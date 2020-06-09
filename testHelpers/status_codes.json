@@ -1,0 +1,59 @@
+{
+  "codes": [
+    {
+      "code": "00",
+      "category": "Generic",
+      "status": "Failure"
+    },
+    {
+      "code": "10",
+      "category": "Permission",
+      "status": "Disallowed_Stop"
+    },
+    {
+      "code": "18",
+      "category": "Permission",
+      "status": "NotApplicatableToCurrentState"
+    },    
+    {
+      "code": "20",
+      "category": "Find",
+      "status": "NotFound_Unequal_OutOfRange"
+    },
+    {
+      "code": "24",
+      "category": "Find",
+      "status": "BelowRange_Underflow"
+    },
+    {
+      "code": "26",
+      "category": "Find",
+      "status": "Above_Range_Overflow"
+    },
+    {
+      "code": "28",
+      "category": "Find",
+      "status": "Duplicate_Conflict_Collision"
+    },            
+    {
+      "code": "40",
+      "category": "Availability",
+      "status": "Unavailable"
+    },            
+    {
+      "code": "46",
+      "category": "Availability",
+      "status": "Expired"
+    },                    
+    {
+      "code": "48",
+      "category": "Availability",
+      "status": "AlreadyDone"
+    },                        
+    {
+      "code": "54",
+      "category": "Finance",
+      "status": "InsufficientFunds"
+    }       
+  ]
+}
