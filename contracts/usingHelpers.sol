@@ -92,7 +92,7 @@ contract usingHelpers {
     /**
      * @notice Sets the flag in the voucher status at specific index
      * @param _status   Current status of the voucher
-     * @param _idx      Index in the status bits to set
+     * @param _changeIdx      Index in the status bits to set
      */
     function setChange(uint8 _status, uint8 _changeIdx) 
         internal pure 
