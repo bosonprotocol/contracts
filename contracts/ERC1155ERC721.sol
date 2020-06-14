@@ -51,13 +51,13 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
     );
     
     modifier onlyOwner() {
-        require(msg.sender == owner, "UNAUTHORIZED");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(msg.sender == owner, "UNAUTHORIZED_O");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         _;
     }
     
     modifier onlyFromVoucherKernel() {
         require(voucherKernelAddress != address(0), "UNSPECIFIED_VOUCHERKERNEL");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(msg.sender == voucherKernelAddress, "UNAUTHORIZED");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(msg.sender == voucherKernelAddress, "UNAUTHORIZED_VK");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         _;
     }    
 
@@ -94,7 +94,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         override
     {
         require(_to != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(_from == msg.sender || operatorApprovals[_from][msg.sender] == true, "UNAUTHORIZED");   //hex"10"FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(_from == msg.sender || operatorApprovals[_from][msg.sender] == true, "UNAUTHORIZED_ST");   //hex"10"FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
 
         // SafeMath throws with insuficient funds or if _id is not valid (balance will be 0)
         balances[_tokenId][_from] = balances[_tokenId][_from].sub(_value);
@@ -183,7 +183,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
     function _transferFrom(address _from, address _to, uint256 _tokenId) 
         internal 
     {
-        require(ownerOf(_tokenId) == _from, "UNAUTHORIZED");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(ownerOf(_tokenId) == _from, "UNAUTHORIZED_T");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         require(_to != address(0), "UNSPECIFIED_ADDRESS");   //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
 
         operator721[_tokenId] = address(0);
@@ -214,7 +214,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         require(_to != tokenOwner, "REDUNDANT_CALL"); //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicatableToCurrentState)
 
         require(msg.sender == tokenOwner || operatorApprovals[tokenOwner][msg.sender],// isApprovedForAll(owner, msg.sender),
-            "UNAUTHORIZED");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+            "UNAUTHORIZED_A");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
             //"ERC721: approve caller is not owner nor approved for all"
 
         operator721[_tokenId] = _to;
@@ -264,7 +264,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
     {
         require(_to != address(0), "UNSPECIFIED_ADDRESS");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTS");    //hex"28" ISSION.code(FISSION.Category.Find, FISSION.Status.Duplicate_Conflict_Collision)
-        require(_from == msg.sender || operatorApprovals[_from][msg.sender] == true, "UNAUTHORIZED");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(_from == msg.sender || operatorApprovals[_from][msg.sender] == true, "UNAUTHORIZED_SB");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
 
         for (uint256 i = 0; i < _tokenIds.length; ++i) {
             uint256 tokenId = _tokenIds[i];
@@ -598,7 +598,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         public 
         onlyFromVoucherKernel
     {
-        require(_account == msg.sender || operatorApprovals[_account][msg.sender] == true, "UNAUTHORIZED"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(_account == msg.sender || operatorApprovals[_account][msg.sender] == true, "UNAUTHORIZED_B"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
 
         _burn(_account, _tokenId, _value);
     }
@@ -632,7 +632,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         public 
         onlyFromVoucherKernel
     {
-        require(_account == msg.sender || operatorApprovals[_account][msg.sender] == true, "UNAUTHORIZED"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(_account == msg.sender || operatorApprovals[_account][msg.sender] == true, "UNAUTHORIZED_BB"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         
         _burnBatch(_account, _tokenIds, _values);
     }  

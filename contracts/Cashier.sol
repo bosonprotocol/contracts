@@ -48,7 +48,7 @@ contract Cashier is usingHelpers, ReentrancyGuard {
     
 
     modifier onlyPoolManager() {
-        require(msg.sender == poolAddress, "UNAUTHORIZED"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(msg.sender == poolAddress, "UNAUTHORIZED_P"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         _;
     }
     
@@ -65,25 +65,53 @@ contract Cashier is usingHelpers, ReentrancyGuard {
     
     /**
      * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
-     * @param _promiseId    ID of the promise for goods or services
+        @param _assetTitle  Name of the asset
+        @param _validFrom   Start of valid period
+        @param _validTo     End of valid period
+        @param _price       Price (payment amount)
+        @param _depositSe   Seller's deposit
+        @param _depositBu   Buyer's deposit
+        @param _complainPeriod Complain period, also adding to the end-of-lifetime mark
+        @param _cancelFaultPeriod   Cancel or Fault tx period, also adding to the end-of-lifetime mark     
      * @param _quantity     Quantity on offer
      */
-    function requestCreateOrder(bytes32 _promiseId, uint256 _quantity)
+    function requestCreateOrder(
+        string calldata _assetTitle, 
+        //bytes32 _value, 
+        uint256 _validFrom,
+        uint256 _validTo,
+        uint256 _price,
+        uint256 _depositSe,
+        uint256 _depositBu,
+        uint256 _complainPeriod,
+        uint256 _cancelFaultPeriod,
+        //bytes32 _promiseId, 
+        uint256 _quantity
+        )
         external
         payable
     {
+        bytes32 promiseId;
+        
         uint256 weiReceived = msg.value;
         
-        //checks
-        uint256 depositSe = voucherKernel.getPromiseDepositSe(_promiseId); 
-        require(depositSe * _quantity == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        //create a promise for an asset first (simplified for prototype)
+        promiseId = voucherKernel.createAssetPromise(msg.sender, _assetTitle, _validFrom, _validTo, _price, _depositSe, _depositBu, _complainPeriod, _cancelFaultPeriod);
         
-        uint256 tokenIdSupply = voucherKernel.createOrder(msg.sender, _promiseId, _quantity);
+        //checks
+        //(i) this is for separate promise allocation, not in prototype
+        //uint256 depositSe = voucherKernel.getPromiseDepositSe(promiseId); 
+        //require(depositSe * _quantity == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        //(ii) prototype check
+        require(_depositSe * _quantity == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        
+        
+        uint256 tokenIdSupply = voucherKernel.createOrder(msg.sender, promiseId, _quantity);
         
         //record funds in escrow ...
         escrow[msg.sender] += weiReceived;     
         
-        emit LogOrderCreated(tokenIdSupply, msg.sender, _promiseId, _quantity);        
+        emit LogOrderCreated(tokenIdSupply, msg.sender, promiseId, _quantity);        
     }
     
     

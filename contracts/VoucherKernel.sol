@@ -24,15 +24,13 @@ contract VoucherKernel is usingHelpers {
     //AssetRegistry assetRegistry;
     ERC1155ERC721 tokensContract;
         
-    //promise is reusable  
+    //promise for an asset could be reusable, but simplified here for brevitbytes32
     struct Promise {
         bytes32 promiseId;
         string assetTitle;      //the asset that is offered
-        //string codePin;          //PIN code of the asset, used for
-        string codeQr;          //QR code of the asset
         address seller;       //the seller who created the promise        
         
-        //we simplify the value for the demoapp, otherwise voucher details would be packed in one bytes32
+        //we simplify the value for the demoapp, otherwise voucher details would be packed in one bytes32 field value
         //bytes32 value;          //plays a role at redemption
         uint256 validFrom;
         uint256 validTo;
@@ -88,8 +86,6 @@ contract VoucherKernel is usingHelpers {
     event LogPromiseCreated(
         bytes32 indexed _promiseId,
         string indexed _assetTitle,
-        //string _codePin,
-        string _codeQr,
         address indexed _seller,
         uint256 _validFrom,
         uint256 _validTo,
@@ -105,6 +101,18 @@ contract VoucherKernel is usingHelpers {
         uint256 _tokenIdVoucher,
         address _holder,
         bytes32 _promiseId
+    );
+    
+    event LogVoucherRefunded(
+        uint256 _tokenIdVoucher
+    );
+    
+    event LogVoucherComplain(
+        uint256 _tokenIdVoucher
+    );
+    
+    event LogVoucherFaultCancel(
+        uint256 _tokenIdVoucher
     );
     
     event LogExpirationTriggered(
@@ -129,19 +137,19 @@ contract VoucherKernel is usingHelpers {
 
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "UNAUTHORIZED");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(msg.sender == owner, "UNAUTHORIZED_O");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         _;
     }
     
     modifier onlyFromCashier() {
         require(cashierAddress != address(0), "UNSPECIFIED_CASHIER");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(msg.sender == cashierAddress, "UNAUTHORIZED");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(msg.sender == cashierAddress, "UNAUTHORIZED_C");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         _;
     }
     
     modifier onlyVoucherOwner(uint256 _tokenIdVoucher) {
         //check authorization
-        require(tokensContract.ownerOf(_tokenIdVoucher) == msg.sender, "UNAUTHORIZED");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(tokensContract.ownerOf(_tokenIdVoucher) == msg.sender, "UNAUTHORIZED_V");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         _;
     }
     
@@ -160,23 +168,21 @@ contract VoucherKernel is usingHelpers {
     
     
     /**
-        @notice Creating a new promise for goods or services.
-        Can be reused, e.g. for making different batches of these.
-        @param _assetTitle  Name of the asset
-        @param _codePin     PIN code (serial)
-        @param _codeQr      QR code of the asset
-        @param _validFrom   Start of valid period
-        @param _validTo     End of valid period
-        @param _price       Price (payment amount)
-        @param _depositSe   Seller's deposit
-        @param _depositBu   Buyer's deposit
-        @param _complainPeriod Complain period, also adding to the end-of-lifetime mark
-        @param _cancelFaultPeriod   Cancel or Fault tx period, also adding to the end-of-lifetime mark
+        * @notice Creating a new promise for goods or services.
+        * Can be reused, e.g. for making different batches of these (but not in prototype).
+        * @param _seller      seller of the promise
+        * @param _assetTitle  Name of the asset
+        * @param _validFrom   Start of valid period
+        * @param _validTo     End of valid period
+        * @param _price       Price (payment amount)
+        * @param _depositSe   Seller's deposit
+        * @param _depositBu   Buyer's deposit
+        * @param _complainPeriod Complain period, also adding to the end-of-lifetime mark
+        * @param _cancelFaultPeriod   Cancel or Fault tx period, also adding to the end-of-lifetime mark
     */
     function createAssetPromise(
+        address _seller, 
         string calldata _assetTitle, 
-        string calldata _codePin,
-        string calldata _codeQr,
         //bytes32 _value, 
         uint256 _validFrom,
         uint256 _validTo,
@@ -187,13 +193,15 @@ contract VoucherKernel is usingHelpers {
         uint256 _cancelFaultPeriod
     ) 
         external 
+        onlyFromCashier
+        returns (bytes32)
     {
         
         require(_validFrom <= _validTo, "INVALID_VALIDITY_FROM");    //hex"26" FISSION.code(FISSION.Category.Find, FISSION.Status.Above_Range_Overflow)
         require(_validTo >= block.timestamp, "INVALID_VALIDITY_TO");   //hex"24" FISSION.code(FISSION.Category.Find, FISSION.Status.BelowRange_Underflow)
         
         bytes32 key;
-        key = keccak256(abi.encodePacked(_assetTitle, _codePin, _validFrom, _validTo, _complainPeriod));
+        key = keccak256(abi.encodePacked(_assetTitle, _validFrom, _validTo, _complainPeriod));
         
         if (promiseKeys.length > 0) {
             require(promiseKeys[promises[key].idx] != key, "PROMISE_ALREADY_EXISTS");
@@ -202,9 +210,7 @@ contract VoucherKernel is usingHelpers {
         promises[key] = Promise({
             promiseId: key,
             assetTitle: _assetTitle,
-            //codePin: _codePin,
-            codeQr: _codeQr,
-            seller: msg.sender,
+            seller: _seller,
             //value: _value,
             validFrom: _validFrom,
             validTo: _validTo,
@@ -218,15 +224,17 @@ contract VoucherKernel is usingHelpers {
         
         promiseKeys.push(key);
         
-        emit LogPromiseCreated(key, _assetTitle, //_codePin, 
-                _codeQr, msg.sender, _validFrom, _validTo, //_price, _depositSe, _depositBu, _complainPeriod, _cancelFaultPeriod, 
+        emit LogPromiseCreated(key, _assetTitle, msg.sender, _validFrom, _validTo, //_price, _depositSe, _depositBu, _complainPeriod, _cancelFaultPeriod, 
                 promiseKeys.length - 1);
+        
+        return key;
     }    
     
     
     /**
      * @notice Create an order for offering a certain quantity of an asset
      * This creates a listing in a marketplace, technically as an ERC-1155 non-fungible token with supply.
+     * @param _seller     seller of the promise
      * @param _promiseId  ID of a promise (simplified into asset for demo)
      * @param _quantity   Quantity of assets on offer
      */
@@ -236,7 +244,7 @@ contract VoucherKernel is usingHelpers {
         returns (uint256)
     {
         require(_promiseId != bytes32(0), "UNSPECIFIED_PROMISE");   //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(promises[_promiseId].seller == _seller, "UNAUTHORIZED");    //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(promises[_promiseId].seller == _seller, "UNAUTHORIZED_CO");    //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         require(_quantity > 0, "INVALID_QUANTITY"); //hex"24" FISSION.code(FISSION.Category.Find, FISSION.Status.BelowRange_Underflow)
         
         uint256 tokenIdSupply = generateTokenType(true); //create & assign a new non-fungible type
@@ -272,8 +280,8 @@ contract VoucherKernel is usingHelpers {
      * @notice Check order is fillable
      * @dev Will throw if checks don't pass
      * @param _tokenIdSupply  ID of the supply token
-     * @param _issuer  Address of the token's issuer
-     * @param _holder  Address of the recipient of the voucher (ERC-721)  
+      * @param _issuer  Address of the token's issuer
+      * @param _holder  Address of the recipient of the voucher (ERC-721)  
      */
      function checkOrderFillable(uint256 _tokenIdSupply, address _issuer, address _holder)
         internal
@@ -310,7 +318,7 @@ contract VoucherKernel is usingHelpers {
         } 
 
         tokensContract.burn(_issuer, _tokenIdSupply, 1);
-        accountSupply[msg.sender]--;
+        accountSupply[_issuer]--;
         
         
         //calculate tokenId
@@ -405,7 +413,7 @@ contract VoucherKernel is usingHelpers {
         vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;
         vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, idxRefund);
         
-        //emit LogVoucherRefunded(_tokenIdVoucher);
+        emit LogVoucherRefunded(_tokenIdVoucher);
     }
     
     
@@ -428,7 +436,7 @@ contract VoucherKernel is usingHelpers {
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block.timestamp;
             vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, idxComplain);
             
-            //emit LogVoucherComplain(_tokenIdVoucher);
+            emit LogVoucherComplain(_tokenIdVoucher);
             
         //if expired
         } else if (isStateExpired(vouchersStatus[_tokenIdVoucher].status)) {
@@ -437,7 +445,7 @@ contract VoucherKernel is usingHelpers {
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block.timestamp;
             vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, idxComplain);
             
-            //emit LogVoucherComplain(_tokenIdVoucher);
+            emit LogVoucherComplain(_tokenIdVoucher);
             
         } else {
             revert("INAPPLICABLE_STATUS");  //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicatableToCurrentState)
@@ -453,7 +461,7 @@ contract VoucherKernel is usingHelpers {
     function cancelOrFault(uint256 _tokenIdVoucher)
         external
     {
-        require(getVoucherIssuer(_tokenIdVoucher) == msg.sender,"UNAUTHORIZED");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(getVoucherIssuer(_tokenIdVoucher) == msg.sender,"UNAUTHORIZED_COF");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         
         uint8 tStatus = vouchersStatus[_tokenIdVoucher].status;
         
@@ -488,7 +496,7 @@ contract VoucherKernel is usingHelpers {
     
         vouchersStatus[_tokenIdVoucher].status = setChange(tStatus, idxCancelFault);
         
-        //emit LogVoucherFaultCancel(_tokenIdVoucher);
+        emit LogVoucherFaultCancel(_tokenIdVoucher);
         
     }    
     
