@@ -163,6 +163,7 @@ contract Cashier is usingHelpers, ReentrancyGuard {
         uint256 price;
         uint256 depositSe;
         uint256 depositBu;
+        uint256 tFraction;
         
         uint256 tokenIdSupply;
         VoucherStatus memory currStatus;
@@ -205,50 +206,52 @@ contract Cashier is usingHelpers, ReentrancyGuard {
             if (!currStatus.isDepositsReleased && 
                 isStatus(currStatus.status, idxFinal)) {
                     
+                    
                 //first, depositSe
-                //CancelOrFault transaction overrides the release/slash of dedepositSe
-                if (isStatus(currStatus.status, idxCancelFault)) {
-                    //part depositSe to Bu, part to Se
-                    escrow[issuer] -= depositSe;
-                    amount2issuer += depositSe.div(CANCELFAULT_SPLIT);
-                    amount2holder += depositSe - depositSe.div(CANCELFAULT_SPLIT);
-                    //Can't use the code below, because of "Stack Too Deep" Error ... this in real life would be optimized, but kept the code above for readability.
-                    //tPartDepositSe = depositSe.div(CANCELFAULT_SPLIT);
-                    //amount2issuer += tPartDepositSe;
-                    //amount2holder += depositSe.sub(tPartDepositSe);     
-                } else if (isStatus(currStatus.status, idxComplain)) {
-                    //slash depositSe
-                    escrow[issuer] -= depositSe;
-                    amount2pool += depositSe;                    
+                if (isStatus(currStatus.status, idxComplain)) {
+                    if (isStatus(currStatus.status, idxCancelFault)) {
+                        //appease the conflict three-ways
+                        escrow[issuer] -= depositSe;
+                        tFraction = depositSe.div(CANCELFAULT_SPLIT);
+                        amount2holder += tFraction; //Bu gets, say, a half
+                        amount2issuer += tFraction.div(CANCELFAULT_SPLIT);   //Se gets, say, a quarter
+                        amount2pool += depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT);    //slashing the rest
+                        tFraction = 0;
+                    } else {
+                        //slash depositSe
+                        escrow[issuer] -= depositSe;
+                        amount2pool += depositSe;
+                    }
                 } else {
-                    //release depositSe
-                    escrow[issuer] -= depositSe;
-                    amount2issuer += depositSe;                    
+                    if (isStatus(currStatus.status, idxCancelFault)) {
+                        //part depositSe to Bu, part to Se
+                        escrow[issuer] -= depositSe;
+                        amount2issuer += depositSe.div(CANCELFAULT_SPLIT);
+                        amount2holder += depositSe - depositSe.div(CANCELFAULT_SPLIT);
+                        //Can't use the code below, because of "Stack Too Deep" Error ... this in real life would be optimized, but kept the code above for readability.
+                        //tPartDepositSe = depositSe.div(CANCELFAULT_SPLIT);
+                        //amount2issuer += tPartDepositSe;
+                        //amount2holder += depositSe.sub(tPartDepositSe);                           
+                    } else {
+                        //release depositSe
+                        escrow[issuer] -= depositSe;
+                        amount2issuer += depositSe;                         
+                    }
                 }
                 
+                
                 //second, depositBu    
-                if (isStatus(currStatus.status, idxRedeem)) {
+                if (isStatus(currStatus.status, idxRedeem) || 
+                    isStatus(currStatus.status, idxCancelFault)
+                    ) {
                     //release depositBu
                     escrow[holder] -= depositBu;
                     amount2holder += depositBu;
-                    
-                } else if (isStatus(currStatus.status, idxRefund) ||
-                            isStatus(currStatus.status, idxExpire)
-                        ) {
+                } else {
                     //slash depositBu
                     escrow[holder] -= depositBu;
-                    amount2pool += depositBu;
-                    
-                } else if (!isStatus(currStatus.status, idxRedeem) && 
-                        !isStatus(currStatus.status, idxRefund) &&
-                        !isStatus(currStatus.status, idxExpire) &&
-                        isStatus(currStatus.status, idxCancelFault)
-                        ) {
-                    //release depositBu
-                    escrow[holder] -= depositBu;
-                    amount2holder += depositBu;   
-                    
-                }    
+                    amount2pool += depositBu;                    
+                }
                 
                 voucherKernel.setDepositsReleased(_tokenIdVouchers[i]);
             }
