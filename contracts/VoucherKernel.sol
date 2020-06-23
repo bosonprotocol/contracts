@@ -570,7 +570,7 @@ contract VoucherKernel is usingHelpers {
         
         uint8 tStatus = vouchersStatus[_tokenIdVoucher].status;
         
-        require(!isStatus(tStatus, idxCancelFault), "ALREADY_CANCELFAULT"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
+        require(!isStatus(tStatus, idxFinal), "ALREADY_FINALIZED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
         
         bool mark;
         Promise memory tPromise = promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
