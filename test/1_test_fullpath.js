@@ -82,7 +82,7 @@ contract("Voucher tests", async accounts => {
 
 		it("adding one new order / promise", async () => {			
 
-			let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD, helpers.PROMISE_CANCELORFAULT_PERIOD, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
+			let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
 
 			//would need truffle-events as the event emitted is from a nested contract, so truffle-assert doesn't detect it
 			// truffleAssert.eventEmitted(txOrder, 'LogOrderCreated', (ev) => {
@@ -104,7 +104,7 @@ contract("Voucher tests", async accounts => {
 
 		it("adding second order", async () => {			
 
-			let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE2, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE2, helpers.PROMISE_DEPOSITSE2, helpers.PROMISE_DEPOSITBU2, helpers.PROMISE_CHALLENGE_PERIOD, helpers.PROMISE_CANCELORFAULT_PERIOD, helpers.ORDER_QUANTITY2, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE2});
+			let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE2, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE2, helpers.PROMISE_DEPOSITSE2, helpers.PROMISE_DEPOSITBU2, helpers.ORDER_QUANTITY2, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE2});
 
 			truffleAssert.eventEmitted(txOrder, 'LogOrderCreated', (ev) => {
 			    tokenSupplyKey2 = ev._tokenIdSupply;
@@ -160,7 +160,7 @@ contract("Voucher tests", async accounts => {
 
 		it("must fail: adding new order with incorrect value sent", async () => {			
 
-			truffleAssert.reverts(contractCashier.requestCreateOrder(helpers.ASSET_TITLE, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD, helpers.PROMISE_CANCELORFAULT_PERIOD, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: 0}),
+			truffleAssert.reverts(contractCashier.requestCreateOrder(helpers.ASSET_TITLE, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: 0}),
 				truffleAssert.ErrorType.REVERT
 			);			
 			
@@ -237,7 +237,7 @@ contract("Voucher tests", async accounts => {
 		// 	);				
 		// });			
 			  	
-    }) 
+    })  
 
 });
 
@@ -278,7 +278,7 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 
 	
 
-		let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD * helpers.SECONDS_IN_DAY, helpers.PROMISE_CANCELORFAULT_PERIOD * helpers.SECONDS_IN_DAY, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
+		let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
 
 		truffleAssert.eventEmitted(txOrder, 'LogOrderCreated', (ev) => {
 		    tokenSupplyKey1 = ev._tokenIdSupply;
@@ -296,6 +296,41 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 		}, "order1 not created successfully"); 
 		//\INIT
     })
+
+
+    describe('Wait periods', function() {
+		it("change complain period", async () => {
+			let txChangePeriod = await contractVoucherKernel.setComplainPeriod(helpers.PROMISE_CHALLENGE_PERIOD * helpers.SECONDS_IN_DAY);
+
+			truffleAssert.eventEmitted(txChangePeriod, 'LogComplainPeriodChanged', (ev) => {
+			    return ev._newComplainPeriod.toString() === (helpers.PROMISE_CHALLENGE_PERIOD * helpers.SECONDS_IN_DAY).toString();
+			}, "complain period not changed successfully");
+		});		
+
+
+		it("must fail: unauthorized change of complain period", async () => {
+			truffleAssert.reverts(contractVoucherKernel.setComplainPeriod(helpers.PROMISE_CHALLENGE_PERIOD * helpers.SECONDS_IN_DAY, {from: Attacker}),
+				truffleAssert.ErrorType.REVERT
+			);				
+		});		
+
+
+		it("change cancelOrFault period", async () => {
+			let txChangePeriod = await contractVoucherKernel.setCancelFaultPeriod(helpers.PROMISE_CANCELORFAULT_PERIOD * helpers.SECONDS_IN_DAY);
+
+			truffleAssert.eventEmitted(txChangePeriod, 'LogCancelFaultPeriodChanged', (ev) => {
+			    return ev._newCancelFaultPeriod.toString() === (helpers.PROMISE_CANCELORFAULT_PERIOD * helpers.SECONDS_IN_DAY).toString();
+			}, "complain period not changed successfully");
+		});		
+
+
+		it("must fail: unauthorized change of cancelOrFault period", async () => {
+			truffleAssert.reverts(contractVoucherKernel.setCancelFaultPeriod(helpers.PROMISE_CANCELORFAULT_PERIOD * helpers.SECONDS_IN_DAY, {from: Attacker}),
+				truffleAssert.ErrorType.REVERT
+			);				
+		});					
+			  	
+    })   
 
 
 	describe('Refunds ...', function() {

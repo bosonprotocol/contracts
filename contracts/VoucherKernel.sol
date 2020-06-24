@@ -38,8 +38,8 @@ contract VoucherKernel is usingHelpers {
         uint256 depositSe;
         uint256 depositBu;
 
-        uint complainPeriod;   //complain period in no. of days (one day is 86400 seconds)
-        uint cancelFaultPeriod;   //cancel or fault tx period in no. of days (one day is 86400 seconds)
+        //uint complainPeriod;   //complain period in no. of days (one day is 86400 seconds)
+        //uint cancelFaultPeriod;   //cancel or fault tx period in no. of days (one day is 86400 seconds)
         uint idx;
     }
     
@@ -70,7 +70,7 @@ contract VoucherKernel is usingHelpers {
     uint256 public constant TYPE_NF_BIT = 1 << 255; //the first bit represents an NFT type
 //1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000    
     
-        uint256 public typeId; //base token type ... 127-bits cover 1.701411835*10^38 types (not differentiating between FTs and NFTs)
+    uint256 public typeId; //base token type ... 127-bits cover 1.701411835*10^38 types (not differentiating between FTs and NFTs)
     /* Token IDs:
     Fungibles: 0, followed by 127-bit FT type ID, in the upper 128 bits, followed by 0 in lower 128-bits
     <0><uint127: base token id><uint128: 0>
@@ -81,6 +81,9 @@ contract VoucherKernel is usingHelpers {
     Non-fungible vouchers: 1, followed by 127-bit NFT type ID, in the upper 128 bits, followed by a 1-based index of an NFT token ID.
     <1><uint127: base token id><uint128: index of non-fungible>
     */
+    
+    uint256 public complainPeriod; //for demo purposes, this is fixed/set by owner
+    uint256 public cancelFaultPeriod; //for demo purposes, this is fixed/set by owner
     
     
     event LogPromiseCreated(
@@ -130,6 +133,16 @@ contract VoucherKernel is usingHelpers {
         address _triggeredBy
     );
     
+    event LogComplainPeriodChanged(
+        uint256 _newComplainPeriod,
+        address _triggeredBy
+    );
+    
+    event LogCancelFaultPeriodChanged(
+        uint256 _newCancelFaultPeriod,
+        address _triggeredBy
+    );    
+    
     event LogFundsReleased(
         uint256 _tokenIdVoucher,
         uint8 _type     //0 .. payment, 1 .. deposits
@@ -164,6 +177,9 @@ contract VoucherKernel is usingHelpers {
         
         //AssetRegistry is currently not used to simplify the process.
         //assetRegistry = AssetRegistry(_assetRegistry);
+        
+        complainPeriod = 7 * 1 days;
+        cancelFaultPeriod = 7 * 1 days;
     }
     
     
@@ -177,8 +193,6 @@ contract VoucherKernel is usingHelpers {
         * @param _price       Price (payment amount)
         * @param _depositSe   Seller's deposit
         * @param _depositBu   Buyer's deposit
-        * @param _complainPeriod Complain period, also adding to the end-of-lifetime mark
-        * @param _cancelFaultPeriod   Cancel or Fault tx period, also adding to the end-of-lifetime mark
     */
     function createAssetPromise(
         address _seller, 
@@ -188,9 +202,9 @@ contract VoucherKernel is usingHelpers {
         uint256 _validTo,
         uint256 _price,
         uint256 _depositSe,
-        uint256 _depositBu,
-        uint256 _complainPeriod,
-        uint256 _cancelFaultPeriod
+        uint256 _depositBu
+        //uint256 _complainPeriod,
+        //uint256 _cancelFaultPeriod
     ) 
         external 
         onlyFromCashier
@@ -201,7 +215,7 @@ contract VoucherKernel is usingHelpers {
         require(_validTo >= block.timestamp, "INVALID_VALIDITY_TO");   //hex"24" FISSION.code(FISSION.Category.Find, FISSION.Status.BelowRange_Underflow)
         
         bytes32 key;
-        key = keccak256(abi.encodePacked(_assetTitle, _validFrom, _validTo, _complainPeriod));
+        key = keccak256(abi.encodePacked(_assetTitle, _validFrom, _validTo));
         
         if (promiseKeys.length > 0) {
             require(promiseKeys[promises[key].idx] != key, "PROMISE_ALREADY_EXISTS");
@@ -217,8 +231,8 @@ contract VoucherKernel is usingHelpers {
             price: _price,
             depositSe: _depositSe,
             depositBu: _depositBu,
-            complainPeriod: _complainPeriod,
-            cancelFaultPeriod: _cancelFaultPeriod,
+            //complainPeriod: _complainPeriod,
+            //cancelFaultPeriod: _cancelFaultPeriod,
             idx: promiseKeys.length
         });
         
@@ -425,13 +439,16 @@ contract VoucherKernel is usingHelpers {
         external
         onlyVoucherOwner(_tokenIdVoucher)
     {
+        require(!isStatus(vouchersStatus[_tokenIdVoucher].status, idxComplain), "ALREADY_COMPLAINED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
+        require(!isStatus(vouchersStatus[_tokenIdVoucher].status, idxFinal), "ALREADY_FINALIZED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
+        
         //check if still in the complain period
         Promise memory tPromise = promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
         
         //if redeeemed or refunded
         if (isStateRedemptionSigned(vouchersStatus[_tokenIdVoucher].status) ||
                     isStateRefunded(vouchersStatus[_tokenIdVoucher].status)) {
-            require(block.timestamp <= vouchersStatus[_tokenIdVoucher].complainPeriodStart + tPromise.complainPeriod, "COMPLAINPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
+            require(block.timestamp <= vouchersStatus[_tokenIdVoucher].complainPeriodStart + complainPeriod, "COMPLAINPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
             
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block.timestamp;
             vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, idxComplain);
@@ -440,9 +457,17 @@ contract VoucherKernel is usingHelpers {
             
         //if expired
         } else if (isStateExpired(vouchersStatus[_tokenIdVoucher].status)) {
-            require(block.timestamp <= tPromise.validTo + tPromise.complainPeriod, "COMPLAINPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
+            require(block.timestamp <= tPromise.validTo + complainPeriod, "COMPLAINPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
             
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block.timestamp;
+            vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, idxComplain);
+            
+            emit LogVoucherComplain(_tokenIdVoucher);
+        
+        //if cancelOrFault
+        } else if (isStatus(vouchersStatus[_tokenIdVoucher].status, idxCancelFault)) {
+            require(block.timestamp <= vouchersStatus[_tokenIdVoucher].complainPeriodStart + complainPeriod, "COMPLAINPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired));
+            
             vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, idxComplain);
             
             emit LogVoucherComplain(_tokenIdVoucher);
@@ -473,17 +498,19 @@ contract VoucherKernel is usingHelpers {
         if (isStatus(tStatus, idxRedeem) || isStatus(tStatus, idxRefund)) {
             //if redeeemed or refunded
             if (!isStatus(tStatus, idxComplain)) {
-                require(block.timestamp <= vouchersStatus[_tokenIdVoucher].complainPeriodStart + tPromise.cancelFaultPeriod, "COFPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)            
+                require(block.timestamp <= vouchersStatus[_tokenIdVoucher].complainPeriodStart + cancelFaultPeriod, "COFPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)            
+                vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;  //resetting the complain period
+
             } else {
-                require(block.timestamp <= vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart + tPromise.cancelFaultPeriod, "COFPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)            
+                require(block.timestamp <= vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart + cancelFaultPeriod, "COFPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)            
             }
             
         } else if (isStatus(tStatus, idxExpire)) {
             //if expired
             if (!isStatus(tStatus, idxComplain)) {
-                require(block.timestamp <= tPromise.validTo + tPromise.cancelFaultPeriod, "COFPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)            
+                require(block.timestamp <= tPromise.validTo + cancelFaultPeriod, "COFPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)            
             } else {
-                require(block.timestamp <= vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart + tPromise.cancelFaultPeriod, "COFPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)            
+                require(block.timestamp <= vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart + cancelFaultPeriod, "COFPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)            
             }
             
         } else if (isStateCommitted(tStatus)) {
@@ -572,6 +599,7 @@ contract VoucherKernel is usingHelpers {
         
         require(!isStatus(tStatus, idxFinal), "ALREADY_FINALIZED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
         
+        
         bool mark;
         Promise memory tPromise = promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
         
@@ -580,13 +608,13 @@ contract VoucherKernel is usingHelpers {
                 //if COMPLAIN && COF: then final
                 mark = true;
                 
-            } else if (block.timestamp >= vouchersStatus[_tokenIdVoucher].complainPeriodStart + tPromise.cancelFaultPeriod) {
+            } else if (block.timestamp >= vouchersStatus[_tokenIdVoucher].complainPeriodStart + cancelFaultPeriod) {
                 //if COMPLAIN: then final after cof period
                 mark = true;
             }
             
         } else if (isStatus(tStatus, idxCancelFault) &&
-                    block.timestamp >= vouchersStatus[_tokenIdVoucher].complainPeriodStart + tPromise.complainPeriod
+                    block.timestamp >= vouchersStatus[_tokenIdVoucher].complainPeriodStart + complainPeriod
                     ) {
             //if COF: then final after complain period
             mark = true;
@@ -594,13 +622,13 @@ contract VoucherKernel is usingHelpers {
         } else if (isStateRedemptionSigned(tStatus) ||
                     isStateRefunded(tStatus)) {
             //if RDM/RFND NON_COMPLAIN: then final after complainPeriodStart + complainPeriod
-            if (block.timestamp >= vouchersStatus[_tokenIdVoucher].complainPeriodStart + tPromise.complainPeriod) {
+            if (block.timestamp >= vouchersStatus[_tokenIdVoucher].complainPeriodStart + complainPeriod) {
                 mark = true;
             }
             
         } else if (isStateExpired(tStatus)) {
             //if EXP NON_COMPLAIN: then final after validTo + complainPeriod
-            if (block.timestamp >= tPromise.validTo + tPromise.complainPeriod) {
+            if (block.timestamp >= tPromise.validTo + complainPeriod) {
                 mark = true;
             }             
         }
@@ -631,6 +659,34 @@ contract VoucherKernel is usingHelpers {
         
         emit LogCashierSet(_cashierAddress, msg.sender);
     }
+    
+    
+    /**
+     * @notice Set the general complain period, should be used sparingly as it has significant consequences. Here done simply for demo purposes.
+     * @param _complainPeriod   the new value for complain period (in number of days)
+     */
+    function setComplainPeriod(uint256 _complainPeriod)
+        external
+        onlyOwner
+    {
+        complainPeriod = _complainPeriod * 1 days;
+        
+        emit LogComplainPeriodChanged(_complainPeriod, msg.sender);
+    }
+    
+    
+    /**
+     * @notice Set the general cancelOrFault period, should be used sparingly as it has significant consequences. Here done simply for demo purposes.
+     * @param _cancelFaultPeriod   the new value for cancelOrFault period (in number of days)
+     */
+    function setCancelFaultPeriod(uint256 _cancelFaultPeriod)
+        external
+        onlyOwner
+    {
+        cancelFaultPeriod = _cancelFaultPeriod * 1 days;
+        
+        emit LogCancelFaultPeriodChanged(_cancelFaultPeriod, msg.sender);
+    }    
     
     
     // // // // // // // //

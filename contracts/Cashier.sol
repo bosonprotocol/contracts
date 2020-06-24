@@ -71,8 +71,6 @@ contract Cashier is usingHelpers, ReentrancyGuard {
         @param _price       Price (payment amount)
         @param _depositSe   Seller's deposit
         @param _depositBu   Buyer's deposit
-        @param _complainPeriod Complain period, also adding to the end-of-lifetime mark
-        @param _cancelFaultPeriod   Cancel or Fault tx period, also adding to the end-of-lifetime mark     
      * @param _quantity     Quantity on offer
      */
     function requestCreateOrder(
@@ -83,8 +81,8 @@ contract Cashier is usingHelpers, ReentrancyGuard {
         uint256 _price,
         uint256 _depositSe,
         uint256 _depositBu,
-        uint256 _complainPeriod,
-        uint256 _cancelFaultPeriod,
+        //uint256 _complainPeriod,
+        //uint256 _cancelFaultPeriod,
         //bytes32 _promiseId, 
         uint256 _quantity
         )
@@ -96,7 +94,7 @@ contract Cashier is usingHelpers, ReentrancyGuard {
         uint256 weiReceived = msg.value;
         
         //create a promise for an asset first (simplified for prototype)
-        promiseId = voucherKernel.createAssetPromise(msg.sender, _assetTitle, _validFrom, _validTo, _price, _depositSe, _depositBu, _complainPeriod, _cancelFaultPeriod);
+        promiseId = voucherKernel.createAssetPromise(msg.sender, _assetTitle, _validFrom, _validTo, _price, _depositSe, _depositBu);
         
         //checks
         //(i) this is for separate promise allocation, not in prototype
