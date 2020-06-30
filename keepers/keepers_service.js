@@ -55,3 +55,106 @@ var contractVK = new ethers.Contract(contractVKAddress, abiVK, wallet);
 var contractCashier = new ethers.Contract(contractCashierAddress, abiCashier, wallet);
 
 
+var tokenSupplyIds = []
+var tokenVoucherIds = []
+
+
+async function initContracts() {
+	
+	//TODO: do this only once
+	await contractNFT.setVoucherKernelAddress(contractVKAddress);
+	await contractVK.setCashierAddress(contractCashierAddress);
+	await contractNFT.setApprovalForAll(contractVKAddress, 'true');	
+}
+
+
+//dummy data for test
+async function loadDummyOrders() {
+  // contractNFT.owner().then((result) => { console.log("contractNFT.owner: ", result, "\n"); });
+  // console.log("i am: ", wallet.address);
+  	console.log("1 loadDummyOrders");
+
+	const today = new Date().valueOf();
+
+	//offers
+	txOrder = await contractCashier.requestCreateOrder(
+	                "abc", //_assetTitle
+	                today - 1, //_validFrom
+	                today + 1, //_validTo
+	                10, //_price
+	                1, //_depositSe
+	                1, //_depositBu
+	                10  //_quantity
+	                //,{nonce: txcount}
+	                , {value: 10}
+	        );
+
+	console.log("Order TX hash: ", txOrder.hash);
+}
+
+
+async function loadLogsOrders() {
+	const filter = contractCashier.filters.LogOrderCreated();
+	const logs = await contractCashier.queryFilter(filter, 0, "latest").then((logs) => {
+	    logs.forEach((log) => {
+	        tokenSupplyIds.push(log.args._tokenIdSupply.toString());
+	    })
+	})	
+}
+
+
+async function loadDummyVoucherCommitments() {
+	//vouchers
+	txVoucherCommit = await contractCashier.requestVoucher(
+	                tokenSupplyIds[0], //_tokenIdSupply
+	                wallet.address //_issuer	                
+	                , {value: 11}
+	        );
+
+	console.log("txVoucherCommit TX hash: ", txVoucherCommit.hash);	
+}
+
+
+async function loadLogsVoucherCommitments() {
+	const filter = contractCashier.filters.LogVoucherDelivered();
+	const logs = await contractCashier.queryFilter(filter, 0, "latest").then((logs) => {
+	    logs.forEach((log) => {
+	        tokenVoucherIds.push(log.args._tokenIdVoucher.toString());
+	    })
+	})	
+}
+
+
+
+async function doStuff() {
+	await initContracts();
+	await loadDummyOrders();
+	await loadLogsOrders();	
+	await loadDummyVoucherCommitments();
+	await loadLogsVoucherCommitments();
+}
+
+
+
+doStuff();
+
+
+// //listen for new offers
+// contractCashier.on("LogOrderCreated", (_tokenIdSupply, _seller, _promiseId, _quantity, event) => {
+// });
+
+
+// //listen for new purchases
+// contractCashier.on("LogVoucherDelivered", (_tokenIdSupply, _tokenIdVoucher, _issuer, _holder, _promiseId, event) => {
+// });
+
+
+//actions
+/*
+VoucherKernel:
+- triggerExpiration(uint256 _tokenIdVoucher)
+- triggerFinalizeVoucher(uint256 _tokenIdVoucher)
+
+Cashier:
+- withdraw(uint256[] calldata _tokenIdVouchers)
+*/
