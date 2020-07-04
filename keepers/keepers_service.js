@@ -9,7 +9,7 @@
 
 
 	Run the script by: 
-	$ node loader.js <addresses of the contracts separated by space> <private key of the transacting account>
+	$ node keepers_service.js <addresses of the contracts separated by space> <private key of the transacting account>
 */
 
 
@@ -34,7 +34,7 @@ var wallet = new ethers.Wallet(privateKey, provider);
 /*
 	ethers complains about overloaded functions, because it wants to be on the safe side,
 	see: https://github.com/ethers-io/ethers.js/issues/499
-	Whis is what we get with a hybrid contract ERC1155ERC721:
+	Which is what we get with the hybrid contract ERC1155ERC721:
 WARNING: Multiple definitions for safeTransferFrom
 WARNING: Multiple definitions for safeTransferFrom
 WARNING: Multiple definitions for balanceOf
@@ -281,11 +281,11 @@ async function doStuff() {
 	console.log("\nKeepers start ...", new Date().toUTCString(), "\n");
 	await initContracts();
 
-	await loadDummyOrders();
+	// await loadDummyOrders();
 	await loadLogsOrders();	
-	await loadDummyVoucherCommitments();
+	// await loadDummyVoucherCommitments();
 	await loadLogsVoucherDeliveredEvents();
-	await loadDummyVoucherRedeem();
+	// await loadDummyVoucherRedeem();
 	
 	await loadLogsVoucherEvents();
 	
