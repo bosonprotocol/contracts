@@ -11,10 +11,13 @@
 	Run the script by: 
 	$ node keepers_service.js <addresses of the contracts separated by space> <private key of the transacting account>
 */
-
+const flagLoadDummy = true;
 
 var fs = require('fs');
 var ethers = require('ethers');
+
+//for testing
+var load_dummy = require('./load_dummy');
 
 //read settings
 var myArgs = process.argv.slice(2);
@@ -60,36 +63,14 @@ var arrVouchers = []
 
 
 async function initContracts() {
+    const blockNo = await provider.getBlockNumber();
+    const block = await provider.getBlock(blockNo);
+    console.log('[Block]', blockNo, block.timestamp, "\n");
 	
 	//TODO: do this only once
 	await contractNFT.setVoucherKernelAddress(contractVKAddress);
 	await contractVK.setCashierAddress(contractCashierAddress);
 	await contractNFT.setApprovalForAll(contractVKAddress, 'true');	
-}
-
-
-//dummy data for test
-async function loadDummyOrders() {
-  // contractNFT.owner().then((result) => { console.log("contractNFT.owner: ", result, "\n"); });
-  // console.log("i am: ", wallet.address);
-  	
-	var today = new Date().valueOf();
-	today = Math.floor( today / 1000 );
-
-	//offers
-	tx = await contractCashier.requestCreateOrder(
-	                "abc", //_assetTitle
-	                today - (3 * 1000 * 60 * 60 * 24), //_validFrom
-	                today + (3 * 1000 * 60 * 60 * 24), //_validTo
-	                10, //_price
-	                1, //_depositSe
-	                1, //_depositBu
-	                10  //_quantity
-	                //,{nonce: txcount}
-	                , {value: 10}
-	        );
-
-	console.log("Order TX hash: ", tx.hash);
 }
 
 
@@ -101,26 +82,6 @@ async function loadLogsOrders() {
 	    })
 	})	
 	console.log("Loaded", arrSupplyIds.length, "events LogOrderCreated.\n");
-}
-
-
-async function loadDummyVoucherCommitments() {
-	tx = await contractCashier.requestVoucher(
-	                arrSupplyIds[0], //_tokenIdSupply
-	                wallet.address //_issuer	                
-	                , {value: 11}
-	        );
-
-	console.log("VoucherCommit TX hash: ", tx.hash);	
-}
-
-
-async function loadDummyVoucherRedeem() {
-	tx = await contractVK.redeem(
-	                arrVouchers[0][0] //_tokenIdVoucher
-	        );
-
-	console.log("Redeem", 0, " TX hash: ", tx.hash);	
 }
 
 
@@ -224,8 +185,8 @@ async function loadLogsVoucherEvents() {
 	        	}
 	        }	        
 	    })
-		console.log("Loaded", cntP, "events LogFundsReleased(_,0).\n");
-		console.log("Loaded", cntD, "events LogFundsReleased(_,1).\n");	    
+		console.log("Loaded", cntP, "events LogFundsReleased(_,0) - payments.\n");
+		console.log("Loaded", cntD, "events LogFundsReleased(_,1) - deposits.\n");	    
 	})	
 }
 
@@ -245,7 +206,7 @@ async function triggerExpirations() {
 
 async function triggerFinalizations() {
 	for (let i = 0; i < arrVouchers.length; i++) {
-		if (arrVouchers[i][1] == 'commitment' 
+		if (arrVouchers[i][1]    == 'commitment' 
 			|| arrVouchers[i][1] == 'redemption' 
 			|| arrVouchers[i][1] == 'refund') 
 		{
@@ -261,7 +222,7 @@ async function triggerFinalizations() {
 
 async function triggerWithdrawals() {
 	for (let i = 0; i < arrVouchers.length; i++) {
-		if (arrVouchers[i][1] == 'commitment' 
+		if (arrVouchers[i][1]    == 'commitment' 
 			|| arrVouchers[i][1] == 'redemption' 
 			|| arrVouchers[i][1] == 'refund' 
 			|| arrVouchers[i][1] == 'expiration' 
@@ -278,23 +239,29 @@ async function triggerWithdrawals() {
 
 
 async function doStuff() {
-	console.log("\nKeepers start ...", new Date().toUTCString(), "\n");
-	await initContracts();
+	console.log("\n[Keepers start]", new Date().toUTCString(), "\n");
 
-	// await loadDummyOrders();
-	await loadLogsOrders();	
-	// await loadDummyVoucherCommitments();
-	await loadLogsVoucherDeliveredEvents();
-	// await loadDummyVoucherRedeem();
-	
-	await loadLogsVoucherEvents();
-	
-	//actually do txs
-	await triggerExpirations();
-	await triggerFinalizations();
-	await triggerWithdrawals();
-	
-	console.log("\nKeepers end ...", new Date().toUTCString(), "\n");
+	try {
+		await initContracts();
+		if (flagLoadDummy) await load_dummy.loadDummyOrders(contractCashier);
+
+		await loadLogsOrders();	
+		if (flagLoadDummy) await load_dummy.loadDummyVoucherCommitments(contractCashier, arrSupplyIds, wallet);
+
+		await loadLogsVoucherDeliveredEvents();
+		if (flagLoadDummy) await load_dummy.loadDummyVoucherRedeem(contractVK, arrVouchers);
+		
+		await loadLogsVoucherEvents();
+		
+		//actually do txs
+		await triggerExpirations();
+		await triggerFinalizations();
+		await triggerWithdrawals();
+	} catch (error) {
+		console.error("\n\n[ERROR]", error);
+	}	
+
+	console.log("\n[Keepers end]", new Date().toUTCString(), "\n");
 }
 
 
