@@ -11,51 +11,15 @@
 	Run the script by: 
 	$ node keepers_service.js <addresses of the contracts separated by space> <private key of the transacting account>
 */
-const flagLoadDummy = true;
 
-var fs = require('fs');
+var cfg = require('./config');
 var ethers = require('ethers');
+var load_dummy = require('./load_dummy');	//for testing
 
-//for testing
-var load_dummy = require('./load_dummy');
 
-//read settings
-var myArgs = process.argv.slice(2);
-var contractNFTaddress = myArgs[0];
-var contractVKAddress = myArgs[1];
-var contractCashierAddress = myArgs[2];
-
-var privateKey = myArgs[3];
-var URL = "http://localhost:8545"
-
-// //connect to web3 provider
-var provider = new ethers.providers.JsonRpcProvider(URL); ////new ethers.providers.JsonRpcProvider(url);
-var wallet = new ethers.Wallet(privateKey, provider);
-
-// //get contract functions signatures
-
-/*
-	ethers complains about overloaded functions, because it wants to be on the safe side,
-	see: https://github.com/ethers-io/ethers.js/issues/499
-	Which is what we get with the hybrid contract ERC1155ERC721:
-WARNING: Multiple definitions for safeTransferFrom
-WARNING: Multiple definitions for safeTransferFrom
-WARNING: Multiple definitions for balanceOf
-WARNING: Multiple definitions for mint
-
-	To silence it, we can uncomment the line below to decrease verbosity.
-*/
-//ethers.errors.setLogLevel("error");
-var contractNFTAbi = JSON.parse(fs.readFileSync('../build/contracts/ERC1155ERC721.json').toString())
-var contractVKAbi = JSON.parse(fs.readFileSync('../build/contracts/VoucherKernel.json').toString())
-var contractCashierAbi = JSON.parse(fs.readFileSync('../build/contracts/Cashier.json').toString())
-var abiNFT = contractNFTAbi.abi;
-var abiVK = contractVKAbi.abi;
-var abiCashier = contractCashierAbi.abi;
-
-var contractNFT = new ethers.Contract(contractNFTaddress, abiNFT, wallet);
-var contractVK = new ethers.Contract(contractVKAddress, abiVK, wallet);
-var contractCashier = new ethers.Contract(contractCashierAddress, abiCashier, wallet);
+var contractNFT = new ethers.Contract(cfg.contractNFTaddress, cfg.abiNFT, cfg.wallet);
+var contractVK = new ethers.Contract(cfg.contractVKAddress, cfg.abiVK, cfg.wallet);
+var contractCashier = new ethers.Contract(cfg.contractCashierAddress, cfg.abiCashier, cfg.wallet);
 
 
 var arrSupplyIds = []
@@ -63,20 +27,22 @@ var arrVouchers = []
 
 
 async function initContracts() {
-    const blockNo = await provider.getBlockNumber();
-    const block = await provider.getBlock(blockNo);
+    const blockNo = await cfg.provider.getBlockNumber();
+    const block = await cfg.provider.getBlock(blockNo);
     console.log('[Block]', blockNo, block.timestamp, "\n");
+
+    cfg.startBlock = blockNo;
 	
 	//TODO: do this only once
-	await contractNFT.setVoucherKernelAddress(contractVKAddress);
-	await contractVK.setCashierAddress(contractCashierAddress);
-	await contractNFT.setApprovalForAll(contractVKAddress, 'true');	
+	await contractNFT.setVoucherKernelAddress(cfg.contractVKAddress);
+	await contractVK.setCashierAddress(cfg.contractCashierAddress);
+	await contractNFT.setApprovalForAll(cfg.contractVKAddress, 'true');	
 }
 
 
 async function loadLogsOrders() {
 	const filter = contractCashier.filters.LogOrderCreated();
-	const logs = await contractCashier.queryFilter(filter, 0, "latest").then((logs) => {
+	const logs = await contractCashier.queryFilter(filter, cfg.startBlock, "latest").then((logs) => {
 	    logs.forEach((log) => {
 	        arrSupplyIds.push(log.args._tokenIdSupply.toString());
 	    })
@@ -87,7 +53,7 @@ async function loadLogsOrders() {
 
 async function loadLogsVoucherDeliveredEvents() {
 	var filter = contractCashier.filters.LogVoucherDelivered();
-	var logs = await contractCashier.queryFilter(filter, 0, "latest").then((logs) => {
+	var logs = await contractCashier.queryFilter(filter, cfg.startBlock, "latest").then((logs) => {
 	    logs.forEach((log) => {
 	        arrVouchers.push([log.args._tokenIdVoucher.toString(), 'commitment']);
 	    })
@@ -100,7 +66,7 @@ async function loadLogsVoucherEvents() {
 	//redemptions
 	var cnt = 0;
 	var filter = contractVK.filters.LogVoucherRedeemed();
-	var logs = await contractVK.queryFilter(filter, 0, "latest").then((logs) => {
+	var logs = await contractVK.queryFilter(filter, cfg.startBlock, "latest").then((logs) => {
 	    logs.forEach((log) => {
 	        for (let i = 0; i < arrVouchers.length; i++) {
 	        	if (arrVouchers[i][0] == log.args._tokenIdVoucher) {
@@ -115,7 +81,7 @@ async function loadLogsVoucherEvents() {
 	//refunds
 	cnt = 0;
 	var filter = contractVK.filters.LogVoucherRefunded();
-	var logs = await contractVK.queryFilter(filter, 0, "latest").then((logs) => {
+	var logs = await contractVK.queryFilter(filter, cfg.startBlock, "latest").then((logs) => {
 	    logs.forEach((log) => {
 	        for (let i = 0; i < arrVouchers.length; i++) {
 	        	if (arrVouchers[i][0] == log.args._tokenIdVoucher) {
@@ -130,7 +96,7 @@ async function loadLogsVoucherEvents() {
 	//expirations
 	cnt = 0;
 	var filter = contractVK.filters.LogExpirationTriggered();
-	var logs = await contractVK.queryFilter(filter, 0, "latest").then((logs) => {
+	var logs = await contractVK.queryFilter(filter, cfg.startBlock, "latest").then((logs) => {
 	    logs.forEach((log) => {
 	        for (let i = 0; i < arrVouchers.length; i++) {
 	        	if (arrVouchers[i][0] == log.args._tokenIdVoucher) {
@@ -145,7 +111,7 @@ async function loadLogsVoucherEvents() {
 	//finalized
 	cnt = 0;
 	var filter = contractVK.filters.LogFinalizeVoucher();
-	var logs = await contractVK.queryFilter(filter, 0, "latest").then((logs) => {
+	var logs = await contractVK.queryFilter(filter, cfg.startBlock, "latest").then((logs) => {
 	    logs.forEach((log) => {
 	        for (let i = 0; i < arrVouchers.length; i++) {
 	        	if (arrVouchers[i][0] == log.args._tokenIdVoucher) {
@@ -161,7 +127,7 @@ async function loadLogsVoucherEvents() {
 	var cntP = 0;
 	var cntD = 0;
 	var filter = contractVK.filters.LogFundsReleased();
-	var logs = await contractVK.queryFilter(filter, 0, "latest").then((logs) => {
+	var logs = await contractVK.queryFilter(filter, cfg.startBlock, "latest").then((logs) => {
 	    logs.forEach((log) => {
 	        for (let i = 0; i < arrVouchers.length; i++) {
 	        	if (arrVouchers[i][0] == log.args._tokenIdVoucher) {
@@ -243,13 +209,13 @@ async function doStuff() {
 
 	try {
 		await initContracts();
-		if (flagLoadDummy) await load_dummy.loadDummyOrders(contractCashier);
+		if (cfg.flagLoadDummy) await load_dummy.loadDummyOrders(contractCashier);
 
 		await loadLogsOrders();	
-		if (flagLoadDummy) await load_dummy.loadDummyVoucherCommitments(contractCashier, arrSupplyIds, wallet);
+		if (cfg.flagLoadDummy) await load_dummy.loadDummyVoucherCommitments(contractCashier, arrSupplyIds, cfg.wallet);
 
 		await loadLogsVoucherDeliveredEvents();
-		if (flagLoadDummy) await load_dummy.loadDummyVoucherRedeem(contractVK, arrVouchers);
+		if (cfg.flagLoadDummy) await load_dummy.loadDummyVoucherRedeem(contractVK, arrVouchers);
 		
 		await loadLogsVoucherEvents();
 		
