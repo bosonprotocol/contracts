@@ -8,7 +8,7 @@ Install dependencies from project root folder:
 ```
 
 ## Contracts initialization 
-Once deployed (see [migrations](./migrations/2_deploy_contracts.js)), call:
+[Migrations script](./migrations/2_deploy_contracts.js) for Truffle also does this initialization:
 - ERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true')
 - ERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address)
 - VoucherKernel.setCashierAddress(contractCashier.address)
