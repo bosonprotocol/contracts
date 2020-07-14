@@ -20,7 +20,7 @@ async function loadDummyOrders(contractCashier) {
 	                , {value: 10}
 	        );
 
-	console.log("Order TX hash: ", tx.hash);
+	console.log(">Dummy> Order TX hash: ", tx.hash);
 }
 
 
@@ -31,7 +31,7 @@ async function loadDummyVoucherCommitments(contractCashier, arrSupplyIds, wallet
 	                , {value: 11}
 	        );
 
-	console.log("VoucherCommit TX hash: ", tx.hash);	
+	console.log(">Dummy> VoucherCommit TX hash: ", tx.hash);	
 }
 
 
@@ -40,7 +40,7 @@ async function loadDummyVoucherRedeem(contractVK, arrVouchers) {
 	                arrVouchers[0][0] //_tokenIdVoucher
 	        );
 
-	console.log("Redeem", 0, " TX hash: ", tx.hash);	
+	console.log(">Dummy> Redeem", 0, " TX hash: ", tx.hash, "\n");	
 }
 
 

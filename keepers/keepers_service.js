@@ -26,17 +26,12 @@ var arrSupplyIds = []
 var arrVouchers = []
 
 
-async function initContracts() {
+async function init() {
     const blockNo = await cfg.provider.getBlockNumber();
     const block = await cfg.provider.getBlock(blockNo);
     console.log('[Block]', blockNo, block.timestamp, "\n");
 
     cfg.startBlock = blockNo;
-	
-	//TODO: do this only once
-	await contractNFT.setVoucherKernelAddress(cfg.contractVKAddress);
-	await contractVK.setCashierAddress(cfg.contractCashierAddress);
-	await contractNFT.setApprovalForAll(cfg.contractVKAddress, 'true');	
 }
 
 
@@ -63,20 +58,22 @@ async function loadLogsVoucherDeliveredEvents() {
 
 
 async function loadLogsVoucherEvents() {
+	console.log("\nLoading events ...");
+
 	//redemptions
 	var cnt = 0;
 	var filter = contractVK.filters.LogVoucherRedeemed();
 	var logs = await contractVK.queryFilter(filter, cfg.startBlock, "latest").then((logs) => {
 	    logs.forEach((log) => {
 	        for (let i = 0; i < arrVouchers.length; i++) {
-	        	if (arrVouchers[i][0] == log.args._tokenIdVoucher) {
+	        	if (arrVouchers[i][0] == log.args._tokenIdVoucher.toString()) {
 	        		arrVouchers[i][1] = 'redemption';
 	        		cnt += 1;
 	        	}
 	        }
 	    })
-		console.log("Loaded", cnt, "events LogVoucherRedeemed.\n");
-	})	
+		console.log("Loaded", cnt, "events LogVoucherRedeemed.");
+	})
 
 	//refunds
 	cnt = 0;
@@ -90,7 +87,7 @@ async function loadLogsVoucherEvents() {
 	        	}
 	        }	        
 	    })
-	    console.log("Loaded", cnt, "events LogVoucherRefunded.\n");	
+	    console.log("Loaded", cnt, "events LogVoucherRefunded.");	
 	})	
 
 	//expirations
@@ -105,7 +102,7 @@ async function loadLogsVoucherEvents() {
 	        	}
 	        }	        
 	    })
-	    console.log("Loaded", cnt, "events LogExpirationTriggered.\n");	
+	    console.log("Loaded", cnt, "events LogExpirationTriggered.");	
 	})	
 
 	//finalized
@@ -120,8 +117,18 @@ async function loadLogsVoucherEvents() {
 	        	}
 	        }	        
 	    })
-	    console.log("Loaded", cnt, "events LogFinalizeVoucher.\n");	
-	})		
+	    console.log("Loaded", cnt, "events LogFinalizeVoucher.");	
+	})	
+
+	//withdrawals
+	var cntW = 0;
+	var filter = contractCashier.filters.LogWithdrawal();
+	var logs = await contractCashier.queryFilter(filter, cfg.startBlock, "latest").then((logs) => {
+	    logs.forEach((log) => {
+	    	cntW += 1;
+	    })
+		console.log("Loaded", cntW, "events LogWithdrawal.");
+	})			
 
 	//funds released
 	var cntP = 0;
@@ -130,7 +137,7 @@ async function loadLogsVoucherEvents() {
 	var logs = await contractVK.queryFilter(filter, cfg.startBlock, "latest").then((logs) => {
 	    logs.forEach((log) => {
 	        for (let i = 0; i < arrVouchers.length; i++) {
-	        	if (arrVouchers[i][0] == log.args._tokenIdVoucher) {
+	        	if (arrVouchers[i][0] == log.args._tokenIdVoucher.toString()) {
 	        		if (log.args._type == 0) {
 		        		if (arrVouchers[i][1] == 'final') {
 		        			arrVouchers[i][1] = 'releasedPayment';	
@@ -151,8 +158,8 @@ async function loadLogsVoucherEvents() {
 	        	}
 	        }	        
 	    })
-		console.log("Loaded", cntP, "events LogFundsReleased(_,0) - payments.\n");
-		console.log("Loaded", cntD, "events LogFundsReleased(_,1) - deposits.\n");	    
+		console.log("Loaded", cntP, "events LogFundsReleased(_,0) - payments.");
+		console.log("Loaded", cntD, "events LogFundsReleased(_,1) - deposits.");	    
 	})	
 }
 
@@ -161,7 +168,7 @@ async function triggerExpirations() {
 	for (let i = 0; i < arrVouchers.length; i++) {
 		if (arrVouchers[i][1] == 'commitment') {
 			tx = await contractVK.triggerExpiration(
-			                arrVouchers[0][0] //_tokenIdVoucher
+			                arrVouchers[i][0] //_tokenIdVoucher
 			        );
 
 			console.log("Expire", i, "TX hash: ", tx.hash);			
@@ -177,10 +184,10 @@ async function triggerFinalizations() {
 			|| arrVouchers[i][1] == 'refund') 
 		{
 			tx = await contractVK.triggerExpiration(
-			                arrVouchers[0][0] //_tokenIdVoucher
+			                arrVouchers[i][0] //_tokenIdVoucher
 			        );
 
-			console.log("Finalize", i, "TX hash: ", tx.hash);			
+			console.log("Finalize at index", i, "TX hash: ", tx.hash);			
 		}
 	}
 }
@@ -195,10 +202,10 @@ async function triggerWithdrawals() {
 			|| arrVouchers[i][1] == 'final') 
 		{
 			tx = await contractCashier.withdraw(
-			                [arrVouchers[0][0]] //_tokenIdVoucher
+			                [arrVouchers[i][0]] //_tokenIdVoucher
 			        );
 
-			console.log("Withdrawal", i, "TX hash: ", tx.hash);			
+			console.log("Withdrawal at index", i, "TX hash: ", tx.hash);			
 		}
 	}
 }
@@ -208,7 +215,7 @@ async function doStuff() {
 	console.log("\n[Keepers start]", new Date().toUTCString(), "\n");
 
 	try {
-		await initContracts();
+		await init();
 		if (cfg.flagLoadDummy) await load_dummy.loadDummyOrders(contractCashier);
 
 		await loadLogsOrders();	
@@ -217,12 +224,16 @@ async function doStuff() {
 		await loadLogsVoucherDeliveredEvents();
 		if (cfg.flagLoadDummy) await load_dummy.loadDummyVoucherRedeem(contractVK, arrVouchers);
 		
-		await loadLogsVoucherEvents();
+		// await loadLogsVoucherEvents();
 		
 		//actually do txs
 		await triggerExpirations();
 		await triggerFinalizations();
 		await triggerWithdrawals();
+
+		//load all event data
+		await loadLogsVoucherEvents();
+
 	} catch (error) {
 		console.error("\n\n[ERROR]", error);
 	}	
