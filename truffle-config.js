@@ -18,11 +18,9 @@
  *
  */
 
-// const HDWalletProvider = require('truffle-hdwallet-provider');
-// const infuraKey = "fj4jll3k.....";
-//
-// const fs = require('fs');
-// const mnemonic = fs.readFileSync(".secret").toString().trim();
+const HDWalletProvider = require('truffle-hdwallet-provider');
+const fs = require('fs');
+const pk = fs.readFileSync(".secret").toString().trim();
 
 
 // const config = require('./common/config');
@@ -54,6 +52,11 @@ module.exports = {
             port: 8545, // Standard Ethereum port (default: none)
             network_id: '*', // Any network (default: none)
         },
+
+        ropsten: {
+         provider: () => new HDWalletProvider(pk, "http://localhost:8545"),
+         network_id: 3,
+        },        
 
         // extend options with JSON config settings
         // this is a complete list of config files in /common/json/config-*.json
