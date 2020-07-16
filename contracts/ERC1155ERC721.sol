@@ -598,7 +598,9 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         public 
         onlyFromVoucherKernel
     {
-        require(_account == msg.sender || operatorApprovals[_account][msg.sender] == true, "UNAUTHORIZED_B"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        //commented out because this action is limited to onlyFromVoucherKernel, which only calls this in extract721
+        //TODO: function cancelOrder
+        //require(_account == msg.sender || operatorApprovals[_account][msg.sender] == true, "UNAUTHORIZED_B"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
 
         _burn(_account, _tokenId, _value);
     }
@@ -632,7 +634,8 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         public 
         onlyFromVoucherKernel
     {
-        require(_account == msg.sender || operatorApprovals[_account][msg.sender] == true, "UNAUTHORIZED_BB"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        //commented out because this action is limited to onlyFromVoucherKernel, which only calls this in extract721
+        //require(_account == msg.sender || operatorApprovals[_account][msg.sender] == true, "UNAUTHORIZED_BB"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         
         _burnBatch(_account, _tokenIds, _values);
     }  
