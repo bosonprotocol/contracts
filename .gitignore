@@ -6,3 +6,5 @@
 # production
 /build
 node_modules
+
+.secret
