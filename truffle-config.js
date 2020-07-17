@@ -17,8 +17,7 @@
  * phrase from a file you've .gitignored so it doesn't accidentally become public.
  *
  */
-
-const HDWalletProvider = require('truffle-hdwallet-provider');
+const HDWalletProvider = require('@truffle/hdwallet-provider');
 const fs = require('fs');
 const pk = fs.readFileSync(".secret").toString().trim();
 
@@ -56,6 +55,7 @@ module.exports = {
         ropsten: {
          provider: () => new HDWalletProvider(pk, "http://localhost:8545"),
          network_id: 3,
+         gas: 8000000,
         },        
 
         // extend options with JSON config settings
