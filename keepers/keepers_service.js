@@ -183,7 +183,7 @@ async function triggerFinalizations() {
 			|| arrVouchers[i][1] == 'redemption' 
 			|| arrVouchers[i][1] == 'refund') 
 		{
-			tx = await contractVK.triggerExpiration(
+			tx = await contractVK.triggerFinalizeVoucher(
 			                arrVouchers[i][0] //_tokenIdVoucher
 			        );
 
