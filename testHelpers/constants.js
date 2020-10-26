@@ -32,6 +32,10 @@ const ORDER_QUANTITY1 = 1;
 const ORDER_QUANTITY2 = 1;
 
 
+const buyer_deposit = '40000000000000000'; // 0.04
+const seller_deposit = '50000000000000000'; // 0.05
+const product_price = '300000000000000000'; // 0.3
+
 module.exports = {
 	ASSET_VERSION,
 	ASSET_TITLE,
@@ -57,5 +61,8 @@ module.exports = {
 	ORDER_QUANTITY1,
 	ORDER_QUANTITY2,
 	SECONDS_IN_DAY,
-	ZERO_ADDRESS
+	ZERO_ADDRESS,
+	buyer_deposit,
+	seller_deposit,
+	product_price
 }
