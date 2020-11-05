@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 pragma solidity >=0.6.2 <0.7.0;
@@ -20,6 +21,8 @@ contract Cashier is usingHelpers, ReentrancyGuard {
     
     address payable poolAddress;                //the account receiving slashed funds
         
+    enum PaymentType { PAYMENT, DEPOSIT_SELLER, DEPOSIT_BUYER }
+
     mapping(address => uint256) public escrow;  //both types of deposits AND payments >> can be released token-by-token if checks pass
     //slashedDepositPool can be obtained through getEscrowAmount(poolAddress)
     
@@ -45,7 +48,13 @@ contract Cashier is usingHelpers, ReentrancyGuard {
         address _payee, 
         uint256 _payment
     );
-    
+
+    event LogAmountDistribution (
+        uint256 indexed _tokenIdVoucher,
+        address _to, 
+        uint256 _payment,
+        PaymentType _type
+    );
 
     modifier onlyPoolManager() {
         require(msg.sender == poolAddress, "UNAUTHORIZED_P"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
@@ -74,8 +83,8 @@ contract Cashier is usingHelpers, ReentrancyGuard {
      * @param _quantity     Quantity on offer
      */
     function requestCreateOrder(
-        string calldata _assetTitle, 
-        //bytes32 _value, 
+        string calldata _assetTitle,
+        //bytes32 _value,
         uint256 _validFrom,
         uint256 _validTo,
         uint256 _price,
@@ -83,7 +92,7 @@ contract Cashier is usingHelpers, ReentrancyGuard {
         uint256 _depositBu,
         //uint256 _complainPeriod,
         //uint256 _cancelFaultPeriod,
-        //bytes32 _promiseId, 
+        //bytes32 _promiseId,
         uint256 _quantity
         )
         external
@@ -98,7 +107,7 @@ contract Cashier is usingHelpers, ReentrancyGuard {
         
         //checks
         //(i) this is for separate promise allocation, not in prototype
-        //uint256 depositSe = voucherKernel.getPromiseDepositSe(promiseId); 
+        //uint256 depositSe = voucherKernel.getPromiseDepositSe(promiseId);
         //require(depositSe * _quantity == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         //(ii) prototype check
         require(_depositSe * _quantity == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
@@ -107,9 +116,9 @@ contract Cashier is usingHelpers, ReentrancyGuard {
         uint256 tokenIdSupply = voucherKernel.createOrder(msg.sender, promiseId, _quantity);
         
         //record funds in escrow ...
-        escrow[msg.sender] += weiReceived;     
+        escrow[msg.sender] += weiReceived;
         
-        emit LogOrderCreated(tokenIdSupply, msg.sender, promiseId, _quantity);        
+        emit LogOrderCreated(tokenIdSupply, msg.sender, promiseId, _quantity);
     }
     
     
@@ -119,14 +128,14 @@ contract Cashier is usingHelpers, ReentrancyGuard {
      * @param _issuer           Address of the issuer of the supply token
      */
     function requestVoucher(uint256 _tokenIdSupply, address _issuer)
-        external 
+        external
         payable
         nonReentrant
     {
         uint256 weiReceived = msg.value;
 
         //checks
-        (uint256 price, uint256 depositSe, uint256 depositBu) = voucherKernel.getOrderCosts(_tokenIdSupply); 
+        (uint256 price, uint256 depositSe, uint256 depositBu) = voucherKernel.getOrderCosts(_tokenIdSupply);
         require(price + depositBu == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         //get voucher token - extract ERC721 from _voucherOrderId to msg.sender
@@ -184,8 +193,10 @@ contract Cashier is usingHelpers, ReentrancyGuard {
                     )) {
                 //release payment to the Seller, because redemption happened
                 escrow[holder] -= price;
-                amount2issuer += price; 
+                amount2issuer += price;
                 voucherKernel.setPaymentReleased(_tokenIdVouchers[i]);
+
+                LogAmountDistribution(_tokenIdVouchers[i], issuer, price, PaymentType.PAYMENT);
                 
             } else if (!currStatus.isPaymentReleased && (
                     isStatus(currStatus.status, idxRefund) ||
@@ -197,13 +208,14 @@ contract Cashier is usingHelpers, ReentrancyGuard {
                 escrow[holder] -= price;
                 amount2holder += price;
                 voucherKernel.setPaymentReleased(_tokenIdVouchers[i]);
+
+                LogAmountDistribution(_tokenIdVouchers[i], holder, price, PaymentType.PAYMENT);
             }    
                 
                 
             //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status 
             if (!currStatus.isDepositsReleased && 
                 isStatus(currStatus.status, idxFinal)) {
-                    
                     
                 //first, depositSe
                 if (isStatus(currStatus.status, idxComplain)) {
@@ -214,11 +226,19 @@ contract Cashier is usingHelpers, ReentrancyGuard {
                         amount2holder += tFraction; //Bu gets, say, a half
                         amount2issuer += tFraction.div(CANCELFAULT_SPLIT);   //Se gets, say, a quarter
                         amount2pool += depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT);    //slashing the rest
+
+                        LogAmountDistribution(_tokenIdVouchers[i], holder, tFraction, PaymentType.DEPOSIT_SELLER);
+                        LogAmountDistribution(_tokenIdVouchers[i], issuer, tFraction.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
+                        LogAmountDistribution(_tokenIdVouchers[i], poolAddress, depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
+                        
                         tFraction = 0;
+
                     } else {
                         //slash depositSe
                         escrow[issuer] -= depositSe;
                         amount2pool += depositSe;
+
+                        LogAmountDistribution(_tokenIdVouchers[i], poolAddress, depositSe, PaymentType.DEPOSIT_SELLER);
                     }
                 } else {
                     if (isStatus(currStatus.status, idxCancelFault)) {
@@ -226,6 +246,10 @@ contract Cashier is usingHelpers, ReentrancyGuard {
                         escrow[issuer] -= depositSe;
                         amount2issuer += depositSe.div(CANCELFAULT_SPLIT);
                         amount2holder += depositSe - depositSe.div(CANCELFAULT_SPLIT);
+
+                        LogAmountDistribution(_tokenIdVouchers[i], issuer, depositSe.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
+                        LogAmountDistribution(_tokenIdVouchers[i], holder, depositSe - depositSe.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
+
                         //Can't use the code below, because of "Stack Too Deep" Error ... this in real life would be optimized, but kept the code above for readability.
                         //tPartDepositSe = depositSe.div(CANCELFAULT_SPLIT);
                         //amount2issuer += tPartDepositSe;
@@ -233,10 +257,11 @@ contract Cashier is usingHelpers, ReentrancyGuard {
                     } else {
                         //release depositSe
                         escrow[issuer] -= depositSe;
-                        amount2issuer += depositSe;                         
+                        amount2issuer += depositSe;    
+
+                        LogAmountDistribution(_tokenIdVouchers[i], issuer, depositSe, PaymentType.DEPOSIT_SELLER);                     
                     }
                 }
-                
                 
                 //second, depositBu    
                 if (isStatus(currStatus.status, idxRedeem) || 
@@ -245,12 +270,16 @@ contract Cashier is usingHelpers, ReentrancyGuard {
                     //release depositBu
                     escrow[holder] -= depositBu;
                     amount2holder += depositBu;
+
+                    LogAmountDistribution(_tokenIdVouchers[i], holder, depositBu, PaymentType.DEPOSIT_BUYER);
                 } else {
                     //slash depositBu
                     escrow[holder] -= depositBu;
-                    amount2pool += depositBu;                    
+                    amount2pool += depositBu; 
+
+                    LogAmountDistribution(_tokenIdVouchers[i], poolAddress, depositBu, PaymentType.DEPOSIT_BUYER);                   
                 }
-                
+
                 voucherKernel.setDepositsReleased(_tokenIdVouchers[i]);
             }
             
@@ -288,7 +317,6 @@ contract Cashier is usingHelpers, ReentrancyGuard {
             _withdraw(poolAddress,amount);
         }
     }    
-    
     
     /**
      * @notice Internal function for withdrawing.
