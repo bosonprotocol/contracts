@@ -26,7 +26,7 @@ contract Cashier is usingHelpers, ReentrancyGuard {
     mapping(address => uint256) public escrow;  //both types of deposits AND payments >> can be released token-by-token if checks pass
     //slashedDepositPool can be obtained through getEscrowAmount(poolAddress)
     
-    uint256 internal constant CANCELFAULT_SPLIT = 2; //for demo purposes, this is fixed; e.g. each party gets depositSe / 2
+    uint256 internal constant CANCELFAULT_SPLIT = 2; //for POC purposes, this is hardcoded; e.g. each party gets depositSe / 2
     
     event LogOrderCreated(
         uint256 indexed _tokenIdSupply,
@@ -84,15 +84,11 @@ contract Cashier is usingHelpers, ReentrancyGuard {
      */
     function requestCreateOrder(
         string calldata _assetTitle,
-        //bytes32 _value,
         uint256 _validFrom,
         uint256 _validTo,
         uint256 _price,
         uint256 _depositSe,
         uint256 _depositBu,
-        //uint256 _complainPeriod,
-        //uint256 _cancelFaultPeriod,
-        //bytes32 _promiseId,
         uint256 _quantity
         )
         external
@@ -158,7 +154,7 @@ contract Cashier is usingHelpers, ReentrancyGuard {
         external
         nonReentrant
     {
-        //TODO: more checks
+        //TODO: more requires
         require(_tokenIdVouchers.length > 0, "EMPTY_LIST"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         
         uint256 amount2pool;
@@ -309,7 +305,7 @@ contract Cashier is usingHelpers, ReentrancyGuard {
         onlyPoolManager
         nonReentrant
     {
-        //TODO: more checks needed?
+        //TODO: more requires needed?
         
         if (escrow[poolAddress] > 0) {
             uint256 amount = escrow[poolAddress];
