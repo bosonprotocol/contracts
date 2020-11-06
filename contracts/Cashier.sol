@@ -21,8 +21,6 @@ contract Cashier is usingHelpers, ReentrancyGuard {
     
     address payable poolAddress;                //the account receiving slashed funds
         
-    enum PaymentType { PAYMENT, DEPOSIT_SELLER, DEPOSIT_BUYER }
-
     mapping(address => uint256) public escrow;  //both types of deposits AND payments >> can be released token-by-token if checks pass
     //slashedDepositPool can be obtained through getEscrowAmount(poolAddress)
     
@@ -47,13 +45,6 @@ contract Cashier is usingHelpers, ReentrancyGuard {
         address _caller,
         address _payee, 
         uint256 _payment
-    );
-
-    event LogAmountDistribution (
-        uint256 indexed _tokenIdVoucher,
-        address _to, 
-        uint256 _payment,
-        PaymentType _type
     );
 
     modifier onlyPoolManager() {
@@ -192,8 +183,6 @@ contract Cashier is usingHelpers, ReentrancyGuard {
                 amount2issuer += price;
                 voucherKernel.setPaymentReleased(_tokenIdVouchers[i]);
 
-                LogAmountDistribution(_tokenIdVouchers[i], issuer, price, PaymentType.PAYMENT);
-                
             } else if (!currStatus.isPaymentReleased && (
                     isStatus(currStatus.status, idxRefund) ||
                     isStatus(currStatus.status, idxExpire) ||
@@ -204,8 +193,6 @@ contract Cashier is usingHelpers, ReentrancyGuard {
                 escrow[holder] -= price;
                 amount2holder += price;
                 voucherKernel.setPaymentReleased(_tokenIdVouchers[i]);
-
-                LogAmountDistribution(_tokenIdVouchers[i], holder, price, PaymentType.PAYMENT);
             }    
                 
                 
@@ -223,18 +210,12 @@ contract Cashier is usingHelpers, ReentrancyGuard {
                         amount2issuer += tFraction.div(CANCELFAULT_SPLIT);   //Se gets, say, a quarter
                         amount2pool += depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT);    //slashing the rest
 
-                        LogAmountDistribution(_tokenIdVouchers[i], holder, tFraction, PaymentType.DEPOSIT_SELLER);
-                        LogAmountDistribution(_tokenIdVouchers[i], issuer, tFraction.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
-                        LogAmountDistribution(_tokenIdVouchers[i], poolAddress, depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
-                        
                         tFraction = 0;
 
                     } else {
                         //slash depositSe
                         escrow[issuer] -= depositSe;
                         amount2pool += depositSe;
-
-                        LogAmountDistribution(_tokenIdVouchers[i], poolAddress, depositSe, PaymentType.DEPOSIT_SELLER);
                     }
                 } else {
                     if (isStatus(currStatus.status, idxCancelFault)) {
@@ -242,9 +223,6 @@ contract Cashier is usingHelpers, ReentrancyGuard {
                         escrow[issuer] -= depositSe;
                         amount2issuer += depositSe.div(CANCELFAULT_SPLIT);
                         amount2holder += depositSe - depositSe.div(CANCELFAULT_SPLIT);
-
-                        LogAmountDistribution(_tokenIdVouchers[i], issuer, depositSe.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
-                        LogAmountDistribution(_tokenIdVouchers[i], holder, depositSe - depositSe.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
 
                         //Can't use the code below, because of "Stack Too Deep" Error ... this in real life would be optimized, but kept the code above for readability.
                         //tPartDepositSe = depositSe.div(CANCELFAULT_SPLIT);
@@ -254,8 +232,6 @@ contract Cashier is usingHelpers, ReentrancyGuard {
                         //release depositSe
                         escrow[issuer] -= depositSe;
                         amount2issuer += depositSe;    
-
-                        LogAmountDistribution(_tokenIdVouchers[i], issuer, depositSe, PaymentType.DEPOSIT_SELLER);                     
                     }
                 }
                 
@@ -266,14 +242,10 @@ contract Cashier is usingHelpers, ReentrancyGuard {
                     //release depositBu
                     escrow[holder] -= depositBu;
                     amount2holder += depositBu;
-
-                    LogAmountDistribution(_tokenIdVouchers[i], holder, depositBu, PaymentType.DEPOSIT_BUYER);
                 } else {
                     //slash depositBu
                     escrow[holder] -= depositBu;
                     amount2pool += depositBu; 
-
-                    LogAmountDistribution(_tokenIdVouchers[i], poolAddress, depositBu, PaymentType.DEPOSIT_BUYER);                   
                 }
 
                 voucherKernel.setDepositsReleased(_tokenIdVouchers[i]);
