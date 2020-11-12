@@ -31,15 +31,12 @@ contract VoucherKernel is usingHelpers {
         address seller;       //the seller who created the promise        
         
         //we simplify the value for the demoapp, otherwise voucher details would be packed in one bytes32 field value
-        //bytes32 value;          //plays a role at redemption
         uint256 validFrom;
         uint256 validTo;
         uint256 price;
         uint256 depositSe;
         uint256 depositBu;
 
-        //uint complainPeriod;   //complain period in no. of days (one day is 86400 seconds)
-        //uint cancelFaultPeriod;   //cancel or fault tx period in no. of days (one day is 86400 seconds)
         uint idx;
     }
     
@@ -92,11 +89,6 @@ contract VoucherKernel is usingHelpers {
         address indexed _seller,
         uint256 _validFrom,
         uint256 _validTo,
-        //uint256 _price,
-        //uint256 _depositSe,
-        //uint256 _depositBu,
-        //uint256 _complainPeriod,
-        //uint256 _cancelFaultPeriod,
         uint256 _idx
     );
     
@@ -167,16 +159,12 @@ contract VoucherKernel is usingHelpers {
     }
     
     constructor(
-        //address _assetRegistry,
         address _tokensContract
     )
         public 
     {
         owner = msg.sender;
         tokensContract = ERC1155ERC721(_tokensContract);
-        
-        //AssetRegistry is currently not used to simplify the process.
-        //assetRegistry = AssetRegistry(_assetRegistry);
         
         complainPeriod = 7 * 1 days;
         cancelFaultPeriod = 7 * 1 days;
@@ -197,14 +185,11 @@ contract VoucherKernel is usingHelpers {
     function createAssetPromise(
         address _seller, 
         string calldata _assetTitle, 
-        //bytes32 _value, 
         uint256 _validFrom,
         uint256 _validTo,
         uint256 _price,
         uint256 _depositSe,
         uint256 _depositBu
-        //uint256 _complainPeriod,
-        //uint256 _cancelFaultPeriod
     ) 
         external 
         onlyFromCashier
@@ -225,14 +210,11 @@ contract VoucherKernel is usingHelpers {
             promiseId: key,
             assetTitle: _assetTitle,
             seller: _seller,
-            //value: _value,
             validFrom: _validFrom,
             validTo: _validTo,
             price: _price,
             depositSe: _depositSe,
             depositBu: _depositBu,
-            //complainPeriod: _complainPeriod,
-            //cancelFaultPeriod: _cancelFaultPeriod,
             idx: promiseKeys.length
         });
         
@@ -383,20 +365,14 @@ contract VoucherKernel is usingHelpers {
         external
         onlyVoucherOwner(_tokenIdVoucher)
     {
-        //check authorization
-        //require(tokensContract.ownerOf(_tokenIdVoucher) == msg.sender, "UNAUTHORIZED");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
-        
         //check status
         require(isStateCommitted(vouchersStatus[_tokenIdVoucher].status), "ALREADY_PROCESSED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
         
         //check validity period
         isInValidityPeriod(_tokenIdVoucher);
         Promise memory tPromise = promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
-        //require(tPromise.validFrom <= block.timestamp, "INVALID_VALIDITY_FROM"); //hex"26" FISSION.code(FISSION.Category.Find, FISSION.Status.Above_Range_Overflow)
-        //require(tPromise.validTo >= block.timestamp, "INVALID_VALIDITY_TO");    //hex"24" FISSION.code(FISSION.Category.Find, FISSION.Status.BelowRange_Underflow)
         
         //check collection code and/or assign collector
-        
         
         vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;
         vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, idxRedeem);
@@ -421,8 +397,6 @@ contract VoucherKernel is usingHelpers {
         
         //check validity period
         isInValidityPeriod(_tokenIdVoucher);
-        
-        //Promise memory tPromise = promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
         
         vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;
         vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, idxRefund);
