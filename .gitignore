@@ -1,13 +1,20 @@
 # See https://help.github.com/ignore-files/ for more about ignoring files.
 
-# dependencies
-/node_modules
-
-# production
-/build
+# Node / NPM / Yarn
 node_modules
 
+# Build
+/build
+.etherlime-store
+
+# Secrets
 .secret
 
+# OS
 .DS_Store
-.etherlime-store
+
+# IntelliJ IDEA
+*.iml
+*.iws
+*.ipr
+.idea/
