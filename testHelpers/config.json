@@ -1,0 +1,13 @@
+{
+    "defaultGasPrice": 50000000000,
+    "defaultGasLimit": 4700000,
+    "defaultChainId": 0,
+    "nodeUrl": "http://localhost:8545/",
+    "ganacheCliPort": 8545,
+    "accounts": {
+        "deployer": "0xD9995BAE12FEe327256FFec1e3184d492bD94C31",
+        "seller": "0xd4Fa489Eacc52BA59438993f37Be9fcC20090E39",
+        "buyer": "0x760bf27cd45036a6C486802D30B5D90CfFBE31FE",
+        "attacker": "0x56A32fFf5E5A8B40d6A21538579fB8922DF5258c"
+    }
+}
