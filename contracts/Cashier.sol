@@ -28,6 +28,20 @@ contract Cashier is usingHelpers, ReentrancyGuard {
     
     uint256 internal constant CANCELFAULT_SPLIT = 2; //for demo purposes, this is fixed; e.g. each party gets depositSe / 2
     
+    struct VoucherDetails {
+        uint256 tokenIdSupply;
+        uint256 tokenIdVoucher;
+        address payable issuer;
+        address payable holder;
+        uint256 price;
+        uint256 depositSe;
+        uint256 depositBu;
+        uint256 amount2pool;
+        uint256 amount2issuer;
+        uint256 amount2holder;
+        VoucherStatus currStatus;
+    }
+
     event LogOrderCreated(
         uint256 indexed _tokenIdSupply,
         address _seller,
@@ -159,148 +173,226 @@ contract Cashier is usingHelpers, ReentrancyGuard {
         nonReentrant
     {
         //TODO: more checks
+        //TODO: check to pass 2 diff holders and how the amounts will be distributed
+
         require(_tokenIdVouchers.length > 0, "EMPTY_LIST"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         
-        uint256 amount2pool;
-        uint256 amount2issuer;
-        uint256 amount2holder;
-        address payable issuer;
-        address payable holder;
+        VoucherDetails memory voucherDetails;
         
-        uint256 price;
-        uint256 depositSe;
-        uint256 depositBu;
-        uint256 tFraction;
-        
-        uint256 tokenIdSupply;
-        VoucherStatus memory currStatus;
         //uint256 tPartDepositSe; //Can't use, because of "Stack Too Deep" Error ... this in real life needs to be optimized, but kept here for readability.
         
         //in the future might want to (i) check the gasleft() (but UNGAS proposal might make it impossible), and/or (ii) set upper loop limit to sth like .length < 2**15
         for(uint256 i = 0; i < _tokenIdVouchers.length; i++) {
             require(_tokenIdVouchers[i] != 0, "UNSPECIFIED_ID");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
             
-            (currStatus.status, currStatus.isPaymentReleased, currStatus.isDepositsReleased) = voucherKernel.getVoucherStatus(_tokenIdVouchers[i]);
-            tokenIdSupply = voucherKernel.getIdSupplyFromVoucher(_tokenIdVouchers[i]);
-            (price, depositSe, depositBu) = voucherKernel.getOrderCosts(tokenIdSupply);
-            issuer = address(uint160( voucherKernel.getVoucherIssuer(_tokenIdVouchers[i]) ));
-            holder = address(uint160( voucherKernel.getVoucherHolder(_tokenIdVouchers[i]) ));
+            // (currStatus.status, currStatus.isPaymentReleased, currStatus.isDepositsReleased) = voucherKernel.getVoucherStatus(_tokenIdVouchers[i]);
+            voucherDetails.tokenIdVoucher = _tokenIdVouchers[i];
+            voucherDetails.tokenIdSupply = voucherKernel.getIdSupplyFromVoucher(voucherDetails.tokenIdVoucher);
+            
+            (voucherDetails.currStatus.status,
+                voucherDetails.currStatus.isPaymentReleased,
+                voucherDetails.currStatus.isDepositsReleased
+            ) = voucherKernel.getVoucherStatus(voucherDetails.tokenIdVoucher);
+            
+            (voucherDetails.price, 
+                voucherDetails.depositSe, 
+                voucherDetails.depositBu
+            ) = voucherKernel.getOrderCosts(voucherDetails.tokenIdSupply);
+            
+            // (price, depositSe, depositBu) = voucherKernel.getOrderCosts(tokenIdSupply);
+            voucherDetails.issuer = address(uint160( voucherKernel.getVoucherIssuer(voucherDetails.tokenIdVoucher) ));
+            voucherDetails.holder = address(uint160( voucherKernel.getVoucherHolder(voucherDetails.tokenIdVoucher) ));
             
             
             //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
-            if (!currStatus.isPaymentReleased && (
-                    isStatus(currStatus.status, idxRedeem)
-                    )) {
-                //release payment to the Seller, because redemption happened
-                escrow[holder] -= price;
-                amount2issuer += price;
-                voucherKernel.setPaymentReleased(_tokenIdVouchers[i]);
-
-                LogAmountDistribution(_tokenIdVouchers[i], issuer, price, PaymentType.PAYMENT);
-                
-            } else if (!currStatus.isPaymentReleased && (
-                    isStatus(currStatus.status, idxRefund) ||
-                    isStatus(currStatus.status, idxExpire) ||
-                    (isStatus(currStatus.status, idxCancelFault) && 
-                        !isStatus(currStatus.status, idxRedeem))
-                    )) {
-                //release payment back to the Buyer as the redemption didn't happen
-                escrow[holder] -= price;
-                amount2holder += price;
-                voucherKernel.setPaymentReleased(_tokenIdVouchers[i]);
-
-                LogAmountDistribution(_tokenIdVouchers[i], holder, price, PaymentType.PAYMENT);
-            }    
-                
-                
-            //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status 
-            if (!currStatus.isDepositsReleased && 
-                isStatus(currStatus.status, idxFinal)) {
-                    
-                //first, depositSe
-                if (isStatus(currStatus.status, idxComplain)) {
-                    if (isStatus(currStatus.status, idxCancelFault)) {
-                        //appease the conflict three-ways
-                        escrow[issuer] -= depositSe;
-                        tFraction = depositSe.div(CANCELFAULT_SPLIT);
-                        amount2holder += tFraction; //Bu gets, say, a half
-                        amount2issuer += tFraction.div(CANCELFAULT_SPLIT);   //Se gets, say, a quarter
-                        amount2pool += depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT);    //slashing the rest
-
-                        LogAmountDistribution(_tokenIdVouchers[i], holder, tFraction, PaymentType.DEPOSIT_SELLER);
-                        LogAmountDistribution(_tokenIdVouchers[i], issuer, tFraction.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
-                        LogAmountDistribution(_tokenIdVouchers[i], poolAddress, depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
-                        
-                        tFraction = 0;
-
-                    } else {
-                        //slash depositSe
-                        escrow[issuer] -= depositSe;
-                        amount2pool += depositSe;
-
-                        LogAmountDistribution(_tokenIdVouchers[i], poolAddress, depositSe, PaymentType.DEPOSIT_SELLER);
-                    }
-                } else {
-                    if (isStatus(currStatus.status, idxCancelFault)) {
-                        //part depositSe to Bu, part to Se
-                        escrow[issuer] -= depositSe;
-                        amount2issuer += depositSe.div(CANCELFAULT_SPLIT);
-                        amount2holder += depositSe - depositSe.div(CANCELFAULT_SPLIT);
-
-                        LogAmountDistribution(_tokenIdVouchers[i], issuer, depositSe.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
-                        LogAmountDistribution(_tokenIdVouchers[i], holder, depositSe - depositSe.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
-
-                        //Can't use the code below, because of "Stack Too Deep" Error ... this in real life would be optimized, but kept the code above for readability.
-                        //tPartDepositSe = depositSe.div(CANCELFAULT_SPLIT);
-                        //amount2issuer += tPartDepositSe;
-                        //amount2holder += depositSe.sub(tPartDepositSe);                           
-                    } else {
-                        //release depositSe
-                        escrow[issuer] -= depositSe;
-                        amount2issuer += depositSe;    
-
-                        LogAmountDistribution(_tokenIdVouchers[i], issuer, depositSe, PaymentType.DEPOSIT_SELLER);                     
-                    }
-                }
-                
-                //second, depositBu    
-                if (isStatus(currStatus.status, idxRedeem) || 
-                    isStatus(currStatus.status, idxCancelFault)
-                    ) {
-                    //release depositBu
-                    escrow[holder] -= depositBu;
-                    amount2holder += depositBu;
-
-                    LogAmountDistribution(_tokenIdVouchers[i], holder, depositBu, PaymentType.DEPOSIT_BUYER);
-                } else {
-                    //slash depositBu
-                    escrow[holder] -= depositBu;
-                    amount2pool += depositBu; 
-
-                    LogAmountDistribution(_tokenIdVouchers[i], poolAddress, depositBu, PaymentType.DEPOSIT_BUYER);                   
-                }
-
-                voucherKernel.setDepositsReleased(_tokenIdVouchers[i]);
+            if (!voucherDetails.currStatus.isPaymentReleased) 
+            {
+                releasePayments(voucherDetails);
             }
-            
-                        
+
+            //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status 
+            if (!voucherDetails.currStatus.isDepositsReleased && 
+                isStatus(voucherDetails.currStatus.status, idxFinal)) 
+            {
+                releaseDeposits(voucherDetails);
+            }
         } //end-for   
         
-        if (amount2pool > 0) {
-            _withdraw(poolAddress, amount2pool);
+        if (voucherDetails.amount2pool > 0) {
+            _withdraw(poolAddress, voucherDetails.amount2pool);
         }
         
-        if (amount2issuer > 0) {
-            _withdraw(issuer, amount2issuer);
+        if (voucherDetails.amount2issuer > 0) {
+            _withdraw(voucherDetails.issuer, voucherDetails.amount2issuer);
         }
 
-        if (amount2holder > 0) {
-            _withdraw(holder, amount2holder);
+        if (voucherDetails.amount2holder > 0) {
+            _withdraw(voucherDetails.holder, voucherDetails.amount2holder);
         }
+
+        delete voucherDetails;
         
     }
-    
-    
+
+    function releasePayments(VoucherDetails memory voucherDetails) internal {
+
+        if (isStatus(voucherDetails.currStatus.status, idxRedeem)) {
+            releasePaymentToSeller(voucherDetails);
+        } else if (isStatus(voucherDetails.currStatus.status, idxRefund) 
+                || isStatus(voucherDetails.currStatus.status, idxExpire) 
+                || (isStatus(voucherDetails.currStatus.status, idxCancelFault) 
+                && !isStatus(voucherDetails.currStatus.status, idxRedeem))) 
+        {
+           releasePaymentToBuyer(voucherDetails);
+        }
+    }
+
+    function releasePaymentToSeller(VoucherDetails memory voucherDetails) internal {
+        escrow[voucherDetails.holder] -= voucherDetails.price;
+        voucherDetails.amount2issuer += voucherDetails.price;
+        voucherKernel.setPaymentReleased(voucherDetails.tokenIdVoucher);
+
+        LogAmountDistribution(
+            voucherDetails.tokenIdVoucher, 
+            voucherDetails.issuer, 
+            voucherDetails.price, 
+            PaymentType.PAYMENT
+        );
+    }
+
+    function releasePaymentToBuyer(VoucherDetails memory voucherDetails) internal {
+
+        escrow[voucherDetails.holder] -= voucherDetails.price;
+        voucherDetails.amount2holder += voucherDetails.price;
+        voucherKernel.setPaymentReleased(voucherDetails.tokenIdVoucher);
+
+        LogAmountDistribution(
+            voucherDetails.tokenIdVoucher, 
+            voucherDetails.holder, 
+            voucherDetails.price, 
+            PaymentType.PAYMENT
+        );
+    }
+
+    function releaseDeposits(VoucherDetails memory voucherDetails) internal returns (uint256, uint256, uint256) {
+
+        //first, depositSe
+        if (isStatus(voucherDetails.currStatus.status, idxComplain)) {
+            //slash depositSe
+            distributeIssuerDepositOnHolderComplain(voucherDetails);
+        } else {
+            if (isStatus(voucherDetails.currStatus.status, idxCancelFault)) {
+                //slash depositSe
+                distributeIssuerDepositOnIssuerCancel(voucherDetails);
+            } else {
+                //release depositSe
+                distributeFullIssuerDeposit(voucherDetails);                  
+            }
+        }
+        
+        //second, depositBu    
+        if (isStatus(voucherDetails.currStatus.status, idxRedeem) || 
+            isStatus(voucherDetails.currStatus.status, idxCancelFault)
+            ) {
+            //release depositBu
+            distributeFullHolderDeposit(voucherDetails);
+           
+        } else {
+            //slash depositBu
+            distributeHolderDepositOnNotRedeemedNotCancelled(voucherDetails);
+                  
+        }
+
+        voucherKernel.setDepositsReleased(voucherDetails.tokenIdVoucher);
+    }
+
+    function distributeIssuerDepositOnHolderComplain(VoucherDetails memory voucherDetails) internal {
+        uint256 tFraction;
+
+        if (isStatus(voucherDetails.currStatus.status, idxCancelFault)) {
+            //appease the conflict three-ways
+            escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+            tFraction = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+            voucherDetails.amount2holder += tFraction; //Bu gets, say, a half
+            voucherDetails.amount2issuer += tFraction.div(CANCELFAULT_SPLIT);   //Se gets, say, a quarter
+            voucherDetails.amount2pool += voucherDetails.depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT);    //slashing the rest
+
+            LogAmountDistribution(voucherDetails.tokenIdVoucher, voucherDetails.holder, tFraction, PaymentType.DEPOSIT_SELLER);
+            LogAmountDistribution(voucherDetails.tokenIdVoucher, voucherDetails.issuer, tFraction.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
+            LogAmountDistribution(voucherDetails.tokenIdVoucher, poolAddress, voucherDetails.depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
+            
+            tFraction = 0;
+
+        } else {
+            //slash depositSe
+            escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+            voucherDetails.amount2pool += voucherDetails.depositSe;
+
+            LogAmountDistribution(voucherDetails.tokenIdVoucher, poolAddress, voucherDetails.depositSe, PaymentType.DEPOSIT_SELLER);
+        }
+    }
+
+    function distributeIssuerDepositOnIssuerCancel(VoucherDetails memory voucherDetails) internal {
+        // uint256 tPartDepositSe = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+        // escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+        // voucherDetails.amount2issuer += tPartDepositSe;
+        // voucherDetails.amount2holder += voucherDetails.depositSe.sub(tPartDepositSe); 
+
+        escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+        voucherDetails.amount2issuer += voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+        voucherDetails.amount2holder += voucherDetails.depositSe - voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+
+        LogAmountDistribution(
+            voucherDetails.tokenIdVoucher, 
+            voucherDetails.issuer, 
+            voucherDetails.depositSe.div(CANCELFAULT_SPLIT), 
+            PaymentType.DEPOSIT_SELLER
+        );
+
+        LogAmountDistribution(
+            voucherDetails.tokenIdVoucher, 
+            voucherDetails.holder, 
+            voucherDetails.depositSe - voucherDetails.depositSe.div(CANCELFAULT_SPLIT), 
+            PaymentType.DEPOSIT_SELLER
+        );
+    }
+
+    function distributeFullIssuerDeposit(VoucherDetails memory voucherDetails) internal {
+        escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+        voucherDetails.amount2issuer += voucherDetails.depositSe;    
+
+        LogAmountDistribution(
+            voucherDetails.tokenIdVoucher, 
+            voucherDetails.issuer, 
+            voucherDetails.depositSe, 
+            PaymentType.DEPOSIT_SELLER
+        );   
+    }
+
+    function distributeFullHolderDeposit(VoucherDetails memory voucherDetails) internal {
+        escrow[voucherDetails.holder] -= voucherDetails.depositBu;
+        voucherDetails.amount2holder += voucherDetails.depositBu;
+
+        LogAmountDistribution(
+            voucherDetails.tokenIdVoucher, 
+            voucherDetails.holder, 
+            voucherDetails.depositBu, 
+            PaymentType.DEPOSIT_BUYER
+        ); 
+    }
+
+    function distributeHolderDepositOnNotRedeemedNotCancelled(VoucherDetails memory voucherDetails) internal {
+        escrow[voucherDetails.holder] -= voucherDetails.depositBu;
+        voucherDetails.amount2pool += voucherDetails.depositBu; 
+
+        LogAmountDistribution(
+            voucherDetails.tokenIdVoucher, 
+            poolAddress, 
+            voucherDetails.depositBu, 
+            PaymentType.DEPOSIT_BUYER
+            ); 
+    }
+
     /**
      * @notice Trigger withdrawals of pooled funds
      */    

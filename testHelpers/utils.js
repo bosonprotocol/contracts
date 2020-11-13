@@ -74,7 +74,9 @@ class Utils {
     }
 
     async withdraw(voucherID, deployer) {
-        return await this.contractCashier.withdraw([voucherID], {from: deployer});
+        const tx =  await this.contractCashier.withdraw([voucherID], {from: deployer});
+        console.log('GAS USED: ', tx.receipt.gasUsed);
+        return tx
     }
 
     calcTotalAmountToRecipients(event, distributionAmounts) {

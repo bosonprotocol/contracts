@@ -7,13 +7,13 @@ const BN = web3.utils.BN
 const Utils = require('../testHelpers/utils')
 let utils
 
-const ERC1155ERC721 = artifacts.require("ERC1155ERC721");
-const VoucherKernel = artifacts.require("VoucherKernel");
-const Cashier = artifacts.require("Cashier");
+const ERC1155ERC721 = artifacts.require("ERC1155ERC721")
+const VoucherKernel = artifacts.require("VoucherKernel")
+const Cashier = artifacts.require("Cashier")
 
-const helpers = require("../testHelpers/constants");
-const timemachine = require('../testHelpers/timemachine');
-const truffleAssert = require('truffle-assertions');
+const helpers = require("../testHelpers/constants")
+const timemachine = require('../testHelpers/timemachine')
+const truffleAssert = require('truffle-assertions')
 
 let TOKEN_SUPPLY_ID
 
@@ -45,7 +45,7 @@ contract("Boson -> ", async accounts => {
         TOKEN_SUPPLY_ID = await utils.requestCreateOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
     })
 
-    describe('Withdraw scenarios', function () {
+    describe.only('Withdraw scenarios', function () {
 
         let distributedAmaounts = {
             buyerAmount: new BN(0),
