@@ -7,6 +7,9 @@ const ERC1155ERC721 = artifacts.require("ERC1155ERC721");
 const VoucherKernel = artifacts.require("VoucherKernel");
 const Cashier 		= artifacts.require("Cashier");
 
+const Utils = require('../testHelpers/utils')
+let snapshot;
+
 contract("Voucher tests", async accounts => {
 	let Seller 		= accounts[0];
 	let Buyer 		= accounts[1];
@@ -19,6 +22,8 @@ contract("Voucher tests", async accounts => {
     let tokenSupplyKey1, tokenSupplyKey2, tokenVoucherKey1, tokenVoucherKey2;
 
     before('setup contracts for tests', async () => {
+		snapshot = await timemachine.takeSnapshot();
+
         contractERC1155ERC721 	= await ERC1155ERC721.new();
         contractVoucherKernel 	= await VoucherKernel.new(contractERC1155ERC721.address);
         contractCashier 		= await Cashier.new(contractVoucherKernel.address);
@@ -80,9 +85,9 @@ contract("Voucher tests", async accounts => {
 
     describe('Orders (aka supply tokens - ERC1155)', function() {
 
-		it("adding one new order / promise", async () => {			
-
-			let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
+		it("adding one new order / promise", async () => {		
+			const timestamp = await Utils.getCurrTimestamp() 
+			let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE, timestamp, timestamp + 2*helpers.SECONDS_IN_DAY, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
 
 			//would need truffle-events as the event emitted is from a nested contract, so truffle-assert doesn't detect it
 			// truffleAssert.eventEmitted(txOrder, 'LogOrderCreated', (ev) => {
@@ -103,8 +108,8 @@ contract("Voucher tests", async accounts => {
 		});	
 
 		it("adding second order", async () => {			
-
-			let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE2, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE2, helpers.PROMISE_DEPOSITSE2, helpers.PROMISE_DEPOSITBU2, helpers.ORDER_QUANTITY2, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE2});
+			const timestamp = await Utils.getCurrTimestamp() 
+			let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE2, timestamp, timestamp + 2*helpers.SECONDS_IN_DAY, helpers.PROMISE_PRICE2, helpers.PROMISE_DEPOSITSE2, helpers.PROMISE_DEPOSITBU2, helpers.ORDER_QUANTITY2, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE2});
 
 			truffleAssert.eventEmitted(txOrder, 'LogOrderCreated', (ev) => {
 			    tokenSupplyKey2 = ev._tokenIdSupply;
@@ -159,8 +164,8 @@ contract("Voucher tests", async accounts => {
 
 
 		it("must fail: adding new order with incorrect value sent", async () => {			
-
-			truffleAssert.reverts(contractCashier.requestCreateOrder(helpers.ASSET_TITLE, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: 0}),
+			const timestamp = await Utils.getCurrTimestamp();
+			truffleAssert.reverts(contractCashier.requestCreateOrder(helpers.ASSET_TITLE, timestamp, timestamp + 2*helpers.SECONDS_IN_DAY, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: 0}),
 				truffleAssert.ErrorType.REVERT
 			);			
 			
@@ -276,9 +281,8 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 
 		// assert.notEqual(promiseKey1, helpers.ZERO_ADDRESS, "promise not added");
 
-	
-
-		let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
+		const timestamp = await Utils.getCurrTimestamp();
+		let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE, timestamp, timestamp + 2 * helpers.SECONDS_IN_DAY, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
 
 		truffleAssert.eventEmitted(txOrder, 'LogOrderCreated', (ev) => {
 		    tokenSupplyKey1 = ev._tokenIdSupply;
@@ -415,8 +419,12 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 			truffleAssert.reverts(contractVoucherKernel.redeem(tokenVoucherKey1, {from: Buyer}),
 				truffleAssert.ErrorType.REVERT
 			);
-		});    	
+		});    
+		
+		after(async () => {
+			await timemachine.revertToSnapShot(snapshot.id)
+		})
 
-    })    
-
+	})    
+	
 });

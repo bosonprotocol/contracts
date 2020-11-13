@@ -45,7 +45,7 @@ contract("Boson -> ", async accounts => {
         TOKEN_SUPPLY_ID = await utils.requestCreateOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
     })
 
-    describe.only('Withdraw scenarios', function () {
+    describe('Withdraw scenarios', function () {
 
         let distributedAmaounts = {
             buyerAmount: new BN(0),
