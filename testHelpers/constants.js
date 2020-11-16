@@ -17,7 +17,7 @@ const CATEGORY2 = "entertainment.games.shield";
 
 //promise
 const PROMISE_VALID_FROM 	= ''; // evaluated based on the current block timestamp
-const PROMISE_VALID_TO = ''; // evalueated based on the PROMISE_VALID_FROM + 2 * SECONDS_IN_DAY
+const PROMISE_VALID_TO = ''; // evaluated based on the PROMISE_VALID_FROM + 2 * SECONDS_IN_DAY
 const PROMISE_PRICE1 		= 10;
 const PROMISE_PRICE2 		= 21;
 const PROMISE_DEPOSITSE1 	= 1;
