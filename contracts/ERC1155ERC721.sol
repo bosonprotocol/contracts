@@ -20,9 +20,6 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
     using SafeMath for uint256;
     using Address for address;
     
-    //using Counters for Counters.Counter;
-    //Counters.Counter private voucherTokenId; //unique IDs for voucher tokens
-    
     //min security
     address public owner;           //contract owner
     address public voucherKernelAddress;  //address of the VoucherKernel contract
@@ -61,15 +58,10 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         _;
     }    
 
-    constructor(
-        //address _assetRegistry,
-    )
+    constructor()
         public 
     {
         owner = msg.sender;
-        
-        //AssetRegistry is currently not used to simplify the process.
-        //assetRegistry = AssetRegistry(_assetRegistry);
     }
     
 
@@ -128,10 +120,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
 
     /**
      * @notice Safely transfers the ownership of a given token ID to another address
-     * If the target address is a contract, it must implement `onERC721Received`,
-     * which is called upon a safe transfer, and return the magic value
-     * `bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))`; otherwise,
-     * the transfer is reverted.
+     * If the target address is a contract, it must implement `onERC721Received`
      * Requires the msg.sender to be the owner, approved, or operator
      * @dev ERC-721
      * @param _from current owner of the token
@@ -147,7 +136,6 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         
         if (_to.isContract()) {
             require(ERC721TokenReceiver(_to).onERC721Received(_from, _to, _tokenId, _data) == ERC721TokenReceiver(_to).onERC721Received.selector, "UNSUPPORTED_ERC721_RECEIVED");  //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
-            //bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))
         }        
     }    
     
@@ -165,7 +153,6 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         public
         override
     {
-        //require(_isApprovedOrOwner(msg.sender, _tokenId), "ERC721: transfer caller is not owner nor approved");
         require(operator721[_tokenId] == msg.sender || ownerOf(_tokenId) == msg.sender, "NOT_OWNER_NOR_APPROVED");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
 
         _transferFrom(_from, _to, _tokenId);
@@ -236,7 +223,6 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         returns (address) 
     {
         require(owners721[_tokenId] != address(0), "ERC721: approved query for nonexistent token");
-        //require(_exists(_tokenId), "ERC721: approved query for nonexistent token");
 
         return operator721[_tokenId];
     }    
@@ -536,7 +522,6 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
     {
         require(_to != address(0), "UNSPECIFIED_ADDRESS");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         require(owners721[_tokenId] == address(0), "ERC721: token already minted");
-        //require(!_exists(tokenId), "ERC721: token already minted");
 
         owners721[_tokenId] = _to;
         balance721[_to]++;
@@ -598,10 +583,6 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         public 
         onlyFromVoucherKernel
     {
-        //commented out because this action is limited to onlyFromVoucherKernel, which only calls this in extract721
-        //TODO: function cancelOrder
-        //require(_account == msg.sender || operatorApprovals[_account][msg.sender] == true, "UNAUTHORIZED_B"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
-
         _burn(_account, _tokenId, _value);
     }
     
@@ -634,9 +615,6 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         public 
         onlyFromVoucherKernel
     {
-        //commented out because this action is limited to onlyFromVoucherKernel, which only calls this in extract721
-        //require(_account == msg.sender || operatorApprovals[_account][msg.sender] == true, "UNAUTHORIZED_BB"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
-        
         _burnBatch(_account, _tokenIds, _values);
     }  
     
