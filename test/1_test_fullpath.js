@@ -7,6 +7,9 @@ const ERC1155ERC721 = artifacts.require("ERC1155ERC721");
 const VoucherKernel = artifacts.require("VoucherKernel");
 const Cashier 		= artifacts.require("Cashier");
 
+const Utils = require('../testHelpers/utils')
+let snapshot;
+
 contract("Voucher tests", async accounts => {
 	let Seller 		= accounts[0];
 	let Buyer 		= accounts[1];
@@ -19,6 +22,12 @@ contract("Voucher tests", async accounts => {
     let tokenSupplyKey1, tokenSupplyKey2, tokenVoucherKey1, tokenVoucherKey2;
 
     before('setup contracts for tests', async () => {
+		snapshot = await timemachine.takeSnapshot();
+
+		const timestamp = await Utils.getCurrTimestamp()
+		helpers.PROMISE_VALID_FROM = timestamp
+		helpers.PROMISE_VALID_TO = timestamp + 2 * helpers.SECONDS_IN_DAY;
+
         contractERC1155ERC721 	= await ERC1155ERC721.new();
         contractVoucherKernel 	= await VoucherKernel.new(contractERC1155ERC721.address);
         contractCashier 		= await Cashier.new(contractVoucherKernel.address);
@@ -80,7 +89,7 @@ contract("Voucher tests", async accounts => {
 
     describe('Orders (aka supply tokens - ERC1155)', function() {
 
-		it("adding one new order / promise", async () => {			
+		it("adding one new order / promise", async () => {		
 
 			let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
 
@@ -102,7 +111,7 @@ contract("Voucher tests", async accounts => {
 			
 		});	
 
-		it("adding second order", async () => {			
+		it("adding second order", async () => {		
 
 			let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE2, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE2, helpers.PROMISE_DEPOSITSE2, helpers.PROMISE_DEPOSITBU2, helpers.ORDER_QUANTITY2, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE2});
 
@@ -158,7 +167,7 @@ contract("Voucher tests", async accounts => {
 		// });		
 
 
-		it("must fail: adding new order with incorrect value sent", async () => {			
+		it("must fail: adding new order with incorrect value sent", async () => {	
 
 			truffleAssert.reverts(contractCashier.requestCreateOrder(helpers.ASSET_TITLE, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: 0}),
 				truffleAssert.ErrorType.REVERT
@@ -237,7 +246,11 @@ contract("Voucher tests", async accounts => {
 		// 	);				
 		// });			
 			  	
-    })  
+	})  
+	
+	after(async () => {
+		await timemachine.revertToSnapShot(snapshot.id)
+	})
 
 });
 
@@ -256,7 +269,16 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
     let promiseKey1, promiseKey2;
     let order1payment, order1depositSe, order1depositBu;
     let ordersCount;
-    let tokenSupplyKey1, tokenSupplyKey2, tokenVoucherKey1, tokenVoucherKey2;	
+	let tokenSupplyKey1, tokenSupplyKey2, tokenVoucherKey1, tokenVoucherKey2;	
+	
+	before('setup promise dates based on the block timestamp', async () => {
+		snapshot = await timemachine.takeSnapshot();
+
+		const timestamp = await Utils.getCurrTimestamp()
+
+		helpers.PROMISE_VALID_FROM = timestamp
+		helpers.PROMISE_VALID_TO = timestamp + 2 * helpers.SECONDS_IN_DAY;
+	})
 
     beforeEach('setup contracts for tests', async () => {
 
@@ -275,8 +297,6 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 		// promiseKey1 = await contractVoucherKernel.promiseKeys.call(0);
 
 		// assert.notEqual(promiseKey1, helpers.ZERO_ADDRESS, "promise not added");
-
-	
 
 		let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
 
@@ -415,8 +435,12 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 			truffleAssert.reverts(contractVoucherKernel.redeem(tokenVoucherKey1, {from: Buyer}),
 				truffleAssert.ErrorType.REVERT
 			);
-		});    	
+		});    
+		
+		after(async () => {
+			await timemachine.revertToSnapShot(snapshot.id)
+		})
 
-    })    
-
+	})    
+	
 });

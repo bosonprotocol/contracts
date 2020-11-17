@@ -313,7 +313,7 @@ contract VoucherKernel is usingHelpers {
             //bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))
         } 
 
-        tokensContract.burn(_issuer, _tokenIdSupply, 1);
+        tokensContract.burn(_issuer, _tokenIdSupply, 1); // This is hardcoded as 1 on purpose
         accountSupply[_issuer]--;
         
         
