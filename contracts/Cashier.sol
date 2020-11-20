@@ -4,7 +4,8 @@
 pragma solidity >=0.6.2 <0.7.0;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-//import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/Access/Ownable.sol";
 import "./VoucherKernel.sol";
 import "./usingHelpers.sol";
 
@@ -13,13 +14,11 @@ import "./usingHelpers.sol";
  * @dev Warning: the contract hasn't been audited yet!
  *  Roughly following OpenZeppelin's Escrow at https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/payment/
  */
-contract Cashier is usingHelpers, ReentrancyGuard {
+contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
     using Address for address payable;
     using SafeMath for uint;
     
     VoucherKernel voucherKernel;
-    
-    address payable poolAddress;                //the account receiving slashed funds
 
     enum PaymentType { PAYMENT, DEPOSIT_SELLER, DEPOSIT_BUYER }
         
@@ -68,13 +67,7 @@ contract Cashier is usingHelpers, ReentrancyGuard {
         address _to, 
         uint256 _payment,
         PaymentType _type
-    );
-
-    modifier onlyPoolManager() {
-        require(msg.sender == poolAddress, "UNAUTHORIZED_P"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
-        _;
-    }
-    
+    );    
    
     constructor(
         address _voucherKernel
@@ -82,7 +75,6 @@ contract Cashier is usingHelpers, ReentrancyGuard {
         public 
     {
         voucherKernel = VoucherKernel(_voucherKernel);
-        poolAddress = msg.sender;   //address(uint160( address(this) ));
     }
     
     
@@ -215,6 +207,7 @@ contract Cashier is usingHelpers, ReentrancyGuard {
         } //end-for   
         
         if (voucherDetails.amount2pool > 0) {
+            address payable poolAddress = address(uint160(owner()));
             _withdraw(poolAddress, voucherDetails.amount2pool);
         }
         
@@ -315,7 +308,7 @@ contract Cashier is usingHelpers, ReentrancyGuard {
 
             LogAmountDistribution(voucherDetails.tokenIdVoucher, voucherDetails.holder, tFraction, PaymentType.DEPOSIT_SELLER);
             LogAmountDistribution(voucherDetails.tokenIdVoucher, voucherDetails.issuer, tFraction.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
-            LogAmountDistribution(voucherDetails.tokenIdVoucher, poolAddress, voucherDetails.depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
+            LogAmountDistribution(voucherDetails.tokenIdVoucher, owner(), voucherDetails.depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
             
             tFraction = 0;
 
@@ -324,7 +317,7 @@ contract Cashier is usingHelpers, ReentrancyGuard {
             escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
             voucherDetails.amount2pool += voucherDetails.depositSe;
 
-            LogAmountDistribution(voucherDetails.tokenIdVoucher, poolAddress, voucherDetails.depositSe, PaymentType.DEPOSIT_SELLER);
+            LogAmountDistribution(voucherDetails.tokenIdVoucher, owner(), voucherDetails.depositSe, PaymentType.DEPOSIT_SELLER);
         }
     }
 
@@ -383,7 +376,7 @@ contract Cashier is usingHelpers, ReentrancyGuard {
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher, 
-            poolAddress, 
+            owner(), 
             voucherDetails.depositBu, 
             PaymentType.DEPOSIT_BUYER
             ); 
@@ -394,12 +387,13 @@ contract Cashier is usingHelpers, ReentrancyGuard {
      */    
     function withdrawPool()
         external 
-        onlyPoolManager
+        onlyOwner
         nonReentrant
     {
         //TODO: more requires needed?
         
-        if (escrow[poolAddress] > 0) {
+        if (escrow[owner()] > 0) {
+            address payable poolAddress = address(uint160(owner()));
             uint256 amount = escrow[poolAddress];
             escrow[poolAddress] = 0;
             _withdraw(poolAddress,amount);
