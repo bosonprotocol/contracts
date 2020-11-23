@@ -3,6 +3,7 @@
 pragma solidity >=0.6.6 <0.7.0;
 
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/Access/Ownable.sol";
 import "./ERC1155ERC721.sol";
 import "./usingHelpers.sol";
 
@@ -16,7 +17,7 @@ import "./usingHelpers.sol";
  *  - The usage of block.timestamp is honored since vouchers are defined with day-precision and the demo app is not covering all edge cases.
  *      See: https://ethereum.stackexchange.com/questions/5924/how-do-ethereum-mining-nodes-maintain-a-time-consistent-with-the-network/5931#5931
 */
-contract VoucherKernel is usingHelpers {    
+contract VoucherKernel is Ownable, usingHelpers {    
     using Address for address;
     //using Counters for Counters.Counter;
     //Counters.Counter private voucherTokenId; //unique IDs for voucher tokens
@@ -40,7 +41,6 @@ contract VoucherKernel is usingHelpers {
         uint idx;
     }
     
-    address public owner;           //contract owner
     address public cashierAddress;  //address of the Cashier contract    
     
     mapping(bytes32 => Promise) public promises;    //promises to deliver goods or services
@@ -141,11 +141,6 @@ contract VoucherKernel is usingHelpers {
     );
 
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "UNAUTHORIZED_O");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
-        _;
-    }
-    
     modifier onlyFromCashier() {
         require(cashierAddress != address(0), "UNSPECIFIED_CASHIER");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         require(msg.sender == cashierAddress, "UNAUTHORIZED_C");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
@@ -163,7 +158,6 @@ contract VoucherKernel is usingHelpers {
     )
         public 
     {
-        owner = msg.sender;
         tokensContract = ERC1155ERC721(_tokensContract);
         
         complainPeriod = 7 * 1 days;
