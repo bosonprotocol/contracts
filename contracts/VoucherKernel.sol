@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-pragma solidity >=0.6.2 <0.7.0;
+pragma solidity >=0.6.6 <0.7.0;
 
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./ERC1155ERC721.sol";
@@ -800,17 +800,15 @@ contract VoucherKernel is usingHelpers {
     /** 
      * 
      */
-     function isInValidityPeriod(uint256 _tokenIdVoucher)
+    function isInValidityPeriod(uint256 _tokenIdVoucher)
         public view
         returns (bool)
-     {
+    {
         //check validity period
         Promise memory tPromise = promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
         require(tPromise.validFrom <= block.timestamp, "INVALID_VALIDITY_FROM"); //hex"26" FISSION.code(FISSION.Category.Find, FISSION.Status.Above_Range_Overflow)
         require(tPromise.validTo >= block.timestamp, "INVALID_VALIDITY_TO");    //hex"24" FISSION.code(FISSION.Category.Find, FISSION.Status.BelowRange_Underflow)         
         
         return true;
-     }
-    
-   
+    }
 }

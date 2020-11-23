@@ -17,7 +17,7 @@ const truffleAssert = require('truffle-assertions')
 
 let TOKEN_SUPPLY_ID
 
-contract("Boson -> ", async accounts => {
+contract("Cashier withdrawals ", async accounts => {
 
     let Deployer = accounts[0] //0xD9995BAE12FEe327256FFec1e3184d492bD94C31
     let Seller = accounts[1] //0xd4Fa489Eacc52BA59438993f37Be9fcC20090E39
