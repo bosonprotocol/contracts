@@ -301,14 +301,14 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == ETH_TKN) {
             escrow[voucherDetails.holder] -= voucherDetails.price;
             voucherDetails.amount2issuer += voucherDetails.price;
-            voucherKernel.setPaymentReleased(voucherDetails.tokenIdVoucher);
         }
 
         if(voucherDetails.paymentMethod == TKN_ETH || voucherDetails.paymentMethod == TKN_TKN) {
             address addressTokenPrice = voucherKernel.getVoucherPriceToken(voucherDetails.tokenIdSupply);
             IERC20WithPermit(addressTokenPrice).transfer(voucherDetails.issuer, voucherDetails.price);
-            voucherKernel.setPaymentReleased(voucherDetails.tokenIdVoucher);
         }
+
+        voucherKernel.setPaymentReleased(voucherDetails.tokenIdVoucher);
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher, 
@@ -327,14 +327,15 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == ETH_TKN) {
             escrow[voucherDetails.holder] -= voucherDetails.price;
             voucherDetails.amount2holder += voucherDetails.price;
-            voucherKernel.setPaymentReleased(voucherDetails.tokenIdVoucher);
         }
 
         if(voucherDetails.paymentMethod == TKN_ETH || voucherDetails.paymentMethod == TKN_TKN) {
             address addressTokenPrice = voucherKernel.getVoucherPriceToken(voucherDetails.tokenIdSupply);
             IERC20WithPermit(addressTokenPrice).transfer(voucherDetails.holder, voucherDetails.price);
-            voucherKernel.setPaymentReleased(voucherDetails.tokenIdVoucher);
+            
         }
+
+        voucherKernel.setPaymentReleased(voucherDetails.tokenIdVoucher);
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher, 
