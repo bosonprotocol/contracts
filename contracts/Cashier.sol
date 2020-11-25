@@ -39,6 +39,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         uint256 amount2pool;
         uint256 amount2issuer;
         uint256 amount2holder;
+        uint8   paymentMethod;
         VoucherStatus currStatus;
     }
 
@@ -65,7 +66,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         require(tokenAddress != address(0), "INVALID_TOKEN_ADDRESS");
         _;
     }
-   
+
     constructor(
         address _voucherKernel
     ) 
@@ -233,7 +234,10 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
             // (currStatus.status, currStatus.isPaymentReleased, currStatus.isDepositsReleased) = voucherKernel.getVoucherStatus(_tokenIdVouchers[i]);
             voucherDetails.tokenIdVoucher = _tokenIdVouchers[i];
             voucherDetails.tokenIdSupply = voucherKernel.getIdSupplyFromVoucher(voucherDetails.tokenIdVoucher);
-            
+            voucherDetails.paymentMethod = voucherKernel.getVoucherPaymentMethod(voucherDetails.tokenIdSupply);
+
+            require(voucherDetails.paymentMethod > 0 && voucherDetails.paymentMethod <= 4, "INVALID PAYMENT METHOD");
+
             (voucherDetails.currStatus.status,
                 voucherDetails.currStatus.isPaymentReleased,
                 voucherDetails.currStatus.isDepositsReleased
@@ -293,9 +297,18 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
     }
 
     function releasePaymentToSeller(VoucherDetails memory voucherDetails) internal {
-        escrow[voucherDetails.holder] -= voucherDetails.price;
-        voucherDetails.amount2issuer += voucherDetails.price;
-        voucherKernel.setPaymentReleased(voucherDetails.tokenIdVoucher);
+
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == ETH_TKN) {
+            escrow[voucherDetails.holder] -= voucherDetails.price;
+            voucherDetails.amount2issuer += voucherDetails.price;
+            voucherKernel.setPaymentReleased(voucherDetails.tokenIdVoucher);
+        }
+
+        if(voucherDetails.paymentMethod == TKN_ETH || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenPrice = voucherKernel.getVoucherPriceToken(voucherDetails.tokenIdSupply);
+            IERC20WithPermit(addressTokenPrice).transfer(voucherDetails.issuer, voucherDetails.price);
+            voucherKernel.setPaymentReleased(voucherDetails.tokenIdVoucher);
+        }
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher, 
@@ -305,11 +318,23 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         );
     }
 
+    function getPaymentMethod(uint256 tokenIdSupply) public view returns (uint8) {
+        return voucherKernel.getVoucherPaymentMethod(tokenIdSupply);
+    }
+
     function releasePaymentToBuyer(VoucherDetails memory voucherDetails) internal {
 
-        escrow[voucherDetails.holder] -= voucherDetails.price;
-        voucherDetails.amount2holder += voucherDetails.price;
-        voucherKernel.setPaymentReleased(voucherDetails.tokenIdVoucher);
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == ETH_TKN) {
+            escrow[voucherDetails.holder] -= voucherDetails.price;
+            voucherDetails.amount2holder += voucherDetails.price;
+            voucherKernel.setPaymentReleased(voucherDetails.tokenIdVoucher);
+        }
+
+        if(voucherDetails.paymentMethod == TKN_ETH || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenPrice = voucherKernel.getVoucherPriceToken(voucherDetails.tokenIdSupply);
+            IERC20WithPermit(addressTokenPrice).transfer(voucherDetails.holder, voucherDetails.price);
+            voucherKernel.setPaymentReleased(voucherDetails.tokenIdVoucher);
+        }
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher, 
@@ -341,7 +366,6 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
             ) {
             //release depositBu
             distributeFullHolderDeposit(voucherDetails);
-           
         } else {
             //slash depositBu
             distributeHolderDepositOnNotRedeemedNotCancelled(voucherDetails);
@@ -352,15 +376,28 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
     }
 
     function distributeIssuerDepositOnHolderComplain(VoucherDetails memory voucherDetails) internal {
+        
         uint256 tFraction;
 
         if (isStatus(voucherDetails.currStatus.status, idxCancelFault)) {
             //appease the conflict three-ways
-            escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
-            tFraction = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
-            voucherDetails.amount2holder += tFraction; //Bu gets, say, a half
-            voucherDetails.amount2issuer += tFraction.div(CANCELFAULT_SPLIT);   //Se gets, say, a quarter
-            voucherDetails.amount2pool += voucherDetails.depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT);    //slashing the rest
+            if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+                escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+                tFraction = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+                voucherDetails.amount2holder += tFraction; //Bu gets, say, a half
+                voucherDetails.amount2issuer += tFraction.div(CANCELFAULT_SPLIT);   //Se gets, say, a quarter
+                voucherDetails.amount2pool += voucherDetails.depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT);    //slashing the rest
+            }
+
+            if(voucherDetails.paymentMethod == ETH_TKN || voucherDetails.paymentMethod == TKN_TKN) {
+                address addressTokenDeposits = voucherKernel.getVoucherDepositToken(voucherDetails.tokenIdSupply);
+                
+                tFraction = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+
+                IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.holder, tFraction);
+                IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.issuer, tFraction.div(CANCELFAULT_SPLIT));
+                IERC20WithPermit(addressTokenDeposits).transfer(owner(), voucherDetails.depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT));
+            }
 
             LogAmountDistribution(voucherDetails.tokenIdVoucher, voucherDetails.holder, tFraction, PaymentType.DEPOSIT_SELLER);
             LogAmountDistribution(voucherDetails.tokenIdVoucher, voucherDetails.issuer, tFraction.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
@@ -370,22 +407,32 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
 
         } else {
             //slash depositSe
-            escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
-            voucherDetails.amount2pool += voucherDetails.depositSe;
+            if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+                escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+                voucherDetails.amount2pool += voucherDetails.depositSe;
+            } else {
+                address addressTokenDeposits = voucherKernel.getVoucherDepositToken(voucherDetails.tokenIdSupply);
+                IERC20WithPermit(addressTokenDeposits).transfer(owner(), voucherDetails.depositSe);
+            }
 
             LogAmountDistribution(voucherDetails.tokenIdVoucher, owner(), voucherDetails.depositSe, PaymentType.DEPOSIT_SELLER);
         }
     }
 
     function distributeIssuerDepositOnIssuerCancel(VoucherDetails memory voucherDetails) internal {
-        // uint256 tPartDepositSe = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
-        // escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
-        // voucherDetails.amount2issuer += tPartDepositSe;
-        // voucherDetails.amount2holder += voucherDetails.depositSe.sub(tPartDepositSe); 
+        
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+            escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+            voucherDetails.amount2issuer += voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+            voucherDetails.amount2holder += voucherDetails.depositSe - voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+        }
 
-        escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
-        voucherDetails.amount2issuer += voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
-        voucherDetails.amount2holder += voucherDetails.depositSe - voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+        if (voucherDetails.paymentMethod == ETH_TKN || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenDeposits = voucherKernel.getVoucherDepositToken(voucherDetails.tokenIdSupply);
+
+            IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.issuer, voucherDetails.depositSe.div(CANCELFAULT_SPLIT));
+            IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.holder, voucherDetails.depositSe - voucherDetails.depositSe.div(CANCELFAULT_SPLIT));
+        }
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher, 
@@ -403,8 +450,18 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
     }
 
     function distributeFullIssuerDeposit(VoucherDetails memory voucherDetails) internal {
-        escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+            escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+            voucherDetails.amount2issuer += voucherDetails.depositSe;
         voucherDetails.amount2issuer += voucherDetails.depositSe;    
+            voucherDetails.amount2issuer += voucherDetails.depositSe;
+        }
+
+        if(voucherDetails.paymentMethod == ETH_TKN || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenDeposits = voucherKernel.getVoucherDepositToken(voucherDetails.tokenIdSupply);
+            IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.issuer, voucherDetails.depositSe);
+        }
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher, 
@@ -415,8 +472,16 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
     }
 
     function distributeFullHolderDeposit(VoucherDetails memory voucherDetails) internal {
-        escrow[voucherDetails.holder] -= voucherDetails.depositBu;
-        voucherDetails.amount2holder += voucherDetails.depositBu;
+
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+            escrow[voucherDetails.holder] -= voucherDetails.depositBu;
+            voucherDetails.amount2holder += voucherDetails.depositBu;
+        }
+
+        if(voucherDetails.paymentMethod == ETH_TKN || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenDeposits = voucherKernel.getVoucherDepositToken(voucherDetails.tokenIdSupply);
+            IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.holder, voucherDetails.depositBu);
+        }
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher, 
@@ -427,15 +492,25 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
     }
 
     function distributeHolderDepositOnNotRedeemedNotCancelled(VoucherDetails memory voucherDetails) internal {
-        escrow[voucherDetails.holder] -= voucherDetails.depositBu;
+
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+            escrow[voucherDetails.holder] -= voucherDetails.depositBu;
+            voucherDetails.amount2pool += voucherDetails.depositBu; 
         voucherDetails.amount2pool += voucherDetails.depositBu; 
+            voucherDetails.amount2pool += voucherDetails.depositBu; 
+        }
+
+        if(voucherDetails.paymentMethod == ETH_TKN || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenDeposits = voucherKernel.getVoucherDepositToken(voucherDetails.tokenIdSupply);
+            IERC20WithPermit(addressTokenDeposits).transfer(owner(), voucherDetails.depositBu);
+        }
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher, 
             owner(), 
             voucherDetails.depositBu, 
             PaymentType.DEPOSIT_BUYER
-            ); 
+        ); 
     }
 
     /**

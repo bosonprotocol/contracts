@@ -840,27 +840,34 @@ contract VoucherKernel is Ownable, usingHelpers {
 
 
     /**
-     * @notice Get the address of the token where the price for the voucher is held
-     * @param _tokenIdVoucher   ID of the voucher token
+     * @notice Get the address of the token where the price for the supply is held
+     * @param _tokenIdSupply   ID of the voucher token
      * @return                  Address of the token
      */
-    function getVoucherPriceToken(uint256 _tokenIdVoucher)
+    function getVoucherPriceToken(uint256 _tokenIdSupply)
         public view
         returns (address)
     {
-        return paymentDetails[_tokenIdVoucher].addressTokenPrice;
+        return paymentDetails[_tokenIdSupply].addressTokenPrice;
     }
 
     /**
-     * @notice Get the address of the token where the deposits for the voucher are held
-     * @param _tokenIdVoucher   ID of the voucher token
+     * @notice Get the address of the token where the deposits for the supply are held
+     * @param _tokenIdSupply   ID of the voucher token
      * @return                  Address of the token
      */
-    function getVoucherDepositToken(uint256 _tokenIdVoucher)
+    function getVoucherDepositToken(uint256 _tokenIdSupply)
         public view
         returns (address)
     {
-        return paymentDetails[_tokenIdVoucher].addressTokenDeposits;
+        return paymentDetails[_tokenIdSupply].addressTokenDeposits;
+    }
+
+    function getVoucherPaymentMethod(uint256 _tokenIdSupply)
+        public view
+        returns (uint8)
+    {
+        return paymentDetails[_tokenIdSupply].paymentMethod;
     }
     
     /** 
