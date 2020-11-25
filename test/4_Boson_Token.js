@@ -5,7 +5,7 @@ chai.use(chaiAsPromised)
 const assert = chai.assert
 const truffleAssert = require('truffle-assertions');
 
-var { ecsign } = require('ethereumjs-util');
+const { ecsign } = require('ethereumjs-util');
 
 const BN = web3.utils.BN
 const BosonToken = artifacts.require("BosonToken")
@@ -22,58 +22,11 @@ const {
     solidityPack
 } = require('ethers').utils;
 
-const toWei = (value) => {
-    return value + '0'.repeat(18);
-}
-
-const PERMIT_TYPEHASH = keccak256(
-    toUtf8Bytes('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)')
-)
-
-const getApprovalDigest = async (
-    token,
-    owner,
-    spender,
-    value,
-    nonce,
-    deadline
-) =>  { 
-
-    const name = await token.name();
-    const DOMAIN_SEPARATOR = getDomainSeparator(name, token.address);
-
-    return keccak256(
-        solidityPack(
-            ['bytes1', 'bytes1', 'bytes32', 'bytes32'],
-            [
-                '0x19',
-                '0x01',
-                DOMAIN_SEPARATOR,
-                keccak256(
-                    defaultAbiCoder.encode(
-                        ['bytes32', 'address', 'address', 'uint256', 'uint256', 'uint256'],
-                        [PERMIT_TYPEHASH, owner, spender, value.toString(), nonce.toString(), deadline]
-                    )
-                )
-            ]
-        )
-    )
-}
-
-function getDomainSeparator(name, tokenAddress) {
-    return keccak256(
-        defaultAbiCoder.encode(
-            ['bytes32', 'bytes32', 'bytes32', 'uint256', 'address'],
-            [
-                keccak256(toUtf8Bytes('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)')),
-                keccak256(toUtf8Bytes(name)),
-                keccak256(toUtf8Bytes('1')),
-                1,
-                tokenAddress
-            ]
-        )
-    )
-}
+const {
+    PERMIT_TYPEHASH,
+    toWei,
+    getApprovalDigest
+} = require('../testHelpers/permitUtils');
 
 contract('Boson token', accounts => {
 
@@ -88,7 +41,7 @@ contract('Boson token', accounts => {
     let Attacker = accounts[3] //0x56A32fFf5E5A8B40d6A21538579fB8922DF5258c 
     let Attacker_PK = '0xf473040b1a83739a9c7cc1f5719fab0f5bf178f83314d98557c58aae1910e03a' 
 
-    before(async () => {
+    beforeEach(async () => {
 
         BosonTokenContract = await BosonToken.new('BOSON TOKEN', 'BSNT')
         bosonContractAddress = BosonTokenContract.address

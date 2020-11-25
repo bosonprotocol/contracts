@@ -26,13 +26,12 @@ class Utils {
         const txValue = new BN(sellerDepoist.toString()).mul(new BN(qty))
 
         let txOrder = await this.contractCashier.requestCreateOrder(
-            helpers.ASSET_TITLE, 
-            from, 
+            [from, 
             to, 
             helpers.product_price, 
             sellerDepoist, 
             helpers.buyer_deposit, 
-            qty, 
+            qty], 
             { 
                 from: seller, 
                 value: txValue.toString()

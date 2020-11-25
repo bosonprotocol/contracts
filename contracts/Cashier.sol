@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/Access/Ownable.sol";
 import "./VoucherKernel.sol";
 import "./usingHelpers.sol";
+import "./IERC20WithPermit.sol";
 
 /**
  * @title Contract for managing funds
@@ -44,17 +45,8 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
     event LogOrderCreated(
         uint256 indexed _tokenIdSupply,
         address _seller,
-        bytes32 _promiseId, 
         uint256 _quantity
     );
-    
-    event LogVoucherDelivered(
-        uint256 indexed _tokenIdSupply,
-        uint256 _tokenIdVoucher,
-        address _issuer,
-        address _holder,
-        bytes32 _promiseId
-    );   
     
     event LogWithdrawal(
         address _caller,
@@ -67,7 +59,12 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         address _to, 
         uint256 _payment,
         PaymentType _type
-    );    
+    );
+
+    modifier notZeroAddress(address tokenAddress) {
+        require(tokenAddress != address(0), "INVALID_TOKEN_ADDRESS");
+        _;
+    }
    
     constructor(
         address _voucherKernel
@@ -80,49 +77,77 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
     
     /**
      * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
-        @param _assetTitle  Name of the asset
-        @param _validFrom   Start of valid period
-        @param _validTo     End of valid period
-        @param _price       Price (payment amount)
-        @param _depositSe   Seller's deposit
-        @param _depositBu   Buyer's deposit
-     * @param _quantity     Quantity on offer
+        @param metadata metadata which is required for creation of a voucher
      */
-    function requestCreateOrder(
-        string calldata _assetTitle,
-        uint256 _validFrom,
-        uint256 _validTo,
-        uint256 _price,
-        uint256 _depositSe,
-        uint256 _depositBu,
-        uint256 _quantity
-        )
+    function requestCreateOrder(uint256[] calldata metadata)
         external
         payable
     {
-        bytes32 promiseId;
+
+        // uint256 _validFrom = metadata[0];
+        // uint256 _validTo = metadata[1];
+        // uint256 _price = metadata[2];
+        // uint256 _depositSe = metadata[3];
+        // uint256 _depositBu = metadata[4];
+        // uint256 _quantity = metadata[5];
+
+
+        require(metadata[3] * metadata[5] == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+
+        //TODO rename this function as it returns tokenSupplyID 
+        uint256 tokenIdSupply = voucherKernel.createAssetPromise(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
         
-        uint256 weiReceived = msg.value;
-        
-        //create a promise for an asset first (simplified for prototype)
-        promiseId = voucherKernel.createAssetPromise(msg.sender, _assetTitle, _validFrom, _validTo, _price, _depositSe, _depositBu);
-        
+        voucherKernel.createPaymentMethod(tokenIdSupply, ETH_ETH, address(0), address(0));
+
         //checks
         //(i) this is for separate promise allocation, not in prototype
         //uint256 depositSe = voucherKernel.getPromiseDepositSe(promiseId);
         //require(depositSe * _quantity == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         //(ii) prototype check
-        require(_depositSe * _quantity == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         
-        
-        uint256 tokenIdSupply = voucherKernel.createOrder(msg.sender, promiseId, _quantity);
         
         //record funds in escrow ...
-        escrow[msg.sender] += weiReceived;
+        escrow[msg.sender] += msg.value;
         
-        emit LogOrderCreated(tokenIdSupply, msg.sender, promiseId, _quantity);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
     }
-    
+
+    function requestCreateOrderTknTknWithPermit(
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256[] calldata metadata
+        )
+        notZeroAddress(_tokenPriceAddress)
+        notZeroAddress(_tokenDepositAddress)
+        external
+        payable
+    {
+        // uint256 _validFrom = metadata[0];
+        // uint256 _validTo = metadata[1];
+        // uint256 _price = metadata[2];
+        // uint256 _depositSe = metadata[3];
+        // uint256 _depositBu = metadata[4];
+        // uint256 _quantity = metadata[5];
+        
+        require(metadata[3] * metadata[5] == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        
+        IERC20WithPermit(_tokenDepositAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
+        
+        //TODO rename this function as it returns tokenSupplyID
+        uint256 tokenIdSupply = voucherKernel.createAssetPromise(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
+        
+        voucherKernel.createPaymentMethod(tokenIdSupply, TKN_TKN, _tokenPriceAddress, _tokenDepositAddress);
+
+        IERC20WithPermit(_tokenDepositAddress).transferFrom(msg.sender, address(this), _tokensSent);
+        
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
+    }
+
     
     /**
      * @notice Consumer requests/buys a voucher by filling an order and receiving a Voucher Token in return
@@ -141,12 +166,44 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         require(price + depositBu == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         //get voucher token - extract ERC721 from _voucherOrderId to msg.sender
-        uint256 voucherTokenId = voucherKernel.fillOrder(_tokenIdSupply, _issuer, msg.sender);
+        // uint256 voucherTokenId = voucherKernel.fillOrder(_tokenIdSupply, _issuer, msg.sender);
+        voucherKernel.fillOrder(_tokenIdSupply, _issuer, msg.sender);
 
         //record funds in escrow ...
         escrow[msg.sender] += weiReceived;
-        
-        emit LogVoucherDelivered(_tokenIdSupply, voucherTokenId, _issuer, msg.sender, voucherKernel.getPromiseIdFromVoucherId(voucherTokenId));
+    }
+    
+    function requestVoucherTknTKnWithPermit(
+        uint256 _tokenIdSupply, 
+        address _issuer,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 vPrice, bytes32 rPrice, bytes32 sPrice, // tokenPrice
+        uint8 vDeposit, bytes32 rDeposit, bytes32 sDeposit  // tokenDeposits
+        )
+        external
+        payable
+        nonReentrant
+    {
+
+        //checks
+        (uint256 price, uint256 depositBu) = voucherKernel.getBuyerOrderCosts(_tokenIdSupply);
+        require(price + depositBu == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+
+        address tokenPriceAddress = voucherKernel.getVoucherPriceToken(_tokenIdSupply);
+        address tokenDepositAddress = voucherKernel.getVoucherDepositToken(_tokenIdSupply);
+
+        IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), price, deadline, vPrice, rPrice, sPrice);
+        IERC20WithPermit(tokenDepositAddress).permit(msg.sender, address(this), depositBu, deadline, vDeposit, rDeposit, sDeposit);
+
+        //get voucher token - extract ERC721 from _voucherOrderId to msg.sender
+        // uint256 voucherTokenId = voucherKernel.fillOrder(_tokenIdSupply, _issuer, msg.sender);
+
+
+        voucherKernel.fillOrder(_tokenIdSupply, _issuer, msg.sender);
+
+        IERC20WithPermit(tokenPriceAddress).transferFrom(msg.sender, address(this), price);
+        IERC20WithPermit(tokenDepositAddress).transferFrom(msg.sender, address(this), depositBu);
     }
 
 
@@ -187,7 +244,6 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
                 voucherDetails.depositBu
             ) = voucherKernel.getOrderCosts(voucherDetails.tokenIdSupply);
             
-            // (price, depositSe, depositBu) = voucherKernel.getOrderCosts(tokenIdSupply);
             voucherDetails.issuer = address(uint160( voucherKernel.getVoucherIssuer(voucherDetails.tokenIdVoucher) ));
             voucherDetails.holder = address(uint160( voucherKernel.getVoucherHolder(voucherDetails.tokenIdVoucher) ));
             

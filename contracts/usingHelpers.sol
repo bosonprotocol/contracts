@@ -19,6 +19,11 @@ contract usingHelpers {
         [7:COMMITTED] [6:REDEEMED] [5:REFUNDED] [4:EXPIRED] [3:COMPLAINED] [2:CANCELORFAULT] [1:FINAL] [1:/]
     */
     
+    uint8 internal constant ETH_ETH = 1;
+    uint8 internal constant ETH_TKN = 2;
+    uint8 internal constant TKN_ETH = 3;
+    uint8 internal constant TKN_TKN = 4;
+
     struct VoucherStatus {
         uint8 status;
         bool isPaymentReleased;
