@@ -320,10 +320,6 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         );
     }
 
-    function getPaymentMethod(uint256 tokenIdSupply) public view returns (uint8) {
-        return voucherKernel.getVoucherPaymentMethod(tokenIdSupply);
-    }
-
     function releasePaymentToBuyer(VoucherDetails memory voucherDetails) internal {
 
         if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == ETH_TKN) {
@@ -347,7 +343,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         );
     }
 
-    function releaseDeposits(VoucherDetails memory voucherDetails) internal returns (uint256, uint256, uint256) { // TODO Chris - Missing return, or remove the returns in declaration
+    function releaseDeposits(VoucherDetails memory voucherDetails) internal {
 
         //first, depositSe
         if (isStatus(voucherDetails.currStatus.status, idxComplain)) {
@@ -457,8 +453,6 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
             escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
             voucherDetails.amount2issuer += voucherDetails.depositSe;
-        voucherDetails.amount2issuer += voucherDetails.depositSe;    
-            voucherDetails.amount2issuer += voucherDetails.depositSe;
         }
 
         if(voucherDetails.paymentMethod == ETH_TKN || voucherDetails.paymentMethod == TKN_TKN) {
@@ -498,8 +492,6 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
 
         if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
             escrow[voucherDetails.holder] -= voucherDetails.depositBu;
-            voucherDetails.amount2pool += voucherDetails.depositBu; 
-        voucherDetails.amount2pool += voucherDetails.depositBu; 
             voucherDetails.amount2pool += voucherDetails.depositBu; 
         }
 
