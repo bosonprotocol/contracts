@@ -80,11 +80,12 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
      * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
         @param metadata metadata which is required for creation of a voucher
      */
+    // TODO Chris - add EthEth to the name
     function requestCreateOrder(uint256[] calldata metadata)
         external
         payable
     {
-
+        // TODO Chris - add comment why we are using this metadata array
         // uint256 _validFrom = metadata[0];
         // uint256 _validTo = metadata[1];
         // uint256 _price = metadata[2];
@@ -193,7 +194,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
 
         address tokenPriceAddress = voucherKernel.getVoucherPriceToken(_tokenIdSupply);
         address tokenDepositAddress = voucherKernel.getVoucherDepositToken(_tokenIdSupply);
-
+        // TODO Chris - Can we do it with only one v,r,s, permit and transferFrom?
         IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), price, deadline, vPrice, rPrice, sPrice);
         IERC20WithPermit(tokenDepositAddress).permit(msg.sender, address(this), depositBu, deadline, vDeposit, rDeposit, sDeposit);
 
@@ -267,7 +268,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         } //end-for   
         
         if (voucherDetails.amount2pool > 0) {
-            address payable poolAddress = address(uint160(owner()));
+            address payable poolAddress = address(uint160(owner())); // TODO Chris - Why we need uint160?
             _withdraw(poolAddress, voucherDetails.amount2pool);
         }
         
@@ -303,6 +304,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
             voucherDetails.amount2issuer += voucherDetails.price;
         }
 
+        // TODO Chris - Can we have the same approach as above, first collect all amounts in one variable and do the payout at the end? So we save gas from multiple transfers
         if(voucherDetails.paymentMethod == TKN_ETH || voucherDetails.paymentMethod == TKN_TKN) {
             address addressTokenPrice = voucherKernel.getVoucherPriceToken(voucherDetails.tokenIdSupply);
             IERC20WithPermit(addressTokenPrice).transfer(voucherDetails.issuer, voucherDetails.price);
@@ -345,7 +347,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         );
     }
 
-    function releaseDeposits(VoucherDetails memory voucherDetails) internal returns (uint256, uint256, uint256) {
+    function releaseDeposits(VoucherDetails memory voucherDetails) internal returns (uint256, uint256, uint256) { // TODO Chris - Missing return, or remove the returns in declaration
 
         //first, depositSe
         if (isStatus(voucherDetails.currStatus.status, idxComplain)) {
