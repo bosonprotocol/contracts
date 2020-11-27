@@ -4,8 +4,6 @@ const config = require('./config.json')
 const BN = web3.utils.BN
 const truffleAssert = require('truffle-assertions')
 
-let instance;
-
 const { ecsign } = require('ethereumjs-util');
 
 const {
@@ -22,11 +20,11 @@ class Utils {
     }
 
     setContracts(erc1155721, voucherKernel, cashier, bsnTokenPrice, bsnTokenDeposit) {
-            this.contractERC1155ERC721 = erc1155721
-            this.contractVoucherKernel = voucherKernel
-            this.contractCashier = cashier
-            this.contractBSNTokenPrice = bsnTokenPrice
-            this.contractBSNTokenDeposit = bsnTokenDeposit
+        this.contractERC1155ERC721 = erc1155721
+        this.contractVoucherKernel = voucherKernel
+        this.contractCashier = cashier
+        this.contractBSNTokenPrice = bsnTokenPrice
+        this.contractBSNTokenDeposit = bsnTokenDeposit
     }
 
     async requestCreateOrder_ETH_ETH(seller, from, to) {
@@ -34,7 +32,7 @@ class Utils {
         const qty = 10
         const txValue = new BN(sellerDepoist.toString()).mul(new BN(qty))
 
-        let txOrder = await this.contractCashier.requestCreateOrder(
+        let txOrder = await this.contractCashier.requestCreateOrder_ETH_ETH(
             [from, 
             to, 
             helpers.product_price, 
@@ -50,7 +48,7 @@ class Utils {
         return (txOrder.logs[0].args._tokenIdSupply).toString() 
     }
 
-    async requestCreateOrder_WithPermit_TKN_TKN(seller, from, to, sellerDeposit, qty) {
+    async requestCreateOrder_TKN_TKN_WithPermit(seller, from, to, sellerDeposit, qty) {
         const txValue = new BN(sellerDeposit.toString()).mul(new BN(qty))
         const deadline = toWei(1)
 
@@ -69,7 +67,7 @@ class Utils {
             Buffer.from(digest.slice(2), 'hex'),
             Buffer.from(seller.pk.slice(2), 'hex'));
        
-        let txOrder = await this.contractCashier.requestCreateOrderTknTknWithPermit(
+        let txOrder = await this.contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
             this.contractBSNTokenPrice.address,
             this.contractBSNTokenDeposit.address,
             txValue.toString(),
@@ -91,7 +89,7 @@ class Utils {
         return (txOrder.logs[0].args._tokenIdSupply).toString()
     }
 
-    async requestCreateOrder_WithPermit_ETH_TKN(seller, from, to, sellerDeposit, qty) {
+    async requestCreateOrder_ETH_TKN_WithPermit(seller, from, to, sellerDeposit, qty) {
         const txValue = new BN(sellerDeposit.toString()).mul(new BN(qty));
         const deadline = toWei(1)
         const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
@@ -110,7 +108,7 @@ class Utils {
             Buffer.from(seller.pk.slice(2), 'hex'));
 
 
-        let txOrder = await this.contractCashier.requestCreateOrderEthTknWithPermit(
+        let txOrder = await this.contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
             this.contractBSNTokenDeposit.address,
             txValue,
             deadline,
@@ -131,7 +129,7 @@ class Utils {
         return (txOrder.logs[0].args._tokenIdSupply).toString()
     }
 
-    async requestCreateOrder_WithPermit_TKN_ETH(seller, from, to, sellerDeposit, qty) {
+    async requestCreateOrder_TKN_ETH_WithPermit(seller, from, to, sellerDeposit, qty) {
         const txValue = new BN(sellerDeposit.toString()).mul(new BN(qty));
 
         let txOrder = await this.contractCashier.requestCreateOrder_TKN_ETH_WithPermit(
@@ -153,7 +151,7 @@ class Utils {
         return (txOrder.logs[0].args._tokenIdSupply).toString()
     }
 
-    async commitToBuy_WithPermit_TKN_TKN(buyer, seller, tokenSupplyId) {
+    async commitToBuy_TKN_TKN_WithPermit(buyer, seller, tokenSupplyId) {
         const buyerDeposit = helpers.buyer_deposit;
         const price = helpers.product_price;
         const txValue = new BN(buyerDeposit).add(new BN(price))
@@ -197,7 +195,7 @@ class Utils {
         let rPrice = VRS_PRICE.r
         let sPrice = VRS_PRICE.s
 
-        let CommitTx = await this.contractCashier.requestVoucherTknTKnWithPermit(
+        let CommitTx = await this.contractCashier.requestVoucher_TKN_TKN_WithPermit(
             tokenSupplyId,
             seller.address,
             txValue.toString(),
@@ -212,7 +210,7 @@ class Utils {
         return filtered.returnValues['_tokenIdVoucher']
     }
 
-    async commitToBuy_WithPermit_ETH_TKN(buyer, seller, tokenSupplyId) {
+    async commitToBuy_ETH_TKN_WithPermit(buyer, seller, tokenSupplyId) {
         const buyerDeposit = helpers.buyer_deposit;
         const price = helpers.product_price;
         const depositInTokens = new BN(buyerDeposit)
@@ -236,7 +234,7 @@ class Utils {
             Buffer.from(buyer.pk.slice(2), 'hex'));
 
 
-        let txOrder = await this.contractCashier.requestVoucherEthTknWithPermit(
+        let txOrder = await this.contractCashier.requestVoucher_ETH_TKN_WithPermit(
             tokenSupplyId,
             sellerAddress,
             buyerDeposit.toString(),
@@ -257,7 +255,7 @@ class Utils {
         const price = helpers.product_price;
         const txValue = new BN(buyerDeposit).add(new BN(price))
 
-        let CommitTx = await this.contractCashier.requestVoucher(tokenSupplyId, seller, { from: buyer, value: txValue.toString() });
+        let CommitTx = await this.contractCashier.requestVoucher_ETH_ETH(tokenSupplyId, seller, { from: buyer, value: txValue.toString() });
 
         let nestedValue = (await truffleAssert.createTransactionResult(this.contractVoucherKernel, CommitTx.tx)).logs
 
@@ -266,7 +264,7 @@ class Utils {
 
     }
 
-    async commitToBuy_WithPermit_TKN_ETH(buyer, seller, tokenSupplyId) {
+    async commitToBuy_TKN_ETH_WithPermit(buyer, seller, tokenSupplyId) {
         const buyerDeposit = helpers.buyer_deposit;
         const price = helpers.product_price;
         const sellerAddress = seller.address;

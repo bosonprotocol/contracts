@@ -33,22 +33,22 @@ class UtilsBuilder {
     }
 
     ETH_TKN_WithPermit() {
-        this.utils.createOrder = this.utils.requestCreateOrder_WithPermit_ETH_TKN
-        this.utils.commitToBuy = this.utils.commitToBuy_WithPermit_ETH_TKN
+        this.utils.createOrder = this.utils.requestCreateOrder_ETH_TKN_WithPermit
+        this.utils.commitToBuy = this.utils.commitToBuy_ETH_TKN_WithPermit
         
         return this
     }
 
     TKN_TKN_WithPermit() {
-        this.utils.createOrder = this.utils.requestCreateOrder_WithPermit_TKN_TKN
-        this.utils.commitToBuy = this.utils.commitToBuy_WithPermit_TKN_TKN
+        this.utils.createOrder = this.utils.requestCreateOrder_TKN_TKN_WithPermit
+        this.utils.commitToBuy = this.utils.commitToBuy_TKN_TKN_WithPermit
 
         return this
     }
 
     TKN_ETH_WithPermit() {
-        this.utils.createOrder = this.utils.requestCreateOrder_WithPermit_TKN_ETH
-        this.utils.commitToBuy = this.utils.commitToBuy_WithPermit_TKN_ETH
+        this.utils.createOrder = this.utils.requestCreateOrder_TKN_ETH_WithPermit
+        this.utils.commitToBuy = this.utils.commitToBuy_TKN_ETH_WithPermit
 
         return this
     }

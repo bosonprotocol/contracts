@@ -81,7 +81,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         @param metadata metadata which is required for creation of a voucher
      */
     // TODO Chris - add EthEth to the name
-    function requestCreateOrder(uint256[] calldata metadata)
+    function requestCreateOrder_ETH_ETH(uint256[] calldata metadata)
         external
         payable
     {
@@ -117,7 +117,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
     }
 
-    function requestCreateOrderTknTknWithPermit(
+    function requestCreateOrder_TKN_TKN_WithPermit(
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent,
@@ -153,7 +153,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
     }
 
-    function requestCreateOrderEthTknWithPermit(
+    function requestCreateOrder_ETH_TKN_WithPermit(
         address _tokenDepositAddress,
         uint256 _tokensSent,
         uint256 deadline,
@@ -220,7 +220,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
      * @param _tokenIdSupply    ID of the supply token
      * @param _issuer           Address of the issuer of the supply token
      */
-    function requestVoucher(uint256 _tokenIdSupply, address _issuer)
+    function requestVoucher_ETH_ETH(uint256 _tokenIdSupply, address _issuer)
         external
         payable
         nonReentrant
@@ -239,7 +239,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         escrow[msg.sender] += weiReceived;
     }
     
-    function requestVoucherTknTKnWithPermit(
+    function requestVoucher_TKN_TKN_WithPermit(
         uint256 _tokenIdSupply, 
         address _issuer,
         uint256 _tokensSent,
@@ -268,7 +268,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         IERC20WithPermit(tokenDepositAddress).transferFrom(msg.sender, address(this), depositBu);
     }
 
-    function requestVoucherEthTknWithPermit(
+    function requestVoucher_ETH_TKN_WithPermit(
         uint256 _tokenIdSupply, 
         address _issuer,
         uint256 _tokensDeposit,
