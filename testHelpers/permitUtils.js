@@ -5,8 +5,11 @@ const {
     keccak256,
     defaultAbiCoder,
     toUtf8Bytes,
-    solidityPack
+    solidityPack,
+    AbiCoder,
+    Interface,
 } = require('ethers').utils;
+
 
 const PERMIT_TYPEHASH = keccak256(
     toUtf8Bytes('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)')
@@ -61,9 +64,43 @@ function getDomainSeparator(name, tokenAddress) {
     )
 }
 
+async function getEncodedTopic(receipt, abi, eventName) {
+    const interface = new Interface(abi)
+    for (const log in receipt.logs) {
+        const topics = receipt.logs[log].topics;
+        for (const index in topics) {
+
+            const encodedTopic = topics[index];
+
+            try {
+                // CHECK IF  TOPIC CORRESPONDS TO THE EVENT GIVEN TO FN
+                let event = await interface.getEvent(encodedTopic);
+
+                if (event.name == eventName) return encodedTopic
+            } catch (error) {
+                // breaks silently as we do not need to do anything if the there is not such an event
+            }
+
+        }
+    }
+
+ 
+    return ''
+}
+
+async function decodeData(receipt, encodedTopic, paramsArr) {
+    const decoder = new AbiCoder();
+
+    const encodedData = receipt.logs.filter(e => e.topics.includes(encodedTopic))[0].data
+    return decoder.decode(paramsArr, encodedData)
+
+}
+
 
 module.exports = {
     PERMIT_TYPEHASH,
     toWei,
-    getApprovalDigest
+    getApprovalDigest,
+    getEncodedTopic,
+    decodeData
 }

@@ -85,7 +85,10 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         external
         payable
     {
-        // TODO Chris - add comment why we are using this metadata array
+        // Metadata array is used as in some scenarios we need several more params, as we need to recover 
+        // onwer address in order to permit the contract to transfer funds in his behalf. 
+        // Since the params get too many, we end up in situation that the stack is too deep.
+        
         // uint256 _validFrom = metadata[0];
         // uint256 _validTo = metadata[1];
         // uint256 _price = metadata[2];
@@ -150,6 +153,40 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
     }
 
+    function requestCreateOrderEthTknWithPermit(
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256[] calldata metadata
+        )
+        notZeroAddress(_tokenDepositAddress)
+        external
+        payable
+    {
+        // uint256 _validFrom = metadata[0];
+        // uint256 _validTo = metadata[1];
+        // uint256 _price = metadata[2];
+        // uint256 _depositSe = metadata[3];
+        // uint256 _depositBu = metadata[4];
+        // uint256 _quantity = metadata[5];
+        
+        require(metadata[3] * metadata[5] == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        
+        IERC20WithPermit(_tokenDepositAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
+        
+        //TODO rename this function as it returns tokenSupplyID
+        uint256 tokenIdSupply = voucherKernel.createAssetPromise(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
+        
+        voucherKernel.createPaymentMethod(tokenIdSupply, ETH_TKN, address(0), _tokenDepositAddress);
+
+        IERC20WithPermit(_tokenDepositAddress).transferFrom(msg.sender, address(this), _tokensSent);
+        
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
+    }
+
     
     /**
      * @notice Consumer requests/buys a voucher by filling an order and receiving a Voucher Token in return
@@ -198,14 +235,37 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), price, deadline, vPrice, rPrice, sPrice);
         IERC20WithPermit(tokenDepositAddress).permit(msg.sender, address(this), depositBu, deadline, vDeposit, rDeposit, sDeposit);
 
-        //get voucher token - extract ERC721 from _voucherOrderId to msg.sender
-        // uint256 voucherTokenId = voucherKernel.fillOrder(_tokenIdSupply, _issuer, msg.sender);
-
-
         voucherKernel.fillOrder(_tokenIdSupply, _issuer, msg.sender);
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(msg.sender, address(this), price);
         IERC20WithPermit(tokenDepositAddress).transferFrom(msg.sender, address(this), depositBu);
+    }
+
+    function requestVoucherEthTknWithPermit(
+        uint256 _tokenIdSupply, 
+        address _issuer,
+        uint256 _tokensDeposit,
+        uint256 deadline,
+        uint8 v, bytes32 r, bytes32 s
+        )
+        external
+        payable
+        nonReentrant
+    {
+
+        //checks
+        (uint256 price, uint256 depositBu) = voucherKernel.getBuyerOrderCosts(_tokenIdSupply);
+        require(price + depositBu == _tokensDeposit + msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+
+        address tokenDepositAddress = voucherKernel.getVoucherDepositToken(_tokenIdSupply);
+        IERC20WithPermit(tokenDepositAddress).permit(msg.sender, address(this), depositBu, deadline, v, r, s);
+
+        voucherKernel.fillOrder(_tokenIdSupply, _issuer, msg.sender);
+
+        IERC20WithPermit(tokenDepositAddress).transferFrom(msg.sender, address(this), depositBu);
+
+         //record funds in escrow ...
+        escrow[msg.sender] += price;
     }
 
 
