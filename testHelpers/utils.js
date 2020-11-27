@@ -15,23 +15,21 @@ const {
 } = require('../testHelpers/permitUtils');
 
 class Utils {
-    static getInstance(erc1155721, voucherKernel, cashier, bsnTokenPrice, bsnTokenDeposit) {
-        if (!instance) {
-            return new Utils(erc1155721, voucherKernel, cashier, bsnTokenPrice, bsnTokenDeposit)
-        }
 
-        return instance;
+    constructor() {
+        this.createOrder = ''
+        this.commitToBuy = ''
     }
 
-    constructor(erc1155721, voucherKernel, cashier, bsnTokenPrice, bsnTokenDeposit) {
-        this.contractERC1155ERC721 = erc1155721
-        this.contractVoucherKernel = voucherKernel
-        this.contractCashier = cashier
-        this.contractBSNTokenPrice = bsnTokenPrice
-        this.contractBSNTokenDeposit = bsnTokenDeposit
+    setContracts(erc1155721, voucherKernel, cashier, bsnTokenPrice, bsnTokenDeposit) {
+            this.contractERC1155ERC721 = erc1155721
+            this.contractVoucherKernel = voucherKernel
+            this.contractCashier = cashier
+            this.contractBSNTokenPrice = bsnTokenPrice
+            this.contractBSNTokenDeposit = bsnTokenDeposit
     }
 
-    async requestCreateOrder(seller, from, to) {
+    async requestCreateOrder_ETH_ETH(seller, from, to) {
         const sellerDepoist = helpers.seller_deposit;
         const qty = 10
         const txValue = new BN(sellerDepoist.toString()).mul(new BN(qty))
@@ -52,9 +50,7 @@ class Utils {
         return (txOrder.logs[0].args._tokenIdSupply).toString() 
     }
 
-
-
-    async requestCreateOrderWithPermit(seller, from, to, sellerDeposit, qty) {
+    async requestCreateOrder_WithPermit_TKN_TKN(seller, from, to, sellerDeposit, qty) {
         const txValue = new BN(sellerDeposit.toString()).mul(new BN(qty))
         const deadline = toWei(1)
 
@@ -95,7 +91,7 @@ class Utils {
         return (txOrder.logs[0].args._tokenIdSupply).toString()
     }
 
-    async requestVoucher_EthTkn_WithPermit(seller, from, to, sellerDeposit, qty) {
+    async requestCreateOrder_WithPermit_ETH_TKN(seller, from, to, sellerDeposit, qty) {
         const txValue = new BN(sellerDeposit.toString()).mul(new BN(qty));
         const deadline = toWei(1)
         const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
@@ -135,7 +131,7 @@ class Utils {
         return (txOrder.logs[0].args._tokenIdSupply).toString()
 }
 
-    async commitToBuyWithPermitTknTkn(buyer, seller, tokenSupplyId) {
+    async commitToBuy_WithPermit_TKN_TKN(buyer, seller, tokenSupplyId) {
         const buyerDeposit = helpers.buyer_deposit;
         const price = helpers.product_price;
         const txValue = new BN(buyerDeposit).add(new BN(price))
@@ -194,7 +190,7 @@ class Utils {
         return filtered.returnValues['_tokenIdVoucher']
     }
 
-    async commitToBuy_ETH_TKN_WithPermit(buyer, seller, tokenSupplyId) {
+    async commitToBuy_WithPermit_ETH_TKN(buyer, seller, tokenSupplyId) {
         const buyerDeposit = helpers.buyer_deposit;
         const price = helpers.product_price;
         const depositInTokens = new BN(buyerDeposit)
@@ -233,8 +229,7 @@ class Utils {
         return filtered.returnValues['_tokenIdVoucher']
     }
 
-
-    async commitToBuy(buyer, seller, tokenSupplyId) {
+    async commitToBuy_ETH_ETH(buyer, seller, tokenSupplyId) {
 
         const buyerDeposit = helpers.buyer_deposit;
         const price = helpers.product_price;

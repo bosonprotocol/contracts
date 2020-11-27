@@ -4,6 +4,7 @@ chai.use(chaiAsPromised)
 const assert = chai.assert
 
 const BN = web3.utils.BN
+const UtilsBuilder = require('../testHelpers/builder')
 const Utils = require('../testHelpers/utils')
 let utils
 
@@ -53,14 +54,18 @@ contract("Cashier withdrawals ", async accounts => {
                 await contractVoucherKernel.setComplainPeriod(60); //60 seconds
                 await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
 
-                utils = Utils.getInstance(contractERC1155ERC721, contractVoucherKernel, contractCashier)
+                utils = UtilsBuilder
+                    .NEW()
+                    .ETH_ETH()
+                    .build(contractERC1155ERC721, contractVoucherKernel, contractCashier)
 
                 const timestamp = await Utils.getCurrTimestamp()
 
-                TOKEN_SUPPLY_ID = await utils.requestCreateOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
             })
 
             it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
+
                 const expectedBuyerAmount = new BN(helpers.buyer_deposit).add(new BN(helpers.product_price)).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.3 + 0.04 + 0.025
                 const expectedSellerAmount = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
                 const expectedEscrowAmount = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
@@ -327,8 +332,13 @@ contract("Cashier withdrawals ", async accounts => {
 
                 await contractVoucherKernel.setComplainPeriod(60); //60 seconds
                 await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
-                utils = Utils.getInstance(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
 
+                utils = UtilsBuilder
+                    .NEW()
+                    .withPermit()
+                    .TKN_TKN()
+                    .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+                 
                 const timestamp = await Utils.getCurrTimestamp()
 
                 const supplyQty = 1
@@ -338,7 +348,7 @@ contract("Cashier withdrawals ", async accounts => {
                 await utils.mintTokens('contractBSNTokenPrice', Buyer, helpers.product_price);
                 await utils.mintTokens('contractBSNTokenDeposit', Buyer, helpers.buyer_deposit);
 
-                TOKEN_SUPPLY_ID = await utils.requestCreateOrderWithPermit(
+                TOKEN_SUPPLY_ID = await utils.createOrder(
                     {
                         address: Seller,
                         pk: Seller_PK
@@ -351,7 +361,8 @@ contract("Cashier withdrawals ", async accounts => {
             })
 
             it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuyWithPermitTknTkn(
+
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
@@ -399,7 +410,7 @@ contract("Cashier withdrawals ", async accounts => {
             });
 
             it("COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuyWithPermitTknTkn(
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
@@ -449,7 +460,7 @@ contract("Cashier withdrawals ", async accounts => {
             });
 
             it("COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuyWithPermitTknTkn(
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
@@ -500,7 +511,7 @@ contract("Cashier withdrawals ", async accounts => {
             });
 
             it("COMMIT->REFUND->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuyWithPermitTknTkn(
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
@@ -548,7 +559,7 @@ contract("Cashier withdrawals ", async accounts => {
             });
 
             it("COMMIT->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuyWithPermitTknTkn(
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
@@ -596,7 +607,7 @@ contract("Cashier withdrawals ", async accounts => {
             });
 
             it("COMMIT->REDEEM->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuyWithPermitTknTkn(
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
@@ -643,7 +654,7 @@ contract("Cashier withdrawals ", async accounts => {
             });
 
             it("COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuyWithPermitTknTkn(
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
@@ -692,7 +703,7 @@ contract("Cashier withdrawals ", async accounts => {
             });
 
             it("COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuyWithPermitTknTkn(
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
@@ -741,7 +752,7 @@ contract("Cashier withdrawals ", async accounts => {
             });
 
             it("COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuyWithPermitTknTkn(
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
@@ -810,7 +821,6 @@ contract("Cashier withdrawals ", async accounts => {
             })
         })
        
-
         describe('ETH - TKN [WITH PERMIT]', async () => {
             let balanceBuyerFromPayment = new BN(0)
             let balanceBuyerFromDesosits = new BN(0)
@@ -843,7 +853,13 @@ contract("Cashier withdrawals ", async accounts => {
 
                 await contractVoucherKernel.setComplainPeriod(60); //60 seconds
                 await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
-                utils = Utils.getInstance(contractERC1155ERC721, contractVoucherKernel, contractCashier, '', contractBSNTokenDeposit)
+
+
+                utils = UtilsBuilder
+                    .NEW()
+                    .withPermit()
+                    .ETH_TKN()
+                    .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
 
                 const timestamp = await Utils.getCurrTimestamp()
 
@@ -853,7 +869,7 @@ contract("Cashier withdrawals ", async accounts => {
                 await utils.mintTokens('contractBSNTokenDeposit', Seller, tokensToMint);
                 await utils.mintTokens('contractBSNTokenDeposit', Buyer, helpers.buyer_deposit);
 
-                TOKEN_SUPPLY_ID = await utils.requestVoucher_EthTkn_WithPermit(
+                TOKEN_SUPPLY_ID = await utils.createOrder(
                     {
                         address: Seller,
                         pk: Seller_PK
@@ -866,7 +882,8 @@ contract("Cashier withdrawals ", async accounts => {
             })
 
             it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy_ETH_TKN_WithPermit(
+
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
@@ -916,7 +933,7 @@ contract("Cashier withdrawals ", async accounts => {
             });
 
             it("COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy_ETH_TKN_WithPermit(
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
@@ -968,7 +985,7 @@ contract("Cashier withdrawals ", async accounts => {
             });
 
             it("COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy_ETH_TKN_WithPermit(
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
@@ -1021,7 +1038,7 @@ contract("Cashier withdrawals ", async accounts => {
             });
 
             it("COMMIT->REFUND->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy_ETH_TKN_WithPermit(
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
@@ -1071,7 +1088,7 @@ contract("Cashier withdrawals ", async accounts => {
             });
 
             it("COMMIT->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy_ETH_TKN_WithPermit(
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
@@ -1121,7 +1138,7 @@ contract("Cashier withdrawals ", async accounts => {
             });
 
             it("COMMIT->REDEEM->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy_ETH_TKN_WithPermit(
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
@@ -1170,7 +1187,7 @@ contract("Cashier withdrawals ", async accounts => {
             });
 
             it("COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy_ETH_TKN_WithPermit(
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
@@ -1221,7 +1238,7 @@ contract("Cashier withdrawals ", async accounts => {
             });
 
             it("COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy_ETH_TKN_WithPermit(
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
@@ -1272,7 +1289,7 @@ contract("Cashier withdrawals ", async accounts => {
             });
 
             it("COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy_ETH_TKN_WithPermit(
+                const voucherID = await utils.commitToBuy(
                     {
                         address: Buyer,
                         pk: Buyer_PK
