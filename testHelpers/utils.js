@@ -129,7 +129,29 @@ class Utils {
         );
 
         return (txOrder.logs[0].args._tokenIdSupply).toString()
-}
+    }
+
+    async requestCreateOrder_WithPermit_TKN_ETH(seller, from, to, sellerDeposit, qty) {
+        const txValue = new BN(sellerDeposit.toString()).mul(new BN(qty));
+
+        let txOrder = await this.contractCashier.requestCreateOrder_TKN_ETH_WithPermit(
+            this.contractBSNTokenPrice.address,
+            [
+                from,
+                to,
+                helpers.product_price,
+                sellerDeposit,
+                helpers.buyer_deposit,
+                qty
+            ],
+            {
+                from: seller.address,
+                value: txValue.toString()
+            }
+        );
+
+        return (txOrder.logs[0].args._tokenIdSupply).toString()
+    }
 
     async commitToBuy_WithPermit_TKN_TKN(buyer, seller, tokenSupplyId) {
         const buyerDeposit = helpers.buyer_deposit;
@@ -244,6 +266,44 @@ class Utils {
 
     }
 
+    async commitToBuy_WithPermit_TKN_ETH(buyer, seller, tokenSupplyId) {
+        const buyerDeposit = helpers.buyer_deposit;
+        const price = helpers.product_price;
+        const sellerAddress = seller.address;
+
+        const deadline = toWei(1)
+
+        const nonce1 = await this.contractBSNTokenPrice.nonces(buyer.address);
+
+        const digestDeposit = await getApprovalDigest(
+            this.contractBSNTokenPrice,
+            buyer.address,
+            this.contractCashier.address,
+            price,
+            nonce1,
+            deadline
+        )
+
+        let { v, r, s } = ecsign(
+            Buffer.from(digestDeposit.slice(2), 'hex'),
+            Buffer.from(buyer.pk.slice(2), 'hex'));
+
+
+        let txOrder = await this.contractCashier.requestVoucher_TKN_ETH_WithPermit(
+            tokenSupplyId,
+            sellerAddress,
+            price,
+            deadline,
+            v, r, s,
+            { from: buyer.address, value: helpers.buyer_deposit }
+        );
+
+        let nestedValue = (await truffleAssert.createTransactionResult(this.contractVoucherKernel, txOrder.tx)).logs
+
+        let filtered = nestedValue.filter(e => e.event == 'LogVoucherDelivered')[0]
+        return filtered.returnValues['_tokenIdVoucher']
+    }
+
     async refund(voucherID, buyer) {
         await this.contractVoucherKernel.refund(voucherID, { from: buyer });
     }
@@ -270,10 +330,10 @@ class Utils {
         return tx
     }
 
-    calcTotalAmountToRecipients(event, distributionAmounts) {
-        if (event._to == config.accounts.buyer) {
+    calcTotalAmountToRecipients(event, distributionAmounts, recipient) {
+        if (event[recipient] == config.accounts.buyer) {
             distributionAmounts.buyerAmount = new BN(distributionAmounts.buyerAmount.toString()).add(new BN(event._payment.toString()))
-        } else if (event._to == config.accounts.seller) {
+        } else if (event[recipient] == config.accounts.seller) {
             distributionAmounts.sellerAmount = new BN(distributionAmounts.sellerAmount.toString()).add(new BN(event._payment.toString()))
         } else {
             distributionAmounts.escrowAmount = new BN(distributionAmounts.escrowAmount.toString()).add(new BN(event._payment.toString()))

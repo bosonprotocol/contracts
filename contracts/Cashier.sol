@@ -187,6 +187,33 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
     }
 
+
+    function requestCreateOrder_TKN_ETH_WithPermit(
+        address _tokenPriceAddress,
+        uint256[] calldata metadata
+        )
+        notZeroAddress(_tokenPriceAddress)
+        external
+        payable
+    {
+        // uint256 _validFrom = metadata[0];
+        // uint256 _validTo = metadata[1];
+        // uint256 _price = metadata[2];
+        // uint256 _depositSe = metadata[3];
+        // uint256 _depositBu = metadata[4];
+        // uint256 _quantity = metadata[5];
+        
+        require(metadata[3] * metadata[5] == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        
+        //TODO rename this function as it returns tokenSupplyID
+        uint256 tokenIdSupply = voucherKernel.createAssetPromise(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
+        voucherKernel.createPaymentMethod(tokenIdSupply, TKN_ETH, _tokenPriceAddress, address(0));
+
+        escrow[msg.sender] += msg.value;
+
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
+    }
+
     
     /**
      * @notice Consumer requests/buys a voucher by filling an order and receiving a Voucher Token in return
@@ -266,6 +293,33 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
 
          //record funds in escrow ...
         escrow[msg.sender] += price;
+    }
+
+    function requestVoucher_TKN_ETH_WithPermit(
+        uint256 _tokenIdSupply, 
+        address _issuer,
+        uint256 _tokensPrice,
+        uint256 deadline,
+        uint8 v, bytes32 r, bytes32 s
+        )
+        external
+        payable
+        nonReentrant
+    {
+
+        //checks
+        (uint256 price, uint256 depositBu) = voucherKernel.getBuyerOrderCosts(_tokenIdSupply);
+        require(price + depositBu == _tokensPrice + msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+
+        address tokenPriceAddress = voucherKernel.getVoucherPriceToken(_tokenIdSupply);
+        IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), price, deadline, v, r, s);
+
+        voucherKernel.fillOrder(_tokenIdSupply, _issuer, msg.sender);
+
+        IERC20WithPermit(tokenPriceAddress).transferFrom(msg.sender, address(this), price);
+
+         //record funds in escrow ...
+        escrow[msg.sender] += msg.value;
     }
 
 
