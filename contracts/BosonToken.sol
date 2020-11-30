@@ -21,7 +21,6 @@ contract BosonToken is ERC20WithPermit, AccessControl {
         ERC20WithPermit(name, symbol)
         public  
     {
-        _mint(msg.sender, 100 * 10 ** uint(decimals));
         owner = msg.sender;
 
         _setupRole(MINTER_ROLE, msg.sender);
