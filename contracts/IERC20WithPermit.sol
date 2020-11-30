@@ -34,7 +34,6 @@ interface IERC20WithPermit {
         uint256 value
     ) external returns (bool);
 
-    // TODO
     function DOMAIN_SEPARATOR() external view returns (bytes32);
 
     function PERMIT_TYPEHASH() external pure returns (bytes32);
