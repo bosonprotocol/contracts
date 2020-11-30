@@ -94,7 +94,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         external
         payable
     {
-        require(metadata[3] * metadata[5] == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(metadata[3].mul(metadata[5])  == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         uint256 tokenIdSupply = voucherKernel.createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
         
@@ -250,7 +250,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
 
         //checks
         (uint256 price, uint256 depositBu) = voucherKernel.getBuyerOrderCosts(_tokenIdSupply);
-        require(price.add(depositBu) == _tokensDeposit + msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(price.add(depositBu) == _tokensDeposit.add(msg.value), "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         address tokenDepositAddress = voucherKernel.getVoucherDepositToken(_tokenIdSupply);
         IERC20WithPermit(tokenDepositAddress).permit(msg.sender, address(this), depositBu, deadline, v, r, s);
