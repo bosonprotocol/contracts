@@ -38,7 +38,7 @@ contract("Cashier withdrawals ", async accounts => {
         escrowAmount: new BN(0)
     }
 
-    describe.only('Withdraw scenarios', function () {
+    describe('Withdraw scenarios', function () {
         
         describe('ETH - ETH', async () => {
             

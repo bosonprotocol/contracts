@@ -91,7 +91,7 @@ contract("Voucher tests", async accounts => {
 
 		it("adding one new order / promise", async () => {		
 
-			let txOrder = await contractCashier.requestCreateOrder([helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1], {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
+			let txOrder = await contractCashier.requestCreateOrder_ETH_ETH([helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1], {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
 
 			//would need truffle-events as the event emitted is from a nested contract, so truffle-assert doesn't detect it
 			// truffleAssert.eventEmitted(txOrder, 'LogOrderCreated', (ev) => {
@@ -113,7 +113,7 @@ contract("Voucher tests", async accounts => {
 
 		it("adding second order", async () => {		
 
-			let txOrder = await contractCashier.requestCreateOrder([helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE2, helpers.PROMISE_DEPOSITSE2, helpers.PROMISE_DEPOSITBU2, helpers.ORDER_QUANTITY2], {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE2});
+			let txOrder = await contractCashier.requestCreateOrder_ETH_ETH([helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE2, helpers.PROMISE_DEPOSITSE2, helpers.PROMISE_DEPOSITBU2, helpers.ORDER_QUANTITY2], {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE2});
 
 			truffleAssert.eventEmitted(txOrder, 'LogOrderCreated', (ev) => {
 			    tokenSupplyKey2 = ev._tokenIdSupply;
@@ -125,46 +125,33 @@ contract("Voucher tests", async accounts => {
 
 		it("fill one order (aka buy a voucher)", async () => {			
 
-			let txFillOrder = await contractCashier.requestVoucher(tokenSupplyKey1, Seller, {from: Buyer, to: contractCashier.address, value: helpers.PROMISE_PRICE1 + helpers.PROMISE_DEPOSITBU1});
+			let txFillOrder = await contractCashier.requestVoucher_ETH_ETH(tokenSupplyKey1, Seller, {from: Buyer, to: contractCashier.address, value: helpers.PROMISE_PRICE1 + helpers.PROMISE_DEPOSITBU1});
+			let internalTx = (await truffleAssert.createTransactionResult(contractVoucherKernel, txFillOrder.tx))
 
-			//move events from VoucherKernel to Cashier:
-			// truffleAssert.eventEmitted(txFillOrder, 'LogVoucherDelivered', (ev) => {
-			//     tokenVoucherKey1 = ev._tokenIdVoucher;
-			// 	console.log('heeeeeeeeeeeeee');
-			//     return ev._tokenIdSupply.toString() === tokenSupplyKey1.toString();
-			// }, "order1 not filled successfully");
+			truffleAssert.eventEmitted(internalTx, 'LogVoucherDelivered', (ev) => {
+				return ev._issuer === Seller;
+			}, "order1 not created successfully");
 
-			console.log('fill order tx: ', txFillOrder.tx);
-			
-			let nestedValue = (await truffleAssert.createTransactionResult(contractVoucherKernel, txFillOrder.tx)).logs
-
-			let filtered = nestedValue.filter(e => e.event == 'LogVoucherDelivered')[0]
+			let filtered = internalTx.logs.filter(e => e.event == 'LogVoucherDelivered')[0]
 			tokenVoucherKey1 = filtered.returnValues['_tokenIdVoucher']
-			
 		});	
 
 
 		it("fill second order (aka buy a voucher)", async () => {			
 
-			let txFillOrder = await contractCashier.requestVoucher(tokenSupplyKey2, Seller, {from: Buyer, to: contractCashier.address, value: helpers.PROMISE_PRICE2 + helpers.PROMISE_DEPOSITBU2});
+			let txFillOrder = await contractCashier.requestVoucher_ETH_ETH(tokenSupplyKey2, Seller, {from: Buyer, to: contractCashier.address, value: helpers.PROMISE_PRICE2 + helpers.PROMISE_DEPOSITBU2});
+			let internalTx = (await truffleAssert.createTransactionResult(contractVoucherKernel, txFillOrder.tx))
 
-			// truffleAssert.eventEmitted(txFillOrder, 'LogVoucherDelivered', (ev) => {
-			//     tokenVoucherKey2 = ev._tokenIdVoucher;
-
-			//     return ev._tokenIdSupply.toString() === tokenSupplyKey2.toString();
-			// }, "order1 not filled successfully");
-			
-			let nestedValue = (await truffleAssert.createTransactionResult(contractVoucherKernel, txFillOrder.tx)).logs
-
-			let filtered = nestedValue.filter(e => e.event == 'LogVoucherDelivered')[0]
-			tokenVoucherKey2 = filtered.returnValues['_tokenIdVoucher']
-			
+			truffleAssert.eventEmitted(internalTx, 'LogVoucherDelivered', (ev) => {
+			    tokenVoucherKey2 = ev._tokenIdVoucher;
+			    return ev._tokenIdSupply.toString() === tokenSupplyKey2.toString();
+			}, "order1 not filled successfully");
 		});			
 
 		//in prototype, everyone can create an order
 		// it("must fail: unauthorized adding of new order", async () => {			
 
-		// 	truffleAssert.reverts(contractCashier.requestCreateOrder(promiseKey1, helpers.ORDER_QUANTITY1, {from: Attacker, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1}),
+		// 	truffleAssert.reverts(contractCashier.requestCreateOrder_ETH_ETH(promiseKey1, helpers.ORDER_QUANTITY1, {from: Attacker, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1}),
 		// 		truffleAssert.ErrorType.REVERT
 		// 	);			
 			
@@ -173,7 +160,7 @@ contract("Voucher tests", async accounts => {
 
 		it("must fail: adding new order with incorrect value sent", async () => {	
 
-			truffleAssert.reverts(contractCashier.requestCreateOrder([helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1], {from: Seller, to: contractCashier.address, value: 0}),
+			truffleAssert.reverts(contractCashier.requestCreateOrder_ETH_ETH([helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1], {from: Seller, to: contractCashier.address, value: 0}),
 				truffleAssert.ErrorType.REVERT
 			);			
 			
@@ -181,7 +168,7 @@ contract("Voucher tests", async accounts => {
 
 		it("must fail: fill an order with incorrect value", async () => {			
 
-			truffleAssert.reverts(contractCashier.requestVoucher(tokenSupplyKey1, Seller, {from: Buyer, to: contractCashier.address, value: 0}),
+			truffleAssert.reverts(contractCashier.requestVoucher_ETH_ETH(tokenSupplyKey1, Seller, {from: Buyer, to: contractCashier.address, value: 0}),
 				truffleAssert.ErrorType.REVERT
 			);			
 			
@@ -303,27 +290,21 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 
 		// assert.notEqual(promiseKey1, helpers.ZERO_ADDRESS, "promise not added");
 
-		let txOrder = await contractCashier.requestCreateOrder( [helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1], {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
+		let txOrder = await contractCashier.requestCreateOrder_ETH_ETH( [helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1], {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
 
 		truffleAssert.eventEmitted(txOrder, 'LogOrderCreated', (ev) => {
 		    tokenSupplyKey1 = ev._tokenIdSupply;
 		    return ev._seller === Seller;
 		}, "order1 not created successfully");	
 
+		let txFillOrder = await contractCashier.requestVoucher_ETH_ETH(tokenSupplyKey1, Seller, {from: Buyer, to: contractCashier.address, value: helpers.PROMISE_PRICE1 + helpers.PROMISE_DEPOSITBU1});
+		let internalTx = (await truffleAssert.createTransactionResult(contractVoucherKernel, txFillOrder.tx))
 
+		truffleAssert.eventEmitted(internalTx, 'LogVoucherDelivered', (ev) => {
+			tokenVoucherKey1 = ev._tokenIdVoucher
+			return ev._issuer === Seller;
+		}, "order1 not created successfully");
 
-		let txFillOrder = await contractCashier.requestVoucher(tokenSupplyKey1, Seller, {from: Buyer, to: contractCashier.address, value: helpers.PROMISE_PRICE1 + helpers.PROMISE_DEPOSITBU1});
-
-		// truffleAssert.eventEmitted(txFillOrder, 'LogVoucherDelivered', (ev) => {
-		//     tokenVoucherKey1 = ev._tokenIdVoucher;
-
-		//     return ev._tokenIdSupply.toString() === tokenSupplyKey1.toString();
-		// }, "order1 not created successfully"); 
-
-		let nestedValue = (await truffleAssert.createTransactionResult(contractVoucherKernel, txFillOrder.tx)).logs
-
-		let filtered = nestedValue.filter(e => e.event == 'LogVoucherDelivered')[0]
-		tokenVoucherKey1 = filtered.returnValues['_tokenIdVoucher']
 		//\INIT
     })
 

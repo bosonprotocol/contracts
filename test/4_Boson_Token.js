@@ -127,7 +127,7 @@ contract('Boson token', accounts => {
             it("should revert if incorrect nonce is provided", async () => {
 
                 const balanceToApprove = 1200;
-                const nonce = maxuint;
+                const nonce = 7000000;
                 const deadline = toWei(1);
                 const digest = await getApprovalDigest(
                     BosonTokenContract,

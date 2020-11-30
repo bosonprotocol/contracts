@@ -83,7 +83,7 @@ contract("Voucher tests", async accounts => {
 				Buffer.from(digest.slice(2), 'hex'),
 				Buffer.from(Seller_PK.slice(2), 'hex'));
 
-			let txOrder = await contractCashier.requestCreateOrderTknTknWithPermit(
+			let txOrder = await contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
 				contractBosonTKN_Price.address,
 				contractBosonTKN_Deposit.address,
 				txValue.toString(),
