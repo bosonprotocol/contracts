@@ -79,23 +79,21 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
     /**
      * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
         @param metadata metadata which is required for creation of a voucher
+        Metadata array is used as in some scenarios we need several more params, as we need to recover 
+        onwer address in order to permit the contract to transfer funds in his behalf. 
+        Since the params get too many, we end up in situation that the stack is too deep.
+        
+        uint256 _validFrom = metadata[0];
+        uint256 _validTo = metadata[1];
+        uint256 _price = metadata[2];
+        uint256 _depositSe = metadata[3];
+        uint256 _depositBu = metadata[4];
+        uint256 _quantity = metadata[5];
      */
     function requestCreateOrder_ETH_ETH(uint256[] calldata metadata)
         external
         payable
     {
-        // Metadata array is used as in some scenarios we need several more params, as we need to recover 
-        // onwer address in order to permit the contract to transfer funds in his behalf. 
-        // Since the params get too many, we end up in situation that the stack is too deep.
-        
-        // uint256 _validFrom = metadata[0];
-        // uint256 _validTo = metadata[1];
-        // uint256 _price = metadata[2];
-        // uint256 _depositSe = metadata[3];
-        // uint256 _depositBu = metadata[4];
-        // uint256 _quantity = metadata[5];
-
-
         require(metadata[3] * metadata[5] == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         uint256 tokenIdSupply = voucherKernel.createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
@@ -130,14 +128,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         external
         payable
     {
-        // uint256 _validFrom = metadata[0];
-        // uint256 _validTo = metadata[1];
-        // uint256 _price = metadata[2];
-        // uint256 _depositSe = metadata[3];
-        // uint256 _depositBu = metadata[4];
-        // uint256 _quantity = metadata[5];
-        
-        require(metadata[3] * metadata[5] == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         
         IERC20WithPermit(_tokenDepositAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
         
@@ -163,14 +154,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         external
         payable
     {
-        // uint256 _validFrom = metadata[0];
-        // uint256 _validTo = metadata[1];
-        // uint256 _price = metadata[2];
-        // uint256 _depositSe = metadata[3];
-        // uint256 _depositBu = metadata[4];
-        // uint256 _quantity = metadata[5];
-        
-        require(metadata[3] * metadata[5] == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         
         IERC20WithPermit(_tokenDepositAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
         
@@ -183,7 +167,6 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
     }
 
-
     function requestCreateOrder_TKN_ETH_WithPermit(
         address _tokenPriceAddress,
         uint256[] calldata metadata
@@ -192,14 +175,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         external
         payable
     {
-        // uint256 _validFrom = metadata[0];
-        // uint256 _validTo = metadata[1];
-        // uint256 _price = metadata[2];
-        // uint256 _depositSe = metadata[3];
-        // uint256 _depositBu = metadata[4];
-        // uint256 _quantity = metadata[5];
-        
-        require(metadata[3] * metadata[5] == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(metadata[3].mul(metadata[5]) == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         
         uint256 tokenIdSupply = voucherKernel.createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
         voucherKernel.createPaymentMethod(tokenIdSupply, TKN_ETH, _tokenPriceAddress, address(0));
@@ -208,7 +184,6 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
 
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
     }
-
     
     /**
      * @notice Consumer requests/buys a voucher by filling an order and receiving a Voucher Token in return
@@ -224,7 +199,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
 
         //checks
         (uint256 price, uint256 depositSe, uint256 depositBu) = voucherKernel.getOrderCosts(_tokenIdSupply);
-        require(price + depositBu == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(price.add(depositBu) == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         voucherKernel.fillOrder(_tokenIdSupply, _issuer, msg.sender);
 
@@ -247,7 +222,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
 
         //checks
         (uint256 price, uint256 depositBu) = voucherKernel.getBuyerOrderCosts(_tokenIdSupply);
-        require(price + depositBu == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(price.add(depositBu) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         address tokenPriceAddress = voucherKernel.getVoucherPriceToken(_tokenIdSupply);
         address tokenDepositAddress = voucherKernel.getVoucherDepositToken(_tokenIdSupply);
@@ -275,7 +250,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
 
         //checks
         (uint256 price, uint256 depositBu) = voucherKernel.getBuyerOrderCosts(_tokenIdSupply);
-        require(price + depositBu == _tokensDeposit + msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(price.add(depositBu) == _tokensDeposit + msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         address tokenDepositAddress = voucherKernel.getVoucherDepositToken(_tokenIdSupply);
         IERC20WithPermit(tokenDepositAddress).permit(msg.sender, address(this), depositBu, deadline, v, r, s);
@@ -302,7 +277,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
 
         //checks
         (uint256 price, uint256 depositBu) = voucherKernel.getBuyerOrderCosts(_tokenIdSupply);
-        require(price + depositBu == _tokensPrice + msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(price.add(depositBu) == _tokensPrice.add(msg.value), "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         address tokenPriceAddress = voucherKernel.getVoucherPriceToken(_tokenIdSupply);
         IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), price, deadline, v, r, s);
