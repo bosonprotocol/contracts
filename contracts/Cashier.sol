@@ -320,57 +320,52 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
      * @notice Trigger withdrawals of what funds are releasable
      * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
      * @dev This function would be optimized a lot, here verbose for readability.
-     * @param _tokenIdVouchers  an array of voucher tokens (ERC-721) to try withdraw funds from
+     * @param _tokenIdVoucher  ID of a voucher token (ERC-721) to try withdraw funds from
      */
-    function withdraw(uint256[] calldata _tokenIdVouchers)
+    function withdraw(uint256 _tokenIdVoucher)
         external
         nonReentrant
     {
         //TODO: more checks
         //TODO: check to pass 2 diff holders and how the amounts will be distributed
 
-        require(_tokenIdVouchers.length > 0, "EMPTY_LIST"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        
         VoucherDetails memory voucherDetails;
         
         //in the future might want to (i) check the gasleft() (but UNGAS proposal might make it impossible), and/or (ii) set upper loop limit to sth like .length < 2**15
-        for(uint256 i = 0; i < _tokenIdVouchers.length; i++) {
-            require(_tokenIdVouchers[i] != 0, "UNSPECIFIED_ID");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-            
-            // (currStatus.status, currStatus.isPaymentReleased, currStatus.isDepositsReleased) = voucherKernel.getVoucherStatus(_tokenIdVouchers[i]);
-            voucherDetails.tokenIdVoucher = _tokenIdVouchers[i];
-            voucherDetails.tokenIdSupply = voucherKernel.getIdSupplyFromVoucher(voucherDetails.tokenIdVoucher);
-            voucherDetails.paymentMethod = voucherKernel.getVoucherPaymentMethod(voucherDetails.tokenIdSupply);
+        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        
+        voucherDetails.tokenIdVoucher = _tokenIdVoucher;
+        voucherDetails.tokenIdSupply = voucherKernel.getIdSupplyFromVoucher(voucherDetails.tokenIdVoucher);
+        voucherDetails.paymentMethod = voucherKernel.getVoucherPaymentMethod(voucherDetails.tokenIdSupply);
 
-            require(voucherDetails.paymentMethod > 0 && voucherDetails.paymentMethod <= 4, "INVALID PAYMENT METHOD");
+        require(voucherDetails.paymentMethod > 0 && voucherDetails.paymentMethod <= 4, "INVALID PAYMENT METHOD");
 
-            (voucherDetails.currStatus.status,
-                voucherDetails.currStatus.isPaymentReleased,
-                voucherDetails.currStatus.isDepositsReleased
-            ) = voucherKernel.getVoucherStatus(voucherDetails.tokenIdVoucher);
-            
-            (voucherDetails.price, 
-                voucherDetails.depositSe, 
-                voucherDetails.depositBu
-            ) = voucherKernel.getOrderCosts(voucherDetails.tokenIdSupply);
-            
-            voucherDetails.issuer = address(uint160( voucherKernel.getVoucherIssuer(voucherDetails.tokenIdVoucher) ));
-            voucherDetails.holder = address(uint160( voucherKernel.getVoucherHolder(voucherDetails.tokenIdVoucher) ));
-            
-            
-            //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
-            if (!voucherDetails.currStatus.isPaymentReleased) 
-            {
-                releasePayments(voucherDetails);
-            }
+        (voucherDetails.currStatus.status,
+            voucherDetails.currStatus.isPaymentReleased,
+            voucherDetails.currStatus.isDepositsReleased
+        ) = voucherKernel.getVoucherStatus(voucherDetails.tokenIdVoucher);
+        
+        (voucherDetails.price, 
+            voucherDetails.depositSe, 
+            voucherDetails.depositBu
+        ) = voucherKernel.getOrderCosts(voucherDetails.tokenIdSupply);
+        
+        voucherDetails.issuer = address(uint160( voucherKernel.getVoucherIssuer(voucherDetails.tokenIdVoucher) ));
+        voucherDetails.holder = address(uint160( voucherKernel.getVoucherHolder(voucherDetails.tokenIdVoucher) ));
+        
+        
+        //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
+        if (!voucherDetails.currStatus.isPaymentReleased) 
+        {
+            releasePayments(voucherDetails);
+        }
 
-            //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status 
-            if (!voucherDetails.currStatus.isDepositsReleased && 
-                isStatus(voucherDetails.currStatus.status, idxFinal)) 
-            {
-                releaseDeposits(voucherDetails);
-            }
-        } //end-for   
+        //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status 
+        if (!voucherDetails.currStatus.isDepositsReleased && 
+            isStatus(voucherDetails.currStatus.status, idxFinal)) 
+        {
+            releaseDeposits(voucherDetails);
+        }
         
         if (voucherDetails.amount2pool > 0) {
             address payable poolAddress = address(uint160(owner())); // TODO Chris - Why we need uint160?

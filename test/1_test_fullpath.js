@@ -222,7 +222,7 @@ contract("Voucher tests", async accounts => {
 		it("withdraw the escrowed payment from one redeemed voucher", async () => {
 			let escrowedBefore = await contractCashier.getEscrowAmount.call(Buyer);
 
-			await contractCashier.withdraw([tokenVoucherKey1]);
+			await contractCashier.withdraw(tokenVoucherKey1);
 
 			let escrowedAfter = await contractCashier.getEscrowAmount.call(Buyer);
 
