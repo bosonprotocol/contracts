@@ -192,7 +192,7 @@ contract VoucherKernel is Ownable, usingHelpers {
         * @param _depositSe   Seller's deposit
         * @param _depositBu   Buyer's deposit
     */
-    function createAssetPromise(
+    function createTokenSupplyID(
         address _seller, 
         uint256 _validFrom,
         uint256 _validTo,

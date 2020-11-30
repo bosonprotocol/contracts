@@ -63,7 +63,7 @@ contract("Voucher tests", async accounts => {
 
 		// it("adding one new promise", async () => {
 		// 	// console.log("helpers.PROMISE_VALID_FROM: ", helpers.PROMISE_VALID_FROM, ", helpers.PROMISE_VALID_TO: ", helpers.PROMISE_VALID_TO);
-		// 	await contractVoucherKernel.createAssetPromise(helpers.ASSET_TITLE, helpers.ASSET_PIN1, helpers.ASSET_QR1, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD, helpers.PROMISE_CANCELORFAULT_PERIOD);
+		// 	await contractVoucherKernel.createTokenSupplyID(helpers.ASSET_TITLE, helpers.ASSET_PIN1, helpers.ASSET_QR1, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD, helpers.PROMISE_CANCELORFAULT_PERIOD);
 
 		// 	promiseKey1 = await contractVoucherKernel.promiseKeys.call(0);
 			
@@ -71,7 +71,7 @@ contract("Voucher tests", async accounts => {
 		// });	
 
 		// it("adding second new promise", async () => {
-		// 	await contractVoucherKernel.createAssetPromise(helpers.ASSET_TITLE2, helpers.ASSET_PIN2, helpers.ASSET_QR2, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE2, helpers.PROMISE_DEPOSITSE2, helpers.PROMISE_DEPOSITBU2, helpers.PROMISE_CHALLENGE_PERIOD, helpers.PROMISE_CANCELORFAULT_PERIOD);
+		// 	await contractVoucherKernel.createTokenSupplyID(helpers.ASSET_TITLE2, helpers.ASSET_PIN2, helpers.ASSET_QR2, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE2, helpers.PROMISE_DEPOSITSE2, helpers.PROMISE_DEPOSITBU2, helpers.PROMISE_CHALLENGE_PERIOD, helpers.PROMISE_CANCELORFAULT_PERIOD);
 
 		// 	promiseKey2 = await contractVoucherKernel.promiseKeys.call(1);
 			
@@ -79,7 +79,7 @@ contract("Voucher tests", async accounts => {
 		// });				
 
 		// it("must fail: adding new promise with invalid validity", async () => {			
-		// 	truffleAssert.reverts(contractVoucherKernel.createAssetPromise(helpers.ASSET_TITLE, helpers.ASSET_PIN1, helpers.ASSET_QR1, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_FROM - 1, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD, helpers.PROMISE_CANCELORFAULT_PERIOD),
+		// 	truffleAssert.reverts(contractVoucherKernel.createTokenSupplyID(helpers.ASSET_TITLE, helpers.ASSET_PIN1, helpers.ASSET_QR1, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_FROM - 1, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD, helpers.PROMISE_CANCELORFAULT_PERIOD),
 		// 		truffleAssert.ErrorType.REVERT
 		// 	);						
 		// });			
@@ -297,7 +297,7 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 
 
         //INIT
-		// await contractVoucherKernel.createAssetPromise(helpers.ASSET_TITLE, helpers.ASSET_PIN1, helpers.ASSET_QR1, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD * helpers.SECONDS_IN_DAY, helpers.PROMISE_CANCELORFAULT_PERIOD * helpers.SECONDS_IN_DAY);
+		// await contractVoucherKernel.createTokenSupplyID(helpers.ASSET_TITLE, helpers.ASSET_PIN1, helpers.ASSET_QR1, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD * helpers.SECONDS_IN_DAY, helpers.PROMISE_CANCELORFAULT_PERIOD * helpers.SECONDS_IN_DAY);
 
 		// promiseKey1 = await contractVoucherKernel.promiseKeys.call(0);
 
