@@ -222,7 +222,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
 
         //checks
         (uint256 price, uint256 depositBu) = voucherKernel.getBuyerOrderCosts(_tokenIdSupply);
-        require(price.add(depositBu) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(_tokensSent.sub(depositBu) == price, "INCORRECT_FUNDS");
 
         address tokenPriceAddress = voucherKernel.getVoucherPriceToken(_tokenIdSupply);
         address tokenDepositAddress = voucherKernel.getVoucherDepositToken(_tokenIdSupply);
@@ -250,17 +250,18 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
 
         //checks
         (uint256 price, uint256 depositBu) = voucherKernel.getBuyerOrderCosts(_tokenIdSupply);
-        require(price.add(depositBu) == _tokensDeposit.add(msg.value), "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(price == msg.value, "INCORRECT_PRICE");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(depositBu == _tokensDeposit, "INCORRECT_DE");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         address tokenDepositAddress = voucherKernel.getVoucherDepositToken(_tokenIdSupply);
-        IERC20WithPermit(tokenDepositAddress).permit(msg.sender, address(this), depositBu, deadline, v, r, s);
+        IERC20WithPermit(tokenDepositAddress).permit(msg.sender, address(this), _tokensDeposit, deadline, v, r, s);
 
         voucherKernel.fillOrder(_tokenIdSupply, _issuer, msg.sender);
 
-        IERC20WithPermit(tokenDepositAddress).transferFrom(msg.sender, address(this), depositBu);
+        IERC20WithPermit(tokenDepositAddress).transferFrom(msg.sender, address(this), _tokensDeposit);
 
          //record funds in escrow ...
-        escrow[msg.sender] += price;
+        escrow[msg.sender] += msg.value;
     }
 
     function requestVoucher_TKN_ETH_WithPermit(
@@ -277,7 +278,8 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
 
         //checks
         (uint256 price, uint256 depositBu) = voucherKernel.getBuyerOrderCosts(_tokenIdSupply);
-        require(price.add(depositBu) == _tokensPrice.add(msg.value), "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(price == _tokensPrice, "INCORRECT_PRICE");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(depositBu == msg.value, "INCORRECT_DE");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         address tokenPriceAddress = voucherKernel.getVoucherPriceToken(_tokenIdSupply);
         IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), price, deadline, v, r, s);
