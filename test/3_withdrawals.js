@@ -16,19 +16,15 @@ const BosonTKN = artifacts.require("BosonToken")
 const helpers = require("../testHelpers/constants")
 const timemachine = require('../testHelpers/timemachine')
 const truffleAssert = require('truffle-assertions')
+const config = require('../testHelpers/config.json')
 
 let TOKEN_SUPPLY_ID
 
 contract("Cashier withdrawals ", async accounts => {
 
-    let Deployer = accounts[0] //0xD9995BAE12FEe327256FFec1e3184d492bD94C31
-    let Deployer_PK = '0x7ab741b57e8d94dd7e1a29055646bafde7010f38a900f55bbd7647880faa6ee8'
-    let Seller = accounts[1] //0xd4Fa489Eacc52BA59438993f37Be9fcC20090E39
-    let Seller_PK = '0x2030b463177db2da82908ef90fa55ddfcef56e8183caf60db464bc398e736e6f';
-    let Buyer = accounts[2] //0x760bf27cd45036a6C486802D30B5D90CfFBE31FE
-    let Buyer_PK = '0x62ecd49c4ccb41a70ad46532aed63cf815de15864bc415c87d507afd6a5e8da2'
-    let Attacker = accounts[3] //0x56A32fFf5E5A8B40d6A21538579fB8922DF5258c 
-    let Attacker_PK = '0xf473040b1a83739a9c7cc1f5719fab0f5bf178f83314d98557c58aae1910e03a' 
+    let Deployer = config.accounts.deployer
+    let Seller = config.accounts.seller
+    let Buyer = config.accounts.buyer
 
     let contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit
 
@@ -61,7 +57,7 @@ contract("Cashier withdrawals ", async accounts => {
 
                 const timestamp = await Utils.getCurrTimestamp()
 
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller.address, timestamp, timestamp + helpers.SECONDS_IN_DAY)
             })
 
             it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
@@ -70,13 +66,13 @@ contract("Cashier withdrawals ", async accounts => {
                 const expectedSellerAmount = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
                 const expectedEscrowAmount = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
 
-                const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
+                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
 
-                await utils.refund(voucherID, Buyer)
-                await utils.complain(voucherID, Buyer)
-                await utils.cancel(voucherID, Seller)
-                await utils.finalize(voucherID, Deployer)
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                await utils.refund(voucherID, Buyer.address)
+                await utils.complain(voucherID, Buyer.address)
+                await utils.cancel(voucherID, Seller.address)
+                await utils.finalize(voucherID, Deployer.address)
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
                     utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
@@ -94,14 +90,14 @@ contract("Cashier withdrawals ", async accounts => {
                 const expectedSellerAmount = new BN(0) // 0
                 const expectedEscrowAmount = new BN(helpers.seller_deposit).add(new BN(helpers.buyer_deposit)) // 0.09
 
-                const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID);
-                await utils.refund(voucherID, Buyer)
-                await utils.complain(voucherID, Buyer)
+                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID);
+                await utils.refund(voucherID, Buyer.address)
+                await utils.complain(voucherID, Buyer.address)
                 await timemachine.advanceTimeSeconds(60);
 
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer)
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
 
                 truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
                     utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
@@ -119,15 +115,15 @@ contract("Cashier withdrawals ", async accounts => {
                 const expectedSellerAmount = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
                 const expectedEscrowAmount = new BN(0) //0
 
-                const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
-                await utils.refund(voucherID, Buyer)
-                await utils.cancel(voucherID, Seller)
+                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
+                await utils.refund(voucherID, Buyer.address)
+                await utils.cancel(voucherID, Seller.address)
 
                 await timemachine.advanceTimeSeconds(60)
 
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
                     utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
@@ -144,13 +140,13 @@ contract("Cashier withdrawals ", async accounts => {
                 const expectedSellerAmount = new BN(helpers.seller_deposit) // 0.05
                 const expectedEscrowAmount = new BN(helpers.buyer_deposit) // 0.04
 
-                const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
-                await utils.refund(voucherID, Buyer)
+                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
+                await utils.refund(voucherID, Buyer.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
                     utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
@@ -167,14 +163,14 @@ contract("Cashier withdrawals ", async accounts => {
                 const expectedSellerAmount = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
                 const expectedEscrowAmount = new BN(0) // 0
 
-                const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
-                await utils.cancel(voucherID, Seller)
+                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
+                await utils.cancel(voucherID, Seller.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
                     utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
@@ -191,13 +187,13 @@ contract("Cashier withdrawals ", async accounts => {
                 const expectedSellerAmount = new BN(helpers.seller_deposit).add(new BN(helpers.product_price)) // 0.35
                 const expectedEscrowAmount = new BN(0) // 0
 
-                const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
-                await utils.redeem(voucherID, Buyer)
+                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
+                await utils.redeem(voucherID, Buyer.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer)
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
 
                 truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
                     utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
@@ -214,14 +210,14 @@ contract("Cashier withdrawals ", async accounts => {
                 const expectedSellerAmount = new BN(helpers.product_price) // 0.3
                 const expectedEscrowAmount = new BN(helpers.seller_deposit) // 0.05
 
-                const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
-                await utils.redeem(voucherID, Buyer)
-                await utils.complain(voucherID, Buyer)
+                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
+                await utils.redeem(voucherID, Buyer.address)
+                await utils.complain(voucherID, Buyer.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
                     utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
@@ -238,15 +234,15 @@ contract("Cashier withdrawals ", async accounts => {
                 const expectedSellerAmount = new BN(helpers.product_price).add(new BN(helpers.seller_deposit).div(new BN(4))) // 0.3125 
                 const expectedEscrowAmount = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
 
-                const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID);
-                await utils.redeem(voucherID, Buyer)
-                await utils.complain(voucherID, Buyer)
-                await utils.cancel(voucherID, Seller)
+                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID);
+                await utils.redeem(voucherID, Buyer.address)
+                await utils.complain(voucherID, Buyer.address)
+                await utils.cancel(voucherID, Seller.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
                     utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
@@ -263,14 +259,14 @@ contract("Cashier withdrawals ", async accounts => {
                 const expectedSellerAmount = new BN(helpers.product_price).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.325
                 const expectedEscrowAmount = new BN(0) // 0
 
-                const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID);
-                await utils.redeem(voucherID, Buyer)
-                await utils.cancel(voucherID, Seller)
+                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID);
+                await utils.redeem(voucherID, Buyer.address)
+                await utils.cancel(voucherID, Seller.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
                     utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
@@ -306,14 +302,14 @@ contract("Cashier withdrawals ", async accounts => {
 
 
             async function getBalancesFromPiceTokenAndDepositToken() {
-                balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(Buyer)
-                balanceBuyerFromDesosits = await utils.contractBSNTokenDeposit.balanceOf(Buyer)
+                balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(Buyer.address)
+                balanceBuyerFromDesosits = await utils.contractBSNTokenDeposit.balanceOf(Buyer.address)
 
-                balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(Seller)
-                balanceSellerFromDesosits = await utils.contractBSNTokenDeposit.balanceOf(Seller)
+                balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(Seller.address)
+                balanceSellerFromDesosits = await utils.contractBSNTokenDeposit.balanceOf(Seller.address)
 
-                escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(Deployer)
-                escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(Deployer)
+                escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(Deployer.address)
+                escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(Deployer.address)
 
                 cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(utils.contractCashier.address)
                 cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(utils.contractCashier.address)
@@ -344,15 +340,12 @@ contract("Cashier withdrawals ", async accounts => {
                 const supplyQty = 1
                 const tokensToMint = new BN(helpers.seller_deposit).mul(new BN(supplyQty))
 
-                await utils.mintTokens('contractBSNTokenDeposit',Seller, tokensToMint);
-                await utils.mintTokens('contractBSNTokenPrice', Buyer, helpers.product_price);
-                await utils.mintTokens('contractBSNTokenDeposit', Buyer, helpers.buyer_deposit);
+                await utils.mintTokens('contractBSNTokenDeposit', Seller.address, tokensToMint);
+                await utils.mintTokens('contractBSNTokenPrice', Buyer.address, helpers.product_price);
+                await utils.mintTokens('contractBSNTokenDeposit', Buyer.address, helpers.buyer_deposit);
 
                 TOKEN_SUPPLY_ID = await utils.createOrder(
-                    {
-                        address: Seller,
-                        pk: Seller_PK
-                    }, 
+                    Seller,
                     timestamp, 
                     timestamp + helpers.SECONDS_IN_DAY,
                     helpers.seller_deposit,
@@ -363,22 +356,16 @@ contract("Cashier withdrawals ", async accounts => {
             it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
 
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    }, 
-                    {
-                        address: Seller,
-                        pk: Seller
-                    }, 
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.refund(voucherID, Buyer)
-                await utils.complain(voucherID, Buyer)
-                await utils.cancel(voucherID, Seller)
-                await utils.finalize(voucherID, Deployer)
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                await utils.refund(voucherID, Buyer.address)
+                await utils.complain(voucherID, Buyer.address)
+                await utils.cancel(voucherID, Seller.address)
+                await utils.finalize(voucherID, Deployer.address)
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                 const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
@@ -411,24 +398,18 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.refund(voucherID, Buyer)
-                await utils.complain(voucherID, Buyer)
+                await utils.refund(voucherID, Buyer.address)
+                await utils.complain(voucherID, Buyer.address)
 
                 await timemachine.advanceTimeSeconds(60);
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer)
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
 
                 const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                 const expectedBuyerDeposit = new BN(0)
@@ -461,25 +442,19 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.refund(voucherID, Buyer)
-                await utils.cancel(voucherID, Seller)
+                await utils.refund(voucherID, Buyer.address)
+                await utils.cancel(voucherID, Seller.address)
 
                 await timemachine.advanceTimeSeconds(60)
 
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                 const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
@@ -512,22 +487,16 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REFUND->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
-                await utils.refund(voucherID, Buyer)
+                await utils.refund(voucherID, Buyer.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                 const expectedBuyerDeposit = new BN(0)
@@ -560,23 +529,17 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->CANCEL->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.cancel(voucherID, Seller)
+                await utils.cancel(voucherID, Seller.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                 const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
@@ -608,22 +571,16 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REDEEM->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
-                await utils.redeem(voucherID, Buyer)
+                await utils.redeem(voucherID, Buyer.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer)
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
 
                 const expectedBuyerPrice = new BN(0) 
                 const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
@@ -655,24 +612,18 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.redeem(voucherID, Buyer)
-                await utils.complain(voucherID, Buyer)
+                await utils.redeem(voucherID, Buyer.address)
+                await utils.complain(voucherID, Buyer.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(0)
                 const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
@@ -704,24 +655,18 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
-                await utils.redeem(voucherID, Buyer)
-                await utils.complain(voucherID, Buyer)
-                await utils.cancel(voucherID, Seller)
+                await utils.redeem(voucherID, Buyer.address)
+                await utils.complain(voucherID, Buyer.address)
+                await utils.cancel(voucherID, Seller.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(0)
                 const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
@@ -753,24 +698,18 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.redeem(voucherID, Buyer)
-                await utils.cancel(voucherID, Seller)
+                await utils.redeem(voucherID, Buyer.address)
+                await utils.cancel(voucherID, Seller.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(0)
                 const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
@@ -835,9 +774,9 @@ contract("Cashier withdrawals ", async accounts => {
             let cashierDepositLeft = new BN(0)
 
             async function getBalancesDepositToken() {
-                balanceBuyerFromDesosits = await utils.contractBSNTokenDeposit.balanceOf(Buyer)
-                balanceSellerFromDesosits = await utils.contractBSNTokenDeposit.balanceOf(Seller)
-                escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(Deployer)
+                balanceBuyerFromDesosits = await utils.contractBSNTokenDeposit.balanceOf(Buyer.address)
+                balanceSellerFromDesosits = await utils.contractBSNTokenDeposit.balanceOf(Seller.address)
+                escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(Deployer.address)
                 cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(utils.contractCashier.address)
             }
 
@@ -866,14 +805,11 @@ contract("Cashier withdrawals ", async accounts => {
                 const supplyQty = 1
                 const tokensToMint = new BN(helpers.seller_deposit).mul(new BN(supplyQty))
 
-                await utils.mintTokens('contractBSNTokenDeposit', Seller, tokensToMint);
-                await utils.mintTokens('contractBSNTokenDeposit', Buyer, helpers.buyer_deposit);
+                await utils.mintTokens('contractBSNTokenDeposit', Seller.address, tokensToMint);
+                await utils.mintTokens('contractBSNTokenDeposit', Buyer.address, helpers.buyer_deposit);
 
                 TOKEN_SUPPLY_ID = await utils.createOrder(
-                    {
-                        address: Seller,
-                        pk: Seller_PK
-                    },
+                    Seller,
                     timestamp,
                     timestamp + helpers.SECONDS_IN_DAY,
                     helpers.seller_deposit,
@@ -884,22 +820,16 @@ contract("Cashier withdrawals ", async accounts => {
             it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
 
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.refund(voucherID, Buyer)
-                await utils.complain(voucherID, Buyer)
-                await utils.cancel(voucherID, Seller)
-                await utils.finalize(voucherID, Deployer)
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                await utils.refund(voucherID, Buyer.address)
+                await utils.complain(voucherID, Buyer.address)
+                await utils.cancel(voucherID, Seller.address)
+                await utils.finalize(voucherID, Deployer.address)
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                 const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
@@ -911,7 +841,7 @@ contract("Cashier withdrawals ", async accounts => {
                 // Payment should have been returned to buyer
                 truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
 
-                    assert.equal(ev._payee, Buyer, "Incorrect Payee")
+                    assert.equal(ev._payee, Buyer.address, "Incorrect Payee")
                     assert.isTrue(ev._payment.eq(expectedBuyerPrice))
                     
                     return true
@@ -934,24 +864,18 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.refund(voucherID, Buyer)
-                await utils.complain(voucherID, Buyer)
+                await utils.refund(voucherID, Buyer.address)
+                await utils.complain(voucherID, Buyer.address)
 
                 await timemachine.advanceTimeSeconds(60);
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer)
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
 
                 const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                 const expectedBuyerDeposit = new BN(0)
@@ -963,7 +887,7 @@ contract("Cashier withdrawals ", async accounts => {
                 // Payment should have been returned to buyer
                 truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
 
-                    assert.equal(ev._payee, Buyer, "Incorrect Payee")
+                    assert.equal(ev._payee, Buyer.address, "Incorrect Payee")
                     assert.isTrue(ev._payment.eq(expectedBuyerPrice))
 
                     return true
@@ -986,25 +910,19 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.refund(voucherID, Buyer)
-                await utils.cancel(voucherID, Seller)
+                await utils.refund(voucherID, Buyer.address)
+                await utils.cancel(voucherID, Seller.address)
 
                 await timemachine.advanceTimeSeconds(60)
 
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                 const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
@@ -1016,7 +934,7 @@ contract("Cashier withdrawals ", async accounts => {
                 // Payment should have been returned to buyer
                 truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
 
-                    assert.equal(ev._payee, Buyer, "Incorrect Payee")
+                    assert.equal(ev._payee, Buyer.address, "Incorrect Payee")
                     assert.isTrue(ev._payment.eq(expectedBuyerPrice))
 
                     return true
@@ -1039,22 +957,16 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REFUND->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
-                await utils.refund(voucherID, Buyer)
+                await utils.refund(voucherID, Buyer.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                 const expectedBuyerDeposit = new BN(0)
@@ -1066,7 +978,7 @@ contract("Cashier withdrawals ", async accounts => {
                 // Payment should have been returned to buyer
                 truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
 
-                    assert.equal(ev._payee, Buyer, "Incorrect Payee")
+                    assert.equal(ev._payee, Buyer.address, "Incorrect Payee")
                     assert.isTrue(ev._payment.eq(expectedBuyerPrice))
 
                     return true
@@ -1089,23 +1001,17 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->CANCEL->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.cancel(voucherID, Seller)
+                await utils.cancel(voucherID, Seller.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                 const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
@@ -1117,7 +1023,7 @@ contract("Cashier withdrawals ", async accounts => {
                 // Payment should have been returned to buyer
                 truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
 
-                    assert.equal(ev._payee, Buyer, "Incorrect Payee")
+                    assert.equal(ev._payee, Buyer.address, "Incorrect Payee")
                     assert.isTrue(ev._payment.eq(expectedBuyerPrice))
 
                     return true
@@ -1139,22 +1045,16 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REDEEM->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
-                await utils.redeem(voucherID, Buyer)
+                await utils.redeem(voucherID, Buyer.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer)
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
 
                 const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
                 const expectedSellerPrice = new BN(helpers.product_price) //// 0.3
@@ -1166,7 +1066,7 @@ contract("Cashier withdrawals ", async accounts => {
                 // Payment should have been sent to seller
                 truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
 
-                    assert.equal(ev._payee, Seller, "Incorrect Payee")
+                    assert.equal(ev._payee, Seller.address, "Incorrect Payee")
                     assert.isTrue(ev._payment.eq(expectedSellerPrice))
 
                     return true
@@ -1188,24 +1088,18 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                   Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.redeem(voucherID, Buyer)
-                await utils.complain(voucherID, Buyer)
+                await utils.redeem(voucherID, Buyer.address)
+                await utils.complain(voucherID, Buyer.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
                 const expectedSellerPrice = new BN(helpers.product_price) // 0.3
@@ -1217,7 +1111,7 @@ contract("Cashier withdrawals ", async accounts => {
                 // Payment should have been sent to seller
                 truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
 
-                    assert.equal(ev._payee, Seller, "Incorrect Payee")
+                    assert.equal(ev._payee, Seller.address, "Incorrect Payee")
                     assert.isTrue(ev._payment.eq(expectedSellerPrice))
 
                     return true
@@ -1239,24 +1133,18 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
-                await utils.redeem(voucherID, Buyer)
-                await utils.complain(voucherID, Buyer)
-                await utils.cancel(voucherID, Seller)
+                await utils.redeem(voucherID, Buyer.address)
+                await utils.complain(voucherID, Buyer.address)
+                await utils.cancel(voucherID, Seller.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
                 const expectedSellerPrice = new BN(helpers.product_price) // 0.3
@@ -1268,7 +1156,7 @@ contract("Cashier withdrawals ", async accounts => {
                 // Payment should have been sent to seller
                 truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
 
-                    assert.equal(ev._payee, Seller, "Incorrect Payee")
+                    assert.equal(ev._payee, Seller.address, "Incorrect Payee")
                     assert.isTrue(ev._payment.eq(expectedSellerPrice))
 
                     return true
@@ -1290,24 +1178,18 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.redeem(voucherID, Buyer)
-                await utils.cancel(voucherID, Seller)
+                await utils.redeem(voucherID, Buyer.address)
+                await utils.cancel(voucherID, Seller.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
                 const expectedSellerPrice = new BN(helpers.product_price) // 0.3
@@ -1319,7 +1201,7 @@ contract("Cashier withdrawals ", async accounts => {
                 // Payment should have been sent to seller
                 truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
 
-                    assert.equal(ev._payee, Seller, "Incorrect Payee")
+                    assert.equal(ev._payee, Seller.address, "Incorrect Payee")
                     assert.isTrue(ev._payment.eq(expectedSellerPrice))
 
                     return true
@@ -1369,9 +1251,9 @@ contract("Cashier withdrawals ", async accounts => {
             let cashierDepositLeft = new BN(0)
 
             async function getBalancesPriceToken() {
-                balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(Buyer)
-                balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(Seller)
-                escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(Deployer)
+                balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(Buyer.address)
+                balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(Seller.address)
+                escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(Deployer.address)
                 cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(utils.contractCashier.address)
             }
 
@@ -1400,13 +1282,10 @@ contract("Cashier withdrawals ", async accounts => {
                 const supplyQty = 1
                 const tokensToMint = new BN(helpers.seller_deposit).mul(new BN(supplyQty))
 
-                await utils.mintTokens('contractBSNTokenPrice', Buyer, helpers.product_price);
+                await utils.mintTokens('contractBSNTokenPrice', Buyer.address, helpers.product_price);
 
                 TOKEN_SUPPLY_ID = await utils.createOrder(
-                    {
-                        address: Seller,
-                        pk: Seller_PK
-                    },
+                    Seller,
                     timestamp,
                     timestamp + helpers.SECONDS_IN_DAY,
                     helpers.seller_deposit,
@@ -1416,22 +1295,16 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.refund(voucherID, Buyer)
-                await utils.complain(voucherID, Buyer)
-                await utils.cancel(voucherID, Seller)
-                await utils.finalize(voucherID, Deployer)
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                await utils.refund(voucherID, Buyer.address)
+                await utils.complain(voucherID, Buyer.address)
+                await utils.cancel(voucherID, Seller.address)
+                await utils.finalize(voucherID, Deployer.address)
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                 const expectedSellerPrice = new BN(0)
@@ -1470,24 +1343,18 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.refund(voucherID, Buyer)
-                await utils.complain(voucherID, Buyer)
+                await utils.refund(voucherID, Buyer.address)
+                await utils.complain(voucherID, Buyer.address)
 
                 await timemachine.advanceTimeSeconds(60);
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer)
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
 
                 const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                 const expectedSellerPrice = new BN(0)
@@ -1526,25 +1393,19 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.refund(voucherID, Buyer)
-                await utils.cancel(voucherID, Seller)
+                await utils.refund(voucherID, Buyer.address)
+                await utils.cancel(voucherID, Seller.address)
 
                 await timemachine.advanceTimeSeconds(60)
 
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                 const expectedSellerPrice = new BN(0)
@@ -1583,22 +1444,16 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REFUND->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
-                await utils.refund(voucherID, Buyer)
+                await utils.refund(voucherID, Buyer.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                 const expectedSellerPrice = new BN(0)
@@ -1637,23 +1492,17 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->CANCEL->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.cancel(voucherID, Seller)
+                await utils.cancel(voucherID, Seller.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                 const expectedSellerPrice = new BN(0)
@@ -1691,22 +1540,16 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REDEEM->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
-                await utils.redeem(voucherID, Buyer)
+                await utils.redeem(voucherID, Buyer.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer)
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
 
                 const expectedBuyerPrice = new BN(0)
                 const expectedSellerPrice = new BN(helpers.product_price) // 0.3
@@ -1744,24 +1587,18 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.redeem(voucherID, Buyer)
-                await utils.complain(voucherID, Buyer)
+                await utils.redeem(voucherID, Buyer.address)
+                await utils.complain(voucherID, Buyer.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(0)
                 const expectedSellerPrice = new BN(helpers.product_price) // 0.3
@@ -1799,24 +1636,18 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
-                await utils.redeem(voucherID, Buyer)
-                await utils.complain(voucherID, Buyer)
-                await utils.cancel(voucherID, Seller)
+                await utils.redeem(voucherID, Buyer.address)
+                await utils.complain(voucherID, Buyer.address)
+                await utils.cancel(voucherID, Seller.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(0)
                 const expectedSellerPrice = new BN(helpers.product_price) // 0.3
@@ -1854,24 +1685,18 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW", async () => {
                 const voucherID = await utils.commitToBuy(
-                    {
-                        address: Buyer,
-                        pk: Buyer_PK
-                    },
-                    {
-                        address: Seller,
-                        pk: Seller
-                    },
+                    Buyer,
+                    Seller,
                     TOKEN_SUPPLY_ID
                 )
 
-                await utils.redeem(voucherID, Buyer)
-                await utils.cancel(voucherID, Seller)
+                await utils.redeem(voucherID, Buyer.address)
+                await utils.cancel(voucherID, Seller.address)
 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer);
+                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                 const expectedBuyerPrice = new BN(0)
                 const expectedSellerPrice = new BN(helpers.product_price) // 0.3

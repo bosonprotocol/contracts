@@ -7,13 +7,15 @@ const ERC1155ERC721 = artifacts.require("ERC1155ERC721");
 const VoucherKernel = artifacts.require("VoucherKernel");
 const Cashier 		= artifacts.require("Cashier");
 
+const config = require('../testHelpers/config.json')
+
 const Utils = require('../testHelpers/utils')
 let snapshot;
 
 contract("Voucher tests", async accounts => {
-	let Seller 		= accounts[0];
-	let Buyer 		= accounts[1];
-	let Attacker 	= accounts[2];
+	let Seller = config.accounts.seller.address
+	let Buyer = config.accounts.buyer.address
+	let Attacker = config.accounts.attacker.address
 
     let contractERC1155ERC721, contractVoucherKernel, contractCashier;
     let promiseKey1, promiseKey2;

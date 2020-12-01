@@ -5,9 +5,21 @@
     "nodeUrl": "http://localhost:8545/",
     "ganacheCliPort": 8545,
     "accounts": {
-        "deployer": "0xD9995BAE12FEe327256FFec1e3184d492bD94C31",
-        "seller": "0xd4Fa489Eacc52BA59438993f37Be9fcC20090E39",
-        "buyer": "0x760bf27cd45036a6C486802D30B5D90CfFBE31FE",
-        "attacker": "0x56A32fFf5E5A8B40d6A21538579fB8922DF5258c"
+        "deployer": {
+            "address": "0xD9995BAE12FEe327256FFec1e3184d492bD94C31",
+            "pk": "0x7ab741b57e8d94dd7e1a29055646bafde7010f38a900f55bbd7647880faa6ee8"
+        },
+        "seller": {
+            "address": "0xd4Fa489Eacc52BA59438993f37Be9fcC20090E39",
+            "pk": "0x2030b463177db2da82908ef90fa55ddfcef56e8183caf60db464bc398e736e6f"
+        },
+        "buyer": {
+            "address": "0x760bf27cd45036a6C486802D30B5D90CfFBE31FE",
+            "pk": "0x62ecd49c4ccb41a70ad46532aed63cf815de15864bc415c87d507afd6a5e8da2"
+        },
+        "attacker": {
+            "address":"0x56A32fFf5E5A8B40d6A21538579fB8922DF5258c",
+            "pk": "0xf473040b1a83739a9c7cc1f5719fab0f5bf178f83314d98557c58aae1910e03a"
+        }
     }
 }

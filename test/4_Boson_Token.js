@@ -9,8 +9,6 @@ const { ecsign } = require('ethereumjs-util');
 
 const BN = web3.utils.BN
 const BosonToken = artifacts.require("BosonToken")
-
-
 const maxuint = new BN('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
 
 const {
@@ -28,18 +26,25 @@ const {
     getApprovalDigest
 } = require('../testHelpers/permitUtils');
 
+const config = require('../testHelpers/config.json')
+
 contract('Boson token', accounts => {
 
     let BosonTokenContract, bosonContractAddress;
 
-    let Deployer = accounts[0] //0xD9995BAE12FEe327256FFec1e3184d492bD94C31
-    let Deployer_PK = '0x7ab741b57e8d94dd7e1a29055646bafde7010f38a900f55bbd7647880faa6ee8'
-    let Seller = accounts[1] //0xd4Fa489Eacc52BA59438993f37Be9fcC20090E39
-    let Seller_PK = '0x2030b463177db2da82908ef90fa55ddfcef56e8183caf60db464bc398e736e6f';
-    let Buyer = accounts[2] //0x760bf27cd45036a6C486802D30B5D90CfFBE31FE
-    let Buyer_PK = '0x62ecd49c4ccb41a70ad46532aed63cf815de15864bc415c87d507afd6a5e8da2'
-    let Attacker = accounts[3] //0x56A32fFf5E5A8B40d6A21538579fB8922DF5258c 
-    let Attacker_PK = '0xf473040b1a83739a9c7cc1f5719fab0f5bf178f83314d98557c58aae1910e03a' 
+    // let Deployer = accounts[0] //0xD9995BAE12FEe327256FFec1e3184d492bD94C31
+    // let Deployer_PK = '0x7ab741b57e8d94dd7e1a29055646bafde7010f38a900f55bbd7647880faa6ee8'
+    // let Seller = accounts[1] //0xd4Fa489Eacc52BA59438993f37Be9fcC20090E39
+    // let Seller_PK = '0x2030b463177db2da82908ef90fa55ddfcef56e8183caf60db464bc398e736e6f';
+    // let Buyer = accounts[2] //0x760bf27cd45036a6C486802D30B5D90CfFBE31FE
+    // let Buyer.pk = '0x62ecd49c4ccb41a70ad46532aed63cf815de15864bc415c87d507afd6a5e8da2'
+    // let Attacker = accounts[3] //0x56A32fFf5E5A8B40d6A21538579fB8922DF5258c 
+    // let Attacker_PK = '0xf473040b1a83739a9c7cc1f5719fab0f5bf178f83314d98557c58aae1910e03a' 
+
+    let Deployer = config.accounts.deployer
+    let Seller = config.accounts.seller
+    let Buyer = config.accounts.buyer
+    let Attacker = config.accounts.attacker //0x56A32fFf5E5A8B40d6A21538579fB8922DF5258c 
 
     beforeEach(async () => {
 
@@ -54,10 +59,10 @@ contract('Boson token', accounts => {
 
         it("Only Deployer Should have admin and minter rights initiially ", async () => {
            
-            const buyerIsAdmin = await BosonTokenContract.hasRole(ADMIN_ROLE, Buyer);
-            const buyerIsMinter = await BosonTokenContract.hasRole(MINTER_ROLE, Buyer);
-            const deployerIsAdmin = await BosonTokenContract.hasRole(ADMIN_ROLE, Deployer);
-            const deployerIsMinter = await BosonTokenContract.hasRole(MINTER_ROLE, Deployer);
+            const buyerIsAdmin = await BosonTokenContract.hasRole(ADMIN_ROLE, Buyer.address);
+            const buyerIsMinter = await BosonTokenContract.hasRole(MINTER_ROLE, Buyer.address);
+            const deployerIsAdmin = await BosonTokenContract.hasRole(ADMIN_ROLE, Deployer.address);
+            const deployerIsMinter = await BosonTokenContract.hasRole(MINTER_ROLE, Deployer.address);
 
             assert.isTrue(deployerIsAdmin)
             assert.isTrue(deployerIsMinter)
@@ -67,13 +72,13 @@ contract('Boson token', accounts => {
         })
 
         it("should revert if unauthorized address tries to mint tokens ", async () => {
-            await truffleAssert.reverts(BosonTokenContract.mint(Seller, 1000, {from: Attacker} ))
+            await truffleAssert.reverts(BosonTokenContract.mint(Seller.address, 1000, { from: Attacker.address} ))
         })
 
         it("should grant minter role to address", async () => {
-            await BosonTokenContract.grantRole(MINTER_ROLE, Buyer);
+            await BosonTokenContract.grantRole(MINTER_ROLE, Buyer.address);
 
-            const buyerIsMinter = await BosonTokenContract.hasRole(MINTER_ROLE, Buyer);
+            const buyerIsMinter = await BosonTokenContract.hasRole(MINTER_ROLE, Buyer.address);
             
             assert.isTrue(buyerIsMinter)
         })
@@ -94,11 +99,11 @@ contract('Boson token', accounts => {
         describe("[PERMIT]", async () => {
             it("Should approve successfully", async () => {
                 const balanceToApprove = 1200;
-                const nonce = await BosonTokenContract.nonces(Buyer)
+                const nonce = await BosonTokenContract.nonces(Buyer.address)
                 const deadline = toWei(1);
                 const digest = await getApprovalDigest(
                     BosonTokenContract,
-                    Buyer,
+                    Buyer.address,
                     bosonContractAddress,
                     balanceToApprove,
                     nonce,
@@ -107,18 +112,18 @@ contract('Boson token', accounts => {
 
                 const { v, r, s } = ecsign(
                     Buffer.from(digest.slice(2), 'hex'),
-                    Buffer.from(Buyer_PK.slice(2), 'hex'));
+                    Buffer.from(Buyer.pk.slice(2), 'hex'));
 
                 await BosonTokenContract.permit(
-                    Buyer,
+                    Buyer.address,
                     bosonContractAddress,
                     balanceToApprove,
                     deadline,
                     v, r, s,
-                    { from: Buyer }
+                    { from: Buyer.address }
                 )
 
-                const tokenAllowanceFromBuyer = await BosonTokenContract.allowance(Buyer, bosonContractAddress);
+                const tokenAllowanceFromBuyer = await BosonTokenContract.allowance(Buyer.address, bosonContractAddress);
 
                 assert.equal(tokenAllowanceFromBuyer, balanceToApprove, "Allowance does not equal the amount provided!")
 
@@ -131,7 +136,7 @@ contract('Boson token', accounts => {
                 const deadline = toWei(1);
                 const digest = await getApprovalDigest(
                     BosonTokenContract,
-                    Buyer,
+                    Buyer.address,
                     bosonContractAddress,
                     balanceToApprove,
                     nonce,
@@ -140,15 +145,15 @@ contract('Boson token', accounts => {
 
                 const { v, r, s } = ecsign(
                     Buffer.from(digest.slice(2), 'hex'),
-                    Buffer.from(Buyer_PK.slice(2), 'hex'));
+                    Buffer.from(Buyer.pk.slice(2), 'hex'));
 
                 await truffleAssert.reverts(BosonTokenContract.permit(
-                    Buyer,
+                    Buyer.address,
                     bosonContractAddress,
                     balanceToApprove,
                     deadline,
                     v, r, s,
-                    { from: Buyer }
+                    { from: Buyer.address }
                 ), truffleAssert.ErrorType.REVERT)
             })
 
@@ -156,11 +161,11 @@ contract('Boson token', accounts => {
 
                 const balanceToApprove = 1200;
                 const incorrectBalance = 1500;
-                const nonce = await BosonTokenContract.nonces(Buyer);
+                const nonce = await BosonTokenContract.nonces(Buyer.address);
                 const deadline = toWei(1);
                 const digest = await getApprovalDigest(
                     BosonTokenContract,
-                    Buyer,
+                    Buyer.address,
                     bosonContractAddress,
                     balanceToApprove,
                     nonce,
@@ -169,26 +174,26 @@ contract('Boson token', accounts => {
 
                 const { v, r, s } = ecsign(
                     Buffer.from(digest.slice(2), 'hex'),
-                    Buffer.from(Buyer_PK.slice(2), 'hex'));
+                    Buffer.from(Buyer.pk.slice(2), 'hex'));
 
                 await truffleAssert.reverts(BosonTokenContract.permit(
-                    Buyer,
+                    Buyer.address,
                     bosonContractAddress,
                     incorrectBalance,
                     deadline,
                     v, r, s,
-                    { from: Buyer }
+                    { from: Buyer.address }
                 ), truffleAssert.ErrorType.REVERT)
             })
 
             it("should revert if incorrect recipient is provided", async () => {
                 const incorrectAddress = accounts[6]
                 const balanceToApprove = 1200;
-                const nonce = await BosonTokenContract.nonces(Buyer);
+                const nonce = await BosonTokenContract.nonces(Buyer.address);
                 const deadline = toWei(1);
                 const digest = await getApprovalDigest(
                     BosonTokenContract,
-                    Buyer,
+                    Buyer.address,
                     bosonContractAddress,
                     balanceToApprove,
                     nonce,
@@ -197,26 +202,26 @@ contract('Boson token', accounts => {
 
                 const { v, r, s } = ecsign(
                     Buffer.from(digest.slice(2), 'hex'),
-                    Buffer.from(Buyer_PK.slice(2), 'hex'));
+                    Buffer.from(Buyer.pk.slice(2), 'hex'));
 
                 await truffleAssert.reverts(BosonTokenContract.permit(
-                    Buyer,
+                    Buyer.address,
                     incorrectAddress,
                     balanceToApprove,
                     deadline,
                     v, r, s,
-                    { from: Buyer }
+                    { from: Buyer.address }
                 ), truffleAssert.ErrorType.REVERT)
             })
 
             it("should revert if owner is incorrect", async () => {
                 const inccorectSender = accounts[6]
                 const balanceToApprove = 1200;
-                const nonce = await BosonTokenContract.nonces(Buyer);
+                const nonce = await BosonTokenContract.nonces(Buyer.address);
                 const deadline = toWei(1);
                 const digest = await getApprovalDigest(
                     BosonTokenContract,
-                    Buyer,
+                    Buyer.address,
                     bosonContractAddress,
                     balanceToApprove,
                     nonce,
@@ -225,7 +230,7 @@ contract('Boson token', accounts => {
 
                 const { v, r, s } = ecsign(
                     Buffer.from(digest.slice(2), 'hex'),
-                    Buffer.from(Buyer_PK.slice(2), 'hex'));
+                    Buffer.from(Buyer.pk.slice(2), 'hex'));
 
                 await truffleAssert.reverts(BosonTokenContract.permit(
                     inccorectSender,
@@ -233,23 +238,23 @@ contract('Boson token', accounts => {
                     balanceToApprove,
                     deadline,
                     v, r, s,
-                    { from: Buyer }
+                    { from: Buyer.address }
                 ), truffleAssert.ErrorType.REVERT)
             })
 
             it("Should transfer tokens on behalf of the buyer", async() => {
                 //Buyer has 1000 preminted tokens
                 const tokensToMint = 1000
-                await BosonTokenContract.mint(Buyer, tokensToMint, { from: Deployer });
+                await BosonTokenContract.mint(Buyer.address, tokensToMint, { from: Deployer.address });
                 const balanceToApprove = 200;
                 const tokensToSend = 200;
 
-                const nonce = await BosonTokenContract.nonces(Buyer)
+                const nonce = await BosonTokenContract.nonces(Buyer.address)
                 const deadline = toWei(1);
                 const digest = await getApprovalDigest(
                     BosonTokenContract,
-                    Buyer,
-                    Deployer,
+                    Buyer.address,
+                    Deployer.address,
                     balanceToApprove,
                     nonce,
                     deadline
@@ -257,24 +262,24 @@ contract('Boson token', accounts => {
 
                 const { v, r, s } = ecsign(
                     Buffer.from(digest.slice(2), 'hex'),
-                    Buffer.from(Buyer_PK.slice(2), 'hex'));
+                    Buffer.from(Buyer.pk.slice(2), 'hex'));
 
                 await BosonTokenContract.permit(
-                    Buyer,
-                    Deployer,
+                    Buyer.address,
+                    Deployer.address,
                     balanceToApprove,
                     deadline,
                     v, r, s,
-                    { from: Buyer }
+                    { from: Buyer.address }
                 )
 
 
-                let sellerBalance = await BosonTokenContract.balanceOf(Seller)
+                let sellerBalance = await BosonTokenContract.balanceOf(Seller.address)
                 assert.equal(sellerBalance.toString(), 0, 'Seller has funds')
 
-                await BosonTokenContract.transferFrom(Buyer, Seller, tokensToSend, {from: Deployer});
+                await BosonTokenContract.transferFrom(Buyer.address, Seller.address, tokensToSend, { from: Deployer.address});
 
-                sellerBalance = await BosonTokenContract.balanceOf(Seller)
+                sellerBalance = await BosonTokenContract.balanceOf(Seller.address)
                 assert.equal(sellerBalance.toString(), tokensToSend, 'Seller has different amount of tokens')
 
             })
@@ -282,16 +287,16 @@ contract('Boson token', accounts => {
             it("Should revert if attacker tries to transfer", async () => {
                 //Buyer has 1000 preminted tokens
                 const tokensToMint = 1000
-                await BosonTokenContract.mint(Buyer, tokensToMint, { from: Deployer });
+                await BosonTokenContract.mint(Buyer.address, tokensToMint, { from: Deployer.address });
                 const balanceToApprove = 200;
                 const tokensToSend = 200;
 
-                const nonce = await BosonTokenContract.nonces(Buyer)
+                const nonce = await BosonTokenContract.nonces(Buyer.address)
                 const deadline = toWei(1);
                 const digest = await getApprovalDigest(
                     BosonTokenContract,
-                    Buyer,
-                    Deployer,
+                    Buyer.address,
+                    Deployer.address,
                     balanceToApprove,
                     nonce,
                     deadline
@@ -299,18 +304,18 @@ contract('Boson token', accounts => {
 
                 const { v, r, s } = ecsign(
                     Buffer.from(digest.slice(2), 'hex'),
-                    Buffer.from(Buyer_PK.slice(2), 'hex'));
+                    Buffer.from(Buyer.pk.slice(2), 'hex'));
 
                 await BosonTokenContract.permit(
-                    Buyer,
-                    Deployer,
+                    Buyer.address,
+                    Deployer.address,
                     balanceToApprove,
                     deadline,
                     v, r, s,
-                    { from: Buyer }
+                    { from: Buyer.address }
                 )
 
-                await truffleAssert.reverts(BosonTokenContract.transferFrom(Buyer, Seller, tokensToSend, { from: Attacker }));
+                await truffleAssert.reverts(BosonTokenContract.transferFrom(Buyer.address, Seller.address, tokensToSend, { from: Attacker.address }));
 
             })
         })

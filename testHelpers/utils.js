@@ -87,6 +87,7 @@ class Utils {
         );
 
         return (txOrder.logs[0].args._tokenIdSupply).toString()
+        // return txOrder
     }
 
     async requestCreateOrder_ETH_TKN_WithPermit(seller, from, to, sellerDeposit, qty) {
@@ -329,9 +330,9 @@ class Utils {
     }
 
     calcTotalAmountToRecipients(event, distributionAmounts, recipient) {
-        if (event[recipient] == config.accounts.buyer) {
+        if (event[recipient] == config.accounts.buyer.address) {
             distributionAmounts.buyerAmount = new BN(distributionAmounts.buyerAmount.toString()).add(new BN(event._payment.toString()))
-        } else if (event[recipient] == config.accounts.seller) {
+        } else if (event[recipient] == config.accounts.seller.address) {
             distributionAmounts.sellerAmount = new BN(distributionAmounts.sellerAmount.toString()).add(new BN(event._payment.toString()))
         } else {
             distributionAmounts.escrowAmount = new BN(distributionAmounts.escrowAmount.toString()).add(new BN(event._payment.toString()))

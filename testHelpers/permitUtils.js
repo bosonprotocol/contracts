@@ -41,7 +41,7 @@ async function getApprovalDigest(
                 keccak256(
                     defaultAbiCoder.encode(
                         ['bytes32', 'address', 'address', 'uint256', 'uint256', 'uint256'],
-                        [PERMIT_TYPEHASH, owner, spender, value.toString(), nonce, deadline]
+                        [PERMIT_TYPEHASH, owner, spender, value.toString(), nonce.toString(), deadline]
                     )
                 )
             ]
