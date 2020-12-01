@@ -25,6 +25,7 @@ contract("Cashier withdrawals ", async accounts => {
     let Deployer = config.accounts.deployer
     let Seller = config.accounts.seller
     let Buyer = config.accounts.buyer
+    let RandomUser = config.accounts.randomUser // will be used to clear tokens received after every successful test
 
     let contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit
 
@@ -34,21 +35,50 @@ contract("Cashier withdrawals ", async accounts => {
         escrowAmount: new BN(0)
     }
 
-    describe('Withdraw scenarios', function () {
+    async function deployContracts() {
+        contractERC1155ERC721 = await ERC1155ERC721.new()
+        contractVoucherKernel = await VoucherKernel.new(contractERC1155ERC721.address)
+        contractCashier = await Cashier.new(contractVoucherKernel.address)
+        contractBSNTokenPrice = await BosonTKN.new('BosonTokenPrice', 'BPRC');
+        contractBSNTokenDeposit = await BosonTKN.new('BosonTokenDeposit', 'BDEP');
+
+        await contractERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true')
+        await contractERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address)
+        await contractVoucherKernel.setCashierAddress(contractCashier.address)
+
+        await contractVoucherKernel.setComplainPeriod(60); //60 seconds
+        await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
+    } 
+
+    // this functions is used after each interaction with tokens to clear balances
+    async function giveAwayToRandom() {
+        const balanceBuyerFromPayment = await contractBSNTokenPrice.balanceOf(Buyer.address)
+        const balanceBuyerFromDesosits = await contractBSNTokenDeposit.balanceOf(Buyer.address)
+
+        const balanceSellerFromPayment = await contractBSNTokenPrice.balanceOf(Seller.address)
+        const balanceSellerFromDesosits = await contractBSNTokenDeposit.balanceOf(Seller.address)
+
+        const escrowBalanceFromPayment = await contractBSNTokenPrice.balanceOf(Deployer.address)
+        const escrowBalanceFromDeposits = await contractBSNTokenDeposit.balanceOf(Deployer.address)
+
+        await contractBSNTokenPrice.transfer(RandomUser.address, balanceBuyerFromPayment, { from: Buyer.address })
+        await contractBSNTokenDeposit.transfer(RandomUser.address, balanceBuyerFromDesosits, { from: Buyer.address })
+        await contractBSNTokenPrice.transfer(RandomUser.address, balanceSellerFromPayment, { from: Seller.address })
+        await contractBSNTokenDeposit.transfer(RandomUser.address, balanceSellerFromDesosits, { from: Seller.address })
+        await contractBSNTokenPrice.transfer(RandomUser.address, escrowBalanceFromPayment, { from: Deployer.address })
+        await contractBSNTokenDeposit.transfer(RandomUser.address, escrowBalanceFromDeposits, { from: Deployer.address })
+
+    }
+
+    describe('Withdraw scenarios', async () => {
         
+        before(async () => {
+            await deployContracts();
+        })
+
         describe('ETH - ETH', async () => {
             
             before(async () => {
-                contractERC1155ERC721 = await ERC1155ERC721.new()
-                contractVoucherKernel = await VoucherKernel.new(contractERC1155ERC721.address)
-                contractCashier = await Cashier.new(contractVoucherKernel.address)
-
-                await contractERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true')
-                await contractERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address)
-                await contractVoucherKernel.setCashierAddress(contractCashier.address)
-
-                await contractVoucherKernel.setComplainPeriod(60); //60 seconds
-                await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
 
                 utils = UtilsBuilder
                     .NEW()
@@ -316,18 +346,6 @@ contract("Cashier withdrawals ", async accounts => {
             }
 
             beforeEach(async () => {
-                contractERC1155ERC721 = await ERC1155ERC721.new()
-                contractVoucherKernel = await VoucherKernel.new(contractERC1155ERC721.address)
-                contractCashier = await Cashier.new(contractVoucherKernel.address)
-                contractBSNTokenPrice = await BosonTKN.new('BosonTokenPrice', 'BPRC');
-                contractBSNTokenDeposit = await BosonTKN.new('BosonTokenDeposit', 'BDEP');
-
-                await contractERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true')
-                await contractERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address)
-                await contractVoucherKernel.setCashierAddress(contractCashier.address)
-
-                await contractVoucherKernel.setComplainPeriod(60); //60 seconds
-                await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
 
                 utils = UtilsBuilder
                     .NEW()
@@ -482,7 +500,6 @@ contract("Cashier withdrawals ", async accounts => {
                 truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
                     return true
                 }, "Event LogAmountDistribution was not emitted")
-
             });
 
             it("COMMIT->REFUND->FINALIZE->WITHDRAW", async () => {
@@ -737,9 +754,11 @@ contract("Cashier withdrawals ", async accounts => {
                 truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
                     return true
                 }, "Event LogAmountDistribution was not emitted")
+
+                
             });
 
-            afterEach(() => {
+            afterEach(async () => {
                 distributedAmounts = {
                     buyerAmount: new BN(0),
                     sellerAmount: new BN(0),
@@ -757,7 +776,10 @@ contract("Cashier withdrawals ", async accounts => {
 
                 cashierPaymentLeft = new BN(0)
                 cashierDepositLeft = new BN(0)
+
+                await giveAwayToRandom();
             })
+
         })
        
         describe('ETH - TKN [WITH PERMIT]', async () => {
@@ -781,18 +803,6 @@ contract("Cashier withdrawals ", async accounts => {
             }
 
             beforeEach(async () => {
-                contractERC1155ERC721 = await ERC1155ERC721.new()
-                contractVoucherKernel = await VoucherKernel.new(contractERC1155ERC721.address)
-                contractCashier = await Cashier.new(contractVoucherKernel.address)
-                contractBSNTokenDeposit = await BosonTKN.new('BosonTokenDeposit', 'BDEP');
-
-                await contractERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true')
-                await contractERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address)
-                await contractVoucherKernel.setCashierAddress(contractCashier.address)
-
-                await contractVoucherKernel.setComplainPeriod(60); //60 seconds
-                await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
-
 
                 utils = UtilsBuilder
                     .NEW()
@@ -1221,7 +1231,7 @@ contract("Cashier withdrawals ", async accounts => {
                 }, "Event LogAmountDistribution was not emitted")
             });
 
-            afterEach(() => {
+            afterEach(async () => {
                 distributedAmounts = {
                     buyerAmount: new BN(0),
                     sellerAmount: new BN(0),
@@ -1239,6 +1249,8 @@ contract("Cashier withdrawals ", async accounts => {
 
                 cashierPaymentLeft = new BN(0)
                 cashierDepositLeft = new BN(0)
+
+                await giveAwayToRandom();
             })
         })
 
@@ -1258,18 +1270,6 @@ contract("Cashier withdrawals ", async accounts => {
             }
 
             beforeEach(async () => {
-                contractERC1155ERC721 = await ERC1155ERC721.new()
-                contractVoucherKernel = await VoucherKernel.new(contractERC1155ERC721.address)
-                contractCashier = await Cashier.new(contractVoucherKernel.address)
-                contractBSNTokenPrice = await BosonTKN.new('BosonTokenPrice', 'BPRC');
-
-                await contractERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true')
-                await contractERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address)
-                await contractVoucherKernel.setCashierAddress(contractCashier.address)
-
-                await contractVoucherKernel.setComplainPeriod(60); //60 seconds
-                await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
-
 
                 utils = UtilsBuilder
                     .NEW()
@@ -1731,7 +1731,7 @@ contract("Cashier withdrawals ", async accounts => {
                 }, "Event LogAmountDistribution was not emitted")
             });
 
-            afterEach(() => {
+            afterEach(async () => {
                 distributedAmounts = {
                     buyerAmount: new BN(0),
                     sellerAmount: new BN(0),
@@ -1744,6 +1744,8 @@ contract("Cashier withdrawals ", async accounts => {
 
                 cashierPaymentLeft = new BN(0)
                 cashierDepositLeft = new BN(0)
+
+                await giveAwayToRandom();
             })
         })
 

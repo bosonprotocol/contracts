@@ -32,15 +32,6 @@ contract('Boson token', accounts => {
 
     let BosonTokenContract, bosonContractAddress;
 
-    // let Deployer = accounts[0] //0xD9995BAE12FEe327256FFec1e3184d492bD94C31
-    // let Deployer_PK = '0x7ab741b57e8d94dd7e1a29055646bafde7010f38a900f55bbd7647880faa6ee8'
-    // let Seller = accounts[1] //0xd4Fa489Eacc52BA59438993f37Be9fcC20090E39
-    // let Seller_PK = '0x2030b463177db2da82908ef90fa55ddfcef56e8183caf60db464bc398e736e6f';
-    // let Buyer = accounts[2] //0x760bf27cd45036a6C486802D30B5D90CfFBE31FE
-    // let Buyer.pk = '0x62ecd49c4ccb41a70ad46532aed63cf815de15864bc415c87d507afd6a5e8da2'
-    // let Attacker = accounts[3] //0x56A32fFf5E5A8B40d6A21538579fB8922DF5258c 
-    // let Attacker_PK = '0xf473040b1a83739a9c7cc1f5719fab0f5bf178f83314d98557c58aae1910e03a' 
-
     let Deployer = config.accounts.deployer
     let Seller = config.accounts.seller
     let Buyer = config.accounts.buyer

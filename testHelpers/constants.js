@@ -37,6 +37,8 @@ const buyer_incorrect_deposit = '4000000000000000'; // 0.004
 const seller_deposit = '50000000000000000'; // 0.05
 const product_price = '300000000000000000'; // 0.3
 const incorrect_product_price = '30000000000000000'; // 0.03
+const QTY_10 = 10
+const QTY_1 = 1
 
 module.exports = {
 	ASSET_VERSION,
@@ -68,5 +70,7 @@ module.exports = {
 	buyer_incorrect_deposit,
 	seller_deposit,
 	product_price,
-	incorrect_product_price
+	incorrect_product_price,
+	QTY_10,
+	QTY_1
 }

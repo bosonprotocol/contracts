@@ -17,6 +17,7 @@ class Utils {
     constructor() {
         this.createOrder = ''
         this.commitToBuy = ''
+        this.deadline = toWei(1)
     }
 
     setContracts(erc1155721, voucherKernel, cashier, bsnTokenPrice, bsnTokenDeposit) {
@@ -29,8 +30,8 @@ class Utils {
 
     async requestCreateOrder_ETH_ETH(seller, from, to) {
         const sellerDepoist = helpers.seller_deposit;
-        const qty = 10
-        const txValue = new BN(sellerDepoist.toString()).mul(new BN(qty))
+        const qty = helpers.QTY_10
+        const txValue = new BN(sellerDepoist).mul(new BN(qty))
 
         let txOrder = await this.contractCashier.requestCreateOrder_ETH_ETH(
             [from, 
@@ -41,7 +42,7 @@ class Utils {
             qty], 
             { 
                 from: seller, 
-                value: txValue.toString()
+                value: txValue
             }
         );
 
@@ -49,8 +50,7 @@ class Utils {
     }
 
     async requestCreateOrder_TKN_TKN_WithPermit(seller, from, to, sellerDeposit, qty) {
-        const txValue = new BN(sellerDeposit.toString()).mul(new BN(qty))
-        const deadline = toWei(1)
+        const txValue = new BN(sellerDeposit).mul(new BN(qty))
 
         const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
 
@@ -58,9 +58,9 @@ class Utils {
             this.contractBSNTokenDeposit,
             seller.address,
             this.contractCashier.address,
-            txValue.toString(),
+            txValue,
             nonce,
-            deadline
+            this.deadline
         )
 
         const { v, r, s } = ecsign( 
@@ -70,8 +70,8 @@ class Utils {
         let txOrder = await this.contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
             this.contractBSNTokenPrice.address,
             this.contractBSNTokenDeposit.address,
-            txValue.toString(),
-            deadline,
+            txValue,
+            this.deadline,
             v,r,s,
             [
                 from,
@@ -87,21 +87,19 @@ class Utils {
         );
 
         return (txOrder.logs[0].args._tokenIdSupply).toString()
-        // return txOrder
     }
 
     async requestCreateOrder_ETH_TKN_WithPermit(seller, from, to, sellerDeposit, qty) {
-        const txValue = new BN(sellerDeposit.toString()).mul(new BN(qty));
-        const deadline = toWei(1)
+        const txValue = new BN(sellerDeposit).mul(new BN(qty));
         const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
 
         const digest = await getApprovalDigest(
             this.contractBSNTokenDeposit,
             seller.address,
             this.contractCashier.address,
-            txValue.toString(),
+            txValue,
             nonce,
-            deadline
+            this.deadline
         )
 
         const { v, r, s } = ecsign(
@@ -112,7 +110,7 @@ class Utils {
         let txOrder = await this.contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
             this.contractBSNTokenDeposit.address,
             txValue,
-            deadline,
+            this.deadline,
             v, r, s,
             [
                 from,
@@ -131,7 +129,7 @@ class Utils {
     }
 
     async requestCreateOrder_TKN_ETH_WithPermit(seller, from, to, sellerDeposit, qty) {
-        const txValue = new BN(sellerDeposit.toString()).mul(new BN(qty));
+        const txValue = new BN(sellerDeposit).mul(new BN(qty));
 
         let txOrder = await this.contractCashier.requestCreateOrder_TKN_ETH_WithPermit(
             this.contractBSNTokenPrice.address,
@@ -145,7 +143,7 @@ class Utils {
             ],
             {
                 from: seller.address,
-                value: txValue.toString()
+                value: txValue
             }
         );
 
@@ -153,20 +151,16 @@ class Utils {
     }
 
     async commitToBuy_TKN_TKN_WithPermit(buyer, seller, tokenSupplyId) {
-        const buyerDeposit = helpers.buyer_deposit;
-        const price = helpers.product_price;
-        const txValue = new BN(buyerDeposit).add(new BN(price))
-
-        const deadline = toWei(1)
+        const txValue = new BN(helpers.buyer_deposit).add(new BN(helpers.product_price))
         const nonce1 = await this.contractBSNTokenDeposit.nonces(buyer.address);
 
         const digestDeposit = await getApprovalDigest(
             this.contractBSNTokenDeposit,
             buyer.address,
             this.contractCashier.address,
-            buyerDeposit,
+            helpers.buyer_deposit,
             nonce1,
-            deadline
+            this.deadline
         )
 
         let VRS_DEPOSIT = ecsign(
@@ -183,9 +177,9 @@ class Utils {
             this.contractBSNTokenPrice,
             buyer.address,
             this.contractCashier.address,
-            price,
+            helpers.product_price,
             nonce2,
-            deadline
+            this.deadline
         )
 
         let VRS_PRICE = ecsign(
@@ -199,8 +193,8 @@ class Utils {
         let CommitTx = await this.contractCashier.requestVoucher_TKN_TKN_WithPermit(
             tokenSupplyId,
             seller.address,
-            txValue.toString(),
-            deadline,
+            txValue,
+            this.deadline,
             vPrice, rPrice, sPrice,
             vDeposit, rDeposit, sDeposit,
         { from: buyer.address });
@@ -212,22 +206,15 @@ class Utils {
     }
 
     async commitToBuy_ETH_TKN_WithPermit(buyer, seller, tokenSupplyId) {
-        const buyerDeposit = helpers.buyer_deposit;
-        const price = helpers.product_price;
-        const depositInTokens = new BN(buyerDeposit)
-        const sellerAddress = seller.address;
-
-        const deadline = toWei(1)
-
         const nonce1 = await this.contractBSNTokenDeposit.nonces(buyer.address);
 
         const digestDeposit = await getApprovalDigest(
             this.contractBSNTokenDeposit,
             buyer.address,
             this.contractCashier.address,
-            buyerDeposit.toString(),
+            helpers.buyer_deposit,
             nonce1,
-            deadline
+            this.deadline
         )
 
         let { v, r, s } = ecsign(
@@ -237,9 +224,9 @@ class Utils {
 
         let txOrder = await this.contractCashier.requestVoucher_ETH_TKN_WithPermit(
             tokenSupplyId,
-            sellerAddress,
-            buyerDeposit.toString(),
-            deadline,
+            seller.address,
+            helpers.buyer_deposit,
+            this.deadline,
             v, r, s,
             { from: buyer.address, value: helpers.product_price.toString() }
         );
@@ -251,10 +238,7 @@ class Utils {
     }
 
     async commitToBuy_ETH_ETH(buyer, seller, tokenSupplyId) {
-
-        const buyerDeposit = helpers.buyer_deposit;
-        const price = helpers.product_price;
-        const txValue = new BN(buyerDeposit).add(new BN(price))
+        const txValue = new BN(helpers.buyer_deposit).add(new BN(helpers.product_price))
 
         let CommitTx = await this.contractCashier.requestVoucher_ETH_ETH(tokenSupplyId, seller, { from: buyer, value: txValue.toString() });
 
@@ -262,25 +246,18 @@ class Utils {
 
         let filtered = nestedValue.filter(e => e.event == 'LogVoucherDelivered')[0]
         return filtered.returnValues['_tokenIdVoucher']
-
     }
 
     async commitToBuy_TKN_ETH_WithPermit(buyer, seller, tokenSupplyId) {
-        const buyerDeposit = helpers.buyer_deposit;
-        const price = helpers.product_price;
-        const sellerAddress = seller.address;
-
-        const deadline = toWei(1)
-
         const nonce1 = await this.contractBSNTokenPrice.nonces(buyer.address);
 
         const digestDeposit = await getApprovalDigest(
             this.contractBSNTokenPrice,
             buyer.address,
             this.contractCashier.address,
-            price,
+            helpers.product_price,
             nonce1,
-            deadline
+            this.deadline
         )
 
         let { v, r, s } = ecsign(
@@ -290,9 +267,9 @@ class Utils {
 
         let txOrder = await this.contractCashier.requestVoucher_TKN_ETH_WithPermit(
             tokenSupplyId,
-            sellerAddress,
-            price,
-            deadline,
+            seller.address,
+            helpers.product_price,
+            this.deadline,
             v, r, s,
             { from: buyer.address, value: helpers.buyer_deposit }
         );

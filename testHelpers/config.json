@@ -20,6 +20,10 @@
         "attacker": {
             "address":"0x56A32fFf5E5A8B40d6A21538579fB8922DF5258c",
             "pk": "0xf473040b1a83739a9c7cc1f5719fab0f5bf178f83314d98557c58aae1910e03a"
+        },
+        "randomUser": {
+            "address": "0xf0508f89e26bd6b00f66a9d467678c7ed16a3c5a",
+            "pk": "0x6ca40ba4cca775643398385022264c0c414da1abd21d08d9e7136796a520a543"
         }
     }
 }

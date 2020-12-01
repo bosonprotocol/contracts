@@ -33,6 +33,8 @@ contract("Voucher tests", async accounts => {
 
 	let contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit;
     let tokenSupplyKey1, tokenSupplyKey2, tokenVoucherKey1, tokenVoucherKey2;
+	const ONE_VOUCHER = 1
+	const deadline = toWei(1)
 
 
 	async function deployContracts() {
@@ -52,7 +54,7 @@ contract("Voucher tests", async accounts => {
 		await contractVoucherKernel.setCashierAddress(contractCashier.address);
 	}
 
-	describe.only('Order Creation', function () {
+	describe('TOKEN SUPPLY CREATION (Voucher batch creation)', function () {
 
 		const paymentMethods = {
 			ETH_ETH: 1,
@@ -65,26 +67,22 @@ contract("Voucher tests", async accounts => {
 		const zeroAddress = '0x0000000000000000000000000000000000000000';
 
 		before(async () => {
-
 			await deployContracts();
 
-			const orderQty = 10
-			const tokensToMint = new BN(helpers.seller_deposit).mul(new BN(orderQty))
+			const tokensToMint = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_10))
 			await contractBSNTokenDeposit.mint(Seller.address, tokensToMint)
 		})
 
 		describe("ETH_ETH", () => { 
 			it("Should create payment method ETH_ETH", async () => {
-				const sellerDepoist = helpers.seller_deposit;
-				const qty = 1
-				const txValue = new BN(sellerDepoist).mul(new BN(qty))
+				const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 				let txOrder = await contractCashier.requestCreateOrder_ETH_ETH(
 					[
 						helpers.PROMISE_VALID_FROM,
 						helpers.PROMISE_VALID_TO,
 						helpers.PROMISE_PRICE1,
-						sellerDepoist,
+						helpers.seller_deposit,
 						helpers.PROMISE_DEPOSITBU1,
 						helpers.ORDER_QUANTITY1
 					],
@@ -101,9 +99,7 @@ contract("Voucher tests", async accounts => {
 			})
 
 			it("[NEGATIVE] Should fail if additional token address is provided", async () => {
-				const sellerDepoist = helpers.seller_deposit;
-				const qty = 1
-				const txValue = new BN(sellerDepoist).mul(new BN(qty))
+				const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 				await truffleAssert.fails(
 					contractCashier.requestCreateOrder_ETH_ETH(
@@ -112,7 +108,7 @@ contract("Voucher tests", async accounts => {
 							helpers.PROMISE_VALID_FROM,
 							helpers.PROMISE_VALID_TO,
 							helpers.PROMISE_PRICE1,
-							sellerDepoist,
+							helpers.seller_deposit,
 							helpers.PROMISE_DEPOSITBU1,
 							helpers.ORDER_QUANTITY1
 						],
@@ -128,9 +124,7 @@ contract("Voucher tests", async accounts => {
 			describe("ETH_TKN", () => {
 
 				it("Should create payment method ETH_TKN", async () => {
-					const sellerDepoist = helpers.seller_deposit;
-					const qty = 1
-					const txValue = new BN(sellerDepoist).mul(new BN(qty))
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
 					const deadline = toWei(1)
 
@@ -156,7 +150,7 @@ contract("Voucher tests", async accounts => {
 							helpers.PROMISE_VALID_FROM,
 							helpers.PROMISE_VALID_TO,
 							helpers.PROMISE_PRICE1,
-							sellerDepoist,
+							helpers.seller_deposit,
 							helpers.PROMISE_DEPOSITBU1,
 							helpers.ORDER_QUANTITY1
 						],
@@ -173,11 +167,8 @@ contract("Voucher tests", async accounts => {
 				})
 
 				it("[NEGATIVE] Should fail if token deposit contract address is not provided", async () => {
-					const sellerDepoist = helpers.seller_deposit;
-					const qty = 1
-					const txValue = new BN(sellerDepoist).mul(new BN(qty))
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
-					const deadline = toWei(1)
 
 					const digest = await getApprovalDigest(
 						contractBSNTokenDeposit,
@@ -202,7 +193,7 @@ contract("Voucher tests", async accounts => {
 								helpers.PROMISE_VALID_FROM,
 								helpers.PROMISE_VALID_TO,
 								helpers.PROMISE_PRICE1,
-								sellerDepoist,
+								helpers.seller_deposit,
 								helpers.PROMISE_DEPOSITBU1,
 								helpers.ORDER_QUANTITY1
 							],
@@ -212,11 +203,8 @@ contract("Voucher tests", async accounts => {
 				})
 
 				it("[NEGATIVE] Should revert if token deposit contract address is zero address", async () => {
-					const sellerDepoist = helpers.seller_deposit;
-					const qty = 1
-					const txValue = new BN(sellerDepoist).mul(new BN(qty))
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
-					const deadline = toWei(1)
 
 					const digest = await getApprovalDigest(
 						contractBSNTokenDeposit,
@@ -241,7 +229,7 @@ contract("Voucher tests", async accounts => {
 								helpers.PROMISE_VALID_FROM,
 								helpers.PROMISE_VALID_TO,
 								helpers.PROMISE_PRICE1,
-								sellerDepoist,
+								helpers.seller_deposit,
 								helpers.PROMISE_DEPOSITBU1,
 								helpers.ORDER_QUANTITY1
 							],
@@ -256,10 +244,7 @@ contract("Voucher tests", async accounts => {
 			describe("TKN ETH", () => {
 
 				it("Should create payment method TKN_ETH", async () => {
-					const sellerDepoist = helpers.seller_deposit;
-					const qty = 1
-					const txValue = new BN(sellerDepoist.toString()).mul(new BN(qty))
-
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 					let txOrder = await contractCashier.requestCreateOrder_TKN_ETH_WithPermit(
 						contractBSNTokenPrice.address,
@@ -267,7 +252,7 @@ contract("Voucher tests", async accounts => {
 							helpers.PROMISE_VALID_FROM,
 							helpers.PROMISE_VALID_TO,
 							helpers.PROMISE_PRICE1,
-							sellerDepoist,
+							helpers.seller_deposit,
 							helpers.PROMISE_DEPOSITBU1,
 							helpers.ORDER_QUANTITY1
 						],
@@ -284,9 +269,7 @@ contract("Voucher tests", async accounts => {
 				})
 
 				it("[NEGATIVE] Should fail if price token contract address is not proviced", async () => {
-					const sellerDepoist = helpers.seller_deposit;
-					const qty = 1
-					const txValue = new BN(sellerDepoist.toString()).mul(new BN(qty))
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 					await truffleAssert.fails(
 						contractCashier.requestCreateOrder_TKN_ETH_WithPermit(
@@ -295,7 +278,7 @@ contract("Voucher tests", async accounts => {
 								helpers.PROMISE_VALID_FROM,
 								helpers.PROMISE_VALID_TO,
 								helpers.PROMISE_PRICE1,
-								sellerDepoist,
+								helpers.seller_deposit,
 								helpers.PROMISE_DEPOSITBU1,
 								helpers.ORDER_QUANTITY1
 							],
@@ -306,8 +289,6 @@ contract("Voucher tests", async accounts => {
 				})
 
 				it("[NEGATIVE] Should fail if token price contract is zero address", async () => {
-					const sellerDepoist = helpers.seller_deposit;
-					const qty = 1
 
 					await truffleAssert.reverts(
 						contractCashier.requestCreateOrder_TKN_ETH_WithPermit(
@@ -316,7 +297,7 @@ contract("Voucher tests", async accounts => {
 								helpers.PROMISE_VALID_FROM,
 								helpers.PROMISE_VALID_TO,
 								helpers.PROMISE_PRICE1,
-								sellerDepoist,
+								helpers.seller_deposit,
 								helpers.PROMISE_DEPOSITBU1,
 								helpers.ORDER_QUANTITY1
 							],
@@ -330,11 +311,8 @@ contract("Voucher tests", async accounts => {
 
 			describe("TKN TKN", () => {
 				it("Should create payment method TKN_TKN", async () => {
-					const sellerDepoist = helpers.seller_deposit;
-					const qty = 1
-					const txValue = new BN(sellerDepoist).mul(new BN(qty))
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_1))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
-					const deadline = toWei(1)
 
 					const digest = await getApprovalDigest(
 						contractBSNTokenDeposit,
@@ -360,7 +338,7 @@ contract("Voucher tests", async accounts => {
 							helpers.PROMISE_VALID_FROM,
 							helpers.PROMISE_VALID_TO,
 							helpers.PROMISE_PRICE1,
-							sellerDepoist,
+							helpers.seller_deposit,
 							helpers.PROMISE_DEPOSITBU1,
 							helpers.ORDER_QUANTITY1
 						],
@@ -377,11 +355,8 @@ contract("Voucher tests", async accounts => {
 				})
 
 				it("[NEGATIVE] Should fail if token price contract address is not proviced", async () => {
-					const sellerDepoist = helpers.seller_deposit;
-					const qty = 1
-					const txValue = new BN(sellerDepoist).mul(new BN(qty))
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
-					const deadline = toWei(1)
 
 					const digest = await getApprovalDigest(
 						contractBSNTokenDeposit,
@@ -408,7 +383,7 @@ contract("Voucher tests", async accounts => {
 								helpers.PROMISE_VALID_FROM,
 								helpers.PROMISE_VALID_TO,
 								helpers.PROMISE_PRICE1,
-								sellerDepoist,
+								helpers.seller_deposit,
 								helpers.PROMISE_DEPOSITBU1,
 								helpers.ORDER_QUANTITY1
 							],
@@ -419,11 +394,8 @@ contract("Voucher tests", async accounts => {
 				})
 
 				it("[NEGATIVE] Should fail if token deposit contract address is not proviced", async () => {
-					const sellerDepoist = helpers.seller_deposit;
-					const qty = 1
-					const txValue = new BN(sellerDepoist).mul(new BN(qty))
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
-					const deadline = toWei(1)
 
 					const digest = await getApprovalDigest(
 						contractBSNTokenDeposit,
@@ -450,7 +422,7 @@ contract("Voucher tests", async accounts => {
 								helpers.PROMISE_VALID_FROM,
 								helpers.PROMISE_VALID_TO,
 								helpers.PROMISE_PRICE1,
-								sellerDepoist,
+								helpers.seller_deposit,
 								helpers.PROMISE_DEPOSITBU1,
 								helpers.ORDER_QUANTITY1
 							],
@@ -461,11 +433,8 @@ contract("Voucher tests", async accounts => {
 				})
 
 				it("[NEGATIVE] Should revert if token price contract address is zero address", async () => {
-					const sellerDepoist = helpers.seller_deposit;
-					const qty = 1
-					const txValue = new BN(sellerDepoist).mul(new BN(qty))
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
-					const deadline = toWei(1)
 
 					const digest = await getApprovalDigest(
 						contractBSNTokenDeposit,
@@ -492,7 +461,7 @@ contract("Voucher tests", async accounts => {
 								helpers.PROMISE_VALID_FROM,
 								helpers.PROMISE_VALID_TO,
 								helpers.PROMISE_PRICE1,
-								sellerDepoist,
+								helpers.seller_deposit,
 								helpers.PROMISE_DEPOSITBU1,
 								helpers.ORDER_QUANTITY1
 							],
@@ -504,9 +473,7 @@ contract("Voucher tests", async accounts => {
 				})
 
 				it("[NEGATIVE] Should revert if token deposit contract address is zero address", async () => {
-					const sellerDepoist = helpers.seller_deposit;
-					const qty = 1
-					const txValue = new BN(sellerDepoist).mul(new BN(qty))
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
 					const deadline = toWei(1)
 
@@ -535,7 +502,7 @@ contract("Voucher tests", async accounts => {
 								helpers.PROMISE_VALID_FROM,
 								helpers.PROMISE_VALID_TO,
 								helpers.PROMISE_PRICE1,
-								sellerDepoist,
+								helpers.seller_deposit,
 								helpers.PROMISE_DEPOSITBU1,
 								helpers.ORDER_QUANTITY1
 							],
@@ -550,9 +517,8 @@ contract("Voucher tests", async accounts => {
 		})
 	})
 
-	describe.only("VOUCHER TESTS", () => {
-		const qty = 5
-		const deadline = toWei(1)
+	describe("VOUCHER CREATION (Commit to buy)", () => {
+		const ORDER_QTY = 5
 		let TOKEN_SUPPLY_ID;
 
 		before(async()=>{
@@ -624,8 +590,8 @@ contract("Voucher tests", async accounts => {
 						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
 				
 
-					const tokensToMintSeller = new BN(helpers.seller_deposit).mul(new BN(qty))
-					const tokensToMintBuyer = new BN(helpers.buyer_deposit).mul(new BN(qty))
+					const tokensToMintSeller = new BN(helpers.seller_deposit).mul(new BN(ORDER_QTY))
+					const tokensToMintBuyer = new BN(helpers.buyer_deposit).mul(new BN(ORDER_QTY))
 
 					await contractBSNTokenDeposit.mint(Seller.address, tokensToMintSeller)
 					await contractBSNTokenDeposit.mint(Buyer.address, tokensToMintBuyer)
@@ -635,7 +601,7 @@ contract("Voucher tests", async accounts => {
 						helpers.PROMISE_VALID_FROM,
 						helpers.PROMISE_VALID_TO,
 						helpers.seller_deposit,
-						qty
+						ORDER_QTY
 					)
 				
 				})
@@ -740,8 +706,8 @@ contract("Voucher tests", async accounts => {
 						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
 				
 
-					const tokensToMintSeller = new BN(helpers.seller_deposit).mul(new BN(qty))
-					const tokensToMintBuyer = new BN(product_price).mul(new BN(qty))
+					const tokensToMintSeller = new BN(helpers.seller_deposit).mul(new BN(ORDER_QTY))
+					const tokensToMintBuyer = new BN(product_price).mul(new BN(ORDER_QTY))
 
 					await contractBSNTokenDeposit.mint(Seller.address, tokensToMintSeller)
 					await contractBSNTokenDeposit.mint(Buyer.address, tokensToMintBuyer)
@@ -752,7 +718,7 @@ contract("Voucher tests", async accounts => {
 						helpers.PROMISE_VALID_FROM,
 						helpers.PROMISE_VALID_TO,
 						helpers.seller_deposit,
-						qty
+						ORDER_QTY
 					)
 				
 				})
@@ -930,7 +896,7 @@ contract("Voucher tests", async accounts => {
 						.TKN_ETH()
 						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
 
-					const tokensToMintBuyer = new BN(product_price).mul(new BN(qty))
+					const tokensToMintBuyer = new BN(product_price).mul(new BN(ORDER_QTY))
 
 					await contractBSNTokenPrice.mint(Buyer.address, tokensToMintBuyer)
 
@@ -939,27 +905,26 @@ contract("Voucher tests", async accounts => {
 						helpers.PROMISE_VALID_FROM,
 						helpers.PROMISE_VALID_TO,
 						helpers.seller_deposit,
-						qty
+						ORDER_QTY
 					)
 
 				})
 
 				it("Should create order", async () => {
-					const nonce1 = await contractBSNTokenPrice.nonces(Buyer.address);
+					const nonce = await contractBSNTokenPrice.nonces(Buyer.address);
 
 					const digestDeposit = await getApprovalDigest(
 						contractBSNTokenPrice,
 						Buyer.address,
 						contractCashier.address,
 						helpers.product_price,
-						nonce1,
+						nonce,
 						deadline
 					)
 
 					let { v, r, s } = ecsign(
 						Buffer.from(digestDeposit.slice(2), 'hex'),
 						Buffer.from(Buyer.pk.slice(2), 'hex'));
-
 
 					let txFillOrder = await contractCashier.requestVoucher_TKN_ETH_WithPermit(
 						TOKEN_SUPPLY_ID,
@@ -979,14 +944,14 @@ contract("Voucher tests", async accounts => {
 				})
 
 				it("[NEGATIVE] Should not create order with incorrect deposit", async () => {
-					const nonce1 = await contractBSNTokenPrice.nonces(Buyer.address);
+					const nonce = await contractBSNTokenPrice.nonces(Buyer.address);
 
 					const digestDeposit = await getApprovalDigest(
 						contractBSNTokenPrice,
 						Buyer.address,
 						contractCashier.address,
 						helpers.product_price,
-						nonce1,
+						nonce,
 						deadline
 					)
 
@@ -1009,14 +974,14 @@ contract("Voucher tests", async accounts => {
 				})
 
 				it("[NEGATIVE] Should not create order with incorrect price", async () => {
-					const nonce1 = await contractBSNTokenPrice.nonces(Buyer.address);
+					const nonce = await contractBSNTokenPrice.nonces(Buyer.address);
 
 					const digestDeposit = await getApprovalDigest(
 						contractBSNTokenPrice,
 						Buyer.address,
 						contractCashier.address,
 						helpers.product_price,
-						nonce1,
+						nonce,
 						deadline
 					)
 
