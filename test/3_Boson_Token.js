@@ -118,7 +118,7 @@ contract('Boson token', accounts => {
         })
 
         it("should grant minter role to address", async () => {
-            await BosonTokenContract.grantRole(MINTER_ROLE, Buyer);
+            await BosonTokenContract.grantMinterRole(Buyer);
 
             const buyerIsMinter = await BosonTokenContract.hasRole(MINTER_ROLE, Buyer);
             
