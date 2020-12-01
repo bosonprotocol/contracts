@@ -87,6 +87,7 @@ contract('Boson token', accounts => {
     let Buyer_PK = '0x62ecd49c4ccb41a70ad46532aed63cf815de15864bc415c87d507afd6a5e8da2'
     let Attacker = accounts[3] //0x56A32fFf5E5A8B40d6A21538579fB8922DF5258c 
     let Attacker_PK = '0xf473040b1a83739a9c7cc1f5719fab0f5bf178f83314d98557c58aae1910e03a' 
+    let RandomAddress = accounts[6]
 
     before(async () => {
 
@@ -362,6 +363,36 @@ contract('Boson token', accounts => {
             })
         })
         
+        describe("[OWNERSHIP]", async () => {
+
+            it("Deployer should be owner initially", async () => {
+                const owner = await BosonTokenContract.owner()
+                assert.equal(owner, Deployer, "Deployer is not an owner")
+            })
+
+            it("Should transfer ownership", async () => {
+                await BosonTokenContract.transferOwnership(RandomAddress)
+
+                const newOwner = await BosonTokenContract.owner()
+                assert.equal(newOwner, RandomAddress, "ownership has not been transferred")
+            })
+
+            it("Should renounce ownership", async () => {
+                const owner = await BosonTokenContract.owner()
+                const zeroAddress = '0x0000000000000000000000000000000000000000';
+
+                await BosonTokenContract.renounceOwnership({ from: owner})
+                
+                const newOwner = await BosonTokenContract.owner()
+                assert.equal(newOwner, zeroAddress, "ownership has not been renounced")
+            })
+
+
+
+            it("[NEGATIVE] Should revert if calling a function which is allowed only from owner", async () => {
+                await truffleAssert.reverts(BosonTokenContract.grantMinterRole(Buyer, {from: Attacker}));
+            })
+        })
     })
 
 })
