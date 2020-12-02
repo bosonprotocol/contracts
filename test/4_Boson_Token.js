@@ -9,7 +9,7 @@ const { ecsign } = require('ethereumjs-util');
 
 const BN = web3.utils.BN
 const BosonToken = artifacts.require("BosonToken")
-const maxuint = new BN('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
+const helpers = require('../testHelpers/constants')
 
 const {
     hexlify,
@@ -36,6 +36,7 @@ contract('Boson token', accounts => {
     let Seller = config.accounts.seller
     let Buyer = config.accounts.buyer
     let Attacker = config.accounts.attacker //0x56A32fFf5E5A8B40d6A21538579fB8922DF5258c 
+    let RandomUser = config.accounts.randomUser
 
     beforeEach(async () => {
 
@@ -67,7 +68,7 @@ contract('Boson token', accounts => {
         })
 
         it("should grant minter role to address", async () => {
-            await BosonTokenContract.grantRole(MINTER_ROLE, Buyer.address);
+            await BosonTokenContract.grantMinterRole(Buyer.address);
 
             const buyerIsMinter = await BosonTokenContract.hasRole(MINTER_ROLE, Buyer.address);
             
@@ -311,6 +312,34 @@ contract('Boson token', accounts => {
             })
         })
         
+        describe("[OWNERSHIP]", async () => {
+
+            it("Deployer should be owner initially", async () => {
+                const owner = await BosonTokenContract.owner()
+                assert.equal(owner, Deployer.address, "Deployer is not an owner")
+            })
+
+            it("Should transfer ownership", async () => {
+                await BosonTokenContract.transferOwnership(RandomUser.address)
+                const newOwner = await BosonTokenContract.owner()
+
+                assert.equal(newOwner, RandomUser.address, "ownership has not been transferred")
+            })
+
+            it("Should renounce ownership", async () => {
+                const owner = await BosonTokenContract.owner()
+
+                await BosonTokenContract.renounceOwnership({ from: owner})
+                
+                const newOwner = await BosonTokenContract.owner()
+
+                assert.equal(newOwner, helpers.ZERO_ADDRESS, "ownership has not been renounced")
+            })
+
+            it("[NEGATIVE] Should revert if calling a function which is allowed only from owner", async () => {
+                await truffleAssert.reverts(BosonTokenContract.grantMinterRole(Buyer.address, {from: Attacker.address}));
+            })
+        })
     })
 
 })

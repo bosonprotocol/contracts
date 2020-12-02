@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LGPL-3.0-or-later
 pragma solidity >=0.6.0 <0.7.0;
 
 interface IERC20WithPermit {

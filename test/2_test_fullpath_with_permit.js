@@ -64,8 +64,6 @@ contract("Voucher tests", async accounts => {
 
 		}
 
-		const zeroAddress = '0x0000000000000000000000000000000000000000';
-
 		before(async () => {
 			await deployContracts();
 
@@ -94,8 +92,8 @@ contract("Voucher tests", async accounts => {
 				const paymentDetails = await contractVoucherKernel.paymentDetails(tokenSupplyKey1);
 
 				assert.equal(paymentDetails.paymentMethod.toString(), paymentMethods.ETH_ETH, "Payment Method ETH_ETH not set correctly")
-				assert.equal(paymentDetails.addressTokenPrice.toString(), zeroAddress, "ETH_ETH Method Price Token Address mismatch")
-				assert.equal(paymentDetails.addressTokenDeposits.toString(), zeroAddress, "ETH_ETH Method Deposit Token Address mismatch")
+				assert.equal(paymentDetails.addressTokenPrice.toString(), helpers.ZERO_ADDRESS, "ETH_ETH Method Price Token Address mismatch")
+				assert.equal(paymentDetails.addressTokenDeposits.toString(), helpers.ZERO_ADDRESS, "ETH_ETH Method Deposit Token Address mismatch")
 			})
 
 			it("[NEGATIVE] Should fail if additional token address is provided", async () => {
@@ -162,7 +160,7 @@ contract("Voucher tests", async accounts => {
 					const paymentDetails = await contractVoucherKernel.paymentDetails(tokenSupplyKey1);
 
 					assert.equal(paymentDetails.paymentMethod.toString(), paymentMethods.ETH_TKN, "Payment Method ETH_TKN not set correctly")
-					assert.equal(paymentDetails.addressTokenPrice.toString(), zeroAddress, "ETH_TKN Method Price Token Address mismatch")
+					assert.equal(paymentDetails.addressTokenPrice.toString(), helpers.ZERO_ADDRESS, "ETH_TKN Method Price Token Address mismatch")
 					assert.equal(paymentDetails.addressTokenDeposits.toString(), contractBSNTokenDeposit.address, "ETH_TKN Method Deposit Token Address mismatch")
 				})
 
@@ -221,7 +219,7 @@ contract("Voucher tests", async accounts => {
 
 					await truffleAssert.reverts(
 						contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
-							zeroAddress,
+							helpers.ZERO_ADDRESS,
 							txValue,
 							deadline,
 							v, r, s,
@@ -265,7 +263,7 @@ contract("Voucher tests", async accounts => {
 
 					assert.equal(paymentDetails.paymentMethod.toString(), paymentMethods.TKN_ETH, "Payment Method TKN_ETH not set correctly")
 					assert.equal(paymentDetails.addressTokenPrice.toString(), contractBSNTokenPrice.address, "TKN_ETH Method Price Token Address mismatch")
-					assert.equal(paymentDetails.addressTokenDeposits.toString(), zeroAddress, "TKN_ETH Method Deposit Token Address mismatch")
+					assert.equal(paymentDetails.addressTokenDeposits.toString(), helpers.ZERO_ADDRESS, "TKN_ETH Method Deposit Token Address mismatch")
 				})
 
 				it("[NEGATIVE] Should fail if price token contract address is not proviced", async () => {
@@ -292,7 +290,7 @@ contract("Voucher tests", async accounts => {
 
 					await truffleAssert.reverts(
 						contractCashier.requestCreateOrder_TKN_ETH_WithPermit(
-							zeroAddress,
+							helpers.ZERO_ADDRESS,
 							[
 								helpers.PROMISE_VALID_FROM,
 								helpers.PROMISE_VALID_TO,
@@ -452,7 +450,7 @@ contract("Voucher tests", async accounts => {
 
 					await truffleAssert.reverts(
 						contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
-							zeroAddress,
+							helpers.ZERO_ADDRESS,
 							contractBSNTokenDeposit.address,
 							txValue,
 							deadline,
@@ -494,7 +492,7 @@ contract("Voucher tests", async accounts => {
 					await truffleAssert.reverts(
 						contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
 							contractBSNTokenPrice.address,
-							zeroAddress,
+							helpers.ZERO_ADDRESS,
 							txValue,
 							deadline,
 							v, r, s,

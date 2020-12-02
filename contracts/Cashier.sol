@@ -1,6 +1,4 @@
-
 // SPDX-License-Identifier: LGPL-3.0-or-later
-
 pragma solidity >=0.6.6 <0.7.0;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -345,7 +343,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         }
         
         if (voucherDetails.amount2pool > 0) {
-            address payable poolAddress = address(uint160(owner())); // TODO Chris - Why we need uint160?
+            address payable poolAddress = address(uint160(owner()));
             _withdraw(poolAddress, voucherDetails.amount2pool);
         }
         
