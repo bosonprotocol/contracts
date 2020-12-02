@@ -343,7 +343,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         }
         
         if (voucherDetails.amount2pool > 0) {
-            address payable poolAddress = address(uint160(owner()));
+            address payable poolAddress = address(uint160(owner())); //this is required as we could not implicitly cast the owner address to payable
             _withdraw(poolAddress, voucherDetails.amount2pool);
         }
         
@@ -594,7 +594,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         //TODO: more requires needed?
         
         if (escrow[owner()] > 0) {
-            address payable poolAddress = address(uint160(owner()));
+            address payable poolAddress = address(uint160(owner())); //this is required as we could not implicitly cast the owner address to payable
             uint256 amount = escrow[poolAddress];
             escrow[poolAddress] = 0;
             _withdraw(poolAddress,amount);
