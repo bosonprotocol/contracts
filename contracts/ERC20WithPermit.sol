@@ -15,8 +15,8 @@ contract ERC20WithPermit is IERC20WithPermit {
     mapping(address => uint256) public override balanceOf;
     mapping(address => mapping(address => uint256)) public override allowance;
 
-    bytes32 public override DOMAIN_SEPARATOR;
-    bytes32 public override constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
+    bytes32 public override DOMAIN_SEPARATOR; //prevents collision of identical structures. Formed in the initialization of the contract 
+    bytes32 public override constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9; //representation of keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
     mapping(address => uint256) public override nonces;
 
     event Approval(

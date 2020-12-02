@@ -50,7 +50,7 @@ contract VoucherKernel is Ownable, usingHelpers {
     address public cashierAddress;  //address of the Cashier contract    
     
     mapping(bytes32 => Promise) public promises;    //promises to deliver goods or services
-    mapping(address => uint256) public tokenNonces;
+    mapping(address => uint256) public tokenNonces; //mapping between seller address and its own nonces. Every time seller creates supply ID it gets incremented. Used to avoid duplicate ID's
     mapping (uint256 => VoucherPaymentMethod) public paymentDetails; // tokenSupplyId to VoucherPaymentMethod
 
     bytes32[] public promiseKeys;
