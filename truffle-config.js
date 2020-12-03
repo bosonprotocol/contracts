@@ -52,6 +52,12 @@ module.exports = {
             network_id: '*', // Any network (default: none)
         },
 
+        coverage: {
+            host: '127.0.0.1', // Localhost (default: none)
+            port: 8555, // Test Coverage Port
+            network_id: '*', // Any network (default: none)
+        },
+
         ropsten: {
          provider: () => new HDWalletProvider(pk, "http://localhost:8545"),
          network_id: 3,
@@ -96,6 +102,8 @@ module.exports = {
         // production: true    // Treats this network as if it was a public net. (default: false)
         // }
     },
+
+    plugins: ["solidity-coverage"],
 
     // Set default mocha options here, use special reporters etc.
     mocha: {
