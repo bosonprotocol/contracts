@@ -29,6 +29,8 @@
     "@truffle/hdwallet-provider": "^1.2.0",
     "chai": "^4.2.0",
     "ethereumjs-util": "^7.0.7",
-    "mocha": "^8.2.1"
+    "mocha": "^8.2.1",
+    "solidity-coverage": "^0.7.12",
+    "truffle": "^5.1.55"
   }
 }

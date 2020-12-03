@@ -19,3 +19,6 @@ node_modules
 *.iws
 *.ipr
 .idea/
+
+#Test Coverage
+coverage*
