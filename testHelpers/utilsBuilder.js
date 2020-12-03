@@ -47,7 +47,7 @@ class UtilsBuilder {
     }
 
     TKN_ETH_WithPermit() {
-        this.utils.createOrder = this.utils.requestCreateOrder_TKN_ETH_WithPermit
+        this.utils.createOrder = this.utils.requestCreateOrder_TKN_ETH
         this.utils.commitToBuy = this.utils.commitToBuy_TKN_ETH_WithPermit
 
         return this

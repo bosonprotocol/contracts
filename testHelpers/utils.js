@@ -128,10 +128,10 @@ class Utils {
         return (txOrder.logs[0].args._tokenIdSupply).toString()
     }
 
-    async requestCreateOrder_TKN_ETH_WithPermit(seller, from, to, sellerDeposit, qty) {
+    async requestCreateOrder_TKN_ETH(seller, from, to, sellerDeposit, qty) {
         const txValue = new BN(sellerDeposit).mul(new BN(qty));
 
-        let txOrder = await this.contractCashier.requestCreateOrder_TKN_ETH_WithPermit(
+        let txOrder = await this.contractCashier.requestCreateOrder_TKN_ETH(
             this.contractBSNTokenPrice.address,
             [
                 from,

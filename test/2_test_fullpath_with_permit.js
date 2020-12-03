@@ -244,7 +244,7 @@ contract("Voucher tests", async accounts => {
 				it("Should create payment method TKN_ETH", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
-					let txOrder = await contractCashier.requestCreateOrder_TKN_ETH_WithPermit(
+					let txOrder = await contractCashier.requestCreateOrder_TKN_ETH(
 						contractBSNTokenPrice.address,
 						[
 							helpers.PROMISE_VALID_FROM,
@@ -270,7 +270,7 @@ contract("Voucher tests", async accounts => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 					await truffleAssert.fails(
-						contractCashier.requestCreateOrder_TKN_ETH_WithPermit(
+						contractCashier.requestCreateOrder_TKN_ETH(
 							'',
 							[
 								helpers.PROMISE_VALID_FROM,
@@ -289,7 +289,7 @@ contract("Voucher tests", async accounts => {
 				it("[NEGATIVE] Should fail if token price contract is zero address", async () => {
 
 					await truffleAssert.reverts(
-						contractCashier.requestCreateOrder_TKN_ETH_WithPermit(
+						contractCashier.requestCreateOrder_TKN_ETH(
 							helpers.ZERO_ADDRESS,
 							[
 								helpers.PROMISE_VALID_FROM,

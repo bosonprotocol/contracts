@@ -447,7 +447,7 @@ contract VoucherKernel is Ownable, usingHelpers {
         //check if still in the complain period
         Promise memory tPromise = promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
         
-        //if redeeemed or refunded
+        //if redeemed or refunded
         if (isStateRedemptionSigned(vouchersStatus[_tokenIdVoucher].status) ||
                     isStateRefunded(vouchersStatus[_tokenIdVoucher].status)) {
             if (!isStatus(vouchersStatus[_tokenIdVoucher].status, idxCancelFault)) {
@@ -506,7 +506,7 @@ contract VoucherKernel is Ownable, usingHelpers {
         Promise memory tPromise = promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
         
         if (isStatus(tStatus, idxRedeem) || isStatus(tStatus, idxRefund)) {
-            //if redeeemed or refunded
+            //if redeemed or refunded
             if (!isStatus(tStatus, idxComplain)) {
                 require(block.timestamp <= vouchersStatus[_tokenIdVoucher].complainPeriodStart + complainPeriod + cancelFaultPeriod, "COFPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)            
                 vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;  //resetting the complain period
@@ -775,7 +775,7 @@ contract VoucherKernel is Ownable, usingHelpers {
     /**
      * @notice Get all necessary funds for a supply token
      * @param _tokenIdSupply   ID of the supply token
-     * @return                  returns a tupple (Payment amount, Seller's deposit, Buyer's deposit)
+     * @return                  returns a tuple (Payment amount, Seller's deposit, Buyer's deposit)
      */
     function getOrderCosts(uint256 _tokenIdSupply)
         public view
@@ -789,7 +789,7 @@ contract VoucherKernel is Ownable, usingHelpers {
     /**
      * @notice Get Buyer costs required to make an order for a supply token
      * @param _tokenIdSupply   ID of the supply token
-     * @return                  returns a tupple (Payment amount, Buyer's deposit)
+     * @return                  returns a tuple (Payment amount, Buyer's deposit)
      */
     function getBuyerOrderCosts(uint256 _tokenIdSupply)
         public view

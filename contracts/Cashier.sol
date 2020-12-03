@@ -78,7 +78,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
      * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
         @param metadata metadata which is required for creation of a voucher
         Metadata array is used as in some scenarios we need several more params, as we need to recover 
-        onwer address in order to permit the contract to transfer funds in his behalf. 
+        owner address in order to permit the contract to transfer funds in his behalf. 
         Since the params get too many, we end up in situation that the stack is too deep.
         
         uint256 _validFrom = metadata[0];
@@ -165,7 +165,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
     }
 
-    function requestCreateOrder_TKN_ETH_WithPermit(
+    function requestCreateOrder_TKN_ETH(
         address _tokenPriceAddress,
         uint256[] calldata metadata
         )
@@ -604,7 +604,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
     /**
      * @notice Internal function for withdrawing.
      * As unbelievable as it is, neither .send() nor .transfer() are now secure to use due to EIP-1884
-     *  So now transfering funds via the last remaining option: .call()
+     *  So now transferring funds via the last remaining option: .call()
      *  See https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/ 
      * @param _recipient    address of the account receiving funds from the escrow
      * @param _amount       amount to be released from escrow
