@@ -342,7 +342,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         onlyFromCashier
         returns (uint256)
     {
-        tokensContract.burn(_issuer, _tokenIdSupply, _qty); // This is hardcoded as 1 on purpose
+        tokensContract.burn(_issuer, _tokenIdSupply, _qty);
         accountSupply[_issuer] = accountSupply[_issuer].sub(_qty);
     }
     

@@ -481,7 +481,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
 
         voucherKernel.burnSupply(seller, _tokenIdSupply, remQty);
 
-        escrow[msg.sender] -= depositAmount;
+        escrow[msg.sender] = escrow[msg.sender].sub(depositAmount);
         _withdrawDeposits(seller, depositAmount);
     }
 
