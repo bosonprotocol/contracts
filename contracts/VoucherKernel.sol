@@ -3,7 +3,8 @@
 pragma solidity >=0.6.6 <0.7.0;
 
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/Access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "./ERC1155ERC721.sol";
 import "./usingHelpers.sol";
 
@@ -17,7 +18,7 @@ import "./usingHelpers.sol";
  *  - The usage of block.timestamp is honored since vouchers are defined with day-precision and the demo app is not covering all edge cases.
  *      See: https://ethereum.stackexchange.com/questions/5924/how-do-ethereum-mining-nodes-maintain-a-time-consistent-with-the-network/5931#5931
 */
-contract VoucherKernel is Ownable, usingHelpers {    
+contract VoucherKernel is Ownable, Pausable, usingHelpers {    
     using Address for address;
     //using Counters for Counters.Counter;
     //Counters.Counter private voucherTokenId; //unique IDs for voucher tokens
@@ -163,7 +164,14 @@ contract VoucherKernel is Ownable, usingHelpers {
         complainPeriod = 7 * 1 days;
         cancelFaultPeriod = 7 * 1 days;
     }
-    
+
+    function pause() external onlyFromCashier {
+        _pause();
+    }
+
+    function unpause() external onlyFromCashier {
+        _unpause();
+    } 
     
     /**
         * @notice Creating a new promise for goods or services.
@@ -357,6 +365,7 @@ contract VoucherKernel is Ownable, usingHelpers {
      */
     function redeem(uint256 _tokenIdVoucher)
         external
+        whenNotPaused
         onlyVoucherOwner(_tokenIdVoucher)
     {
         //check status
@@ -385,6 +394,7 @@ contract VoucherKernel is Ownable, usingHelpers {
      */
     function refund(uint256 _tokenIdVoucher)
         external
+        whenNotPaused
         onlyVoucherOwner(_tokenIdVoucher)
     {
         require(isStateCommitted(vouchersStatus[_tokenIdVoucher].status), "INAPPLICABLE_STATUS");  //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicatableToCurrentState)
@@ -405,6 +415,7 @@ contract VoucherKernel is Ownable, usingHelpers {
      */
     function complain(uint256 _tokenIdVoucher)
         external
+        whenNotPaused
         onlyVoucherOwner(_tokenIdVoucher)
     {
         require(!isStatus(vouchersStatus[_tokenIdVoucher].status, idxComplain), "ALREADY_COMPLAINED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
@@ -461,6 +472,7 @@ contract VoucherKernel is Ownable, usingHelpers {
      */
     function cancelOrFault(uint256 _tokenIdVoucher)
         external
+        whenNotPaused
     {
         require(getVoucherIssuer(_tokenIdVoucher) == msg.sender,"UNAUTHORIZED_COF");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         

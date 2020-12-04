@@ -5,7 +5,8 @@ pragma solidity >=0.6.6 <0.7.0;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/Access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "./VoucherKernel.sol";
 import "./usingHelpers.sol";
 
@@ -14,7 +15,7 @@ import "./usingHelpers.sol";
  * @dev Warning: the contract hasn't been audited yet!
  *  Roughly following OpenZeppelin's Escrow at https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/payment/
  */
-contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
+contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     using Address for address payable;
     using SafeMath for uint;
     
@@ -77,7 +78,16 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         voucherKernel = VoucherKernel(_voucherKernel);
     }
     
-    
+    function pause() external onlyOwner {
+        _pause();
+        voucherKernel.pause();
+    } 
+
+    function unpause() external onlyOwner {
+        _unpause();
+        voucherKernel.unpause();
+    } 
+
     /**
      * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
         @param _assetTitle  Name of the asset
@@ -99,6 +109,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         )
         external
         payable
+        whenNotPaused
     {
         bytes32 promiseId;
         
@@ -133,6 +144,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         external
         payable
         nonReentrant
+        whenNotPaused
     {
         uint256 weiReceived = msg.value;
 
@@ -159,6 +171,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
     function withdraw(uint256[] calldata _tokenIdVouchers)
         external
         nonReentrant
+        whenNotPaused
     {
         //TODO: more checks
         //TODO: check to pass 2 diff holders and how the amounts will be distributed
