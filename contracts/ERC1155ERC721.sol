@@ -636,7 +636,17 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         }
 
         emit TransferBatch(msg.sender, _account, address(0), _tokenIds, _values);
-    }     
+    }
+
+    function getRemainingQtyInSupply(uint _tokenSupplyId, address _owner)
+        external 
+        view
+        onlyFromVoucherKernel
+        returns (uint) {
+         
+        // mapping (uint256 => mapping(address => uint256)) private balances; //balance of token ids of an account
+        return balances[_tokenSupplyId][_owner];
+    }
     
     
     // // // // // // // //

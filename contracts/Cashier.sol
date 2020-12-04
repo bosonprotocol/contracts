@@ -236,6 +236,73 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         
     }
 
+    /**
+     * @notice Trigger withdrawals of what funds are releasable
+     * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
+     * @dev This function would be optimized a lot, here verbose for readability.
+     * @param _tokenIdVoucher an array of voucher tokens (ERC-721) to try withdraw funds from
+     */
+    function withdrawWhenPaused(uint256 _tokenIdVoucher)
+        external
+        nonReentrant
+        whenPaused
+    {
+        VoucherDetails memory voucherDetails;
+        
+        //uint256 tPartDepositSe; //Can't use, because of "Stack Too Deep" Error ... this in real life needs to be optimized, but kept here for readability.
+        
+        //in the future might want to (i) check the gasleft() (but UNGAS proposal might make it impossible), and/or (ii) set upper loop limit to sth like .length < 2**15
+        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        
+        voucherDetails.tokenIdVoucher = _tokenIdVoucher;
+        voucherDetails.tokenIdSupply = voucherKernel.getIdSupplyFromVoucher(voucherDetails.tokenIdVoucher);
+        
+        (voucherDetails.currStatus.status,
+            voucherDetails.currStatus.isPaymentReleased,
+            voucherDetails.currStatus.isDepositsReleased
+        ) = voucherKernel.getVoucherStatus(voucherDetails.tokenIdVoucher);
+        
+        (voucherDetails.price, 
+            voucherDetails.depositSe, 
+            voucherDetails.depositBu
+        ) = voucherKernel.getOrderCosts(voucherDetails.tokenIdSupply);
+        
+        // (price, depositSe, depositBu) = voucherKernel.getOrderCosts(tokenIdSupply);
+        voucherDetails.issuer = address(uint160( voucherKernel.getVoucherIssuer(voucherDetails.tokenIdVoucher) ));
+        voucherDetails.holder = address(uint160( voucherKernel.getVoucherHolder(voucherDetails.tokenIdVoucher) ));
+        
+        require(msg.sender == voucherDetails.issuer || msg.sender == voucherDetails.holder, "INVALID CALLER");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        
+        //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
+        if (!voucherDetails.currStatus.isPaymentReleased) 
+        {
+            releasePayments(voucherDetails);
+        }
+
+        //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status 
+        if (!voucherDetails.currStatus.isDepositsReleased && 
+            isStatus(voucherDetails.currStatus.status, idxFinal)) 
+        {
+            releaseDeposits(voucherDetails);
+        }
+        
+        if (voucherDetails.amount2pool > 0) {
+            address payable poolAddress = address(uint160(owner()));
+            _withdraw(poolAddress, voucherDetails.amount2pool);
+        }
+        
+        if (voucherDetails.amount2issuer > 0) {
+            _withdraw(voucherDetails.issuer, voucherDetails.amount2issuer);
+        }
+
+        if (voucherDetails.amount2holder > 0) {
+            _withdraw(voucherDetails.holder, voucherDetails.amount2holder);
+        }
+
+        delete voucherDetails;
+        
+    }
+
     function releasePayments(VoucherDetails memory voucherDetails) internal {
 
         if (isStatus(voucherDetails.currStatus.status, idxRedeem)) {
@@ -395,6 +462,29 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
             ); 
     }
 
+    function withdrawDeposits(uint256 _tokenIdSupply)
+        external 
+        nonReentrant
+        whenPaused
+    {
+        bytes32 promiseKey = voucherKernel.ordersPromise(_tokenIdSupply);
+        address payable seller = address(uint160(voucherKernel.getSupplyHolder(promiseKey)));
+        
+        require(msg.sender == seller, "UNAUTHORIZED_SE");
+
+        uint256 deposit =  voucherKernel.getPromiseDepositSe(promiseKey);
+        uint256 remQty = voucherKernel.getRemQtyForSupply(_tokenIdSupply, seller);
+        
+        require(remQty > 0, "OFFER_EMPTY");
+
+        uint256 depositAmount = deposit.mul(remQty);
+
+        voucherKernel.burnSupply(seller, _tokenIdSupply, remQty);
+
+        escrow[msg.sender] -= depositAmount;
+        _withdrawDeposits(seller, depositAmount);
+    }
+
     /**
      * @notice Trigger withdrawals of pooled funds
      */    
@@ -422,6 +512,17 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @param _amount       amount to be released from escrow
      */
     function _withdraw(address payable _recipient, uint256 _amount)
+        internal
+    {
+        require(_recipient != address(0), "UNSPECIFIED_ADDRESS");   //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_amount > 0, "");
+        
+        _recipient.sendValue(_amount);
+
+        emit LogWithdrawal(msg.sender, _recipient, _amount);
+    }
+
+    function _withdrawDeposits(address payable _recipient, uint256 _amount)
         internal
     {
         require(_recipient != address(0), "UNSPECIFIED_ADDRESS");   //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)

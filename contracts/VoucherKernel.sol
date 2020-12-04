@@ -5,6 +5,7 @@ pragma solidity >=0.6.6 <0.7.0;
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./ERC1155ERC721.sol";
 import "./usingHelpers.sol";
 
@@ -20,6 +21,7 @@ import "./usingHelpers.sol";
 */
 contract VoucherKernel is Ownable, Pausable, usingHelpers {    
     using Address for address;
+    using SafeMath for uint;
     //using Counters for Counters.Counter;
     //Counters.Counter private voucherTokenId; //unique IDs for voucher tokens
     
@@ -332,6 +334,16 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         voucherIssuers[voucherTokenId] = _issuer;
         
         return voucherTokenId;
+    }
+
+    function burnSupply(address _issuer, uint256 _tokenIdSupply, uint256 _qty)
+        external
+        whenPaused
+        onlyFromCashier
+        returns (uint256)
+    {
+        tokensContract.burn(_issuer, _tokenIdSupply, _qty); // This is hardcoded as 1 on purpose
+        accountSupply[_issuer] = accountSupply[_issuer].sub(_qty);
     }
     
     
@@ -735,6 +747,23 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
     {
         return accountSupply[_account];
     }
+
+    function getRemQtyForSupply(uint _tokenSupplyId, address _owner) 
+        external 
+        view
+        returns (uint256)
+    {
+        return tokensContract.getRemainingQtyInSupply(_tokenSupplyId, _owner);
+    }
+
+    function getPromiseDeposit(uint _tokenSupplyId, address _owner)
+        external 
+        view
+        onlyFromCashier
+        returns (uint256)
+    {
+        return tokensContract.getRemainingQtyInSupply(_tokenSupplyId, _owner);
+    }
     
     
     /**
@@ -800,6 +829,13 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         returns (address)
     {
         return tokensContract.ownerOf(_tokenIdVoucher);
+    }
+
+    function getSupplyHolder(bytes32 _promiseId)
+        public view
+        returns (address)
+    {
+        return (promises[_promiseId].seller);
     }
     
     

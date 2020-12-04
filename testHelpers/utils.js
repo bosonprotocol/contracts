@@ -79,6 +79,12 @@ class Utils {
         return tx
     }
 
+     async withdrawWhenPaused(voucherID, executor) {
+        const tx =  await this.contractCashier.withdrawWhenPaused(voucherID, {from: executor});
+        console.log('GAS USED: ', tx.receipt.gasUsed);
+        return tx
+    }
+
     calcTotalAmountToRecipients(event, distributionAmounts) {
         if (event._to == config.accounts.buyer) {
             distributionAmounts.buyerAmount = new BN(distributionAmounts.buyerAmount.toString()).add(new BN(event._payment.toString()))
