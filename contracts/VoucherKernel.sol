@@ -28,7 +28,7 @@ contract VoucherKernel is Ownable, usingHelpers {
     //promise for an asset could be reusable, but simplified here for brevitbytes32
     struct Promise {
         bytes32 promiseId;
-        string assetTitle;      //the asset that is offered
+        uint256 nonce;      //the asset that is offered
         address seller;       //the seller who created the promise        
         
         //we simplify the value for the demoapp, otherwise voucher details would be packed in one bytes32 field value
@@ -40,10 +40,19 @@ contract VoucherKernel is Ownable, usingHelpers {
 
         uint idx;
     }
+
+    struct VoucherPaymentMethod {
+        uint8 paymentMethod;
+        address addressTokenPrice;
+        address addressTokenDeposits;
+    }
     
     address public cashierAddress;  //address of the Cashier contract    
     
     mapping(bytes32 => Promise) public promises;    //promises to deliver goods or services
+    mapping(address => uint256) public tokenNonces; //mapping between seller address and its own nonces. Every time seller creates supply ID it gets incremented. Used to avoid duplicate ID's
+    mapping (uint256 => VoucherPaymentMethod) public paymentDetails; // tokenSupplyId to VoucherPaymentMethod
+
     bytes32[] public promiseKeys;
     
     mapping(address => uint256) public accountSupply;
@@ -85,12 +94,20 @@ contract VoucherKernel is Ownable, usingHelpers {
     
     event LogPromiseCreated(
         bytes32 indexed _promiseId,
-        string indexed _assetTitle,
+        uint256 indexed _nonce,
         address indexed _seller,
         uint256 _validFrom,
         uint256 _validTo,
         uint256 _idx
     );
+
+     event LogVoucherDelivered(
+        uint256 indexed _tokenIdSupply,
+        uint256 _tokenIdVoucher,
+        address _issuer,
+        address _holder,
+        bytes32 _promiseId
+    );   
     
     event LogVoucherRedeemed(
         uint256 _tokenIdVoucher,
@@ -169,32 +186,31 @@ contract VoucherKernel is Ownable, usingHelpers {
         * @notice Creating a new promise for goods or services.
         * Can be reused, e.g. for making different batches of these (but not in prototype).
         * @param _seller      seller of the promise
-        * @param _assetTitle  Name of the asset
         * @param _validFrom   Start of valid period
         * @param _validTo     End of valid period
         * @param _price       Price (payment amount)
         * @param _depositSe   Seller's deposit
         * @param _depositBu   Buyer's deposit
     */
-    function createAssetPromise(
+    function createTokenSupplyID(
         address _seller, 
-        string calldata _assetTitle, 
         uint256 _validFrom,
         uint256 _validTo,
         uint256 _price,
         uint256 _depositSe,
-        uint256 _depositBu
+        uint256 _depositBu,
+        uint256 _quantity
     ) 
         external 
         onlyFromCashier
-        returns (bytes32)
+        returns (uint256)
     {
         
         require(_validFrom <= _validTo, "INVALID_VALIDITY_FROM");    //hex"26" FISSION.code(FISSION.Category.Find, FISSION.Status.Above_Range_Overflow)
         require(_validTo >= block.timestamp, "INVALID_VALIDITY_TO");   //hex"24" FISSION.code(FISSION.Category.Find, FISSION.Status.BelowRange_Underflow)
         
         bytes32 key;
-        key = keccak256(abi.encodePacked(_assetTitle, _validFrom, _validTo));
+        key = keccak256(abi.encodePacked(tokenNonces[_seller]++, _validFrom, _validTo));
         
         if (promiseKeys.length > 0) {
             require(promiseKeys[promises[key].idx] != key, "PROMISE_ALREADY_EXISTS");
@@ -202,7 +218,7 @@ contract VoucherKernel is Ownable, usingHelpers {
         
         promises[key] = Promise({
             promiseId: key,
-            assetTitle: _assetTitle,
+            nonce: tokenNonces[_seller],
             seller: _seller,
             validFrom: _validFrom,
             validTo: _validTo,
@@ -214,13 +230,30 @@ contract VoucherKernel is Ownable, usingHelpers {
         
         promiseKeys.push(key);
         
-        emit LogPromiseCreated(key, _assetTitle, msg.sender, _validFrom, _validTo, //_price, _depositSe, _depositBu, _complainPeriod, _cancelFaultPeriod, 
+        emit LogPromiseCreated(key, tokenNonces[_seller], _seller, _validFrom, _validTo, //_price, _depositSe, _depositBu, _complainPeriod, _cancelFaultPeriod, 
                 promiseKeys.length - 1);
-        
-        return key;
-    }    
-    
-    
+
+        return createOrder(_seller, key, _quantity);
+    }
+
+     function createPaymentMethod(
+        uint256 _tokenIdSupply,
+        uint8 _paymentMethod,
+        address _tokenPrice,
+        address _tokenDeposits
+        )
+        external 
+        onlyFromCashier
+    {
+
+        paymentDetails[_tokenIdSupply] = VoucherPaymentMethod({
+            paymentMethod: _paymentMethod,
+            addressTokenPrice: _tokenPrice,
+            addressTokenDeposits: _tokenDeposits
+
+        });
+    }
+
     /**
      * @notice Create an order for offering a certain quantity of an asset
      * This creates a listing in a marketplace, technically as an ERC-1155 non-fungible token with supply.
@@ -229,8 +262,7 @@ contract VoucherKernel is Ownable, usingHelpers {
      * @param _quantity   Quantity of assets on offer
      */
     function createOrder(address _seller, bytes32 _promiseId, uint256 _quantity)
-        external 
-        onlyFromCashier
+        private 
         returns (uint256)
     {
         require(_promiseId != bytes32(0), "UNSPECIFIED_PROMISE");   //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
@@ -256,13 +288,15 @@ contract VoucherKernel is Ownable, usingHelpers {
     function fillOrder(uint256 _tokenIdSupply, address _issuer, address _holder)
         external
         onlyFromCashier
-        returns (uint256)
+        
     {
         //checks
         checkOrderFillable(_tokenIdSupply, _issuer, _holder);
 
         //close order
-        return extract721(_issuer, _holder, _tokenIdSupply);
+        uint256 voucherTokenId = extract721(_issuer, _holder, _tokenIdSupply);
+
+        emit LogVoucherDelivered(_tokenIdSupply, voucherTokenId, _issuer, _holder, getPromiseIdFromVoucherId(voucherTokenId));
     }
     
     
@@ -413,7 +447,7 @@ contract VoucherKernel is Ownable, usingHelpers {
         //check if still in the complain period
         Promise memory tPromise = promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
         
-        //if redeeemed or refunded
+        //if redeemed or refunded
         if (isStateRedemptionSigned(vouchersStatus[_tokenIdVoucher].status) ||
                     isStateRefunded(vouchersStatus[_tokenIdVoucher].status)) {
             if (!isStatus(vouchersStatus[_tokenIdVoucher].status, idxCancelFault)) {
@@ -472,7 +506,7 @@ contract VoucherKernel is Ownable, usingHelpers {
         Promise memory tPromise = promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
         
         if (isStatus(tStatus, idxRedeem) || isStatus(tStatus, idxRefund)) {
-            //if redeeemed or refunded
+            //if redeemed or refunded
             if (!isStatus(tStatus, idxComplain)) {
                 require(block.timestamp <= vouchersStatus[_tokenIdVoucher].complainPeriodStart + complainPeriod + cancelFaultPeriod, "COFPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)            
                 vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;  //resetting the complain period
@@ -741,7 +775,7 @@ contract VoucherKernel is Ownable, usingHelpers {
     /**
      * @notice Get all necessary funds for a supply token
      * @param _tokenIdSupply   ID of the supply token
-     * @return                  returns a tupple (Payment amount, Seller's deposit, Buyer's deposit)
+     * @return                  returns a tuple (Payment amount, Seller's deposit, Buyer's deposit)
      */
     function getOrderCosts(uint256 _tokenIdSupply)
         public view
@@ -749,6 +783,20 @@ contract VoucherKernel is Ownable, usingHelpers {
     {
         bytes32 promiseKey = ordersPromise[_tokenIdSupply];
         return (promises[promiseKey].price, promises[promiseKey].depositSe, promises[promiseKey].depositBu);
+    }
+
+
+    /**
+     * @notice Get Buyer costs required to make an order for a supply token
+     * @param _tokenIdSupply   ID of the supply token
+     * @return                  returns a tuple (Payment amount, Buyer's deposit)
+     */
+    function getBuyerOrderCosts(uint256 _tokenIdSupply)
+        public view
+        returns (uint256, uint256)
+    {
+        bytes32 promiseKey = ordersPromise[_tokenIdSupply];
+        return (promises[promiseKey].price, promises[promiseKey].depositBu);
     }
     
     
@@ -789,7 +837,38 @@ contract VoucherKernel is Ownable, usingHelpers {
     {
         return tokensContract.ownerOf(_tokenIdVoucher);
     }
-    
+
+
+    /**
+     * @notice Get the address of the token where the price for the supply is held
+     * @param _tokenIdSupply   ID of the voucher token
+     * @return                  Address of the token
+     */
+    function getVoucherPriceToken(uint256 _tokenIdSupply)
+        public view
+        returns (address)
+    {
+        return paymentDetails[_tokenIdSupply].addressTokenPrice;
+    }
+
+    /**
+     * @notice Get the address of the token where the deposits for the supply are held
+     * @param _tokenIdSupply   ID of the voucher token
+     * @return                  Address of the token
+     */
+    function getVoucherDepositToken(uint256 _tokenIdSupply)
+        public view
+        returns (address)
+    {
+        return paymentDetails[_tokenIdSupply].addressTokenDeposits;
+    }
+
+    function getVoucherPaymentMethod(uint256 _tokenIdSupply)
+        public view
+        returns (uint8)
+    {
+        return paymentDetails[_tokenIdSupply].paymentMethod;
+    }
     
     /** 
      * 

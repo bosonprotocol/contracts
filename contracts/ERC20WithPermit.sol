@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LGPL-3.0-or-later
 pragma solidity >=0.6.6;
 
 import "./IERC20WithPermit.sol";
@@ -15,11 +15,8 @@ contract ERC20WithPermit is IERC20WithPermit {
     mapping(address => uint256) public override balanceOf;
     mapping(address => mapping(address => uint256)) public override allowance;
 
-    // TODO - This TODO stems from the ERC20WithPermit Standard
-    bytes32 public override DOMAIN_SEPARATOR;
-    // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"); // The commented line stems from the ERC20WithPermit Standard
-    bytes32
-        public override constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
+    bytes32 public override DOMAIN_SEPARATOR; //prevents collision of identical structures. Formed in the initialization of the contract 
+    bytes32 public override constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9; //representation of keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
     mapping(address => uint256) public override nonces;
 
     event Approval(
