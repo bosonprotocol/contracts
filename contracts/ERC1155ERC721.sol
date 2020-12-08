@@ -88,7 +88,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         require(_to != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         require(_from == msg.sender || operatorApprovals[_from][msg.sender] == true, "UNAUTHORIZED_ST");   //hex"10"FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
 
-        // SafeMath throws with insuficient funds or if _id is not valid (balance will be 0)
+        // SafeMath throws with insufficient funds or if _id is not valid (balance will be 0)
         balances[_tokenId][_from] = balances[_tokenId][_from].sub(_value);
         balances[_tokenId][_to] = _value.add(balances[_tokenId][_to]);
 
@@ -249,14 +249,14 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         override
     {
         require(_to != address(0), "UNSPECIFIED_ADDRESS");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTS");    //hex"28" ISSION.code(FISSION.Category.Find, FISSION.Status.Duplicate_Conflict_Collision)
+        require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTHS");    //hex"28" FISSION.code(FISSION.Category.Find, FISSION.Status.Duplicate_Conflict_Collision)
         require(_from == msg.sender || operatorApprovals[_from][msg.sender] == true, "UNAUTHORIZED_SB");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
 
         for (uint256 i = 0; i < _tokenIds.length; ++i) {
             uint256 tokenId = _tokenIds[i];
             uint256 value = _values[i];
 
-            // SafeMath throws with insuficient funds or if _id is not valid (balance will be 0)
+            // SafeMath throws with insufficient funds or if _id is not valid (balance will be 0)
             balances[tokenId][_from] = balances[tokenId][_from].sub(value);
             balances[tokenId][_to]   = value.add(balances[tokenId][_to]);
         }
@@ -391,7 +391,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         override
         returns (uint256[] memory)
     {
-        require(_accounts.length == _tokenIds.length, "MISMATCHED_ARRAY_LENGTS");  //hex"28" FISSION.code(FISSION.Category.Find, FISSION.Status.Duplicate_Conflict_Collision)
+        require(_accounts.length == _tokenIds.length, "MISMATCHED_ARRAY_LENGTHS");  //hex"28" FISSION.code(FISSION.Category.Find, FISSION.Status.Duplicate_Conflict_Collision)
         uint256[] memory batchBalances = new uint256[](_accounts.length);
 
         for (uint256 i = 0; i < _accounts.length; ++i) {
@@ -459,7 +459,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
     // // // // // // // //  
     /**
      * @notice Mint an amount of a desired token
-     * Currently no restrictions as to who is allowd to mint - so, it is public.
+     * Currently no restrictions as to who is allowed to mint - so, it is public.
      * @dev ERC-1155
      * @param _to       owner of the minted token
      * @param _tokenId  ID of the token to be minted
@@ -532,7 +532,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
     
     /**
      * @notice Batch minting of tokens
-     * Currently no restrictions as to who is allowd to mint - so, it is public.
+     * Currently no restrictions as to who is allowed to mint - so, it is public.
      * @dev ERC-1155
      * @param _to The address that will own the minted token
      * @param _tokenIds IDs of the tokens to be minted
@@ -560,7 +560,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         internal 
     {
         require(_to != address(0), "UNSPECIFIED_ADDRESS");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTS"); //hex"28" FISSION.code(FISSION.Category.Find, FISSION.Status.Duplicate_Conflict_Collision)
+        require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTHS"); //hex"28" FISSION.code(FISSION.Category.Find, FISSION.Status.Duplicate_Conflict_Collision)
 
         for(uint i = 0; i < _tokenIds.length; i++) {
             balances[_tokenIds[i]][_to] = _values[i].add(balances[_tokenIds[i]][_to]);
@@ -629,7 +629,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         internal 
     {
         require(_account != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTS"); //hex"28" FISSION.code(FISSION.Category.Find, FISSION.Status.Duplicate_Conflict_Collision)
+        require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTHS"); //hex"28" FISSION.code(FISSION.Category.Find, FISSION.Status.Duplicate_Conflict_Collision)
 
         for(uint i = 0; i < _tokenIds.length; i++) {
             balances[_tokenIds[i]][_account] = balances[_tokenIds[i]][_account].sub(_values[i]);

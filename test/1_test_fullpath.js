@@ -7,13 +7,15 @@ const ERC1155ERC721 = artifacts.require("ERC1155ERC721");
 const VoucherKernel = artifacts.require("VoucherKernel");
 const Cashier 		= artifacts.require("Cashier");
 
+const config = require('../testHelpers/config.json')
+
 const Utils = require('../testHelpers/utils')
 let snapshot;
 
 contract("Voucher tests", async accounts => {
-	let Seller 		= accounts[0];
-	let Buyer 		= accounts[1];
-	let Attacker 	= accounts[2];
+	let Seller = config.accounts.seller.address
+	let Buyer = config.accounts.buyer.address
+	let Attacker = config.accounts.attacker.address
 
     let contractERC1155ERC721, contractVoucherKernel, contractCashier;
     let promiseKey1, promiseKey2;
@@ -63,7 +65,7 @@ contract("Voucher tests", async accounts => {
 
 		// it("adding one new promise", async () => {
 		// 	// console.log("helpers.PROMISE_VALID_FROM: ", helpers.PROMISE_VALID_FROM, ", helpers.PROMISE_VALID_TO: ", helpers.PROMISE_VALID_TO);
-		// 	await contractVoucherKernel.createAssetPromise(helpers.ASSET_TITLE, helpers.ASSET_PIN1, helpers.ASSET_QR1, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD, helpers.PROMISE_CANCELORFAULT_PERIOD);
+		// 	await contractVoucherKernel.createTokenSupplyID(helpers.ASSET_TITLE, helpers.ASSET_PIN1, helpers.ASSET_QR1, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD, helpers.PROMISE_CANCELORFAULT_PERIOD);
 
 		// 	promiseKey1 = await contractVoucherKernel.promiseKeys.call(0);
 			
@@ -71,7 +73,7 @@ contract("Voucher tests", async accounts => {
 		// });	
 
 		// it("adding second new promise", async () => {
-		// 	await contractVoucherKernel.createAssetPromise(helpers.ASSET_TITLE2, helpers.ASSET_PIN2, helpers.ASSET_QR2, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE2, helpers.PROMISE_DEPOSITSE2, helpers.PROMISE_DEPOSITBU2, helpers.PROMISE_CHALLENGE_PERIOD, helpers.PROMISE_CANCELORFAULT_PERIOD);
+		// 	await contractVoucherKernel.createTokenSupplyID(helpers.ASSET_TITLE2, helpers.ASSET_PIN2, helpers.ASSET_QR2, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE2, helpers.PROMISE_DEPOSITSE2, helpers.PROMISE_DEPOSITBU2, helpers.PROMISE_CHALLENGE_PERIOD, helpers.PROMISE_CANCELORFAULT_PERIOD);
 
 		// 	promiseKey2 = await contractVoucherKernel.promiseKeys.call(1);
 			
@@ -79,7 +81,7 @@ contract("Voucher tests", async accounts => {
 		// });				
 
 		// it("must fail: adding new promise with invalid validity", async () => {			
-		// 	truffleAssert.reverts(contractVoucherKernel.createAssetPromise(helpers.ASSET_TITLE, helpers.ASSET_PIN1, helpers.ASSET_QR1, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_FROM - 1, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD, helpers.PROMISE_CANCELORFAULT_PERIOD),
+		// 	truffleAssert.reverts(contractVoucherKernel.createTokenSupplyID(helpers.ASSET_TITLE, helpers.ASSET_PIN1, helpers.ASSET_QR1, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_FROM - 1, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD, helpers.PROMISE_CANCELORFAULT_PERIOD),
 		// 		truffleAssert.ErrorType.REVERT
 		// 	);						
 		// });			
@@ -91,7 +93,7 @@ contract("Voucher tests", async accounts => {
 
 		it("adding one new order / promise", async () => {		
 
-			let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
+			let txOrder = await contractCashier.requestCreateOrder_ETH_ETH([helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1], {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
 
 			//would need truffle-events as the event emitted is from a nested contract, so truffle-assert doesn't detect it
 			// truffleAssert.eventEmitted(txOrder, 'LogOrderCreated', (ev) => {
@@ -113,7 +115,7 @@ contract("Voucher tests", async accounts => {
 
 		it("adding second order", async () => {		
 
-			let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE2, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE2, helpers.PROMISE_DEPOSITSE2, helpers.PROMISE_DEPOSITBU2, helpers.ORDER_QUANTITY2, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE2});
+			let txOrder = await contractCashier.requestCreateOrder_ETH_ETH([helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE2, helpers.PROMISE_DEPOSITSE2, helpers.PROMISE_DEPOSITBU2, helpers.ORDER_QUANTITY2], {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE2});
 
 			truffleAssert.eventEmitted(txOrder, 'LogOrderCreated', (ev) => {
 			    tokenSupplyKey2 = ev._tokenIdSupply;
@@ -125,42 +127,33 @@ contract("Voucher tests", async accounts => {
 
 		it("fill one order (aka buy a voucher)", async () => {			
 
-			let txFillOrder = await contractCashier.requestVoucher(tokenSupplyKey1, Seller, {from: Buyer, to: contractCashier.address, value: helpers.PROMISE_PRICE1 + helpers.PROMISE_DEPOSITBU1});
+			let txFillOrder = await contractCashier.requestVoucher_ETH_ETH(tokenSupplyKey1, Seller, {from: Buyer, to: contractCashier.address, value: helpers.PROMISE_PRICE1 + helpers.PROMISE_DEPOSITBU1});
+			let internalTx = (await truffleAssert.createTransactionResult(contractVoucherKernel, txFillOrder.tx))
 
-// //Why .toString()? Because ... either that or chai: https://spectrum.chat/trufflesuite/truffle/truffle-5-test-equality-assertions-on-bns~59f4b31c-6547-4d8a-bee1-e3fc43f0bf0a
+			truffleAssert.eventEmitted(internalTx, 'LogVoucherDelivered', (ev) => {
+				return ev._issuer === Seller;
+			}, "order1 not created successfully");
 
-// //console.log("ev._tokenIdSupply: ", ev._tokenIdSupply); //<BN: 8000000000000000000000000000000100000000000000000000000000000000>
-// //console.log("ev._tokenIdSupply.toNumber(): ", ev._tokenIdSupply.toNumber()); //Error: Number can only safely store up to 53 bits at assert (/usr/lib/node_modules/truffle/build/webpack:/~/bn.js/lib/bn.js:6:1)
-// //console.log("ev._tokenIdSupply.toString(): ", ev._tokenIdSupply.toString()); //57896044618658097711785492504343953926975274699741220483192166611388333031424
-// 			    return ev._tokenIdSupply.toString() == tokenSupplyKey.toString();
-// 			}, "order1 not created successfully");
-
-			//move events from VoucherKernel to Cashier:
-			truffleAssert.eventEmitted(txFillOrder, 'LogVoucherDelivered', (ev) => {
-			    tokenVoucherKey1 = ev._tokenIdVoucher;
-
-			    return ev._tokenIdSupply.toString() === tokenSupplyKey1.toString();
-			}, "order1 not filled successfully");		
-			
+			let filtered = internalTx.logs.filter(e => e.event == 'LogVoucherDelivered')[0]
+			tokenVoucherKey1 = filtered.returnValues['_tokenIdVoucher']
 		});	
 
 
 		it("fill second order (aka buy a voucher)", async () => {			
 
-			let txFillOrder = await contractCashier.requestVoucher(tokenSupplyKey2, Seller, {from: Buyer, to: contractCashier.address, value: helpers.PROMISE_PRICE2 + helpers.PROMISE_DEPOSITBU2});
+			let txFillOrder = await contractCashier.requestVoucher_ETH_ETH(tokenSupplyKey2, Seller, {from: Buyer, to: contractCashier.address, value: helpers.PROMISE_PRICE2 + helpers.PROMISE_DEPOSITBU2});
+			let internalTx = (await truffleAssert.createTransactionResult(contractVoucherKernel, txFillOrder.tx))
 
-			truffleAssert.eventEmitted(txFillOrder, 'LogVoucherDelivered', (ev) => {
+			truffleAssert.eventEmitted(internalTx, 'LogVoucherDelivered', (ev) => {
 			    tokenVoucherKey2 = ev._tokenIdVoucher;
-
 			    return ev._tokenIdSupply.toString() === tokenSupplyKey2.toString();
-			}, "order1 not filled successfully");		
-			
+			}, "order1 not filled successfully");
 		});			
 
 		//in prototype, everyone can create an order
 		// it("must fail: unauthorized adding of new order", async () => {			
 
-		// 	truffleAssert.reverts(contractCashier.requestCreateOrder(promiseKey1, helpers.ORDER_QUANTITY1, {from: Attacker, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1}),
+		// 	truffleAssert.reverts(contractCashier.requestCreateOrder_ETH_ETH(promiseKey1, helpers.ORDER_QUANTITY1, {from: Attacker, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1}),
 		// 		truffleAssert.ErrorType.REVERT
 		// 	);			
 			
@@ -169,7 +162,7 @@ contract("Voucher tests", async accounts => {
 
 		it("must fail: adding new order with incorrect value sent", async () => {	
 
-			truffleAssert.reverts(contractCashier.requestCreateOrder(helpers.ASSET_TITLE, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: 0}),
+			truffleAssert.reverts(contractCashier.requestCreateOrder_ETH_ETH([helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1], {from: Seller, to: contractCashier.address, value: 0}),
 				truffleAssert.ErrorType.REVERT
 			);			
 			
@@ -177,15 +170,14 @@ contract("Voucher tests", async accounts => {
 
 		it("must fail: fill an order with incorrect value", async () => {			
 
-			truffleAssert.reverts(contractCashier.requestVoucher(tokenSupplyKey1, Seller, {from: Buyer, to: contractCashier.address, value: 0}),
+			truffleAssert.reverts(contractCashier.requestVoucher_ETH_ETH(tokenSupplyKey1, Seller, {from: Buyer, to: contractCashier.address, value: 0}),
 				truffleAssert.ErrorType.REVERT
 			);			
 			
 		});					
 			  	
-    })    
-
-
+	})
+	
     describe('Voucher tokens', function() {
 
 		it("redeeming one voucher", async () => {
@@ -232,7 +224,7 @@ contract("Voucher tests", async accounts => {
 		it("withdraw the escrowed payment from one redeemed voucher", async () => {
 			let escrowedBefore = await contractCashier.getEscrowAmount.call(Buyer);
 
-			await contractCashier.withdraw([tokenVoucherKey1]);
+			await contractCashier.withdraw(tokenVoucherKey1);
 
 			let escrowedAfter = await contractCashier.getEscrowAmount.call(Buyer);
 
@@ -247,6 +239,8 @@ contract("Voucher tests", async accounts => {
 		// });			
 			  	
 	})  
+
+
 	
 	after(async () => {
 		await timemachine.revertToSnapShot(snapshot.id)
@@ -292,28 +286,27 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 
 
         //INIT
-		// await contractVoucherKernel.createAssetPromise(helpers.ASSET_TITLE, helpers.ASSET_PIN1, helpers.ASSET_QR1, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD * helpers.SECONDS_IN_DAY, helpers.PROMISE_CANCELORFAULT_PERIOD * helpers.SECONDS_IN_DAY);
+		// await contractVoucherKernel.createTokenSupplyID(helpers.ASSET_TITLE, helpers.ASSET_PIN1, helpers.ASSET_QR1, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD * helpers.SECONDS_IN_DAY, helpers.PROMISE_CANCELORFAULT_PERIOD * helpers.SECONDS_IN_DAY);
 
 		// promiseKey1 = await contractVoucherKernel.promiseKeys.call(0);
 
 		// assert.notEqual(promiseKey1, helpers.ZERO_ADDRESS, "promise not added");
 
-		let txOrder = await contractCashier.requestCreateOrder(helpers.ASSET_TITLE, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1, {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
+		let txOrder = await contractCashier.requestCreateOrder_ETH_ETH( [helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1], {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
 
 		truffleAssert.eventEmitted(txOrder, 'LogOrderCreated', (ev) => {
 		    tokenSupplyKey1 = ev._tokenIdSupply;
 		    return ev._seller === Seller;
 		}, "order1 not created successfully");	
 
+		let txFillOrder = await contractCashier.requestVoucher_ETH_ETH(tokenSupplyKey1, Seller, {from: Buyer, to: contractCashier.address, value: helpers.PROMISE_PRICE1 + helpers.PROMISE_DEPOSITBU1});
+		let internalTx = (await truffleAssert.createTransactionResult(contractVoucherKernel, txFillOrder.tx))
 
+		truffleAssert.eventEmitted(internalTx, 'LogVoucherDelivered', (ev) => {
+			tokenVoucherKey1 = ev._tokenIdVoucher
+			return ev._issuer === Seller;
+		}, "order1 not created successfully");
 
-		let txFillOrder = await contractCashier.requestVoucher(tokenSupplyKey1, Seller, {from: Buyer, to: contractCashier.address, value: helpers.PROMISE_PRICE1 + helpers.PROMISE_DEPOSITBU1});
-
-		truffleAssert.eventEmitted(txFillOrder, 'LogVoucherDelivered', (ev) => {
-		    tokenVoucherKey1 = ev._tokenIdVoucher;
-
-		    return ev._tokenIdSupply.toString() === tokenSupplyKey1.toString();
-		}, "order1 not created successfully"); 
 		//\INIT
     })
 

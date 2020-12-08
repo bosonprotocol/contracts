@@ -4,6 +4,7 @@ chai.use(chaiAsPromised)
 const assert = chai.assert
 
 const BN = web3.utils.BN
+const UtilsBuilder = require('../testHelpers/utilsBuilder')
 const Utils = require('../testHelpers/utils')
 let utils
 
@@ -43,16 +44,21 @@ contract("Cashier withdrawals ", async accounts => {
 
     
 
-    describe('Withdraw scenarios', function () {
+    describe('[PAUSING] Withdraw scenarios', function () {
 
         before(async () => {
             await deployContracts();
 
-            utils = Utils.getInstance(contractERC1155ERC721, contractVoucherKernel, contractCashier)
+            // utils = Utils.getInstance(contractERC1155ERC721, contractVoucherKernel, contractCashier)
+
+            utils = UtilsBuilder
+                .NEW()
+                .ETH_ETH()
+                .build(contractERC1155ERC721, contractVoucherKernel, contractCashier);
 
             const timestamp = await Utils.getCurrTimestamp()
 
-            TOKEN_SUPPLY_ID = await utils.requestCreateOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+            TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
         })
 
         let distributedAmaounts = {
@@ -74,7 +80,7 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdraw(voucherID, Deployer);
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
 
@@ -99,7 +105,7 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdraw(voucherID, Deployer)
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
 
@@ -125,7 +131,7 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdraw(voucherID, Deployer);
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
 
@@ -148,7 +154,7 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdraw(voucherID, Deployer);
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
 
@@ -171,7 +177,7 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdraw(voucherID, Deployer);
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
 
@@ -194,7 +200,7 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdraw(voucherID, Deployer)
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
 
@@ -218,7 +224,7 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdraw(voucherID, Deployer);
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
 
@@ -243,7 +249,7 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdraw(voucherID, Deployer);
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
 
@@ -267,7 +273,7 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdraw(voucherID, Deployer);
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
 
@@ -290,11 +296,16 @@ contract("Cashier withdrawals ", async accounts => {
         before(async () => {
              await deployContracts();
 
-            utils = Utils.getInstance(contractERC1155ERC721, contractVoucherKernel, contractCashier)
+
+
+            utils = UtilsBuilder
+                .NEW()
+                .ETH_ETH()
+                .build(contractERC1155ERC721, contractVoucherKernel, contractCashier);
 
             const timestamp = await Utils.getCurrTimestamp()
 
-            TOKEN_SUPPLY_ID = await utils.requestCreateOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+            TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
 
         })
 
@@ -313,6 +324,9 @@ contract("Cashier withdrawals ", async accounts => {
             await utils.refund(voucherID, Buyer)
             await utils.complain(voucherID, Buyer)
             await utils.cancel(voucherID, Seller)
+
+            await timemachine.advanceTimeSeconds(60);
+
             await utils.finalize(voucherID, Deployer)
 
             await contractCashier.pause();
@@ -320,10 +334,9 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdrawWhenPaused(voucherID, Buyer);
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
-
 
             assert.isTrue(distributedAmaounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
             assert.isTrue(distributedAmaounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
@@ -347,7 +360,7 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdrawWhenPaused(voucherID, Buyer);
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
 
@@ -375,7 +388,7 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdrawWhenPaused(voucherID, Buyer);
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
 
@@ -400,7 +413,7 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdrawWhenPaused(voucherID, Buyer);
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
 
@@ -425,7 +438,7 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdrawWhenPaused(voucherID, Buyer);
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
 
@@ -450,7 +463,7 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdrawWhenPaused(voucherID, Buyer);
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
 
@@ -476,7 +489,7 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdrawWhenPaused(voucherID, Buyer);
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
 
@@ -503,7 +516,7 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdrawWhenPaused(voucherID, Buyer);
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
 
@@ -529,7 +542,7 @@ contract("Cashier withdrawals ", async accounts => {
             const withdrawTx = await utils.withdrawWhenPaused(voucherID, Buyer);
 
             truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                utils.calcTotalAmountToRecipients(ev, distributedAmaounts)
+                utils.calcTotalAmountToRecipients(ev, distributedAmaounts, '_to')
                 return true
             }, "Amounts not distributed successfully")
 
@@ -559,12 +572,15 @@ contract("Cashier withdrawals ", async accounts => {
         before(async () => {
             await deployContracts();
 
-            utils = Utils.getInstance(contractERC1155ERC721, contractVoucherKernel, contractCashier)
+            utils = UtilsBuilder
+                .NEW()
+                .ETH_ETH()
+                .build(contractERC1155ERC721, contractVoucherKernel, contractCashier);
 
             const timestamp = await Utils.getCurrTimestamp()
 
             // Seller has created order for 10 vouchers
-            TOKEN_SUPPLY_ID = await utils.requestCreateOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+            TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
         })
 
         it("ESCROW has correct initial balance", async () => {
@@ -648,4 +664,3 @@ contract("Cashier withdrawals ", async accounts => {
 
     })
 })
-

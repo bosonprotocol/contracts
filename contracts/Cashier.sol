@@ -1,6 +1,4 @@
-
 // SPDX-License-Identifier: LGPL-3.0-or-later
-
 pragma solidity >=0.6.6 <0.7.0;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -9,6 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "./VoucherKernel.sol";
 import "./usingHelpers.sol";
+import "./IERC20WithPermit.sol";
 
 /**
  * @title Contract for managing funds
@@ -39,23 +38,15 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         uint256 amount2pool;
         uint256 amount2issuer;
         uint256 amount2holder;
+        uint8   paymentMethod;
         VoucherStatus currStatus;
     }
 
     event LogOrderCreated(
         uint256 indexed _tokenIdSupply,
         address _seller,
-        bytes32 _promiseId, 
         uint256 _quantity
     );
-    
-    event LogVoucherDelivered(
-        uint256 indexed _tokenIdSupply,
-        uint256 _tokenIdVoucher,
-        address _issuer,
-        address _holder,
-        bytes32 _promiseId
-    );   
     
     event LogWithdrawal(
         address _caller,
@@ -68,8 +59,13 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         address _to, 
         uint256 _payment,
         PaymentType _type
-    );    
-   
+    );
+
+    modifier notZeroAddress(address tokenAddress) {
+        require(tokenAddress != address(0), "INVALID_TOKEN_ADDRESS");
+        _;
+    }
+
     constructor(
         address _voucherKernel
     ) 
@@ -90,57 +86,120 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
 
     /**
      * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
-        @param _assetTitle  Name of the asset
-        @param _validFrom   Start of valid period
-        @param _validTo     End of valid period
-        @param _price       Price (payment amount)
-        @param _depositSe   Seller's deposit
-        @param _depositBu   Buyer's deposit
-     * @param _quantity     Quantity on offer
+        @param metadata metadata which is required for creation of a voucher
+        Metadata array is used as in some scenarios we need several more params, as we need to recover 
+        owner address in order to permit the contract to transfer funds in his behalf. 
+        Since the params get too many, we end up in situation that the stack is too deep.
+        
+        uint256 _validFrom = metadata[0];
+        uint256 _validTo = metadata[1];
+        uint256 _price = metadata[2];
+        uint256 _depositSe = metadata[3];
+        uint256 _depositBu = metadata[4];
+        uint256 _quantity = metadata[5];
      */
-    function requestCreateOrder(
-        string calldata _assetTitle,
-        uint256 _validFrom,
-        uint256 _validTo,
-        uint256 _price,
-        uint256 _depositSe,
-        uint256 _depositBu,
-        uint256 _quantity
-        )
+    function requestCreateOrder_ETH_ETH(uint256[] calldata metadata)
         external
         payable
         whenNotPaused
     {
-        bytes32 promiseId;
+        require(metadata[3].mul(metadata[5])  == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+
+        uint256 tokenIdSupply = voucherKernel.createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
         
-        uint256 weiReceived = msg.value;
-        
-        //create a promise for an asset first (simplified for prototype)
-        promiseId = voucherKernel.createAssetPromise(msg.sender, _assetTitle, _validFrom, _validTo, _price, _depositSe, _depositBu);
-        
+        voucherKernel.createPaymentMethod(tokenIdSupply, ETH_ETH, address(0), address(0));
+
         //checks
         //(i) this is for separate promise allocation, not in prototype
         //uint256 depositSe = voucherKernel.getPromiseDepositSe(promiseId);
         //require(depositSe * _quantity == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         //(ii) prototype check
-        require(_depositSe * _quantity == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         
-        
-        uint256 tokenIdSupply = voucherKernel.createOrder(msg.sender, promiseId, _quantity);
         
         //record funds in escrow ...
-        escrow[msg.sender] += weiReceived;
+        escrow[msg.sender] += msg.value;
         
-        emit LogOrderCreated(tokenIdSupply, msg.sender, promiseId, _quantity);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
     }
-    
+
+    function requestCreateOrder_TKN_TKN_WithPermit(
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256[] calldata metadata
+        )
+        notZeroAddress(_tokenPriceAddress)
+        notZeroAddress(_tokenDepositAddress)
+        external
+        payable
+    {
+        require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        
+        IERC20WithPermit(_tokenDepositAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
+        
+        uint256 tokenIdSupply = voucherKernel.createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
+        
+        voucherKernel.createPaymentMethod(tokenIdSupply, TKN_TKN, _tokenPriceAddress, _tokenDepositAddress);
+
+        IERC20WithPermit(_tokenDepositAddress).transferFrom(msg.sender, address(this), _tokensSent);
+        
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
+    }
+
+    function requestCreateOrder_ETH_TKN_WithPermit(
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256[] calldata metadata
+        )
+        notZeroAddress(_tokenDepositAddress)
+        external
+        payable
+    {
+        require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        
+        IERC20WithPermit(_tokenDepositAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
+        
+        uint256 tokenIdSupply = voucherKernel.createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
+        
+        voucherKernel.createPaymentMethod(tokenIdSupply, ETH_TKN, address(0), _tokenDepositAddress);
+
+        IERC20WithPermit(_tokenDepositAddress).transferFrom(msg.sender, address(this), _tokensSent);
+        
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
+    }
+
+    function requestCreateOrder_TKN_ETH(
+        address _tokenPriceAddress,
+        uint256[] calldata metadata
+        )
+        notZeroAddress(_tokenPriceAddress)
+        external
+        payable
+    {
+        require(metadata[3].mul(metadata[5]) == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        
+        uint256 tokenIdSupply = voucherKernel.createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
+        voucherKernel.createPaymentMethod(tokenIdSupply, TKN_ETH, _tokenPriceAddress, address(0));
+
+        escrow[msg.sender] += msg.value;
+
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
+    }
     
     /**
      * @notice Consumer requests/buys a voucher by filling an order and receiving a Voucher Token in return
      * @param _tokenIdSupply    ID of the supply token
      * @param _issuer           Address of the issuer of the supply token
      */
-    function requestVoucher(uint256 _tokenIdSupply, address _issuer)
+    function requestVoucher_ETH_ETH(uint256 _tokenIdSupply, address _issuer)
         external
         payable
         nonReentrant
@@ -150,15 +209,97 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
 
         //checks
         (uint256 price, uint256 depositSe, uint256 depositBu) = voucherKernel.getOrderCosts(_tokenIdSupply);
-        require(price + depositBu == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(price.add(depositBu) == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        //get voucher token - extract ERC721 from _voucherOrderId to msg.sender
-        uint256 voucherTokenId = voucherKernel.fillOrder(_tokenIdSupply, _issuer, msg.sender);
+        voucherKernel.fillOrder(_tokenIdSupply, _issuer, msg.sender);
 
         //record funds in escrow ...
         escrow[msg.sender] += weiReceived;
-        
-        emit LogVoucherDelivered(_tokenIdSupply, voucherTokenId, _issuer, msg.sender, voucherKernel.getPromiseIdFromVoucherId(voucherTokenId));
+    }
+    
+    function requestVoucher_TKN_TKN_WithPermit(
+        uint256 _tokenIdSupply, 
+        address _issuer,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 vPrice, bytes32 rPrice, bytes32 sPrice, // tokenPrice
+        uint8 vDeposit, bytes32 rDeposit, bytes32 sDeposit  // tokenDeposits
+        )
+        external
+        payable
+        nonReentrant
+    {
+
+        //checks
+        (uint256 price, uint256 depositBu) = voucherKernel.getBuyerOrderCosts(_tokenIdSupply);
+        require(_tokensSent.sub(depositBu) == price, "INCORRECT_FUNDS");
+
+        address tokenPriceAddress = voucherKernel.getVoucherPriceToken(_tokenIdSupply);
+        address tokenDepositAddress = voucherKernel.getVoucherDepositToken(_tokenIdSupply);
+
+        IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), price, deadline, vPrice, rPrice, sPrice);
+        IERC20WithPermit(tokenDepositAddress).permit(msg.sender, address(this), depositBu, deadline, vDeposit, rDeposit, sDeposit);
+
+        voucherKernel.fillOrder(_tokenIdSupply, _issuer, msg.sender);
+
+        IERC20WithPermit(tokenPriceAddress).transferFrom(msg.sender, address(this), price);
+        IERC20WithPermit(tokenDepositAddress).transferFrom(msg.sender, address(this), depositBu);
+    }
+
+    function requestVoucher_ETH_TKN_WithPermit(
+        uint256 _tokenIdSupply, 
+        address _issuer,
+        uint256 _tokensDeposit,
+        uint256 deadline,
+        uint8 v, bytes32 r, bytes32 s
+        )
+        external
+        payable
+        nonReentrant
+    {
+
+        //checks
+        (uint256 price, uint256 depositBu) = voucherKernel.getBuyerOrderCosts(_tokenIdSupply);
+        require(price == msg.value, "INCORRECT_PRICE");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(depositBu == _tokensDeposit, "INCORRECT_DE");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+
+        address tokenDepositAddress = voucherKernel.getVoucherDepositToken(_tokenIdSupply);
+        IERC20WithPermit(tokenDepositAddress).permit(msg.sender, address(this), _tokensDeposit, deadline, v, r, s);
+
+        voucherKernel.fillOrder(_tokenIdSupply, _issuer, msg.sender);
+
+        IERC20WithPermit(tokenDepositAddress).transferFrom(msg.sender, address(this), _tokensDeposit);
+
+         //record funds in escrow ...
+        escrow[msg.sender] += msg.value;
+    }
+
+    function requestVoucher_TKN_ETH_WithPermit(
+        uint256 _tokenIdSupply, 
+        address _issuer,
+        uint256 _tokensPrice,
+        uint256 deadline,
+        uint8 v, bytes32 r, bytes32 s
+        )
+        external
+        payable
+        nonReentrant
+    {
+
+        //checks
+        (uint256 price, uint256 depositBu) = voucherKernel.getBuyerOrderCosts(_tokenIdSupply);
+        require(price == _tokensPrice, "INCORRECT_PRICE");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(depositBu == msg.value, "INCORRECT_DE");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+
+        address tokenPriceAddress = voucherKernel.getVoucherPriceToken(_tokenIdSupply);
+        IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), price, deadline, v, r, s);
+
+        voucherKernel.fillOrder(_tokenIdSupply, _issuer, msg.sender);
+
+        IERC20WithPermit(tokenPriceAddress).transferFrom(msg.sender, address(this), price);
+
+         //record funds in escrow ...
+        escrow[msg.sender] += msg.value;
     }
 
 
@@ -166,9 +307,9 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @notice Trigger withdrawals of what funds are releasable
      * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
      * @dev This function would be optimized a lot, here verbose for readability.
-     * @param _tokenIdVouchers  an array of voucher tokens (ERC-721) to try withdraw funds from
+     * @param _tokenIdVoucher  ID of a voucher token (ERC-721) to try withdraw funds from
      */
-    function withdraw(uint256[] calldata _tokenIdVouchers)
+    function withdraw(uint256 _tokenIdVoucher)
         external
         nonReentrant
         whenNotPaused
@@ -176,51 +317,46 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         //TODO: more checks
         //TODO: check to pass 2 diff holders and how the amounts will be distributed
 
-        require(_tokenIdVouchers.length > 0, "EMPTY_LIST"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        
         VoucherDetails memory voucherDetails;
         
-        //uint256 tPartDepositSe; //Can't use, because of "Stack Too Deep" Error ... this in real life needs to be optimized, but kept here for readability.
-        
         //in the future might want to (i) check the gasleft() (but UNGAS proposal might make it impossible), and/or (ii) set upper loop limit to sth like .length < 2**15
-        for(uint256 i = 0; i < _tokenIdVouchers.length; i++) {
-            require(_tokenIdVouchers[i] != 0, "UNSPECIFIED_ID");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-            
-            // (currStatus.status, currStatus.isPaymentReleased, currStatus.isDepositsReleased) = voucherKernel.getVoucherStatus(_tokenIdVouchers[i]);
-            voucherDetails.tokenIdVoucher = _tokenIdVouchers[i];
-            voucherDetails.tokenIdSupply = voucherKernel.getIdSupplyFromVoucher(voucherDetails.tokenIdVoucher);
-            
-            (voucherDetails.currStatus.status,
-                voucherDetails.currStatus.isPaymentReleased,
-                voucherDetails.currStatus.isDepositsReleased
-            ) = voucherKernel.getVoucherStatus(voucherDetails.tokenIdVoucher);
-            
-            (voucherDetails.price, 
-                voucherDetails.depositSe, 
-                voucherDetails.depositBu
-            ) = voucherKernel.getOrderCosts(voucherDetails.tokenIdSupply);
-            
-            // (price, depositSe, depositBu) = voucherKernel.getOrderCosts(tokenIdSupply);
-            voucherDetails.issuer = address(uint160( voucherKernel.getVoucherIssuer(voucherDetails.tokenIdVoucher) ));
-            voucherDetails.holder = address(uint160( voucherKernel.getVoucherHolder(voucherDetails.tokenIdVoucher) ));
-            
-            
-            //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
-            if (!voucherDetails.currStatus.isPaymentReleased) 
-            {
-                releasePayments(voucherDetails);
-            }
+        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        
+        voucherDetails.tokenIdVoucher = _tokenIdVoucher;
+        voucherDetails.tokenIdSupply = voucherKernel.getIdSupplyFromVoucher(voucherDetails.tokenIdVoucher);
+        voucherDetails.paymentMethod = voucherKernel.getVoucherPaymentMethod(voucherDetails.tokenIdSupply);
 
-            //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status 
-            if (!voucherDetails.currStatus.isDepositsReleased && 
-                isStatus(voucherDetails.currStatus.status, idxFinal)) 
-            {
-                releaseDeposits(voucherDetails);
-            }
-        } //end-for   
+        require(voucherDetails.paymentMethod > 0 && voucherDetails.paymentMethod <= 4, "INVALID PAYMENT METHOD");
+
+        (voucherDetails.currStatus.status,
+            voucherDetails.currStatus.isPaymentReleased,
+            voucherDetails.currStatus.isDepositsReleased
+        ) = voucherKernel.getVoucherStatus(voucherDetails.tokenIdVoucher);
+        
+        (voucherDetails.price, 
+            voucherDetails.depositSe, 
+            voucherDetails.depositBu
+        ) = voucherKernel.getOrderCosts(voucherDetails.tokenIdSupply);
+        
+        voucherDetails.issuer = address(uint160( voucherKernel.getVoucherIssuer(voucherDetails.tokenIdVoucher) ));
+        voucherDetails.holder = address(uint160( voucherKernel.getVoucherHolder(voucherDetails.tokenIdVoucher) ));
+        
+        
+        //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
+        if (!voucherDetails.currStatus.isPaymentReleased) 
+        {
+            releasePayments(voucherDetails);
+        }
+
+        //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status 
+        if (!voucherDetails.currStatus.isDepositsReleased && 
+            isStatus(voucherDetails.currStatus.status, idxFinal)) 
+        {
+            releaseDeposits(voucherDetails);
+        }
         
         if (voucherDetails.amount2pool > 0) {
-            address payable poolAddress = address(uint160(owner()));
+            address payable poolAddress = address(uint160(owner())); //this is required as we could not implicitly cast the owner address to payable
             _withdraw(poolAddress, voucherDetails.amount2pool);
         }
         
@@ -256,7 +392,10 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         
         voucherDetails.tokenIdVoucher = _tokenIdVoucher;
         voucherDetails.tokenIdSupply = voucherKernel.getIdSupplyFromVoucher(voucherDetails.tokenIdVoucher);
-        
+        voucherDetails.paymentMethod = voucherKernel.getVoucherPaymentMethod(voucherDetails.tokenIdSupply);
+
+        require(voucherDetails.paymentMethod > 0 && voucherDetails.paymentMethod <= 4, "INVALID PAYMENT METHOD");
+
         (voucherDetails.currStatus.status,
             voucherDetails.currStatus.isPaymentReleased,
             voucherDetails.currStatus.isDepositsReleased
@@ -267,7 +406,6 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.depositBu
         ) = voucherKernel.getOrderCosts(voucherDetails.tokenIdSupply);
         
-        // (price, depositSe, depositBu) = voucherKernel.getOrderCosts(tokenIdSupply);
         voucherDetails.issuer = address(uint160( voucherKernel.getVoucherIssuer(voucherDetails.tokenIdVoucher) ));
         voucherDetails.holder = address(uint160( voucherKernel.getVoucherHolder(voucherDetails.tokenIdVoucher) ));
         
@@ -317,8 +455,18 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     function releasePaymentToSeller(VoucherDetails memory voucherDetails) internal {
-        escrow[voucherDetails.holder] -= voucherDetails.price;
-        voucherDetails.amount2issuer += voucherDetails.price;
+
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == ETH_TKN) {
+            escrow[voucherDetails.holder] -= voucherDetails.price;
+            voucherDetails.amount2issuer += voucherDetails.price;
+        }
+
+        // TODO Chris - Can we have the same approach as above, first collect all amounts in one variable and do the payout at the end? So we save gas from multiple transfers
+        if(voucherDetails.paymentMethod == TKN_ETH || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenPrice = voucherKernel.getVoucherPriceToken(voucherDetails.tokenIdSupply);
+            IERC20WithPermit(addressTokenPrice).transfer(voucherDetails.issuer, voucherDetails.price);
+        }
+
         voucherKernel.setPaymentReleased(voucherDetails.tokenIdVoucher);
 
         LogAmountDistribution(
@@ -331,8 +479,17 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
 
     function releasePaymentToBuyer(VoucherDetails memory voucherDetails) internal {
 
-        escrow[voucherDetails.holder] -= voucherDetails.price;
-        voucherDetails.amount2holder += voucherDetails.price;
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == ETH_TKN) {
+            escrow[voucherDetails.holder] -= voucherDetails.price;
+            voucherDetails.amount2holder += voucherDetails.price;
+        }
+
+        if(voucherDetails.paymentMethod == TKN_ETH || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenPrice = voucherKernel.getVoucherPriceToken(voucherDetails.tokenIdSupply);
+            IERC20WithPermit(addressTokenPrice).transfer(voucherDetails.holder, voucherDetails.price);
+            
+        }
+
         voucherKernel.setPaymentReleased(voucherDetails.tokenIdVoucher);
 
         LogAmountDistribution(
@@ -343,7 +500,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         );
     }
 
-    function releaseDeposits(VoucherDetails memory voucherDetails) internal returns (uint256, uint256, uint256) {
+    function releaseDeposits(VoucherDetails memory voucherDetails) internal {
 
         //first, depositSe
         if (isStatus(voucherDetails.currStatus.status, idxComplain)) {
@@ -365,7 +522,6 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
             ) {
             //release depositBu
             distributeFullHolderDeposit(voucherDetails);
-           
         } else {
             //slash depositBu
             distributeHolderDepositOnNotRedeemedNotCancelled(voucherDetails);
@@ -376,15 +532,28 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     function distributeIssuerDepositOnHolderComplain(VoucherDetails memory voucherDetails) internal {
+        
         uint256 tFraction;
 
         if (isStatus(voucherDetails.currStatus.status, idxCancelFault)) {
             //appease the conflict three-ways
-            escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
-            tFraction = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
-            voucherDetails.amount2holder += tFraction; //Bu gets, say, a half
-            voucherDetails.amount2issuer += tFraction.div(CANCELFAULT_SPLIT);   //Se gets, say, a quarter
-            voucherDetails.amount2pool += voucherDetails.depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT);    //slashing the rest
+            if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+                escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+                tFraction = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+                voucherDetails.amount2holder += tFraction; //Bu gets, say, a half
+                voucherDetails.amount2issuer += tFraction.div(CANCELFAULT_SPLIT);   //Se gets, say, a quarter
+                voucherDetails.amount2pool += voucherDetails.depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT);    //slashing the rest
+            }
+
+            if(voucherDetails.paymentMethod == ETH_TKN || voucherDetails.paymentMethod == TKN_TKN) {
+                address addressTokenDeposits = voucherKernel.getVoucherDepositToken(voucherDetails.tokenIdSupply);
+                
+                tFraction = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+
+                IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.holder, tFraction);
+                IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.issuer, tFraction.div(CANCELFAULT_SPLIT));
+                IERC20WithPermit(addressTokenDeposits).transfer(owner(), voucherDetails.depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT));
+            }
 
             LogAmountDistribution(voucherDetails.tokenIdVoucher, voucherDetails.holder, tFraction, PaymentType.DEPOSIT_SELLER);
             LogAmountDistribution(voucherDetails.tokenIdVoucher, voucherDetails.issuer, tFraction.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
@@ -394,22 +563,32 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
 
         } else {
             //slash depositSe
-            escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
-            voucherDetails.amount2pool += voucherDetails.depositSe;
+            if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+                escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+                voucherDetails.amount2pool += voucherDetails.depositSe;
+            } else {
+                address addressTokenDeposits = voucherKernel.getVoucherDepositToken(voucherDetails.tokenIdSupply);
+                IERC20WithPermit(addressTokenDeposits).transfer(owner(), voucherDetails.depositSe);
+            }
 
             LogAmountDistribution(voucherDetails.tokenIdVoucher, owner(), voucherDetails.depositSe, PaymentType.DEPOSIT_SELLER);
         }
     }
 
     function distributeIssuerDepositOnIssuerCancel(VoucherDetails memory voucherDetails) internal {
-        // uint256 tPartDepositSe = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
-        // escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
-        // voucherDetails.amount2issuer += tPartDepositSe;
-        // voucherDetails.amount2holder += voucherDetails.depositSe.sub(tPartDepositSe); 
+        
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+            escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+            voucherDetails.amount2issuer += voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+            voucherDetails.amount2holder += voucherDetails.depositSe - voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+        }
 
-        escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
-        voucherDetails.amount2issuer += voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
-        voucherDetails.amount2holder += voucherDetails.depositSe - voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+        if (voucherDetails.paymentMethod == ETH_TKN || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenDeposits = voucherKernel.getVoucherDepositToken(voucherDetails.tokenIdSupply);
+
+            IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.issuer, voucherDetails.depositSe.div(CANCELFAULT_SPLIT));
+            IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.holder, voucherDetails.depositSe - voucherDetails.depositSe.div(CANCELFAULT_SPLIT));
+        }
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher, 
@@ -427,8 +606,16 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     function distributeFullIssuerDeposit(VoucherDetails memory voucherDetails) internal {
-        escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
-        voucherDetails.amount2issuer += voucherDetails.depositSe;    
+
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+            escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+            voucherDetails.amount2issuer += voucherDetails.depositSe;
+        }
+
+        if(voucherDetails.paymentMethod == ETH_TKN || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenDeposits = voucherKernel.getVoucherDepositToken(voucherDetails.tokenIdSupply);
+            IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.issuer, voucherDetails.depositSe);
+        }
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher, 
@@ -439,8 +626,16 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     function distributeFullHolderDeposit(VoucherDetails memory voucherDetails) internal {
-        escrow[voucherDetails.holder] -= voucherDetails.depositBu;
-        voucherDetails.amount2holder += voucherDetails.depositBu;
+
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+            escrow[voucherDetails.holder] -= voucherDetails.depositBu;
+            voucherDetails.amount2holder += voucherDetails.depositBu;
+        }
+
+        if(voucherDetails.paymentMethod == ETH_TKN || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenDeposits = voucherKernel.getVoucherDepositToken(voucherDetails.tokenIdSupply);
+            IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.holder, voucherDetails.depositBu);
+        }
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher, 
@@ -451,15 +646,23 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     function distributeHolderDepositOnNotRedeemedNotCancelled(VoucherDetails memory voucherDetails) internal {
-        escrow[voucherDetails.holder] -= voucherDetails.depositBu;
-        voucherDetails.amount2pool += voucherDetails.depositBu; 
+
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+            escrow[voucherDetails.holder] -= voucherDetails.depositBu;
+            voucherDetails.amount2pool += voucherDetails.depositBu; 
+        }
+
+        if(voucherDetails.paymentMethod == ETH_TKN || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenDeposits = voucherKernel.getVoucherDepositToken(voucherDetails.tokenIdSupply);
+            IERC20WithPermit(addressTokenDeposits).transfer(owner(), voucherDetails.depositBu);
+        }
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher, 
             owner(), 
             voucherDetails.depositBu, 
             PaymentType.DEPOSIT_BUYER
-            ); 
+        ); 
     }
 
     function withdrawDeposits(uint256 _tokenIdSupply)
@@ -496,7 +699,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         //TODO: more requires needed?
         
         if (escrow[owner()] > 0) {
-            address payable poolAddress = address(uint160(owner()));
+            address payable poolAddress = address(uint160(owner())); //this is required as we could not implicitly cast the owner address to payable
             uint256 amount = escrow[poolAddress];
             escrow[poolAddress] = 0;
             _withdraw(poolAddress,amount);
@@ -506,7 +709,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     /**
      * @notice Internal function for withdrawing.
      * As unbelievable as it is, neither .send() nor .transfer() are now secure to use due to EIP-1884
-     *  So now transfering funds via the last remaining option: .call()
+     *  So now transferring funds via the last remaining option: .call()
      *  See https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/ 
      * @param _recipient    address of the account receiving funds from the escrow
      * @param _amount       amount to be released from escrow
