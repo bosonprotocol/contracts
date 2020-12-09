@@ -45,7 +45,8 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     event LogOrderCreated(
         uint256 indexed _tokenIdSupply,
         address _seller,
-        uint256 _quantity
+        uint256 _quantity,
+        uint8 _paymentType
     );
     
     event LogWithdrawal(
@@ -119,7 +120,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         //record funds in escrow ...
         escrow[msg.sender] += msg.value;
         
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETH_ETH);
     }
 
     function requestCreateOrder_TKN_TKN_WithPermit(
@@ -147,7 +148,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
 
         IERC20WithPermit(_tokenDepositAddress).transferFrom(msg.sender, address(this), _tokensSent);
         
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKN_TKN);
     }
 
     function requestCreateOrder_ETH_TKN_WithPermit(
@@ -173,7 +174,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
 
         IERC20WithPermit(_tokenDepositAddress).transferFrom(msg.sender, address(this), _tokensSent);
         
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETH_TKN);
     }
 
     function requestCreateOrder_TKN_ETH(
@@ -191,7 +192,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
 
         escrow[msg.sender] += msg.value;
 
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKN_ETH);
     }
     
     /**
@@ -384,8 +385,6 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         whenPaused
     {
         VoucherDetails memory voucherDetails;
-        
-        //uint256 tPartDepositSe; //Can't use, because of "Stack Too Deep" Error ... this in real life needs to be optimized, but kept here for readability.
         
         //in the future might want to (i) check the gasleft() (but UNGAS proposal might make it impossible), and/or (ii) set upper loop limit to sth like .length < 2**15
         require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
