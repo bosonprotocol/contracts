@@ -28,6 +28,8 @@ contract("Cashier withdrawals ", async accounts => {
     let RandomUser = config.accounts.randomUser // will be used to clear tokens received after every successful test
 
     let contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit
+    const PAUSED_WITHPERMIT = 1;
+    const PAUSED_LABEL = "[PAUSED]";
 
     let distributedAmounts = {
         buyerAmount: new BN(0),
@@ -70,693 +72,21 @@ contract("Cashier withdrawals ", async accounts => {
 
     }
 
-    describe('Withdraw scenarios', async () => {
+    async function withdraw(utils, index, voucherID) {
+        if (index == 1) {
+            await utils.pause(Deployer.address)
+            return await utils.withdrawWhenPaused(voucherID, Seller.address);
+        } else {
+            return  await utils.withdraw(voucherID, Deployer.address);
+        }
+    }
+
+    for (let i = 0; i <= PAUSED_WITHPERMIT; i++) {
+        describe.only('Withdraw scenarios', async () => {
         
-        before(async () => {
-            await deployContracts();
-        })
-
-        describe('ETH - ETH', async () => {
-            
             before(async () => {
-
-                utils = UtilsBuilder
-                    .NEW()
-                    .ETH_ETH()
-                    .build(contractERC1155ERC721, contractVoucherKernel, contractCashier)
-
-                const timestamp = await Utils.getCurrTimestamp()
-
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller.address, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+                await deployContracts();
             })
-
-            it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
-
-                const expectedBuyerAmount = new BN(helpers.buyer_deposit).add(new BN(helpers.product_price)).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.3 + 0.04 + 0.025
-                const expectedSellerAmount = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
-                const expectedEscrowAmount = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
-
-                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
-
-                await utils.refund(voucherID, Buyer.address)
-                await utils.complain(voucherID, Buyer.address)
-                await utils.cancel(voucherID, Seller.address)
-                await utils.finalize(voucherID, Deployer.address)
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
-                    return true
-                }, "Amounts not distributed successfully")
-
-
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
-            });
-
-            it("COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW", async () => {
-                const expectedBuyerAmount = new BN(helpers.product_price) // 0.3
-                const expectedSellerAmount = new BN(0) // 0
-                const expectedEscrowAmount = new BN(helpers.seller_deposit).add(new BN(helpers.buyer_deposit)) // 0.09
-
-                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID);
-                await utils.refund(voucherID, Buyer.address)
-                await utils.complain(voucherID, Buyer.address)
-                await timemachine.advanceTimeSeconds(60);
-
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
-                    return true
-                }, "Amounts not distributed successfully")
-
-
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
-            });
-
-            it("COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const expectedBuyerAmount = new BN(helpers.buyer_deposit).add(new BN(helpers.product_price)).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.3 + 0.04 + 0.025
-                const expectedSellerAmount = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
-                const expectedEscrowAmount = new BN(0) //0
-
-                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
-                await utils.refund(voucherID, Buyer.address)
-                await utils.cancel(voucherID, Seller.address)
-
-                await timemachine.advanceTimeSeconds(60)
-
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
-                    return true
-                }, "Amounts not distributed successfully")
-
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
-            });
-
-            it("COMMIT->REFUND->FINALIZE->WITHDRAW", async () => {
-                const expectedBuyerAmount = new BN(helpers.product_price) // 0.3
-                const expectedSellerAmount = new BN(helpers.seller_deposit) // 0.05
-                const expectedEscrowAmount = new BN(helpers.buyer_deposit) // 0.04
-
-                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
-                await utils.refund(voucherID, Buyer.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
-                    return true
-                }, "Amounts not distributed successfully")
-
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
-            });
-
-            it("COMMIT->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const expectedBuyerAmount = new BN(helpers.buyer_deposit).add(new BN(helpers.product_price)).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.3 + 0.04 + 0.025
-                const expectedSellerAmount = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
-                const expectedEscrowAmount = new BN(0) // 0
-
-                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
-                await utils.cancel(voucherID, Seller.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
-                    return true
-                }, "Amounts not distributed successfully")
-
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
-            });
-
-            it("COMMIT->REDEEM->FINALIZE->WITHDRAW", async () => {
-                const expectedBuyerAmount = new BN(helpers.buyer_deposit) // 0.04
-                const expectedSellerAmount = new BN(helpers.seller_deposit).add(new BN(helpers.product_price)) // 0.35
-                const expectedEscrowAmount = new BN(0) // 0
-
-                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
-                await utils.redeem(voucherID, Buyer.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
-                    return true
-                }, "Amounts not distributed successfully")
-
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
-            });
-
-            it("COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW", async () => {
-                const expectedBuyerAmount = new BN(helpers.buyer_deposit) // 0.04
-                const expectedSellerAmount = new BN(helpers.product_price) // 0.3
-                const expectedEscrowAmount = new BN(helpers.seller_deposit) // 0.05
-
-                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
-                await utils.redeem(voucherID, Buyer.address)
-                await utils.complain(voucherID, Buyer.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
-                    return true
-                }, "Amounts not distributed successfully")
-
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
-            });
-
-            it("COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const expectedBuyerAmount = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
-                const expectedSellerAmount = new BN(helpers.product_price).add(new BN(helpers.seller_deposit).div(new BN(4))) // 0.3125 
-                const expectedEscrowAmount = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
-
-                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID);
-                await utils.redeem(voucherID, Buyer.address)
-                await utils.complain(voucherID, Buyer.address)
-                await utils.cancel(voucherID, Seller.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
-                    return true
-                }, "Amounts not distributed successfully")
-
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
-            });
-
-            it("COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const expectedBuyerAmount = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
-                const expectedSellerAmount = new BN(helpers.product_price).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.325
-                const expectedEscrowAmount = new BN(0) // 0
-
-                const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID);
-                await utils.redeem(voucherID, Buyer.address)
-                await utils.cancel(voucherID, Seller.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
-                    return true
-                }, "Amounts not distributed successfully")
-
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
-            });
-
-            afterEach(() => {
-                distributedAmounts = {
-                    buyerAmount: new BN(0),
-                    sellerAmount: new BN(0),
-                    escrowAmount: new BN(0)
-                }
-            })
-        })
-
-        describe('TKN - TKN [WITH PERMIT]', async () => {
-            let balanceBuyerFromPayment = new BN(0)
-            let balanceBuyerFromDesosits = new BN(0)
-
-            let balanceSellerFromPayment = new BN(0)
-            let balanceSellerFromDesosits = new BN(0)
-
-            let escrowBalanceFromPayment = new BN(0)
-            let escrowBalanceFromDeposits = new BN(0)
-
-            let cashierPaymentLeft = new BN(0)
-            let cashierDepositLeft = new BN(0)
-
-
-            async function getBalancesFromPiceTokenAndDepositToken() {
-                balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(Buyer.address)
-                balanceBuyerFromDesosits = await utils.contractBSNTokenDeposit.balanceOf(Buyer.address)
-
-                balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(Seller.address)
-                balanceSellerFromDesosits = await utils.contractBSNTokenDeposit.balanceOf(Seller.address)
-
-                escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(Deployer.address)
-                escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(Deployer.address)
-
-                cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(utils.contractCashier.address)
-                cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(utils.contractCashier.address)
-            }
-
-            beforeEach(async () => {
-
-                utils = UtilsBuilder
-                    .NEW()
-                    .ERC20withPermit()
-                    .TKN_TKN()
-                    .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
-                 
-                const timestamp = await Utils.getCurrTimestamp()
-
-                const supplyQty = 1
-                const tokensToMint = new BN(helpers.seller_deposit).mul(new BN(supplyQty))
-
-                await utils.mintTokens('contractBSNTokenDeposit', Seller.address, tokensToMint);
-                await utils.mintTokens('contractBSNTokenPrice', Buyer.address, helpers.product_price);
-                await utils.mintTokens('contractBSNTokenDeposit', Buyer.address, helpers.buyer_deposit);
-
-                TOKEN_SUPPLY_ID = await utils.createOrder(
-                    Seller,
-                    timestamp, 
-                    timestamp + helpers.SECONDS_IN_DAY,
-                    helpers.seller_deposit,
-                    supplyQty
-                )
-            })
-
-            it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
-
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-
-                await utils.refund(voucherID, Buyer.address)
-                await utils.complain(voucherID, Buyer.address)
-                await utils.cancel(voucherID, Seller.address)
-                await utils.finalize(voucherID, Deployer.address)
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
-                const expectedSellerPrice = new BN(0)
-                const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
-                const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
-                const expectedEscrowAmountPrice = new BN(0)
-
-                await getBalancesFromPiceTokenAndDepositToken();
-
-                //Payments 
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
-                
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-
-            });
-
-            it("COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-
-                await utils.refund(voucherID, Buyer.address)
-                await utils.complain(voucherID, Buyer.address)
-
-                await timemachine.advanceTimeSeconds(60);
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
-
-                const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
-                const expectedBuyerDeposit = new BN(0)
-                const expectedSellerPrice = new BN(0)
-                const expectedSellerDeposit = new BN(0)
-                const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).add(new BN(helpers.buyer_deposit)) // 0.09
-                const expectedEscrowAmountPrice = new BN(0)
-
-                await getBalancesFromPiceTokenAndDepositToken();
-
-                //Payments 
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
-
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-
-            });
-
-            it("COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-
-                await utils.refund(voucherID, Buyer.address)
-                await utils.cancel(voucherID, Seller.address)
-
-                await timemachine.advanceTimeSeconds(60)
-
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
-                const expectedSellerPrice = new BN(0)
-                const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
-                const expectedEscrowAmountDeposit = new BN(0)
-                const expectedEscrowAmountPrice = new BN(0)
-
-                await getBalancesFromPiceTokenAndDepositToken();
-
-                //Payments 
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
-
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
-
-            it("COMMIT->REFUND->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-                await utils.refund(voucherID, Buyer.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
-                const expectedBuyerDeposit = new BN(0)
-                const expectedSellerPrice = new BN(0)
-                const expectedSellerDeposit = new BN(helpers.seller_deposit) // 0.05
-                const expectedEscrowAmountDeposit = new BN(helpers.buyer_deposit) // 0.04
-                const expectedEscrowAmountPrice = new BN(0)
-
-                await getBalancesFromPiceTokenAndDepositToken();
-
-                //Payments 
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
-
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-             
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
-
-            it("COMMIT->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-
-                await utils.cancel(voucherID, Seller.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
-                const expectedSellerPrice = new BN(0)
-                const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
-                const expectedEscrowAmountPrice = new BN(0)
-                const expectedEscrowAmountDeposit = new BN(0)
-
-                await getBalancesFromPiceTokenAndDepositToken();
-
-                //Payments 
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
-
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
-
-            it("COMMIT->REDEEM->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-                await utils.redeem(voucherID, Buyer.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
-
-                const expectedBuyerPrice = new BN(0) 
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
-                const expectedSellerPrice = new BN(helpers.product_price) //// 0.3
-                const expectedSellerDeposit = new BN(helpers.seller_deposit) // 0.05
-                const expectedEscrowAmountDeposit = new BN(0) 
-                const expectedEscrowAmountPrice = new BN(0)
-
-                await getBalancesFromPiceTokenAndDepositToken();
-
-                //Payments 
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
-
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
-
-            it("COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-
-                await utils.redeem(voucherID, Buyer.address)
-                await utils.complain(voucherID, Buyer.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerPrice = new BN(0)
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
-                const expectedSellerPrice = new BN(helpers.product_price) // 0.3
-                const expectedSellerDeposit = new BN(0) 
-                const expectedEscrowAmountPrice = new BN(0)
-                const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit) // 0.05
-
-                await getBalancesFromPiceTokenAndDepositToken();
-
-                //Payments 
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
-
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
-
-            it("COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-                await utils.redeem(voucherID, Buyer.address)
-                await utils.complain(voucherID, Buyer.address)
-                await utils.cancel(voucherID, Seller.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerPrice = new BN(0)
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
-                const expectedSellerPrice = new BN(helpers.product_price) // 0.3
-                const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
-                const expectedEscrowAmountPrice = new BN(0)
-                const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
-
-                await getBalancesFromPiceTokenAndDepositToken();
-
-                //Payments 
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
-
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
-
-            it("COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-
-                await utils.redeem(voucherID, Buyer.address)
-                await utils.cancel(voucherID, Seller.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerPrice = new BN(0)
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
-                const expectedSellerPrice = new BN(helpers.product_price) // 0.3
-                const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
-                const expectedEscrowAmountPrice = new BN(0)
-                const expectedEscrowAmountDeposit = new BN(0)
-
-                await getBalancesFromPiceTokenAndDepositToken();
-
-                //Payments 
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
-
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-
-                
-            });
 
             afterEach(async () => {
                 distributedAmounts = {
@@ -765,990 +95,1733 @@ contract("Cashier withdrawals ", async accounts => {
                     escrowAmount: new BN(0)
                 }
 
-                balanceBuyerFromPayment = new BN(0)
-                balanceBuyerFromDesosits = new BN(0)
-
-                balanceSellerFromPayment = new BN(0)
-                balanceSellerFromDesosits = new BN(0)
-
-                escrowBalanceFromPayment = new BN(0)
-                escrowBalanceFromDeposits = new BN(0)
-
-                cashierPaymentLeft = new BN(0)
-                cashierDepositLeft = new BN(0)
-
-                await giveAwayToRandom();
+                const isPaused = await contractCashier.paused();
+                if (isPaused) {
+                    await contractCashier.unpause();
+                }
             })
 
-        })
-       
-        describe('ETH - TKN [WITH PERMIT]', async () => {
-            let balanceBuyerFromPayment = new BN(0)
-            let balanceBuyerFromDesosits = new BN(0)
+            describe(`ETH - ETH${i == PAUSED_WITHPERMIT ? PAUSED_LABEL : ''}`, async () => {
+                
+                before(async () => {
 
-            let balanceSellerFromPayment = new BN(0)
-            let balanceSellerFromDesosits = new BN(0)
+                    utils = UtilsBuilder
+                        .NEW()
+                        .ETH_ETH()
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier)
 
-            let escrowBalanceFromPayment = new BN(0)
-            let escrowBalanceFromDeposits = new BN(0)
+                    const timestamp = await Utils.getCurrTimestamp()
 
-            let cashierPaymentLeft = new BN(0)
-            let cashierDepositLeft = new BN(0)
+                    TOKEN_SUPPLY_ID = await utils.createOrder(Seller.address, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+                })
 
-            async function getBalancesDepositToken() {
-                balanceBuyerFromDesosits = await utils.contractBSNTokenDeposit.balanceOf(Buyer.address)
-                balanceSellerFromDesosits = await utils.contractBSNTokenDeposit.balanceOf(Seller.address)
-                escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(Deployer.address)
-                cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(utils.contractCashier.address)
-            }
+                it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
 
-            beforeEach(async () => {
+                    const expectedBuyerAmount = new BN(helpers.buyer_deposit).add(new BN(helpers.product_price)).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.3 + 0.04 + 0.025
+                    const expectedSellerAmount = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
+                    const expectedEscrowAmount = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
 
-                utils = UtilsBuilder
-                    .NEW()
-                    .ERC20withPermit()
-                    .ETH_TKN()
-                    .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+                    const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
 
-                const timestamp = await Utils.getCurrTimestamp()
+                    await utils.refund(voucherID, Buyer.address)
+                    await utils.complain(voucherID, Buyer.address)
+                    await utils.cancel(voucherID, Seller.address)
+                    await utils.finalize(voucherID, Deployer.address)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+                    const withdrawTx = await withdraw(utils, i, voucherID)
 
-                const supplyQty = 1
-                const tokensToMint = new BN(helpers.seller_deposit).mul(new BN(supplyQty))
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                        return true
+                    }, "Amounts not distributed successfully")
 
-                await utils.mintTokens('contractBSNTokenDeposit', Seller.address, tokensToMint);
-                await utils.mintTokens('contractBSNTokenDeposit', Buyer.address, helpers.buyer_deposit);
 
-                TOKEN_SUPPLY_ID = await utils.createOrder(
-                    Seller,
-                    timestamp,
-                    timestamp + helpers.SECONDS_IN_DAY,
-                    helpers.seller_deposit,
-                    supplyQty
-                )
-            })
+                    assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
+                    assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
+                    assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
+                });
 
-            it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
+                it("COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW", async () => {
+                    const expectedBuyerAmount = new BN(helpers.product_price) // 0.3
+                    const expectedSellerAmount = new BN(0) // 0
+                    const expectedEscrowAmount = new BN(helpers.seller_deposit).add(new BN(helpers.buyer_deposit)) // 0.09
 
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
+                    const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID);
+                    await utils.refund(voucherID, Buyer.address)
+                    await utils.complain(voucherID, Buyer.address)
+                    await timemachine.advanceTimeSeconds(60);
 
-                await utils.refund(voucherID, Buyer.address)
-                await utils.complain(voucherID, Buyer.address)
-                await utils.cancel(voucherID, Seller.address)
-                await utils.finalize(voucherID, Deployer.address)
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+                    await utils.finalize(voucherID, Deployer.address)
 
-                const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
-                const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
-                const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
+                    const withdrawTx = await withdraw(utils, i, voucherID)
 
-                await getBalancesDepositToken();
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                        return true
+                    }, "Amounts not distributed successfully")
 
-                // Payment should have been returned to buyer
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
 
-                    assert.equal(ev._payee, Buyer.address, "Incorrect Payee")
-                    assert.isTrue(ev._payment.eq(expectedBuyerPrice))
+                    assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
+                    assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
+                    assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
+                });
+
+                it("COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW", async () => {
+                    const expectedBuyerAmount = new BN(helpers.buyer_deposit).add(new BN(helpers.product_price)).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.3 + 0.04 + 0.025
+                    const expectedSellerAmount = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
+                    const expectedEscrowAmount = new BN(0) //0
+
+                    const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
+                    await utils.refund(voucherID, Buyer.address)
+                    await utils.cancel(voucherID, Seller.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                        return true
+                    }, "Amounts not distributed successfully")
+
+                    assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
+                    assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
+                    assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
+                });
+
+                it("COMMIT->REFUND->FINALIZE->WITHDRAW", async () => {
+                    const expectedBuyerAmount = new BN(helpers.product_price) // 0.3
+                    const expectedSellerAmount = new BN(helpers.seller_deposit) // 0.05
+                    const expectedEscrowAmount = new BN(helpers.buyer_deposit) // 0.04
+
+                    const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
+                    await utils.refund(voucherID, Buyer.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                        return true
+                    }, "Amounts not distributed successfully")
+
+                    assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
+                    assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
+                    assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
+                });
+
+                it("COMMIT->CANCEL->FINALIZE->WITHDRAW", async () => {
+                    const expectedBuyerAmount = new BN(helpers.buyer_deposit).add(new BN(helpers.product_price)).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.3 + 0.04 + 0.025
+                    const expectedSellerAmount = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
+                    const expectedEscrowAmount = new BN(0) // 0
+
+                    const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
+                    await utils.cancel(voucherID, Seller.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                        return true
+                    }, "Amounts not distributed successfully")
+
+                    assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
+                    assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
+                    assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
+                });
+
+                it("COMMIT->REDEEM->FINALIZE->WITHDRAW", async () => {
+                    const expectedBuyerAmount = new BN(helpers.buyer_deposit) // 0.04
+                    const expectedSellerAmount = new BN(helpers.seller_deposit).add(new BN(helpers.product_price)) // 0.35
+                    const expectedEscrowAmount = new BN(0) // 0
+
+                    const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
+                    await utils.redeem(voucherID, Buyer.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                        return true
+                    }, "Amounts not distributed successfully")
+
+                    assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
+                    assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
+                    assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
+                });
+
+                it("COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW", async () => {
+                    const expectedBuyerAmount = new BN(helpers.buyer_deposit) // 0.04
+                    const expectedSellerAmount = new BN(helpers.product_price) // 0.3
+                    const expectedEscrowAmount = new BN(helpers.seller_deposit) // 0.05
+
+                    const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
+                    await utils.redeem(voucherID, Buyer.address)
+                    await utils.complain(voucherID, Buyer.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                        return true
+                    }, "Amounts not distributed successfully")
+
+                    assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
+                    assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
+                    assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
+                });
+
+                it("COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
+                    const expectedBuyerAmount = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
+                    const expectedSellerAmount = new BN(helpers.product_price).add(new BN(helpers.seller_deposit).div(new BN(4))) // 0.3125 
+                    const expectedEscrowAmount = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
+
+                    const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID);
+                    await utils.redeem(voucherID, Buyer.address)
+                    await utils.complain(voucherID, Buyer.address)
+                    await utils.cancel(voucherID, Seller.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                        return true
+                    }, "Amounts not distributed successfully")
+
+                    assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
+                    assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
+                    assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
+                });
+
+                it("COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW", async () => {
+                        const expectedBuyerAmount = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
+                        const expectedSellerAmount = new BN(helpers.product_price).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.325
+                        const expectedEscrowAmount = new BN(0) // 0
+
+                        const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID);
+                        await utils.redeem(voucherID, Buyer.address)
+                        await utils.cancel(voucherID, Seller.address)
+
+                        await timemachine.advanceTimeSeconds(60)
+                        await utils.finalize(voucherID, Deployer.address)
+
+                        // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+                        const withdrawTx = await withdraw(utils, i, voucherID)
+
+                        truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                            utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                            return true
+                        }, "Amounts not distributed successfully")
+
+                        assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
+                        assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
+                        assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmount), 'Escrow Amount is not as expected')
+                    });
+
+                
+                })
+
+            describe(`TKN - TKN [WITH PERMIT]${i == PAUSED_WITHPERMIT ? PAUSED_LABEL : ''}`, async () => {
+                let balanceBuyerFromPayment = new BN(0)
+                let balanceBuyerFromDesosits = new BN(0)
+
+                let balanceSellerFromPayment = new BN(0)
+                let balanceSellerFromDesosits = new BN(0)
+
+                let escrowBalanceFromPayment = new BN(0)
+                let escrowBalanceFromDeposits = new BN(0)
+
+                let cashierPaymentLeft = new BN(0)
+                let cashierDepositLeft = new BN(0)
+
+
+                async function getBalancesFromPiceTokenAndDepositToken() {
+                    balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(Buyer.address)
+                    balanceBuyerFromDesosits = await utils.contractBSNTokenDeposit.balanceOf(Buyer.address)
+
+                    balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(Seller.address)
+                    balanceSellerFromDesosits = await utils.contractBSNTokenDeposit.balanceOf(Seller.address)
+
+                    escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(Deployer.address)
+                    escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(Deployer.address)
+
+                    cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(utils.contractCashier.address)
+                    cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(utils.contractCashier.address)
+                }
+
+                beforeEach(async () => {
+
+                    utils = UtilsBuilder
+                        .NEW()
+                        .ERC20withPermit()
+                        .TKN_TKN()
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
                     
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-
-            });
-
-            it("COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-
-                await utils.refund(voucherID, Buyer.address)
-                await utils.complain(voucherID, Buyer.address)
-
-                await timemachine.advanceTimeSeconds(60);
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
-
-                const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
-                const expectedBuyerDeposit = new BN(0)
-                const expectedSellerDeposit = new BN(0)
-                const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).add(new BN(helpers.buyer_deposit)) // 0.09
-
-                await getBalancesDepositToken();
-
-                // Payment should have been returned to buyer
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-
-                    assert.equal(ev._payee, Buyer.address, "Incorrect Payee")
-                    assert.isTrue(ev._payment.eq(expectedBuyerPrice))
-
-                    return true
-                }, "Event LogWithdrawal was not emitted")
-
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-
-            });
-
-            it("COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-
-                await utils.refund(voucherID, Buyer.address)
-                await utils.cancel(voucherID, Seller.address)
-
-                await timemachine.advanceTimeSeconds(60)
-
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
-                const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
-                const expectedEscrowAmountDeposit = new BN(0)
-
-                await getBalancesDepositToken();
-
-                // Payment should have been returned to buyer
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-
-                    assert.equal(ev._payee, Buyer.address, "Incorrect Payee")
-                    assert.isTrue(ev._payment.eq(expectedBuyerPrice))
-
-                    return true
-                }, "Event LogWithdrawal was not emitted")
-
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-
-            });
-
-            it("COMMIT->REFUND->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-                await utils.refund(voucherID, Buyer.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
-                const expectedBuyerDeposit = new BN(0)
-                const expectedSellerDeposit = new BN(helpers.seller_deposit) // 0.05
-                const expectedEscrowAmountDeposit = new BN(helpers.buyer_deposit) // 0.04
-
-                await getBalancesDepositToken();
-
-                // Payment should have been returned to buyer
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-
-                    assert.equal(ev._payee, Buyer.address, "Incorrect Payee")
-                    assert.isTrue(ev._payment.eq(expectedBuyerPrice))
-
-                    return true
-                }, "Event LogWithdrawal was not emitted")
-
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
-
-            it("COMMIT->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-
-                await utils.cancel(voucherID, Seller.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
-                const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
-                const expectedEscrowAmountDeposit = new BN(0)
-
-                await getBalancesDepositToken();
-
-                // Payment should have been returned to buyer
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-
-                    assert.equal(ev._payee, Buyer.address, "Incorrect Payee")
-                    assert.isTrue(ev._payment.eq(expectedBuyerPrice))
-
-                    return true
-                }, "Event LogWithdrawal was not emitted")
-
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
-
-            it("COMMIT->REDEEM->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-                await utils.redeem(voucherID, Buyer.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
-
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
-                const expectedSellerPrice = new BN(helpers.product_price) //// 0.3
-                const expectedSellerDeposit = new BN(helpers.seller_deposit) // 0.05
-                const expectedEscrowAmountDeposit = new BN(0)
-
-                await getBalancesDepositToken();
-
-                // Payment should have been sent to seller
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-
-                    assert.equal(ev._payee, Seller.address, "Incorrect Payee")
-                    assert.isTrue(ev._payment.eq(expectedSellerPrice))
-
-                    return true
-                }, "Event LogWithdrawal was not emitted")
-
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
-
-            it("COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                   Seller,
-                    TOKEN_SUPPLY_ID
-                )
-
-                await utils.redeem(voucherID, Buyer.address)
-                await utils.complain(voucherID, Buyer.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
-                const expectedSellerPrice = new BN(helpers.product_price) // 0.3
-                const expectedSellerDeposit = new BN(0)
-                const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit) // 0.05
+                    const timestamp = await Utils.getCurrTimestamp()
+
+                    const supplyQty = 1
+                    const tokensToMint = new BN(helpers.seller_deposit).mul(new BN(supplyQty))
+
+                    await utils.mintTokens('contractBSNTokenDeposit', Seller.address, tokensToMint);
+                    await utils.mintTokens('contractBSNTokenPrice', Buyer.address, helpers.product_price);
+                    await utils.mintTokens('contractBSNTokenDeposit', Buyer.address, helpers.buyer_deposit);
+
+                    TOKEN_SUPPLY_ID = await utils.createOrder(
+                        Seller,
+                        timestamp, 
+                        timestamp + helpers.SECONDS_IN_DAY,
+                        helpers.seller_deposit,
+                        supplyQty
+                    )
+                })
+
+                it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
+
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+
+                    await utils.refund(voucherID, Buyer.address)
+                    await utils.complain(voucherID, Buyer.address)
+                    await utils.cancel(voucherID, Seller.address)
+                    await utils.finalize(voucherID, Deployer.address)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+
+
+                    const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
+                    const expectedSellerPrice = new BN(0)
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
+                    const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
+                    const expectedEscrowAmountPrice = new BN(0)
+
+                    await getBalancesFromPiceTokenAndDepositToken();
+
+                    //Payments 
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
+                    
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+
+                });
+
+                it("COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+
+                    await utils.refund(voucherID, Buyer.address)
+                    await utils.complain(voucherID, Buyer.address)
+
+                    await timemachine.advanceTimeSeconds(60);
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
+
+                    const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedBuyerDeposit = new BN(0)
+                    const expectedSellerPrice = new BN(0)
+                    const expectedSellerDeposit = new BN(0)
+                    const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).add(new BN(helpers.buyer_deposit)) // 0.09
+                    const expectedEscrowAmountPrice = new BN(0)
+
+                    await getBalancesFromPiceTokenAndDepositToken();
+
+                    //Payments 
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
+
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+
+                });
+
+                it("COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+
+                    await utils.refund(voucherID, Buyer.address)
+                    await utils.cancel(voucherID, Seller.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+
+                    const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
+                    const expectedSellerPrice = new BN(0)
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
+                    const expectedEscrowAmountDeposit = new BN(0)
+                    const expectedEscrowAmountPrice = new BN(0)
+
+                    await getBalancesFromPiceTokenAndDepositToken();
+
+                    //Payments 
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
+
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
+
+                it("COMMIT->REFUND->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+                    await utils.refund(voucherID, Buyer.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+
+                    const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedBuyerDeposit = new BN(0)
+                    const expectedSellerPrice = new BN(0)
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit) // 0.05
+                    const expectedEscrowAmountDeposit = new BN(helpers.buyer_deposit) // 0.04
+                    const expectedEscrowAmountPrice = new BN(0)
+
+                    await getBalancesFromPiceTokenAndDepositToken();
+
+                    //Payments 
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
+
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
                 
-                await getBalancesDepositToken();
 
-                // Payment should have been sent to seller
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
 
-                    assert.equal(ev._payee, Seller.address, "Incorrect Payee")
-                    assert.isTrue(ev._payment.eq(expectedSellerPrice))
+                it("COMMIT->CANCEL->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
 
-                    return true
-                }, "Event LogWithdrawal was not emitted")
+                    await utils.cancel(voucherID, Seller.address)
 
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
 
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
+                    const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
+                    const expectedSellerPrice = new BN(0)
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
+                    const expectedEscrowAmountPrice = new BN(0)
+                    const expectedEscrowAmountDeposit = new BN(0)
 
-            it("COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-                await utils.redeem(voucherID, Buyer.address)
-                await utils.complain(voucherID, Buyer.address)
-                await utils.cancel(voucherID, Seller.address)
+                    await getBalancesFromPiceTokenAndDepositToken();
 
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
+                    //Payments 
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
 
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
-                const expectedSellerPrice = new BN(helpers.product_price) // 0.3
-                const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
-                const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
 
-                await getBalancesDepositToken();
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
 
-                // Payment should have been sent to seller
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+                it("COMMIT->REDEEM->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+                    await utils.redeem(voucherID, Buyer.address)
 
-                    assert.equal(ev._payee, Seller.address, "Incorrect Payee")
-                    assert.isTrue(ev._payment.eq(expectedSellerPrice))
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
 
-                    return true
-                }, "Event LogWithdrawal was not emitted")
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
 
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
+                    const expectedBuyerPrice = new BN(0) 
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
+                    const expectedSellerPrice = new BN(helpers.product_price) //// 0.3
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit) // 0.05
+                    const expectedEscrowAmountDeposit = new BN(0) 
+                    const expectedEscrowAmountPrice = new BN(0)
 
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    await getBalancesFromPiceTokenAndDepositToken();
 
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
+                    //Payments 
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
 
-            it("COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
 
-                await utils.redeem(voucherID, Buyer.address)
-                await utils.cancel(voucherID, Seller.address)
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
 
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
 
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+                it("COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
 
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
-                const expectedSellerPrice = new BN(helpers.product_price) // 0.3
-                const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
-                const expectedEscrowAmountDeposit = new BN(0)
+                    await utils.redeem(voucherID, Buyer.address)
+                    await utils.complain(voucherID, Buyer.address)
 
-                await getBalancesDepositToken();
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
 
-                // Payment should have been sent to seller
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
-                    assert.equal(ev._payee, Seller.address, "Incorrect Payee")
-                    assert.isTrue(ev._payment.eq(expectedSellerPrice))
+                    const expectedBuyerPrice = new BN(0)
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
+                    const expectedSellerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedSellerDeposit = new BN(0) 
+                    const expectedEscrowAmountPrice = new BN(0)
+                    const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit) // 0.05
 
-                    return true
-                }, "Event LogWithdrawal was not emitted")
+                    await getBalancesFromPiceTokenAndDepositToken();
 
-                //Deposits
-                assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
-                assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
-                assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
+                    //Payments 
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
 
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
 
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
 
-            afterEach(async () => {
-                distributedAmounts = {
-                    buyerAmount: new BN(0),
-                    sellerAmount: new BN(0),
-                    escrowAmount: new BN(0)
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
+
+                it("COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+                    await utils.redeem(voucherID, Buyer.address)
+                    await utils.complain(voucherID, Buyer.address)
+                    await utils.cancel(voucherID, Seller.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+
+                    const expectedBuyerPrice = new BN(0)
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
+                    const expectedSellerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
+                    const expectedEscrowAmountPrice = new BN(0)
+                    const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
+
+                    await getBalancesFromPiceTokenAndDepositToken();
+
+                    //Payments 
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
+
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
+
+                it("COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+
+                    await utils.redeem(voucherID, Buyer.address)
+                    await utils.cancel(voucherID, Seller.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+
+                    const expectedBuyerPrice = new BN(0)
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
+                    const expectedSellerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
+                    const expectedEscrowAmountPrice = new BN(0)
+                    const expectedEscrowAmountDeposit = new BN(0)
+
+                    await getBalancesFromPiceTokenAndDepositToken();
+
+                    //Payments 
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PriceTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowAmountPrice), "Escrow did not get expected tokens from PriceTokenContract");
+
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+
+                    
+                });
+
+                afterEach(async () => {
+                        distributedAmounts = {
+                            buyerAmount: new BN(0),
+                            sellerAmount: new BN(0),
+                            escrowAmount: new BN(0)
+                        }
+
+                        balanceBuyerFromPayment = new BN(0)
+                        balanceBuyerFromDesosits = new BN(0)
+
+                        balanceSellerFromPayment = new BN(0)
+                        balanceSellerFromDesosits = new BN(0)
+
+                        escrowBalanceFromPayment = new BN(0)
+                        escrowBalanceFromDeposits = new BN(0)
+
+                        cashierPaymentLeft = new BN(0)
+                        cashierDepositLeft = new BN(0)
+
+                        await giveAwayToRandom();
+
+                        const isPaused = await contractCashier.paused();
+                        if (isPaused) {
+                            await contractCashier.unpause();
+                        }
+                    })
+
+            })
+                
+            describe(`ETH - TKN [WITH PERMIT]${ i == PAUSED_WITHPERMIT ? PAUSED_LABEL : '' }`, async () => {
+                let balanceBuyerFromPayment = new BN(0)
+                let balanceBuyerFromDesosits = new BN(0)
+
+                let balanceSellerFromPayment = new BN(0)
+                let balanceSellerFromDesosits = new BN(0)
+
+                let escrowBalanceFromPayment = new BN(0)
+                let escrowBalanceFromDeposits = new BN(0)
+
+                let cashierPaymentLeft = new BN(0)
+                let cashierDepositLeft = new BN(0)
+
+                async function getBalancesDepositToken() {
+                    balanceBuyerFromDesosits = await utils.contractBSNTokenDeposit.balanceOf(Buyer.address)
+                    balanceSellerFromDesosits = await utils.contractBSNTokenDeposit.balanceOf(Seller.address)
+                    escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(Deployer.address)
+                    cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(utils.contractCashier.address)
                 }
 
-                balanceBuyerFromPayment = new BN(0)
-                balanceBuyerFromDesosits = new BN(0)
+                beforeEach(async () => {
+                    utils = UtilsBuilder
+                        .NEW()
+                        .ERC20withPermit()
+                        .ETH_TKN()
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
 
-                balanceSellerFromPayment = new BN(0)
-                balanceSellerFromDesosits = new BN(0)
+                    const timestamp = await Utils.getCurrTimestamp()
 
-                escrowBalanceFromPayment = new BN(0)
-                escrowBalanceFromDeposits = new BN(0)
+                    const supplyQty = 1
+                    const tokensToMint = new BN(helpers.seller_deposit).mul(new BN(supplyQty))
 
-                cashierPaymentLeft = new BN(0)
-                cashierDepositLeft = new BN(0)
+                    await utils.mintTokens('contractBSNTokenDeposit', Seller.address, tokensToMint);
+                    await utils.mintTokens('contractBSNTokenDeposit', Buyer.address, helpers.buyer_deposit);
 
-                await giveAwayToRandom();
-            })
-        })
+                    TOKEN_SUPPLY_ID = await utils.createOrder(
+                        Seller,
+                        timestamp,
+                        timestamp + helpers.SECONDS_IN_DAY,
+                        helpers.seller_deposit,
+                        supplyQty
+                    )
+                })
 
-        describe('TKN - ETH [WITH PERMIT]', async () => {
-            let balanceBuyerFromPayment = new BN(0)
-            let balanceSellerFromPayment = new BN(0)
-            let escrowBalanceFromPayment = new BN(0)
+                afterEach(async () => {
+                    distributedAmounts = {
+                        buyerAmount: new BN(0),
+                        sellerAmount: new BN(0),
+                        escrowAmount: new BN(0)
+                    }
 
-            let cashierPaymentLeft = new BN(0)
-            let cashierDepositLeft = new BN(0)
+                    balanceBuyerFromPayment = new BN(0)
+                    balanceBuyerFromDesosits = new BN(0)
 
-            async function getBalancesPriceToken() {
-                balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(Buyer.address)
-                balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(Seller.address)
-                escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(Deployer.address)
-                cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(utils.contractCashier.address)
-            }
+                    balanceSellerFromPayment = new BN(0)
+                    balanceSellerFromDesosits = new BN(0)
 
-            beforeEach(async () => {
+                    escrowBalanceFromPayment = new BN(0)
+                    escrowBalanceFromDeposits = new BN(0)
 
-                utils = UtilsBuilder
-                    .NEW()
-                    .ERC20withPermit()
-                    .TKN_ETH()
-                    .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, '')
+                    cashierPaymentLeft = new BN(0)
+                    cashierDepositLeft = new BN(0)
 
-                const timestamp = await Utils.getCurrTimestamp()
+                    await giveAwayToRandom();
 
-                const supplyQty = 1
-                const tokensToMint = new BN(helpers.seller_deposit).mul(new BN(supplyQty))
+                    const isPaused = await contractCashier.paused();
+                    if (isPaused) {
+                        await contractCashier.unpause();
+                    }
+                })
 
-                await utils.mintTokens('contractBSNTokenPrice', Buyer.address, helpers.product_price);
+                it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
 
-                TOKEN_SUPPLY_ID = await utils.createOrder(
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+
+                    await utils.refund(voucherID, Buyer.address)
+                    await utils.complain(voucherID, Buyer.address)
+                    await utils.cancel(voucherID, Seller.address)
+                    await utils.finalize(voucherID, Deployer.address)
+                    
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+
+
+                    const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
+                    const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
+
+                    await getBalancesDepositToken();
+
+                    // Payment should have been returned to buyer
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+
+                        assert.equal(ev._payee, Buyer.address, "Incorrect Payee")
+                        assert.isTrue(ev._payment.eq(expectedBuyerPrice))
+                        
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+
+                });
+
+                it("COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+
+                    await utils.refund(voucherID, Buyer.address)
+                    await utils.complain(voucherID, Buyer.address)
+
+                    await timemachine.advanceTimeSeconds(60);
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
+
+                    const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedBuyerDeposit = new BN(0)
+                    const expectedSellerDeposit = new BN(0)
+                    const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).add(new BN(helpers.buyer_deposit)) // 0.09
+
+                    await getBalancesDepositToken();
+
+                    // Payment should have been returned to buyer
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+
+                        assert.equal(ev._payee, Buyer.address, "Incorrect Payee")
+                        assert.isTrue(ev._payment.eq(expectedBuyerPrice))
+
+                        return true
+                    }, "Event LogWithdrawal was not emitted")
+
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+
+                });
+
+                it("COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+
+                    await utils.refund(voucherID, Buyer.address)
+                    await utils.cancel(voucherID, Seller.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+
+                    const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
+                    const expectedEscrowAmountDeposit = new BN(0)
+
+                    await getBalancesDepositToken();
+
+                    // Payment should have been returned to buyer
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+
+                        assert.equal(ev._payee, Buyer.address, "Incorrect Payee")
+                        assert.isTrue(ev._payment.eq(expectedBuyerPrice))
+
+                        return true
+                    }, "Event LogWithdrawal was not emitted")
+
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+
+                });
+
+                it("COMMIT->REFUND->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+                    await utils.refund(voucherID, Buyer.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+
+                    const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedBuyerDeposit = new BN(0)
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit) // 0.05
+                    const expectedEscrowAmountDeposit = new BN(helpers.buyer_deposit) // 0.04
+
+                    await getBalancesDepositToken();
+
+                    // Payment should have been returned to buyer
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+
+                        assert.equal(ev._payee, Buyer.address, "Incorrect Payee")
+                        assert.isTrue(ev._payment.eq(expectedBuyerPrice))
+
+                        return true
+                    }, "Event LogWithdrawal was not emitted")
+
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
+
+                it("COMMIT->CANCEL->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+
+                    await utils.cancel(voucherID, Seller.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+
+                    const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
+                    const expectedEscrowAmountDeposit = new BN(0)
+
+                    await getBalancesDepositToken();
+
+                    // Payment should have been returned to buyer
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+
+                        assert.equal(ev._payee, Buyer.address, "Incorrect Payee")
+                        assert.isTrue(ev._payment.eq(expectedBuyerPrice))
+
+                        return true
+                    }, "Event LogWithdrawal was not emitted")
+
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
+
+                it("COMMIT->REDEEM->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+                    await utils.redeem(voucherID, Buyer.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
+                    const expectedSellerPrice = new BN(helpers.product_price) //// 0.3
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit) // 0.05
+                    const expectedEscrowAmountDeposit = new BN(0)
+
+                    await getBalancesDepositToken();
+
+                    // Payment should have been sent to seller
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+
+                        assert.equal(ev._payee, Seller.address, "Incorrect Payee")
+                        assert.isTrue(ev._payment.eq(expectedSellerPrice))
+
+                        return true
+                    }, "Event LogWithdrawal was not emitted")
+
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
+
+                it("COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
                     Seller,
-                    timestamp,
-                    timestamp + helpers.SECONDS_IN_DAY,
-                    helpers.seller_deposit,
-                    supplyQty
-                )
-            })
-
-            it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-
-                await utils.refund(voucherID, Buyer.address)
-                await utils.complain(voucherID, Buyer.address)
-                await utils.cancel(voucherID, Seller.address)
-                await utils.finalize(voucherID, Deployer.address)
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
-                const expectedSellerPrice = new BN(0)
-                const expectedEscrowPrice = new BN(0)
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
-                const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
-                const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
-
-                await getBalancesPriceToken();
-
-                // Payments in TKN
-                // Payment should have been returned to buyer
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
-                
-                //Deposits in ETH
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
-                    return true
-                }, "Amounts not distributed successfully")
-              
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-
-            });
-
-            it("COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-
-                await utils.refund(voucherID, Buyer.address)
-                await utils.complain(voucherID, Buyer.address)
-
-                await timemachine.advanceTimeSeconds(60);
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
-
-                const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
-                const expectedSellerPrice = new BN(0)
-                const expectedEscrowPrice = new BN(0)
-                const expectedBuyerDeposit = new BN(0)
-                const expectedSellerDeposit = new BN(0)
-                const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).add(new BN(helpers.buyer_deposit)) // 0.09
-
-                await getBalancesPriceToken();
-
-                // Payments in TKN
-                // Payment should have been returned to buyer
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
-
-                //Deposits in ETH
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
-                    return true
-                }, "Amounts not distributed successfully")
-
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-
-            });
-
-            it("COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-
-                await utils.refund(voucherID, Buyer.address)
-                await utils.cancel(voucherID, Seller.address)
-
-                await timemachine.advanceTimeSeconds(60)
-
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
-                const expectedSellerPrice = new BN(0)
-                const expectedEscrowPrice = new BN(0)
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
-                const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
-                const expectedEscrowAmountDeposit = new BN(0)
-
-                await getBalancesPriceToken();
-
-                // Payments in TKN
-                // Payment should have been returned to buyer
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
-
-                //Deposits in ETH
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
-                    return true
-                }, "Amounts not distributed successfully")
-
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
-                
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-
-            });
-
-            it("COMMIT->REFUND->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-                await utils.refund(voucherID, Buyer.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
-                const expectedSellerPrice = new BN(0)
-                const expectedEscrowPrice = new BN(0)
-                const expectedBuyerDeposit = new BN(0)
-                const expectedSellerDeposit = new BN(helpers.seller_deposit) // 0.05
-                const expectedEscrowAmountDeposit = new BN(helpers.buyer_deposit) // 0.04
-
-                await getBalancesPriceToken();
-
-                // Payments in TKN
-                // Payment should have been returned to buyer
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
-
-                //Deposits in ETH
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
-                    return true
-                }, "Amounts not distributed successfully")
-
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
-
-            it("COMMIT->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-
-                await utils.cancel(voucherID, Seller.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
-                const expectedSellerPrice = new BN(0)
-                const expectedEscrowPrice = new BN(0)
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
-                const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
-                const expectedEscrowAmountDeposit = new BN(0)
-
-                await getBalancesPriceToken();
-
-                // Payments in TKN
-                // Payment should have been returned to buyer
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
-
-                //Deposits in ETH
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
-                    return true
-                }, "Amounts not distributed successfully")
-
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
-
-            it("COMMIT->REDEEM->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-                await utils.redeem(voucherID, Buyer.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
-
-                const expectedBuyerPrice = new BN(0)
-                const expectedSellerPrice = new BN(helpers.product_price) // 0.3
-                const expectedEscrowPrice = new BN(0)
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
-                const expectedSellerDeposit = new BN(helpers.seller_deposit) // 0.05
-                const expectedEscrowAmountDeposit = new BN(0)
-
-                await getBalancesPriceToken();
-
-                // Payments in TKN
-                // Payment should have been sent to seller
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
-
-                //Deposits in ETH
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
-                    return true
-                }, "Amounts not distributed successfully")
-
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
-
-            it("COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-
-                await utils.redeem(voucherID, Buyer.address)
-                await utils.complain(voucherID, Buyer.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerPrice = new BN(0)
-                const expectedSellerPrice = new BN(helpers.product_price) // 0.3
-                const expectedEscrowPrice = new BN(0)
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
-                const expectedSellerDeposit = new BN(0)
-                const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit) // 0.05
-
-                await getBalancesPriceToken();
-
-                // Payments in TKN
-                // Payment should have been sent to seller
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
-
-                //Deposits in ETH
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
-                    return true
-                }, "Amounts not distributed successfully")
-
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
-
-            it("COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-                await utils.redeem(voucherID, Buyer.address)
-                await utils.complain(voucherID, Buyer.address)
-                await utils.cancel(voucherID, Seller.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerPrice = new BN(0)
-                const expectedSellerPrice = new BN(helpers.product_price) // 0.3
-                const expectedEscrowPrice = new BN(0)
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
-                const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
-                const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
-
-                await getBalancesPriceToken();
-
-                // Payments in TKN
-                // Payment should have been sent to seller
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
-
-                //Deposits in ETH
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
-                    return true
-                }, "Amounts not distributed successfully")
-
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
-
-            it("COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW", async () => {
-                const voucherID = await utils.commitToBuy(
-                    Buyer,
-                    Seller,
-                    TOKEN_SUPPLY_ID
-                )
-
-                await utils.redeem(voucherID, Buyer.address)
-                await utils.cancel(voucherID, Seller.address)
-
-                await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer.address)
-
-                const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-
-                const expectedBuyerPrice = new BN(0)
-                const expectedSellerPrice = new BN(helpers.product_price) // 0.3
-                const expectedEscrowPrice = new BN(0)
-                const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
-                const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
-                const expectedEscrowAmountDeposit = new BN(0)
-
-                await getBalancesPriceToken();
-                // Payments in TKN
-                // Payment should have been sent to seller
-                assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
-                assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
-
-                //Deposits in ETH
-                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                    utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
-                    return true
-                }, "Amounts not distributed successfully")
-
-                assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
-                assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
-                assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
-
-                //Cashier Should be Empty
-                assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
-                assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
-
-                truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                    return true
-                }, "Event LogAmountDistribution was not emitted")
-            });
-
-            afterEach(async () => {
-                distributedAmounts = {
-                    buyerAmount: new BN(0),
-                    sellerAmount: new BN(0),
-                    escrowAmount: new BN(0)
+                        TOKEN_SUPPLY_ID
+                    )
+
+                    await utils.redeem(voucherID, Buyer.address)
+                    await utils.complain(voucherID, Buyer.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
+                    const expectedSellerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedSellerDeposit = new BN(0)
+                    const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit) // 0.05
+                    
+                    await getBalancesDepositToken();
+
+                    // Payment should have been sent to seller
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+
+                        assert.equal(ev._payee, Seller.address, "Incorrect Payee")
+                        assert.isTrue(ev._payment.eq(expectedSellerPrice))
+
+                        return true
+                    }, "Event LogWithdrawal was not emitted")
+
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
+
+                it("COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+                    await utils.redeem(voucherID, Buyer.address)
+                    await utils.complain(voucherID, Buyer.address)
+                    await utils.cancel(voucherID, Seller.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
+                    const expectedSellerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
+                    const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
+
+                    await getBalancesDepositToken();
+
+                    // Payment should have been sent to seller
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+
+                        assert.equal(ev._payee, Seller.address, "Incorrect Payee")
+                        assert.isTrue(ev._payment.eq(expectedSellerPrice))
+
+                        return true
+                    }, "Event LogWithdrawal was not emitted")
+
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
+
+                it("COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+
+                    await utils.redeem(voucherID, Buyer.address)
+                    await utils.cancel(voucherID, Seller.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
+                    const expectedSellerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
+                    const expectedEscrowAmountDeposit = new BN(0)
+
+                    await getBalancesDepositToken();
+
+                    // Payment should have been sent to seller
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+
+                        assert.equal(ev._payee, Seller.address, "Incorrect Payee")
+                        assert.isTrue(ev._payment.eq(expectedSellerPrice))
+
+                        return true
+                    }, "Event LogWithdrawal was not emitted")
+
+                    //Deposits
+                    assert.isTrue(balanceBuyerFromDesosits.eq(expectedBuyerDeposit), "Buyer did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(balanceSellerFromDesosits.eq(expectedSellerDeposit), "Seller did not get expected tokens from DepositTokenContract");
+                    assert.isTrue(escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit), "Escrow did not get expected tokens from DepositTokenContract");
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
+
+                })
+
+            describe(`TKN - ETH [WITH PERMIT]${i == PAUSED_WITHPERMIT ? PAUSED_LABEL : ''}`, async () => {
+                let balanceBuyerFromPayment = new BN(0)
+                let balanceSellerFromPayment = new BN(0)
+                let escrowBalanceFromPayment = new BN(0)
+
+                let cashierPaymentLeft = new BN(0)
+                let cashierDepositLeft = new BN(0)
+
+                async function getBalancesPriceToken() {
+                    balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(Buyer.address)
+                    balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(Seller.address)
+                    escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(Deployer.address)
+                    cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(utils.contractCashier.address)
                 }
 
-                balanceBuyerFromPayment = new BN(0)
-                balanceSellerFromPayment = new BN(0)
-                escrowBalanceFromPayment = new BN(0)
+                beforeEach(async () => {
 
-                cashierPaymentLeft = new BN(0)
-                cashierDepositLeft = new BN(0)
+                    utils = UtilsBuilder
+                        .NEW()
+                        .ERC20withPermit()
+                        .TKN_ETH()
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, '')
 
-                await giveAwayToRandom();
+                    const timestamp = await Utils.getCurrTimestamp()
+
+                    const supplyQty = 1
+                    const tokensToMint = new BN(helpers.seller_deposit).mul(new BN(supplyQty))
+
+                    await utils.mintTokens('contractBSNTokenPrice', Buyer.address, helpers.product_price);
+
+                    TOKEN_SUPPLY_ID = await utils.createOrder(
+                        Seller,
+                        timestamp,
+                        timestamp + helpers.SECONDS_IN_DAY,
+                        helpers.seller_deposit,
+                        supplyQty
+                    )
+                })
+
+                it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+
+                    await utils.refund(voucherID, Buyer.address)
+                    await utils.complain(voucherID, Buyer.address)
+                    await utils.cancel(voucherID, Seller.address)
+                    await utils.finalize(voucherID, Deployer.address)
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+
+                    const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedSellerPrice = new BN(0)
+                    const expectedEscrowPrice = new BN(0)
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
+                    const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
+
+                    await getBalancesPriceToken();
+
+                    // Payments in TKN
+                    // Payment should have been returned to buyer
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
+                    
+                    //Deposits in ETH
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        return true
+                    }, "Amounts not distributed successfully")
+                
+                    assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
+                    assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
+                    assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+
+                });
+
+                it("COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+
+                    await utils.refund(voucherID, Buyer.address)
+                    await utils.complain(voucherID, Buyer.address)
+
+                    await timemachine.advanceTimeSeconds(60);
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
+
+                    const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedSellerPrice = new BN(0)
+                    const expectedEscrowPrice = new BN(0)
+                    const expectedBuyerDeposit = new BN(0)
+                    const expectedSellerDeposit = new BN(0)
+                    const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).add(new BN(helpers.buyer_deposit)) // 0.09
+
+                    await getBalancesPriceToken();
+
+                    // Payments in TKN
+                    // Payment should have been returned to buyer
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
+
+                    //Deposits in ETH
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        return true
+                    }, "Amounts not distributed successfully")
+
+                    assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
+                    assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
+                    assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+
+                });
+
+                it("COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+
+                    await utils.refund(voucherID, Buyer.address)
+                    await utils.cancel(voucherID, Seller.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+
+                    const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedSellerPrice = new BN(0)
+                    const expectedEscrowPrice = new BN(0)
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
+                    const expectedEscrowAmountDeposit = new BN(0)
+
+                    await getBalancesPriceToken();
+
+                    // Payments in TKN
+                    // Payment should have been returned to buyer
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
+
+                    //Deposits in ETH
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        return true
+                    }, "Amounts not distributed successfully")
+
+                    assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
+                    assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
+                    assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
+                    
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+
+                });
+
+                it("COMMIT->REFUND->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+                    await utils.refund(voucherID, Buyer.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+
+                    const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedSellerPrice = new BN(0)
+                    const expectedEscrowPrice = new BN(0)
+                    const expectedBuyerDeposit = new BN(0)
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit) // 0.05
+                    const expectedEscrowAmountDeposit = new BN(helpers.buyer_deposit) // 0.04
+
+                    await getBalancesPriceToken();
+
+                    // Payments in TKN
+                    // Payment should have been returned to buyer
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
+
+                    //Deposits in ETH
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        return true
+                    }, "Amounts not distributed successfully")
+
+                    assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
+                    assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
+                    assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
+
+                it("COMMIT->CANCEL->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+
+                    await utils.cancel(voucherID, Seller.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+
+                    const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedSellerPrice = new BN(0)
+                    const expectedEscrowPrice = new BN(0)
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
+                    const expectedEscrowAmountDeposit = new BN(0)
+
+                    await getBalancesPriceToken();
+
+                    // Payments in TKN
+                    // Payment should have been returned to buyer
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
+
+                    //Deposits in ETH
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        return true
+                    }, "Amounts not distributed successfully")
+
+                    assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
+                    assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
+                    assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
+
+                it("COMMIT->REDEEM->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+                    await utils.redeem(voucherID, Buyer.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
+
+                    const expectedBuyerPrice = new BN(0)
+                    const expectedSellerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedEscrowPrice = new BN(0)
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit) // 0.05
+                    const expectedEscrowAmountDeposit = new BN(0)
+
+                    await getBalancesPriceToken();
+
+                    // Payments in TKN
+                    // Payment should have been sent to seller
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
+
+                    //Deposits in ETH
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        return true
+                    }, "Amounts not distributed successfully")
+
+                    assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
+                    assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
+                    assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
+
+                it("COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+
+                    await utils.redeem(voucherID, Buyer.address)
+                    await utils.complain(voucherID, Buyer.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+
+                    const expectedBuyerPrice = new BN(0)
+                    const expectedSellerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedEscrowPrice = new BN(0)
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
+                    const expectedSellerDeposit = new BN(0)
+                    const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit) // 0.05
+
+                    await getBalancesPriceToken();
+
+                    // Payments in TKN
+                    // Payment should have been sent to seller
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
+
+                    //Deposits in ETH
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        return true
+                    }, "Amounts not distributed successfully")
+
+                    assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
+                    assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
+                    assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
+
+                it("COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+                    await utils.redeem(voucherID, Buyer.address)
+                    await utils.complain(voucherID, Buyer.address)
+                    await utils.cancel(voucherID, Seller.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+
+                    const expectedBuyerPrice = new BN(0)
+                    const expectedSellerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedEscrowPrice = new BN(0)
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
+                    const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
+
+                    await getBalancesPriceToken();
+
+                    // Payments in TKN
+                    // Payment should have been sent to seller
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
+
+                    //Deposits in ETH
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        return true
+                    }, "Amounts not distributed successfully")
+
+                    assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
+                    assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
+                    assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
+
+                it("COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW", async () => {
+                    const voucherID = await utils.commitToBuy(
+                        Buyer,
+                        Seller,
+                        TOKEN_SUPPLY_ID
+                    )
+
+                    await utils.redeem(voucherID, Buyer.address)
+                    await utils.cancel(voucherID, Seller.address)
+
+                    await timemachine.advanceTimeSeconds(60)
+                    await utils.finalize(voucherID, Deployer.address)
+
+                    const withdrawTx = await withdraw(utils, i, voucherID)
+                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+
+                    const expectedBuyerPrice = new BN(0)
+                    const expectedSellerPrice = new BN(helpers.product_price) // 0.3
+                    const expectedEscrowPrice = new BN(0)
+                    const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
+                    const expectedSellerDeposit = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
+                    const expectedEscrowAmountDeposit = new BN(0)
+
+                    await getBalancesPriceToken();
+                    // Payments in TKN
+                    // Payment should have been sent to seller
+                    assert.isTrue(balanceBuyerFromPayment.eq(expectedBuyerPrice), "Buyer did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(balanceSellerFromPayment.eq(expectedSellerPrice), "Seller did not get expected tokens from PaymentTokenContract");
+                    assert.isTrue(escrowBalanceFromPayment.eq(expectedEscrowPrice), "Escrow did not get expected tokens from PaymentTokenContract");
+
+                    //Deposits in ETH
+                    truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        return true
+                    }, "Amounts not distributed successfully")
+
+                    assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerDeposit), 'Buyer Amount is not as expected')
+                    assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerDeposit), 'Seller Amount is not as expected')
+                    assert.isTrue(distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit), 'Escrow Amount is not as expected')
+
+                    //Cashier Should be Empty
+                    assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
+                    assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
+
+                    truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
+                        return true
+                    }, "Event LogAmountDistribution was not emitted")
+                });
+
+                afterEach(async () => {
+                    distributedAmounts = {
+                        buyerAmount: new BN(0),
+                        sellerAmount: new BN(0),
+                        escrowAmount: new BN(0)
+                    }
+
+                    balanceBuyerFromPayment = new BN(0)
+                    balanceSellerFromPayment = new BN(0)
+                    escrowBalanceFromPayment = new BN(0)
+
+                    cashierPaymentLeft = new BN(0)
+                    cashierDepositLeft = new BN(0)
+
+                    await giveAwayToRandom();
+                })
             })
+
         })
 
-    })
+
+    }
+
+  
+
 })
 

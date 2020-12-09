@@ -266,7 +266,7 @@ contract("Voucher tests", async accounts => {
 					assert.equal(paymentDetails.addressTokenDeposits.toString(), helpers.ZERO_ADDRESS, "TKN_ETH Method Deposit Token Address mismatch")
 				})
 
-				it("[NEGATIVE] Should fail if price token contract address is not proviced", async () => {
+				it("[NEGATIVE] Should fail if price token contract address is not provided", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 					await truffleAssert.fails(
@@ -352,7 +352,7 @@ contract("Voucher tests", async accounts => {
 					assert.equal(paymentDetails.addressTokenDeposits.toString(), contractBSNTokenDeposit.address, "TKN_TKN Method Deposit Token Address mismatch")
 				})
 
-				it("[NEGATIVE] Should fail if token price contract address is not proviced", async () => {
+				it("[NEGATIVE] Should fail if token price contract address is not provided", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
 
@@ -391,7 +391,7 @@ contract("Voucher tests", async accounts => {
 
 				})
 
-				it("[NEGATIVE] Should fail if token deposit contract address is not proviced", async () => {
+				it("[NEGATIVE] Should fail if token deposit contract address is not provided", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
 
@@ -563,7 +563,7 @@ contract("Voucher tests", async accounts => {
 					
 			})
 
-			it("[NEGATIVE] Should not create order with incorrect депосит", async () => {
+			it("[NEGATIVE] Should not create order with incorrect deposit", async () => {
 				const txValue = new BN(helpers.buyer_incorrect_deposit).add(new BN(helpers.product_price))
 
 				await truffleAssert.reverts(
