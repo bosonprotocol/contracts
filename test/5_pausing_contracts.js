@@ -98,19 +98,19 @@ contract("Cashier withdrawals ", async accounts => {
                 await contractCashier.pause();
 
                 await truffleAssert.reverts(
-                    utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1),
+                    utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.seller_deposit, helpers.QTY_1),
                     truffleAssert.ErrorType.REVERT
                 )
             })
 
             it("Should create voucher supply when contract is unpaused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.seller_deposit, helpers.QTY_1)
                 
                 assert.isNotEmpty(TOKEN_SUPPLY_ID)
             })
             
             it("[NEGATIVE] Should not create voucherID from Buyer when paused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.seller_deposit, helpers.QTY_1)
 
                 await contractCashier.pause();
 
@@ -121,7 +121,7 @@ contract("Cashier withdrawals ", async accounts => {
             })
 
             it("[NEGATIVE] Should not process withdrawals when paused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.seller_deposit, helpers.QTY_1)
                 
                 const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
                 await utils.refund(voucherID, Buyer.address)
@@ -138,7 +138,7 @@ contract("Cashier withdrawals ", async accounts => {
             })
 
             it("withdrawWhenPaused - Buyer should be able to withdraw funds when paused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.seller_deposit, helpers.QTY_1)
                 
                 const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
                 await utils.refund(voucherID, Buyer.address)
@@ -155,7 +155,7 @@ contract("Cashier withdrawals ", async accounts => {
             })
 
             it("[NEGATIVE] withdrawWhenPaused - Buyer should not be able to withdraw funds when not paused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.seller_deposit, helpers.QTY_1)
                 
                 const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
                 await utils.refund(voucherID, Buyer.address)
@@ -170,7 +170,7 @@ contract("Cashier withdrawals ", async accounts => {
             })
 
             it("withdrawWhenPaused - Seller should be able to withdraw funds when paused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.seller_deposit, helpers.QTY_1)
                 
                 const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
                 await utils.refund(voucherID, Buyer.address)
@@ -187,7 +187,7 @@ contract("Cashier withdrawals ", async accounts => {
             })
 
             it("[NEGATIVE] withdrawWhenPaused - Seller should not be able to withdraw funds when not paused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.seller_deposit, helpers.QTY_1)
                 
                 const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
                 await utils.refund(voucherID, Buyer.address)
@@ -202,7 +202,7 @@ contract("Cashier withdrawals ", async accounts => {
             })
 
             it("[NEGATIVE] withdrawWhenPaused - Attacker should not be able to withdraw funds when paused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.seller_deposit, helpers.QTY_1)
                 
                 const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
                 await utils.refund(voucherID, Buyer.address)
@@ -219,7 +219,7 @@ contract("Cashier withdrawals ", async accounts => {
             })
 
             it("[NEGATIVE] withdrawWhenPaused - Attacker should not be able to withdraw funds when not paused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.seller_deposit, helpers.QTY_1)
                 
                 const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
                 await utils.refund(voucherID, Buyer.address)
@@ -240,8 +240,7 @@ contract("Cashier withdrawals ", async accounts => {
             before(async () => {
                 await deployContracts();
 
-                // Create Voucher Supply of 10
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_10)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.seller_deposit, helpers.QTY_10)
             })
 
             it("Should not be paused on deployment", async () => {

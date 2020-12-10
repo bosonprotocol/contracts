@@ -683,8 +683,22 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
 
         voucherKernel.burnSupply(seller, _tokenIdSupply, remQty);
 
-        escrow[msg.sender] = escrow[msg.sender].sub(depositAmount);
-        _withdrawDeposits(seller, depositAmount);
+        uint8 paymentMethod = voucherKernel.getVoucherPaymentMethod(_tokenIdSupply);
+
+        require(paymentMethod > 0 && paymentMethod <= 4, "INVALID PAYMENT METHOD");
+
+
+        if(paymentMethod == ETH_ETH || paymentMethod == TKN_ETH)
+        {
+            escrow[msg.sender] = escrow[msg.sender].sub(depositAmount);
+            _withdrawDeposits(seller, depositAmount);
+        }
+
+        if(paymentMethod == ETH_TKN || paymentMethod == TKN_TKN)
+        {
+            address addressTokenDeposits = voucherKernel.getVoucherDepositToken(_tokenIdSupply);
+            IERC20WithPermit(addressTokenDeposits).transfer(seller, depositAmount);
+        }
     }
 
     /**

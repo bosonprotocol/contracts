@@ -28,15 +28,14 @@ class Utils {
         this.contractBSNTokenDeposit = bsnTokenDeposit
     }
 
-    async requestCreateOrder_ETH_ETH(seller, from, to, qty, returnTx = false) {
-        const sellerDepoist = helpers.seller_deposit;
-        const txValue = new BN(sellerDepoist).mul(new BN(qty))
+    async requestCreateOrder_ETH_ETH(seller, from, to, sellerDeposit, qty, returnTx = false) {
+        const txValue = new BN(sellerDeposit).mul(new BN(qty))
 
         let txOrder = await this.contractCashier.requestCreateOrder_ETH_ETH(
             [from, 
             to, 
             helpers.product_price, 
-            sellerDepoist, 
+            sellerDeposit, 
             helpers.buyer_deposit, 
             qty], 
             { 

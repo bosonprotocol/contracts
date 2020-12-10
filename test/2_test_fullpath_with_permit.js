@@ -84,7 +84,12 @@ contract("Voucher tests", async accounts => {
 
 				timestamp = await Utils.getCurrTimestamp()
 				
-                tokenSupplyKey = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_10)
+                tokenSupplyKey = await utils.createOrder(
+					Seller, 
+					timestamp, 
+					timestamp + helpers.SECONDS_IN_DAY,
+					helpers.seller_deposit,
+					helpers.QTY_10)
 			})
 
 			it("ESCROW has correct initial balance", async () => {
@@ -110,9 +115,7 @@ contract("Voucher tests", async accounts => {
 
 			it("Should create payment method ETH_ETH", async () => {
 				timestamp = await Utils.getCurrTimestamp()
-				let txOrder = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_10, true);
-
-				tokenSupplyKey = txOrder.logs[0].args._tokenIdSupply.toString()
+				let tokenSupplyKey = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.seller_deposit, helpers.QTY_10);
 
 				const paymentDetails = await contractVoucherKernel.paymentDetails(tokenSupplyKey);
 
@@ -627,7 +630,7 @@ contract("Voucher tests", async accounts => {
 					.ETH_ETH()
 					.build(contractERC1155ERC721, contractVoucherKernel, contractCashier)
 
-				TOKEN_SUPPLY_ID = await utils.createOrder(Seller, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.QTY_10)
+				TOKEN_SUPPLY_ID = await utils.createOrder(Seller, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.seller_deposit, helpers.QTY_10)
 			})
 
 			it("Should create order", async () => {
