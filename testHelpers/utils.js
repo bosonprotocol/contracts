@@ -28,9 +28,8 @@ class Utils {
         this.contractBSNTokenDeposit = bsnTokenDeposit
     }
 
-    async requestCreateOrder_ETH_ETH(seller, from, to) {
+    async requestCreateOrder_ETH_ETH(seller, from, to, qty, returnTx = false) {
         const sellerDepoist = helpers.seller_deposit;
-        const qty = helpers.QTY_10
         const txValue = new BN(sellerDepoist).mul(new BN(qty))
 
         let txOrder = await this.contractCashier.requestCreateOrder_ETH_ETH(
@@ -41,12 +40,12 @@ class Utils {
             helpers.buyer_deposit, 
             qty], 
             { 
-                from: seller, 
+                from: seller.address, 
                 value: txValue
             }
         );
 
-        return (txOrder.logs[0].args._tokenIdSupply).toString() 
+        return returnTx ? txOrder: (txOrder.logs[0].args._tokenIdSupply).toString() 
     }
 
     async requestCreateOrder_TKN_TKN_WithPermit(seller, from, to, sellerDeposit, qty) {
@@ -89,7 +88,7 @@ class Utils {
         return (txOrder.logs[0].args._tokenIdSupply).toString()
     }
 
-    async requestCreateOrder_ETH_TKN_WithPermit(seller, from, to, sellerDeposit, qty) {
+    async requestCreateOrder_ETH_TKN_WithPermit(seller, from, to, sellerDeposit, qty, returnTx = false) {
         const txValue = new BN(sellerDeposit).mul(new BN(qty));
         const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
 
@@ -125,7 +124,7 @@ class Utils {
             }
         );
 
-        return (txOrder.logs[0].args._tokenIdSupply).toString()
+        return returnTx ? txOrder : (txOrder.logs[0].args._tokenIdSupply).toString()
     }
 
     async requestCreateOrder_TKN_ETH(seller, from, to, sellerDeposit, qty) {
@@ -240,7 +239,7 @@ class Utils {
     async commitToBuy_ETH_ETH(buyer, seller, tokenSupplyId) {
         const txValue = new BN(helpers.buyer_deposit).add(new BN(helpers.product_price))
 
-        let CommitTx = await this.contractCashier.requestVoucher_ETH_ETH(tokenSupplyId, seller, { from: buyer, value: txValue.toString() });
+        let CommitTx = await this.contractCashier.requestVoucher_ETH_ETH(tokenSupplyId, seller.address, { from: buyer.address, value: txValue.toString() });
 
         let nestedValue = (await truffleAssert.createTransactionResult(this.contractVoucherKernel, CommitTx.tx)).logs
 

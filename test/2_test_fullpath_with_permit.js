@@ -23,7 +23,7 @@ const {
 	getApprovalDigest
 } = require('../testHelpers/permitUtils');
 const { assert } = require("chai");
-const { product_price } = require("../testHelpers/constants");
+const { product_price, seller_deposit } = require("../testHelpers/constants");
 
 contract("Voucher tests", async accounts => {
 	let Deployer = config.accounts.deployer
@@ -32,9 +32,10 @@ contract("Voucher tests", async accounts => {
 	let Attacker = config.accounts.attacker
 
 	let contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit;
-    let tokenSupplyKey1, tokenSupplyKey2, tokenVoucherKey1, tokenVoucherKey2;
+    let tokenSupplyKey;
 	const ONE_VOUCHER = 1
 	const deadline = toWei(1)
+	let timestamp
 
 
 	async function deployContracts() {
@@ -56,6 +57,9 @@ contract("Voucher tests", async accounts => {
 
 	describe('TOKEN SUPPLY CREATION (Voucher batch creation)', function () {
 
+		let remQty = helpers.QTY_10
+		let vouchersToBuy = 5
+		
 		const paymentMethods = {
 			ETH_ETH: 1,
 			ETH_TKN: 2,
@@ -64,32 +68,53 @@ contract("Voucher tests", async accounts => {
 
 		}
 
-		before(async () => {
-			await deployContracts();
-
-			const tokensToMint = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_10))
-			await contractBSNTokenDeposit.mint(Seller.address, tokensToMint)
-		})
+		afterEach(() => {
+			remQty = helpers.QTY_10
+		}) 
 
 		describe("ETH_ETH", () => { 
+
+			before(async() => {
+				await deployContracts();
+
+				utils = UtilsBuilder
+                    .NEW()
+                    .ETH_ETH()
+                    .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, helpers.QTY_10);
+
+				timestamp = await Utils.getCurrTimestamp()
+				
+                tokenSupplyKey = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_10)
+			})
+
+			it("ESCROW has correct initial balance", async () => {
+                const expectedBalance = new BN(helpers.seller_deposit).mul(new BN(remQty))
+				const escrowAmount = await contractCashier.getEscrowAmount(Seller.address);
+				
+                assert.isTrue(escrowAmount.eq(expectedBalance), "Escrow amount is incorrect")
+			})
+			
+			it("Get correct remaining qty for supply", async () => {
+                let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(tokenSupplyKey, Seller.address)
+
+                assert.equal(remainingQtyInContract, remQty, "Remaining qty is not correct")
+
+                for (let i = 0; i < vouchersToBuy; i++) {
+					await utils.commitToBuy(Buyer, Seller, tokenSupplyKey)
+					remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(tokenSupplyKey, Seller.address)
+					
+                    assert.equal(remainingQtyInContract, --remQty , "Remaining qty is not correct")
+                }
+                
+            });
+
 			it("Should create payment method ETH_ETH", async () => {
-				const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
+				timestamp = await Utils.getCurrTimestamp()
+				let txOrder = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_10, true);
 
-				let txOrder = await contractCashier.requestCreateOrder_ETH_ETH(
-					[
-						helpers.PROMISE_VALID_FROM,
-						helpers.PROMISE_VALID_TO,
-						helpers.PROMISE_PRICE1,
-						helpers.seller_deposit,
-						helpers.PROMISE_DEPOSITBU1,
-						helpers.ORDER_QUANTITY1
-					],
-					{ from: Seller.address, value: txValue }
-				);
+				tokenSupplyKey = txOrder.logs[0].args._tokenIdSupply.toString()
 
-				tokenSupplyKey1 = txOrder.logs[0].args._tokenIdSupply.toString()
-
-				const paymentDetails = await contractVoucherKernel.paymentDetails(tokenSupplyKey1);
+				const paymentDetails = await contractVoucherKernel.paymentDetails(tokenSupplyKey);
 
 				assert.equal(paymentDetails.paymentMethod.toString(), paymentMethods.ETH_ETH, "Payment Method ETH_ETH not set correctly")
 				assert.equal(paymentDetails.addressTokenPrice.toString(), helpers.ZERO_ADDRESS, "ETH_ETH Method Price Token Address mismatch")
@@ -98,13 +123,14 @@ contract("Voucher tests", async accounts => {
 
 			it("[NEGATIVE] Should fail if additional token address is provided", async () => {
 				const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
-
+				timestamp = await Utils.getCurrTimestamp()
+				
 				await truffleAssert.fails(
 					contractCashier.requestCreateOrder_ETH_ETH(
 						contractBSNTokenDeposit.address,
 						[
-							helpers.PROMISE_VALID_FROM,
-							helpers.PROMISE_VALID_TO,
+							timestamp,
+							timestamp + helpers.SECONDS_IN_DAY,
 							helpers.PROMISE_PRICE1,
 							helpers.seller_deposit,
 							helpers.PROMISE_DEPOSITBU1,
@@ -119,45 +145,63 @@ contract("Voucher tests", async accounts => {
 		})
 
 		describe("[WITH PERMIT]", () => {
+
 			describe("ETH_TKN", () => {
+				
+				before(async() => {
+					await deployContracts();
 
-				it("Should create payment method ETH_TKN", async () => {
-					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
-					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
-					const deadline = toWei(1)
+					utils = UtilsBuilder
+                        .NEW()
+                        .ERC20withPermit()
+                        .ETH_TKN()
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
 
-					const digest = await getApprovalDigest(
-						contractBSNTokenDeposit,
-						Seller.address,
-						contractCashier.address,
-						txValue,
-						nonce,
-						deadline
+					const tokensToMint = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_20))
+
+					await utils.mintTokens('contractBSNTokenDeposit', Seller.address, tokensToMint);
+					await utils.mintTokens('contractBSNTokenDeposit', Buyer.address, tokensToMint);
+					
+					timestamp = await Utils.getCurrTimestamp()
+					tokenSupplyKey = await utils.createOrder(
+                        Seller,
+                        timestamp,
+                        timestamp + helpers.SECONDS_IN_DAY,
+                        helpers.seller_deposit,
+                        helpers.QTY_10
 					)
 
-					const { v, r, s } = ecsign(
-						Buffer.from(digest.slice(2), 'hex'),
-						Buffer.from(Seller.pk.slice(2), 'hex'));
+				})
 
-					let txOrder = await contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
-						contractBSNTokenDeposit.address,
-						txValue,
-						deadline,
-						v, r, s,
-						[
-							helpers.PROMISE_VALID_FROM,
-							helpers.PROMISE_VALID_TO,
-							helpers.PROMISE_PRICE1,
-							helpers.seller_deposit,
-							helpers.PROMISE_DEPOSITBU1,
-							helpers.ORDER_QUANTITY1
-						],
-						{ from: Seller.address }
+				it("ESCROW has correct initial balance", async () => {
+					const expectedBalance = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_10))
+					const escrowAmount = await contractBSNTokenDeposit.balanceOf(contractCashier.address)
+
+					assert.isTrue(escrowAmount.eq(expectedBalance), "Escrow amount is incorrect")
+				})
+
+				it("Get correct remaining qty for supply", async () => {
+					let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(tokenSupplyKey, Seller.address)
+					assert.equal(remainingQtyInContract, remQty, "Remaining qty is not correct")
+
+					for (let i = 0; i < vouchersToBuy; i++) {
+						await utils.commitToBuy(Buyer, Seller, tokenSupplyKey)
+						remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(tokenSupplyKey, Seller.address)
+						
+						assert.equal(remainingQtyInContract, --remQty , "Remaining qty is not correct")
+					}
+            	});
+
+				it("Should create payment method ETH_TKN", async () => {
+					tokenSupplyKey = await utils.createOrder(
+						Seller,
+                        timestamp,
+                        timestamp + helpers.SECONDS_IN_DAY,
+                        helpers.seller_deposit,
+						helpers.QTY_10,
 					);
-
-					tokenSupplyKey1 = txOrder.logs[0].args._tokenIdSupply.toString()
-
-					const paymentDetails = await contractVoucherKernel.paymentDetails(tokenSupplyKey1);
+					
+					const paymentDetails = await contractVoucherKernel.paymentDetails(tokenSupplyKey);
 
 					assert.equal(paymentDetails.paymentMethod.toString(), paymentMethods.ETH_TKN, "Payment Method ETH_TKN not set correctly")
 					assert.equal(paymentDetails.addressTokenPrice.toString(), helpers.ZERO_ADDRESS, "ETH_TKN Method Price Token Address mismatch")
@@ -239,27 +283,61 @@ contract("Voucher tests", async accounts => {
 				})
 			})
 
-			describe("TKN ETH", () => {
+			describe("TKN_ETH", () => {
+
+				before(async () => {
+					await deployContracts();
+
+					utils = UtilsBuilder
+                        .NEW()
+                        .ERC20withPermit()
+                        .TKN_ETH()
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, '')
+
+					timestamp = await Utils.getCurrTimestamp()
+
+                    const tokensToMint = new BN(helpers.product_price).mul(new BN(helpers.QTY_10))
+                    await utils.mintTokens('contractBSNTokenPrice', Buyer.address, tokensToMint);
+
+					tokenSupplyKey = await utils.createOrder(
+                        Seller,
+                        timestamp,
+                        timestamp + helpers.SECONDS_IN_DAY,
+                        helpers.seller_deposit,
+                        helpers.QTY_10
+					)
+				})
+
+				it("ESCROW has correct initial balance", async () => {
+					const expectedBalance = new BN(helpers.seller_deposit).mul(new BN(remQty))
+					const escrowAmount = await contractCashier.getEscrowAmount(Seller.address);
+					
+					assert.isTrue(escrowAmount.eq(expectedBalance), "Escrow amount is incorrect")
+				})
+
+				it("Get correct remaining qty for supply", async () => {
+					let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(tokenSupplyKey, Seller.address)
+
+					assert.equal(remainingQtyInContract, remQty, "Remaining qty is not correct")
+
+					for (let i = 0; i < vouchersToBuy; i++) {
+						await utils.commitToBuy(Buyer, Seller, tokenSupplyKey)
+						remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(tokenSupplyKey, Seller.address)
+						
+						assert.equal(remainingQtyInContract, --remQty , "Remaining qty is not correct")
+					}
+            	});
 
 				it("Should create payment method TKN_ETH", async () => {
-					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
+					tokenSupplyKey = await utils.createOrder(
+                        Seller,
+                        timestamp,
+                        timestamp + helpers.SECONDS_IN_DAY,
+                        helpers.seller_deposit,
+                        helpers.QTY_1
+                    )
 
-					let txOrder = await contractCashier.requestCreateOrder_TKN_ETH(
-						contractBSNTokenPrice.address,
-						[
-							helpers.PROMISE_VALID_FROM,
-							helpers.PROMISE_VALID_TO,
-							helpers.PROMISE_PRICE1,
-							helpers.seller_deposit,
-							helpers.PROMISE_DEPOSITBU1,
-							helpers.ORDER_QUANTITY1
-						],
-						{ from: Seller.address, value: txValue.toString() }
-					);
-
-					tokenSupplyKey1 = txOrder.logs[0].args._tokenIdSupply.toString()
-
-					const paymentDetails = await contractVoucherKernel.paymentDetails(tokenSupplyKey1);
+					const paymentDetails = await contractVoucherKernel.paymentDetails(tokenSupplyKey);
 
 					assert.equal(paymentDetails.paymentMethod.toString(), paymentMethods.TKN_ETH, "Payment Method TKN_ETH not set correctly")
 					assert.equal(paymentDetails.addressTokenPrice.toString(), contractBSNTokenPrice.address, "TKN_ETH Method Price Token Address mismatch")
@@ -307,45 +385,64 @@ contract("Voucher tests", async accounts => {
 				})
 			})
 
-			describe("TKN TKN", () => {
-				it("Should create payment method TKN_TKN", async () => {
-					const txValue = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_1))
-					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
+			describe("TKN_TKN", () => {
 
-					const digest = await getApprovalDigest(
-						contractBSNTokenDeposit,
-						Seller.address,
-						contractCashier.address,
-						txValue,
-						nonce,
-						deadline
+				before(async () => {
+					await deployContracts();
+
+					utils = UtilsBuilder
+                        .NEW()
+                        .ERC20withPermit()
+                        .TKN_TKN()
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+                    
+                    timestamp = await Utils.getCurrTimestamp()
+
+                    const tokensToMint = new BN(helpers.product_price).mul(new BN(helpers.QTY_20))
+
+                    await utils.mintTokens('contractBSNTokenDeposit', Seller.address, tokensToMint);
+                    await utils.mintTokens('contractBSNTokenPrice', Buyer.address, tokensToMint);
+                    await utils.mintTokens('contractBSNTokenDeposit', Buyer.address, tokensToMint);
+
+                    tokenSupplyKey = await utils.createOrder(
+                        Seller,
+                        timestamp, 
+                        timestamp + helpers.SECONDS_IN_DAY,
+                        helpers.seller_deposit,
+                        helpers.QTY_10
+					)
+				})
+
+				it("ESCROW has correct initial balance", async () => {
+					const expectedBalance = new BN(helpers.seller_deposit).mul(new BN(remQty))
+					const escrowAmount = await contractBSNTokenDeposit.balanceOf(contractCashier.address)
+
+					assert.isTrue(escrowAmount.eq(expectedBalance), "Escrow amount is incorrect")
+				})
+
+				it("Get correct remaining qty for supply", async () => {
+					let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(tokenSupplyKey, Seller.address)
+
+					assert.equal(remainingQtyInContract, remQty, "Remaining qty is not correct")
+
+					for (let i = 0; i < vouchersToBuy; i++) {
+						await utils.commitToBuy(Buyer, Seller, tokenSupplyKey)
+						remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(tokenSupplyKey, Seller.address)
+						
+						assert.equal(remainingQtyInContract, --remQty , "Remaining qty is not correct")
+					}
+            	});
+
+				it("Should create payment method TKN_TKN", async () => {
+					  tokenSupplyKey = await utils.createOrder(
+                        Seller,
+                        timestamp, 
+                        timestamp + helpers.SECONDS_IN_DAY,
+                        helpers.seller_deposit,
+                        helpers.QTY_1
 					)
 
-					const { v, r, s } = ecsign(
-						Buffer.from(digest.slice(2), 'hex'),
-						Buffer.from(Seller.pk.slice(2), 'hex'));
-
-
-					let txOrder = await contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
-						contractBSNTokenPrice.address,
-						contractBSNTokenDeposit.address,
-						txValue,
-						deadline,
-						v, r, s,
-						[
-							helpers.PROMISE_VALID_FROM,
-							helpers.PROMISE_VALID_TO,
-							helpers.PROMISE_PRICE1,
-							helpers.seller_deposit,
-							helpers.PROMISE_DEPOSITBU1,
-							helpers.ORDER_QUANTITY1
-						],
-						{ from: Seller.address }
-					);
-
-					tokenSupplyKey1 = txOrder.logs[0].args._tokenIdSupply.toString()
-
-					const paymentDetails = await contractVoucherKernel.paymentDetails(tokenSupplyKey1);
+					const paymentDetails = await contractVoucherKernel.paymentDetails(tokenSupplyKey);
 
 					assert.equal(paymentDetails.paymentMethod.toString(), paymentMethods.TKN_TKN, "Payment Method TKN_TKN not set correctly")
 					assert.equal(paymentDetails.addressTokenPrice.toString(), contractBSNTokenPrice.address, "TKN_TKN Method Price Token Address mismatch")
@@ -530,7 +627,7 @@ contract("Voucher tests", async accounts => {
 					.ETH_ETH()
 					.build(contractERC1155ERC721, contractVoucherKernel, contractCashier)
 
-				TOKEN_SUPPLY_ID = await utils.createOrder(Seller.address, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO)
+				TOKEN_SUPPLY_ID = await utils.createOrder(Seller, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.QTY_10)
 			})
 
 			it("Should create order", async () => {

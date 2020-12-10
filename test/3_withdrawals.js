@@ -25,6 +25,7 @@ contract("Cashier withdrawals ", async accounts => {
     let Deployer = config.accounts.deployer
     let Seller = config.accounts.seller
     let Buyer = config.accounts.buyer
+    let Attacker = config.accounts.attacker
     let RandomUser = config.accounts.randomUser // will be used to clear tokens received after every successful test
 
     let contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit
@@ -82,7 +83,7 @@ contract("Cashier withdrawals ", async accounts => {
     }
 
     for (let i = 0; i <= PAUSED_WITHPERMIT; i++) {
-        describe.only('Withdraw scenarios', async () => {
+        describe('Withdraw scenarios', async () => {
         
             before(async () => {
                 await deployContracts();
@@ -112,7 +113,7 @@ contract("Cashier withdrawals ", async accounts => {
 
                     const timestamp = await Utils.getCurrTimestamp()
 
-                    TOKEN_SUPPLY_ID = await utils.createOrder(Seller.address, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+                    TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_10)
                 })
 
                 it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
@@ -121,20 +122,18 @@ contract("Cashier withdrawals ", async accounts => {
                     const expectedSellerAmount = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
                     const expectedEscrowAmount = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
 
-                    const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
+                    const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
 
                     await utils.refund(voucherID, Buyer.address)
                     await utils.complain(voucherID, Buyer.address)
                     await utils.cancel(voucherID, Seller.address)
                     await utils.finalize(voucherID, Deployer.address)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
                         utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
                         return true
                     }, "Amounts not distributed successfully")
-
 
                     assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
                     assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
@@ -146,21 +145,19 @@ contract("Cashier withdrawals ", async accounts => {
                     const expectedSellerAmount = new BN(0) // 0
                     const expectedEscrowAmount = new BN(helpers.seller_deposit).add(new BN(helpers.buyer_deposit)) // 0.09
 
-                    const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID);
+                    const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID);
                     await utils.refund(voucherID, Buyer.address)
                     await utils.complain(voucherID, Buyer.address)
                     await timemachine.advanceTimeSeconds(60);
 
                     await utils.finalize(voucherID, Deployer.address)
 
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
                         utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
                         return true
                     }, "Amounts not distributed successfully")
-
 
                     assert.isTrue(distributedAmounts.buyerAmount.eq(expectedBuyerAmount), 'Buyer Amount is not as expected')
                     assert.isTrue(distributedAmounts.sellerAmount.eq(expectedSellerAmount), 'Seller Amount is not as expected')
@@ -172,7 +169,7 @@ contract("Cashier withdrawals ", async accounts => {
                     const expectedSellerAmount = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
                     const expectedEscrowAmount = new BN(0) //0
 
-                    const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
+                    const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
                     await utils.refund(voucherID, Buyer.address)
                     await utils.cancel(voucherID, Seller.address)
 
@@ -180,7 +177,6 @@ contract("Cashier withdrawals ", async accounts => {
 
                     await utils.finalize(voucherID, Deployer.address)
 
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
@@ -198,13 +194,12 @@ contract("Cashier withdrawals ", async accounts => {
                     const expectedSellerAmount = new BN(helpers.seller_deposit) // 0.05
                     const expectedEscrowAmount = new BN(helpers.buyer_deposit) // 0.04
 
-                    const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
+                    const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
                     await utils.refund(voucherID, Buyer.address)
 
                     await timemachine.advanceTimeSeconds(60)
                     await utils.finalize(voucherID, Deployer.address)
 
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
@@ -222,13 +217,12 @@ contract("Cashier withdrawals ", async accounts => {
                     const expectedSellerAmount = new BN(helpers.seller_deposit).div(new BN(2)) // 0.025
                     const expectedEscrowAmount = new BN(0) // 0
 
-                    const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
+                    const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
                     await utils.cancel(voucherID, Seller.address)
 
                     await timemachine.advanceTimeSeconds(60)
                     await utils.finalize(voucherID, Deployer.address)
 
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
@@ -246,13 +240,12 @@ contract("Cashier withdrawals ", async accounts => {
                     const expectedSellerAmount = new BN(helpers.seller_deposit).add(new BN(helpers.product_price)) // 0.35
                     const expectedEscrowAmount = new BN(0) // 0
 
-                    const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
+                    const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
                     await utils.redeem(voucherID, Buyer.address)
 
                     await timemachine.advanceTimeSeconds(60)
                     await utils.finalize(voucherID, Deployer.address)
 
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
@@ -270,14 +263,13 @@ contract("Cashier withdrawals ", async accounts => {
                     const expectedSellerAmount = new BN(helpers.product_price) // 0.3
                     const expectedEscrowAmount = new BN(helpers.seller_deposit) // 0.05
 
-                    const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID)
+                    const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
                     await utils.redeem(voucherID, Buyer.address)
                     await utils.complain(voucherID, Buyer.address)
 
                     await timemachine.advanceTimeSeconds(60)
                     await utils.finalize(voucherID, Deployer.address)
 
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
@@ -295,7 +287,7 @@ contract("Cashier withdrawals ", async accounts => {
                     const expectedSellerAmount = new BN(helpers.product_price).add(new BN(helpers.seller_deposit).div(new BN(4))) // 0.3125 
                     const expectedEscrowAmount = new BN(helpers.seller_deposit).div(new BN(4)) // 0.0125
 
-                    const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID);
+                    const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID);
                     await utils.redeem(voucherID, Buyer.address)
                     await utils.complain(voucherID, Buyer.address)
                     await utils.cancel(voucherID, Seller.address)
@@ -304,8 +296,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                     truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
                         utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
@@ -322,14 +312,13 @@ contract("Cashier withdrawals ", async accounts => {
                         const expectedSellerAmount = new BN(helpers.product_price).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.325
                         const expectedEscrowAmount = new BN(0) // 0
 
-                        const voucherID = await utils.commitToBuy(Buyer.address, Seller.address, TOKEN_SUPPLY_ID);
+                        const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID);
                         await utils.redeem(voucherID, Buyer.address)
                         await utils.cancel(voucherID, Seller.address)
 
                         await timemachine.advanceTimeSeconds(60)
                         await utils.finalize(voucherID, Deployer.address)
 
-                        // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
                         const withdrawTx = await withdraw(utils, i, voucherID)
 
                         truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
@@ -411,9 +400,8 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.complain(voucherID, Buyer.address)
                     await utils.cancel(voucherID, Seller.address)
                     await utils.finalize(voucherID, Deployer.address)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
-                    const withdrawTx = await withdraw(utils, i, voucherID)
 
+                    const withdrawTx = await withdraw(utils, i, voucherID)
 
                     const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                     const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
@@ -458,7 +446,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
 
                     const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                     const expectedBuyerDeposit = new BN(0)
@@ -504,7 +491,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                     const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                     const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
@@ -546,7 +532,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                     const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                     const expectedBuyerDeposit = new BN(0)
@@ -590,7 +575,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                     const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                     const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
@@ -632,7 +616,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
 
                     const expectedBuyerPrice = new BN(0) 
                     const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
@@ -676,7 +659,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                     const expectedBuyerPrice = new BN(0)
                     const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
@@ -720,7 +702,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                     const expectedBuyerPrice = new BN(0)
                     const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
@@ -764,7 +745,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                     const expectedBuyerPrice = new BN(0)
                     const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
@@ -957,7 +937,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
 
                     const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                     const expectedBuyerDeposit = new BN(0)
@@ -1004,7 +983,6 @@ contract("Cashier withdrawals ", async accounts => {
 
                     await utils.finalize(voucherID, Deployer.address)
 
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
@@ -1049,7 +1027,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await timemachine.advanceTimeSeconds(60)
                     await utils.finalize(voucherID, Deployer.address)
 
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
@@ -1077,7 +1054,6 @@ contract("Cashier withdrawals ", async accounts => {
                     assert.isTrue(cashierPaymentLeft.eq(new BN(0)), "Cashier Contract is not empty");
                     assert.isTrue(cashierDepositLeft.eq(new BN(0)), "Cashier Contract is not empty");
 
-
                     truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
                         return true
                     }, "Event LogAmountDistribution was not emitted")
@@ -1095,7 +1071,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await timemachine.advanceTimeSeconds(60)
                     await utils.finalize(voucherID, Deployer.address)
 
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
@@ -1139,7 +1114,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await timemachine.advanceTimeSeconds(60)
                     await utils.finalize(voucherID, Deployer.address)
 
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
@@ -1185,7 +1159,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await timemachine.advanceTimeSeconds(60)
                     await utils.finalize(voucherID, Deployer.address)
 
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
@@ -1231,7 +1204,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await timemachine.advanceTimeSeconds(60)
                     await utils.finalize(voucherID, Deployer.address)
 
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
@@ -1277,7 +1249,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await timemachine.advanceTimeSeconds(60)
                     await utils.finalize(voucherID, Deployer.address)
 
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(new BN(helpers.seller_deposit).div(new BN(2))) // 0.065
@@ -1362,8 +1333,8 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.complain(voucherID, Buyer.address)
                     await utils.cancel(voucherID, Seller.address)
                     await utils.finalize(voucherID, Deployer.address)
+
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                     const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                     const expectedSellerPrice = new BN(0)
@@ -1414,7 +1385,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
 
                     const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                     const expectedSellerPrice = new BN(0)
@@ -1466,7 +1436,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                     const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                     const expectedSellerPrice = new BN(0)
@@ -1515,7 +1484,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                     const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                     const expectedSellerPrice = new BN(0)
@@ -1565,7 +1533,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                     const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
                     const expectedSellerPrice = new BN(0)
@@ -1613,7 +1580,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address)
 
                     const expectedBuyerPrice = new BN(0)
                     const expectedSellerPrice = new BN(helpers.product_price) // 0.3
@@ -1663,7 +1629,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                     const expectedBuyerPrice = new BN(0)
                     const expectedSellerPrice = new BN(helpers.product_price) // 0.3
@@ -1713,7 +1678,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                     const expectedBuyerPrice = new BN(0)
                     const expectedSellerPrice = new BN(helpers.product_price) // 0.3
@@ -1763,7 +1727,6 @@ contract("Cashier withdrawals ", async accounts => {
                     await utils.finalize(voucherID, Deployer.address)
 
                     const withdrawTx = await withdraw(utils, i, voucherID)
-                    // const withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                     const expectedBuyerPrice = new BN(0)
                     const expectedSellerPrice = new BN(helpers.product_price) // 0.3
@@ -1817,9 +1780,125 @@ contract("Cashier withdrawals ", async accounts => {
             })
 
         })
-
-
     }
+
+    describe("[WHEN PAUSED] Seller withdraws deposit locked in escrow", async () => {
+
+        let remQty = 10;
+        let voucherToBuyBeforeBurn = 5
+
+      
+
+        describe.only("ETH ETH", () => {
+
+            before(async () => {
+                await deployContracts();
+
+                utils = UtilsBuilder
+                    .NEW()
+                    .ETH_ETH()
+                    .build(contractERC1155ERC721, contractVoucherKernel, contractCashier);
+
+                const timestamp = await Utils.getCurrTimestamp()
+
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_10)
+            })
+
+            after(() => {
+                remQty = 10;
+                voucherToBuyBeforeBurn = 5
+            }) 
+
+            it("[NEGATIVE] Should revert if called when contract is not paused", async () => {
+                await truffleAssert.reverts(
+                    contractCashier.withdrawDeposits(TOKEN_SUPPLY_ID, {from: Seller.address}),
+                    truffleAssert.ErrorType.REVERT
+                )
+            })
+
+            it("Should pause the contract", async () => {
+                // Does nothing in particular .. 
+                // Buys 5 vouchers before pausing the contract so as to test if the locked seller deposit should be returned correctly
+                // Pauses contract as below tests are dependant to paused contract
+
+                for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
+                    await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
+                    remQty--;
+                }
+
+                await contractCashier.pause();
+            })
+
+            it("[NEGATIVE] should revert if not called from the seller", async () => {
+                await truffleAssert.reverts(
+                    contractCashier.withdrawDeposits(TOKEN_SUPPLY_ID, {from: Attacker.address}),
+                    truffleAssert.ErrorType.REVERT
+                )
+            })
+
+            it("Seller should be able to withdraw deposits for the remaining QTY in Token Supply", async () => {
+                let withdrawTx = await contractCashier.withdrawDeposits(TOKEN_SUPPLY_ID, {from: Seller.address});
+                const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(new BN(remQty))
+                truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
+                    assert.equal(ev._payee, Seller.address, "Incorrect Payee")
+                    assert.isTrue(ev._payment.eq(expectedSellerDeposit))
+                        
+                    return true
+                }, "Event LogWithdrawal was not emitted")
+            });
+
+            it("Escrow should have correct balance after burning the rest of the supply", async () => {
+                const expectedBalance = new BN(helpers.seller_deposit).mul(new BN(voucherToBuyBeforeBurn))
+                const escrowAmount = await contractCashier.getEscrowAmount(Seller.address);
+
+                assert.isTrue(escrowAmount.eq(expectedBalance), "Escrow amount is incorrect")
+            });
+
+            it("Remaining QTY for Token Supply should be ZERO", async () => {
+                let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(TOKEN_SUPPLY_ID, Seller.address)
+
+                assert.isTrue(remainingQtyInContract.eq(new BN(0)), "Escrow amount is incorrect")
+            })
+
+            it("[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply", async () => {
+                await truffleAssert.reverts(
+                    utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID),
+                    truffleAssert.ErrorType.REVERT
+                )
+            });
+
+            it("[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice", async () => {
+                await truffleAssert.reverts(
+                    contractCashier.withdrawDeposits(TOKEN_SUPPLY_ID, {from: Seller.address}),
+                    truffleAssert.ErrorType.REVERT
+                )
+            });
+        
+        })
+
+        describe("[WITH PERMIT]", () => {
+            
+            describe("ETH_TKN", () => {
+                before(async () => {
+
+                })
+            })
+
+            xdescribe("TKN_ETH", () => {
+                before(async () => {
+
+                })
+            })
+
+            xdescribe("TKN_TKN", () => {
+                before(async () => {
+
+                })
+            })
+
+        })
+    })
+
 
   
 

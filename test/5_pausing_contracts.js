@@ -15,16 +15,17 @@ const Cashier = artifacts.require("Cashier")
 const helpers = require("../testHelpers/constants")
 const timemachine = require('../testHelpers/timemachine')
 const truffleAssert = require('truffle-assertions')
+const config = require('../testHelpers/config.json')
 
 let TOKEN_SUPPLY_ID
 let VOUCHER_ID
 
 contract("Cashier withdrawals ", async accounts => {
 
-    let Deployer = accounts[0] //0xD9995BAE12FEe327256FFec1e3184d492bD94C31
-    let Seller = accounts[1] //0xd4Fa489Eacc52BA59438993f37Be9fcC20090E39
-    let Buyer = accounts[2] //0x760bf27cd45036a6C486802D30B5D90CfFBE31FE
-    let Attacker = accounts[3] //0x56A32fFf5E5A8B40d6A21538579fB8922DF5258c
+    let Deployer = config.accounts.deployer
+    let Seller = config.accounts.seller
+    let Buyer = config.accounts.buyer
+    let Attacker = config.accounts.attacker
 
     let contractERC1155ERC721, contractVoucherKernel, contractCashier
     let timestamp
@@ -47,7 +48,6 @@ contract("Cashier withdrawals ", async accounts => {
             .build(contractERC1155ERC721, contractVoucherKernel, contractCashier)
         timestamp = await Utils.getCurrTimestamp()
     }
-   
 
     describe('Pausing Scenarios', function () {
 
@@ -80,7 +80,7 @@ contract("Cashier withdrawals ", async accounts => {
 
             it("[NEGATIVE] Attacker should not be able to pause the contract", async () => {
                 await truffleAssert.reverts(
-                    contractCashier.pause({ from: Attacker }),
+                    contractCashier.pause({ from: Attacker.address }),
                     truffleAssert.ErrorType.REVERT
                 )
             });
@@ -89,7 +89,7 @@ contract("Cashier withdrawals ", async accounts => {
                 await contractCashier.pause();
 
                 await truffleAssert.reverts(
-                    contractCashier.unpause({ from: Attacker }),
+                    contractCashier.unpause({ from: Attacker.address }),
                     truffleAssert.ErrorType.REVERT
                 )
             });
@@ -98,20 +98,19 @@ contract("Cashier withdrawals ", async accounts => {
                 await contractCashier.pause();
 
                 await truffleAssert.reverts(
-                    utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY),
+                    utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1),
                     truffleAssert.ErrorType.REVERT
                 )
             })
 
             it("Should create voucher supply when contract is unpaused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
                 
                 assert.isNotEmpty(TOKEN_SUPPLY_ID)
             })
             
-            //TODO When all tests are run below 8 will fail, but this will be fixed from PR#16 when gets merged
             it("[NEGATIVE] Should not create voucherID from Buyer when paused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
 
                 await contractCashier.pause();
 
@@ -122,33 +121,33 @@ contract("Cashier withdrawals ", async accounts => {
             })
 
             it("[NEGATIVE] Should not process withdrawals when paused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
                 
                 const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
-                await utils.refund(voucherID, Buyer)
+                await utils.refund(voucherID, Buyer.address)
                 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
                 await contractCashier.pause();
                 
                 await truffleAssert.reverts(
-                    utils.withdraw(voucherID, Deployer),
+                    utils.withdraw(voucherID, Deployer.address),
                     truffleAssert.ErrorType.REVERT
                 )
             })
 
             it("withdrawWhenPaused - Buyer should be able to withdraw funds when paused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
                 
                 const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
-                await utils.refund(voucherID, Buyer)
+                await utils.refund(voucherID, Buyer.address)
                 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
                 await contractCashier.pause();
-                const withdrawTx = await utils.withdrawWhenPaused(voucherID, Buyer)
+                const withdrawTx = await utils.withdrawWhenPaused(voucherID, Buyer.address)
 
                 truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
                     return true
@@ -156,31 +155,31 @@ contract("Cashier withdrawals ", async accounts => {
             })
 
             it("[NEGATIVE] withdrawWhenPaused - Buyer should not be able to withdraw funds when not paused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
                 
                 const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
-                await utils.refund(voucherID, Buyer)
+                await utils.refund(voucherID, Buyer.address)
                 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
                 await truffleAssert.reverts(
-                    utils.withdrawWhenPaused(voucherID, Buyer),
+                    utils.withdrawWhenPaused(voucherID, Buyer.address),
                     truffleAssert.ErrorType.REVERT
                 )
             })
 
             it("withdrawWhenPaused - Seller should be able to withdraw funds when paused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
                 
                 const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
-                await utils.refund(voucherID, Buyer)
+                await utils.refund(voucherID, Buyer.address)
                 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
                 await contractCashier.pause();
-                const withdrawTx = await utils.withdrawWhenPaused(voucherID, Seller)
+                const withdrawTx = await utils.withdrawWhenPaused(voucherID, Seller.address)
 
                 truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
                     return true
@@ -188,48 +187,48 @@ contract("Cashier withdrawals ", async accounts => {
             })
 
             it("[NEGATIVE] withdrawWhenPaused - Seller should not be able to withdraw funds when not paused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
                 
                 const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
-                await utils.refund(voucherID, Buyer)
+                await utils.refund(voucherID, Buyer.address)
                 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
                 await truffleAssert.reverts(
-                    utils.withdrawWhenPaused(voucherID, Seller),
+                    utils.withdrawWhenPaused(voucherID, Seller.address),
                     truffleAssert.ErrorType.REVERT
                 )
             })
 
             it("[NEGATIVE] withdrawWhenPaused - Attacker should not be able to withdraw funds when paused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
                 
                 const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
-                await utils.refund(voucherID, Buyer)
+                await utils.refund(voucherID, Buyer.address)
                 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
                 await contractCashier.pause();
 
                 await truffleAssert.reverts(
-                    utils.withdrawWhenPaused(voucherID, Attacker),
+                    utils.withdrawWhenPaused(voucherID, Attacker.address),
                     truffleAssert.ErrorType.REVERT
                 )
             })
 
             it("[NEGATIVE] withdrawWhenPaused - Attacker should not be able to withdraw funds when not paused", async () => {
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_1)
                 
                 const voucherID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
-                await utils.refund(voucherID, Buyer)
+                await utils.refund(voucherID, Buyer.address)
                 
                 await timemachine.advanceTimeSeconds(60)
-                await utils.finalize(voucherID, Deployer)
+                await utils.finalize(voucherID, Deployer.address)
 
                 await truffleAssert.reverts(
-                    utils.withdrawWhenPaused(voucherID, Attacker),
+                    utils.withdrawWhenPaused(voucherID, Attacker.address),
                     truffleAssert.ErrorType.REVERT
                 )
             })
@@ -242,7 +241,7 @@ contract("Cashier withdrawals ", async accounts => {
                 await deployContracts();
 
                 // Create Voucher Supply of 10
-                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY)
+                TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.QTY_10)
             })
 
             it("Should not be paused on deployment", async () => {
@@ -285,7 +284,7 @@ contract("Cashier withdrawals ", async accounts => {
                 await contractCashier.pause();
 
                 await truffleAssert.reverts(
-                    utils.refund(VOUCHER_ID, Buyer),
+                    utils.refund(VOUCHER_ID, Buyer.address),
                     truffleAssert.ErrorType.REVERT
                 )
             })
@@ -293,12 +292,12 @@ contract("Cashier withdrawals ", async accounts => {
             it("[NEGATIVE] Should not process complain when paused", async () => {
                 VOUCHER_ID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID)
 
-                await utils.refund(VOUCHER_ID, Buyer)
+                await utils.refund(VOUCHER_ID, Buyer.address)
                 
                 await contractCashier.pause();
 
                 await truffleAssert.reverts(
-                    utils.complain(VOUCHER_ID, Buyer),
+                    utils.complain(VOUCHER_ID, Buyer.address),
                     truffleAssert.ErrorType.REVERT
                 )
             })
@@ -309,19 +308,19 @@ contract("Cashier withdrawals ", async accounts => {
                 await contractCashier.pause();
 
                 await truffleAssert.reverts(
-                    utils.redeem(VOUCHER_ID, Buyer),
+                    utils.redeem(VOUCHER_ID, Buyer.address),
                     truffleAssert.ErrorType.REVERT
                 )
             })
 
             it("[NEGATIVE] Should not process cancel when paused", async () => {
                 VOUCHER_ID = await utils.commitToBuy(Buyer, Seller, TOKEN_SUPPLY_ID);
-                await utils.redeem(VOUCHER_ID, Buyer)
+                await utils.redeem(VOUCHER_ID, Buyer.address)
 
                 await contractCashier.pause();
 
                 await truffleAssert.reverts(
-                    utils.cancel(VOUCHER_ID, Seller),
+                    utils.cancel(VOUCHER_ID, Seller.address),
                     truffleAssert.ErrorType.REVERT
                 )
             })
