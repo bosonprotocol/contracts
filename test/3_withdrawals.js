@@ -1799,6 +1799,7 @@ contract("Cashier withdrawals ", async accounts => {
                 const timestamp = await Utils.getCurrTimestamp()
 
                 TOKEN_SUPPLY_ID = await utils.createOrder(Seller, timestamp, timestamp + helpers.SECONDS_IN_DAY, helpers.seller_deposit, helpers.QTY_10)
+            
             })
 
             after(() => {

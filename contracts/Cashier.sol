@@ -137,6 +137,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         notZeroAddress(_tokenDepositAddress)
         external
         payable
+        whenNotPaused
     {
         require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         
@@ -163,6 +164,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         notZeroAddress(_tokenDepositAddress)
         external
         payable
+        whenNotPaused
     {
         require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         
@@ -184,6 +186,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         notZeroAddress(_tokenPriceAddress)
         external
         payable
+        whenNotPaused
     {
         require(metadata[3].mul(metadata[5]) == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         
@@ -229,6 +232,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         external
         payable
         nonReentrant
+        whenNotPaused
     {
 
         //checks
@@ -257,6 +261,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         external
         payable
         nonReentrant
+        whenNotPaused
     {
 
         //checks
@@ -285,6 +290,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         external
         payable
         nonReentrant
+        whenNotPaused
     {
 
         //checks
