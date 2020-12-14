@@ -74,12 +74,21 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     {
         voucherKernel = VoucherKernel(_voucherKernel);
     }
-    
+
+    /**
+    * @notice Pause the Cashier && the Voucher Kernel contracts in case of emergency.
+    * All functions related to creating new batch, requestVoucher or withdraw will be paused, hence cannot be executed. 
+    * There is special function for withdrawing funds if contract is paused.
+    */
     function pause() external onlyOwner {
         _pause();
         voucherKernel.pause();
-    } 
+    }
 
+    /**
+    * @notice Unpause the Cashier && the Voucher Kernel contracts.
+    * All functions related to creating new batch, requestVoucher or withdraw will be unpaused.
+    */
     function unpause() external onlyOwner {
         _unpause();
         voucherKernel.unpause();
@@ -383,7 +392,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @notice Trigger withdrawals of what funds are releasable
      * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
      * @dev This function would be optimized a lot, here verbose for readability.
-     * @param _tokenIdVoucher an array of voucher tokens (ERC-721) to try withdraw funds from
+     * @param _tokenIdVoucher an ID of a voucher token (ERC-721) to try withdraw funds from
      */
     function withdrawWhenPaused(uint256 _tokenIdVoucher)
         external
@@ -670,6 +679,10 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         ); 
     }
 
+    /**
+    * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the contracts are paused.
+    * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
+    */
     function withdrawDeposits(uint256 _tokenIdSupply)
         external 
         nonReentrant

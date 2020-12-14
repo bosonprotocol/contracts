@@ -184,10 +184,18 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         cancelFaultPeriod = 7 * 1 days;
     }
 
+    /**
+    * @notice Pause the process of interaction with voucherID's (ERC-721), in case of emergency.
+    * Only Cashier contract is in control of this function.
+    */
     function pause() external onlyFromCashier {
         _pause();
     }
 
+    /**
+    * @notice Unpause the process of interaction with voucherID's (ERC-721).
+    * Only Cashier contract is in control of this function.
+    */
     function unpause() external onlyFromCashier {
         _unpause();
     } 
@@ -370,11 +378,17 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         return voucherTokenId;
     }
 
+    /**
+     * @notice Extract a standard non-fungible tokens ERC-721 from a supply stored in ERC-1155
+     * @dev Token ID is derived following the same principles for both ERC-1155 and ERC-721
+     * @param _issuer          The address of the token issuer
+     * @param _tokenIdSupply   ID of the token type
+     * @param _qty   qty that should be burned
+     */
     function burnSupply(address _issuer, uint256 _tokenIdSupply, uint256 _qty)
         external
         whenPaused
         onlyFromCashier
-        returns (uint256)
     {
         tokensContract.burn(_issuer, _tokenIdSupply, _qty);
         accountSupply[_issuer] = accountSupply[_issuer].sub(_qty);
@@ -772,7 +786,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
     /**
      * @notice Get the current supply of tokens of an account
      * @param _account  Address to query
-     * @return         Balance
+     * @return          Balance
      */
     //TODO: might not need it
     function getTotalSupply(address _account)
@@ -782,6 +796,12 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         return accountSupply[_account];
     }
 
+    /**
+     * @notice Get the remaining quantity left in supply of tokens (e.g ERC-721 left in ERC-1155) of an account
+     * @param _tokenSupplyId  Token supply ID
+     * @param _owner    holder of the Token Supply
+     * @return          remaining quantity
+     */
     function getRemQtyForSupply(uint _tokenSupplyId, address _owner) 
         external 
         view
@@ -790,16 +810,6 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         return tokensContract.getRemainingQtyInSupply(_tokenSupplyId, _owner);
     }
 
-    function getPromiseDeposit(uint _tokenSupplyId, address _owner)
-        external 
-        view
-        onlyFromCashier
-        returns (uint256)
-    {
-        return tokensContract.getRemainingQtyInSupply(_tokenSupplyId, _owner);
-    }
-    
-    
     /**
      * @notice Get the seller's deposit for a promise
      * @param _promiseId    ID of the promise
@@ -879,6 +889,11 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         return tokensContract.ownerOf(_tokenIdVoucher);
     }
 
+    /**
+    * @notice Get the holder of a supply
+    * @param _promiseId        ID of a promise which is mapped to the corresponding Promise
+    * @return                  Address of the holder
+    */
     function getSupplyHolder(bytes32 _promiseId)
         public view
         returns (address)
