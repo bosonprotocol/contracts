@@ -385,7 +385,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
      * @param _tokenIdSupply   ID of the token type
      * @param _qty   qty that should be burned
      */
-    function burnSupply(address _issuer, uint256 _tokenIdSupply, uint256 _qty)
+    function burnSupplyOnPause(address _issuer, uint256 _tokenIdSupply, uint256 _qty)
         external
         whenPaused
         onlyFromCashier

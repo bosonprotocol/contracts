@@ -700,7 +700,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
 
         uint256 depositAmount = deposit.mul(remQty);
 
-        voucherKernel.burnSupply(seller, _tokenIdSupply, remQty);
+        voucherKernel.burnSupplyOnPause(seller, _tokenIdSupply, remQty);
 
         uint8 paymentMethod = voucherKernel.getVoucherPaymentMethod(_tokenIdSupply);
 
