@@ -1,5 +1,5 @@
 # Smart contracts description
-This is a brief description of the smart contracts used in Boson Protocol. They are based on two NFT standards, ERC-1155 and ERC-721.  
+This is a brief description of the smart contracts used in Boson Protocol. They are based on two NFT standards, [ERC-1155](https://eips.ethereum.org/EIPS/eip-1155) and [ERC-721](https://eips.ethereum.org/EIPS/eip-721).  
 
 Main contracts:  
 * BosonToken: ERC-20 contract for the native Boson Protocol token  
@@ -14,7 +14,7 @@ Supported currencies are currently ETH and BSN tokens therefore functions dealin
 ## Transactions flow
 The journey through the NFT lifecycle is presented on a simplified diagram below.  
 
-![Simplified exchange mechanism](assets/boson_exchange diagram_simplified.png)  
+![Simplified exchange mechanism](assets/boson_exchange_diagram_simplified.png)  
 
 
 Voucher's status is defined in 7 bits that are set depending on the path in its lifecycle (defined in [usingHelpers.sol](https://github.com/bosonprotocol/bsn-core-prototype/blob/master/contracts/usingHelpers.sol#L29)):  
