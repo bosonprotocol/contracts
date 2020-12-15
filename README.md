@@ -1,5 +1,5 @@
 # Core prototype
-Repo for Boson Protocol prototype of the core exchange mechanism
+Code repository for Boson Protocol smart contracts. The description of the contracts and process can be found in [doc_contracts.md](doc_contracts.md).    
 
 ## Install
 Install dependencies from project root folder:
