@@ -38,4 +38,4 @@ See the project board at [https://github.com/bosonprotocol/bsn-core-prototype/pr
 Test coverage is executed by running the following command: 
 
 ``` 
-node --max-old-space-size=4096 ./node_modules/.bin/truffle run coverage --network coverage
+npm run coverage
