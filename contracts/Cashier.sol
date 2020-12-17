@@ -64,14 +64,6 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         PaymentType _type
     );
 
-    event LogTestLog(
-        address _from,
-        address _to,
-        uint256 _tokenIdVoucher,
-        uint256 _actualQtyInContract,
-        uint256 _valueSentFromContract
-    );
-
     event LogTokenContractSet(
         address _newTokenContract,
         address _triggeredBy
