@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "./VoucherKernel.sol";
 import "./usingHelpers.sol";
 import "./IERC20WithPermit.sol";
+import "./ERC1155ERC721.sol";
 
 /**
  * @title Contract for managing funds
@@ -19,6 +20,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     using SafeMath for uint;
     
     VoucherKernel voucherKernel;
+    address public tokensContractAddress;
 
     enum PaymentType { PAYMENT, DEPOSIT_SELLER, DEPOSIT_BUYER }
         
@@ -62,8 +64,27 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         PaymentType _type
     );
 
+    event LogTestLog(
+        address _from,
+        address _to,
+        uint256 _tokenIdVoucher,
+        uint256 _actualQtyInContract,
+        uint256 _valueSentFromContract
+    );
+
+    event LogTokenContractSet(
+        address _newTokenContract,
+        address _triggeredBy
+    );
+
     modifier notZeroAddress(address tokenAddress) {
         require(tokenAddress != address(0), "INVALID_TOKEN_ADDRESS");
+        _;
+    }
+
+    modifier onlyTokensContract() {
+        require(tokensContractAddress != address(0), "UNSPECIFIED_TK");
+        require(msg.sender == tokensContractAddress, "UNAUTHORIZED_TK");
         _;
     }
 
@@ -354,8 +375,8 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.depositBu
         ) = voucherKernel.getOrderCosts(voucherDetails.tokenIdSupply);
         
-        voucherDetails.issuer = address(uint160( voucherKernel.getVoucherIssuer(voucherDetails.tokenIdVoucher) ));
-        voucherDetails.holder = address(uint160( voucherKernel.getVoucherHolder(voucherDetails.tokenIdVoucher) ));
+        voucherDetails.issuer = address(uint160(voucherKernel.getSupplyHolder(voucherDetails.tokenIdSupply)));
+        voucherDetails.holder = address(uint160(voucherKernel.getVoucherHolder(voucherDetails.tokenIdVoucher)));
         
         
         //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
@@ -420,8 +441,8 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.depositBu
         ) = voucherKernel.getOrderCosts(voucherDetails.tokenIdSupply);
         
-        voucherDetails.issuer = address(uint160( voucherKernel.getVoucherIssuer(voucherDetails.tokenIdVoucher) ));
-        voucherDetails.holder = address(uint160( voucherKernel.getVoucherHolder(voucherDetails.tokenIdVoucher) ));
+        voucherDetails.issuer = address(uint160(voucherKernel.getSupplyHolder(voucherDetails.tokenIdSupply)));
+        voucherDetails.holder = address(uint160(voucherKernel.getVoucherHolder(voucherDetails.tokenIdVoucher)));
         
         require(msg.sender == voucherDetails.issuer || msg.sender == voucherDetails.holder, "INVALID CALLER");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         
@@ -688,12 +709,11 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         nonReentrant
         whenPaused
     {
-        bytes32 promiseKey = voucherKernel.ordersPromise(_tokenIdSupply);
-        address payable seller = address(uint160(voucherKernel.getSupplyHolder(promiseKey)));
+        address payable seller = address(uint160(voucherKernel.getSupplyHolder(_tokenIdSupply)));
         
         require(msg.sender == seller, "UNAUTHORIZED_SE");
 
-        uint256 deposit =  voucherKernel.getPromiseDepositSe(promiseKey);
+        uint256 deposit =  voucherKernel.getSellerDeposit(_tokenIdSupply);
         uint256 remQty = voucherKernel.getRemQtyForSupply(_tokenIdSupply, seller);
         
         require(remQty > 0, "OFFER_EMPTY");
@@ -767,7 +787,98 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
 
         emit LogWithdrawal(msg.sender, _recipient, _amount);
     }
+
+
+    /**
+    * @notice Hook which will be triggered when a _tokenIdVoucher will be transferred. Escrow funds should be allocated to the new owner.
+    * @param _from prev owner of the _tokenIdVoucher
+    * @param _to next owner of the _tokenIdVoucher
+    * @param _tokenIdVoucher _tokenIdVoucher that has been transferred
+    */
+    function _onERC721Transfer(address _from, address _to, uint256 _tokenIdVoucher) 
+        external
+        onlyTokensContract
+    {
+        uint256 tokenSupplyId = voucherKernel.getIdSupplyFromVoucher(_tokenIdVoucher);
+        uint8 paymentType = voucherKernel.getVoucherPaymentMethod(tokenSupplyId);
+
+        (uint256 price, uint256 depositBu) = voucherKernel.getBuyerOrderCosts(tokenSupplyId);
+
+        if(paymentType == ETH_ETH)
+        {
+            uint256 totalAmount = price.add(depositBu);
+            escrow[_from] = escrow[_from].sub(totalAmount);
+            escrow[_to] = escrow[_to].add(totalAmount);
+        }
+
+        if(paymentType == ETH_TKN) {
+            escrow[_from] = escrow[_from].sub(price);
+            escrow[_to] = escrow[_to].add(price);
+        }
+
+        if(paymentType == TKN_ETH) {
+            escrow[_from] = escrow[_from].sub(depositBu);
+            escrow[_to] = escrow[_to].add(depositBu);
+        }
+    }
+
+
+    /**
+    * @notice Pre-validation when a transfer from the the Tokens contract is triggered. Only the whole supply is allowed for transfer, otherwise reverts.
+    * @param _from owner of the _tokenSupplyId
+    * @param _tokenSupplyId _tokenSupplyId which will be validated
+    * @param _value qty which is desired to be transferred
+    */
+    function _beforeERC1155Transfer(address _from, uint256 _tokenSupplyId, uint256 _value) 
+        external
+        onlyTokensContract
+    {
+        uint256 _tokenSupplyQty = voucherKernel.getRemQtyForSupply(_tokenSupplyId, _from);
+        require(_tokenSupplyQty == _value, "INVALID_QTY");
+    }
+
+    /**
+    * @notice After the transfer happens the _tokenSupplyId should be updated in the promise. Escrow funds for the deposits (If in ETH) should be allocated to the new owner as well.
+    * @param _from prev owner of the _tokenSupplyId
+    * @param _to nex owner of the _tokenSupplyId
+    * @param _tokenSupplyId _tokenSupplyId for transfer
+    * @param _value qty which has been transferred
+    */
+    function _onERC1155Transfer(address _from, address _to, uint256 _tokenSupplyId, uint256 _value) 
+        external
+        onlyTokensContract
+    {
+        uint8 paymentType = voucherKernel.getVoucherPaymentMethod(_tokenSupplyId);
+
+        if(paymentType == ETH_ETH || paymentType == TKN_ETH) {
+            uint256 depositSe = voucherKernel.getSellerDeposit(_tokenSupplyId);
+            uint256 totalAmount = depositSe.mul(_value);
+
+            escrow[_from] = escrow[_from].sub(totalAmount);
+            escrow[_to] = escrow[_to].add(totalAmount);
+        }
+
+        voucherKernel.setSupplyHolderOnTransfer(_tokenSupplyId, _to);
+    }
+
+    // // // // // // // //
+    // UTILS 
+    // // // // // // // //  
         
+    /**
+     * @notice Set the address of the ERC1155ERC721 contract
+     * @param _tokensContractAddress   The address of the ERC1155ERC721 contract
+     */
+    function setTokenContractAddress(address _tokensContractAddress)
+        external
+        onlyOwner
+    {
+        require(_tokensContractAddress != address(0), "UNSPECIFIED_ADDRESS");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        
+        tokensContractAddress = _tokensContractAddress;
+        
+        emit LogTokenContractSet(_tokensContractAddress, msg.sender);
+    }
         
     // // // // // // // //
     // GETTERS 

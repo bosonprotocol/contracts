@@ -78,7 +78,7 @@ contract("Cashier withdrawals ", async accounts => {
             await utils.pause(Deployer.address)
             return await utils.withdrawWhenPaused(voucherID, Seller.address);
         } else {
-            return  await utils.withdraw(voucherID, Deployer.address);
+            return await utils.withdraw(voucherID, Deployer.address);
         }
     }
 
@@ -132,7 +132,7 @@ contract("Cashier withdrawals ", async accounts => {
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to', Buyer.address, Seller.address)
                         return true
                     }, "Amounts not distributed successfully")
 
@@ -156,7 +156,7 @@ contract("Cashier withdrawals ", async accounts => {
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to', Buyer.address, Seller.address)
                         return true
                     }, "Amounts not distributed successfully")
 
@@ -181,7 +181,7 @@ contract("Cashier withdrawals ", async accounts => {
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to', Buyer.address, Seller.address)
                         return true
                     }, "Amounts not distributed successfully")
 
@@ -204,7 +204,7 @@ contract("Cashier withdrawals ", async accounts => {
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to', Buyer.address, Seller.address)
                         return true
                     }, "Amounts not distributed successfully")
 
@@ -227,7 +227,7 @@ contract("Cashier withdrawals ", async accounts => {
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to', Buyer.address, Seller.address)
                         return true
                     }, "Amounts not distributed successfully")
 
@@ -250,7 +250,7 @@ contract("Cashier withdrawals ", async accounts => {
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to', Buyer.address, Seller.address)
                         return true
                     }, "Amounts not distributed successfully")
 
@@ -274,7 +274,7 @@ contract("Cashier withdrawals ", async accounts => {
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to', Buyer.address, Seller.address)
                         return true
                     }, "Amounts not distributed successfully")
 
@@ -299,7 +299,7 @@ contract("Cashier withdrawals ", async accounts => {
                     const withdrawTx = await withdraw(utils, i, voucherID)
 
                     truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to', Buyer.address, Seller.address)
                         return true
                     }, "Amounts not distributed successfully")
 
@@ -323,7 +323,7 @@ contract("Cashier withdrawals ", async accounts => {
                         const withdrawTx = await withdraw(utils, i, voucherID)
 
                         truffleAssert.eventEmitted(withdrawTx, 'LogAmountDistribution', (ev) => {
-                            utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to')
+                            utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_to', Buyer.address, Seller.address)
                             return true
                         }, "Amounts not distributed successfully")
 
@@ -1351,7 +1351,7 @@ contract("Cashier withdrawals ", async accounts => {
                     
                     //Deposits in ETH
                     truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee', Buyer.address, Seller.address)
                         return true
                     }, "Amounts not distributed successfully")
                 
@@ -1401,7 +1401,7 @@ contract("Cashier withdrawals ", async accounts => {
 
                     //Deposits in ETH
                     truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee', Buyer.address, Seller.address)
                         return true
                     }, "Amounts not distributed successfully")
 
@@ -1452,7 +1452,7 @@ contract("Cashier withdrawals ", async accounts => {
 
                     //Deposits in ETH
                     truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee', Buyer.address, Seller.address)
                         return true
                     }, "Amounts not distributed successfully")
 
@@ -1500,7 +1500,7 @@ contract("Cashier withdrawals ", async accounts => {
 
                     //Deposits in ETH
                     truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee', Buyer.address, Seller.address)
                         return true
                     }, "Amounts not distributed successfully")
 
@@ -1549,7 +1549,7 @@ contract("Cashier withdrawals ", async accounts => {
 
                     //Deposits in ETH
                     truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee', Buyer.address, Seller.address)
                         return true
                     }, "Amounts not distributed successfully")
 
@@ -1596,7 +1596,7 @@ contract("Cashier withdrawals ", async accounts => {
 
                     //Deposits in ETH
                     truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee', Buyer.address, Seller.address)
                         return true
                     }, "Amounts not distributed successfully")
 
@@ -1645,7 +1645,7 @@ contract("Cashier withdrawals ", async accounts => {
 
                     //Deposits in ETH
                     truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee', Buyer.address, Seller.address)
                         return true
                     }, "Amounts not distributed successfully")
 
@@ -1694,7 +1694,7 @@ contract("Cashier withdrawals ", async accounts => {
 
                     //Deposits in ETH
                     truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee', Buyer.address, Seller.address)
                         return true
                     }, "Amounts not distributed successfully")
 
@@ -1742,7 +1742,7 @@ contract("Cashier withdrawals ", async accounts => {
 
                     //Deposits in ETH
                     truffleAssert.eventEmitted(withdrawTx, 'LogWithdrawal', (ev) => {
-                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee')
+                        utils.calcTotalAmountToRecipients(ev, distributedAmounts, '_payee', Buyer.address, Seller.address)
                         return true
                     }, "Amounts not distributed successfully")
 
