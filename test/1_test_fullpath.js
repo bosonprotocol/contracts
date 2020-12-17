@@ -433,7 +433,7 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 			);
 		});    
 		
-		afterEach(async () => {
+		after(async () => {
 			await timemachine.revertToSnapShot(snapshot.id)
 		})
 

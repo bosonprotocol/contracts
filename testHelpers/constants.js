@@ -41,7 +41,7 @@ const QTY_10 = 10
 const QTY_20 = 20
 const QTY_1 = 1
 
-//funds 
+//fund limits 
 const ETHER_LIMIT = (1 * 10 ** 18).toString();
 const ABOVE_ETH_LIMIT = (2 * 10 ** 18).toString();
 
