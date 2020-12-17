@@ -314,7 +314,7 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
     })
 
 
-   	xdescribe('Wait periods', function() {
+   	describe('Wait periods', function() {
 		it("change complain period", async () => {
 			let txChangePeriod = await contractVoucherKernel.setComplainPeriod(helpers.PROMISE_CHALLENGE_PERIOD * helpers.SECONDS_IN_DAY);
 
@@ -325,7 +325,7 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 
 
 		it("must fail: unauthorized change of complain period", async () => {
-			truffleAssert.reverts(contractVoucherKernel.setComplainPeriod(helpers.PROMISE_CHALLENGE_PERIOD * helpers.SECONDS_IN_DAY, {from: Attacker}),
+			await truffleAssert.reverts(contractVoucherKernel.setComplainPeriod(helpers.PROMISE_CHALLENGE_PERIOD * helpers.SECONDS_IN_DAY, {from: Attacker}),
 				truffleAssert.ErrorType.REVERT
 			);				
 		});		
@@ -334,14 +334,14 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 		it("change cancelOrFault period", async () => {
 			let txChangePeriod = await contractVoucherKernel.setCancelFaultPeriod(helpers.PROMISE_CANCELORFAULT_PERIOD * helpers.SECONDS_IN_DAY);
 
-			truffleAssert.eventEmitted(txChangePeriod, 'LogCancelFaultPeriodChanged', (ev) => {
+			await truffleAssert.eventEmitted(txChangePeriod, 'LogCancelFaultPeriodChanged', (ev) => {
 			    return ev._newCancelFaultPeriod.toString() === (helpers.PROMISE_CANCELORFAULT_PERIOD * helpers.SECONDS_IN_DAY).toString();
 			}, "complain period not changed successfully");
 		});		
 
 
 		it("must fail: unauthorized change of cancelOrFault period", async () => {
-			truffleAssert.reverts(contractVoucherKernel.setCancelFaultPeriod(helpers.PROMISE_CANCELORFAULT_PERIOD * helpers.SECONDS_IN_DAY, {from: Attacker}),
+			await truffleAssert.reverts(contractVoucherKernel.setCancelFaultPeriod(helpers.PROMISE_CANCELORFAULT_PERIOD * helpers.SECONDS_IN_DAY, {from: Attacker}),
 				truffleAssert.ErrorType.REVERT
 			);				
 		});					
@@ -349,7 +349,7 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
     })   
 
 
-	xdescribe('Refunds ...', function() {
+	describe('Refunds ...', function() {
 
 		it("refunding one voucher", async () => {
 			let txRefund = await contractVoucherKernel.refund(tokenVoucherKey1, {from: Buyer});
@@ -381,7 +381,7 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 		it("must fail: refund then try to redeem", async () => {
 			let txRefund = await contractVoucherKernel.refund(tokenVoucherKey1, {from: Buyer});
 
-			truffleAssert.reverts(contractVoucherKernel.redeem(tokenVoucherKey1, {from: Buyer}),
+			await truffleAssert.reverts(contractVoucherKernel.redeem(tokenVoucherKey1, {from: Buyer}),
 				truffleAssert.ErrorType.REVERT
 			);				
 		});	
@@ -389,7 +389,7 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
     }) 
 
 
-	xdescribe('Cancel/Fault by the seller ...', function() {
+	describe('Cancel/Fault by the seller ...', function() {
 
 		it("canceling one voucher", async () => {
 			let txCoF = await contractVoucherKernel.cancelOrFault(tokenVoucherKey1, {from: Seller});
@@ -402,7 +402,7 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 		it("must fail: cancel/fault then try to redeem", async () => {
 			let txCoF = await contractVoucherKernel.cancelOrFault(tokenVoucherKey1, {from: Seller});
 
-			truffleAssert.reverts(contractVoucherKernel.redeem(tokenVoucherKey1, {from: Buyer}),
+			await truffleAssert.reverts(contractVoucherKernel.redeem(tokenVoucherKey1, {from: Buyer}),
 				truffleAssert.ErrorType.REVERT
 			);				
 		});	
@@ -410,7 +410,7 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
     })     
 
 
-	xdescribe('Expirations (one universal test) ...', function() {
+	describe('Expirations (one universal test) ...', function() {
 
 		it("Expired, then complain, then Cancel/Fault, then try to redeem", async () => {
 			await timemachine.advanceTimeSeconds(helpers.SECONDS_IN_DAY*3); //fast-forward for three days
@@ -428,12 +428,12 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 			assert.equal(web3.utils.toHex(statusAfter[0]), web3.utils.numberToHex(156), "end voucher status not as expected (EXPIRED_COMPLAINED_CANCELORFAULT)");
 
 			//in the same test, because the EVM time machine is funky ...
-			truffleAssert.reverts(contractVoucherKernel.redeem(tokenVoucherKey1, {from: Buyer}),
+			await truffleAssert.reverts(contractVoucherKernel.redeem(tokenVoucherKey1, {from: Buyer}),
 				truffleAssert.ErrorType.REVERT
 			);
 		});    
 		
-		after(async () => {
+		afterEach(async () => {
 			await timemachine.revertToSnapShot(snapshot.id)
 		})
 
