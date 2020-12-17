@@ -7,7 +7,8 @@
     "test": "test"
   },
   "scripts": {
-    "test": "truffle test"
+    "test": "truffle test",
+    "coverage": "node --max-old-space-size=4096 ./node_modules/.bin/truffle run coverage --network coverage"
   },
   "repository": {
     "type": "git",
@@ -31,6 +32,6 @@
     "ethereumjs-util": "^7.0.7",
     "mocha": "^8.2.1",
     "solidity-coverage": "^0.7.12",
-    "truffle": "^5.1.10"
+    "truffle": "5.1.10"
   }
 }

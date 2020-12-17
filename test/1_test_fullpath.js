@@ -314,7 +314,7 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
     })
 
 
-    xdescribe('Wait periods', function() {
+   	xdescribe('Wait periods', function() {
 		it("change complain period", async () => {
 			let txChangePeriod = await contractVoucherKernel.setComplainPeriod(helpers.PROMISE_CHALLENGE_PERIOD * helpers.SECONDS_IN_DAY);
 

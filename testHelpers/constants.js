@@ -38,6 +38,7 @@ const seller_deposit = '50000000000000000'; // 0.05
 const product_price = '300000000000000000'; // 0.3
 const incorrect_product_price = '30000000000000000'; // 0.03
 const QTY_10 = 10
+const QTY_20 = 20
 const QTY_1 = 1
 
 //funds 
@@ -78,8 +79,10 @@ module.exports = {
 	seller_deposit,
 	product_price,
 	incorrect_product_price,
+	QTY_1,
 	QTY_10,
 	QTY_1,
+	QTY_20,
 	ETHER_LIMIT,
 	ABOVE_ETH_LIMIT,
 	TOKEN_LIMIT,

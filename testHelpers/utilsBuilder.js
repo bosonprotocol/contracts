@@ -15,7 +15,7 @@ class UtilsBuilder {
     ETH_ETH () {
         this.utils.createOrder = this.utils.requestCreateOrder_ETH_ETH
         this.utils.commitToBuy = this.utils.commitToBuy_ETH_ETH
-
+        
         return this
     }
 

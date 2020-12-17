@@ -3,18 +3,19 @@ pragma solidity >=0.6.6 <0.7.0;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/Access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "./VoucherKernel.sol";
-import "./FundLimitsOracle.sol";
 import "./usingHelpers.sol";
 import "./IERC20WithPermit.sol";
+import "./FundLimitsOracle.sol";
 
 /**
  * @title Contract for managing funds
  * @dev Warning: the contract hasn't been audited yet!
  *  Roughly following OpenZeppelin's Escrow at https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/payment/
  */
-contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
+contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     using Address for address payable;
     using SafeMath for uint;
     
@@ -46,7 +47,8 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
     event LogOrderCreated(
         uint256 indexed _tokenIdSupply,
         address _seller,
-        uint256 _quantity
+        uint256 _quantity,
+        uint8 _paymentType
     );
     
     event LogWithdrawal(
@@ -85,6 +87,26 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         fundLimitsOracle = FundLimitsOracle(_fundLimitsOracle);
     }
     
+
+    /**
+    * @notice Pause the Cashier && the Voucher Kernel contracts in case of emergency.
+    * All functions related to creating new batch, requestVoucher or withdraw will be paused, hence cannot be executed. 
+    * There is special function for withdrawing funds if contract is paused.
+    */
+    function pause() external onlyOwner {
+        _pause();
+        voucherKernel.pause();
+    }
+
+    /**
+    * @notice Unpause the Cashier && the Voucher Kernel contracts.
+    * All functions related to creating new batch, requestVoucher or withdraw will be unpaused.
+    */
+    function unpause() external onlyOwner {
+        _unpause();
+        voucherKernel.unpause();
+    } 
+
     /**
      * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
         @param metadata metadata which is required for creation of a voucher
@@ -102,6 +124,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
     function requestCreateOrder_ETH_ETH(uint256[] calldata metadata)
         external
         payable
+        whenNotPaused
     {
         notAboveETHLimit(metadata[2]); 
         notAboveETHLimit(metadata[3]);
@@ -122,7 +145,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         //record funds in escrow ...
         escrow[msg.sender] += msg.value;
         
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETH_ETH);
     }
 
     function requestCreateOrder_TKN_TKN_WithPermit(
@@ -139,6 +162,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         notZeroAddress(_tokenDepositAddress)
         external
         payable
+        whenNotPaused
     {
         notAboveTokenLimit(_tokenPriceAddress, metadata[2]);
         notAboveTokenLimit(_tokenDepositAddress, metadata[3]);
@@ -154,7 +178,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
 
         IERC20WithPermit(_tokenDepositAddress).transferFrom(msg.sender, address(this), _tokensSent);
         
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKN_TKN);
     }
 
     function requestCreateOrder_ETH_TKN_WithPermit(
@@ -169,6 +193,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         notZeroAddress(_tokenDepositAddress)
         external
         payable
+        whenNotPaused
     {
         notAboveETHLimit(metadata[2]); 
         notAboveTokenLimit(_tokenDepositAddress, metadata[3]);
@@ -184,7 +209,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
 
         IERC20WithPermit(_tokenDepositAddress).transferFrom(msg.sender, address(this), _tokensSent);
         
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETH_TKN);
     }
 
     function requestCreateOrder_TKN_ETH(
@@ -194,6 +219,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         notZeroAddress(_tokenPriceAddress)
         external
         payable
+        whenNotPaused
     {
         notAboveTokenLimit(_tokenPriceAddress, metadata[2]);
         notAboveETHLimit(metadata[3]);
@@ -206,7 +232,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
 
         escrow[msg.sender] += msg.value;
 
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5]);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKN_ETH);
     }
     
     /**
@@ -218,6 +244,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         external
         payable
         nonReentrant
+        whenNotPaused
     {
         uint256 weiReceived = msg.value;
 
@@ -242,6 +269,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         external
         payable
         nonReentrant
+        whenNotPaused
     {
 
         //checks
@@ -270,6 +298,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         external
         payable
         nonReentrant
+        whenNotPaused
     {
 
         //checks
@@ -298,6 +327,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         external
         payable
         nonReentrant
+        whenNotPaused
     {
 
         //checks
@@ -326,6 +356,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
     function withdraw(uint256 _tokenIdVoucher)
         external
         nonReentrant
+        whenNotPaused
     {
         //TODO: more checks
         //TODO: check to pass 2 diff holders and how the amounts will be distributed
@@ -370,6 +401,73 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
         
         if (voucherDetails.amount2pool > 0) {
             address payable poolAddress = address(uint160(owner())); //this is required as we could not implicitly cast the owner address to payable
+            _withdraw(poolAddress, voucherDetails.amount2pool);
+        }
+        
+        if (voucherDetails.amount2issuer > 0) {
+            _withdraw(voucherDetails.issuer, voucherDetails.amount2issuer);
+        }
+
+        if (voucherDetails.amount2holder > 0) {
+            _withdraw(voucherDetails.holder, voucherDetails.amount2holder);
+        }
+
+        delete voucherDetails;
+        
+    }
+
+    /**
+     * @notice Trigger withdrawals of what funds are releasable
+     * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
+     * @dev This function would be optimized a lot, here verbose for readability.
+     * @param _tokenIdVoucher an ID of a voucher token (ERC-721) to try withdraw funds from
+     */
+    function withdrawWhenPaused(uint256 _tokenIdVoucher)
+        external
+        nonReentrant
+        whenPaused
+    {
+        VoucherDetails memory voucherDetails;
+        
+        //in the future might want to (i) check the gasleft() (but UNGAS proposal might make it impossible), and/or (ii) set upper loop limit to sth like .length < 2**15
+        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        
+        voucherDetails.tokenIdVoucher = _tokenIdVoucher;
+        voucherDetails.tokenIdSupply = voucherKernel.getIdSupplyFromVoucher(voucherDetails.tokenIdVoucher);
+        voucherDetails.paymentMethod = voucherKernel.getVoucherPaymentMethod(voucherDetails.tokenIdSupply);
+
+        require(voucherDetails.paymentMethod > 0 && voucherDetails.paymentMethod <= 4, "INVALID PAYMENT METHOD");
+
+        (voucherDetails.currStatus.status,
+            voucherDetails.currStatus.isPaymentReleased,
+            voucherDetails.currStatus.isDepositsReleased
+        ) = voucherKernel.getVoucherStatus(voucherDetails.tokenIdVoucher);
+        
+        (voucherDetails.price, 
+            voucherDetails.depositSe, 
+            voucherDetails.depositBu
+        ) = voucherKernel.getOrderCosts(voucherDetails.tokenIdSupply);
+        
+        voucherDetails.issuer = address(uint160( voucherKernel.getVoucherIssuer(voucherDetails.tokenIdVoucher) ));
+        voucherDetails.holder = address(uint160( voucherKernel.getVoucherHolder(voucherDetails.tokenIdVoucher) ));
+        
+        require(msg.sender == voucherDetails.issuer || msg.sender == voucherDetails.holder, "INVALID CALLER");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        
+        //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
+        if (!voucherDetails.currStatus.isPaymentReleased) 
+        {
+            releasePayments(voucherDetails);
+        }
+
+        //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status 
+        if (!voucherDetails.currStatus.isDepositsReleased && 
+            isStatus(voucherDetails.currStatus.status, idxFinal)) 
+        {
+            releaseDeposits(voucherDetails);
+        }
+        
+        if (voucherDetails.amount2pool > 0) {
+            address payable poolAddress = address(uint160(owner()));
             _withdraw(poolAddress, voucherDetails.amount2pool);
         }
         
@@ -610,6 +708,47 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
     }
 
     /**
+    * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the contracts are paused.
+    * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
+    */
+    function withdrawDeposits(uint256 _tokenIdSupply)
+        external 
+        nonReentrant
+        whenPaused
+    {
+        bytes32 promiseKey = voucherKernel.ordersPromise(_tokenIdSupply);
+        address payable seller = address(uint160(voucherKernel.getSupplyHolder(promiseKey)));
+        
+        require(msg.sender == seller, "UNAUTHORIZED_SE");
+
+        uint256 deposit =  voucherKernel.getPromiseDepositSe(promiseKey);
+        uint256 remQty = voucherKernel.getRemQtyForSupply(_tokenIdSupply, seller);
+        
+        require(remQty > 0, "OFFER_EMPTY");
+
+        uint256 depositAmount = deposit.mul(remQty);
+
+        voucherKernel.burnSupplyOnPause(seller, _tokenIdSupply, remQty);
+
+        uint8 paymentMethod = voucherKernel.getVoucherPaymentMethod(_tokenIdSupply);
+
+        require(paymentMethod > 0 && paymentMethod <= 4, "INVALID PAYMENT METHOD");
+
+
+        if(paymentMethod == ETH_ETH || paymentMethod == TKN_ETH)
+        {
+            escrow[msg.sender] = escrow[msg.sender].sub(depositAmount);
+            _withdrawDeposits(seller, depositAmount);
+        }
+
+        if(paymentMethod == ETH_TKN || paymentMethod == TKN_TKN)
+        {
+            address addressTokenDeposits = voucherKernel.getVoucherDepositToken(_tokenIdSupply);
+            IERC20WithPermit(addressTokenDeposits).transfer(seller, depositAmount);
+        }
+    }
+
+    /**
      * @notice Trigger withdrawals of pooled funds
      */    
     function withdrawPool()
@@ -636,6 +775,17 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable {
      * @param _amount       amount to be released from escrow
      */
     function _withdraw(address payable _recipient, uint256 _amount)
+        internal
+    {
+        require(_recipient != address(0), "UNSPECIFIED_ADDRESS");   //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_amount > 0, "");
+        
+        _recipient.sendValue(_amount);
+
+        emit LogWithdrawal(msg.sender, _recipient, _amount);
+    }
+
+    function _withdrawDeposits(address payable _recipient, uint256 _amount)
         internal
     {
         require(_recipient != address(0), "UNSPECIFIED_ADDRESS");   //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)

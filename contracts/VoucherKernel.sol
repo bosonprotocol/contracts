@@ -3,7 +3,9 @@
 pragma solidity >=0.6.6 <0.7.0;
 
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/Access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./ERC1155ERC721.sol";
 import "./usingHelpers.sol";
 
@@ -17,8 +19,9 @@ import "./usingHelpers.sol";
  *  - The usage of block.timestamp is honored since vouchers are defined with day-precision and the demo app is not covering all edge cases.
  *      See: https://ethereum.stackexchange.com/questions/5924/how-do-ethereum-mining-nodes-maintain-a-time-consistent-with-the-network/5931#5931
 */
-contract VoucherKernel is Ownable, usingHelpers {    
+contract VoucherKernel is Ownable, Pausable, usingHelpers {    
     using Address for address;
+    using SafeMath for uint;
     //using Counters for Counters.Counter;
     //Counters.Counter private voucherTokenId; //unique IDs for voucher tokens
     
@@ -180,7 +183,22 @@ contract VoucherKernel is Ownable, usingHelpers {
         complainPeriod = 7 * 1 days;
         cancelFaultPeriod = 7 * 1 days;
     }
-    
+
+    /**
+    * @notice Pause the process of interaction with voucherID's (ERC-721), in case of emergency.
+    * Only Cashier contract is in control of this function.
+    */
+    function pause() external onlyFromCashier {
+        _pause();
+    }
+
+    /**
+    * @notice Unpause the process of interaction with voucherID's (ERC-721).
+    * Only Cashier contract is in control of this function.
+    */
+    function unpause() external onlyFromCashier {
+        _unpause();
+    } 
     
     /**
         * @notice Creating a new promise for goods or services.
@@ -359,6 +377,22 @@ contract VoucherKernel is Ownable, usingHelpers {
         
         return voucherTokenId;
     }
+
+    /**
+     * @notice Extract a standard non-fungible tokens ERC-721 from a supply stored in ERC-1155
+     * @dev Token ID is derived following the same principles for both ERC-1155 and ERC-721
+     * @param _issuer          The address of the token issuer
+     * @param _tokenIdSupply   ID of the token type
+     * @param _qty   qty that should be burned
+     */
+    function burnSupplyOnPause(address _issuer, uint256 _tokenIdSupply, uint256 _qty)
+        external
+        whenPaused
+        onlyFromCashier
+    {
+        tokensContract.burn(_issuer, _tokenIdSupply, _qty);
+        accountSupply[_issuer] = accountSupply[_issuer].sub(_qty);
+    }
     
     
     /**
@@ -391,6 +425,7 @@ contract VoucherKernel is Ownable, usingHelpers {
      */
     function redeem(uint256 _tokenIdVoucher)
         external
+        whenNotPaused
         onlyVoucherOwner(_tokenIdVoucher)
     {
         //check status
@@ -419,6 +454,7 @@ contract VoucherKernel is Ownable, usingHelpers {
      */
     function refund(uint256 _tokenIdVoucher)
         external
+        whenNotPaused
         onlyVoucherOwner(_tokenIdVoucher)
     {
         require(isStateCommitted(vouchersStatus[_tokenIdVoucher].status), "INAPPLICABLE_STATUS");  //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicatableToCurrentState)
@@ -439,6 +475,7 @@ contract VoucherKernel is Ownable, usingHelpers {
      */
     function complain(uint256 _tokenIdVoucher)
         external
+        whenNotPaused
         onlyVoucherOwner(_tokenIdVoucher)
     {
         require(!isStatus(vouchersStatus[_tokenIdVoucher].status, idxComplain), "ALREADY_COMPLAINED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
@@ -495,6 +532,7 @@ contract VoucherKernel is Ownable, usingHelpers {
      */
     function cancelOrFault(uint256 _tokenIdVoucher)
         external
+        whenNotPaused
     {
         require(getVoucherIssuer(_tokenIdVoucher) == msg.sender,"UNAUTHORIZED_COF");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         
@@ -748,7 +786,7 @@ contract VoucherKernel is Ownable, usingHelpers {
     /**
      * @notice Get the current supply of tokens of an account
      * @param _account  Address to query
-     * @return         Balance
+     * @return          Balance
      */
     //TODO: might not need it
     function getTotalSupply(address _account)
@@ -757,8 +795,21 @@ contract VoucherKernel is Ownable, usingHelpers {
     {
         return accountSupply[_account];
     }
-    
-    
+
+    /**
+     * @notice Get the remaining quantity left in supply of tokens (e.g ERC-721 left in ERC-1155) of an account
+     * @param _tokenSupplyId  Token supply ID
+     * @param _owner    holder of the Token Supply
+     * @return          remaining quantity
+     */
+    function getRemQtyForSupply(uint _tokenSupplyId, address _owner) 
+        external 
+        view
+        returns (uint256)
+    {
+        return tokensContract.getRemainingQtyInSupply(_tokenSupplyId, _owner);
+    }
+
     /**
      * @notice Get the seller's deposit for a promise
      * @param _promiseId    ID of the promise
@@ -838,6 +889,18 @@ contract VoucherKernel is Ownable, usingHelpers {
         return tokensContract.ownerOf(_tokenIdVoucher);
     }
 
+    /**
+    * @notice Get the holder of a supply
+    * @param _promiseId        ID of a promise which is mapped to the corresponding Promise
+    * @return                  Address of the holder
+    */
+    function getSupplyHolder(bytes32 _promiseId)
+        public view
+        returns (address)
+    {
+        return (promises[_promiseId].seller);
+    }
+    
 
     /**
      * @notice Get the address of the token where the price for the supply is held
