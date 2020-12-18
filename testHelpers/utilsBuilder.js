@@ -48,9 +48,6 @@ class UtilsBuilder {
     }
 
     TKN_TKN_SameWithPermit() {
-        // for the creation of voucher supply we use the same fn as on TKN_TKN,
-        // due to the seller only needs to make 1 internal tx upon creation of a supply
-
         this.utils.createOrder = this.utils.requestCreateOrder_TKN_TKN_Same_WithPermit
         this.utils.commitToBuy = this.utils.commitToBuy_TKN_TKN_Same_WithPermit
 
