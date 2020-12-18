@@ -260,6 +260,36 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         IERC20WithPermit(tokenDepositAddress).transferFrom(msg.sender, address(this), depositBu);
     }
 
+    function requestVoucher_TKN_TKN_Same_WithPermit(
+        uint256 _tokenIdSupply, 
+        address _issuer,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v, bytes32 r, bytes32 s
+        )
+        external
+        payable
+        nonReentrant
+        whenNotPaused
+    {
+        //checks
+        (uint256 price, uint256 depositBu) = voucherKernel.getBuyerOrderCosts(_tokenIdSupply);
+        require(_tokensSent.sub(depositBu) == price, "INCORRECT_FUNDS");
+
+        address tokenPriceAddress = voucherKernel.getVoucherPriceToken(_tokenIdSupply);
+        address tokenDepositAddress = voucherKernel.getVoucherDepositToken(_tokenIdSupply);
+
+        require(tokenPriceAddress == tokenDepositAddress, "INVALID_CALL");
+
+        // If tokenPriceAddress && tokenPriceAddress are the same 
+        // practically it's not of importance to each we are sending the funds
+        IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
+
+        voucherKernel.fillOrder(_tokenIdSupply, _issuer, msg.sender);
+
+        IERC20WithPermit(tokenPriceAddress).transferFrom(msg.sender, address(this), _tokensSent);
+    }
+
     function requestVoucher_ETH_TKN_WithPermit(
         uint256 _tokenIdSupply, 
         address _issuer,
