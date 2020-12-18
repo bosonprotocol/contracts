@@ -75,17 +75,17 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     modifier onlyTokensContract() {
-        require(tokensContractAddress != address(0), "UNSPECIFIED_TK");
         require(msg.sender == tokensContractAddress, "UNAUTHORIZED_TK");
         _;
     }
 
     constructor(
-        address _voucherKernel
+        address _voucherKernel, address _tokensContractAddress
     ) 
         public 
     {
         voucherKernel = VoucherKernel(_voucherKernel);
+        tokensContractAddress = _tokensContractAddress;
     }
 
     /**
@@ -823,6 +823,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     */
     function _beforeERC1155Transfer(address _from, uint256 _tokenSupplyId, uint256 _value) 
         external
+        view
         onlyTokensContract
     {
         uint256 _tokenSupplyQty = voucherKernel.getRemQtyForSupply(_tokenSupplyId, _from);
@@ -864,11 +865,9 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     function setTokenContractAddress(address _tokensContractAddress)
         external
         onlyOwner
+        notZeroAddress(_tokensContractAddress)
     {
-        require(_tokensContractAddress != address(0), "UNSPECIFIED_ADDRESS");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        
         tokensContractAddress = _tokensContractAddress;
-        
         emit LogTokenContractSet(_tokensContractAddress, msg.sender);
     }
         

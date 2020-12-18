@@ -13,7 +13,7 @@ module.exports = function(deployer, network, accounts) {
 
 	deployer.deploy(ERC1155ERC721).then(function() {
 		return deployer.deploy(VoucherKernel, ERC1155ERC721.address).then(function() {
-			return deployer.deploy(Cashier, VoucherKernel.address).then(function() {
+			return deployer.deploy(Cashier, VoucherKernel.address, ERC1155ERC721.address).then(function() {
 					console.log("$ Setting initial values ...");
 					ERC1155ERC721.deployed().then(instance => { instance.setApprovalForAll(VoucherKernel.address, 'true').then(tx => 
 						console.log("\n$ ERC1155ERC721", tx.logs[0].event, "approved VoucherKernel:", tx.logs[0].args._approved))});
