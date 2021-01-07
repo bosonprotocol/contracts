@@ -314,10 +314,31 @@ class Utils {
         await this.contractCashier.pause({from: deployer})
     }
 
-    calcTotalAmountToRecipients(event, distributionAmounts, recipient) {
-        if (event[recipient] == config.accounts.buyer.address) {
+    async safeTransfer721(oldVoucherOwner, newVoucherOwner, voucherID, from) {
+        const arbitraryBytes = web3.utils.fromAscii('0x0').padEnd(66, '0')
+        return await this.contractERC1155ERC721
+            .methods['safeTransferFrom(address,address,uint256,bytes)']
+            (oldVoucherOwner, newVoucherOwner, voucherID, arbitraryBytes, from);
+    }
+
+    async safeTransfer1155(oldSupplyOwner, newSupplyOwner, supplyID, qty, from) {
+        const arbitraryBytes = web3.utils.fromAscii('0x0').padEnd(66, '0')
+        return await this.contractERC1155ERC721
+            .methods['safeTransferFrom(address,address,uint256,uint256,bytes)']
+            (oldSupplyOwner, newSupplyOwner, supplyID, qty, arbitraryBytes, from);
+    }
+
+    async safeBatchTransfer1155(oldSupplyOwner, newSupplyOwner, supplyIDs, values, from) {
+        const arbitraryBytes = web3.utils.fromAscii('0x0').padEnd(66, '0')
+        return await this.contractERC1155ERC721
+            .methods['safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)']
+            (oldSupplyOwner, newSupplyOwner, supplyIDs, values, arbitraryBytes, from);
+    }
+
+    calcTotalAmountToRecipients(event, distributionAmounts, recipient, buyer, seller) {
+        if (event[recipient] == buyer) {
             distributionAmounts.buyerAmount = new BN(distributionAmounts.buyerAmount.toString()).add(new BN(event._payment.toString()))
-        } else if (event[recipient] == config.accounts.seller.address) {
+        } else if (event[recipient] == seller) {
             distributionAmounts.sellerAmount = new BN(distributionAmounts.sellerAmount.toString()).add(new BN(event._payment.toString()))
         } else {
             distributionAmounts.escrowAmount = new BN(distributionAmounts.escrowAmount.toString()).add(new BN(event._payment.toString()))

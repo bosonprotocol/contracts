@@ -62,7 +62,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
     mapping(uint256 => bytes32) public ordersPromise;   //mapping between an order (supply token) and a promise
     
     mapping(uint256 => VoucherStatus) public vouchersStatus;    //recording the vouchers evolution
-    mapping(uint256 => address) public voucherIssuers;  //issuers of vouchers
+    mapping(uint256 => address) public voucherIssuers;  //issuers of vouchers // TODO on refactoring this must be removed as if we are to transfer 1155, issuer should be fetched from the promise, not from the 721
     
     //standard reqs
     mapping (uint256 => mapping(address => uint256)) private balances; //balance of token ids of an account
@@ -373,7 +373,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         
         //mint voucher NFT as ERC-721
         tokensContract.mint(_to, voucherTokenId);
-        voucherIssuers[voucherTokenId] = _issuer;
+        voucherIssuers[voucherTokenId] = _issuer; //TODO THIS MIGHT NOT BE REQUIRED ANYMORE
         
         return voucherTokenId;
     }
@@ -457,7 +457,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         whenNotPaused
         onlyVoucherOwner(_tokenIdVoucher)
     {
-        require(isStateCommitted(vouchersStatus[_tokenIdVoucher].status), "INAPPLICABLE_STATUS");  //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicatableToCurrentState)
+        require(isStateCommitted(vouchersStatus[_tokenIdVoucher].status), "INAPPLICABLE_STATUS");  //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicableToCurrentState)
         
         //check validity period
         isInValidityPeriod(_tokenIdVoucher);
@@ -520,7 +520,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
             emit LogVoucherComplain(_tokenIdVoucher);
             
         } else {
-            revert("INAPPLICABLE_STATUS");  //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicatableToCurrentState)
+            revert("INAPPLICABLE_STATUS");  //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicableToCurrentState)
         }
         
     }
@@ -534,7 +534,8 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         external
         whenNotPaused
     {
-        require(getVoucherIssuer(_tokenIdVoucher) == msg.sender,"UNAUTHORIZED_COF");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        uint256 tokenIdSupply = getIdSupplyFromVoucher(_tokenIdVoucher);
+        require(getSupplyHolder(tokenIdSupply) == msg.sender,"UNAUTHORIZED_COF");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         
         uint8 tStatus = vouchersStatus[_tokenIdVoucher].status;
         
@@ -566,7 +567,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
             require(block.timestamp <= tPromise.validTo + complainPeriod + cancelFaultPeriod, "COFPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)       
             
         } else {
-            revert("INAPPLICABLE_STATUS");  //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicatableToCurrentState)
+            revert("INAPPLICABLE_STATUS");  //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicableToCurrentState)
         }
     
         vouchersStatus[_tokenIdVoucher].status = setChange(tStatus, idxCancelFault);
@@ -688,11 +689,24 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         //
     }    
     
-    
     // // // // // // // //
     // UTILS 
     // // // // // // // //  
-    
+
+
+    /**
+     * @notice Set the address of the new holder of a _tokenIdSupply on transfer
+     * @param _tokenIdSupply   _tokenIdSupply which will be transferred
+     * @param _newSeller   new holder of the supply
+     */
+    function setSupplyHolderOnTransfer(uint256 _tokenIdSupply, address _newSeller)
+        external onlyFromCashier
+        returns (address)
+    {
+        bytes32 promiseKey = ordersPromise[_tokenIdSupply];
+        return promises[promiseKey].seller = _newSeller;
+    }
+
     /**
      * @notice Set the address of the Cashier contract
      * @param _cashierAddress   The address of the Cashier contract
@@ -807,21 +821,9 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         view
         returns (uint256)
     {
-        return tokensContract.getRemainingQtyInSupply(_tokenSupplyId, _owner);
+        return tokensContract.balanceOf(_owner, _tokenSupplyId);
     }
 
-    /**
-     * @notice Get the seller's deposit for a promise
-     * @param _promiseId    ID of the promise
-     * @return              Deposit of the seller
-     */
-    function getPromiseDepositSe(bytes32 _promiseId)
-        public view
-        returns (uint256)
-    {
-        return (promises[_promiseId].depositSe);
-    }
-    
 
     /**
      * @notice Get all necessary funds for a supply token
@@ -836,7 +838,6 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         return (promises[promiseKey].price, promises[promiseKey].depositSe, promises[promiseKey].depositBu);
     }
 
-
     /**
      * @notice Get Buyer costs required to make an order for a supply token
      * @param _tokenIdSupply   ID of the supply token
@@ -849,7 +850,19 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         bytes32 promiseKey = ordersPromise[_tokenIdSupply];
         return (promises[promiseKey].price, promises[promiseKey].depositBu);
     }
-    
+
+    /**
+     * @notice Get Seller deposit 
+     * @param _tokenIdSupply   ID of the supply token
+     * @return                  returns sellers deposit
+     */
+    function getSellerDeposit(uint256 _tokenIdSupply)
+        public view
+        returns (uint256)
+    {
+        bytes32 promiseKey = ordersPromise[_tokenIdSupply];
+        return promises[promiseKey].depositSe;
+    }
     
     /**
      * @notice Get the current status of a voucher
@@ -862,20 +875,6 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
     {
         return (vouchersStatus[_tokenIdVoucher].status, vouchersStatus[_tokenIdVoucher].isPaymentReleased, vouchersStatus[_tokenIdVoucher].isDepositsReleased);
     }
-    
-    
-    /**
-     * @notice Get the issuer of a voucher
-     * @param _tokenIdVoucher   ID of the voucher token
-     * @return                  Address of the issuer
-     */
-    function getVoucherIssuer(uint256 _tokenIdVoucher)
-        public view
-        returns (address)
-    {
-        return voucherIssuers[_tokenIdVoucher];
-    }
-    
     
     /**
      * @notice Get the holder of a voucher
@@ -891,14 +890,15 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
 
     /**
     * @notice Get the holder of a supply
-    * @param _promiseId        ID of a promise which is mapped to the corresponding Promise
+    * @param _tokenIdSupply        ID of a promise which is mapped to the corresponding Promise
     * @return                  Address of the holder
     */
-    function getSupplyHolder(bytes32 _promiseId)
+    function getSupplyHolder(uint256 _tokenIdSupply)
         public view
         returns (address)
     {
-        return (promises[_promiseId].seller);
+        bytes32 promiseKey = ordersPromise[_tokenIdSupply];
+        return promises[promiseKey].seller;
     }
     
 
