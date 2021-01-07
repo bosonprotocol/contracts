@@ -4,6 +4,11 @@ import "./ERC20WithPermit.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+/**
+* @notice This contract is only used for, while deploying on rinkeby with verifying contracts,
+so that we have 2 distinguished contracts concerning tokens for the price of the products, and for the deposits. 
+Will not be used while deploying on prod.
+*/
 contract BosonTokenDeposit is ERC20WithPermit, AccessControl, Ownable {
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");

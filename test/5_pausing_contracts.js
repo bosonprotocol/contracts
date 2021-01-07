@@ -1,6 +1,4 @@
 const chai = require('chai')
-let chaiAsPromised = require("chai-as-promised")
-chai.use(chaiAsPromised)
 const assert = chai.assert
 
 const BN = web3.utils.BN
@@ -11,7 +9,7 @@ let utils
 const ERC1155ERC721 = artifacts.require("ERC1155ERC721")
 const VoucherKernel = artifacts.require("VoucherKernel")
 const Cashier = artifacts.require("Cashier")
-const BosonTKN = artifacts.require("BosonToken")
+const BosonTKN = artifacts.require("BosonTokenPrice")
 
 const helpers = require("../testHelpers/constants")
 const timemachine = require('../testHelpers/timemachine')
