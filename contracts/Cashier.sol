@@ -830,7 +830,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-    * @notice After the transfer happens the _tokenSupplyId should be updated in the promise. Escrow funds for the seller deposits (If in ETH) should be allocated to the new owner as well.
+    * @notice After the transfer happens the _tokenSupplyId should be updated in the promise. Escrow funds for the seller's deposits (If in ETH) should be allocated to the new owner as well.
     * @param _from prev owner of the _tokenSupplyId
     * @param _to nex owner of the _tokenSupplyId
     * @param _tokenSupplyId _tokenSupplyId for transfer
