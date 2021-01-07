@@ -21,6 +21,7 @@ const HDWalletProvider = require('@truffle/hdwallet-provider');
 const fs = require('fs');
 const pk = fs.readFileSync(".secret").toString().trim();
 
+require('dotenv').config();
 
 // const config = require('./common/config');
 // const config_networks = config("networks");
@@ -59,10 +60,20 @@ module.exports = {
         },
 
         ropsten: {
-         provider: () => new HDWalletProvider(pk, "http://localhost:8545"),
-         network_id: 3,
-         gas: 8000000,
-        },        
+            provider: () => new HDWalletProvider(pk, "http://localhost:8545"),
+            network_id: 3,
+            gas: 8000000,
+        },
+
+        rinkeby: {
+            provider: function() {
+                return new HDWalletProvider(
+                    `${process.env.PK}`, 
+                    `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`
+                )
+            },
+            network_id: 4
+        },
 
         // extend options with JSON config settings
         // this is a complete list of config files in /common/json/config-*.json
@@ -103,7 +114,14 @@ module.exports = {
         // }
     },
 
-    plugins: ["solidity-coverage"],
+    plugins: [
+        "solidity-coverage",
+        "truffle-plugin-verify"
+    ],
+
+    api_keys: {
+        etherscan: process.env.ETHERSCAN_API_KEY
+    },
 
     // Set default mocha options here, use special reporters etc.
     mocha: {
