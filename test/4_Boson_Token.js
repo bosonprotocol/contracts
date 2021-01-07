@@ -1,14 +1,12 @@
 const chai = require('chai')
 const ethers = require('ethers')
-let chaiAsPromised = require("chai-as-promised")
-chai.use(chaiAsPromised)
 const assert = chai.assert
 const truffleAssert = require('truffle-assertions');
 
 const { ecsign } = require('ethereumjs-util');
 
 const BN = web3.utils.BN
-const BosonToken = artifacts.require("BosonToken")
+const BosonToken = artifacts.require("BosonTokenPrice")
 const helpers = require('../testHelpers/constants')
 
 const {
