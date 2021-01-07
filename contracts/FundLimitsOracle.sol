@@ -24,7 +24,7 @@ contract FundLimitsOracle is Ownable {
     }
 
     constructor() public {
-        ethLimit = 1 * 10 ** 18;
+        ethLimit = 1 ether;
     }
 
     function setETHLimit(uint256 _newLimit)
@@ -35,6 +35,11 @@ contract FundLimitsOracle is Ownable {
         emit LogETHLimitChanged(_newLimit, owner());
     }
 
+    /**
+     * @notice Set new limit for a token.
+        @param _tokenAddress Address of the token which will be update.
+        @param _newLimit New limit which will be set. It must comply to the decimals of the token, so the limit is set in the correct decimals.
+    */
     function setTokenLimit(address _tokenAddress, uint256 _newLimit) 
         external 
         onlyOwner
