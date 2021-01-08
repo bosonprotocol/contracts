@@ -47,7 +47,7 @@ contract('Boson token', accounts => {
         const ADMIN_ROLE = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("ADMIN_ROLE"))
         const MINTER_ROLE = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("MINTER_ROLE"))
 
-        it("Only Deployer Should have admin and minter rights initiially ", async () => {
+        it("Only Deployer Should have admin and minter rights initially ", async () => {
            
             const buyerIsAdmin = await BosonTokenContract.hasRole(ADMIN_ROLE, Buyer.address);
             const buyerIsMinter = await BosonTokenContract.hasRole(MINTER_ROLE, Buyer.address);
@@ -205,7 +205,7 @@ contract('Boson token', accounts => {
             })
 
             it("should revert if owner is incorrect", async () => {
-                const inccorectSender = accounts[6]
+                const incorrectSender = accounts[6]
                 const balanceToApprove = 1200;
                 const nonce = await BosonTokenContract.nonces(Buyer.address);
                 const deadline = toWei(1);
@@ -223,7 +223,7 @@ contract('Boson token', accounts => {
                     Buffer.from(Buyer.pk.slice(2), 'hex'));
 
                 await truffleAssert.reverts(BosonTokenContract.permit(
-                    inccorectSender,
+                    incorrectSender,
                     bosonContractAddress,
                     balanceToApprove,
                     deadline,

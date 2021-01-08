@@ -24,7 +24,7 @@ const {
 } = require('../testHelpers/permitUtils');
 const { assert } = require("chai");
 
-contract("Voucher tests", async accounts => {
+contract("Cashier && VK", async accounts => {
 	let Deployer = config.accounts.deployer
 	let Seller = config.accounts.seller
 	let Buyer = config.accounts.buyer
@@ -991,6 +991,191 @@ contract("Voucher tests", async accounts => {
 							vPrice, rPrice, sPrice,
 							vDeposit, rDeposit, sDeposit,
 							{ from: Buyer.address }),
+						truffleAssert.ErrorType.REVERT
+					)
+				})
+			
+			})
+
+			describe("TKN_TKN_SAME", () => {
+
+				const tokensToMintSeller = new BN(helpers.seller_deposit).mul(new BN(ORDER_QTY))
+				const tokensToMintBuyer = new BN(product_price).mul(new BN(ORDER_QTY))
+
+				before(async () => {
+					utils = UtilsBuilder
+						.NEW()
+						.ERC20withPermit()
+						.TKN_TKN_SAME()
+						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+
+					await utils.contractBSNTokenSAME.mint(Seller.address, tokensToMintSeller)
+					await utils.contractBSNTokenSAME.mint(Buyer.address, tokensToMintBuyer)
+
+					TOKEN_SUPPLY_ID = await utils.createOrder(
+						Seller,
+						helpers.PROMISE_VALID_FROM,
+						helpers.PROMISE_VALID_TO,
+						helpers.seller_deposit,
+						ORDER_QTY
+					)
+				
+				})
+
+				it("Should create voucher", async () => {
+
+					const nonce = await utils.contractBSNTokenSAME.nonces(Buyer.address);
+					const tokensToSend = new BN(helpers.product_price).add(new BN(helpers.buyer_deposit))
+
+					const digestTokens = await getApprovalDigest(
+						utils.contractBSNTokenSAME,
+						Buyer.address,
+						contractCashier.address,
+						tokensToSend,
+						nonce,
+						deadline
+					)
+
+					let VRS_TOKENS = ecsign(
+						Buffer.from(digestTokens.slice(2), 'hex'),
+						Buffer.from(Buyer.pk.slice(2), 'hex'));
+
+					let v = VRS_TOKENS.v
+					let r = VRS_TOKENS.r
+					let s = VRS_TOKENS.s
+
+					let txFillOrder = await contractCashier.requestVoucher_TKN_TKN_Same_WithPermit(
+						TOKEN_SUPPLY_ID,
+						Seller.address,
+						tokensToSend,
+						deadline,
+						v, r, s,
+						{ from: Buyer.address });
+
+					let internalTx = (await truffleAssert.createTransactionResult(contractVoucherKernel, txFillOrder.tx))
+
+					truffleAssert.eventEmitted(internalTx, 'LogVoucherDelivered', (ev) => {
+						tokenVoucherKey1 = ev._tokenIdVoucher
+						return ev._issuer === Seller.address;
+					}, "order1 not created successfully");
+				})
+
+				it("[NEGATIVE] Should not create order with incorrect price", async () => {
+
+					const nonce = await contractBSNTokenDeposit.nonces(Buyer.address);
+					const incorrectTokensToSign = new BN(helpers.incorrect_product_price).add(new BN(helpers.buyer_deposit))
+					const digestTokens = await getApprovalDigest(
+						utils.contractBSNTokenSAME,
+						Buyer.address,
+						contractCashier.address,
+						incorrectTokensToSign,
+						nonce,
+						deadline
+					)
+
+					let VRS_TOKENS = ecsign(
+						Buffer.from(digestTokens.slice(2), 'hex'),
+						Buffer.from(Buyer.pk.slice(2), 'hex'));
+
+					let v = VRS_TOKENS.v
+					let r = VRS_TOKENS.r
+					let s = VRS_TOKENS.s
+
+					await truffleAssert.reverts(
+						contractCashier.requestVoucher_TKN_TKN_Same_WithPermit(
+							TOKEN_SUPPLY_ID,
+							Seller.address,
+							incorrectTokensToSign,
+							deadline,
+							v, r, s,
+							{ from: Buyer.address }),
+						truffleAssert.ErrorType.REVERT
+					)
+				})
+
+				it("[NEGATIVE] Should not create order with incorrect deposit", async () => {
+
+					const nonce = await contractBSNTokenDeposit.nonces(Buyer.address);
+					const incorrectTokensToSign = new BN(helpers.product_price).add(new BN(helpers.buyer_incorrect_deposit))
+					const digestTokens = await getApprovalDigest(
+						utils.contractBSNTokenSAME,
+						Buyer.address,
+						contractCashier.address,
+						incorrectTokensToSign,
+						nonce,
+						deadline
+					)
+
+					let VRS_TOKENS = ecsign(
+						Buffer.from(digestTokens.slice(2), 'hex'),
+						Buffer.from(Buyer.pk.slice(2), 'hex'));
+
+					let v = VRS_TOKENS.v
+					let r = VRS_TOKENS.r
+					let s = VRS_TOKENS.s
+
+				
+					await truffleAssert.reverts(
+						contractCashier.requestVoucher_TKN_TKN_Same_WithPermit(
+							TOKEN_SUPPLY_ID,
+							Seller.address,
+							incorrectTokensToSign,
+							deadline,
+							v, r, s,
+							{ from: Buyer.address }),
+						truffleAssert.ErrorType.REVERT
+					)
+				})
+
+				it("[NEGATIVE] Should revert if Price Token and Deposit Token are diff contracts", async () => {
+					
+					let utilsTKN_TKN = UtilsBuilder
+						.NEW()
+						.ERC20withPermit()
+						.TKN_TKN()
+						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+
+					await contractBSNTokenDeposit.mint(Seller.address, tokensToMintSeller)
+					await contractBSNTokenDeposit.mint(Buyer.address, tokensToMintBuyer)
+					await contractBSNTokenPrice.mint(Buyer.address, tokensToMintBuyer)
+
+					TOKEN_SUPPLY_ID = await utilsTKN_TKN.createOrder(
+						Seller,
+						helpers.PROMISE_VALID_FROM,
+						helpers.PROMISE_VALID_TO,
+						helpers.seller_deposit,
+						ORDER_QTY
+					)
+
+					const nonce = await utils.contractBSNTokenSAME.nonces(Buyer.address);
+					const tokensToSend = new BN(helpers.product_price).add(new BN(helpers.buyer_deposit))
+
+					const digestTokens = await getApprovalDigest(
+						utils.contractBSNTokenSAME,
+						Buyer.address,
+						contractCashier.address,
+						tokensToSend,
+						nonce,
+						deadline
+					)
+
+					let VRS_TOKENS = ecsign(
+						Buffer.from(digestTokens.slice(2), 'hex'),
+						Buffer.from(Buyer.pk.slice(2), 'hex'));
+
+					let v = VRS_TOKENS.v
+					let r = VRS_TOKENS.r
+					let s = VRS_TOKENS.s
+
+					await truffleAssert.reverts(
+						contractCashier.requestVoucher_TKN_TKN_Same_WithPermit(
+							TOKEN_SUPPLY_ID,
+							Seller.address,
+							tokensToSend,
+							deadline,
+							v, r, s,
+							{ from: Buyer.address }
+						),
 						truffleAssert.ErrorType.REVERT
 					)
 				})
