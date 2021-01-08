@@ -13,7 +13,7 @@ module.exports = function(deployer, network, accounts) {
 	
 	
 	deployer.deploy(FundLimitsOracle).then(function() {
-		deployer.deploy(ERC1155ERC721).then(function() {
+		return deployer.deploy(ERC1155ERC721).then(function() {
 			return deployer.deploy(VoucherKernel, ERC1155ERC721.address).then(function() {
 				return deployer.deploy(Cashier, VoucherKernel.address, FundLimitsOracle.address).then(function() {
 						console.log("$ Setting initial values ...");
