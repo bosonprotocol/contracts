@@ -50,7 +50,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
     );
 
     event LogCashierSet(
-        address _newCashierKernel,
+        address _newCashier,
         address _triggeredBy
     );
     
@@ -745,7 +745,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
     }
 
     /**
-     * @notice Set the address of the VoucherKernel contract
+     * @notice Set the address of the Cashier contract
      * @param _cashier   The Cashier contract
      */
     function setCashierContract(address _cashier)
@@ -753,6 +753,8 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         onlyOwner
     {
         cashier = _cashier;
+        emit LogCashierSet(_cashier, msg.sender);
+
     }
 
     function getCashierAddress() public view returns (address){

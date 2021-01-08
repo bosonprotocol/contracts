@@ -23,6 +23,9 @@ module.exports = function(deployer, network, accounts) {
 							ERC1155ERC721.deployed().then(instance => { instance.setVoucherKernelAddress(VoucherKernel.address).then(tx => 
 							console.log("\n$ ERC1155ERC721", tx.logs[0].event, "at:", tx.logs[0].args._newVoucherKernel))});
 
+							ERC1155ERC721.deployed().then(instance => { instance.setCashierContract(Cashier.address).then(tx => 
+								console.log("\n$ ERC1155ERC721", tx.logs[0].event, "at:", tx.logs[0].args._newCashier))});
+
 							VoucherKernel.deployed().then(instance => { instance.setCashierAddress(Cashier.address).then(tx => 
 							console.log("\n$ VoucherKernel", tx.logs[0].event, "at:", tx.logs[0].args._newCashier))});
 
