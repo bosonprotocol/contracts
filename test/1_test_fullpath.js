@@ -6,6 +6,7 @@ const truffleAssert = require('truffle-assertions');
 const ERC1155ERC721 = artifacts.require("ERC1155ERC721");
 const VoucherKernel = artifacts.require("VoucherKernel");
 const Cashier 		= artifacts.require("Cashier");
+const FundLimitsOracle 	= artifacts.require('FundLimitsOracle');
 
 const config = require('../testHelpers/config.json')
 
@@ -17,7 +18,7 @@ contract("Voucher tests", async accounts => {
 	let Buyer = config.accounts.buyer.address
 	let Attacker = config.accounts.attacker.address
 
-    let contractERC1155ERC721, contractVoucherKernel, contractCashier;
+    let contractERC1155ERC721, contractVoucherKernel, contractCashier, contractFundLimitsOracle;
     let promiseKey1, promiseKey2;
     let order1payment, order1depositSe, order1depositBu;
     let ordersCount;
@@ -30,9 +31,10 @@ contract("Voucher tests", async accounts => {
 		helpers.PROMISE_VALID_FROM = timestamp
 		helpers.PROMISE_VALID_TO = timestamp + 2 * helpers.SECONDS_IN_DAY;
 
+		contractFundLimitsOracle = await FundLimitsOracle.new()
         contractERC1155ERC721 	= await ERC1155ERC721.new();
         contractVoucherKernel 	= await VoucherKernel.new(contractERC1155ERC721.address);
-        contractCashier 		= await Cashier.new(contractVoucherKernel.address);
+        contractCashier 		= await Cashier.new(contractVoucherKernel.address, contractFundLimitsOracle.address);
 
         await contractERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true');
         await contractERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address);
@@ -89,7 +91,7 @@ contract("Voucher tests", async accounts => {
   //   })
 
 
-    describe('Orders (aka supply tokens - ERC1155)', function() {
+  	describe('Orders (aka supply tokens - ERC1155)', function() {
 
 		it("adding one new order / promise", async () => {		
 
@@ -259,7 +261,7 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 	let Buyer 		= accounts[1];
 	let Attacker 	= accounts[2];
 
-    let contractERC1155ERC721, contractVoucherKernel, contractCashier;
+    let contractERC1155ERC721, contractVoucherKernel, contractCashier, contractFundLimitsOracle;
     let promiseKey1, promiseKey2;
     let order1payment, order1depositSe, order1depositBu;
     let ordersCount;
@@ -276,9 +278,10 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 
     beforeEach('setup contracts for tests', async () => {
 
+		contractFundLimitsOracle = await FundLimitsOracle.new()
         contractERC1155ERC721 	= await ERC1155ERC721.new();
         contractVoucherKernel 	= await VoucherKernel.new(contractERC1155ERC721.address);
-        contractCashier 		= await Cashier.new(contractVoucherKernel.address);
+        contractCashier 		= await Cashier.new(contractVoucherKernel.address, contractFundLimitsOracle.address);
 
         await contractERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true');
         await contractERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address);
@@ -311,7 +314,7 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
     })
 
 
-    describe('Wait periods', function() {
+   	describe('Wait periods', function() {
 		it("change complain period", async () => {
 			let txChangePeriod = await contractVoucherKernel.setComplainPeriod(helpers.PROMISE_CHALLENGE_PERIOD * helpers.SECONDS_IN_DAY);
 
@@ -331,7 +334,7 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 		it("change cancelOrFault period", async () => {
 			let txChangePeriod = await contractVoucherKernel.setCancelFaultPeriod(helpers.PROMISE_CANCELORFAULT_PERIOD * helpers.SECONDS_IN_DAY);
 
-			truffleAssert.eventEmitted(txChangePeriod, 'LogCancelFaultPeriodChanged', (ev) => {
+			await truffleAssert.eventEmitted(txChangePeriod, 'LogCancelFaultPeriodChanged', (ev) => {
 			    return ev._newCancelFaultPeriod.toString() === (helpers.PROMISE_CANCELORFAULT_PERIOD * helpers.SECONDS_IN_DAY).toString();
 			}, "complain period not changed successfully");
 		});		

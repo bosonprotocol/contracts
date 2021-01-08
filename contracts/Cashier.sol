@@ -9,6 +9,7 @@ import "./VoucherKernel.sol";
 import "./usingHelpers.sol";
 import "./IERC20WithPermit.sol";
 import "./ERC1155ERC721.sol";
+import "./FundLimitsOracle.sol";
 
 /**
  * @title Contract for managing funds
@@ -21,6 +22,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     
     VoucherKernel voucherKernel;
     address public tokensContractAddress;
+    FundLimitsOracle fundLimitsOracle;
 
     enum PaymentType { PAYMENT, DEPOSIT_SELLER, DEPOSIT_BUYER }
         
@@ -28,7 +30,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     //slashedDepositPool can be obtained through getEscrowAmount(poolAddress)
     
     uint256 internal constant CANCELFAULT_SPLIT = 2; //for POC purposes, this is hardcoded; e.g. each party gets depositSe / 2
-    
+
     struct VoucherDetails {
         uint256 tokenIdSupply;
         uint256 tokenIdVoucher;
@@ -79,14 +81,25 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         require(msg.sender == tokensContractAddress, "UNAUTHORIZED_TK");
         _;
     }
+    
+    function notAboveETHLimit(uint256 value) internal view{
+        require(value <= fundLimitsOracle.getETHLimit(), "VALUE_ABOVE_ETH_LIMIT");    
+    }
+
+    function notAboveTokenLimit(address _tokenAddress, uint256 value) internal view{
+        require(value <= fundLimitsOracle.getTokenLimit(_tokenAddress), "VALUE_ABOVE_TKN_LIMIT");    
+    }
 
     constructor(
-        address _voucherKernel
+        address _voucherKernel,
+        address _fundLimitsOracle
     ) 
         public 
     {
         voucherKernel = VoucherKernel(_voucherKernel);
+        fundLimitsOracle = FundLimitsOracle(_fundLimitsOracle);
     }
+    
 
     /**
     * @notice Pause the Cashier && the Voucher Kernel contracts in case of emergency.
@@ -126,6 +139,9 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         payable
         whenNotPaused
     {
+        notAboveETHLimit(metadata[2]); 
+        notAboveETHLimit(metadata[3]);
+        notAboveETHLimit(metadata[4]);
         require(metadata[3].mul(metadata[5])  == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         uint256 tokenIdSupply = voucherKernel.createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
@@ -161,6 +177,10 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         payable
         whenNotPaused
     {
+        notAboveTokenLimit(_tokenPriceAddress, metadata[2]);
+        notAboveTokenLimit(_tokenDepositAddress, metadata[3]);
+        notAboveTokenLimit(_tokenDepositAddress, metadata[4]);
+
         require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         
         IERC20WithPermit(_tokenDepositAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
@@ -188,6 +208,10 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         payable
         whenNotPaused
     {
+        notAboveETHLimit(metadata[2]); 
+        notAboveTokenLimit(_tokenDepositAddress, metadata[3]);
+        notAboveTokenLimit(_tokenDepositAddress, metadata[4]);
+
         require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         
         IERC20WithPermit(_tokenDepositAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
@@ -210,6 +234,10 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         payable
         whenNotPaused
     {
+        notAboveTokenLimit(_tokenPriceAddress, metadata[2]);
+        notAboveETHLimit(metadata[3]);
+        notAboveETHLimit(metadata[4]);
+
         require(metadata[3].mul(metadata[5]) == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         
         uint256 tokenIdSupply = voucherKernel.createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);

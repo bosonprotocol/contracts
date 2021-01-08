@@ -41,6 +41,13 @@ const QTY_10 = 10
 const QTY_20 = 20
 const QTY_1 = 1
 
+//fund limits 
+const ETHER_LIMIT = (1 * 10 ** 18).toString();
+const ABOVE_ETH_LIMIT = (2 * 10 ** 18).toString();
+
+const TOKEN_LIMIT = (1 * 10 ** 18).toString();
+const ABOVE_TOKEN_LIMIT = (2 * 10 ** 18).toString();
+
 module.exports = {
 	ASSET_VERSION,
 	ASSET_TITLE,
@@ -74,5 +81,10 @@ module.exports = {
 	incorrect_product_price,
 	QTY_1,
 	QTY_10,
-	QTY_20
+	QTY_1,
+	QTY_20,
+	ETHER_LIMIT,
+	ABOVE_ETH_LIMIT,
+	TOKEN_LIMIT,
+	ABOVE_TOKEN_LIMIT
 }
