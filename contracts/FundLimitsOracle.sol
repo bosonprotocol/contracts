@@ -2,8 +2,10 @@
 pragma solidity >=0.6.6 <0.7.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./IFundLimitsOracle.sol";
 
-contract FundLimitsOracle is Ownable {
+
+contract FundLimitsOracle is Ownable, IFundLimitsOracle {
 
     uint256 private ethLimit;
     mapping (address => uint256) private tokenLimits;
@@ -29,6 +31,7 @@ contract FundLimitsOracle is Ownable {
 
     function setETHLimit(uint256 _newLimit)
         external
+        override
         onlyOwner 
     {
         ethLimit = _newLimit;
@@ -41,7 +44,8 @@ contract FundLimitsOracle is Ownable {
         @param _newLimit New limit which will be set. It must comply to the decimals of the token, so the limit is set in the correct decimals.
     */
     function setTokenLimit(address _tokenAddress, uint256 _newLimit) 
-        external 
+        external
+        override
         onlyOwner
         notZeroAddress(_tokenAddress)
     {
@@ -49,11 +53,11 @@ contract FundLimitsOracle is Ownable {
         emit LogTokenLimitChanged(_newLimit, owner());
     }
 
-    function getETHLimit() external view returns(uint256) {
+    function getETHLimit() external override view returns(uint256) {
         return ethLimit;
     }
 
-    function getTokenLimit(address _tokenAddress) external view returns(uint256) {
+    function getTokenLimit(address _tokenAddress) external override view returns(uint256) {
         return tokenLimits[_tokenAddress];
     }
 
