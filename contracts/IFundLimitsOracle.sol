@@ -10,5 +10,4 @@ interface IFundLimitsOracle {
 
     function setETHLimit(uint256 _newLimit) external;
     function getETHLimit() external view returns(uint256);
-
 }

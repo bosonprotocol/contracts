@@ -26,12 +26,29 @@ contract usingHelpers {
     uint8 internal constant TKN_ETH = 3;
     uint8 internal constant TKN_TKN = 4;
 
+    string test1 = "Invalid_something";
+
     struct VoucherStatus {
         uint8 status;
         bool isPaymentReleased;
         bool isDepositsReleased;
         uint256 complainPeriodStart;
         uint256 cancelFaultPeriodStart;
+    }
+
+    struct VoucherDetails {
+        uint256 tokenIdSupply;
+        uint256 tokenIdVoucher;
+        address payable issuer;
+        address payable holder;
+        uint256 price;
+        uint256 depositSe;
+        uint256 depositBu;
+        uint256 amount2pool;
+        uint256 amount2issuer;
+        uint256 amount2holder;
+        uint8   paymentMethod;
+        VoucherStatus currStatus;
     }
     
     

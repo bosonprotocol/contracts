@@ -160,7 +160,7 @@ contract("Cashier && VK", async accounts => {
 
 			})
 			
-			it("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
+			xit("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
 				const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 				await truffleAssert.reverts(
@@ -179,7 +179,7 @@ contract("Cashier && VK", async accounts => {
 				)
 			})
 
-			it("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
+			xit("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
 				const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 				await truffleAssert.reverts(
@@ -198,7 +198,7 @@ contract("Cashier && VK", async accounts => {
 				)
 			})
 
-			it("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
+			xit("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
 				const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 				await await truffleAssert.reverts(
@@ -357,7 +357,7 @@ contract("Cashier && VK", async accounts => {
 
 				})
 
-				it("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
+				xit("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
 					const deadline = toWei(1)
@@ -395,7 +395,7 @@ contract("Cashier && VK", async accounts => {
 					)
 				})
 	
-				it("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
+				xit("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
 					const deadline = toWei(1)
@@ -433,7 +433,7 @@ contract("Cashier && VK", async accounts => {
 					)
 				})
 	
-				it("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
+				xit("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
 					const deadline = toWei(1)
@@ -574,7 +574,7 @@ contract("Cashier && VK", async accounts => {
 
 				})
 
-				it("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
+				xit("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 					await truffleAssert.reverts(
@@ -594,7 +594,7 @@ contract("Cashier && VK", async accounts => {
 					)
 				})
 
-				it("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
+				xit("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 					await truffleAssert.reverts(
@@ -615,7 +615,7 @@ contract("Cashier && VK", async accounts => {
 
 				})
 
-				it("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
+				xit("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 					await truffleAssert.reverts(
@@ -859,7 +859,7 @@ contract("Cashier && VK", async accounts => {
 
 				})
 
-				it("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
+				xit("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_1))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
 
@@ -898,7 +898,7 @@ contract("Cashier && VK", async accounts => {
 					)
 				})
 
-				it("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
+				xit("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_1))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
 
@@ -937,7 +937,7 @@ contract("Cashier && VK", async accounts => {
 					)
 				})
 
-				it("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
+				xit("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_1))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
 
