@@ -62,7 +62,7 @@ contract("Cashier && VK", async accounts => {
 		await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
 		await contractERC1155ERC721.setCashierContract(contractCashier.address);
-		await contractCashier.setTokenContractAddress(contractERC1155ERC721.address);
+		// await contractCashier.setTokenContractAddress(contractERC1155ERC721.address); // might not need it as i set it in the constructor
 
 		await contractVoucherKernel.setComplainPeriod(60); //60 seconds
         await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds

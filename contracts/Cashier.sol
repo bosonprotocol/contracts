@@ -12,7 +12,7 @@ import "./IERC20WithPermit.sol";
 import "./ERC1155ERC721.sol";
 import "./IFundLimitsOracle.sol";
 import "./ICashier.sol";
-import "./CashierEscrow.sol";
+import "./CashierWithdraw.sol";
 
 /**
  * @title Contract for managing funds
@@ -27,7 +27,7 @@ contract Cashier is usingHelpers, Pausable, ReentrancyGuard, Ownable
     // using Address for address payable;
     using SafeMath for uint;
     
-    CashierEscrow escrowContractAddress;
+    CashierWithdraw escrowContractAddress;
     address public voucherKernel;
     address public tokensContractAddress;
     address public fundLimitsOracle;
@@ -65,16 +65,16 @@ contract Cashier is usingHelpers, Pausable, ReentrancyGuard, Ownable
     }
 
     constructor(
+        address _voucherKernel,
         address _tokensContractAddress,
         address _fundLimitsOracle,
-        address _voucherKernel,
         address _escrowContractAddress
     ) 
         public 
     {
         voucherKernel = _voucherKernel;
         tokensContractAddress = _tokensContractAddress;
-        escrowContractAddress = CashierEscrow(_escrowContractAddress);
+        escrowContractAddress = CashierWithdraw(_escrowContractAddress);
         fundLimitsOracle = _fundLimitsOracle;
     }
     

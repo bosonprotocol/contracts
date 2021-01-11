@@ -14,13 +14,13 @@ import "./IERC20WithPermit.sol";
 
 
 
-abstract contract CashierEscrow is usingHelpers, Pausable, ReentrancyGuard, Ownable {
+contract CashierWithdraw is usingHelpers, Pausable, ReentrancyGuard, Ownable {
     using Address for address payable;
     using SafeMath for uint;
 
 
     address public voucherKernel;
-
+    address public cashierAddress;
 
     mapping(address => uint256) public escrow;  //both types of deposits AND payments >> can be released token-by-token if checks pass
     //slashedDepositPool can be obtained through getEscrowAmount(poolAddress)
@@ -29,6 +29,10 @@ abstract contract CashierEscrow is usingHelpers, Pausable, ReentrancyGuard, Owna
 
     uint256 internal constant CANCELFAULT_SPLIT = 2; //for POC purposes, this is hardcoded; e.g. each party gets depositSe / 2
 
+    event LogCashierSet(
+        address _newCashier,
+        address _triggeredBy
+    );
 
     event LogWithdrawal(
         address _caller,
@@ -43,11 +47,19 @@ abstract contract CashierEscrow is usingHelpers, Pausable, ReentrancyGuard, Owna
         PaymentType _type
     );
 
+
+    modifier onlyFromCashier() {
+        require(cashierAddress != address(0), "UNSPECIFIED_CASHIER");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(msg.sender == cashierAddress, "UNAUTHORIZED_C");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        _;
+    }
+
     constructor(address _voucherKernel) public {
         voucherKernel = _voucherKernel;
     }
 
 
+    //TODO Pause contract from cashier!!!
     /**
      * @notice Trigger withdrawals of what funds are releasable
      * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
@@ -496,6 +508,29 @@ abstract contract CashierEscrow is usingHelpers, Pausable, ReentrancyGuard, Owna
         emit LogWithdrawal(msg.sender, _recipient, _amount);
     }
 
+    /**
+     * @notice Set the address of the Cashier contract
+     * @param _cashierAddress   The address of the Cashier contract
+     */
+    function setCashierAddress(address _cashierAddress)
+        external
+        onlyOwner
+    {
+        require(_cashierAddress != address(0), "UNSPECIFIED_ADDRESS");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        
+        cashierAddress = _cashierAddress;
+        
+        emit LogCashierSet(_cashierAddress, msg.sender);
+    }
+
+    function updateEscrowAmount(address _account, uint256 _newAmount) 
+        external
+        onlyFromCashier
+        returns (uint256)
+    {
+        return escrow[_account] = _newAmount;
+    }
+
             
     // // // // // // // //
     // GETTERS 
@@ -512,14 +547,5 @@ abstract contract CashierEscrow is usingHelpers, Pausable, ReentrancyGuard, Owna
     {
         return escrow[_account];
     }
-
-    function updateEscrowAmount(address _account, uint256 _newAmount) 
-        external
-        //TODO OnlyFromCashier
-        returns (uint256)
-    {
-        return escrow[_account] = _newAmount;
-    }
-
 
 }

@@ -26,8 +26,6 @@ contract usingHelpers {
     uint8 internal constant TKN_ETH = 3;
     uint8 internal constant TKN_TKN = 4;
 
-    string test1 = "Invalid_something";
-
     struct VoucherStatus {
         uint8 status;
         bool isPaymentReleased;
