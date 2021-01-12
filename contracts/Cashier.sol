@@ -16,7 +16,7 @@ import "./ICashier.sol";
  * @dev Warning: the contract hasn't been audited yet!
  *  Roughly following OpenZeppelin's Escrow at https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/payment/
  */
-contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
+contract Cashier is ICashier, usingHelpers, ReentrancyGuard, Ownable, Pausable {
     using Address for address payable;
     using SafeMath for uint;
     
@@ -94,7 +94,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     * All functions related to creating new batch, requestVoucher or withdraw will be paused, hence cannot be executed. 
     * There is special function for withdrawing funds if contract is paused.
     */
-    function pause() external onlyOwner {
+    function pause() external override onlyOwner {
         _pause();
         IVoucherKernel(voucherKernel).pause();
     }
@@ -103,7 +103,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     * @notice Unpause the Cashier && the Voucher Kernel contracts.
     * All functions related to creating new batch, requestVoucher or withdraw will be unpaused.
     */
-    function unpause() external onlyOwner {
+    function unpause() external override onlyOwner {
         _unpause();
         IVoucherKernel(voucherKernel).unpause();
     } 
@@ -125,6 +125,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     function requestCreateOrder_ETH_ETH(uint256[] calldata metadata)
         external
         payable
+        override
         whenNotPaused
     {
         require(metadata[3].mul(metadata[5])  == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
@@ -160,6 +161,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         notZeroAddress(_tokenDepositAddress)
         external
         payable
+        override
         whenNotPaused
     {
         require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
@@ -187,6 +189,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         notZeroAddress(_tokenDepositAddress)
         external
         payable
+        override
         whenNotPaused
     {
         require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
@@ -209,6 +212,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         notZeroAddress(_tokenPriceAddress)
         external
         payable
+        override
         whenNotPaused
     {
         require(metadata[3].mul(metadata[5]) == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
@@ -229,6 +233,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     function requestVoucher_ETH_ETH(uint256 _tokenIdSupply, address _issuer)
         external
         payable
+        override
         nonReentrant
         whenNotPaused
     {
@@ -254,6 +259,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         )
         external
         payable
+        override
         nonReentrant
         whenNotPaused
     {
@@ -283,6 +289,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         )
         external
         payable
+        override
         nonReentrant
         whenNotPaused
     {
@@ -313,6 +320,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         )
         external
         payable
+        override
         nonReentrant
         whenNotPaused
     {
@@ -342,6 +350,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         )
         external
         payable
+        override
         nonReentrant
         whenNotPaused
     {
@@ -371,6 +380,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
      */
     function withdraw(uint256 _tokenIdVoucher)
         external
+        override
         nonReentrant
         whenNotPaused
     {
@@ -440,6 +450,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
      */
     function withdrawWhenPaused(uint256 _tokenIdVoucher)
         external
+        override
         nonReentrant
         whenPaused
     {
@@ -728,7 +739,8 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
     */
     function withdrawDeposits(uint256 _tokenIdSupply)
-        external 
+        external
+        override
         nonReentrant
         whenPaused
     {
@@ -767,7 +779,8 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @notice Trigger withdrawals of pooled funds
      */    
     function withdrawPool()
-        external 
+        external
+        override
         onlyOwner
         nonReentrant
     {
@@ -820,6 +833,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     */
     function _onERC721Transfer(address _from, address _to, uint256 _tokenIdVoucher) 
         external
+        override
         onlyTokensContract
     {
         uint256 tokenSupplyId = IVoucherKernel(voucherKernel).getIdSupplyFromVoucher(_tokenIdVoucher);
@@ -855,6 +869,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     function _beforeERC1155Transfer(address _from, uint256 _tokenSupplyId, uint256 _value) 
         external
         view
+        override
         onlyTokensContract
     {
         uint256 _tokenSupplyQty = IVoucherKernel(voucherKernel).getRemQtyForSupply(_tokenSupplyId, _from);
@@ -870,6 +885,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
     */
     function _onERC1155Transfer(address _from, address _to, uint256 _tokenSupplyId, uint256 _value) 
         external
+        override
         onlyTokensContract
     {
         uint8 paymentType = IVoucherKernel(voucherKernel).getVoucherPaymentMethod(_tokenSupplyId);
@@ -895,6 +911,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
      */
     function setTokenContractAddress(address _tokensContractAddress)
         external
+        override
         onlyOwner
         notZeroAddress(_tokensContractAddress)
     {
@@ -912,7 +929,7 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @return          The balance in escrow
      */
     function getEscrowAmount(address _account) 
-        public view
+        public view override
         returns (uint256)
     {
         return escrow[_account];
