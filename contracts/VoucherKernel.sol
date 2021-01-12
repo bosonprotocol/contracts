@@ -55,6 +55,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         address addressTokenDeposits;
     }
     
+    address public bosonRouterAddress;  //address of the Boson Router contract    
     address public cashierAddress;  //address of the Cashier contract    
     
     mapping(bytes32 => Promise) public promises;    //promises to deliver goods or services
@@ -145,6 +146,11 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         address _triggeredBy
     );
     
+    event LogBosonRouterSet(
+        address _newBosonRouter,
+        address _triggeredBy
+    );
+
     event LogCashierSet(
         address _newCashier,
         address _triggeredBy
@@ -166,15 +172,21 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
     );
 
 
+    modifier onlyFromBR() {
+        require(bosonRouterAddress != address(0), "UNSPECIFIED_BR");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        _;
+    }
+
     modifier onlyFromCashier() {
-        require(cashierAddress != address(0), "UNSPECIFIED_CASHIER");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(cashierAddress != address(0), "UNSPECIFIED_BR");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         require(msg.sender == cashierAddress, "UNAUTHORIZED_C");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         _;
     }
     
-    modifier onlyVoucherOwner(uint256 _tokenIdVoucher) {
+    modifier onlyVoucherOwner(uint256 _tokenIdVoucher, address _sender) {
         //check authorization
-        require(IERC721(tokensContract).ownerOf(_tokenIdVoucher) == msg.sender, "UNAUTHORIZED_V");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(IERC721(tokensContract).ownerOf(_tokenIdVoucher) == _sender, "UNAUTHORIZED_V");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         _;
     }
     
@@ -191,17 +203,17 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
 
     /**
     * @notice Pause the process of interaction with voucherID's (ERC-721), in case of emergency.
-    * Only Cashier contract is in control of this function.
+    * Only BR contract is in control of this function.
     */
-    function pause() external override onlyFromCashier {
+    function pause() external override onlyFromBR {
         _pause();
     }
 
     /**
     * @notice Unpause the process of interaction with voucherID's (ERC-721).
-    * Only Cashier contract is in control of this function.
+    * Only BR contract is in control of this function.
     */
-    function unpause() external override onlyFromCashier {
+    function unpause() external override onlyFromBR {
         _unpause();
     } 
     
@@ -226,7 +238,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
     ) 
         external 
         override
-        onlyFromCashier
+        onlyFromBR
         returns (uint256)
     {
         
@@ -268,7 +280,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         )
         external
         override
-        onlyFromCashier
+        onlyFromBR
     {
 
         paymentDetails[_tokenIdSupply] = VoucherPaymentMethod({
@@ -313,7 +325,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
     function fillOrder(uint256 _tokenIdSupply, address _issuer, address _holder)
         external
         override
-        onlyFromCashier
+        onlyFromBR
         
     {
         //checks
@@ -431,11 +443,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
     /**
      * @notice Redemption of the vouchers promise
      * @param _tokenIdVoucher   ID of the voucher
+     * @param _msgSender   account called the fn from the BR contract
      */
-    function redeem(uint256 _tokenIdVoucher)
+    function redeem(uint256 _tokenIdVoucher, address _msgSender)
         external
+        override
         whenNotPaused
-        onlyVoucherOwner(_tokenIdVoucher)
+        onlyFromBR
+        onlyVoucherOwner(_tokenIdVoucher, _msgSender)
     {
         //check status
         require(isStateCommitted(vouchersStatus[_tokenIdVoucher].status), "ALREADY_PROCESSED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
@@ -449,7 +464,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;
         vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, idxRedeem);
         
-        emit LogVoucherRedeemed(_tokenIdVoucher, msg.sender, tPromise.promiseId);
+        emit LogVoucherRedeemed(_tokenIdVoucher, _msgSender, tPromise.promiseId);
     }
     
     
@@ -460,11 +475,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
     /**
      * @notice Refunding a voucher
      * @param _tokenIdVoucher   ID of the voucher
+     * @param _msgSender   account called the fn from the BR contract
      */
-    function refund(uint256 _tokenIdVoucher)
+    function refund(uint256 _tokenIdVoucher, address _msgSender)
         external
+        override
         whenNotPaused
-        onlyVoucherOwner(_tokenIdVoucher)
+        onlyFromBR
+        onlyVoucherOwner(_tokenIdVoucher, _msgSender)
     {
         require(isStateCommitted(vouchersStatus[_tokenIdVoucher].status), "INAPPLICABLE_STATUS");  //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicableToCurrentState)
         
@@ -481,11 +499,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
     /**
      * @notice Issue a complain for a voucher
      * @param _tokenIdVoucher   ID of the voucher
+     * @param _msgSender   account called the fn from the BR contract
      */
-    function complain(uint256 _tokenIdVoucher)
+    function complain(uint256 _tokenIdVoucher, address _msgSender)
         external
+        override
         whenNotPaused
-        onlyVoucherOwner(_tokenIdVoucher)
+        onlyFromBR
+        onlyVoucherOwner(_tokenIdVoucher, _msgSender)
     {
         require(!isStatus(vouchersStatus[_tokenIdVoucher].status, idxComplain), "ALREADY_COMPLAINED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
         require(!isStatus(vouchersStatus[_tokenIdVoucher].status, idxFinal), "ALREADY_FINALIZED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
@@ -539,12 +560,13 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
      * @notice Cancel/Fault transaction by the Seller, admitting to a fault or backing out of the deal
      * @param _tokenIdVoucher   ID of the voucher
      */
-    function cancelOrFault(uint256 _tokenIdVoucher)
+    function cancelOrFault(uint256 _tokenIdVoucher, address _msgSender)
         external
+        override
         whenNotPaused
     {
         uint256 tokenIdSupply = getIdSupplyFromVoucher(_tokenIdVoucher);
-        require(getSupplyHolder(tokenIdSupply) == msg.sender,"UNAUTHORIZED_COF");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(getSupplyHolder(tokenIdSupply) == _msgSender, "UNAUTHORIZED_COF");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         
         uint8 tStatus = vouchersStatus[_tokenIdVoucher].status;
         
@@ -711,15 +733,30 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
      * @param _newSeller   new holder of the supply
      */
     function setSupplyHolderOnTransfer(uint256 _tokenIdSupply, address _newSeller)
-        external override onlyFromCashier
+        external override onlyFromBR
     {
         bytes32 promiseKey = ordersPromise[_tokenIdSupply];
         promises[promiseKey].seller = _newSeller;
     }
 
     /**
+     * @notice Set the address of the Boson Router contract
+     * @param _bosonRouterAddress   The address of the BR contract
+     */
+    function setBosonRouterAddress(address _bosonRouterAddress)
+        external
+        onlyOwner
+    {
+        require(_bosonRouterAddress != address(0), "UNSPECIFIED_ADDRESS");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        
+        bosonRouterAddress = _bosonRouterAddress;
+        
+        emit LogBosonRouterSet(_bosonRouterAddress, msg.sender);
+    }
+
+     /**
      * @notice Set the address of the Cashier contract
-     * @param _cashierAddress   The address of the Cashier contract
+     * @param _cashierAddress   The address of the BR contract
      */
     function setCashierAddress(address _cashierAddress)
         external

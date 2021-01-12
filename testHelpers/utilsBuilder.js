@@ -28,8 +28,8 @@ class UtilsBuilder {
         return this
     }
 
-    build(erc1155721, voucherKernel, cashier, bsnTokenPrice, bsnTokenDeposit) {
-        this.utils.setContracts(erc1155721, voucherKernel, cashier, bsnTokenPrice, bsnTokenDeposit);
+    build(erc1155721, voucherKernel, cashier, bsnRouter, bsnTokenPrice, bsnTokenDeposit) {
+        this.utils.setContracts(erc1155721, voucherKernel, cashier, bsnRouter, bsnTokenPrice, bsnTokenDeposit);
         return this.utils;
     }
 

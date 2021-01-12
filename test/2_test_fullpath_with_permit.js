@@ -6,6 +6,7 @@ const truffleAssert = require('truffle-assertions');
 const ERC1155ERC721 = artifacts.require("ERC1155ERC721");
 const VoucherKernel = artifacts.require("VoucherKernel");
 const Cashier 		= artifacts.require("Cashier");
+const BosonRouter = artifacts.require("BosonRouter")
 const BosonToken 	= artifacts.require("BosonTokenPrice");
 const FundLimitsOracle 	= artifacts.require('FundLimitsOracle');
 
@@ -31,7 +32,13 @@ contract("Cashier && VK", async accounts => {
 	let Buyer = config.accounts.buyer
 	let Attacker = config.accounts.attacker
 
-	let contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit, contractFundLimitsOracle;
+	let contractERC1155ERC721, 
+		contractVoucherKernel,
+		contractCashier, 
+		contractBosonRouter,
+		contractBSNTokenPrice, 
+		contractBSNTokenDeposit, 
+		contractFundLimitsOracle;
 	let tokenSupplyKey, tokenVoucherKey;
 	const ONE_VOUCHER = 1
 	const deadline = toWei(1)
@@ -52,17 +59,20 @@ contract("Cashier && VK", async accounts => {
 		contractFundLimitsOracle = await FundLimitsOracle.new()
 		contractERC1155ERC721 = await ERC1155ERC721.new();
 		contractVoucherKernel = await VoucherKernel.new(contractERC1155ERC721.address);
-		contractCashier = await Cashier.new(contractVoucherKernel.address, contractERC1155ERC721.address, contractFundLimitsOracle.address);
+		contractCashier = await Cashier.new(contractVoucherKernel.address);
+		contractBosonRouter = await BosonRouter.new(contractVoucherKernel.address, contractERC1155ERC721.address, contractFundLimitsOracle.address, contractCashier.address);
 
 		contractBSNTokenPrice = await BosonToken.new("BosonTokenPrice", "BPRC");
 		contractBSNTokenDeposit = await BosonToken.new("BosonTokenDeposit", "BDEP");
 
 		await contractERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true');
 		await contractERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address);
+		await contractERC1155ERC721.setBosonRouterAddress(contractBosonRouter.address);
+
+		await contractVoucherKernel.setBosonRouterAddress(contractBosonRouter.address);
 		await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
-		await contractERC1155ERC721.setCashierContract(contractCashier.address);
-		// await contractCashier.setTokenContractAddress(contractERC1155ERC721.address); // might not need it as i set it in the constructor
+		await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
 
 		await contractVoucherKernel.setComplainPeriod(60); //60 seconds
         await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
@@ -71,6 +81,7 @@ contract("Cashier && VK", async accounts => {
 		await contractFundLimitsOracle.setTokenLimit(contractBSNTokenDeposit.address, helpers.TOKEN_LIMIT)
 	}
 
+	//Working
 	describe('TOKEN SUPPLY CREATION (Voucher batch creation)', () =>  {
 
 		let remQty = helpers.QTY_10
@@ -95,7 +106,7 @@ contract("Cashier && VK", async accounts => {
 				utils = UtilsBuilder
                     .NEW()
                     .ETH_ETH()
-                    .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, helpers.QTY_10);
+                    .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter);
 
 				timestamp = await Utils.getCurrTimestamp()
 				
@@ -144,7 +155,7 @@ contract("Cashier && VK", async accounts => {
 				timestamp = await Utils.getCurrTimestamp()
 				
 				await truffleAssert.fails(
-					contractCashier.requestCreateOrder_ETH_ETH(
+					contractBosonRouter.requestCreateOrder_ETH_ETH(
 						contractBSNTokenDeposit.address,
 						[
 							timestamp,
@@ -160,11 +171,11 @@ contract("Cashier && VK", async accounts => {
 
 			})
 			
-			xit("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
+			it("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
 				const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 				await truffleAssert.reverts(
-					contractCashier.requestCreateOrder_ETH_ETH(
+					contractBosonRouter.requestCreateOrder_ETH_ETH(
 						[
 							helpers.PROMISE_VALID_FROM,
 							helpers.PROMISE_VALID_TO,
@@ -179,11 +190,11 @@ contract("Cashier && VK", async accounts => {
 				)
 			})
 
-			xit("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
+			it("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
 				const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 				await truffleAssert.reverts(
-					 contractCashier.requestCreateOrder_ETH_ETH(
+					contractBosonRouter.requestCreateOrder_ETH_ETH(
 						[
 							helpers.PROMISE_VALID_FROM,
 							helpers.PROMISE_VALID_TO,
@@ -198,11 +209,11 @@ contract("Cashier && VK", async accounts => {
 				)
 			})
 
-			xit("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
+			it("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
 				const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 				await await truffleAssert.reverts(
-					contractCashier.requestCreateOrder_ETH_ETH(
+					contractBosonRouter.requestCreateOrder_ETH_ETH(
 						[
 							helpers.PROMISE_VALID_FROM,
 							helpers.PROMISE_VALID_TO,
@@ -230,7 +241,7 @@ contract("Cashier && VK", async accounts => {
                         .NEW()
                         .ERC20withPermit()
                         .ETH_TKN()
-                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, contractBSNTokenDeposit)
 
 					const tokensToMint = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_20))
 
@@ -301,7 +312,7 @@ contract("Cashier && VK", async accounts => {
 						Buffer.from(Seller.pk.slice(2), 'hex'));
 
 					await truffleAssert.fails(
-						contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
+						contractBosonRouter.requestCreateOrder_ETH_TKN_WithPermit(
 							'',
 							txValue,
 							deadline,
@@ -337,7 +348,7 @@ contract("Cashier && VK", async accounts => {
 						Buffer.from(Seller.pk.slice(2), 'hex'));
 
 					await truffleAssert.reverts(
-						contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
+						contractBosonRouter.requestCreateOrder_ETH_TKN_WithPermit(
 							helpers.ZERO_ADDRESS,
 							txValue,
 							deadline,
@@ -357,7 +368,7 @@ contract("Cashier && VK", async accounts => {
 
 				})
 
-				xit("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
+				it("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
 					const deadline = toWei(1)
@@ -376,7 +387,7 @@ contract("Cashier && VK", async accounts => {
 						Buffer.from(Seller.pk.slice(2), 'hex'));
 
 					await truffleAssert.reverts(
-						contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
+						contractBosonRouter.requestCreateOrder_ETH_TKN_WithPermit(
 							contractBSNTokenDeposit.address,
 							txValue,
 							deadline,
@@ -395,7 +406,7 @@ contract("Cashier && VK", async accounts => {
 					)
 				})
 	
-				xit("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
+				it("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
 					const deadline = toWei(1)
@@ -414,7 +425,7 @@ contract("Cashier && VK", async accounts => {
 						Buffer.from(Seller.pk.slice(2), 'hex'));
 
 					await truffleAssert.reverts(
-						contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
+						contractBosonRouter.requestCreateOrder_ETH_TKN_WithPermit(
 							contractBSNTokenDeposit.address,
 							txValue,
 							deadline,
@@ -433,7 +444,7 @@ contract("Cashier && VK", async accounts => {
 					)
 				})
 	
-				xit("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
+				it("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
 					const deadline = toWei(1)
@@ -453,7 +464,7 @@ contract("Cashier && VK", async accounts => {
 
 
 					await truffleAssert.reverts(
-						contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
+						contractBosonRouter.requestCreateOrder_ETH_TKN_WithPermit(
 							contractBSNTokenDeposit.address,
 							txValue,
 							deadline,
@@ -482,7 +493,7 @@ contract("Cashier && VK", async accounts => {
                         .NEW()
                         .ERC20withPermit()
                         .TKN_ETH()
-                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, '')
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, '')
 
 					timestamp = await Utils.getCurrTimestamp()
 
@@ -538,7 +549,7 @@ contract("Cashier && VK", async accounts => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 					await truffleAssert.fails(
-						contractCashier.requestCreateOrder_TKN_ETH(
+						contractBosonRouter.requestCreateOrder_TKN_ETH(
 							'',
 							[
 								helpers.PROMISE_VALID_FROM,
@@ -557,7 +568,7 @@ contract("Cashier && VK", async accounts => {
 				it("[NEGATIVE] Should fail if token price contract is zero address", async () => {
 
 					await truffleAssert.reverts(
-						contractCashier.requestCreateOrder_TKN_ETH(
+						contractBosonRouter.requestCreateOrder_TKN_ETH(
 							helpers.ZERO_ADDRESS,
 							[
 								helpers.PROMISE_VALID_FROM,
@@ -574,11 +585,11 @@ contract("Cashier && VK", async accounts => {
 
 				})
 
-				xit("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
+				it("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 					await truffleAssert.reverts(
-						contractCashier.requestCreateOrder_TKN_ETH(
+						contractBosonRouter.requestCreateOrder_TKN_ETH(
 							contractBSNTokenPrice.address,
 							[
 								helpers.PROMISE_VALID_FROM,
@@ -594,11 +605,11 @@ contract("Cashier && VK", async accounts => {
 					)
 				})
 
-				xit("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
+				it("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 					await truffleAssert.reverts(
-						contractCashier.requestCreateOrder_TKN_ETH(
+						contractBosonRouter.requestCreateOrder_TKN_ETH(
 							contractBSNTokenPrice.address,
 							[
 								helpers.PROMISE_VALID_FROM,
@@ -615,11 +626,11 @@ contract("Cashier && VK", async accounts => {
 
 				})
 
-				xit("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
+				it("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
 					await truffleAssert.reverts(
-						contractCashier.requestCreateOrder_TKN_ETH(
+						contractBosonRouter.requestCreateOrder_TKN_ETH(
 							contractBSNTokenPrice.address,
 							[
 								helpers.PROMISE_VALID_FROM,
@@ -645,7 +656,7 @@ contract("Cashier && VK", async accounts => {
                         .NEW()
                         .ERC20withPermit()
                         .TKN_TKN()
-                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, contractBSNTokenDeposit)
                     
                     timestamp = await Utils.getCurrTimestamp()
 
@@ -719,7 +730,7 @@ contract("Cashier && VK", async accounts => {
 
 
 					await truffleAssert.fails(
-						contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+						contractBosonRouter.requestCreateOrder_TKN_TKN_WithPermit(
 							'',
 							contractBSNTokenDeposit.address,
 							txValue,
@@ -758,7 +769,7 @@ contract("Cashier && VK", async accounts => {
 
 
 					await truffleAssert.fails(
-						contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+						contractBosonRouter.requestCreateOrder_TKN_TKN_WithPermit(
 							contractBSNTokenPrice.address,
 							'',
 							txValue,
@@ -797,7 +808,7 @@ contract("Cashier && VK", async accounts => {
 
 
 					await truffleAssert.reverts(
-						contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+						contractBosonRouter.requestCreateOrder_TKN_TKN_WithPermit(
 							helpers.ZERO_ADDRESS,
 							contractBSNTokenDeposit.address,
 							txValue,
@@ -838,7 +849,7 @@ contract("Cashier && VK", async accounts => {
 
 
 					await truffleAssert.reverts(
-						contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+						contractBosonRouter.requestCreateOrder_TKN_TKN_WithPermit(
 							contractBSNTokenPrice.address,
 							helpers.ZERO_ADDRESS,
 							txValue,
@@ -859,7 +870,7 @@ contract("Cashier && VK", async accounts => {
 
 				})
 
-				xit("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
+				it("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_1))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
 
@@ -878,7 +889,7 @@ contract("Cashier && VK", async accounts => {
 
 
 					await truffleAssert.reverts(
-						contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+						contractBosonRouter.requestCreateOrder_TKN_TKN_WithPermit(
 							contractBSNTokenPrice.address,
 							contractBSNTokenDeposit.address,
 							txValue,
@@ -898,7 +909,7 @@ contract("Cashier && VK", async accounts => {
 					)
 				})
 
-				xit("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
+				it("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_1))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
 
@@ -917,7 +928,7 @@ contract("Cashier && VK", async accounts => {
 
 
 					await truffleAssert.reverts(
-						contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+						contractBosonRouter.requestCreateOrder_TKN_TKN_WithPermit(
 							contractBSNTokenPrice.address,
 							contractBSNTokenDeposit.address,
 							txValue,
@@ -937,7 +948,7 @@ contract("Cashier && VK", async accounts => {
 					)
 				})
 
-				xit("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
+				it("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
 					const txValue = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_1))
 					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
 
@@ -956,7 +967,7 @@ contract("Cashier && VK", async accounts => {
 
 
 					await truffleAssert.reverts(
-						contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+						contractBosonRouter.requestCreateOrder_TKN_TKN_WithPermit(
 							contractBSNTokenPrice.address,
 							contractBSNTokenDeposit.address,
 							txValue,
@@ -981,6 +992,7 @@ contract("Cashier && VK", async accounts => {
 		})
 	})
 
+	//working
 	describe("VOUCHER CREATION (Commit to buy)", () => {
 		const ORDER_QTY = 5
 		let TOKEN_SUPPLY_ID;
@@ -994,14 +1006,14 @@ contract("Cashier && VK", async accounts => {
 				utils = UtilsBuilder
 					.NEW()
 					.ETH_ETH()
-					.build(contractERC1155ERC721, contractVoucherKernel, contractCashier)
+					.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter)
 
 				TOKEN_SUPPLY_ID = await utils.createOrder(Seller, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.seller_deposit, helpers.QTY_10)
 			})
 
 			it("Should create order", async () => {
 				const txValue = new BN(helpers.buyer_deposit).add(new BN(helpers.product_price))
-				let txFillOrder = await contractCashier.requestVoucher_ETH_ETH(
+				let txFillOrder = await contractBosonRouter.requestVoucher_ETH_ETH(
 					TOKEN_SUPPLY_ID,
 					Seller.address,
 					{
@@ -1020,7 +1032,7 @@ contract("Cashier && VK", async accounts => {
 				const txValue = new BN(helpers.buyer_deposit).add(new BN(helpers.incorrect_product_price))
 				
 				await truffleAssert.reverts(
-					contractCashier.requestVoucher_ETH_ETH(
+					contractBosonRouter.requestVoucher_ETH_ETH(
 						TOKEN_SUPPLY_ID,
 						Seller.address,
 						{ from: Buyer.address, value: txValue}),
@@ -1033,7 +1045,7 @@ contract("Cashier && VK", async accounts => {
 				const txValue = new BN(helpers.buyer_incorrect_deposit).add(new BN(helpers.product_price))
 
 				await truffleAssert.reverts(
-					contractCashier.requestVoucher_ETH_ETH(
+					contractBosonRouter.requestVoucher_ETH_ETH(
 						TOKEN_SUPPLY_ID,
 						Seller.address,
 						{ from: Buyer.address, value: txValue }),
@@ -1051,7 +1063,7 @@ contract("Cashier && VK", async accounts => {
 						.NEW()
 						.ERC20withPermit()
 						.ETH_TKN()
-						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, contractBSNTokenDeposit)
 				
 
 					const tokensToMintSeller = new BN(helpers.seller_deposit).mul(new BN(ORDER_QTY))
@@ -1075,7 +1087,7 @@ contract("Cashier && VK", async accounts => {
 					const digestDeposit = await getApprovalDigest(
 						contractBSNTokenDeposit,
 						Buyer.address,
-						contractCashier.address,
+						contractBosonRouter.address,
 						helpers.buyer_deposit,
 						nonce,
 						deadline
@@ -1085,7 +1097,7 @@ contract("Cashier && VK", async accounts => {
 						Buffer.from(digestDeposit.slice(2), 'hex'),
 						Buffer.from(Buyer.pk.slice(2), 'hex'));
 
-					const txFillOrder = await contractCashier.requestVoucher_ETH_TKN_WithPermit(
+					const txFillOrder = await contractBosonRouter.requestVoucher_ETH_TKN_WithPermit(
 						TOKEN_SUPPLY_ID,
 						Seller.address,
 						helpers.buyer_deposit,
@@ -1119,7 +1131,7 @@ contract("Cashier && VK", async accounts => {
 
 
 					await truffleAssert.reverts(
-						contractCashier.requestVoucher_ETH_TKN_WithPermit(
+						contractBosonRouter.requestVoucher_ETH_TKN_WithPermit(
 							TOKEN_SUPPLY_ID,
 							Seller.address,
 							helpers.buyer_deposit, 
@@ -1148,7 +1160,7 @@ contract("Cashier && VK", async accounts => {
 
 
 					await truffleAssert.reverts(
-						contractCashier.requestVoucher_ETH_TKN_WithPermit(
+						contractBosonRouter.requestVoucher_ETH_TKN_WithPermit(
 							TOKEN_SUPPLY_ID,
 							Seller.address,
 							helpers.buyer_incorrect_deposit,
@@ -1167,7 +1179,7 @@ contract("Cashier && VK", async accounts => {
 						.NEW()
 						.ERC20withPermit()
 						.TKN_TKN()
-						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, contractBSNTokenDeposit)
 				
 
 					const tokensToMintSeller = new BN(helpers.seller_deposit).mul(new BN(ORDER_QTY))
@@ -1194,7 +1206,7 @@ contract("Cashier && VK", async accounts => {
 					const digestDeposit = await getApprovalDigest(
 						contractBSNTokenDeposit,
 						Buyer.address,
-						contractCashier.address,
+						contractBosonRouter.address,
 						helpers.buyer_deposit,
 						nonce1,
 						deadline
@@ -1213,7 +1225,7 @@ contract("Cashier && VK", async accounts => {
 					const digestPrice = await getApprovalDigest(
 						contractBSNTokenPrice,
 						Buyer.address,
-						contractCashier.address,
+						contractBosonRouter.address,
 						helpers.product_price,
 						nonce2,
 						deadline
@@ -1227,7 +1239,7 @@ contract("Cashier && VK", async accounts => {
 					let rPrice = VRS_PRICE.r
 					let sPrice = VRS_PRICE.s
 
-					let txFillOrder = await contractCashier.requestVoucher_TKN_TKN_WithPermit(
+					let txFillOrder = await contractBosonRouter.requestVoucher_TKN_TKN_WithPermit(
 						TOKEN_SUPPLY_ID,
 						Seller.address,
 						tokensToSend,
@@ -1285,7 +1297,7 @@ contract("Cashier && VK", async accounts => {
 					let sPrice = VRS_PRICE.s
 
 					await truffleAssert.reverts(
-						contractCashier.requestVoucher_TKN_TKN_WithPermit(
+						contractBosonRouter.requestVoucher_TKN_TKN_WithPermit(
 							TOKEN_SUPPLY_ID,
 							Seller.address,
 							tokensToSend,
@@ -1338,7 +1350,7 @@ contract("Cashier && VK", async accounts => {
 					let sPrice = VRS_PRICE.s
 
 					await truffleAssert.reverts(
-						contractCashier.requestVoucher_TKN_TKN_WithPermit(
+						contractBosonRouter.requestVoucher_TKN_TKN_WithPermit(
 							TOKEN_SUPPLY_ID,
 							Seller.address,
 							tokensToSend,
@@ -1352,8 +1364,7 @@ contract("Cashier && VK", async accounts => {
 			
 			})
 
-			// Ignored due to deployment failure.
-			xdescribe("TKN_TKN_SAME", () => {
+			describe("TKN_TKN_SAME", () => {
 
 				const tokensToMintSeller = new BN(helpers.seller_deposit).mul(new BN(ORDER_QTY))
 				const tokensToMintBuyer = new BN(helpers.product_price).mul(new BN(ORDER_QTY))
@@ -1363,7 +1374,7 @@ contract("Cashier && VK", async accounts => {
 						.NEW()
 						.ERC20withPermit()
 						.TKN_TKN_SAME()
-						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, contractBSNTokenDeposit)
 
 					await utils.contractBSNTokenSAME.mint(Seller.address, tokensToMintSeller)
 					await utils.contractBSNTokenSAME.mint(Buyer.address, tokensToMintBuyer)
@@ -1386,7 +1397,7 @@ contract("Cashier && VK", async accounts => {
 					const digestTokens = await getApprovalDigest(
 						utils.contractBSNTokenSAME,
 						Buyer.address,
-						contractCashier.address,
+						contractBosonRouter.address,
 						tokensToSend,
 						nonce,
 						deadline
@@ -1400,7 +1411,7 @@ contract("Cashier && VK", async accounts => {
 					let r = VRS_TOKENS.r
 					let s = VRS_TOKENS.s
 
-					let txFillOrder = await contractCashier.requestVoucher_TKN_TKN_Same_WithPermit(
+					let txFillOrder = await contractBosonRouter.requestVoucher_TKN_TKN_Same_WithPermit(
 						TOKEN_SUPPLY_ID,
 						Seller.address,
 						tokensToSend,
@@ -1438,7 +1449,7 @@ contract("Cashier && VK", async accounts => {
 					let s = VRS_TOKENS.s
 
 					await truffleAssert.reverts(
-						contractCashier.requestVoucher_TKN_TKN_Same_WithPermit(
+						contractBosonRouter.requestVoucher_TKN_TKN_Same_WithPermit(
 							TOKEN_SUPPLY_ID,
 							Seller.address,
 							incorrectTokensToSign,
@@ -1472,7 +1483,7 @@ contract("Cashier && VK", async accounts => {
 
 				
 					await truffleAssert.reverts(
-						contractCashier.requestVoucher_TKN_TKN_Same_WithPermit(
+						contractBosonRouter.requestVoucher_TKN_TKN_Same_WithPermit(
 							TOKEN_SUPPLY_ID,
 							Seller.address,
 							incorrectTokensToSign,
@@ -1485,11 +1496,12 @@ contract("Cashier && VK", async accounts => {
 
 				it("[NEGATIVE] Should revert if Price Token and Deposit Token are diff contracts", async () => {
 					
+					//get instance with different Price token and Deposit Token addresses
 					let utilsTKN_TKN = UtilsBuilder
 						.NEW()
 						.ERC20withPermit()
 						.TKN_TKN()
-						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, contractBSNTokenDeposit)
 
 					await contractBSNTokenDeposit.mint(Seller.address, tokensToMintSeller)
 					await contractBSNTokenDeposit.mint(Buyer.address, tokensToMintBuyer)
@@ -1509,7 +1521,7 @@ contract("Cashier && VK", async accounts => {
 					const digestTokens = await getApprovalDigest(
 						utils.contractBSNTokenSAME,
 						Buyer.address,
-						contractCashier.address,
+						contractBosonRouter.address,
 						tokensToSend,
 						nonce,
 						deadline
@@ -1524,7 +1536,7 @@ contract("Cashier && VK", async accounts => {
 					let s = VRS_TOKENS.s
 
 					await truffleAssert.reverts(
-						contractCashier.requestVoucher_TKN_TKN_Same_WithPermit(
+						contractBosonRouter.requestVoucher_TKN_TKN_Same_WithPermit(
 							TOKEN_SUPPLY_ID,
 							Seller.address,
 							tokensToSend,
@@ -1544,7 +1556,7 @@ contract("Cashier && VK", async accounts => {
 						.NEW()
 						.ERC20withPermit()
 						.TKN_ETH()
-						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, contractBSNTokenDeposit)
 
 					const tokensToMintBuyer = new BN(helpers.product_price).mul(new BN(ORDER_QTY))
 
@@ -1566,7 +1578,7 @@ contract("Cashier && VK", async accounts => {
 					const digestDeposit = await getApprovalDigest(
 						contractBSNTokenPrice,
 						Buyer.address,
-						contractCashier.address,
+						contractBosonRouter.address,
 						helpers.product_price,
 						nonce,
 						deadline
@@ -1576,7 +1588,7 @@ contract("Cashier && VK", async accounts => {
 						Buffer.from(digestDeposit.slice(2), 'hex'),
 						Buffer.from(Buyer.pk.slice(2), 'hex'));
 
-					let txFillOrder = await contractCashier.requestVoucher_TKN_ETH_WithPermit(
+					let txFillOrder = await contractBosonRouter.requestVoucher_TKN_ETH_WithPermit(
 						TOKEN_SUPPLY_ID,
 						Seller.address,
 						helpers.product_price,
@@ -1611,7 +1623,7 @@ contract("Cashier && VK", async accounts => {
 
 		
 					await truffleAssert.reverts(
-						contractCashier.requestVoucher_TKN_ETH_WithPermit(
+						contractBosonRouter.requestVoucher_TKN_ETH_WithPermit(
 							TOKEN_SUPPLY_ID,
 							Seller.address,
 							helpers.product_price,
@@ -1640,7 +1652,7 @@ contract("Cashier && VK", async accounts => {
 						Buffer.from(Buyer.pk.slice(2), 'hex'));
 
 					await truffleAssert.reverts(
-						contractCashier.requestVoucher_TKN_ETH_WithPermit(
+						contractBosonRouter.requestVoucher_TKN_ETH_WithPermit(
 							TOKEN_SUPPLY_ID,
 							Seller.address,
 							helpers.incorrect_product_price,
@@ -1655,6 +1667,7 @@ contract("Cashier && VK", async accounts => {
 		})
 	})
 
+	// working
 	describe("TOKEN SUPPLY TRANSFER", () => {
 		let OldSupplyOwner = config.accounts.randomUser 
 		let NewSupplyOwner = config.accounts.randomUser2 
@@ -1678,7 +1691,7 @@ contract("Cashier && VK", async accounts => {
 				utils = UtilsBuilder
 					.NEW()
 					.ETH_ETH()
-					.build(contractERC1155ERC721, contractVoucherKernel, contractCashier)
+					.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter)
 
 				const timestamp = await Utils.getCurrTimestamp()
 
@@ -1764,7 +1777,7 @@ contract("Cashier && VK", async accounts => {
 				utils = UtilsBuilder
 					.NEW()
 					.ETH_ETH()
-					.build(contractERC1155ERC721, contractVoucherKernel, contractCashier)
+					.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter)
 
 				tokenSupplyKey = await utils.createOrder(OldSupplyOwner, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.seller_deposit, helpers.QTY_1)
 			})
@@ -1865,7 +1878,7 @@ contract("Cashier && VK", async accounts => {
 						.NEW()
 						.ERC20withPermit()
 						.ETH_TKN()
-						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, contractBSNTokenDeposit)
 
 					const timestamp = await Utils.getCurrTimestamp()
 
@@ -1891,14 +1904,14 @@ contract("Cashier && VK", async accounts => {
                     escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(Deployer.address)
 					cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(utils.contractCashier.address)
 					
-                }
-
+				}
+				
 				it("Should finalize 1 voucher to ensure payments are sent to the new owner", async () => {
 
 					const expectedBuyerDeposit = new BN(helpers.buyer_deposit) // 0.04
                     const expectedSellerPrice = new BN(helpers.product_price) //// 0.3
                     const expectedSellerDeposit = new BN(helpers.seller_deposit) // 0.05
-                    const expectedEscrowAmountDeposit = new BN(0)
+					const expectedEscrowAmountDeposit = new BN(0)
 					
 					utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 
@@ -1913,7 +1926,7 @@ contract("Cashier && VK", async accounts => {
                     await timemachine.advanceTimeSeconds(60)
                     await utils.finalize(voucherID, Deployer.address)
 
-                    let withdrawTx = await utils.withdraw(voucherID, Deployer.address);
+					let withdrawTx = await utils.withdraw(voucherID, Deployer.address);
 
                     await getBalancesDepositToken();
 
@@ -1989,7 +2002,7 @@ contract("Cashier && VK", async accounts => {
 						.NEW()
 						.ERC20withPermit()
 						.TKN_TKN()
-						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+						.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, contractBSNTokenDeposit)
 				
 					const timestamp = await Utils.getCurrTimestamp()
 
@@ -2111,7 +2124,7 @@ contract("Cashier && VK", async accounts => {
                         .NEW()
                         .ERC20withPermit()
                         .TKN_ETH()
-                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, '')
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, '')
 
                     const timestamp = await Utils.getCurrTimestamp()
 
@@ -2261,7 +2274,7 @@ contract("Cashier && VK", async accounts => {
 				utils = UtilsBuilder
 					.NEW()
 					.ETH_ETH()
-					.build(contractERC1155ERC721, contractVoucherKernel, contractCashier)
+					.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter)
 
 				tokenSupplyKey = await utils.createOrder(Seller, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.seller_deposit, helpers.QTY_10)
 			})
@@ -2292,7 +2305,7 @@ contract("Cashier && VK", async accounts => {
 				utils = UtilsBuilder
 					.NEW()
 					.ETH_ETH()
-					.build(contractERC1155ERC721, contractVoucherKernel, contractCashier)
+					.build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter)
 
 				tokenSupplyKey = await utils.createOrder(Seller, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.seller_deposit, helpers.QTY_10)
 			})
@@ -2399,7 +2412,7 @@ contract("Cashier && VK", async accounts => {
                         .NEW()
                         .ERC20withPermit()
                         .ETH_TKN()
-                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, contractBSNTokenDeposit)
 
                     const timestamp = await Utils.getCurrTimestamp()
 
@@ -2577,7 +2590,7 @@ contract("Cashier && VK", async accounts => {
                     .NEW()
                     .ERC20withPermit()
                     .TKN_TKN()
-                    .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+                    .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, contractBSNTokenDeposit)
                  
 					const timestamp = await Utils.getCurrTimestamp()
 
@@ -2685,7 +2698,7 @@ contract("Cashier && VK", async accounts => {
                         .NEW()
                         .ERC20withPermit()
                         .TKN_ETH()
-                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, '')
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, '')
 
                     const timestamp = await Utils.getCurrTimestamp()
 

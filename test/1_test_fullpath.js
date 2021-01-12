@@ -6,6 +6,7 @@ const truffleAssert = require('truffle-assertions');
 const ERC1155ERC721 = artifacts.require("ERC1155ERC721");
 const VoucherKernel = artifacts.require("VoucherKernel");
 const Cashier 		= artifacts.require("Cashier");
+const BosonRouter = artifacts.require("BosonRouter")
 const FundLimitsOracle 	= artifacts.require('FundLimitsOracle');
 
 const config = require('../testHelpers/config.json')
@@ -18,11 +19,13 @@ contract("Voucher tests", async accounts => {
 	let Buyer = config.accounts.buyer.address
 	let Attacker = config.accounts.attacker.address
 
-    let contractERC1155ERC721, contractVoucherKernel, contractCashier, contractFundLimitsOracle;
+    let contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractFundLimitsOracle;
     let promiseKey1, promiseKey2;
     let order1payment, order1depositSe, order1depositBu;
     let ordersCount;
-    let tokenSupplyKey1, tokenSupplyKey2, tokenVoucherKey1, tokenVoucherKey2;
+	let tokenSupplyKey1, tokenSupplyKey2, tokenVoucherKey1, tokenVoucherKey2;
+	
+
 
     before('setup contracts for tests', async () => {
 		snapshot = await timemachine.takeSnapshot();
@@ -32,13 +35,22 @@ contract("Voucher tests", async accounts => {
 		helpers.PROMISE_VALID_TO = timestamp + 2 * helpers.SECONDS_IN_DAY;
 
 		contractFundLimitsOracle = await FundLimitsOracle.new()
-        contractERC1155ERC721 	= await ERC1155ERC721.new();
-        contractVoucherKernel 	= await VoucherKernel.new(contractERC1155ERC721.address);
-        contractCashier 		= await Cashier.new(contractVoucherKernel.address, contractERC1155ERC721.address, contractFundLimitsOracle.address);
+		contractERC1155ERC721 = await ERC1155ERC721.new();
+		contractVoucherKernel = await VoucherKernel.new(contractERC1155ERC721.address);
+		contractCashier = await Cashier.new(contractVoucherKernel.address);
+		contractBosonRouter = await BosonRouter.new(contractVoucherKernel.address, contractERC1155ERC721.address, contractFundLimitsOracle.address, contractCashier.address);
 
-        await contractERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true');
-        await contractERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address);
-        await contractVoucherKernel.setCashierAddress(contractCashier.address);
+		await contractERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true');
+		await contractERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address);
+		await contractERC1155ERC721.setBosonRouterAddress(contractBosonRouter.address);
+
+		await contractVoucherKernel.setBosonRouterAddress(contractBosonRouter.address);
+		await contractVoucherKernel.setCashierAddress(contractCashier.address);
+
+		await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
+
+		await contractVoucherKernel.setComplainPeriod(60); //60 seconds
+		await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
 
         console.log("Seller:   " + Seller);
         console.log("Buyer:    " + Buyer);
@@ -95,7 +107,7 @@ contract("Voucher tests", async accounts => {
 
 		it("adding one new order / promise", async () => {		
 
-			let txOrder = await contractCashier.requestCreateOrder_ETH_ETH([helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1], {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
+			let txOrder = await contractBosonRouter.requestCreateOrder_ETH_ETH([helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1], {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
 
 			//would need truffle-events as the event emitted is from a nested contract, so truffle-assert doesn't detect it
 			// truffleAssert.eventEmitted(txOrder, 'LogOrderCreated', (ev) => {
@@ -104,7 +116,7 @@ contract("Voucher tests", async accounts => {
 			// }, "order1 not created successfully");
 
 			// //instead, we check that the escrow increased for the seller
-			// let escrowAmount = await contractCashier.getEscrowAmount.call(Seller);
+			// let escrowAmount = await contractBosonRouter.getEscrowAmount.call(Seller);
 			// assert.isAbove(escrowAmount.toNumber(), 0, "seller's escrowed deposit should be more than zero");
 
 			//move events from VoucherKernel to Cashier:
@@ -117,7 +129,7 @@ contract("Voucher tests", async accounts => {
 
 		it("adding second order", async () => {		
 
-			let txOrder = await contractCashier.requestCreateOrder_ETH_ETH([helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE2, helpers.PROMISE_DEPOSITSE2, helpers.PROMISE_DEPOSITBU2, helpers.ORDER_QUANTITY2], {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE2});
+			let txOrder = await contractBosonRouter.requestCreateOrder_ETH_ETH([helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE2, helpers.PROMISE_DEPOSITSE2, helpers.PROMISE_DEPOSITBU2, helpers.ORDER_QUANTITY2], {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE2});
 
 			truffleAssert.eventEmitted(txOrder, 'LogOrderCreated', (ev) => {
 			    tokenSupplyKey2 = ev._tokenIdSupply;
@@ -129,7 +141,7 @@ contract("Voucher tests", async accounts => {
 
 		it("fill one order (aka buy a voucher)", async () => {			
 
-			let txFillOrder = await contractCashier.requestVoucher_ETH_ETH(tokenSupplyKey1, Seller, {from: Buyer, to: contractCashier.address, value: helpers.PROMISE_PRICE1 + helpers.PROMISE_DEPOSITBU1});
+			let txFillOrder = await contractBosonRouter.requestVoucher_ETH_ETH(tokenSupplyKey1, Seller, {from: Buyer, to: contractBosonRouter.address, value: helpers.PROMISE_PRICE1 + helpers.PROMISE_DEPOSITBU1});
 			let internalTx = (await truffleAssert.createTransactionResult(contractVoucherKernel, txFillOrder.tx))
 
 			truffleAssert.eventEmitted(internalTx, 'LogVoucherDelivered', (ev) => {
@@ -143,7 +155,7 @@ contract("Voucher tests", async accounts => {
 
 		it("fill second order (aka buy a voucher)", async () => {			
 
-			let txFillOrder = await contractCashier.requestVoucher_ETH_ETH(tokenSupplyKey2, Seller, {from: Buyer, to: contractCashier.address, value: helpers.PROMISE_PRICE2 + helpers.PROMISE_DEPOSITBU2});
+			let txFillOrder = await contractBosonRouter.requestVoucher_ETH_ETH(tokenSupplyKey2, Seller, {from: Buyer, to: contractBosonRouter.address, value: helpers.PROMISE_PRICE2 + helpers.PROMISE_DEPOSITBU2});
 			let internalTx = (await truffleAssert.createTransactionResult(contractVoucherKernel, txFillOrder.tx))
 
 			truffleAssert.eventEmitted(internalTx, 'LogVoucherDelivered', (ev) => {
@@ -155,7 +167,7 @@ contract("Voucher tests", async accounts => {
 		//in prototype, everyone can create an order
 		// it("must fail: unauthorized adding of new order", async () => {			
 
-		// 	await truffleAssert.reverts(contractCashier.requestCreateOrder_ETH_ETH(promiseKey1, helpers.ORDER_QUANTITY1, {from: Attacker, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1}),
+		// 	await truffleAssert.reverts(contractBosonRouter.requestCreateOrder_ETH_ETH(promiseKey1, helpers.ORDER_QUANTITY1, {from: Attacker, to: contractBosonRouter.address, value: helpers.PROMISE_DEPOSITSE1}),
 		// 		truffleAssert.ErrorType.REVERT
 		// 	);			
 			
@@ -164,7 +176,7 @@ contract("Voucher tests", async accounts => {
 
 		it("must fail: adding new order with incorrect value sent", async () => {	
 
-			await truffleAssert.reverts(contractCashier.requestCreateOrder_ETH_ETH([helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1], {from: Seller, to: contractCashier.address, value: 0}),
+			await truffleAssert.reverts(contractBosonRouter.requestCreateOrder_ETH_ETH([helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1], {from: Seller, to: contractBosonRouter.address, value: 0}),
 				truffleAssert.ErrorType.REVERT
 			);			
 			
@@ -172,7 +184,7 @@ contract("Voucher tests", async accounts => {
 
 		it("must fail: fill an order with incorrect value", async () => {			
 
-			await truffleAssert.reverts(contractCashier.requestVoucher_ETH_ETH(tokenSupplyKey1, Seller, {from: Buyer, to: contractCashier.address, value: 0}),
+			await truffleAssert.reverts(contractBosonRouter.requestVoucher_ETH_ETH(tokenSupplyKey1, Seller, {from: Buyer, to: contractBosonRouter.address, value: 0}),
 				truffleAssert.ErrorType.REVERT
 			);			
 			
@@ -183,9 +195,11 @@ contract("Voucher tests", async accounts => {
     describe('Voucher tokens', function() {
 
 		it("redeeming one voucher", async () => {
-			let txRedeem = await contractVoucherKernel.redeem(tokenVoucherKey1, {from: Buyer});
+			let txRedeem = await contractBosonRouter.redeem(tokenVoucherKey1, {from: Buyer});
+			let internalTx = (await truffleAssert.createTransactionResult(contractVoucherKernel, txRedeem.tx))
 
-			truffleAssert.eventEmitted(txRedeem, 'LogVoucherRedeemed', (ev) => {
+
+			truffleAssert.eventEmitted(internalTx, 'LogVoucherRedeemed', (ev) => {
 			    return ev._tokenIdVoucher.toString() === tokenVoucherKey1.toString();
 			}, "voucher not redeemed successfully");				
 		});		
@@ -213,7 +227,7 @@ contract("Voucher tests", async accounts => {
 
 			  	
 		it("must fail: unauthorized redemption", async () => {
-			await truffleAssert.reverts(contractVoucherKernel.redeem(tokenVoucherKey1, {from: Attacker}),
+			await truffleAssert.reverts(contractBosonRouter.redeem(tokenVoucherKey1, {from: Attacker}),
 				truffleAssert.ErrorType.REVERT
 			);				
 		});		
@@ -252,9 +266,6 @@ contract("Voucher tests", async accounts => {
 
 
 
-
-
-
 contract("Voucher tests - UNHAPPY PATH", async accounts => {    
 
 	let Seller 		= accounts[0];
@@ -274,19 +285,27 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 
 		helpers.PROMISE_VALID_FROM = timestamp
 		helpers.PROMISE_VALID_TO = timestamp + 2 * helpers.SECONDS_IN_DAY;
+
+		contractFundLimitsOracle = await FundLimitsOracle.new()
+		contractERC1155ERC721 = await ERC1155ERC721.new();
+		contractVoucherKernel = await VoucherKernel.new(contractERC1155ERC721.address);
+		contractCashier = await Cashier.new(contractVoucherKernel.address);
+		contractBosonRouter = await BosonRouter.new(contractVoucherKernel.address, contractERC1155ERC721.address, contractFundLimitsOracle.address, contractCashier.address);
+
+		await contractERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true');
+		await contractERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address);
+		await contractERC1155ERC721.setBosonRouterAddress(contractBosonRouter.address);
+
+		await contractVoucherKernel.setBosonRouterAddress(contractBosonRouter.address);
+		await contractVoucherKernel.setCashierAddress(contractCashier.address);
+
+		await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
+
+		await contractVoucherKernel.setComplainPeriod(60); //60 seconds
+		await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
 	})
 
     beforeEach('setup contracts for tests', async () => {
-
-		contractFundLimitsOracle = await FundLimitsOracle.new()
-        contractERC1155ERC721 	= await ERC1155ERC721.new();
-        contractVoucherKernel 	= await VoucherKernel.new(contractERC1155ERC721.address);
-        contractCashier 		= await Cashier.new(contractVoucherKernel.address, contractERC1155ERC721.address, contractFundLimitsOracle.address);
-
-        await contractERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true');
-        await contractERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address);
-        await contractVoucherKernel.setCashierAddress(contractCashier.address);
-
 
         //INIT
 		// await contractVoucherKernel.createTokenSupplyID(helpers.ASSET_TITLE, helpers.ASSET_PIN1, helpers.ASSET_QR1, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD * helpers.SECONDS_IN_DAY, helpers.PROMISE_CANCELORFAULT_PERIOD * helpers.SECONDS_IN_DAY);
@@ -295,14 +314,14 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 
 		// assert.notEqual(promiseKey1, helpers.ZERO_ADDRESS, "promise not added");
 
-		let txOrder = await contractCashier.requestCreateOrder_ETH_ETH( [helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1], {from: Seller, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1});
+		let txOrder = await contractBosonRouter.requestCreateOrder_ETH_ETH( [helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1], {from: Seller, to: contractBosonRouter.address, value: helpers.PROMISE_DEPOSITSE1});
 
 		truffleAssert.eventEmitted(txOrder, 'LogOrderCreated', (ev) => {
 		    tokenSupplyKey1 = ev._tokenIdSupply;
 		    return ev._seller === Seller;
 		}, "order1 not created successfully");	
 
-		let txFillOrder = await contractCashier.requestVoucher_ETH_ETH(tokenSupplyKey1, Seller, {from: Buyer, to: contractCashier.address, value: helpers.PROMISE_PRICE1 + helpers.PROMISE_DEPOSITBU1});
+		let txFillOrder = await contractBosonRouter.requestVoucher_ETH_ETH(tokenSupplyKey1, Seller, {from: Buyer, to: contractBosonRouter.address, value: helpers.PROMISE_PRICE1 + helpers.PROMISE_DEPOSITBU1});
 		let internalTx = (await truffleAssert.createTransactionResult(contractVoucherKernel, txFillOrder.tx))
 
 		truffleAssert.eventEmitted(internalTx, 'LogVoucherDelivered', (ev) => {
@@ -352,7 +371,7 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 	describe('Refunds ...', function() {
 
 		it("refunding one voucher", async () => {
-			let txRefund = await contractVoucherKernel.refund(tokenVoucherKey1, {from: Buyer});
+			let txRefund = await contractBosonRouter.refund(tokenVoucherKey1, {from: Buyer});
 
 			let statusAfter = await contractVoucherKernel.getVoucherStatus.call(tokenVoucherKey1);	//[1010.0000] = hex"A0" = 160 = REFUND
 			assert.equal(web3.utils.toHex(statusAfter[0]), web3.utils.numberToHex(160), "end voucher status not as expected (REFUNDED)");			
@@ -360,8 +379,8 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 
 
 		it("refunding one voucher, then complain", async () => {
-			let txRefund = await contractVoucherKernel.refund(tokenVoucherKey1, {from: Buyer});
-			let txComplain = await contractVoucherKernel.complain(tokenVoucherKey1, {from: Buyer});
+			let txRefund = await contractBosonRouter.refund(tokenVoucherKey1, {from: Buyer});
+			let txComplain = await contractBosonRouter.complain(tokenVoucherKey1, {from: Buyer});
 
 			let statusAfter = await contractVoucherKernel.getVoucherStatus.call(tokenVoucherKey1);	//[1010.1000] = hex"A8" = 168 = REFUND_COMPLAIN
 			assert.equal(web3.utils.toHex(statusAfter[0]), web3.utils.numberToHex(168), "end voucher status not as expected (REFUNDED_COMPLAINED)");			
@@ -369,9 +388,9 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 
 
 		it("refunding one voucher, then complain, then cancel/fault", async () => {
-			let txRefund = await contractVoucherKernel.refund(tokenVoucherKey1, {from: Buyer});
-			let txComplain = await contractVoucherKernel.complain(tokenVoucherKey1, {from: Buyer});
-			let txCoF = await contractVoucherKernel.cancelOrFault(tokenVoucherKey1, {from: Seller});
+			let txRefund = await contractBosonRouter.refund(tokenVoucherKey1, {from: Buyer});
+			let txComplain = await contractBosonRouter.complain(tokenVoucherKey1, {from: Buyer});
+			let txCoF = await contractBosonRouter.cancelOrFault(tokenVoucherKey1, {from: Seller});
 
 			let statusAfter = await contractVoucherKernel.getVoucherStatus.call(tokenVoucherKey1);	//[1010.1100] = hex"AC" = 172 = REFUND_COMPLAIN_COF
 			assert.equal(web3.utils.toHex(statusAfter[0]), web3.utils.numberToHex(172), "end voucher status not as expected (REFUNDED_COMPLAINED_CANCELORFAULT)");			
@@ -379,9 +398,9 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 
 
 		it("must fail: refund then try to redeem", async () => {
-			let txRefund = await contractVoucherKernel.refund(tokenVoucherKey1, {from: Buyer});
+			let txRefund = await contractBosonRouter.refund(tokenVoucherKey1, {from: Buyer});
 
-			await truffleAssert.reverts(contractVoucherKernel.redeem(tokenVoucherKey1, {from: Buyer}),
+			await truffleAssert.reverts(contractBosonRouter.redeem(tokenVoucherKey1, {from: Buyer}),
 				truffleAssert.ErrorType.REVERT
 			);				
 		});	
@@ -392,7 +411,7 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 	describe('Cancel/Fault by the seller ...', function() {
 
 		it("canceling one voucher", async () => {
-			let txCoF = await contractVoucherKernel.cancelOrFault(tokenVoucherKey1, {from: Seller});
+			let txCoF = await contractBosonRouter.cancelOrFault(tokenVoucherKey1, {from: Seller});
 
 			let statusAfter = await contractVoucherKernel.getVoucherStatus.call(tokenVoucherKey1);	//[1000.0100] = hex"84" = 132 = CANCELORFAULT
 			assert.equal(web3.utils.toHex(statusAfter[0]), web3.utils.numberToHex(132), "end voucher status not as expected (CANCELORFAULT)");			
@@ -400,9 +419,9 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 
 
 		it("must fail: cancel/fault then try to redeem", async () => {
-			let txCoF = await contractVoucherKernel.cancelOrFault(tokenVoucherKey1, {from: Seller});
+			let txCoF = await contractBosonRouter.cancelOrFault(tokenVoucherKey1, {from: Seller});
 
-			await truffleAssert.reverts(contractVoucherKernel.redeem(tokenVoucherKey1, {from: Buyer}),
+			await truffleAssert.reverts(contractBosonRouter.redeem(tokenVoucherKey1, {from: Buyer}),
 				truffleAssert.ErrorType.REVERT
 			);				
 		});	
@@ -417,18 +436,18 @@ contract("Voucher tests - UNHAPPY PATH", async accounts => {
 			await contractVoucherKernel.triggerExpiration(tokenVoucherKey1);
 
 			let statusAfter = await contractVoucherKernel.getVoucherStatus.call(tokenVoucherKey1);	//[1001.0000] = hex"90" = 144 = EXPIRED			
-			let txComplain = await contractVoucherKernel.complain(tokenVoucherKey1, {from: Buyer});
+			let txComplain = await contractBosonRouter.complain(tokenVoucherKey1, {from: Buyer});
 
 			statusAfter = await contractVoucherKernel.getVoucherStatus.call(tokenVoucherKey1);	//[1001.1000] = hex"98" = 152 = EXPIRED_COMPLAIN
 			assert.equal(web3.utils.toHex(statusAfter[0]), web3.utils.numberToHex(152), "end voucher status not as expected (EXPIRED_COMPLAINED)");			
 
 			//in the same test, because the EVM time machine is funky ...
-			let txCoF = await contractVoucherKernel.cancelOrFault(tokenVoucherKey1, {from: Seller});
+			let txCoF = await contractBosonRouter.cancelOrFault(tokenVoucherKey1, {from: Seller});
 			statusAfter = await contractVoucherKernel.getVoucherStatus.call(tokenVoucherKey1);	//[1001.1000] = hex"9C" = 156 = EXPIRED_COMPLAINED_CANCELORFAULT
 			assert.equal(web3.utils.toHex(statusAfter[0]), web3.utils.numberToHex(156), "end voucher status not as expected (EXPIRED_COMPLAINED_CANCELORFAULT)");
 
 			//in the same test, because the EVM time machine is funky ...
-			await truffleAssert.reverts(contractVoucherKernel.redeem(tokenVoucherKey1, {from: Buyer}),
+			await truffleAssert.reverts(contractBosonRouter.redeem(tokenVoucherKey1, {from: Buyer}),
 				truffleAssert.ErrorType.REVERT
 			);
 		});    

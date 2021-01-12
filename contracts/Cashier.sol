@@ -1,502 +1,564 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 pragma solidity >=0.6.6 <0.7.0;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-// import "@openzeppelin/contracts/access/Ownable.sol";
-// import "@openzeppelin/contracts/utils/Pausable.sol";
-// import "@openzeppelin/contracts/utils/Address.sol";
+import "./usingHelpers.sol";
 import "./IVoucherKernel.sol";
-// import "./usingHelpers.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+
+import "./IVoucherKernel.sol";
 import "./IERC20WithPermit.sol";
-import "./ERC1155ERC721.sol";
-import "./IFundLimitsOracle.sol";
-import "./ICashier.sol";
-import "./CashierWithdraw.sol";
 
-/**
- * @title Contract for managing funds
- * @dev Warning: the contract hasn't been audited yet!
- *  Roughly following OpenZeppelin's Escrow at https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/payment/
- */
-contract Cashier is usingHelpers, Pausable, ReentrancyGuard, Ownable
-    // ReentrancyGuard, 
-    
-    // Pausable
-    {
-    // using Address for address payable;
+
+contract Cashier is usingHelpers, Pausable, ReentrancyGuard, Ownable {
+    using Address for address payable;
     using SafeMath for uint;
-    
-    CashierWithdraw escrowContractAddress;
+
+
     address public voucherKernel;
-    address public tokensContractAddress;
-    address public fundLimitsOracle;
+    address public bosonRouterAddress;
 
-        
+    mapping(address => uint256) public escrow;  //both types of deposits AND payments >> can be released token-by-token if checks pass
+    //slashedDepositPool can be obtained through getEscrowAmount(poolAddress)
 
-    event LogOrderCreated(
-        uint256 indexed _tokenIdSupply,
-        address _seller,
-        uint256 _quantity,
-        uint8 _paymentType
-    );
-    
-    event LogTokenContractSet(
-        address _newTokenContract,
+    enum PaymentType { PAYMENT, DEPOSIT_SELLER, DEPOSIT_BUYER }
+
+    uint256 internal constant CANCELFAULT_SPLIT = 2; //for POC purposes, this is hardcoded; e.g. each party gets depositSe / 2
+
+    event LogBosonRouterSet(
+        address _newBosonRouter,
         address _triggeredBy
     );
 
-    modifier notZeroAddress(address tokenAddress) {
-        require(tokenAddress != address(0), "INVALID_TOKEN_ADDRESS");
+    event LogWithdrawal(
+        address _caller,
+        address _payee, 
+        uint256 _payment
+    );
+
+    event LogAmountDistribution (
+        uint256 indexed _tokenIdVoucher,
+        address _to, 
+        uint256 _payment,
+        PaymentType _type
+    );
+
+    modifier onlyFromBR() {
+        require(bosonRouterAddress != address(0), "UNSPECIFIED_BR");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         _;
     }
 
-    modifier onlyTokensContract() {
-        require(msg.sender == tokensContractAddress, "UNAUTHORIZED_TK");
-        _;
-    }
-    
-    function notAboveETHLimit(uint256 value) internal view{
-        require(value <= IFundLimitsOracle(fundLimitsOracle).getETHLimit(), "VALUE_ABOVE_ETH_LIMIT");    
-    }
-
-    function notAboveTokenLimit(address _tokenAddress, uint256 value) internal view{
-        require(value <= IFundLimitsOracle(fundLimitsOracle).getTokenLimit(_tokenAddress), "VALUE_ABOVE_TKN_LIMIT");    
-    }
-
-    constructor(
-        address _voucherKernel,
-        address _tokensContractAddress,
-        address _fundLimitsOracle,
-        address _escrowContractAddress
-    ) 
-        public 
-    {
+    constructor(address _voucherKernel) public {
         voucherKernel = _voucherKernel;
-        tokensContractAddress = _tokensContractAddress;
-        escrowContractAddress = CashierWithdraw(_escrowContractAddress);
-        fundLimitsOracle = _fundLimitsOracle;
     }
-    
 
     /**
-    * @notice Pause the Cashier && the Voucher Kernel contracts in case of emergency.
-    * All functions related to creating new batch, requestVoucher or withdraw will be paused, hence cannot be executed. 
-    * There is special function for withdrawing funds if contract is paused.
+    * @notice Pause the process of interaction with voucherID's (ERC-721), in case of emergency.
+    * Only BR contract is in control of this function.
     */
-    function pause() external onlyOwner {
+    function pause() external onlyFromBR {
         _pause();
-        IVoucherKernel(voucherKernel).pause();
     }
 
     /**
-    * @notice Unpause the Cashier && the Voucher Kernel contracts.
-    * All functions related to creating new batch, requestVoucher or withdraw will be unpaused.
+    * @notice Unpause the process of interaction with voucherID's (ERC-721).
+    * Only BR contract is in control of this function.
     */
-    function unpause() external onlyOwner {
+    function unpause() external onlyFromBR {
         _unpause();
-        IVoucherKernel(voucherKernel).unpause();
     } 
 
     /**
-     * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
-        @param metadata metadata which is required for creation of a voucher
-        Metadata array is used as in some scenarios we need several more params, as we need to recover 
-        owner address in order to permit the contract to transfer funds in his behalf. 
-        Since the params get too many, we end up in situation that the stack is too deep.
-        
-        uint256 _validFrom = metadata[0];
-        uint256 _validTo = metadata[1];
-        uint256 _price = metadata[2];
-        uint256 _depositSe = metadata[3];
-        uint256 _depositBu = metadata[4];
-        uint256 _quantity = metadata[5];
+     * @notice Trigger withdrawals of what funds are releasable
+     * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
+     * @dev This function would be optimized a lot, here verbose for readability.
+     * @param _tokenIdVoucher  ID of a voucher token (ERC-721) to try withdraw funds from
      */
-    function requestCreateOrder_ETH_ETH(uint256[] calldata metadata)
+    function withdraw(uint256 _tokenIdVoucher)
         external
-        payable
-        whenNotPaused
-    {
-        notAboveETHLimit(metadata[2]); 
-        notAboveETHLimit(metadata[3]);
-        notAboveETHLimit(metadata[4]);
-        require(metadata[3].mul(metadata[5])  == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel).createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
-        
-        IVoucherKernel(voucherKernel).createPaymentMethod(tokenIdSupply, ETH_ETH, address(0), address(0));
-
-        //checks
-        //(i) this is for separate promise allocation, not in prototype
-        //uint256 depositSe = IVoucherKernel(voucherKernel).getPromiseDepositSe(promiseId);
-        //require(depositSe * _quantity == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-        //(ii) prototype check
-        
-        
-        //record funds in escrow ...
-        // escrowContractAddress.escrow[msg.sender] += msg.value;
-        uint256 amount = escrowContractAddress.getEscrowAmount(msg.sender);
-        escrowContractAddress.updateEscrowAmount(msg.sender, amount + msg.value);
-
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETH_ETH);
-    }
-
-    function requestCreateOrder_TKN_TKN_WithPermit(
-        address _tokenPriceAddress,
-        address _tokenDepositAddress,
-        uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint256[] calldata metadata
-        )
-        notZeroAddress(_tokenPriceAddress)
-        notZeroAddress(_tokenDepositAddress)
-        external
-        payable
-        whenNotPaused
-    {
-        notAboveTokenLimit(_tokenPriceAddress, metadata[2]);
-        notAboveTokenLimit(_tokenDepositAddress, metadata[3]);
-        notAboveTokenLimit(_tokenDepositAddress, metadata[4]);
-
-        require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-        
-        IERC20WithPermit(_tokenDepositAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
-        
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel).createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
-        
-        IVoucherKernel(voucherKernel).createPaymentMethod(tokenIdSupply, TKN_TKN, _tokenPriceAddress, _tokenDepositAddress);
-
-        IERC20WithPermit(_tokenDepositAddress).transferFrom(msg.sender, address(this), _tokensSent);
-        
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKN_TKN);
-    }
-
-    function requestCreateOrder_ETH_TKN_WithPermit(
-        address _tokenDepositAddress,
-        uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint256[] calldata metadata
-        )
-        notZeroAddress(_tokenDepositAddress)
-        external
-        payable
-        whenNotPaused
-    {
-        notAboveETHLimit(metadata[2]); 
-        notAboveTokenLimit(_tokenDepositAddress, metadata[3]);
-        notAboveTokenLimit(_tokenDepositAddress, metadata[4]);
-
-        require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-        
-        IERC20WithPermit(_tokenDepositAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
-        
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel).createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
-        
-        IVoucherKernel(voucherKernel).createPaymentMethod(tokenIdSupply, ETH_TKN, address(0), _tokenDepositAddress);
-
-        IERC20WithPermit(_tokenDepositAddress).transferFrom(msg.sender, address(this), _tokensSent);
-        
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETH_TKN);
-    }
-
-    function requestCreateOrder_TKN_ETH(
-        address _tokenPriceAddress,
-        uint256[] calldata metadata
-        )
-        notZeroAddress(_tokenPriceAddress)
-        external
-        payable
-        whenNotPaused
-    {
-        notAboveTokenLimit(_tokenPriceAddress, metadata[2]);
-        notAboveETHLimit(metadata[3]);
-        notAboveETHLimit(metadata[4]);
-
-        require(metadata[3].mul(metadata[5]) == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-        
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel).createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
-        IVoucherKernel(voucherKernel).createPaymentMethod(tokenIdSupply, TKN_ETH, _tokenPriceAddress, address(0));
-
-        // escrowContractAddress.escrow[msg.sender] += msg.value;
-
-        uint256 amount = escrowContractAddress.getEscrowAmount(msg.sender);
-        escrowContractAddress.updateEscrowAmount(msg.sender, amount + msg.value);
-
-
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKN_ETH);
-    }
-    
-    /**
-     * @notice Consumer requests/buys a voucher by filling an order and receiving a Voucher Token in return
-     * @param _tokenIdSupply    ID of the supply token
-     * @param _issuer           Address of the issuer of the supply token
-     */
-    function requestVoucher_ETH_ETH(uint256 _tokenIdSupply, address _issuer)
-        external
-        payable
         nonReentrant
         whenNotPaused
     {
-        uint256 weiReceived = msg.value;
+        //TODO: more checks
+        //TODO: check to pass 2 diff holders and how the amounts will be distributed
 
-        //checks
-        (uint256 price, uint256 depositSe, uint256 depositBu) = IVoucherKernel(voucherKernel).getOrderCosts(_tokenIdSupply);
-        require(price.add(depositBu) == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        VoucherDetails memory voucherDetails;
+        
+        //in the future might want to (i) check the gasleft() (but UNGAS proposal might make it impossible), and/or (ii) set upper loop limit to sth like .length < 2**15
+        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        
+        voucherDetails.tokenIdVoucher = _tokenIdVoucher;
+        voucherDetails.tokenIdSupply = IVoucherKernel(voucherKernel).getIdSupplyFromVoucher(voucherDetails.tokenIdVoucher);
+        voucherDetails.paymentMethod = IVoucherKernel(voucherKernel).getVoucherPaymentMethod(voucherDetails.tokenIdSupply);
 
-        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender);
+        require(voucherDetails.paymentMethod > 0 && voucherDetails.paymentMethod <= 4, "INVALID PAYMENT METHOD");
 
-        //record funds in escrow ...
-        // escrowContractAddress.escrow[msg.sender] += weiReceived;
-        uint256 amount = escrowContractAddress.getEscrowAmount(msg.sender);
-        escrowContractAddress.updateEscrowAmount(msg.sender, amount + weiReceived);
-    }
-    
-    function requestVoucher_TKN_TKN_WithPermit(
-        uint256 _tokenIdSupply, 
-        address _issuer,
-        uint256 _tokensSent,
-        uint256 deadline,
-        uint8 vPrice, bytes32 rPrice, bytes32 sPrice, // tokenPrice
-        uint8 vDeposit, bytes32 rDeposit, bytes32 sDeposit  // tokenDeposits
-        )
-        external
-        payable
-        nonReentrant
-        whenNotPaused
-    {
-
-        //checks
-        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
-        require(_tokensSent.sub(depositBu) == price, "INCORRECT_FUNDS");
-
-        address tokenPriceAddress = IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
-        address tokenDepositAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(_tokenIdSupply);
-
-        IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), price, deadline, vPrice, rPrice, sPrice);
-        IERC20WithPermit(tokenDepositAddress).permit(msg.sender, address(this), depositBu, deadline, vDeposit, rDeposit, sDeposit);
-
-        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender);
-
-        IERC20WithPermit(tokenPriceAddress).transferFrom(msg.sender, address(this), price);
-        IERC20WithPermit(tokenDepositAddress).transferFrom(msg.sender, address(this), depositBu);
-    }
-
-    function requestVoucher_TKN_TKN_Same_WithPermit(
-        uint256 _tokenIdSupply, 
-        address _issuer,
-        uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v, bytes32 r, bytes32 s
-        )
-        external
-        payable
-        nonReentrant
-        whenNotPaused
-    {
-        //checks
-        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
-        require(_tokensSent.sub(depositBu) == price, "INCORRECT_FUNDS");
-
-        address tokenPriceAddress = IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
-        address tokenDepositAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(_tokenIdSupply);
-
-        require(tokenPriceAddress == tokenDepositAddress, "INVALID_CALL");
-
-        // If tokenPriceAddress && tokenPriceAddress are the same 
-        // practically it's not of importance to each we are sending the funds
-        IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
-
-        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender);
-
-        IERC20WithPermit(tokenPriceAddress).transferFrom(msg.sender, address(this), _tokensSent);
-    }
-
-    function requestVoucher_ETH_TKN_WithPermit(
-        uint256 _tokenIdSupply, 
-        address _issuer,
-        uint256 _tokensDeposit,
-        uint256 deadline,
-        uint8 v, bytes32 r, bytes32 s
-        )
-        external
-        payable
-        nonReentrant
-        whenNotPaused
-    {
-
-        //checks
-        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
-        require(price == msg.value, "INCORRECT_PRICE");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-        require(depositBu == _tokensDeposit, "INCORRECT_DE");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-
-        address tokenDepositAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(_tokenIdSupply);
-        IERC20WithPermit(tokenDepositAddress).permit(msg.sender, address(this), _tokensDeposit, deadline, v, r, s);
-
-        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender);
-
-        IERC20WithPermit(tokenDepositAddress).transferFrom(msg.sender, address(this), _tokensDeposit);
-
-         //record funds in escrow ...
-        // escrowContractAddress.escrow[msg.sender] += msg.value;
-
-        uint256 amount = escrowContractAddress.getEscrowAmount(msg.sender);
-        escrowContractAddress.updateEscrowAmount(msg.sender, amount + msg.value);
-    }
-
-    function requestVoucher_TKN_ETH_WithPermit(
-        uint256 _tokenIdSupply, 
-        address _issuer,
-        uint256 _tokensPrice,
-        uint256 deadline,
-        uint8 v, bytes32 r, bytes32 s
-        )
-        external
-        payable
-        nonReentrant
-        whenNotPaused
-    {
-
-        //checks
-        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
-        require(price == _tokensPrice, "INCORRECT_PRICE");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-        require(depositBu == msg.value, "INCORRECT_DE");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-
-        address tokenPriceAddress = IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
-        IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), price, deadline, v, r, s);
-
-        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender);
-
-        IERC20WithPermit(tokenPriceAddress).transferFrom(msg.sender, address(this), price);
-
-         //record funds in escrow ...
-        // escrowContractAddress.escrow[msg.sender] += msg.value;
-
-        uint256 amount = escrowContractAddress.getEscrowAmount(msg.sender);
-        escrowContractAddress.updateEscrowAmount(msg.sender, amount + msg.value);
-    }
-
-
-    /**
-    * @notice Hook which will be triggered when a _tokenIdVoucher will be transferred. Escrow funds should be allocated to the new owner.
-    * @param _from prev owner of the _tokenIdVoucher
-    * @param _to next owner of the _tokenIdVoucher
-    * @param _tokenIdVoucher _tokenIdVoucher that has been transferred
-    */
-    function _onERC721Transfer(address _from, address _to, uint256 _tokenIdVoucher) 
-        external
-        onlyTokensContract
-    {
-        uint256 tokenSupplyId = IVoucherKernel(voucherKernel).getIdSupplyFromVoucher(_tokenIdVoucher);
-        uint8 paymentType = IVoucherKernel(voucherKernel).getVoucherPaymentMethod(tokenSupplyId);
-
-        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel).getBuyerOrderCosts(tokenSupplyId);
-
-        if(paymentType == ETH_ETH)
+        (voucherDetails.currStatus.status,
+            voucherDetails.currStatus.isPaymentReleased,
+            voucherDetails.currStatus.isDepositsReleased
+        ) = IVoucherKernel(voucherKernel).getVoucherStatus(voucherDetails.tokenIdVoucher);
+        
+        (voucherDetails.price, 
+            voucherDetails.depositSe, 
+            voucherDetails.depositBu
+        ) = IVoucherKernel(voucherKernel).getOrderCosts(voucherDetails.tokenIdSupply);
+        
+        voucherDetails.issuer = payable(IVoucherKernel(voucherKernel).getSupplyHolder(voucherDetails.tokenIdSupply));
+        voucherDetails.holder = payable(IVoucherKernel(voucherKernel).getVoucherHolder(voucherDetails.tokenIdVoucher));
+        
+        //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
+        if (!voucherDetails.currStatus.isPaymentReleased) 
         {
-            uint256 totalAmount = price.add(depositBu);
-
-            // escrowContractAddress.escrow[_from] = escrowContractAddress.escrow[_from].sub(totalAmount);
-            uint256 amount = escrowContractAddress.getEscrowAmount(_from);
-            escrowContractAddress.updateEscrowAmount(_from, amount.sub(totalAmount));
-
-
-            // escrowContractAddress.escrow[_to] = escrowContractAddress.escrow[_to].add(totalAmount);
-            amount = escrowContractAddress.getEscrowAmount(_to);
-            escrowContractAddress.updateEscrowAmount(_to, amount.add(totalAmount));
+            releasePayments(voucherDetails);
         }
 
-        if(paymentType == ETH_TKN) {
-            // escrowContractAddress.escrow[_from] = escrowContractAddress.escrow[_from].sub(price);
-
-            uint256 amount = escrowContractAddress.getEscrowAmount(_from);
-            escrowContractAddress.updateEscrowAmount(_from, amount.sub(price));
-
-            
-            // escrowContractAddress.escrow[_to] = escrowContractAddress.escrow[_to].add(price);
-            amount = escrowContractAddress.getEscrowAmount(_to);
-            escrowContractAddress.updateEscrowAmount(_to, amount.add(price));
+        //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status 
+        if (!voucherDetails.currStatus.isDepositsReleased && 
+            isStatus(voucherDetails.currStatus.status, idxFinal)) 
+        {
+            releaseDeposits(voucherDetails);
         }
-
-        if(paymentType == TKN_ETH) {
-            // escrowContractAddress.escrow[_from] = escrowContractAddress.escrow[_from].sub(depositBu);
-
-            uint256 amount = escrowContractAddress.getEscrowAmount(_from);
-            escrowContractAddress.updateEscrowAmount(_from, amount.sub(depositBu));
-
-            // escrowContractAddress.escrow[_to] = escrowContractAddress.escrow[_to].add(depositBu);
-
-            amount = escrowContractAddress.getEscrowAmount(_to);
-            escrowContractAddress.updateEscrowAmount(_to, amount.add(depositBu));
-        }
-    }
-
-
-    /**
-    * @notice Pre-validation when a transfer from the the Tokens contract is triggered. Only the whole supply is allowed for transfer, otherwise reverts.
-    * @param _from owner of the _tokenSupplyId
-    * @param _tokenSupplyId _tokenSupplyId which will be validated
-    * @param _value qty which is desired to be transferred
-    */
-    function _beforeERC1155Transfer(address _from, uint256 _tokenSupplyId, uint256 _value) 
-        external
-        view
-        onlyTokensContract
-    {
-        uint256 _tokenSupplyQty = IVoucherKernel(voucherKernel).getRemQtyForSupply(_tokenSupplyId, _from);
-        require(_tokenSupplyQty == _value, "INVALID_QTY");
-    }
-
-    /**
-    * @notice After the transfer happens the _tokenSupplyId should be updated in the promise. Escrow funds for the seller's deposits (If in ETH) should be allocated to the new owner as well.
-    * @param _from prev owner of the _tokenSupplyId
-    * @param _to nex owner of the _tokenSupplyId
-    * @param _tokenSupplyId _tokenSupplyId for transfer
-    * @param _value qty which has been transferred
-    */
-    function _onERC1155Transfer(address _from, address _to, uint256 _tokenSupplyId, uint256 _value) 
-        external
-        onlyTokensContract
-    {
-        uint8 paymentType = IVoucherKernel(voucherKernel).getVoucherPaymentMethod(_tokenSupplyId);
-
-        if(paymentType == ETH_ETH || paymentType == TKN_ETH) {
-            uint256 depositSe = IVoucherKernel(voucherKernel).getSellerDeposit(_tokenSupplyId);
-            uint256 totalAmount = depositSe.mul(_value);
-
-            // escrowContractAddress.escrow[_from] = escrowContractAddress.escrow[_from].sub(totalAmount);
-            uint256 amount = escrowContractAddress.getEscrowAmount(_from);
-            escrowContractAddress.updateEscrowAmount(_from, amount.sub(totalAmount));
-
-
-            // escrowContractAddress.escrow[_to] = escrowContractAddress.escrow[_to].add(totalAmount);
-
-            amount = escrowContractAddress.getEscrowAmount(_to);
-            escrowContractAddress.updateEscrowAmount(_to, amount.add(totalAmount));
-        }
-
-        IVoucherKernel(voucherKernel).setSupplyHolderOnTransfer(_tokenSupplyId, _to);
-    }
-
-    // // // // // // // //
-    // UTILS 
-    // // // // // // // //  
         
+        if (voucherDetails.amount2pool > 0) {
+            address payable poolAddress = payable(owner()); //this is required as we could not implicitly cast the owner address to payable
+            _withdraw(poolAddress, voucherDetails.amount2pool);
+        }
+        
+        if (voucherDetails.amount2issuer > 0) {
+            _withdraw(voucherDetails.issuer, voucherDetails.amount2issuer);
+        }
+
+        if (voucherDetails.amount2holder > 0) {
+            _withdraw(voucherDetails.holder, voucherDetails.amount2holder);
+        }
+
+        delete voucherDetails;
+    }
+
     /**
-     * @notice Set the address of the ERC1155ERC721 contract
-     * @param _tokensContractAddress   The address of the ERC1155ERC721 contract
+     * @notice Trigger withdrawals of what funds are releasable
+     * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
+     * @dev This function would be optimized a lot, here verbose for readability.
+     * @param _tokenIdVoucher an ID of a voucher token (ERC-721) to try withdraw funds from
      */
-    function setTokenContractAddress(address _tokensContractAddress)
+    function withdrawWhenPaused(uint256 _tokenIdVoucher)
+        external
+        nonReentrant
+        whenPaused
+    {
+        VoucherDetails memory voucherDetails;
+        
+        //in the future might want to (i) check the gasleft() (but UNGAS proposal might make it impossible), and/or (ii) set upper loop limit to sth like .length < 2**15
+        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        
+        voucherDetails.tokenIdVoucher = _tokenIdVoucher;
+        voucherDetails.tokenIdSupply = IVoucherKernel(voucherKernel).getIdSupplyFromVoucher(voucherDetails.tokenIdVoucher);
+        voucherDetails.paymentMethod = IVoucherKernel(voucherKernel).getVoucherPaymentMethod(voucherDetails.tokenIdSupply);
+
+        require(voucherDetails.paymentMethod > 0 && voucherDetails.paymentMethod <= 4, "INVALID PAYMENT METHOD");
+
+        (voucherDetails.currStatus.status,
+            voucherDetails.currStatus.isPaymentReleased,
+            voucherDetails.currStatus.isDepositsReleased
+        ) = IVoucherKernel(voucherKernel).getVoucherStatus(voucherDetails.tokenIdVoucher);
+        
+        (voucherDetails.price, 
+            voucherDetails.depositSe, 
+            voucherDetails.depositBu
+        ) = IVoucherKernel(voucherKernel).getOrderCosts(voucherDetails.tokenIdSupply);
+        
+        voucherDetails.issuer = payable(IVoucherKernel(voucherKernel).getSupplyHolder(voucherDetails.tokenIdSupply));
+        voucherDetails.holder = payable(IVoucherKernel(voucherKernel).getVoucherHolder(voucherDetails.tokenIdVoucher));
+        
+        require(msg.sender == voucherDetails.issuer || msg.sender == voucherDetails.holder, "INVALID CALLER");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        
+        //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
+        if (!voucherDetails.currStatus.isPaymentReleased) 
+        {
+            releasePayments(voucherDetails);
+        }
+
+        //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status 
+        if (!voucherDetails.currStatus.isDepositsReleased && 
+            isStatus(voucherDetails.currStatus.status, idxFinal)) 
+        {
+            releaseDeposits(voucherDetails);
+        }
+        
+        if (voucherDetails.amount2pool > 0) {
+            address payable poolAddress = payable(owner());
+            _withdraw(poolAddress, voucherDetails.amount2pool);
+        }
+        
+        if (voucherDetails.amount2issuer > 0) {
+            _withdraw(voucherDetails.issuer, voucherDetails.amount2issuer);
+        }
+
+        if (voucherDetails.amount2holder > 0) {
+            _withdraw(voucherDetails.holder, voucherDetails.amount2holder);
+        }
+
+        delete voucherDetails;
+        
+    }
+
+    function releasePayments(VoucherDetails memory voucherDetails) internal {
+
+        if (isStatus(voucherDetails.currStatus.status, idxRedeem)) {
+            releasePaymentToSeller(voucherDetails);
+        } else if (isStatus(voucherDetails.currStatus.status, idxRefund) 
+                || isStatus(voucherDetails.currStatus.status, idxExpire) 
+                || (isStatus(voucherDetails.currStatus.status, idxCancelFault) 
+                && !isStatus(voucherDetails.currStatus.status, idxRedeem))) 
+        {
+           releasePaymentToBuyer(voucherDetails);
+        }
+    }
+
+    function releasePaymentToSeller(VoucherDetails memory voucherDetails) internal {
+
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == ETH_TKN) {
+            escrow[voucherDetails.holder] -= voucherDetails.price;
+            voucherDetails.amount2issuer += voucherDetails.price;
+        }
+
+        // TODO Chris - Can we have the same approach as above, first collect all amounts in one variable and do the payout at the end? So we save gas from multiple transfers
+        if(voucherDetails.paymentMethod == TKN_ETH || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenPrice = IVoucherKernel(voucherKernel).getVoucherPriceToken(voucherDetails.tokenIdSupply);
+            IERC20WithPermit(addressTokenPrice).transfer(voucherDetails.issuer, voucherDetails.price);
+        }
+
+        IVoucherKernel(voucherKernel).setPaymentReleased(voucherDetails.tokenIdVoucher);
+
+        LogAmountDistribution(
+            voucherDetails.tokenIdVoucher, 
+            voucherDetails.issuer, 
+            voucherDetails.price, 
+            PaymentType.PAYMENT
+        );
+    }
+
+    function releasePaymentToBuyer(VoucherDetails memory voucherDetails) internal {
+
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == ETH_TKN) {
+            escrow[voucherDetails.holder] -= voucherDetails.price;
+            voucherDetails.amount2holder += voucherDetails.price;
+        }
+
+        if(voucherDetails.paymentMethod == TKN_ETH || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenPrice = IVoucherKernel(voucherKernel).getVoucherPriceToken(voucherDetails.tokenIdSupply);
+            IERC20WithPermit(addressTokenPrice).transfer(voucherDetails.holder, voucherDetails.price);
+        }
+
+        IVoucherKernel(voucherKernel).setPaymentReleased(voucherDetails.tokenIdVoucher);
+
+        LogAmountDistribution(
+            voucherDetails.tokenIdVoucher, 
+            voucherDetails.holder, 
+            voucherDetails.price, 
+            PaymentType.PAYMENT
+        );
+    }
+
+    function releaseDeposits(VoucherDetails memory voucherDetails) internal {
+
+        //first, depositSe
+        if (isStatus(voucherDetails.currStatus.status, idxComplain)) {
+            //slash depositSe
+            distributeIssuerDepositOnHolderComplain(voucherDetails);
+        } else {
+            if (isStatus(voucherDetails.currStatus.status, idxCancelFault)) {
+                //slash depositSe
+                distributeIssuerDepositOnIssuerCancel(voucherDetails);
+            } else {
+                //release depositSe
+                distributeFullIssuerDeposit(voucherDetails);                  
+            }
+        }
+        
+        //second, depositBu    
+        if (isStatus(voucherDetails.currStatus.status, idxRedeem) || 
+            isStatus(voucherDetails.currStatus.status, idxCancelFault)
+            ) {
+            //release depositBu
+            distributeFullHolderDeposit(voucherDetails);
+        } else {
+            //slash depositBu
+            distributeHolderDepositOnNotRedeemedNotCancelled(voucherDetails);
+                  
+        }
+
+        IVoucherKernel(voucherKernel).setDepositsReleased(voucherDetails.tokenIdVoucher);
+    }
+
+    function distributeIssuerDepositOnHolderComplain(VoucherDetails memory voucherDetails) internal {
+        
+        uint256 tFraction;
+
+        if (isStatus(voucherDetails.currStatus.status, idxCancelFault)) {
+            //appease the conflict three-ways
+            if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+                escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+                tFraction = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+                voucherDetails.amount2holder += tFraction; //Bu gets, say, a half
+                voucherDetails.amount2issuer += tFraction.div(CANCELFAULT_SPLIT);   //Se gets, say, a quarter
+                voucherDetails.amount2pool += voucherDetails.depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT);    //slashing the rest
+            }
+
+            if(voucherDetails.paymentMethod == ETH_TKN || voucherDetails.paymentMethod == TKN_TKN) {
+                address addressTokenDeposits = IVoucherKernel(voucherKernel).getVoucherDepositToken(voucherDetails.tokenIdSupply);
+                
+                tFraction = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+
+                IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.holder, tFraction);
+                IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.issuer, tFraction.div(CANCELFAULT_SPLIT));
+                IERC20WithPermit(addressTokenDeposits).transfer(owner(), voucherDetails.depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT));
+            }
+
+            LogAmountDistribution(voucherDetails.tokenIdVoucher, voucherDetails.holder, tFraction, PaymentType.DEPOSIT_SELLER);
+            LogAmountDistribution(voucherDetails.tokenIdVoucher, voucherDetails.issuer, tFraction.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
+            LogAmountDistribution(voucherDetails.tokenIdVoucher, owner(), voucherDetails.depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT), PaymentType.DEPOSIT_SELLER);
+            
+            tFraction = 0;
+
+        } else {
+            //slash depositSe
+            if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+                escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+                voucherDetails.amount2pool += voucherDetails.depositSe;
+            } else {
+                address addressTokenDeposits = IVoucherKernel(voucherKernel).getVoucherDepositToken(voucherDetails.tokenIdSupply);
+                IERC20WithPermit(addressTokenDeposits).transfer(owner(), voucherDetails.depositSe);
+            }
+
+            LogAmountDistribution(voucherDetails.tokenIdVoucher, owner(), voucherDetails.depositSe, PaymentType.DEPOSIT_SELLER);
+        }
+    }
+
+    function distributeIssuerDepositOnIssuerCancel(VoucherDetails memory voucherDetails) internal {
+        
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+            escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+            voucherDetails.amount2issuer += voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+            voucherDetails.amount2holder += voucherDetails.depositSe - voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+        }
+
+        if (voucherDetails.paymentMethod == ETH_TKN || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenDeposits = IVoucherKernel(voucherKernel).getVoucherDepositToken(voucherDetails.tokenIdSupply);
+
+            IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.issuer, voucherDetails.depositSe.div(CANCELFAULT_SPLIT));
+            IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.holder, voucherDetails.depositSe - voucherDetails.depositSe.div(CANCELFAULT_SPLIT));
+        }
+
+        LogAmountDistribution(
+            voucherDetails.tokenIdVoucher, 
+            voucherDetails.issuer, 
+            voucherDetails.depositSe.div(CANCELFAULT_SPLIT), 
+            PaymentType.DEPOSIT_SELLER
+        );
+
+        LogAmountDistribution(
+            voucherDetails.tokenIdVoucher, 
+            voucherDetails.holder, 
+            voucherDetails.depositSe - voucherDetails.depositSe.div(CANCELFAULT_SPLIT), 
+            PaymentType.DEPOSIT_SELLER
+        );
+    }
+
+    function distributeFullIssuerDeposit(VoucherDetails memory voucherDetails) internal {
+
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+            escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
+            voucherDetails.amount2issuer += voucherDetails.depositSe;
+        }
+
+        if(voucherDetails.paymentMethod == ETH_TKN || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenDeposits = IVoucherKernel(voucherKernel).getVoucherDepositToken(voucherDetails.tokenIdSupply);
+            IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.issuer, voucherDetails.depositSe);
+        }
+
+        LogAmountDistribution(
+            voucherDetails.tokenIdVoucher, 
+            voucherDetails.issuer, 
+            voucherDetails.depositSe, 
+            PaymentType.DEPOSIT_SELLER
+        );   
+    }
+
+    function distributeFullHolderDeposit(VoucherDetails memory voucherDetails) internal {
+
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+            escrow[voucherDetails.holder] -= voucherDetails.depositBu;
+            voucherDetails.amount2holder += voucherDetails.depositBu;
+        }
+
+        if(voucherDetails.paymentMethod == ETH_TKN || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenDeposits = IVoucherKernel(voucherKernel).getVoucherDepositToken(voucherDetails.tokenIdSupply);
+            IERC20WithPermit(addressTokenDeposits).transfer(voucherDetails.holder, voucherDetails.depositBu);
+        }
+
+        LogAmountDistribution(
+            voucherDetails.tokenIdVoucher, 
+            voucherDetails.holder, 
+            voucherDetails.depositBu, 
+            PaymentType.DEPOSIT_BUYER
+        ); 
+    }
+
+    function distributeHolderDepositOnNotRedeemedNotCancelled(VoucherDetails memory voucherDetails) internal {
+
+        if(voucherDetails.paymentMethod == ETH_ETH || voucherDetails.paymentMethod == TKN_ETH) {
+            escrow[voucherDetails.holder] -= voucherDetails.depositBu;
+            voucherDetails.amount2pool += voucherDetails.depositBu; 
+        }
+
+        if(voucherDetails.paymentMethod == ETH_TKN || voucherDetails.paymentMethod == TKN_TKN) {
+            address addressTokenDeposits = IVoucherKernel(voucherKernel).getVoucherDepositToken(voucherDetails.tokenIdSupply);
+            IERC20WithPermit(addressTokenDeposits).transfer(owner(), voucherDetails.depositBu);
+        }
+
+        LogAmountDistribution(
+            voucherDetails.tokenIdVoucher, 
+            owner(), 
+            voucherDetails.depositBu, 
+            PaymentType.DEPOSIT_BUYER
+        ); 
+    }
+
+    /**
+    * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the contracts are paused.
+    * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
+    */
+    function withdrawDeposits(uint256 _tokenIdSupply)
+        external 
+        nonReentrant
+        whenPaused
+    {
+        address payable seller = payable(IVoucherKernel(voucherKernel).getSupplyHolder(_tokenIdSupply));
+        
+        require(msg.sender == seller, "UNAUTHORIZED_SE");
+
+        uint256 deposit =  IVoucherKernel(voucherKernel).getSellerDeposit(_tokenIdSupply);
+        uint256 remQty = IVoucherKernel(voucherKernel).getRemQtyForSupply(_tokenIdSupply, seller);
+        
+        require(remQty > 0, "OFFER_EMPTY");
+
+        uint256 depositAmount = deposit.mul(remQty);
+
+        IVoucherKernel(voucherKernel).burnSupplyOnPause(seller, _tokenIdSupply, remQty);
+
+        uint8 paymentMethod = IVoucherKernel(voucherKernel).getVoucherPaymentMethod(_tokenIdSupply);
+
+        require(paymentMethod > 0 && paymentMethod <= 4, "INVALID PAYMENT METHOD");
+
+
+        if(paymentMethod == ETH_ETH || paymentMethod == TKN_ETH)
+        {
+            escrow[msg.sender] = escrow[msg.sender].sub(depositAmount);
+            _withdrawDeposits(seller, depositAmount);
+        }
+
+        if(paymentMethod == ETH_TKN || paymentMethod == TKN_TKN)
+        {
+            address addressTokenDeposits = IVoucherKernel(voucherKernel).getVoucherDepositToken(_tokenIdSupply);
+            IERC20WithPermit(addressTokenDeposits).transfer(seller, depositAmount);
+        }
+    }
+
+    /**
+     * @notice Trigger withdrawals of pooled funds
+     */    
+    function withdrawPool()
+        external 
+        onlyOwner
+        nonReentrant
+    {
+        //TODO: more requires needed?
+        
+        if (escrow[owner()] > 0) {
+            address payable poolAddress = address(uint160(owner())); //this is required as we could not implicitly cast the owner address to payable
+            uint256 amount = escrow[poolAddress];
+            escrow[poolAddress] = 0;
+            _withdraw(poolAddress,amount);
+        }
+    }
+
+    /**
+     * @notice Internal function for withdrawing.
+     * As unbelievable as it is, neither .send() nor .transfer() are now secure to use due to EIP-1884
+     *  So now transferring funds via the last remaining option: .call()
+     *  See https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/ 
+     * @param _recipient    address of the account receiving funds from the escrow
+     * @param _amount       amount to be released from escrow
+     */
+    function _withdraw(address payable _recipient, uint256 _amount)
+        internal
+    {
+        require(_recipient != address(0), "UNSPECIFIED_ADDRESS");   //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_amount > 0, "");
+        
+        _recipient.sendValue(_amount);
+
+        emit LogWithdrawal(msg.sender, _recipient, _amount);
+    }
+
+    function _withdrawDeposits(address payable _recipient, uint256 _amount)
+        internal
+    {
+        require(_recipient != address(0), "UNSPECIFIED_ADDRESS");   //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_amount > 0, "");
+        
+        _recipient.sendValue(_amount);
+
+        emit LogWithdrawal(msg.sender, _recipient, _amount);
+    }
+
+    /**
+     * @notice Set the address of the Cashier contract
+     * @param _bosonRouterAddress   The address of the Cashier contract
+     */
+    function setBosonRouterAddress(address _bosonRouterAddress)
         external
         onlyOwner
-        notZeroAddress(_tokensContractAddress)
     {
-        tokensContractAddress = _tokensContractAddress;
-        emit LogTokenContractSet(_tokensContractAddress, msg.sender);
+        require(_bosonRouterAddress != address(0), "UNSPECIFIED_ADDRESS");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        
+        bosonRouterAddress = _bosonRouterAddress;
+        
+        emit LogBosonRouterSet(_bosonRouterAddress, msg.sender);
     }
+
+    function updateEscrowAmount(address _account, uint256 _newAmount) 
+        external
+        onlyFromBR
+        returns (uint256)
+    {
+        return escrow[_account] = _newAmount;
+    }
+
+    receive() external payable {
+        assert(msg.sender == bosonRouterAddress); // only accept ETH via fallback from the BR Contract
+    }
+
+
+    // // // // // // // //
+    // GETTERS 
+    // // // // // // // //  
+    
+    /**
+     * @notice Get the amount in escrow of an address
+     * @param _account  The address of an account to query
+     * @return          The balance in escrow
+     */
+    function getEscrowAmount(address _account) 
+        external view
+        returns (uint256)
+    {
+        return escrow[_account];
+    }
+
 }

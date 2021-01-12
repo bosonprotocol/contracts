@@ -44,4 +44,12 @@ interface IVoucherKernel {
 
     function setSupplyHolderOnTransfer(uint256 _tokenIdSupply, address _newSeller) external;
 
+    function redeem(uint256 _tokenIdVoucher, address _msgSender) external;
+
+    function refund(uint256 _tokenIdVoucher, address _msgSender) external;
+
+    function cancelOrFault(uint256 _tokenIdVoucher, address _msgSender) external;
+
+    function complain(uint256 _tokenIdVoucher, address _msgSender) external;
+
 }

@@ -4,6 +4,7 @@ const truffleAssert = require('truffle-assertions');
 const ERC1155ERC721 = artifacts.require("ERC1155ERC721");
 const VoucherKernel = artifacts.require("VoucherKernel");
 const Cashier 		= artifacts.require("Cashier");
+const BosonRouter = artifacts.require("BosonRouter")
 const BosonToken 	= artifacts.require("BosonTokenPrice");
 const FundLimitsOracle 	= artifacts.require('FundLimitsOracle');
 
@@ -19,7 +20,14 @@ contract("FundLimitsOracle", async accounts => {
 	let Deployer = config.accounts.deployer
     let Attacker = config.accounts.attacker
     
-	let contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit, contractFundLimitsOracle;
+    let contractERC1155ERC721,
+        contractVoucherKernel,
+        contractCashier,
+        contractBosonRouter,
+        contractBSNTokenPrice,
+        contractBSNTokenDeposit,
+        contractFundLimitsOracle
+
     let expectedLimit
     const FIVE_ETHERS = (5 * 10 ** 18).toString()
     const FIVE_TOKENS = (5 * 10 ** 16).toString()
@@ -33,18 +41,24 @@ contract("FundLimitsOracle", async accounts => {
 
 		contractERC1155ERC721 = await ERC1155ERC721.new();
 		contractVoucherKernel = await VoucherKernel.new(contractERC1155ERC721.address);
-		contractCashier = await Cashier.new(contractVoucherKernel.address, contractFundLimitsOracle.address);
+        contractCashier = await Cashier.new(contractVoucherKernel.address)
+        contractBosonRouter = await BosonRouter.new(contractVoucherKernel.address, contractERC1155ERC721.address, contractFundLimitsOracle.address, contractCashier.address);
 
 		contractBSNTokenPrice = await BosonToken.new("BosonTokenPrice", "BPRC");
 		contractBSNTokenDeposit = await BosonToken.new("BosonTokenDeposit", "BDEP");
 
 
-		await contractERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true');
-		await contractERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address);
-		await contractVoucherKernel.setCashierAddress(contractCashier.address);
+		await contractERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true')
+        await contractERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address)
+        await contractERC1155ERC721.setBosonRouterAddress(contractBosonRouter.address);
+        
+        await contractVoucherKernel.setBosonRouterAddress(contractBosonRouter.address);
+        await contractVoucherKernel.setCashierAddress(contractCashier.address)
+
+        await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
     }
 
-	xdescribe('FundLimitsOracle interaction', function() {
+	describe('FundLimitsOracle interaction', function() {
 
         before(async () => {
             await deployContracts()
