@@ -4,10 +4,34 @@ pragma solidity >=0.6.6 <0.7.0;
 
 interface ICashier {
 
+    /**
+    * @notice Pause the Cashier && the Voucher Kernel contracts in case of emergency.
+    * All functions related to creating new batch, requestVoucher or withdraw will be paused, hence cannot be executed. 
+    * There is special function for withdrawing funds if contract is paused.
+    */
     function pause() external;
     
+    /**
+    * @notice Unpause the Cashier && the Voucher Kernel contracts.
+    * All functions related to creating new batch, requestVoucher or withdraw will be unpaused.
+    */
     function unpause() external;
 
+
+     /**
+     * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
+        @param metadata metadata which is required for creation of a voucher
+        Metadata array is used as in some scenarios we need several more params, as we need to recover 
+        owner address in order to permit the contract to transfer funds in his behalf. 
+        Since the params get too many, we end up in situation that the stack is too deep.
+        
+        uint256 _validFrom = metadata[0];
+        uint256 _validTo = metadata[1];
+        uint256 _price = metadata[2];
+        uint256 _depositSe = metadata[3];
+        uint256 _depositBu = metadata[4];
+        uint256 _quantity = metadata[5];
+     */
     function requestCreateOrder_ETH_ETH(uint256[] calldata metadata)
         external
         payable;
@@ -44,6 +68,11 @@ interface ICashier {
         external
         payable;
 
+    /**
+     * @notice Consumer requests/buys a voucher by filling an order and receiving a Voucher Token in return
+     * @param _tokenIdSupply    ID of the supply token
+     * @param _issuer           Address of the issuer of the supply token
+     */
     function requestVoucher_ETH_ETH(uint256 _tokenIdSupply, address _issuer)
         external
         payable;
@@ -59,15 +88,15 @@ interface ICashier {
         external
         payable;
 
-    // function requestVoucher_TKN_TKN_Same_WithPermit(
-    //     uint256 _tokenIdSupply, 
-    //     address _issuer,
-    //     uint256 _tokensSent,
-    //     uint256 deadline,
-    //     uint8 v, bytes32 r, bytes32 s
-    //     )
-    //     external
-    //     payable;
+    function requestVoucher_TKN_TKN_Same_WithPermit(
+        uint256 _tokenIdSupply, 
+        address _issuer,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v, bytes32 r, bytes32 s
+        )
+        external
+        payable;
 
     function requestVoucher_ETH_TKN_WithPermit(
         uint256 _tokenIdSupply, 
@@ -89,17 +118,47 @@ interface ICashier {
         external
         payable;
 
+    /**
+     * @notice Trigger withdrawals of what funds are releasable
+     * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
+     * @dev This function would be optimized a lot, here verbose for readability.
+     * @param _tokenIdVoucher  ID of a voucher token (ERC-721) to try withdraw funds from
+     */
     function withdraw(uint256 _tokenIdVoucher) external;
 
+    /**
+     * @notice Trigger withdrawals of what funds are releasable
+     * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
+     * @dev This function would be optimized a lot, here verbose for readability.
+     * @param _tokenIdVoucher an ID of a voucher token (ERC-721) to try withdraw funds from
+     */
     function withdrawWhenPaused(uint256 _tokenIdVoucher) external;
 
+
+    /**
+    * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the contracts are paused.
+    * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
+    */
     function withdrawDeposits(uint256 _tokenIdSupply) external;
 
+
+    /**
+     * @notice Trigger withdrawals of pooled funds
+     */ 
     function withdrawPool() external;
 
+    /**
+     * @notice Set the address of the ERC1155ERC721 contract
+     * @param _tokensContractAddress   The address of the ERC1155ERC721 contract
+     */
     function setTokenContractAddress(address _tokensContractAddress)
         external;
 
+    /**
+     * @notice Get the amount in escrow of an address
+     * @param _account  The address of an account to query
+     * @return          The balance in escrow
+     */
     function getEscrowAmount(address _account) external view returns (uint256);
 
     /**

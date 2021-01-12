@@ -260,7 +260,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         return createOrder(_seller, key, _quantity);
     }
 
-     function createPaymentMethod(
+    /**
+     * @notice Creates a Payment method struct recording the details on how the seller requires to receive Price and Deposits for a certain Voucher Set.
+     * @param _tokenIdSupply     _tokenIdSupply of the voucher set this is related to
+     * @param _paymentMethod  might be ETH_ETH, ETH_TKN, TKN_ETH or TKN_TKN
+     * @param _tokenPrice   token address which will hold the funds for the price of the voucher
+     * @param _tokenDeposits   token address which will hold the funds for the deposits of the voucher
+     */
+    function createPaymentMethod(
         uint256 _tokenIdSupply,
         uint8 _paymentMethod,
         address _tokenPrice,
@@ -304,12 +311,12 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
     }
     
     
-     /**
-      * @notice Fill Voucher Order, iff funds paid, then extract & mint NFT to the voucher holder
-      * @param _tokenIdSupply   ID of the supply token (ERC-1155)
-      * @param _issuer          Address of the token's issuer
-      * @param _holder          Address of the recipient of the voucher (ERC-721)
-      */
+    /**
+    * @notice Fill Voucher Order, iff funds paid, then extract & mint NFT to the voucher holder
+    * @param _tokenIdSupply   ID of the supply token (ERC-1155)
+    * @param _issuer          Address of the token's issuer
+    * @param _holder          Address of the recipient of the voucher (ERC-721)
+    */
     function fillOrder(uint256 _tokenIdSupply, address _issuer, address _holder)
         external
         override
@@ -392,7 +399,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
      * @param _issuer          The address of the token issuer
      * @param _tokenIdSupply   ID of the token type
      * @param _qty   qty that should be burned
-     */
+    */
     function burnSupplyOnPause(address _issuer, uint256 _tokenIdSupply, uint256 _qty)
         external
         override
@@ -434,6 +441,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
      */
     function redeem(uint256 _tokenIdVoucher)
         external
+        override
         whenNotPaused
         onlyVoucherOwner(_tokenIdVoucher)
     {
@@ -463,6 +471,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
      */
     function refund(uint256 _tokenIdVoucher)
         external
+        override
         whenNotPaused
         onlyVoucherOwner(_tokenIdVoucher)
     {
@@ -484,6 +493,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
      */
     function complain(uint256 _tokenIdVoucher)
         external
+        override
         whenNotPaused
         onlyVoucherOwner(_tokenIdVoucher)
     {
@@ -541,6 +551,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
      */
     function cancelOrFault(uint256 _tokenIdVoucher)
         external
+        override
         whenNotPaused
     {
         uint256 tokenIdSupply = getIdSupplyFromVoucher(_tokenIdVoucher);
@@ -594,7 +605,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
     /**
      * @notice Mark voucher token that the payment was released
      * @param _tokenIdVoucher   ID of the voucher token
-     */
+    */
     function setPaymentReleased(uint256 _tokenIdVoucher)
         external
         override
@@ -610,7 +621,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
     /**
      * @notice Mark voucher token that the deposits were released
      * @param _tokenIdVoucher   ID of the voucher token
-     */
+    */
     function setDepositsReleased(uint256 _tokenIdVoucher)
         external
         override
@@ -630,6 +641,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
      //TODO: refactor to support array of inputs
     function triggerExpiration(uint256 _tokenIdVoucher)
         external
+        override
     {
         require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         
@@ -652,13 +664,13 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
     //TODO: refactor to support array of inputs
     function triggerFinalizeVoucher(uint256 _tokenIdVoucher)
         external
+        override
     {
         require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         
         uint8 tStatus = vouchersStatus[_tokenIdVoucher].status;
         
         require(!isStatus(tStatus, idxFinal), "ALREADY_FINALIZED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
-        
         
         bool mark;
         Promise memory tPromise = promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
@@ -709,9 +721,11 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
      * @notice Set the address of the new holder of a _tokenIdSupply on transfer
      * @param _tokenIdSupply   _tokenIdSupply which will be transferred
      * @param _newSeller   new holder of the supply
-     */
+    */
     function setSupplyHolderOnTransfer(uint256 _tokenIdSupply, address _newSeller)
-        external override onlyFromCashier
+        external
+        override
+        onlyFromCashier
     {
         bytes32 promiseKey = ordersPromise[_tokenIdSupply];
         promises[promiseKey].seller = _newSeller;
@@ -723,6 +737,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
      */
     function setCashierAddress(address _cashierAddress)
         external
+        override
         onlyOwner
     {
         require(_cashierAddress != address(0), "UNSPECIFIED_ADDRESS");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
@@ -739,6 +754,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
      */
     function setComplainPeriod(uint256 _complainPeriod)
         external
+        override
         onlyOwner
     {
         complainPeriod = _complainPeriod;
@@ -866,7 +882,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
      * @notice Get Seller deposit 
      * @param _tokenIdSupply   ID of the supply token
      * @return                  returns sellers deposit
-     */
+    */
     function getSellerDeposit(uint256 _tokenIdSupply)
         public view override
         returns (uint256)
@@ -891,7 +907,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
      * @notice Get the holder of a voucher
      * @param _tokenIdVoucher   ID of the voucher token
      * @return                  Address of the holder
-     */
+    */
     function getVoucherHolder(uint256 _tokenIdVoucher)
         public view override
         returns (address)
@@ -915,7 +931,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
 
     /**
      * @notice Get the address of the token where the price for the supply is held
-     * @param _tokenIdSupply   ID of the voucher token
+     * @param _tokenIdSupply   ID of the voucher supply token
      * @return                  Address of the token
      */
     function getVoucherPriceToken(uint256 _tokenIdSupply)
@@ -927,7 +943,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
 
     /**
      * @notice Get the address of the token where the deposits for the supply are held
-     * @param _tokenIdSupply   ID of the voucher token
+     * @param _tokenIdSupply   ID of the voucher supply token
      * @return                  Address of the token
      */
     function getVoucherDepositToken(uint256 _tokenIdSupply)
@@ -937,6 +953,11 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         return paymentDetails[_tokenIdSupply].addressTokenDeposits;
     }
 
+    /**
+     * @notice Get the payment method for a particular _tokenIdSupply
+     * @param _tokenIdSupply   ID of the voucher supply token
+     * @return                  payment method
+     */
     function getVoucherPaymentMethod(uint256 _tokenIdSupply)
         public view override
         returns (uint8)
