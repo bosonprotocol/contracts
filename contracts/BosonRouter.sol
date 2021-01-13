@@ -24,7 +24,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
     using Address for address payable;
     using SafeMath for uint;
     
-    address payable public cashierAddress;
+    address public cashierAddress;
     address public voucherKernel;
     address public tokensContractAddress;
     address public fundLimitsOracle;
@@ -70,7 +70,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         voucherKernel = _voucherKernel;
         tokensContractAddress = _tokensContractAddress;
         fundLimitsOracle = _fundLimitsOracle;
-        cashierAddress = payable(_cashierAddress);
+        cashierAddress = _cashierAddress;
     }
     
 
@@ -131,9 +131,8 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         
         
         //record funds in escrow ...
-        // escrowContractAddress.escrow[msg.sender] += msg.value;
         uint256 amount = ICashier(cashierAddress).getEscrowAmount(msg.sender);
-        ICashier(cashierAddress).updateEscrowAmount(msg.sender, amount + msg.value);
+        ICashier(cashierAddress).updateEscrowAmount(msg.sender, amount.add(msg.value));
 
         require(payable(cashierAddress).send(msg.value));
 
@@ -223,10 +222,8 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         uint256 tokenIdSupply = IVoucherKernel(voucherKernel).createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
         IVoucherKernel(voucherKernel).createPaymentMethod(tokenIdSupply, TKN_ETH, _tokenPriceAddress, address(0));
 
-        // escrowContractAddress.escrow[msg.sender] += msg.value;
-
         uint256 amount = ICashier(cashierAddress).getEscrowAmount(msg.sender);
-        ICashier(cashierAddress).updateEscrowAmount(msg.sender, amount + msg.value);
+        ICashier(cashierAddress).updateEscrowAmount(msg.sender, amount.add(msg.value));
 
         require(payable(cashierAddress).send(msg.value));
 
@@ -253,9 +250,8 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender);
 
         //record funds in escrow ...
-        // escrowContractAddress.escrow[msg.sender] += weiReceived;
         uint256 amount = ICashier(cashierAddress).getEscrowAmount(msg.sender);
-        ICashier(cashierAddress).updateEscrowAmount(msg.sender, amount + weiReceived);
+        ICashier(cashierAddress).updateEscrowAmount(msg.sender, amount.add(weiReceived));
 
         require(payable(cashierAddress).send(msg.value));
     }
@@ -345,10 +341,8 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         IERC20WithPermit(tokenDepositAddress).transferFrom(msg.sender, address(cashierAddress), _tokensDeposit);
 
          //record funds in escrow ...
-        // escrowContractAddress.escrow[msg.sender] += msg.value;
-
         uint256 amount = ICashier(cashierAddress).getEscrowAmount(msg.sender);
-        ICashier(cashierAddress).updateEscrowAmount(msg.sender, amount + msg.value);
+        ICashier(cashierAddress).updateEscrowAmount(msg.sender, amount.add(msg.value));
 
         require(payable(cashierAddress).send(msg.value));
     }
@@ -379,10 +373,8 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         IERC20WithPermit(tokenPriceAddress).transferFrom(msg.sender, address(cashierAddress), price);
 
          //record funds in escrow ...
-        // escrowContractAddress.escrow[msg.sender] += msg.value;
-
         uint256 amount = ICashier(cashierAddress).getEscrowAmount(msg.sender);
-        ICashier(cashierAddress).updateEscrowAmount(msg.sender, amount + msg.value);
+        ICashier(cashierAddress).updateEscrowAmount(msg.sender, amount.add(msg.value));
 
         require(payable(cashierAddress).send(msg.value));
     }
@@ -432,35 +424,24 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         {
             uint256 totalAmount = price.add(depositBu);
 
-            // escrowContractAddress.escrow[_from] = escrowContractAddress.escrow[_from].sub(totalAmount);
             uint256 amount = ICashier(cashierAddress).getEscrowAmount(_from);
             ICashier(cashierAddress).updateEscrowAmount(_from, amount.sub(totalAmount));
 
-
-            // escrowContractAddress.escrow[_to] = escrowContractAddress.escrow[_to].add(totalAmount);
             amount = ICashier(cashierAddress).getEscrowAmount(_to);
             ICashier(cashierAddress).updateEscrowAmount(_to, amount.add(totalAmount));
         }
 
         if(paymentType == ETH_TKN) {
-            // ICashier(cashierAddress).escrow[_from] = ICashier(cashierAddress).escrow[_from].sub(price);
-
             uint256 amount = ICashier(cashierAddress).getEscrowAmount(_from);
             ICashier(cashierAddress).updateEscrowAmount(_from, amount.sub(price));
 
-            
-            // ICashier(cashierAddress).escrow[_to] = ICashier(cashierAddress).escrow[_to].add(price);
             amount = ICashier(cashierAddress).getEscrowAmount(_to);
             ICashier(cashierAddress).updateEscrowAmount(_to, amount.add(price));
         }
 
         if(paymentType == TKN_ETH) {
-            // ICashier(cashierAddress).escrow[_from] = ICashier(cashierAddress).escrow[_from].sub(depositBu);
-
             uint256 amount = ICashier(cashierAddress).getEscrowAmount(_from);
             ICashier(cashierAddress).updateEscrowAmount(_from, amount.sub(depositBu));
-
-            // ICashier(cashierAddress).escrow[_to] = ICashier(cashierAddress).escrow[_to].add(depositBu);
 
             amount = ICashier(cashierAddress).getEscrowAmount(_to);
             ICashier(cashierAddress).updateEscrowAmount(_to, amount.add(depositBu));
@@ -502,12 +483,8 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
             uint256 depositSe = IVoucherKernel(voucherKernel).getSellerDeposit(_tokenSupplyId);
             uint256 totalAmount = depositSe.mul(_value);
 
-            // ICashier(cashierAddress).escrow[_from] = ICashier(cashierAddress).escrow[_from].sub(totalAmount);
             uint256 amount = ICashier(cashierAddress).getEscrowAmount(_from);
             ICashier(cashierAddress).updateEscrowAmount(_from, amount.sub(totalAmount));
-
-
-            // ICashier(cashierAddress).escrow[_to] = ICashier(cashierAddress).escrow[_to].add(totalAmount);
 
             amount = ICashier(cashierAddress).getEscrowAmount(_to);
             ICashier(cashierAddress).updateEscrowAmount(_to, amount.add(totalAmount));

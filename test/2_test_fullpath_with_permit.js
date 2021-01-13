@@ -512,7 +512,7 @@ contract("Cashier && VK", async accounts => {
 				it("ESCROW has correct initial balance", async () => {
 					const expectedBalance = new BN(helpers.seller_deposit).mul(new BN(remQty))
 					const escrowAmount = await contractCashier.getEscrowAmount(Seller.address);
-					
+
 					assert.isTrue(escrowAmount.eq(expectedBalance), "Escrow amount is incorrect")
 				})
 

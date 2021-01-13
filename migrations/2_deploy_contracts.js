@@ -42,6 +42,7 @@ module.exports = function(deployer, network, accounts) {
 								Cashier.deployed().then(instance => { instance.setBosonRouterAddress(BosonRouter.address).then(tx => 
 									console.log("\n$ VoucherKernel", tx.logs[0].event, "at:", tx.logs[0].args._newBosonRouter))});
 									
+								console.log("FundLimitsOracle Contract Address: ", FundLimitsOracle.address);
 								console.log("ERC1155ERC721 Contract Address: ", ERC1155ERC721.address);
 								console.log("VoucherKernel Contract Address: ", VoucherKernel.address);
 								console.log("Cashier Contract Address: ", Cashier.address);
