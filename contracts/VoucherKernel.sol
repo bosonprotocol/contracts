@@ -6,7 +6,12 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./ERC1155ERC721.sol";
+import "./IERC1155.sol";
+import "./IERC165.sol";
+import "./IERC721.sol";
+import "./IERC1155ERC721.sol";
+import "./IERC721TokenReceiver.sol";
+import "./IVoucherKernel.sol";
 import "./usingHelpers.sol";
 
 //preparing for ERC-1066, ERC-1444, EIP-838
@@ -19,14 +24,14 @@ import "./usingHelpers.sol";
  *  - The usage of block.timestamp is honored since vouchers are defined with day-precision and the demo app is not covering all edge cases.
  *      See: https://ethereum.stackexchange.com/questions/5924/how-do-ethereum-mining-nodes-maintain-a-time-consistent-with-the-network/5931#5931
 */
-contract VoucherKernel is Ownable, Pausable, usingHelpers {    
+contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {    
     using Address for address;
     using SafeMath for uint;
     //using Counters for Counters.Counter;
     //Counters.Counter private voucherTokenId; //unique IDs for voucher tokens
     
     //AssetRegistry assetRegistry;
-    ERC1155ERC721 tokensContract;
+    address public tokensContract;
         
     //promise for an asset could be reusable, but simplified here for brevitbytes32
     struct Promise {
@@ -169,7 +174,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
     
     modifier onlyVoucherOwner(uint256 _tokenIdVoucher) {
         //check authorization
-        require(tokensContract.ownerOf(_tokenIdVoucher) == msg.sender, "UNAUTHORIZED_V");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(IERC721(tokensContract).ownerOf(_tokenIdVoucher) == msg.sender, "UNAUTHORIZED_V");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         _;
     }
     
@@ -178,7 +183,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
     )
         public 
     {
-        tokensContract = ERC1155ERC721(_tokensContract);
+        tokensContract = _tokensContract;
         
         complainPeriod = 7 * 1 days;
         cancelFaultPeriod = 7 * 1 days;
@@ -188,7 +193,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
     * @notice Pause the process of interaction with voucherID's (ERC-721), in case of emergency.
     * Only Cashier contract is in control of this function.
     */
-    function pause() external onlyFromCashier {
+    function pause() external override onlyFromCashier {
         _pause();
     }
 
@@ -196,7 +201,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
     * @notice Unpause the process of interaction with voucherID's (ERC-721).
     * Only Cashier contract is in control of this function.
     */
-    function unpause() external onlyFromCashier {
+    function unpause() external override onlyFromCashier {
         _unpause();
     } 
     
@@ -220,6 +225,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         uint256 _quantity
     ) 
         external 
+        override
         onlyFromCashier
         returns (uint256)
     {
@@ -254,13 +260,21 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         return createOrder(_seller, key, _quantity);
     }
 
-     function createPaymentMethod(
+    /**
+     * @notice Creates a Payment method struct recording the details on how the seller requires to receive Price and Deposits for a certain Voucher Set.
+     * @param _tokenIdSupply     _tokenIdSupply of the voucher set this is related to
+     * @param _paymentMethod  might be ETH_ETH, ETH_TKN, TKN_ETH or TKN_TKN
+     * @param _tokenPrice   token address which will hold the funds for the price of the voucher
+     * @param _tokenDeposits   token address which will hold the funds for the deposits of the voucher
+     */
+    function createPaymentMethod(
         uint256 _tokenIdSupply,
         uint8 _paymentMethod,
         address _tokenPrice,
         address _tokenDeposits
         )
-        external 
+        external
+        override
         onlyFromCashier
     {
 
@@ -288,7 +302,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         require(_quantity > 0, "INVALID_QUANTITY"); //hex"24" FISSION.code(FISSION.Category.Find, FISSION.Status.BelowRange_Underflow)
         
         uint256 tokenIdSupply = generateTokenType(true); //create & assign a new non-fungible type
-        tokensContract.mint(_seller, tokenIdSupply, _quantity, "");
+        IERC1155ERC721(tokensContract).mint(_seller, tokenIdSupply, _quantity, "");
         
         ordersPromise[tokenIdSupply] = _promiseId;
         accountSupply[_seller] += _quantity;
@@ -297,14 +311,15 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
     }
     
     
-     /**
-      * @notice Fill Voucher Order, iff funds paid, then extract & mint NFT to the voucher holder
-      * @param _tokenIdSupply   ID of the supply token (ERC-1155)
-      * @param _issuer          Address of the token's issuer
-      * @param _holder          Address of the recipient of the voucher (ERC-721)
-      */
+    /**
+    * @notice Fill Voucher Order, iff funds paid, then extract & mint NFT to the voucher holder
+    * @param _tokenIdSupply   ID of the supply token (ERC-1155)
+    * @param _issuer          Address of the token's issuer
+    * @param _holder          Address of the recipient of the voucher (ERC-721)
+    */
     function fillOrder(uint256 _tokenIdSupply, address _issuer, address _holder)
         external
+        override
         onlyFromCashier
         
     {
@@ -337,7 +352,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         }        
         
         require(_holder != address(0), "UNSPECIFIED_ADDRESS");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(tokensContract.balanceOf(_issuer, _tokenIdSupply) > 0, "OFFER_EMPTY");  //hex"40" FISSION.code(FISSION.Category.Availability, FISSION.Status.Unavailable)
+        require(IERC1155(tokensContract).balanceOf(_issuer, _tokenIdSupply) > 0, "OFFER_EMPTY");  //hex"40" FISSION.code(FISSION.Category.Availability, FISSION.Status.Unavailable)
         
     }
     
@@ -359,7 +374,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
             //bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))
         } 
 
-        tokensContract.burn(_issuer, _tokenIdSupply, 1); // This is hardcoded as 1 on purpose
+        IERC1155ERC721(tokensContract).burn(_issuer, _tokenIdSupply, 1); // This is hardcoded as 1 on purpose
         accountSupply[_issuer]--;
         
         
@@ -372,7 +387,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
         vouchersStatus[voucherTokenId].isDepositsReleased = false;
         
         //mint voucher NFT as ERC-721
-        tokensContract.mint(_to, voucherTokenId);
+        IERC1155ERC721(tokensContract).mint(_to, voucherTokenId);
         voucherIssuers[voucherTokenId] = _issuer; //TODO THIS MIGHT NOT BE REQUIRED ANYMORE
         
         return voucherTokenId;
@@ -384,13 +399,14 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
      * @param _issuer          The address of the token issuer
      * @param _tokenIdSupply   ID of the token type
      * @param _qty   qty that should be burned
-     */
+    */
     function burnSupplyOnPause(address _issuer, uint256 _tokenIdSupply, uint256 _qty)
         external
+        override
         whenPaused
         onlyFromCashier
     {
-        tokensContract.burn(_issuer, _tokenIdSupply, _qty);
+        IERC1155ERC721(tokensContract).burn(_issuer, _tokenIdSupply, _qty);
         accountSupply[_issuer] = accountSupply[_issuer].sub(_qty);
     }
     
@@ -425,6 +441,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
      */
     function redeem(uint256 _tokenIdVoucher)
         external
+        override
         whenNotPaused
         onlyVoucherOwner(_tokenIdVoucher)
     {
@@ -454,6 +471,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
      */
     function refund(uint256 _tokenIdVoucher)
         external
+        override
         whenNotPaused
         onlyVoucherOwner(_tokenIdVoucher)
     {
@@ -475,6 +493,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
      */
     function complain(uint256 _tokenIdVoucher)
         external
+        override
         whenNotPaused
         onlyVoucherOwner(_tokenIdVoucher)
     {
@@ -532,6 +551,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
      */
     function cancelOrFault(uint256 _tokenIdVoucher)
         external
+        override
         whenNotPaused
     {
         uint256 tokenIdSupply = getIdSupplyFromVoucher(_tokenIdVoucher);
@@ -585,9 +605,10 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
     /**
      * @notice Mark voucher token that the payment was released
      * @param _tokenIdVoucher   ID of the voucher token
-     */
+    */
     function setPaymentReleased(uint256 _tokenIdVoucher)
         external
+        override
         onlyFromCashier
     {
         require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
@@ -600,9 +621,10 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
     /**
      * @notice Mark voucher token that the deposits were released
      * @param _tokenIdVoucher   ID of the voucher token
-     */
+    */
     function setDepositsReleased(uint256 _tokenIdVoucher)
         external
+        override
         onlyFromCashier
     {
         require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
@@ -619,6 +641,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
      //TODO: refactor to support array of inputs
     function triggerExpiration(uint256 _tokenIdVoucher)
         external
+        override
     {
         require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         
@@ -641,13 +664,13 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
     //TODO: refactor to support array of inputs
     function triggerFinalizeVoucher(uint256 _tokenIdVoucher)
         external
+        override
     {
         require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         
         uint8 tStatus = vouchersStatus[_tokenIdVoucher].status;
         
         require(!isStatus(tStatus, idxFinal), "ALREADY_FINALIZED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
-        
         
         bool mark;
         Promise memory tPromise = promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
@@ -698,13 +721,14 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
      * @notice Set the address of the new holder of a _tokenIdSupply on transfer
      * @param _tokenIdSupply   _tokenIdSupply which will be transferred
      * @param _newSeller   new holder of the supply
-     */
+    */
     function setSupplyHolderOnTransfer(uint256 _tokenIdSupply, address _newSeller)
-        external onlyFromCashier
-        returns (address)
+        external
+        override
+        onlyFromCashier
     {
         bytes32 promiseKey = ordersPromise[_tokenIdSupply];
-        return promises[promiseKey].seller = _newSeller;
+        promises[promiseKey].seller = _newSeller;
     }
 
     /**
@@ -713,6 +737,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
      */
     function setCashierAddress(address _cashierAddress)
         external
+        override
         onlyOwner
     {
         require(_cashierAddress != address(0), "UNSPECIFIED_ADDRESS");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
@@ -729,6 +754,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
      */
     function setComplainPeriod(uint256 _complainPeriod)
         external
+        override
         onlyOwner
     {
         complainPeriod = _complainPeriod;
@@ -774,7 +800,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
      * @return                  ID of the supply token
      */
     function getIdSupplyFromVoucher(uint256 _tokenIdVoucher)
-        public pure
+        public pure override
         returns (uint256)
     {
         return _tokenIdVoucher & MASK_TYPE;
@@ -819,9 +845,10 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
     function getRemQtyForSupply(uint _tokenSupplyId, address _owner) 
         external 
         view
+        override
         returns (uint256)
     {
-        return tokensContract.balanceOf(_owner, _tokenSupplyId);
+        return IERC1155(tokensContract).balanceOf(_owner, _tokenSupplyId);
     }
 
 
@@ -831,7 +858,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
      * @return                  returns a tuple (Payment amount, Seller's deposit, Buyer's deposit)
      */
     function getOrderCosts(uint256 _tokenIdSupply)
-        public view
+        public view override
         returns (uint256, uint256, uint256)
     {
         bytes32 promiseKey = ordersPromise[_tokenIdSupply];
@@ -844,7 +871,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
      * @return                  returns a tuple (Payment amount, Buyer's deposit)
      */
     function getBuyerOrderCosts(uint256 _tokenIdSupply)
-        public view
+        public view override
         returns (uint256, uint256)
     {
         bytes32 promiseKey = ordersPromise[_tokenIdSupply];
@@ -855,9 +882,9 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
      * @notice Get Seller deposit 
      * @param _tokenIdSupply   ID of the supply token
      * @return                  returns sellers deposit
-     */
+    */
     function getSellerDeposit(uint256 _tokenIdSupply)
-        public view
+        public view override
         returns (uint256)
     {
         bytes32 promiseKey = ordersPromise[_tokenIdSupply];
@@ -870,7 +897,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
      * @return                  Status of the voucher (via enum)
      */
     function getVoucherStatus(uint256 _tokenIdVoucher)
-        public view
+        public view override
         returns (uint8, bool, bool)
     {
         return (vouchersStatus[_tokenIdVoucher].status, vouchersStatus[_tokenIdVoucher].isPaymentReleased, vouchersStatus[_tokenIdVoucher].isDepositsReleased);
@@ -880,12 +907,12 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
      * @notice Get the holder of a voucher
      * @param _tokenIdVoucher   ID of the voucher token
      * @return                  Address of the holder
-     */
+    */
     function getVoucherHolder(uint256 _tokenIdVoucher)
-        public view
+        public view override
         returns (address)
     {
-        return tokensContract.ownerOf(_tokenIdVoucher);
+        return IERC721(tokensContract).ownerOf(_tokenIdVoucher);
     }
 
     /**
@@ -894,7 +921,7 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
     * @return                  Address of the holder
     */
     function getSupplyHolder(uint256 _tokenIdSupply)
-        public view
+        public view override
         returns (address)
     {
         bytes32 promiseKey = ordersPromise[_tokenIdSupply];
@@ -904,11 +931,11 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
 
     /**
      * @notice Get the address of the token where the price for the supply is held
-     * @param _tokenIdSupply   ID of the voucher token
+     * @param _tokenIdSupply   ID of the voucher supply token
      * @return                  Address of the token
      */
     function getVoucherPriceToken(uint256 _tokenIdSupply)
-        public view
+        public view override
         returns (address)
     {
         return paymentDetails[_tokenIdSupply].addressTokenPrice;
@@ -916,18 +943,23 @@ contract VoucherKernel is Ownable, Pausable, usingHelpers {
 
     /**
      * @notice Get the address of the token where the deposits for the supply are held
-     * @param _tokenIdSupply   ID of the voucher token
+     * @param _tokenIdSupply   ID of the voucher supply token
      * @return                  Address of the token
      */
     function getVoucherDepositToken(uint256 _tokenIdSupply)
-        public view
+        public view override
         returns (address)
     {
         return paymentDetails[_tokenIdSupply].addressTokenDeposits;
     }
 
+    /**
+     * @notice Get the payment method for a particular _tokenIdSupply
+     * @param _tokenIdSupply   ID of the voucher supply token
+     * @return                  payment method
+     */
     function getVoucherPaymentMethod(uint256 _tokenIdSupply)
-        public view
+        public view override
         returns (uint8)
     {
         return paymentDetails[_tokenIdSupply].paymentMethod;
