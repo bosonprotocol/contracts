@@ -9,7 +9,7 @@ let utils
 const ERC1155ERC721 = artifacts.require("ERC1155ERC721")
 const VoucherKernel = artifacts.require("VoucherKernel")
 const Cashier = artifacts.require("Cashier")
-const BosonTKN = artifacts.require("BosonToken")
+const BosonTKN = artifacts.require("BosonTokenPrice")
 const FundLimitsOracle 	= artifacts.require('FundLimitsOracle');
 
 const helpers = require("../testHelpers/constants")

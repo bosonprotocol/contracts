@@ -6,7 +6,7 @@ const truffleAssert = require('truffle-assertions');
 const ERC1155ERC721 = artifacts.require("ERC1155ERC721");
 const VoucherKernel = artifacts.require("VoucherKernel");
 const Cashier 		= artifacts.require("Cashier");
-const BosonToken 	= artifacts.require('BosonToken');
+const BosonToken 	= artifacts.require('BosonTokenPrice');
 const FundLimitsOracle 	= artifacts.require('FundLimitsOracle');
 
 const BN = web3.utils.BN
@@ -1356,7 +1356,7 @@ contract("Cashier && VK", async accounts => {
 			xdescribe("TKN_TKN_SAME", () => {
 
 				const tokensToMintSeller = new BN(helpers.seller_deposit).mul(new BN(ORDER_QTY))
-				const tokensToMintBuyer = new BN(product_price).mul(new BN(ORDER_QTY))
+				const tokensToMintBuyer = new BN(helpers.product_price).mul(new BN(ORDER_QTY))
 
 				before(async () => {
 					utils = UtilsBuilder
