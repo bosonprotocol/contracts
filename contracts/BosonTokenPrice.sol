@@ -4,7 +4,7 @@ import "./ERC20WithPermit.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract BosonToken is ERC20WithPermit, AccessControl, Ownable {
+contract BosonTokenPrice is ERC20WithPermit, AccessControl, Ownable {
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");

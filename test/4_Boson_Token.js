@@ -1,14 +1,12 @@
 const chai = require('chai')
 const ethers = require('ethers')
-let chaiAsPromised = require("chai-as-promised")
-chai.use(chaiAsPromised)
 const assert = chai.assert
 const truffleAssert = require('truffle-assertions');
 
 const { ecsign } = require('ethereumjs-util');
 
 const BN = web3.utils.BN
-const BosonToken = artifacts.require("BosonToken")
+const BosonToken = artifacts.require("BosonTokenPrice")
 const helpers = require('../testHelpers/constants')
 
 const {
@@ -49,7 +47,7 @@ contract('Boson token', accounts => {
         const ADMIN_ROLE = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("ADMIN_ROLE"))
         const MINTER_ROLE = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("MINTER_ROLE"))
 
-        it("Only Deployer Should have admin and minter rights initiially ", async () => {
+        it("Only Deployer Should have admin and minter rights initially ", async () => {
            
             const buyerIsAdmin = await BosonTokenContract.hasRole(ADMIN_ROLE, Buyer.address);
             const buyerIsMinter = await BosonTokenContract.hasRole(MINTER_ROLE, Buyer.address);
@@ -207,7 +205,7 @@ contract('Boson token', accounts => {
             })
 
             it("should revert if owner is incorrect", async () => {
-                const inccorectSender = accounts[6]
+                const incorrectSender = accounts[6]
                 const balanceToApprove = 1200;
                 const nonce = await BosonTokenContract.nonces(Buyer.address);
                 const deadline = toWei(1);
@@ -225,7 +223,7 @@ contract('Boson token', accounts => {
                     Buffer.from(Buyer.pk.slice(2), 'hex'));
 
                 await truffleAssert.reverts(BosonTokenContract.permit(
-                    inccorectSender,
+                    incorrectSender,
                     bosonContractAddress,
                     balanceToApprove,
                     deadline,

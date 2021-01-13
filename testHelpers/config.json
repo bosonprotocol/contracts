@@ -24,6 +24,10 @@
         "randomUser": {
             "address": "0xf0508F89e26Bd6b00f66a9D467678C7ED16a3C5A",
             "pk": "0x6ca40ba4cca775643398385022264c0c414da1abd21d08d9e7136796a520a543"
+        },
+        "randomUser2": {
+            "address": "0x8199de05654e9afa5C081BcE38F140082C9a7733",
+            "pk": "0x187bb12e927c1652377405f81d93ce948a593f7d66cfba383ee761858b05921a"
         }
     }
 }

@@ -26,6 +26,7 @@ class Utils {
         this.contractCashier = cashier
         this.contractBSNTokenPrice = bsnTokenPrice
         this.contractBSNTokenDeposit = bsnTokenDeposit
+        this.contractBSNTokenSAME = bsnTokenPrice
     }
 
     async requestCreateOrder_ETH_ETH(seller, from, to, sellerDeposit, qty, returnTx = false) {
@@ -46,6 +47,47 @@ class Utils {
 
         return returnTx ? txOrder: (txOrder.logs[0].args._tokenIdSupply).toString() 
     }
+
+    async requestCreateOrder_TKN_TKN_Same_WithPermit(seller, from, to, sellerDeposit, qty) {
+        const txValue = new BN(sellerDeposit).mul(new BN(qty))
+
+        const nonce = await this.contractBSNTokenSAME.nonces(seller.address);
+
+        const digest = await getApprovalDigest(
+            this.contractBSNTokenSAME,
+            seller.address,
+            this.contractCashier.address,
+            txValue,
+            nonce,
+            this.deadline
+        )
+
+        const { v, r, s } = ecsign( 
+            Buffer.from(digest.slice(2), 'hex'),
+            Buffer.from(seller.pk.slice(2), 'hex'));
+       
+        let txOrder = await this.contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+            this.contractBSNTokenSAME.address,
+            this.contractBSNTokenSAME.address,
+            txValue,
+            this.deadline,
+            v,r,s,
+            [
+                from,
+                to,
+                helpers.product_price,
+                sellerDeposit,
+                helpers.buyer_deposit,
+                qty
+            ],
+            {
+                from: seller.address
+            }
+        );
+
+        return (txOrder.logs[0].args._tokenIdSupply).toString()
+    }
+
 
     async requestCreateOrder_TKN_TKN_WithPermit(seller, from, to, sellerDeposit, qty) {
         const txValue = new BN(sellerDeposit).mul(new BN(qty))
@@ -203,6 +245,41 @@ class Utils {
         return filtered.returnValues['_tokenIdVoucher']
     }
 
+    async commitToBuy_TKN_TKN_Same_WithPermit(buyer, seller, tokenSupplyId) {
+        const txValue = new BN(helpers.buyer_deposit).add(new BN(helpers.product_price))
+        const nonce = await this.contractBSNTokenSAME.nonces(buyer.address);
+
+        const digestTxValue = await getApprovalDigest(
+            this.contractBSNTokenSAME,
+            buyer.address,
+            this.contractCashier.address,
+            txValue,
+            nonce,
+            this.deadline
+        )
+
+        let VRS_TX_VALUE = ecsign(
+            Buffer.from(digestTxValue.slice(2), 'hex'),
+            Buffer.from(buyer.pk.slice(2), 'hex'));
+
+        let v = VRS_TX_VALUE.v
+        let r = VRS_TX_VALUE.r
+        let s = VRS_TX_VALUE.s
+
+        let CommitTx = await this.contractCashier.requestVoucher_TKN_TKN_Same_WithPermit(
+            tokenSupplyId,
+            seller.address,
+            txValue,
+            this.deadline,
+            v, r, s,
+        { from: buyer.address });
+
+        let nestedValue = (await truffleAssert.createTransactionResult(this.contractVoucherKernel, CommitTx.tx)).logs
+
+        let filtered = nestedValue.filter(e => e.event == 'LogVoucherDelivered')[0]
+        return filtered.returnValues['_tokenIdVoucher']
+    }
+
     async commitToBuy_ETH_TKN_WithPermit(buyer, seller, tokenSupplyId) {
         const nonce1 = await this.contractBSNTokenDeposit.nonces(buyer.address);
 
@@ -314,10 +391,31 @@ class Utils {
         await this.contractCashier.pause({from: deployer})
     }
 
-    calcTotalAmountToRecipients(event, distributionAmounts, recipient) {
-        if (event[recipient] == config.accounts.buyer.address) {
+    async safeTransfer721(oldVoucherOwner, newVoucherOwner, voucherID, from) {
+        const arbitraryBytes = web3.utils.fromAscii('0x0').padEnd(66, '0')
+        return await this.contractERC1155ERC721
+            .methods['safeTransferFrom(address,address,uint256,bytes)']
+            (oldVoucherOwner, newVoucherOwner, voucherID, arbitraryBytes, from);
+    }
+
+    async safeTransfer1155(oldSupplyOwner, newSupplyOwner, supplyID, qty, from) {
+        const arbitraryBytes = web3.utils.fromAscii('0x0').padEnd(66, '0')
+        return await this.contractERC1155ERC721
+            .methods['safeTransferFrom(address,address,uint256,uint256,bytes)']
+            (oldSupplyOwner, newSupplyOwner, supplyID, qty, arbitraryBytes, from);
+    }
+
+    async safeBatchTransfer1155(oldSupplyOwner, newSupplyOwner, supplyIDs, values, from) {
+        const arbitraryBytes = web3.utils.fromAscii('0x0').padEnd(66, '0')
+        return await this.contractERC1155ERC721
+            .methods['safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)']
+            (oldSupplyOwner, newSupplyOwner, supplyIDs, values, arbitraryBytes, from);
+    }
+
+    calcTotalAmountToRecipients(event, distributionAmounts, recipient, buyer, seller) {
+        if (event[recipient] == buyer) {
             distributionAmounts.buyerAmount = new BN(distributionAmounts.buyerAmount.toString()).add(new BN(event._payment.toString()))
-        } else if (event[recipient] == config.accounts.seller.address) {
+        } else if (event[recipient] == seller) {
             distributionAmounts.sellerAmount = new BN(distributionAmounts.sellerAmount.toString()).add(new BN(event._payment.toString()))
         } else {
             distributionAmounts.escrowAmount = new BN(distributionAmounts.escrowAmount.toString()).add(new BN(event._payment.toString()))

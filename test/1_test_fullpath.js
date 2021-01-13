@@ -49,13 +49,13 @@ contract("Voucher tests", async accounts => {
 	describe('Direct minting', function() {
 
 		it("must fail: unauthorized minting ERC-1155", async () => {
-			truffleAssert.reverts(contractERC1155ERC721.mint(Attacker, 666, 1, []), 
+			await truffleAssert.reverts(contractERC1155ERC721.mint(Attacker, 666, 1, []), 
 				truffleAssert.ErrorType.REVERT
 			);
 		});	
 
 		it("must fail: unauthorized minting ERC-721", async () => {
-			truffleAssert.reverts(contractERC1155ERC721.mint(Attacker, 666), 
+			await truffleAssert.reverts(contractERC1155ERC721.mint(Attacker, 666), 
 				truffleAssert.ErrorType.REVERT
 			);
 		});	
@@ -83,7 +83,7 @@ contract("Voucher tests", async accounts => {
 		// });				
 
 		// it("must fail: adding new promise with invalid validity", async () => {			
-		// 	truffleAssert.reverts(contractVoucherKernel.createTokenSupplyID(helpers.ASSET_TITLE, helpers.ASSET_PIN1, helpers.ASSET_QR1, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_FROM - 1, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD, helpers.PROMISE_CANCELORFAULT_PERIOD),
+		// 	await truffleAssert.reverts(contractVoucherKernel.createTokenSupplyID(helpers.ASSET_TITLE, helpers.ASSET_PIN1, helpers.ASSET_QR1, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_FROM - 1, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.PROMISE_CHALLENGE_PERIOD, helpers.PROMISE_CANCELORFAULT_PERIOD),
 		// 		truffleAssert.ErrorType.REVERT
 		// 	);						
 		// });			
@@ -155,7 +155,7 @@ contract("Voucher tests", async accounts => {
 		//in prototype, everyone can create an order
 		// it("must fail: unauthorized adding of new order", async () => {			
 
-		// 	truffleAssert.reverts(contractCashier.requestCreateOrder_ETH_ETH(promiseKey1, helpers.ORDER_QUANTITY1, {from: Attacker, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1}),
+		// 	await truffleAssert.reverts(contractCashier.requestCreateOrder_ETH_ETH(promiseKey1, helpers.ORDER_QUANTITY1, {from: Attacker, to: contractCashier.address, value: helpers.PROMISE_DEPOSITSE1}),
 		// 		truffleAssert.ErrorType.REVERT
 		// 	);			
 			
@@ -164,7 +164,7 @@ contract("Voucher tests", async accounts => {
 
 		it("must fail: adding new order with incorrect value sent", async () => {	
 
-			truffleAssert.reverts(contractCashier.requestCreateOrder_ETH_ETH([helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1], {from: Seller, to: contractCashier.address, value: 0}),
+			await truffleAssert.reverts(contractCashier.requestCreateOrder_ETH_ETH([helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.PROMISE_PRICE1, helpers.PROMISE_DEPOSITSE1, helpers.PROMISE_DEPOSITBU1, helpers.ORDER_QUANTITY1], {from: Seller, to: contractCashier.address, value: 0}),
 				truffleAssert.ErrorType.REVERT
 			);			
 			
@@ -172,7 +172,7 @@ contract("Voucher tests", async accounts => {
 
 		it("must fail: fill an order with incorrect value", async () => {			
 
-			truffleAssert.reverts(contractCashier.requestVoucher_ETH_ETH(tokenSupplyKey1, Seller, {from: Buyer, to: contractCashier.address, value: 0}),
+			await truffleAssert.reverts(contractCashier.requestVoucher_ETH_ETH(tokenSupplyKey1, Seller, {from: Buyer, to: contractCashier.address, value: 0}),
 				truffleAssert.ErrorType.REVERT
 			);			
 			
@@ -213,7 +213,7 @@ contract("Voucher tests", async accounts => {
 
 			  	
 		it("must fail: unauthorized redemption", async () => {
-			truffleAssert.reverts(contractVoucherKernel.redeem(tokenVoucherKey1, {from: Attacker}),
+			await truffleAssert.reverts(contractVoucherKernel.redeem(tokenVoucherKey1, {from: Attacker}),
 				truffleAssert.ErrorType.REVERT
 			);				
 		});		
@@ -235,7 +235,7 @@ contract("Voucher tests", async accounts => {
 
 
 		// it("must fail: unauthorized withdrawal of escrowed pool", async () => {
-		// 	truffleAssert.reverts(contractCashier.withdrawPool({from: Attacker}),
+		// 	await truffleAssert.reverts(contractCashier.withdrawPool({from: Attacker}),
 		// 		truffleAssert.ErrorType.REVERT
 		// 	);				
 		// });			
