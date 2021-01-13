@@ -81,7 +81,6 @@ contract("Cashier && VK", async accounts => {
 		await contractFundLimitsOracle.setTokenLimit(contractBSNTokenDeposit.address, helpers.TOKEN_LIMIT)
 	}
 
-	//Working
 	describe('TOKEN SUPPLY CREATION (Voucher batch creation)', () =>  {
 
 		let remQty = helpers.QTY_10
@@ -123,6 +122,13 @@ contract("Cashier && VK", async accounts => {
 				const escrowAmount = await contractCashier.getEscrowAmount(Seller.address);
 				
                 assert.isTrue(escrowAmount.eq(expectedBalance), "Escrow amount is incorrect")
+			})
+
+			it("Cashier Contract has correct amount of ETH", async () => {
+                const expectedBalance = new BN(helpers.seller_deposit).mul(new BN(remQty))
+				const cashierBalance = await web3.eth.getBalance(contractCashier.address)
+
+                assert.isTrue((new BN(cashierBalance)).eq(expectedBalance), "Escrow amount is incorrect")
 			})
 			
 			it("Get correct remaining qty for supply", async () => {
@@ -514,6 +520,13 @@ contract("Cashier && VK", async accounts => {
 					const escrowAmount = await contractCashier.getEscrowAmount(Seller.address);
 
 					assert.isTrue(escrowAmount.eq(expectedBalance), "Escrow amount is incorrect")
+				})
+
+				it("Cashier Contract has correct amount of ETH", async () => {
+					const expectedBalance = new BN(helpers.seller_deposit).mul(new BN(remQty))
+					const cashierBalance = await web3.eth.getBalance(contractCashier.address)
+	
+					assert.isTrue((new BN(cashierBalance)).eq(expectedBalance), "Escrow amount is incorrect")
 				})
 
 				it("Get correct remaining qty for supply", async () => {
@@ -992,17 +1005,14 @@ contract("Cashier && VK", async accounts => {
 		})
 	})
 
-	//working
 	describe("VOUCHER CREATION (Commit to buy)", () => {
 		const ORDER_QTY = 5
 		let TOKEN_SUPPLY_ID;
 
-		before(async()=>{
-			await deployContracts();
-		})
-
 		describe("ETH_ETH", async () => {
+
 			before(async () => {
+				await deployContracts();
 				utils = UtilsBuilder
 					.NEW()
 					.ETH_ETH()
@@ -1026,6 +1036,16 @@ contract("Cashier && VK", async accounts => {
 					tokenVoucherKey = ev._tokenIdVoucher
 					return ev._issuer === Seller.address;
 				}, "order1 not created successfully");
+			})
+
+			it("Cashier Contract has correct amount of funds", async () => {
+				const sellerDeposits = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_10))
+				const buyerETHSent = new BN(helpers.product_price).add(new BN(helpers.buyer_deposit))
+				const expectedBalance = sellerDeposits.add(buyerETHSent)
+
+				const cashierBalance = await web3.eth.getBalance(contractCashier.address)
+
+				assert.isTrue((new BN(cashierBalance)).eq(expectedBalance), "Escrow amount is incorrect")
 			})
 
 			it("[NEGATIVE] Should not create order with incorrect price", async () => {
@@ -1059,6 +1079,8 @@ contract("Cashier && VK", async accounts => {
 			describe("ETH_TKN", async () => {
 
 				before(async () => {
+					await deployContracts();
+
 					utils = UtilsBuilder
 						.NEW()
 						.ERC20withPermit()
@@ -1112,6 +1134,18 @@ contract("Cashier && VK", async accounts => {
 						tokenVoucherKey = ev._tokenIdVoucher
 						return ev._issuer === Seller.address;
 					}, "order1 not created successfully");
+				})
+
+				it("Cashier Contract has correct amount of funds", async () => {
+					const expectedETHBalance = new BN(helpers.product_price)
+					const cashierETHBalance = await web3.eth.getBalance(contractCashier.address)
+
+					const cashierDepositTokenBalance = await contractBSNTokenDeposit.balanceOf(contractCashier.address)
+					const sellerTokenDeposits = new BN(helpers.seller_deposit).mul(new BN(ORDER_QTY))
+					const expectedTokenBalance = new BN(helpers.buyer_deposit).add(sellerTokenDeposits)
+	
+					assert.isTrue((new BN(cashierETHBalance)).eq(expectedETHBalance), "Escrow amount is incorrect")
+					assert.isTrue(expectedTokenBalance.eq(cashierDepositTokenBalance), "Escrow amount is incorrect")
 				})
 
 				it("[NEGATIVE] Should not create order with incorrect price", async () => {
@@ -1175,6 +1209,8 @@ contract("Cashier && VK", async accounts => {
 
 			describe("TKN_TKN", () => {
 				before(async () => {
+					await deployContracts();
+
 					utils = UtilsBuilder
 						.NEW()
 						.ERC20withPermit()
@@ -1254,6 +1290,16 @@ contract("Cashier && VK", async accounts => {
 						tokenVoucherKey = ev._tokenIdVoucher
 						return ev._issuer === Seller.address;
 					}, "order1 not created successfully");
+				})
+
+				it("Cashier Contract has correct amount of funds", async () => {
+					const cashierPriceTokenBalance = await contractBSNTokenPrice.balanceOf(contractCashier.address)
+					const cashierDepositTokenBalance = await contractBSNTokenDeposit.balanceOf(contractCashier.address)
+					const sellerDeposit = new BN(helpers.seller_deposit).mul(new BN(ORDER_QTY))
+					const expectedDepositBalance = new BN(helpers.buyer_deposit).add(sellerDeposit)
+
+					assert.isTrue((new BN(cashierPriceTokenBalance)).eq(new BN(helpers.product_price)), "Escrow amount is incorrect")
+					assert.isTrue((new BN(cashierDepositTokenBalance)).eq(expectedDepositBalance), "Escrow amount is incorrect")
 				})
 
 				it("[NEGATIVE] Should not create order with incorrect price", async () => {
@@ -1370,6 +1416,8 @@ contract("Cashier && VK", async accounts => {
 				const tokensToMintBuyer = new BN(helpers.product_price).mul(new BN(ORDER_QTY))
 
 				before(async () => {
+					await deployContracts();
+
 					utils = UtilsBuilder
 						.NEW()
 						.ERC20withPermit()
@@ -1425,6 +1473,15 @@ contract("Cashier && VK", async accounts => {
 						tokenVoucherKey1 = ev._tokenIdVoucher
 						return ev._issuer === Seller.address;
 					}, "order1 not created successfully");
+				})
+
+				it("Cashier Contract has correct amount of funds", async () => {
+					const cashierTokenBalanceSame = await utils.contractBSNTokenSAME.balanceOf(contractCashier.address)
+					const sellerDeposits = new BN(helpers.seller_deposit).mul(new BN(ORDER_QTY))
+					const buyerTokensSent = new BN(helpers.product_price).add(new BN(helpers.buyer_deposit))
+					const expectedDepositBalance = buyerTokensSent.add(sellerDeposits)
+
+					assert.isTrue((new BN(cashierTokenBalanceSame)).eq(expectedDepositBalance), "Cashier amount is incorrect")
 				})
 
 				it("[NEGATIVE] Should not create order with incorrect price", async () => {
@@ -1552,6 +1609,8 @@ contract("Cashier && VK", async accounts => {
 
 			describe("TKN_ETH", () => {
 				before(async () => {
+					await deployContracts();
+
 					utils = UtilsBuilder
 						.NEW()
 						.ERC20withPermit()
@@ -1603,6 +1662,17 @@ contract("Cashier && VK", async accounts => {
 						tokenVoucherKey = ev._tokenIdVoucher
 						return ev._issuer === Seller.address;
 					}, "order1 not created successfully");
+				})
+
+				it("Cashier Contract has correct amount of funds", async () => {
+					const cashierDepositETH = await web3.eth.getBalance(contractCashier.address)
+					const sellerDeposits = new BN(helpers.seller_deposit).mul(new BN(ORDER_QTY))
+					const expectedDepositBalance = new BN(helpers.buyer_deposit).add(sellerDeposits)
+
+					const cashierPriceTokenBalance = await contractBSNTokenPrice.balanceOf(contractCashier.address)
+
+					assert.isTrue((new BN(cashierDepositETH)).eq(expectedDepositBalance), "Cashier amount is incorrect")
+					assert.isTrue((new BN(cashierPriceTokenBalance)).eq(new BN(helpers.product_price)), "Cashier amount is incorrect")
 				})
 
 				it("[NEGATIVE] Should not create order with incorrect deposit", async () => {
@@ -1667,7 +1737,6 @@ contract("Cashier && VK", async accounts => {
 		})
 	})
 
-	// working
 	describe("TOKEN SUPPLY TRANSFER", () => {
 		let OldSupplyOwner = config.accounts.randomUser 
 		let NewSupplyOwner = config.accounts.randomUser2 

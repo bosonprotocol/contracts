@@ -182,7 +182,6 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         )
         notZeroAddress(_tokenDepositAddress)
         external
-        payable
         whenNotPaused
     {
         notAboveETHLimit(metadata[2]); 
@@ -199,8 +198,6 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
 
         IERC20WithPermit(_tokenDepositAddress).transferFrom(msg.sender, address(cashierAddress), _tokensSent);
         
-        require(payable(cashierAddress).send(msg.value));
-
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETH_TKN);
     }
 
@@ -265,7 +262,6 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         uint8 vDeposit, bytes32 rDeposit, bytes32 sDeposit  // tokenDeposits
         )
         external
-        payable
         nonReentrant
         whenNotPaused
     {
