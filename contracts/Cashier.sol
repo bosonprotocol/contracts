@@ -138,9 +138,9 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         payable
         whenNotPaused
     {
-        notAboveETHLimit(metadata[2]); 
-        notAboveETHLimit(metadata[3]);
-        notAboveETHLimit(metadata[4]);
+        notAboveETHLimit(metadata[2].mul(metadata[5])); 
+        notAboveETHLimit(metadata[3].mul(metadata[5]));
+        notAboveETHLimit(metadata[4].mul(metadata[5]));
         require(metadata[3].mul(metadata[5])  == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         uint256 tokenIdSupply = voucherKernel.createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
@@ -176,9 +176,9 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         payable
         whenNotPaused
     {
-        notAboveTokenLimit(_tokenPriceAddress, metadata[2]);
-        notAboveTokenLimit(_tokenDepositAddress, metadata[3]);
-        notAboveTokenLimit(_tokenDepositAddress, metadata[4]);
+        notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
+        notAboveTokenLimit(_tokenDepositAddress, metadata[3].mul(metadata[5]));
+        notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
 
         require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         
@@ -208,8 +208,8 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         whenNotPaused
     {
         notAboveETHLimit(metadata[2]); 
-        notAboveTokenLimit(_tokenDepositAddress, metadata[3]);
-        notAboveTokenLimit(_tokenDepositAddress, metadata[4]);
+        notAboveTokenLimit(_tokenDepositAddress, metadata[3].mul(metadata[5]));
+        notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
 
         require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         
@@ -233,9 +233,9 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         payable
         whenNotPaused
     {
-        notAboveTokenLimit(_tokenPriceAddress, metadata[2]);
-        notAboveETHLimit(metadata[3]);
-        notAboveETHLimit(metadata[4]);
+        notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
+        notAboveETHLimit(metadata[3].mul(metadata[5]));
+        notAboveETHLimit(metadata[4].mul(metadata[5]));
 
         require(metadata[3].mul(metadata[5]) == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         
@@ -458,72 +458,72 @@ contract Cashier is usingHelpers, ReentrancyGuard, Ownable, Pausable {
         
     }
 
-    /**
-     * @notice Trigger withdrawals of what funds are releasable
-     * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
-     * @dev This function would be optimized a lot, here verbose for readability.
-     * @param _tokenIdVoucher an ID of a voucher token (ERC-721) to try withdraw funds from
-     */
-    function withdrawWhenPaused(uint256 _tokenIdVoucher)
-        external
-        nonReentrant
-        whenPaused
-    {
-        VoucherDetails memory voucherDetails;
+    // /**
+    //  * @notice Trigger withdrawals of what funds are releasable
+    //  * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
+    //  * @dev This function would be optimized a lot, here verbose for readability.
+    //  * @param _tokenIdVoucher an ID of a voucher token (ERC-721) to try withdraw funds from
+    //  */
+    // function withdrawWhenPaused(uint256 _tokenIdVoucher)
+    //     external
+    //     nonReentrant
+    //     whenPaused
+    // {
+    //     VoucherDetails memory voucherDetails;
         
-        //in the future might want to (i) check the gasleft() (but UNGAS proposal might make it impossible), and/or (ii) set upper loop limit to sth like .length < 2**15
-        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+    //     //in the future might want to (i) check the gasleft() (but UNGAS proposal might make it impossible), and/or (ii) set upper loop limit to sth like .length < 2**15
+    //     require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         
-        voucherDetails.tokenIdVoucher = _tokenIdVoucher;
-        voucherDetails.tokenIdSupply = voucherKernel.getIdSupplyFromVoucher(voucherDetails.tokenIdVoucher);
-        voucherDetails.paymentMethod = voucherKernel.getVoucherPaymentMethod(voucherDetails.tokenIdSupply);
+    //     voucherDetails.tokenIdVoucher = _tokenIdVoucher;
+    //     voucherDetails.tokenIdSupply = voucherKernel.getIdSupplyFromVoucher(voucherDetails.tokenIdVoucher);
+    //     voucherDetails.paymentMethod = voucherKernel.getVoucherPaymentMethod(voucherDetails.tokenIdSupply);
 
-        require(voucherDetails.paymentMethod > 0 && voucherDetails.paymentMethod <= 4, "INVALID PAYMENT METHOD");
+    //     require(voucherDetails.paymentMethod > 0 && voucherDetails.paymentMethod <= 4, "INVALID PAYMENT METHOD");
 
-        (voucherDetails.currStatus.status,
-            voucherDetails.currStatus.isPaymentReleased,
-            voucherDetails.currStatus.isDepositsReleased
-        ) = voucherKernel.getVoucherStatus(voucherDetails.tokenIdVoucher);
+    //     (voucherDetails.currStatus.status,
+    //         voucherDetails.currStatus.isPaymentReleased,
+    //         voucherDetails.currStatus.isDepositsReleased
+    //     ) = voucherKernel.getVoucherStatus(voucherDetails.tokenIdVoucher);
         
-        (voucherDetails.price, 
-            voucherDetails.depositSe, 
-            voucherDetails.depositBu
-        ) = voucherKernel.getOrderCosts(voucherDetails.tokenIdSupply);
+    //     (voucherDetails.price, 
+    //         voucherDetails.depositSe, 
+    //         voucherDetails.depositBu
+    //     ) = voucherKernel.getOrderCosts(voucherDetails.tokenIdSupply);
         
-        voucherDetails.issuer = address(uint160(voucherKernel.getSupplyHolder(voucherDetails.tokenIdSupply)));
-        voucherDetails.holder = address(uint160(voucherKernel.getVoucherHolder(voucherDetails.tokenIdVoucher)));
+    //     voucherDetails.issuer = address(uint160(voucherKernel.getSupplyHolder(voucherDetails.tokenIdSupply)));
+    //     voucherDetails.holder = address(uint160(voucherKernel.getVoucherHolder(voucherDetails.tokenIdVoucher)));
         
-        require(msg.sender == voucherDetails.issuer || msg.sender == voucherDetails.holder, "INVALID CALLER");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+    //     require(msg.sender == voucherDetails.issuer || msg.sender == voucherDetails.holder, "INVALID CALLER");    //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         
-        //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
-        if (!voucherDetails.currStatus.isPaymentReleased) 
-        {
-            releasePayments(voucherDetails);
-        }
+    //     //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
+    //     if (!voucherDetails.currStatus.isPaymentReleased) 
+    //     {
+    //         releasePayments(voucherDetails);
+    //     }
 
-        //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status 
-        if (!voucherDetails.currStatus.isDepositsReleased && 
-            isStatus(voucherDetails.currStatus.status, idxFinal)) 
-        {
-            releaseDeposits(voucherDetails);
-        }
+    //     //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status 
+    //     if (!voucherDetails.currStatus.isDepositsReleased && 
+    //         isStatus(voucherDetails.currStatus.status, idxFinal)) 
+    //     {
+    //         releaseDeposits(voucherDetails);
+    //     }
         
-        if (voucherDetails.amount2pool > 0) {
-            address payable poolAddress = address(uint160(owner()));
-            _withdraw(poolAddress, voucherDetails.amount2pool);
-        }
+    //     if (voucherDetails.amount2pool > 0) {
+    //         address payable poolAddress = address(uint160(owner()));
+    //         _withdraw(poolAddress, voucherDetails.amount2pool);
+    //     }
         
-        if (voucherDetails.amount2issuer > 0) {
-            _withdraw(voucherDetails.issuer, voucherDetails.amount2issuer);
-        }
+    //     if (voucherDetails.amount2issuer > 0) {
+    //         _withdraw(voucherDetails.issuer, voucherDetails.amount2issuer);
+    //     }
 
-        if (voucherDetails.amount2holder > 0) {
-            _withdraw(voucherDetails.holder, voucherDetails.amount2holder);
-        }
+    //     if (voucherDetails.amount2holder > 0) {
+    //         _withdraw(voucherDetails.holder, voucherDetails.amount2holder);
+    //     }
 
-        delete voucherDetails;
+    //     delete voucherDetails;
         
-    }
+    // }
 
     function releasePayments(VoucherDetails memory voucherDetails) internal {
 

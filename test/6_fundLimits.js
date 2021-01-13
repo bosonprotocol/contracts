@@ -52,10 +52,11 @@ contract("FundLimitsOracle", async accounts => {
 
         describe("ETH", () => {
             it("Should have set ETH Limit initially to 1 ETH", async () => {
+                const ONE_ETH = (1 * 10 ** 18).toString()
 
                 const ethLimit = await contractFundLimitsOracle.getETHLimit()
     
-                assert.equal(ethLimit.toString(), helpers.ETHER_LIMIT, "ETH Limit not set properly")
+                assert.equal(ethLimit.toString(), ONE_ETH, "ETH Limit not set properly")
             })
     
             it("Owner should change ETH Limit", async () => {
@@ -78,7 +79,7 @@ contract("FundLimitsOracle", async accounts => {
                 )
             })
     
-            it("[NEGATIVE] Should revert if attacker ties to change ETH Limit", async () => {
+            it("[NEGATIVE] Should revert if attacker tries to change ETH Limit", async () => {
                 await truffleAssert.reverts(
                     contractFundLimitsOracle.setETHLimit(FIVE_ETHERS, {from: Attacker.address}),
                     truffleAssert.ErrorType.REVERT
@@ -108,7 +109,7 @@ contract("FundLimitsOracle", async accounts => {
                 )
             })
     
-            it("[NEGATIVE] Should revert if attacker ties to change Token Limit", async () => {
+            it("[NEGATIVE] Should revert if attacker tries to change Token Limit", async () => {
                 await truffleAssert.reverts(
                     contractFundLimitsOracle.setTokenLimit(contractBSNTokenPrice.address, FIVE_TOKENS, {from: Attacker.address}),
                     truffleAssert.ErrorType.REVERT
