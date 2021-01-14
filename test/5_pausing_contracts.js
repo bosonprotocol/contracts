@@ -36,7 +36,7 @@ contract("Cashier && VK", async accounts => {
 		contractFundLimitsOracle = await FundLimitsOracle.new()
         contractERC1155ERC721 = await ERC1155ERC721.new()
         contractVoucherKernel = await VoucherKernel.new(contractERC1155ERC721.address)
-        contractCashier = await Cashier.new(contractVoucherKernel.address, contractFundLimitsOracle.address)
+        contractCashier = await Cashier.new(contractVoucherKernel.address, contractERC1155ERC721.address, contractFundLimitsOracle.address)
         contractBSNTokenPrice = await BosonTKN.new('BosonTokenPrice', 'BPRC');
         contractBSNTokenDeposit = await BosonTKN.new('BosonTokenDeposit', 'BDEP');
 
@@ -49,6 +49,8 @@ contract("Cashier && VK", async accounts => {
 
         await contractFundLimitsOracle.setTokenLimit(contractBSNTokenPrice.address, helpers.TOKEN_LIMIT)
 		await contractFundLimitsOracle.setTokenLimit(contractBSNTokenDeposit.address, helpers.TOKEN_LIMIT)
+        await contractFundLimitsOracle.setETHLimit(helpers.ETHER_LIMIT)
+
 
         utils = UtilsBuilder
             .NEW()
@@ -1084,6 +1086,7 @@ contract("Cashier && VK", async accounts => {
                     })
                 })
 
+                // Ignored due to deployment failure.
                 xdescribe("TKN_TKN_SAME", () => {
 
                     before(async () => {

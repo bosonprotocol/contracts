@@ -41,7 +41,7 @@ contract("Cashier withdrawals ", async accounts => {
         contractFundLimitsOracle = await FundLimitsOracle.new()
         contractERC1155ERC721 = await ERC1155ERC721.new()
         contractVoucherKernel = await VoucherKernel.new(contractERC1155ERC721.address)
-        contractCashier = await Cashier.new(contractVoucherKernel.address, contractFundLimitsOracle.address)
+        contractCashier = await Cashier.new(contractVoucherKernel.address, contractERC1155ERC721.address, contractFundLimitsOracle.address)
         contractBSNTokenPrice = await BosonTKN.new('BosonTokenPrice', 'BPRC');
         contractBSNTokenDeposit = await BosonTKN.new('BosonTokenDeposit', 'BDEP');
 
@@ -810,6 +810,7 @@ contract("Cashier withdrawals ", async accounts => {
 
             })
 
+            // Ignored due to deployment failure.
             xdescribe(`TKN - TKN SAME [WITH PERMIT]${i == PAUSED_WITHPERMIT ? PAUSED_LABEL : ''}`, async () => {
 
                 let balanceBuyer = new BN(0)

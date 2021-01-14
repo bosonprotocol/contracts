@@ -33,15 +33,14 @@ contract("FundLimitsOracle", async accounts => {
 
 		contractERC1155ERC721 = await ERC1155ERC721.new();
 		contractVoucherKernel = await VoucherKernel.new(contractERC1155ERC721.address);
-		contractCashier = await Cashier.new(contractVoucherKernel.address, contractFundLimitsOracle.address);
+		contractCashier = await Cashier.new(contractVoucherKernel.address, contractERC1155ERC721.address, contractFundLimitsOracle.address);
 
 		contractBSNTokenPrice = await BosonToken.new("BosonTokenPrice", "BPRC");
 		contractBSNTokenDeposit = await BosonToken.new("BosonTokenDeposit", "BDEP");
 
-
 		await contractERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true');
 		await contractERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address);
-		await contractVoucherKernel.setCashierAddress(contractCashier.address);
+        await contractVoucherKernel.setCashierAddress(contractCashier.address);
     }
 
 	describe('FundLimitsOracle interaction', function() {

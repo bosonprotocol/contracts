@@ -9,7 +9,8 @@ import "./IERC1155.sol";
 import "./IERC1155TokenReceiver.sol";
 import "./IERC721.sol";
 import "./IERC721TokenReceiver.sol";
-import "./Cashier.sol";
+import "./ICashier.sol";
+import "./IERC1155ERC721.sol";
 
 //preparing for ERC-1066, ERC-1444, EIP-838
 
@@ -17,14 +18,14 @@ import "./Cashier.sol";
  * @title Multi-token contract, implementing ERC-1155 and ERC-721 hybrid 
  *  Inspired by: https://github.com/pixowl/sandbox-smart-contracts
  */
-contract ERC1155ERC721 is IERC1155, IERC721 {    
+contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {    
     using SafeMath for uint256;
     using Address for address;
     
     //min security
     address public owner;           //contract owner
     address public voucherKernelAddress;  //address of the VoucherKernel contract
-    Cashier cashier;  //Cashier contract
+    address public cashier;  //Cashier contract
     
     //standard reqs
     //ERC-1155
@@ -50,7 +51,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
     );
 
     event LogCashierSet(
-        address _newCashierKernel,
+        address _newCashier,
         address _triggeredBy
     );
     
@@ -95,13 +96,13 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         require(_to != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         require(_from == msg.sender || operatorApprovals[_from][msg.sender] == true, "UNAUTHORIZED_ST");   //hex"10"FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         
-        cashier._beforeERC1155Transfer(_from, _tokenId, _value);
+        ICashier(cashier)._beforeERC1155Transfer(_from, _tokenId, _value);
 
         // SafeMath throws with insufficient funds or if _id is not valid (balance will be 0)
         balances[_tokenId][_from] = balances[_tokenId][_from].sub(_value);
         balances[_tokenId][_to] = _value.add(balances[_tokenId][_to]);
 
-        cashier._onERC1155Transfer(_from, _to, _tokenId, _value);
+        ICashier(cashier)._onERC1155Transfer(_from, _to, _tokenId, _value);
 
         emit TransferSingle(msg.sender, _from, _to, _tokenId, _value);
 
@@ -191,7 +192,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
         
         owners721[_tokenId] = _to;
 
-        cashier._onERC721Transfer(_from, _to, _tokenId);
+        ICashier(cashier)._onERC721Transfer(_from, _to, _tokenId);
 
         emit Transfer(_from, _to, _tokenId);
     }    
@@ -269,13 +270,13 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
             uint256 tokenId = _tokenIds[i];
             uint256 value = _values[i];
 
-            cashier._beforeERC1155Transfer(_from, tokenId, value);
+            ICashier(cashier)._beforeERC1155Transfer(_from, tokenId, value);
             
             // SafeMath throws with insufficient funds or if _id is not valid (balance will be 0)
             balances[tokenId][_from] = balances[tokenId][_from].sub(value);
             balances[tokenId][_to]   = value.add(balances[tokenId][_to]);
 
-            cashier._onERC1155Transfer(_from, _to, tokenId, value);
+            ICashier(cashier)._onERC1155Transfer(_from, _to, tokenId, value);
 
         }
 
@@ -485,7 +486,8 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
      * @param _data     Additional data forwarded to onERC1155BatchReceived if _to is a contract
      */
     function mint(address _to, uint256 _tokenId, uint256 _value, bytes memory _data) 
-        public 
+        public
+        override
         onlyFromVoucherKernel
     {
         _mint(_to, _tokenId, _value, _data);
@@ -520,6 +522,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
      */
     function mint(address to, uint256 tokenId) 
         public
+        override
         onlyFromVoucherKernel
         returns (bool) 
     {
@@ -598,7 +601,8 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
      * @param _value    Amount of the token
      */
     function burn(address _account, uint256 _tokenId, uint256 _value) 
-        public 
+        public
+        override
         onlyFromVoucherKernel
     {
         _burn(_account, _tokenId, _value);
@@ -745,14 +749,16 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
     }
 
     /**
-     * @notice Set the address of the VoucherKernel contract
+     * @notice Set the address of the Cashier contract
      * @param _cashier   The Cashier contract
      */
-    function setCashierContract(Cashier _cashier)
+    function setCashierContract(address _cashier)
         external
         onlyOwner
     {
-        cashier = Cashier(_cashier);
+        cashier = _cashier;
+        emit LogCashierSet(_cashier, msg.sender);
+
     }
 
     function getCashierAddress() public view returns (address){
