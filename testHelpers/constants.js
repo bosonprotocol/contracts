@@ -42,11 +42,11 @@ const QTY_20 = 20
 const QTY_1 = 1
 
 //fund limits 
-const ETHER_LIMIT = (1 * 10 ** 18).toString();
-const ABOVE_ETH_LIMIT = (2 * 10 ** 18).toString();
+const ETHER_LIMIT = (5 * 10 ** 18).toString();
+const ABOVE_ETH_LIMIT = (10 * 10 ** 18).toString();
 
-const TOKEN_LIMIT = (1 * 10 ** 18).toString();
-const ABOVE_TOKEN_LIMIT = (2 * 10 ** 18).toString();
+const TOKEN_LIMIT = (5 * 10 ** 18).toString();
+const ABOVE_TOKEN_LIMIT = (10 * 10 ** 18).toString();
 
 module.exports = {
 	ASSET_VERSION,

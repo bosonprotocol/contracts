@@ -11,13 +11,17 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 
 import "./IVoucherKernel.sol";
 import "./IERC20WithPermit.sol";
+import "./ICashier.sol";
 
-
-contract Cashier is usingHelpers, Pausable, ReentrancyGuard, Ownable {
+/**
+ * @title Contract for managing funds
+ * @dev Warning: the contract hasn't been audited yet!
+ *  Roughly following OpenZeppelin's Escrow at https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/payment/
+ */
+contract Cashier is ICashier, usingHelpers, ReentrancyGuard, Ownable, Pausable {
     using Address for address payable;
     using SafeMath for uint;
-
-
+    
     address public voucherKernel;
     address public bosonRouterAddress;
 
@@ -52,7 +56,21 @@ contract Cashier is usingHelpers, Pausable, ReentrancyGuard, Ownable {
         _;
     }
 
-    constructor(address _voucherKernel) public {
+    event LogTokenContractSet(
+        address _newTokenContract,
+        address _triggeredBy
+    );
+
+    modifier notZeroAddress(address tokenAddress) {
+        require(tokenAddress != address(0), "INVALID_TOKEN_ADDRESS");
+        _;
+    }
+
+    constructor(
+        address _voucherKernel
+    ) 
+        public
+    {
         voucherKernel = _voucherKernel;
     }
 
@@ -60,7 +78,7 @@ contract Cashier is usingHelpers, Pausable, ReentrancyGuard, Ownable {
     * @notice Pause the process of interaction with voucherID's (ERC-721), in case of emergency.
     * Only BR contract is in control of this function.
     */
-    function pause() external onlyFromBR {
+    function pause() external override onlyFromBR {
         _pause();
     }
 
@@ -68,7 +86,7 @@ contract Cashier is usingHelpers, Pausable, ReentrancyGuard, Ownable {
     * @notice Unpause the process of interaction with voucherID's (ERC-721).
     * Only BR contract is in control of this function.
     */
-    function unpause() external onlyFromBR {
+    function unpause() external override onlyFromBR {
         _unpause();
     } 
 
@@ -80,6 +98,7 @@ contract Cashier is usingHelpers, Pausable, ReentrancyGuard, Ownable {
      */
     function withdraw(uint256 _tokenIdVoucher)
         external
+        override
         nonReentrant
         whenNotPaused
     {
@@ -147,6 +166,7 @@ contract Cashier is usingHelpers, Pausable, ReentrancyGuard, Ownable {
      */
     function withdrawWhenPaused(uint256 _tokenIdVoucher)
         external
+        override
         nonReentrant
         whenPaused
     {
@@ -434,7 +454,8 @@ contract Cashier is usingHelpers, Pausable, ReentrancyGuard, Ownable {
     * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
     */
     function withdrawDeposits(uint256 _tokenIdSupply)
-        external 
+        external
+        override
         nonReentrant
         whenPaused
     {
@@ -473,7 +494,8 @@ contract Cashier is usingHelpers, Pausable, ReentrancyGuard, Ownable {
      * @notice Trigger withdrawals of pooled funds
      */    
     function withdrawPool()
-        external 
+        external
+        override
         onlyOwner
         nonReentrant
     {
@@ -518,11 +540,12 @@ contract Cashier is usingHelpers, Pausable, ReentrancyGuard, Ownable {
     }
 
     /**
-     * @notice Set the address of the Cashier contract
+     * @notice Set the address of the BR contract
      * @param _bosonRouterAddress   The address of the Cashier contract
      */
     function setBosonRouterAddress(address _bosonRouterAddress)
         external
+        override
         onlyOwner
     {
         require(_bosonRouterAddress != address(0), "UNSPECIFIED_ADDRESS");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
@@ -532,16 +555,24 @@ contract Cashier is usingHelpers, Pausable, ReentrancyGuard, Ownable {
         emit LogBosonRouterSet(_bosonRouterAddress, msg.sender);
     }
 
+    /**
+    * @notice Update the amount in escrow of an address wit the new value, based on VoucherSet/Voucher interaction
+    * @param _account  The address of an account to query
+    * @param _newAmount  New amount to be set
+    */
     function updateEscrowAmount(address _account, uint256 _newAmount) 
         external
+        override
         onlyFromBR
-        returns (uint256)
     {
-        return escrow[_account] = _newAmount;
+        escrow[_account] = _newAmount;
     }
 
+    /**
+    * @notice Only accept ETH via fallback from the BR Contract
+    */
     receive() external payable {
-        assert(msg.sender == bosonRouterAddress); // only accept ETH via fallback from the BR Contract
+        assert(msg.sender == bosonRouterAddress);
     }
 
 
@@ -555,7 +586,7 @@ contract Cashier is usingHelpers, Pausable, ReentrancyGuard, Ownable {
      * @return          The balance in escrow
      */
     function getEscrowAmount(address _account) 
-        external view
+        external view override
         returns (uint256)
     {
         return escrow[_account];

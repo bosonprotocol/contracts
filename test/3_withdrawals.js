@@ -63,7 +63,8 @@ contract("Cashier withdrawals ", async accounts => {
 		await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
 
         await contractFundLimitsOracle.setTokenLimit(contractBSNTokenPrice.address, helpers.TOKEN_LIMIT)
-		await contractFundLimitsOracle.setTokenLimit(contractBSNTokenDeposit.address, helpers.TOKEN_LIMIT)
+        await contractFundLimitsOracle.setTokenLimit(contractBSNTokenDeposit.address, helpers.TOKEN_LIMIT)
+		await contractFundLimitsOracle.setETHLimit(helpers.ETHER_LIMIT)
 
         await contractVoucherKernel.setComplainPeriod(60); //60 seconds
         await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds

@@ -29,6 +29,10 @@ contract FundLimitsOracle is Ownable, IFundLimitsOracle {
         ethLimit = 1 ether;
     }
 
+    /** 
+    * @notice Set new limit for ETH. It's used while seller tries to create a voucher. The limit is determined by a voucher set. Voucher price * quantity, seller deposit * quantity, buyer deposit * qty must be below the limit. 
+    * @param _newLimit New limit which will be set.
+    */
     function setETHLimit(uint256 _newLimit)
         external
         override
@@ -38,10 +42,10 @@ contract FundLimitsOracle is Ownable, IFundLimitsOracle {
         emit LogETHLimitChanged(_newLimit, owner());
     }
 
-    /**
-     * @notice Set new limit for a token.
-        @param _tokenAddress Address of the token which will be update.
-        @param _newLimit New limit which will be set. It must comply to the decimals of the token, so the limit is set in the correct decimals.
+    /** 
+    * @notice Set new limit for a token. It's used while seller tries to create a voucher. The limit is determined by a voucher set. Voucher price * quantity, seller deposit * quantity, buyer deposit * qty must be below the limit. 
+    * @param _tokenAddress Address of the token which will be updated.
+    * @param _newLimit New limit which will be set. It must comply to the decimals of the token, so the limit is set in the correct decimals.
     */
     function setTokenLimit(address _tokenAddress, uint256 _newLimit) 
         external
@@ -53,10 +57,21 @@ contract FundLimitsOracle is Ownable, IFundLimitsOracle {
         emit LogTokenLimitChanged(_newLimit, owner());
     }
 
+    // // // // // // // //
+    // GETTERS 
+    // // // // // // // //  
+
+    /** 
+    * @notice Get the maximum allowed ETH limit to set as price of voucher, buyer deposit or seller deposit.
+    */
     function getETHLimit() external override view returns(uint256) {
         return ethLimit;
     }
 
+    /** 
+    * @notice Get the maximum allowed token limit for the specified Token.
+    * @param _tokenAddress Address of the token which will be update.
+    */
     function getTokenLimit(address _tokenAddress) external override view returns(uint256) {
         return tokenLimits[_tokenAddress];
     }

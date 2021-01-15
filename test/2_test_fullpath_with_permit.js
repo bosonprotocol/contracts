@@ -75,10 +75,11 @@ contract("Cashier && VK", async accounts => {
 		await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
 
 		await contractVoucherKernel.setComplainPeriod(60); //60 seconds
-        await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
-
+		await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
+		
 		await contractFundLimitsOracle.setTokenLimit(contractBSNTokenPrice.address, helpers.TOKEN_LIMIT)
 		await contractFundLimitsOracle.setTokenLimit(contractBSNTokenDeposit.address, helpers.TOKEN_LIMIT)
+		await contractFundLimitsOracle.setETHLimit(helpers.ETHER_LIMIT)
 	}
 
 	describe('TOKEN SUPPLY CREATION (Voucher batch creation)', () =>  {
@@ -218,7 +219,7 @@ contract("Cashier && VK", async accounts => {
 			it("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
 				const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
 
-				await await truffleAssert.reverts(
+				await truffleAssert.reverts(
 					contractBosonRouter.requestCreateOrder_ETH_ETH(
 						[
 							helpers.PROMISE_VALID_FROM,

@@ -9,6 +9,7 @@ import "./IERC1155.sol";
 import "./IERC1155TokenReceiver.sol";
 import "./IERC721.sol";
 import "./IERC721TokenReceiver.sol";
+import "./IERC1155ERC721.sol";
 import "./IBosonRouter.sol";
 
 //preparing for ERC-1066, ERC-1444, EIP-838
@@ -17,7 +18,7 @@ import "./IBosonRouter.sol";
  * @title Multi-token contract, implementing ERC-1155 and ERC-721 hybrid 
  *  Inspired by: https://github.com/pixowl/sandbox-smart-contracts
  */
-contract ERC1155ERC721 is IERC1155, IERC721 {    
+contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {    
     using SafeMath for uint256;
     using Address for address;
     
@@ -485,7 +486,8 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
      * @param _data     Additional data forwarded to onERC1155BatchReceived if _to is a contract
      */
     function mint(address _to, uint256 _tokenId, uint256 _value, bytes memory _data) 
-        public 
+        public
+        override
         onlyFromVoucherKernel
     {
         _mint(_to, _tokenId, _value, _data);
@@ -520,6 +522,7 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
      */
     function mint(address to, uint256 tokenId) 
         public
+        override
         onlyFromVoucherKernel
         returns (bool) 
     {
@@ -598,7 +601,8 @@ contract ERC1155ERC721 is IERC1155, IERC721 {
      * @param _value    Amount of the token
      */
     function burn(address _account, uint256 _tokenId, uint256 _value) 
-        public 
+        public
+        override
         onlyFromVoucherKernel
     {
         _burn(_account, _tokenId, _value);

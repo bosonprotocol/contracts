@@ -63,6 +63,8 @@ contract("Cashier && VK", async accounts => {
 
         await contractFundLimitsOracle.setTokenLimit(contractBSNTokenPrice.address, helpers.TOKEN_LIMIT)
 		await contractFundLimitsOracle.setTokenLimit(contractBSNTokenDeposit.address, helpers.TOKEN_LIMIT)
+        await contractFundLimitsOracle.setETHLimit(helpers.ETHER_LIMIT)
+
 
         utils = UtilsBuilder
             .NEW()

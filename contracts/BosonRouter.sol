@@ -79,7 +79,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
     * All functions related to creating new batch, requestVoucher or withdraw will be paused, hence cannot be executed. 
     * There is special function for withdrawing funds if contract is paused.
     */
-    function pause() external onlyOwner {
+    function pause() external override onlyOwner {
         _pause();
         IVoucherKernel(voucherKernel).pause();
         ICashier(cashierAddress).pause();
@@ -89,7 +89,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
     * @notice Unpause the Cashier && the Voucher Kernel contracts.
     * All functions related to creating new batch, requestVoucher or withdraw will be unpaused.
     */
-    function unpause() external onlyOwner {
+    function unpause() external override onlyOwner {
         _unpause();
         IVoucherKernel(voucherKernel).unpause();
         ICashier(cashierAddress).unpause();
@@ -112,6 +112,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
     function requestCreateOrder_ETH_ETH(uint256[] calldata metadata)
         external
         payable
+        override
         whenNotPaused
     {
         notAboveETHLimit(metadata[2]); 
@@ -152,6 +153,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         notZeroAddress(_tokenPriceAddress)
         notZeroAddress(_tokenDepositAddress)
         external
+        override
         whenNotPaused
     {
         notAboveTokenLimit(_tokenPriceAddress, metadata[2]);
@@ -182,6 +184,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         )
         notZeroAddress(_tokenDepositAddress)
         external
+        override
         whenNotPaused
     {
         notAboveETHLimit(metadata[2]); 
@@ -208,6 +211,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         notZeroAddress(_tokenPriceAddress)
         external
         payable
+        override
         whenNotPaused
     {
         notAboveTokenLimit(_tokenPriceAddress, metadata[2]);
@@ -235,6 +239,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
     function requestVoucher_ETH_ETH(uint256 _tokenIdSupply, address _issuer)
         external
         payable
+        override
         nonReentrant
         whenNotPaused
     {
@@ -262,6 +267,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         uint8 vDeposit, bytes32 rDeposit, bytes32 sDeposit  // tokenDeposits
         )
         external
+        override
         nonReentrant
         whenNotPaused
     {
@@ -290,6 +296,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         uint8 v, bytes32 r, bytes32 s
         )
         external
+        override
         nonReentrant
         whenNotPaused
     {
@@ -320,6 +327,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         )
         external
         payable
+        override
         nonReentrant
         whenNotPaused
     {
@@ -352,6 +360,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         )
         external
         payable
+        override
         nonReentrant
         whenNotPaused
     {
@@ -375,30 +384,49 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         require(payable(cashierAddress).send(msg.value));
     }
 
+    /**
+    * @notice Redemption of the vouchers promise
+    * @param _tokenIdVoucher   ID of the voucher
+    */
     function redeem(uint256 _tokenIdVoucher)
         external
+        override
     {
         IVoucherKernel(voucherKernel).redeem(_tokenIdVoucher, msg.sender);
     }
 
+    /**
+    * @notice Refunding a voucher
+    * @param _tokenIdVoucher   ID of the voucher
+    */
     function refund(uint256 _tokenIdVoucher)
         external
+        override
     {
         IVoucherKernel(voucherKernel).refund(_tokenIdVoucher, msg.sender);
     }
 
-    function complain(uint256 _tokenIdVoucher) external
+    /**
+    * @notice Issue a complain for a voucher
+    * @param _tokenIdVoucher   ID of the voucher
+    */
+    function complain(uint256 _tokenIdVoucher) 
+        external
+        override
     {
         IVoucherKernel(voucherKernel).complain(_tokenIdVoucher, msg.sender);
     }
 
+    /**
+    * @notice Cancel/Fault transaction by the Seller, admitting to a fault or backing out of the deal
+    * @param _tokenIdVoucher   ID of the voucher
+    */
     function cancelOrFault(uint256 _tokenIdVoucher)
         external
+        override
     {
         IVoucherKernel(voucherKernel).cancelOrFault(_tokenIdVoucher, msg.sender);
     }
-
-
 
     /**
     * @notice Hook which will be triggered when a _tokenIdVoucher will be transferred. Escrow funds should be allocated to the new owner.
@@ -496,9 +524,10 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
     /**
      * @notice Set the address of the ERC1155ERC721 contract
      * @param _tokensContractAddress   The address of the ERC1155ERC721 contract
-     */
+    */
     function setTokenContractAddress(address _tokensContractAddress)
         external
+        override
         onlyOwner
         notZeroAddress(_tokensContractAddress)
     {
