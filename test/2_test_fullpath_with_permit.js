@@ -6,7 +6,8 @@ const truffleAssert = require('truffle-assertions');
 const ERC1155ERC721 = artifacts.require("ERC1155ERC721");
 const VoucherKernel = artifacts.require("VoucherKernel");
 const Cashier 		= artifacts.require("Cashier");
-const BosonToken 	= artifacts.require("BosonTokenPrice");
+const BosonToken 	= artifacts.require('BosonTokenPrice');
+const FundLimitsOracle 	= artifacts.require('FundLimitsOracle');
 
 const BN = web3.utils.BN
 
@@ -30,8 +31,8 @@ contract("Cashier && VK", async accounts => {
 	let Buyer = config.accounts.buyer
 	let Attacker = config.accounts.attacker
 
-	let contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit;
-    let tokenSupplyKey;
+	let contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit, contractFundLimitsOracle;
+	let tokenSupplyKey, tokenVoucherKey;
 	const ONE_VOUCHER = 1
 	const deadline = toWei(1)
 	let timestamp
@@ -48,9 +49,10 @@ contract("Cashier && VK", async accounts => {
 		helpers.PROMISE_VALID_FROM = timestamp
 		helpers.PROMISE_VALID_TO = timestamp + 2 * helpers.SECONDS_IN_DAY;
 
+		contractFundLimitsOracle = await FundLimitsOracle.new()
 		contractERC1155ERC721 = await ERC1155ERC721.new();
 		contractVoucherKernel = await VoucherKernel.new(contractERC1155ERC721.address);
-		contractCashier = await Cashier.new(contractVoucherKernel.address, contractERC1155ERC721.address);
+		contractCashier = await Cashier.new(contractVoucherKernel.address, contractERC1155ERC721.address, contractFundLimitsOracle.address);
 
 		contractBSNTokenPrice = await BosonToken.new("BosonTokenPrice", "BPRC");
 		contractBSNTokenDeposit = await BosonToken.new("BosonTokenDeposit", "BDEP");
@@ -58,12 +60,16 @@ contract("Cashier && VK", async accounts => {
 		await contractERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true');
 		await contractERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address);
 		await contractVoucherKernel.setCashierAddress(contractCashier.address);
-
+	
 		await contractERC1155ERC721.setCashierContract(contractCashier.address);
 		await contractCashier.setTokenContractAddress(contractERC1155ERC721.address);
 
 		await contractVoucherKernel.setComplainPeriod(60); //60 seconds
-        await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
+		await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
+		
+		await contractFundLimitsOracle.setTokenLimit(contractBSNTokenPrice.address, helpers.TOKEN_LIMIT)
+		await contractFundLimitsOracle.setTokenLimit(contractBSNTokenDeposit.address, helpers.TOKEN_LIMIT)
+		await contractFundLimitsOracle.setETHLimit(helpers.ETHER_LIMIT)
 
 	}
 
@@ -154,6 +160,63 @@ contract("Cashier && VK", async accounts => {
 					)
 				);
 
+			})
+			
+			it("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
+				const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
+
+				await truffleAssert.reverts(
+					contractCashier.requestCreateOrder_ETH_ETH(
+						[
+							helpers.PROMISE_VALID_FROM,
+							helpers.PROMISE_VALID_TO,
+							helpers.ABOVE_ETH_LIMIT,
+							helpers.seller_deposit,
+							helpers.PROMISE_DEPOSITBU1,
+							helpers.ORDER_QUANTITY1
+						],
+						{ from: Seller.address, value: txValue }
+					),
+					truffleAssert.ErrorType.REVERT
+				)
+			})
+
+			it("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
+				const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
+
+				await truffleAssert.reverts(
+					 contractCashier.requestCreateOrder_ETH_ETH(
+						[
+							helpers.PROMISE_VALID_FROM,
+							helpers.PROMISE_VALID_TO,
+							helpers.PROMISE_PRICE1,
+							helpers.seller_deposit,
+							helpers.ABOVE_ETH_LIMIT,
+							helpers.ORDER_QUANTITY1
+						],
+						{ from: Seller.address, value: txValue }
+					),
+					truffleAssert.ErrorType.REVERT
+				)
+			})
+
+			it("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
+				const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
+
+				await truffleAssert.reverts(
+					contractCashier.requestCreateOrder_ETH_ETH(
+						[
+							helpers.PROMISE_VALID_FROM,
+							helpers.PROMISE_VALID_TO,
+							helpers.PROMISE_PRICE1,
+							helpers.ABOVE_ETH_LIMIT,
+							helpers.PROMISE_DEPOSITBU1,
+							helpers.ORDER_QUANTITY1
+						],
+						{ from: Seller.address, value: txValue }
+					),
+					truffleAssert.ErrorType.REVERT
+				)
 			})
 
 		})
@@ -295,6 +358,121 @@ contract("Cashier && VK", async accounts => {
 					)
 
 				})
+
+				it("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
+					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
+					const deadline = toWei(1)
+
+					const digest = await getApprovalDigest(
+						contractBSNTokenDeposit,
+						Seller.address,
+						contractCashier.address,
+						txValue,
+						nonce,
+						deadline
+					)
+
+					const { v, r, s } = ecsign(
+						Buffer.from(digest.slice(2), 'hex'),
+						Buffer.from(Seller.pk.slice(2), 'hex'));
+
+					await truffleAssert.reverts(
+						contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
+							contractBSNTokenDeposit.address,
+							txValue,
+							deadline,
+							v, r, s,
+							[
+								helpers.PROMISE_VALID_FROM,
+								helpers.PROMISE_VALID_TO,
+								helpers.ABOVE_ETH_LIMIT,
+								helpers.seller_deposit,
+								helpers.PROMISE_DEPOSITBU1,
+								helpers.ORDER_QUANTITY1
+							],
+							{ from: Seller.address }
+						),
+						truffleAssert.ErrorType.REVERT
+					)
+				})
+	
+				it("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
+					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
+					const deadline = toWei(1)
+
+					const digest = await getApprovalDigest(
+						contractBSNTokenDeposit,
+						Seller.address,
+						contractCashier.address,
+						txValue,
+						nonce,
+						deadline
+					)
+
+					const { v, r, s } = ecsign(
+						Buffer.from(digest.slice(2), 'hex'),
+						Buffer.from(Seller.pk.slice(2), 'hex'));
+
+					await truffleAssert.reverts(
+						contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
+							contractBSNTokenDeposit.address,
+							txValue,
+							deadline,
+							v, r, s,
+							[
+								helpers.PROMISE_VALID_FROM,
+								helpers.PROMISE_VALID_TO,
+								helpers.PROMISE_PRICE1,
+								helpers.seller_deposit,
+								helpers.ABOVE_TOKEN_LIMIT,
+								helpers.ORDER_QUANTITY1
+							],
+							{ from: Seller.address }
+						),
+						truffleAssert.ErrorType.REVERT
+					)
+				})
+	
+				it("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
+					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
+					const deadline = toWei(1)
+
+					const digest = await getApprovalDigest(
+						contractBSNTokenDeposit,
+						Seller.address,
+						contractCashier.address,
+						txValue,
+						nonce,
+						deadline
+					)
+
+					const { v, r, s } = ecsign(
+						Buffer.from(digest.slice(2), 'hex'),
+						Buffer.from(Seller.pk.slice(2), 'hex'));
+
+
+					await truffleAssert.reverts(
+						contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
+							contractBSNTokenDeposit.address,
+							txValue,
+							deadline,
+							v, r, s,
+							[
+								helpers.PROMISE_VALID_FROM,
+								helpers.PROMISE_VALID_TO,
+								helpers.PROMISE_PRICE1,
+								helpers.ABOVE_TOKEN_LIMIT,
+								helpers.PROMISE_DEPOSITBU1,
+								helpers.ORDER_QUANTITY1
+							],
+							{ from: Seller.address }
+						),
+						truffleAssert.ErrorType.REVERT
+					)
+				})
 			})
 
 			describe("TKN_ETH", () => {
@@ -396,6 +574,67 @@ contract("Cashier && VK", async accounts => {
 						truffleAssert.ErrorType.REVERT
 					);
 
+				})
+
+				it("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
+
+					await truffleAssert.reverts(
+						contractCashier.requestCreateOrder_TKN_ETH(
+							contractBSNTokenPrice.address,
+							[
+								helpers.PROMISE_VALID_FROM,
+								helpers.PROMISE_VALID_TO,
+								helpers.ABOVE_TOKEN_LIMIT,
+								helpers.seller_deposit,
+								helpers.PROMISE_DEPOSITBU1,
+								helpers.ORDER_QUANTITY1
+							],
+							{ from: Seller.address, value: txValue.toString() }
+						),
+						truffleAssert.ErrorType.REVERT
+					)
+				})
+
+				it("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
+
+					await truffleAssert.reverts(
+						contractCashier.requestCreateOrder_TKN_ETH(
+							contractBSNTokenPrice.address,
+							[
+								helpers.PROMISE_VALID_FROM,
+								helpers.PROMISE_VALID_TO,
+								helpers.PROMISE_PRICE1,
+								helpers.seller_deposit,
+								helpers.ABOVE_ETH_LIMIT,
+								helpers.ORDER_QUANTITY1
+							],
+							{ from: Seller.address, value: txValue.toString() }
+						),
+						truffleAssert.ErrorType.REVERT
+					)
+
+				})
+
+				it("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(ONE_VOUCHER))
+
+					await truffleAssert.reverts(
+						contractCashier.requestCreateOrder_TKN_ETH(
+							contractBSNTokenPrice.address,
+							[
+								helpers.PROMISE_VALID_FROM,
+								helpers.PROMISE_VALID_TO,
+								helpers.PROMISE_PRICE1,
+								helpers.ABOVE_ETH_LIMIT,
+								helpers.PROMISE_DEPOSITBU1,
+								helpers.ORDER_QUANTITY1
+							],
+							{ from: Seller.address, value: txValue.toString() }
+						),
+						truffleAssert.ErrorType.REVERT
+					)
 				})
 			})
 
@@ -621,6 +860,124 @@ contract("Cashier && VK", async accounts => {
 					);
 
 				})
+
+				it("[NEGATIVE] Should not create a supply if price is above the limit", async () => {
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_1))
+					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
+
+					const digest = await getApprovalDigest(
+						contractBSNTokenDeposit,
+						Seller.address,
+						contractCashier.address,
+						txValue,
+						nonce,
+						deadline
+					)
+
+					const { v, r, s } = ecsign(
+						Buffer.from(digest.slice(2), 'hex'),
+						Buffer.from(Seller.pk.slice(2), 'hex'));
+
+
+					await truffleAssert.reverts(
+						contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+							contractBSNTokenPrice.address,
+							contractBSNTokenDeposit.address,
+							txValue,
+							deadline,
+							v, r, s,
+							[
+								helpers.PROMISE_VALID_FROM,
+								helpers.PROMISE_VALID_TO,
+								helpers.ABOVE_TOKEN_LIMIT,
+								helpers.seller_deposit,
+								helpers.PROMISE_DEPOSITBU1,
+								helpers.ORDER_QUANTITY1
+							],
+							{ from: Seller.address }
+						),
+						truffleAssert.ErrorType.REVERT
+					)
+				})
+
+				it("[NEGATIVE] Should not create a supply if depositBu is above the limit", async () => {
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_1))
+					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
+
+					const digest = await getApprovalDigest(
+						contractBSNTokenDeposit,
+						Seller.address,
+						contractCashier.address,
+						txValue,
+						nonce,
+						deadline
+					)
+
+					const { v, r, s } = ecsign(
+						Buffer.from(digest.slice(2), 'hex'),
+						Buffer.from(Seller.pk.slice(2), 'hex'));
+
+
+					await truffleAssert.reverts(
+						contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+							contractBSNTokenPrice.address,
+							contractBSNTokenDeposit.address,
+							txValue,
+							deadline,
+							v, r, s,
+							[
+								helpers.PROMISE_VALID_FROM,
+								helpers.PROMISE_VALID_TO,
+								helpers.PROMISE_PRICE1,
+								helpers.seller_deposit,
+								helpers.ABOVE_TOKEN_LIMIT,
+								helpers.ORDER_QUANTITY1
+							],
+							{ from: Seller.address }
+						),
+						truffleAssert.ErrorType.REVERT
+					)
+				})
+
+				it("[NEGATIVE] Should not create a supply if depositSe is above the limit", async () => {
+					const txValue = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_1))
+					const nonce = await contractBSNTokenDeposit.nonces(Seller.address);
+
+					const digest = await getApprovalDigest(
+						contractBSNTokenDeposit,
+						Seller.address,
+						contractCashier.address,
+						txValue,
+						nonce,
+						deadline
+					)
+
+					const { v, r, s } = ecsign(
+						Buffer.from(digest.slice(2), 'hex'),
+						Buffer.from(Seller.pk.slice(2), 'hex'));
+
+
+					await truffleAssert.reverts(
+						contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+							contractBSNTokenPrice.address,
+							contractBSNTokenDeposit.address,
+							txValue,
+							deadline,
+							v, r, s,
+							[
+								helpers.PROMISE_VALID_FROM,
+								helpers.PROMISE_VALID_TO,
+								helpers.PROMISE_PRICE1,
+								helpers.ABOVE_TOKEN_LIMIT,
+								helpers.PROMISE_DEPOSITBU1,
+								helpers.ORDER_QUANTITY1
+							],
+							{ from: Seller.address }
+						),
+						truffleAssert.ErrorType.REVERT
+					)
+				})
+
 			})
 
 		})
@@ -656,7 +1013,7 @@ contract("Cashier && VK", async accounts => {
 				let internalTx = (await truffleAssert.createTransactionResult(contractVoucherKernel, txFillOrder.tx))
 
 				truffleAssert.eventEmitted(internalTx, 'LogVoucherDelivered', (ev) => {
-					tokenVoucherKey1 = ev._tokenIdVoucher
+					tokenVoucherKey = ev._tokenIdVoucher
 					return ev._issuer === Seller.address;
 				}, "order1 not created successfully");
 			})
@@ -742,7 +1099,7 @@ contract("Cashier && VK", async accounts => {
 					let internalTx = (await truffleAssert.createTransactionResult(contractVoucherKernel, txFillOrder.tx))
 					
 					truffleAssert.eventEmitted(internalTx, 'LogVoucherDelivered', (ev) => {
-						tokenVoucherKey1 = ev._tokenIdVoucher
+						tokenVoucherKey = ev._tokenIdVoucher
 						return ev._issuer === Seller.address;
 					}, "order1 not created successfully");
 				})
@@ -884,7 +1241,7 @@ contract("Cashier && VK", async accounts => {
 					let internalTx = (await truffleAssert.createTransactionResult(contractVoucherKernel, txFillOrder.tx))
 
 					truffleAssert.eventEmitted(internalTx, 'LogVoucherDelivered', (ev) => {
-						tokenVoucherKey1 = ev._tokenIdVoucher
+						tokenVoucherKey = ev._tokenIdVoucher
 						return ev._issuer === Seller.address;
 					}, "order1 not created successfully");
 				})
@@ -1233,7 +1590,7 @@ contract("Cashier && VK", async accounts => {
 					let internalTx = (await truffleAssert.createTransactionResult(contractVoucherKernel, txFillOrder.tx))
 
 					truffleAssert.eventEmitted(internalTx, 'LogVoucherDelivered', (ev) => {
-						tokenVoucherKey1 = ev._tokenIdVoucher
+						tokenVoucherKey = ev._tokenIdVoucher
 						return ev._issuer === Seller.address;
 					}, "order1 not created successfully");
 				})

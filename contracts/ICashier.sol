@@ -95,8 +95,8 @@ interface ICashier {
         uint256 deadline,
         uint8 v, bytes32 r, bytes32 s
         )
-        external
-        payable;
+        external;
+
 
     function requestVoucher_ETH_TKN_WithPermit(
         uint256 _tokenIdSupply, 

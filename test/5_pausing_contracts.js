@@ -10,6 +10,7 @@ const ERC1155ERC721 = artifacts.require("ERC1155ERC721")
 const VoucherKernel = artifacts.require("VoucherKernel")
 const Cashier = artifacts.require("Cashier")
 const BosonTKN = artifacts.require("BosonTokenPrice")
+const FundLimitsOracle 	= artifacts.require('FundLimitsOracle');
 
 const helpers = require("../testHelpers/constants")
 const timemachine = require('../testHelpers/timemachine')
@@ -26,14 +27,16 @@ contract("Cashier && VK", async accounts => {
     let Buyer = config.accounts.buyer
     let Attacker = config.accounts.attacker
 
-    let contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit
+    let contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit, contractFundLimitsOracle
     let tokensToMint
     let timestamp
 
     async function deployContracts() {
+
+		contractFundLimitsOracle = await FundLimitsOracle.new()
         contractERC1155ERC721 = await ERC1155ERC721.new()
         contractVoucherKernel = await VoucherKernel.new(contractERC1155ERC721.address)
-        contractCashier = await Cashier.new(contractVoucherKernel.address, contractERC1155ERC721.address)
+        contractCashier = await Cashier.new(contractVoucherKernel.address, contractERC1155ERC721.address, contractFundLimitsOracle.address)
         contractBSNTokenPrice = await BosonTKN.new('BosonTokenPrice', 'BPRC');
         contractBSNTokenDeposit = await BosonTKN.new('BosonTokenDeposit', 'BDEP');
 
@@ -43,6 +46,11 @@ contract("Cashier && VK", async accounts => {
 
         await contractVoucherKernel.setComplainPeriod(60); //60 seconds
         await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
+
+        await contractFundLimitsOracle.setTokenLimit(contractBSNTokenPrice.address, helpers.TOKEN_LIMIT)
+		await contractFundLimitsOracle.setTokenLimit(contractBSNTokenDeposit.address, helpers.TOKEN_LIMIT)
+        await contractFundLimitsOracle.setETHLimit(helpers.ETHER_LIMIT)
+
 
         utils = UtilsBuilder
             .NEW()

@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "./IVoucherKernel.sol";
 import "./usingHelpers.sol";
 import "./IERC20WithPermit.sol";
+import "./IFundLimitsOracle.sol";
 import "./ICashier.sol";
 
 /**
@@ -20,6 +21,7 @@ contract Cashier is ICashier, usingHelpers, ReentrancyGuard, Ownable, Pausable {
     using Address for address payable;
     using SafeMath for uint;
     
+    address public fundLimitsOracle;
     address public voucherKernel;
     address public tokensContractAddress;
 
@@ -29,7 +31,7 @@ contract Cashier is ICashier, usingHelpers, ReentrancyGuard, Ownable, Pausable {
     //slashedDepositPool can be obtained through getEscrowAmount(poolAddress)
     
     uint256 internal constant CANCELFAULT_SPLIT = 2; //for POC purposes, this is hardcoded; e.g. each party gets depositSe / 2
-    
+
     struct VoucherDetails {
         uint256 tokenIdSupply;
         uint256 tokenIdVoucher;
@@ -75,19 +77,31 @@ contract Cashier is ICashier, usingHelpers, ReentrancyGuard, Ownable, Pausable {
         _;
     }
 
+    function notAboveETHLimit(uint256 value) internal view{
+        require(value <= IFundLimitsOracle(fundLimitsOracle).getETHLimit(), "VALUE_ABOVE_ETH_LIMIT");    
+    }
+
+    function notAboveTokenLimit(address _tokenAddress, uint256 value) internal view{
+        require(value <= IFundLimitsOracle(fundLimitsOracle).getTokenLimit(_tokenAddress), "VALUE_ABOVE_TKN_LIMIT");
+    }
+
     modifier onlyTokensContract() {
         require(msg.sender == tokensContractAddress, "UNAUTHORIZED_TK");
         _;
     }
 
     constructor(
-        address _voucherKernel, address _tokensContractAddress
+        address _voucherKernel,
+        address _tokensContractAddress,
+        address _fundLimitsOracle
     ) 
-        public 
+        public
     {
         voucherKernel = _voucherKernel;
         tokensContractAddress = _tokensContractAddress;
+        fundLimitsOracle = _fundLimitsOracle;
     }
+    
 
     /**
     * @notice Pause the Cashier && the Voucher Kernel contracts in case of emergency.
@@ -128,6 +142,9 @@ contract Cashier is ICashier, usingHelpers, ReentrancyGuard, Ownable, Pausable {
         override
         whenNotPaused
     {
+        notAboveETHLimit(metadata[2].mul(metadata[5])); 
+        notAboveETHLimit(metadata[3].mul(metadata[5]));
+        notAboveETHLimit(metadata[4].mul(metadata[5]));
         require(metadata[3].mul(metadata[5])  == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         uint256 tokenIdSupply = IVoucherKernel(voucherKernel).createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
@@ -164,6 +181,10 @@ contract Cashier is ICashier, usingHelpers, ReentrancyGuard, Ownable, Pausable {
         override
         whenNotPaused
     {
+        notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
+        notAboveTokenLimit(_tokenDepositAddress, metadata[3].mul(metadata[5]));
+        notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
+
         require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         
         IERC20WithPermit(_tokenDepositAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
@@ -192,6 +213,10 @@ contract Cashier is ICashier, usingHelpers, ReentrancyGuard, Ownable, Pausable {
         override
         whenNotPaused
     {
+        notAboveETHLimit(metadata[2]); 
+        notAboveTokenLimit(_tokenDepositAddress, metadata[3].mul(metadata[5]));
+        notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
+
         require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         
         IERC20WithPermit(_tokenDepositAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
@@ -215,6 +240,10 @@ contract Cashier is ICashier, usingHelpers, ReentrancyGuard, Ownable, Pausable {
         override
         whenNotPaused
     {
+        notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
+        notAboveETHLimit(metadata[3].mul(metadata[5]));
+        notAboveETHLimit(metadata[4].mul(metadata[5]));
+
         require(metadata[3].mul(metadata[5]) == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         
         uint256 tokenIdSupply = IVoucherKernel(voucherKernel).createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
@@ -280,7 +309,7 @@ contract Cashier is ICashier, usingHelpers, ReentrancyGuard, Ownable, Pausable {
         IERC20WithPermit(tokenDepositAddress).transferFrom(msg.sender, address(this), depositBu);
     }
 
-    function requestVoucher_TKN_TKN_Same_WithPermit(
+  function requestVoucher_TKN_TKN_Same_WithPermit(
         uint256 _tokenIdSupply, 
         address _issuer,
         uint256 _tokensSent,
@@ -288,7 +317,6 @@ contract Cashier is ICashier, usingHelpers, ReentrancyGuard, Ownable, Pausable {
         uint8 v, bytes32 r, bytes32 s
         )
         external
-        payable
         override
         nonReentrant
         whenNotPaused
