@@ -7,7 +7,8 @@
     "test": "test"
   },
   "scripts": {
-    "test": "truffle test",
+    "compile": "truffle compile",
+    "test:unit": "truffle test",
     "coverage": "node --max-old-space-size=4096 ./node_modules/.bin/truffle run coverage --network coverage",
     "migrate-dev": "truffle migrate --network=rinkeby",
     "verify-dev": "truffle run verify ERC1155ERC721 VoucherKernel Cashier BosonTokenPrice BosonTokenDeposit --network rinkeby"
@@ -24,18 +25,16 @@
   "homepage": "https://github.com/bosonprotocol/bsn-core-prototype#readme",
   "dependencies": {
     "@openzeppelin/contracts": "^3.2.0",
-    "ethers": "5.0.4",
-    "truffle-assertions": "^0.9.2",
-    "truffle-hdwallet-provider": "^1.0.17"
-  },
-  "devDependencies": {
     "@truffle/hdwallet-provider": "^1.2.0",
+    "axios": "^0.20.0",
     "chai": "^4.2.0",
     "dotenv": "^8.2.0",
     "ethereumjs-util": "^7.0.7",
+    "ethers": "5.0.4",
     "mocha": "^8.2.1",
     "solidity-coverage": "^0.7.12",
     "truffle": "5.1.10",
+    "truffle-assertions": "^0.9.2",
     "truffle-plugin-verify": "^0.5.2"
   }
 }
