@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "compile": "truffle compile",
+    "compile": "truffle compile --all",
     "test:unit": "truffle test",
     "coverage": "node --max-old-space-size=4096 ./node_modules/.bin/truffle run coverage --network coverage",
     "migrate-dev": "truffle migrate --network=rinkeby",
