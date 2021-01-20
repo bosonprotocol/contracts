@@ -32,11 +32,11 @@ interface ICashier {
         uint256 _depositBu = metadata[4];
         uint256 _quantity = metadata[5];
      */
-    function requestCreateOrder_ETH_ETH(uint256[] calldata metadata)
+    function requestCreateOrderETHETH(uint256[] calldata metadata)
         external
         payable;
 
-    function requestCreateOrder_TKN_TKN_WithPermit(
+    function requestCreateOrderTKNTKNWithPermit(
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent,
@@ -49,7 +49,7 @@ interface ICashier {
         external
         payable;
 
-    function requestCreateOrder_ETH_TKN_WithPermit(
+    function requestCreateOrderETHTKNWithPermit(
         address _tokenDepositAddress,
         uint256 _tokensSent,
         uint256 deadline,
@@ -61,7 +61,7 @@ interface ICashier {
         external
         payable;
 
-    function requestCreateOrder_TKN_ETH(
+    function requestCreateOrderTKNETH(
         address _tokenPriceAddress,
         uint256[] calldata metadata
         )
@@ -73,11 +73,11 @@ interface ICashier {
      * @param _tokenIdSupply    ID of the supply token
      * @param _issuer           Address of the issuer of the supply token
      */
-    function requestVoucher_ETH_ETH(uint256 _tokenIdSupply, address _issuer)
+    function requestVoucherETHETH(uint256 _tokenIdSupply, address _issuer)
         external
         payable;
 
-    function requestVoucher_TKN_TKN_WithPermit(
+    function requestVoucherTKNTKNWithPermit(
         uint256 _tokenIdSupply, 
         address _issuer,
         uint256 _tokensSent,
@@ -88,7 +88,7 @@ interface ICashier {
         external
         payable;
 
-    function requestVoucher_TKN_TKN_Same_WithPermit(
+    function requestVoucherTKNTKNSameWithPermit(
         uint256 _tokenIdSupply, 
         address _issuer,
         uint256 _tokensSent,
@@ -98,7 +98,7 @@ interface ICashier {
         external;
 
 
-    function requestVoucher_ETH_TKN_WithPermit(
+    function requestVoucherETHTKNWithPermit(
         uint256 _tokenIdSupply, 
         address _issuer,
         uint256 _tokensDeposit,
@@ -108,7 +108,7 @@ interface ICashier {
         external
         payable;
 
-    function requestVoucher_TKN_ETH_WithPermit(
+    function requestVoucherTKNETHWithPermit(
         uint256 _tokenIdSupply, 
         address _issuer,
         uint256 _tokensPrice,

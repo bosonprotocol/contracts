@@ -5,15 +5,15 @@ pragma solidity >=0.6.6 <0.7.0;
 /**
  * @title Utility contract to enable access to common structures
  */
-contract usingHelpers {
+contract UsingHelpers {
     uint8 internal constant ONE = 1;
-    uint8 internal constant idxCommit = 7;
-    uint8 internal constant idxRedeem = 6;
-    uint8 internal constant idxRefund = 5;
-    uint8 internal constant idxExpire = 4;
-    uint8 internal constant idxComplain = 3;
-    uint8 internal constant idxCancelFault = 2;
-    uint8 internal constant idxFinal = 1;
+    uint8 internal constant IDX_COMMIT = 7;
+    uint8 internal constant IDX_REDEEM = 6;
+    uint8 internal constant IDX_REFUND = 5;
+    uint8 internal constant IDX_EXPIRE = 4;
+    uint8 internal constant IDX_COMPLAIN = 3;
+    uint8 internal constant IDX_CANCEL_FAULT = 2;
+    uint8 internal constant IDX_FINAL = 1;
     
     /*  Status of the voucher in 8 bits:
         [7:COMMITTED] [6:REDEEMED] [5:REFUNDED] [4:EXPIRED] [3:COMPLAINED] [2:CANCELORFAULT] [1:FINAL] [1:/]
@@ -21,10 +21,10 @@ contract usingHelpers {
 
     // Those are the payment methods we are using throughout the system. 
     // Depending on how to user choose to interact with it's funds we store the method, so we could distribute its tokens afterwise 
-    uint8 internal constant ETH_ETH = 1;
-    uint8 internal constant ETH_TKN = 2;
-    uint8 internal constant TKN_ETH = 3;
-    uint8 internal constant TKN_TKN = 4;
+    uint8 internal constant ETHETH = 1;
+    uint8 internal constant ETHTKN = 2;
+    uint8 internal constant TKNETH = 3;
+    uint8 internal constant TKNTKN = 4;
 
     struct VoucherStatus {
         uint8 status;
@@ -39,7 +39,7 @@ contract usingHelpers {
         internal pure
         returns (bool)
     {
-        return _status == setChange(0, idxCommit);
+        return _status == setChange(0, IDX_COMMIT);
     }
     
     
@@ -47,7 +47,7 @@ contract usingHelpers {
         internal pure
         returns (bool)
     {
-        return _status == setChange(setChange(0, idxCommit), idxRedeem);
+        return _status == setChange(setChange(0, IDX_COMMIT), IDX_REDEEM);
     }    
     
     
@@ -55,7 +55,7 @@ contract usingHelpers {
         internal pure
         returns (bool)
     {
-        return _status == setChange(setChange(0, idxCommit), idxRefund);
+        return _status == setChange(setChange(0, IDX_COMMIT), IDX_REFUND);
     }    
     
 
@@ -63,7 +63,7 @@ contract usingHelpers {
         internal pure
         returns (bool)
     {
-        return _status == setChange(setChange(0, idxCommit), idxExpire);
+        return _status == setChange(setChange(0, IDX_COMMIT), IDX_EXPIRE);
     }      
     
     

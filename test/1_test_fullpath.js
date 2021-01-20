@@ -74,7 +74,7 @@ contract("Voucher tests", async addresses => {
   describe('Orders (aka supply tokens - ERC1155)', () => {
     it("adding one new order / promise", async () => {
       const txOrder = await contractCashier
-        .requestCreateOrder_ETH_ETH([
+        .requestCreateOrderETHETH([
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.PROMISE_PRICE1,
@@ -112,7 +112,7 @@ contract("Voucher tests", async addresses => {
 
     it("adding second order", async () => {
       const txOrder = await contractCashier
-        .requestCreateOrder_ETH_ETH([
+        .requestCreateOrderETHETH([
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.PROMISE_PRICE2,
@@ -136,7 +136,7 @@ contract("Voucher tests", async addresses => {
 
     it("fill one order (aka buy a voucher)", async () => {
       const txFillOrder = await contractCashier
-        .requestVoucher_ETH_ETH(
+        .requestVoucherETHETH(
           tokenSupplyKey1,
           users.buyer.address, {
             from: users.buyer.address,
@@ -161,7 +161,7 @@ contract("Voucher tests", async addresses => {
 
     it("fill second order (aka buy a voucher)", async () => {
       const txFillOrder = await contractCashier
-        .requestVoucher_ETH_ETH(
+        .requestVoucherETHETH(
           tokenSupplyKey2,
           users.buyer.address, {
             from: users.buyer.address,
@@ -183,7 +183,7 @@ contract("Voucher tests", async addresses => {
     it("must fail: adding new order with incorrect value sent",
       async () => {
         await truffleAssert.reverts(
-          contractCashier.requestCreateOrder_ETH_ETH([
+          contractCashier.requestCreateOrderETHETH([
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
             constants.PROMISE_PRICE1,
@@ -201,7 +201,7 @@ contract("Voucher tests", async addresses => {
 
     it("must fail: fill an order with incorrect value", async () => {
       await truffleAssert.reverts(
-        contractCashier.requestVoucher_ETH_ETH(
+        contractCashier.requestVoucherETHETH(
           tokenSupplyKey1,
           users.buyer.address, {
             from: users.buyer.address,
@@ -341,7 +341,7 @@ contract("Voucher tests - UNHAPPY PATH", async addresses => {
       contractCashier.address)
 
     const txOrder = await contractCashier
-      .requestCreateOrder_ETH_ETH([
+      .requestCreateOrderETHETH([
         constants.PROMISE_VALID_FROM,
         constants.PROMISE_VALID_TO,
         constants.PROMISE_PRICE1,
@@ -363,7 +363,7 @@ contract("Voucher tests - UNHAPPY PATH", async addresses => {
       }, "order1 not created successfully")
 
     const txFillOrder = await contractCashier
-      .requestVoucher_ETH_ETH(
+      .requestVoucherETHETH(
         tokenSupplyKey1,
         users.seller.address,
         {

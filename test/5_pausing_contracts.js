@@ -65,7 +65,7 @@ contract("Cashier && VK", async addresses => {
       .setETHLimit(constants.ETHER_LIMIT)
 
     utils = UtilsBuilder.create()
-      .ETH_ETH()
+      .ETHETH()
       .build(
         contractERC1155ERC721,
         contractVoucherKernel,
@@ -123,11 +123,11 @@ contract("Cashier && VK", async addresses => {
           })
       })
 
-      describe("ETH_ETH", () => {
+      describe("ETHETH", () => {
         before(async () => {
           await deployContracts()
           utils = UtilsBuilder.create()
-            .ETH_ETH()
+            .ETHETH()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -368,13 +368,13 @@ contract("Cashier && VK", async addresses => {
       })
 
       describe("[WITH PERMIT]", () => {
-        describe("ETH_TKN", () => {
+        describe("ETHTKN", () => {
           before(async () => {
             await deployContracts()
 
             utils = UtilsBuilder.create()
               .ERC20withPermit()
-              .ETH_TKN()
+              .ETHTKN()
               .build(
                 contractERC1155ERC721,
                 contractVoucherKernel,
@@ -632,12 +632,12 @@ contract("Cashier && VK", async addresses => {
             })
         })
 
-        describe("TKN_ETH", () => {
+        describe("TKNETH", () => {
           before(async () => {
             await deployContracts()
             utils = UtilsBuilder.create()
               .ERC20withPermit()
-              .TKN_ETH()
+              .TKNETH()
               .build(
                 contractERC1155ERC721,
                 contractVoucherKernel,
@@ -895,12 +895,12 @@ contract("Cashier && VK", async addresses => {
             })
         })
 
-        describe("TKN_TKN", () => {
+        describe("TKNTKN", () => {
           before(async () => {
             await deployContracts()
             utils = UtilsBuilder.create()
               .ERC20withPermit()
-              .TKN_TKN()
+              .TKNTKN()
               .build(
                 contractERC1155ERC721,
                 contractVoucherKernel,
@@ -1205,12 +1205,12 @@ contract("Cashier && VK", async addresses => {
           })
       })
 
-      describe("ETH_ETH", () => {
+      describe("ETHETH", () => {
         before(async () => {
           await deployContracts()
 
           utils = UtilsBuilder.create()
-            .ETH_ETH()
+            .ETHETH()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -1285,14 +1285,14 @@ contract("Cashier && VK", async addresses => {
       })
 
       describe("[WITH PERMIT]", () => {
-        describe("ETH_TKN", () => {
+        describe("ETHTKN", () => {
           before(async () => {
             await deployContracts()
             await deployContracts()
             utils = UtilsBuilder
               .create()
               .ERC20withPermit()
-              .ETH_TKN()
+              .ETHTKN()
               .build(
                 contractERC1155ERC721,
                 contractVoucherKernel,
@@ -1380,12 +1380,12 @@ contract("Cashier && VK", async addresses => {
             })
         })
 
-        describe("TKN_ETH", () => {
+        describe("TKNETH", () => {
           before(async () => {
             await deployContracts()
             utils = UtilsBuilder.create()
               .ERC20withPermit()
-              .TKN_ETH()
+              .TKNETH()
               .build(
                 contractERC1155ERC721,
                 contractVoucherKernel,
@@ -1469,12 +1469,12 @@ contract("Cashier && VK", async addresses => {
             })
         })
 
-        describe("TKN_TKN", () => {
+        describe("TKNTKN", () => {
           before(async () => {
             await deployContracts()
             utils = UtilsBuilder.create()
               .ERC20withPermit()
-              .TKN_TKN()
+              .TKNTKN()
               .build(
                 contractERC1155ERC721,
                 contractVoucherKernel,
@@ -1567,12 +1567,12 @@ contract("Cashier && VK", async addresses => {
         })
 
         // Ignored due to deployment failure.
-        xdescribe("TKN_TKN_SAME", () => {
+        xdescribe("TKNTKNSAME", () => {
           before(async () => {
             await deployContracts()
             utils = UtilsBuilder.create()
               .ERC20withPermit()
-              .TKN_TKN_SAME()
+              .TKNTKNSAME()
               .build(
                 contractERC1155ERC721,
                 contractVoucherKernel,

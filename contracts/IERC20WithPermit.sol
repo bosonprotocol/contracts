@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
-pragma solidity >=0.6.0 <0.7.0;
+pragma solidity >=0.6.6 <0.7.0;
 
 interface IERC20WithPermit {
     event Approval(
@@ -34,8 +34,10 @@ interface IERC20WithPermit {
         uint256 value
     ) external returns (bool);
 
+    // solhint-disable-next-line func-name-mixedcase
     function DOMAIN_SEPARATOR() external view returns (bytes32);
 
+    // solhint-disable-next-line func-name-mixedcase
     function PERMIT_TYPEHASH() external pure returns (bytes32);
 
     function nonces(address owner) external view returns (uint256);

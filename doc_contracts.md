@@ -10,12 +10,12 @@ Main contracts:
 * Cashier: funds-related functions  
 * ERC1155ERC721: token factory  
 * VoucherKernel: main business logic  
-* usingHelpers: common utils as structures  
+* UsingHelpers: common utils as structures  
 
 Supported currencies are currently ETH and BSN tokens therefore functions 
-dealing with funds have appendices such as ETH_ETH or ETH_TKN to denote the 
+dealing with funds have appendices such as ETHETH or ETHTKN to denote the 
 currencies used in that particular function (e.g. 
-`function requestCreateOrder_ETH_ETH(uint256[] calldata metadata)`).  
+`function requestCreateOrderETHETH(uint256[] calldata metadata)`).  
 
 ## Transactions flow
 
@@ -26,7 +26,7 @@ below.
 
 Voucher's status is defined in 7 bits that are set depending on the path in its 
 lifecycle (defined in 
-[usingHelpers.sol](https://github.com/bosonprotocol/bsn-core-prototype/blob/master/contracts/usingHelpers.sol#L29)):  
+[UsingHelpers.sol](https://github.com/bosonprotocol/bsn-core-prototype/blob/master/contracts/UsingHelpers.sol#L29)):  
 
 7:COMMITTED  
 6:REDEEMED  

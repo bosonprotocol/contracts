@@ -12,7 +12,7 @@ import "./IERC721.sol";
 import "./IERC1155ERC721.sol";
 import "./IERC721TokenReceiver.sol";
 import "./IVoucherKernel.sol";
-import "./usingHelpers.sol";
+import "./UsingHelpers.sol";
 
 //preparing for ERC-1066, ERC-1444, EIP-838
 
@@ -24,7 +24,7 @@ import "./usingHelpers.sol";
  *  - The usage of block.timestamp is honored since vouchers are defined with day-precision and the demo app is not covering all edge cases.
  *      See: https://ethereum.stackexchange.com/questions/5924/how-do-ethereum-mining-nodes-maintain-a-time-consistent-with-the-network/5931#5931
 */
-contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {    
+contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     using Address for address;
     using SafeMath for uint;
     //using Counters for Counters.Counter;
@@ -263,7 +263,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
     /**
      * @notice Creates a Payment method struct recording the details on how the seller requires to receive Price and Deposits for a certain Voucher Set.
      * @param _tokenIdSupply     _tokenIdSupply of the voucher set this is related to
-     * @param _paymentMethod  might be ETH_ETH, ETH_TKN, TKN_ETH or TKN_TKN
+     * @param _paymentMethod  might be ETHETH, ETHTKN, TKNETH or TKNTKN
      * @param _tokenPrice   token address which will hold the funds for the price of the voucher
      * @param _tokenDeposits   token address which will hold the funds for the deposits of the voucher
      */
@@ -382,7 +382,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         uint256 voucherTokenId = _tokenIdSupply | ++typeCounters[_tokenIdSupply];
         
         //set status
-        vouchersStatus[voucherTokenId].status = setChange(vouchersStatus[voucherTokenId].status, idxCommit);
+        vouchersStatus[voucherTokenId].status = setChange(vouchersStatus[voucherTokenId].status, IDX_COMMIT);
         vouchersStatus[voucherTokenId].isPaymentReleased = false;
         vouchersStatus[voucherTokenId].isDepositsReleased = false;
         
@@ -455,7 +455,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         //check collection code and/or assign collector
         
         vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;
-        vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, idxRedeem);
+        vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, IDX_REDEEM);
         
         emit LogVoucherRedeemed(_tokenIdVoucher, msg.sender, tPromise.promiseId);
     }
@@ -481,7 +481,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         isInValidityPeriod(_tokenIdVoucher);
         
         vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;
-        vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, idxRefund);
+        vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, IDX_REFUND);
         
         emit LogVoucherRefunded(_tokenIdVoucher);
     }
@@ -497,8 +497,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         whenNotPaused
         onlyVoucherOwner(_tokenIdVoucher)
     {
-        require(!isStatus(vouchersStatus[_tokenIdVoucher].status, idxComplain), "ALREADY_COMPLAINED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
-        require(!isStatus(vouchersStatus[_tokenIdVoucher].status, idxFinal), "ALREADY_FINALIZED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
+        require(!isStatus(vouchersStatus[_tokenIdVoucher].status, IDX_COMPLAIN), "ALREADY_COMPLAINED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
+        require(!isStatus(vouchersStatus[_tokenIdVoucher].status, IDX_FINAL), "ALREADY_FINALIZED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
         
         //check if still in the complain period
         Promise memory tPromise = promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
@@ -506,35 +506,35 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         //if redeemed or refunded
         if (isStateRedemptionSigned(vouchersStatus[_tokenIdVoucher].status) ||
                     isStateRefunded(vouchersStatus[_tokenIdVoucher].status)) {
-            if (!isStatus(vouchersStatus[_tokenIdVoucher].status, idxCancelFault)) {
+            if (!isStatus(vouchersStatus[_tokenIdVoucher].status, IDX_CANCEL_FAULT)) {
                 require(block.timestamp <= vouchersStatus[_tokenIdVoucher].complainPeriodStart + complainPeriod + cancelFaultPeriod, "COMPLAINPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
             } else {
                 require(block.timestamp <= vouchersStatus[_tokenIdVoucher].complainPeriodStart + complainPeriod, "COMPLAINPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
             }
             
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block.timestamp;
-            vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, idxComplain);
+            vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, IDX_COMPLAIN);
             
             emit LogVoucherComplain(_tokenIdVoucher);
             
         //if expired
         } else if (isStateExpired(vouchersStatus[_tokenIdVoucher].status)) {
-            if (!isStatus(vouchersStatus[_tokenIdVoucher].status, idxCancelFault)) {
+            if (!isStatus(vouchersStatus[_tokenIdVoucher].status, IDX_CANCEL_FAULT)) {
                 require(block.timestamp <= tPromise.validTo + complainPeriod + cancelFaultPeriod, "COMPLAINPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
             } else {
                 require(block.timestamp <= tPromise.validTo + complainPeriod, "COMPLAINPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
             }
             
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block.timestamp;
-            vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, idxComplain);
+            vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, IDX_COMPLAIN);
             
             emit LogVoucherComplain(_tokenIdVoucher);
         
         //if cancelOrFault
-        } else if (isStatus(vouchersStatus[_tokenIdVoucher].status, idxCancelFault)) {
+        } else if (isStatus(vouchersStatus[_tokenIdVoucher].status, IDX_CANCEL_FAULT)) {
             require(block.timestamp <= vouchersStatus[_tokenIdVoucher].complainPeriodStart + complainPeriod, "COMPLAINPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired));
             
-            vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, idxComplain);
+            vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, IDX_COMPLAIN);
             
             emit LogVoucherComplain(_tokenIdVoucher);
             
@@ -559,14 +559,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         
         uint8 tStatus = vouchersStatus[_tokenIdVoucher].status;
         
-        require(!isStatus(tStatus, idxCancelFault), "ALREADY_CANCELFAULT"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
-        require(!isStatus(tStatus, idxFinal), "ALREADY_FINALIZED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
+        require(!isStatus(tStatus, IDX_CANCEL_FAULT), "ALREADY_CANCELFAULT"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
+        require(!isStatus(tStatus, IDX_FINAL), "ALREADY_FINALIZED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
         
         Promise memory tPromise = promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
         
-        if (isStatus(tStatus, idxRedeem) || isStatus(tStatus, idxRefund)) {
+        if (isStatus(tStatus, IDX_REDEEM) || isStatus(tStatus, IDX_REFUND)) {
             //if redeemed or refunded
-            if (!isStatus(tStatus, idxComplain)) {
+            if (!isStatus(tStatus, IDX_COMPLAIN)) {
                 require(block.timestamp <= vouchersStatus[_tokenIdVoucher].complainPeriodStart + complainPeriod + cancelFaultPeriod, "COFPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)            
                 vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;  //resetting the complain period
 
@@ -574,9 +574,9 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
                 require(block.timestamp <= vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart + cancelFaultPeriod, "COFPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)            
             }
             
-        } else if (isStatus(tStatus, idxExpire)) {
+        } else if (isStatus(tStatus, IDX_EXPIRE)) {
             //if expired
-            if (!isStatus(tStatus, idxComplain)) {
+            if (!isStatus(tStatus, IDX_COMPLAIN)) {
                 require(block.timestamp <= tPromise.validTo + complainPeriod + cancelFaultPeriod, "COFPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)            
             } else {
                 require(block.timestamp <= vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart + cancelFaultPeriod, "COFPERIOD_EXPIRED"); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)            
@@ -590,7 +590,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
             revert("INAPPLICABLE_STATUS");  //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicableToCurrentState)
         }
     
-        vouchersStatus[_tokenIdVoucher].status = setChange(tStatus, idxCancelFault);
+        vouchersStatus[_tokenIdVoucher].status = setChange(tStatus, IDX_CANCEL_FAULT);
         
         emit LogVoucherFaultCancel(_tokenIdVoucher);
         
@@ -650,7 +650,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         if (tPromise.validTo < block.timestamp &&
             isStateCommitted(vouchersStatus[_tokenIdVoucher].status)
             ) {
-                vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, idxExpire);
+                vouchersStatus[_tokenIdVoucher].status = setChange(vouchersStatus[_tokenIdVoucher].status, IDX_EXPIRE);
                 
                 emit LogExpirationTriggered(_tokenIdVoucher, msg.sender);
         }  
@@ -670,13 +670,13 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         
         uint8 tStatus = vouchersStatus[_tokenIdVoucher].status;
         
-        require(!isStatus(tStatus, idxFinal), "ALREADY_FINALIZED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
+        require(!isStatus(tStatus, IDX_FINAL), "ALREADY_FINALIZED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
         
         bool mark;
         Promise memory tPromise = promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
         
-        if (isStatus(tStatus, idxComplain)) {
-            if (isStatus(tStatus, idxCancelFault)) {
+        if (isStatus(tStatus, IDX_COMPLAIN)) {
+            if (isStatus(tStatus, IDX_CANCEL_FAULT)) {
                 //if COMPLAIN && COF: then final
                 mark = true;
                 
@@ -685,7 +685,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
                 mark = true;
             }
             
-        } else if (isStatus(tStatus, idxCancelFault) &&
+        } else if (isStatus(tStatus, IDX_CANCEL_FAULT) &&
                     block.timestamp >= vouchersStatus[_tokenIdVoucher].complainPeriodStart + complainPeriod
                     ) {
             //if COF: then final after complain period
@@ -706,7 +706,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         }
         
         if (mark) {
-            vouchersStatus[_tokenIdVoucher].status = setChange(tStatus, idxFinal);
+            vouchersStatus[_tokenIdVoucher].status = setChange(tStatus, IDX_FINAL);
             emit LogFinalizeVoucher(_tokenIdVoucher, msg.sender);            
         }
         //

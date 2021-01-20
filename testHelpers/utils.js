@@ -27,12 +27,12 @@ class Utils {
     this.contractBSNTokenSAME = bsnTokenPrice
   }
 
-  async requestCreateOrder_ETH_ETH (
+  async requestCreateOrderETHETH (
     seller, from, to, sellerDeposit, qty, returnTx = false
   ) {
     const txValue = new BN(sellerDeposit).mul(new BN(qty))
 
-    let txOrder = await this.contractCashier.requestCreateOrder_ETH_ETH(
+    let txOrder = await this.contractCashier.requestCreateOrderETHETH(
       [ from,
         to,
         helpers.product_price,
@@ -50,7 +50,7 @@ class Utils {
       (txOrder.logs[0].args._tokenIdSupply).toString()
   }
 
-  async requestCreateOrder_TKN_TKN_Same_WithPermit (
+  async requestCreateOrderETHTKNSameWithPermit (
     seller, from, to, sellerDeposit, qty
   ) {
     const txValue = new BN(sellerDeposit).mul(new BN(qty))
@@ -71,7 +71,7 @@ class Utils {
       Buffer.from(seller.privateKey.slice(2), 'hex'))
 
     let txOrder = await this.contractCashier
-      .requestCreateOrder_TKN_TKN_WithPermit(
+      .requestCreateOrderTKNTKNWithPermit(
         this.contractBSNTokenSAME.address,
         this.contractBSNTokenSAME.address,
         txValue,
@@ -93,7 +93,7 @@ class Utils {
     return (txOrder.logs[0].args._tokenIdSupply).toString()
   }
 
-  async requestCreateOrder_TKN_TKN_WithPermit (
+  async requestCreateOrderTKNTKNWithPermit (
     seller, from, to, sellerDeposit, qty
   ) {
     const txValue = new BN(sellerDeposit).mul(new BN(qty))
@@ -114,7 +114,7 @@ class Utils {
       Buffer.from(seller.privateKey.slice(2), 'hex'))
 
     let txOrder = await this.contractCashier
-      .requestCreateOrder_TKN_TKN_WithPermit(
+      .requestCreateOrderTKNTKNWithPermit(
         this.contractBSNTokenPrice.address,
         this.contractBSNTokenDeposit.address,
         txValue,
@@ -136,7 +136,7 @@ class Utils {
     return (txOrder.logs[0].args._tokenIdSupply).toString()
   }
 
-  async requestCreateOrder_ETH_TKN_WithPermit (
+  async requestCreateOrderETHTKNWithPermit (
     seller, from, to, sellerDeposit, qty, returnTx = false
   ) {
     const txValue = new BN(sellerDeposit).mul(new BN(qty))
@@ -156,7 +156,7 @@ class Utils {
       Buffer.from(seller.privateKey.slice(2), 'hex'))
 
     let txOrder = await this.contractCashier
-      .requestCreateOrder_ETH_TKN_WithPermit(
+      .requestCreateOrderETHTKNWithPermit(
         this.contractBSNTokenDeposit.address,
         txValue,
         this.deadline,
@@ -179,12 +179,12 @@ class Utils {
       (txOrder.logs[0].args._tokenIdSupply).toString()
   }
 
-  async requestCreateOrder_TKN_ETH (
+  async requestCreateOrderTKNETH (
     seller, from, to, sellerDeposit, qty
   ) {
     const txValue = new BN(sellerDeposit).mul(new BN(qty))
 
-    let txOrder = await this.contractCashier.requestCreateOrder_TKN_ETH(
+    let txOrder = await this.contractCashier.requestCreateOrderTKNETH(
       this.contractBSNTokenPrice.address,
       [
         from,
@@ -203,7 +203,7 @@ class Utils {
     return (txOrder.logs[0].args._tokenIdSupply).toString()
   }
 
-  async commitToBuy_TKN_TKN_WithPermit (buyer, seller, tokenSupplyId) {
+  async commitToBuyTKNTKNWithPermit (buyer, seller, tokenSupplyId) {
     const txValue = new BN(helpers.buyer_deposit)
       .add(new BN(helpers.product_price))
     const nonce1 = await this.contractBSNTokenDeposit.nonces(buyer.address)
@@ -245,7 +245,7 @@ class Utils {
     let sPrice = VRS_PRICE.s
 
     let CommitTx = await this.contractCashier
-      .requestVoucher_TKN_TKN_WithPermit(
+      .requestVoucherTKNTKNWithPermit(
         tokenSupplyId,
         seller.address,
         txValue,
@@ -265,7 +265,7 @@ class Utils {
     return filtered.returnValues['_tokenIdVoucher']
   }
 
-  async commitToBuy_TKN_TKN_Same_WithPermit (buyer, seller, tokenSupplyId) {
+  async commitToBuyETHTKNSameWithPermit (buyer, seller, tokenSupplyId) {
     const txValue = new BN(helpers.buyer_deposit)
       .add(new BN(helpers.product_price))
     const nonce = await this.contractBSNTokenSAME.nonces(buyer.address)
@@ -288,7 +288,7 @@ class Utils {
     let s = VRS_TX_VALUE.s
 
     let CommitTx = await this.contractCashier
-      .requestVoucher_TKN_TKN_Same_WithPermit(
+      .requestVoucherETHTKNSameWithPermit(
         tokenSupplyId,
         seller.address,
         txValue,
@@ -307,7 +307,7 @@ class Utils {
     return filtered.returnValues['_tokenIdVoucher']
   }
 
-  async commitToBuy_ETH_TKN_WithPermit (buyer, seller, tokenSupplyId) {
+  async commitToBuyETHTKNWithPermit (buyer, seller, tokenSupplyId) {
     const nonce1 = await this.contractBSNTokenDeposit.nonces(buyer.address)
 
     const digestDeposit = await getApprovalDigest(
@@ -324,7 +324,7 @@ class Utils {
       Buffer.from(buyer.privateKey.slice(2), 'hex'))
 
     let txOrder = await this.contractCashier
-      .requestVoucher_ETH_TKN_WithPermit(
+      .requestVoucherETHTKNWithPermit(
         tokenSupplyId,
         seller.address,
         helpers.buyer_deposit,
@@ -344,12 +344,12 @@ class Utils {
     return filtered.returnValues['_tokenIdVoucher']
   }
 
-  async commitToBuy_ETH_ETH (buyer, seller, tokenSupplyId) {
+  async commitToBuyETHETH (buyer, seller, tokenSupplyId) {
     const txValue = new BN(helpers.buyer_deposit)
       .add(new BN(helpers.product_price))
 
     let CommitTx = await this.contractCashier
-      .requestVoucher_ETH_ETH(
+      .requestVoucherETHETH(
         tokenSupplyId,
         seller.address,
         {
@@ -368,7 +368,7 @@ class Utils {
     return filtered.returnValues['_tokenIdVoucher']
   }
 
-  async commitToBuy_TKN_ETH_WithPermit (buyer, seller, tokenSupplyId) {
+  async commitToBuyTKNETHWithPermit (buyer, seller, tokenSupplyId) {
     const nonce1 = await this.contractBSNTokenPrice.nonces(buyer.address)
 
     const digestDeposit = await getApprovalDigest(
@@ -385,7 +385,7 @@ class Utils {
       Buffer.from(buyer.privateKey.slice(2), 'hex'))
 
     let txOrder = await this.contractCashier
-      .requestVoucher_TKN_ETH_WithPermit(
+      .requestVoucherTKNETHWithPermit(
         tokenSupplyId,
         seller.address,
         helpers.product_price,

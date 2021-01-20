@@ -161,7 +161,7 @@ contract("Cashier withdrawals ", async addresses => {
         async () => {
           before(async () => {
             utils = UtilsBuilder.create()
-              .ETH_ETH()
+              .ETHETH()
               .build(
                 contractERC1155ERC721,
                 contractVoucherKernel,
@@ -625,7 +625,7 @@ contract("Cashier withdrawals ", async addresses => {
           beforeEach(async () => {
             utils = UtilsBuilder.create()
               .ERC20withPermit()
-              .TKN_TKN()
+              .TKNTKN()
               .build(
                 contractERC1155ERC721,
                 contractVoucherKernel,
@@ -1321,7 +1321,7 @@ contract("Cashier withdrawals ", async addresses => {
         beforeEach(async () => {
           utils = UtilsBuilder.create()
             .ERC20withPermit()
-            .TKN_TKN_SAME()
+            .TKNTKNSAME()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -1896,7 +1896,7 @@ contract("Cashier withdrawals ", async addresses => {
         beforeEach(async () => {
           utils = UtilsBuilder.create()
             .ERC20withPermit()
-            .ETH_TKN()
+            .ETHTKN()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -2601,7 +2601,7 @@ contract("Cashier withdrawals ", async addresses => {
         beforeEach(async () => {
           utils = UtilsBuilder.create()
             .ERC20withPermit()
-            .TKN_ETH()
+            .TKNETH()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -3386,7 +3386,7 @@ contract("Cashier withdrawals ", async addresses => {
           await deployContracts()
 
           utils = UtilsBuilder.create()
-            .ETH_ETH()
+            .ETHETH()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -3516,12 +3516,12 @@ contract("Cashier withdrawals ", async addresses => {
       })
 
       describe("[WITH PERMIT]", () => {
-        describe("ETH_TKN", () => {
+        describe("ETHTKN", () => {
           before(async () => {
             await deployContracts()
             utils = UtilsBuilder.create()
               .ERC20withPermit()
-              .ETH_TKN()
+              .ETHTKN()
               .build(
                 contractERC1155ERC721,
                 contractVoucherKernel,
@@ -3670,12 +3670,12 @@ contract("Cashier withdrawals ", async addresses => {
 
         })
 
-        describe("TKN_ETH", () => {
+        describe("TKNETH", () => {
           before(async () => {
             await deployContracts()
             utils = UtilsBuilder.create()
               .ERC20withPermit()
-              .TKN_ETH()
+              .TKNETH()
               .build(
                 contractERC1155ERC721,
                 contractVoucherKernel,
@@ -3820,12 +3820,12 @@ contract("Cashier withdrawals ", async addresses => {
 
         })
 
-        describe("TKN_TKN", () => {
+        describe("TKNTKN", () => {
           before(async () => {
             await deployContracts()
             utils = UtilsBuilder.create()
               .ERC20withPermit()
-              .TKN_TKN()
+              .TKNTKN()
               .build(
                 contractERC1155ERC721,
                 contractVoucherKernel,

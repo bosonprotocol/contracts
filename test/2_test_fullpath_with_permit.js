@@ -92,22 +92,22 @@ contract("Cashier && VK", async addresses => {
     let vouchersToBuy = 5
 
     const paymentMethods = {
-      ETH_ETH: 1,
-      ETH_TKN: 2,
-      TKN_ETH: 3,
-      TKN_TKN: 4
+      ETHETH: 1,
+      ETHTKN: 2,
+      TKNETH: 3,
+      TKNTKN: 4
     }
 
     afterEach(() => {
       remQty = constants.QTY_10
     })
 
-    describe("ETH_ETH", () => {
+    describe("ETHETH", () => {
       before(async () => {
         await deployContracts()
 
         utils = UtilsBuilder.create()
-          .ETH_ETH()
+          .ETHETH()
           .build(
             contractERC1155ERC721,
             contractVoucherKernel,
@@ -156,7 +156,7 @@ contract("Cashier && VK", async addresses => {
         }
       })
 
-      it("Should create payment method ETH_ETH", async () => {
+      it("Should create payment method ETHETH", async () => {
         timestamp = await Utils.getCurrTimestamp()
 
         let tokenSupplyKey = await utils
@@ -172,16 +172,16 @@ contract("Cashier && VK", async addresses => {
 
         assert.equal(
           paymentDetails.paymentMethod.toString(),
-          paymentMethods.ETH_ETH,
-          "Payment Method ETH_ETH not set correctly")
+          paymentMethods.ETHETH,
+          "Payment Method ETHETH not set correctly")
         assert.equal(
           paymentDetails.addressTokenPrice.toString(),
           constants.ZERO_ADDRESS,
-          "ETH_ETH Method Price Token Address mismatch")
+          "ETHETH Method Price Token Address mismatch")
         assert.equal(
           paymentDetails.addressTokenDeposits.toString(),
           constants.ZERO_ADDRESS,
-          "ETH_ETH Method Deposit Token Address mismatch")
+          "ETHETH Method Deposit Token Address mismatch")
       })
 
       it("[NEGATIVE] Should fail if additional token address is provided",
@@ -192,7 +192,7 @@ contract("Cashier && VK", async addresses => {
           timestamp = await Utils.getCurrTimestamp()
 
           await truffleAssert.fails(
-            contractCashier.requestCreateOrder_ETH_ETH(
+            contractCashier.requestCreateOrderETHETH(
               contractBSNTokenDeposit.address,
               [
                 timestamp,
@@ -215,7 +215,7 @@ contract("Cashier && VK", async addresses => {
             new BN(constants.seller_deposit).mul(new BN(ONE_VOUCHER))
 
           await truffleAssert.reverts(
-            contractCashier.requestCreateOrder_ETH_ETH(
+            contractCashier.requestCreateOrderETHETH(
               [
                 constants.PROMISE_VALID_FROM,
                 constants.PROMISE_VALID_TO,
@@ -238,7 +238,7 @@ contract("Cashier && VK", async addresses => {
             new BN(constants.seller_deposit).mul(new BN(ONE_VOUCHER))
 
           await truffleAssert.reverts(
-            contractCashier.requestCreateOrder_ETH_ETH(
+            contractCashier.requestCreateOrderETHETH(
               [
                 constants.PROMISE_VALID_FROM,
                 constants.PROMISE_VALID_TO,
@@ -261,7 +261,7 @@ contract("Cashier && VK", async addresses => {
             new BN(constants.seller_deposit).mul(new BN(ONE_VOUCHER))
 
           await truffleAssert.reverts(
-            contractCashier.requestCreateOrder_ETH_ETH(
+            contractCashier.requestCreateOrderETHETH(
               [
                 constants.PROMISE_VALID_FROM,
                 constants.PROMISE_VALID_TO,
@@ -280,13 +280,13 @@ contract("Cashier && VK", async addresses => {
     })
 
     describe("[WITH PERMIT]", () => {
-      describe("ETH_TKN", () => {
+      describe("ETHTKN", () => {
         before(async () => {
           await deployContracts()
 
           utils = UtilsBuilder.create()
             .ERC20withPermit()
-            .ETH_TKN()
+            .ETHTKN()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -349,7 +349,7 @@ contract("Cashier && VK", async addresses => {
           }
         })
 
-        it("Should create payment method ETH_TKN", async () => {
+        it("Should create payment method ETHTKN", async () => {
           tokenSupplyKey = await utils.createOrder(
             users.seller,
             timestamp,
@@ -363,16 +363,16 @@ contract("Cashier && VK", async addresses => {
 
           assert.equal(
             paymentDetails.paymentMethod.toString(),
-            paymentMethods.ETH_TKN,
-            "Payment Method ETH_TKN not set correctly")
+            paymentMethods.ETHTKN,
+            "Payment Method ETHTKN not set correctly")
           assert.equal(
             paymentDetails.addressTokenPrice.toString(),
             constants.ZERO_ADDRESS,
-            "ETH_TKN Method Price Token Address mismatch")
+            "ETHTKN Method Price Token Address mismatch")
           assert.equal(
             paymentDetails.addressTokenDeposits.toString(),
             contractBSNTokenDeposit.address,
-            "ETH_TKN Method Deposit Token Address mismatch")
+            "ETHTKN Method Deposit Token Address mismatch")
         })
 
         it("[NEGATIVE] Should fail if token deposit contract address is not provided",
@@ -396,7 +396,7 @@ contract("Cashier && VK", async addresses => {
               Buffer.from(users.seller.privateKey.slice(2), 'hex'))
 
             await truffleAssert.fails(
-              contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
+              contractCashier.requestCreateOrderETHTKNWithPermit(
                 '',
                 txValue,
                 deadline,
@@ -436,7 +436,7 @@ contract("Cashier && VK", async addresses => {
               Buffer.from(users.seller.privateKey.slice(2), 'hex'))
 
             await truffleAssert.reverts(
-              contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
+              contractCashier.requestCreateOrderETHTKNWithPermit(
                 constants.ZERO_ADDRESS,
                 txValue,
                 deadline,
@@ -478,7 +478,7 @@ contract("Cashier && VK", async addresses => {
               Buffer.from(users.seller.privateKey.slice(2), 'hex'))
 
             await truffleAssert.reverts(
-              contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
+              contractCashier.requestCreateOrderETHTKNWithPermit(
                 contractBSNTokenDeposit.address,
                 txValue,
                 deadline,
@@ -520,7 +520,7 @@ contract("Cashier && VK", async addresses => {
               Buffer.from(users.seller.privateKey.slice(2), 'hex'))
 
             await truffleAssert.reverts(
-              contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
+              contractCashier.requestCreateOrderETHTKNWithPermit(
                 contractBSNTokenDeposit.address,
                 txValue,
                 deadline,
@@ -562,7 +562,7 @@ contract("Cashier && VK", async addresses => {
               Buffer.from(users.seller.privateKey.slice(2), 'hex'))
 
             await truffleAssert.reverts(
-              contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
+              contractCashier.requestCreateOrderETHTKNWithPermit(
                 contractBSNTokenDeposit.address,
                 txValue,
                 deadline,
@@ -583,14 +583,14 @@ contract("Cashier && VK", async addresses => {
           })
       })
 
-      describe("TKN_ETH", () => {
+      describe("TKNETH", () => {
         before(async () => {
           await deployContracts()
 
           utils = UtilsBuilder
             .create()
             .ERC20withPermit()
-            .TKN_ETH()
+            .TKNETH()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -648,7 +648,7 @@ contract("Cashier && VK", async addresses => {
           }
         })
 
-        it("Should create payment method TKN_ETH", async () => {
+        it("Should create payment method TKNETH", async () => {
           tokenSupplyKey = await utils.createOrder(
             users.seller,
             timestamp,
@@ -662,16 +662,16 @@ contract("Cashier && VK", async addresses => {
 
           assert.equal(
             paymentDetails.paymentMethod.toString(),
-            paymentMethods.TKN_ETH,
-            "Payment Method TKN_ETH not set correctly")
+            paymentMethods.TKNETH,
+            "Payment Method TKNETH not set correctly")
           assert.equal(
             paymentDetails.addressTokenPrice.toString(),
             contractBSNTokenPrice.address,
-            "TKN_ETH Method Price Token Address mismatch")
+            "TKNETH Method Price Token Address mismatch")
           assert.equal(
             paymentDetails.addressTokenDeposits.toString(),
             constants.ZERO_ADDRESS,
-            "TKN_ETH Method Deposit Token Address mismatch")
+            "TKNETH Method Deposit Token Address mismatch")
         })
 
         it("[NEGATIVE] Should fail if price token contract address is not provided",
@@ -680,7 +680,7 @@ contract("Cashier && VK", async addresses => {
               new BN(constants.seller_deposit).mul(new BN(ONE_VOUCHER))
 
             await truffleAssert.fails(
-              contractCashier.requestCreateOrder_TKN_ETH(
+              contractCashier.requestCreateOrderTKNETH(
                 '',
                 [
                   constants.PROMISE_VALID_FROM,
@@ -701,7 +701,7 @@ contract("Cashier && VK", async addresses => {
           async () => {
 
             await truffleAssert.reverts(
-              contractCashier.requestCreateOrder_TKN_ETH(
+              contractCashier.requestCreateOrderTKNETH(
                 constants.ZERO_ADDRESS,
                 [
                   constants.PROMISE_VALID_FROM,
@@ -724,7 +724,7 @@ contract("Cashier && VK", async addresses => {
               new BN(constants.seller_deposit).mul(new BN(ONE_VOUCHER))
 
             await truffleAssert.reverts(
-              contractCashier.requestCreateOrder_TKN_ETH(
+              contractCashier.requestCreateOrderTKNETH(
                 contractBSNTokenPrice.address,
                 [
                   constants.PROMISE_VALID_FROM,
@@ -747,7 +747,7 @@ contract("Cashier && VK", async addresses => {
               new BN(constants.seller_deposit).mul(new BN(ONE_VOUCHER))
 
             await truffleAssert.reverts(
-              contractCashier.requestCreateOrder_TKN_ETH(
+              contractCashier.requestCreateOrderTKNETH(
                 contractBSNTokenPrice.address,
                 [
                   constants.PROMISE_VALID_FROM,
@@ -771,7 +771,7 @@ contract("Cashier && VK", async addresses => {
               new BN(constants.seller_deposit).mul(new BN(ONE_VOUCHER))
 
             await truffleAssert.reverts(
-              contractCashier.requestCreateOrder_TKN_ETH(
+              contractCashier.requestCreateOrderTKNETH(
                 contractBSNTokenPrice.address,
                 [
                   constants.PROMISE_VALID_FROM,
@@ -790,13 +790,13 @@ contract("Cashier && VK", async addresses => {
           })
       })
 
-      describe("TKN_TKN", () => {
+      describe("TKNTKN", () => {
         before(async () => {
           await deployContracts()
 
           utils = UtilsBuilder.create()
             .ERC20withPermit()
-            .TKN_TKN()
+            .TKNTKN()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -863,7 +863,7 @@ contract("Cashier && VK", async addresses => {
           }
         })
 
-        it("Should create payment method TKN_TKN", async () => {
+        it("Should create payment method TKNTKN", async () => {
           tokenSupplyKey = await utils.createOrder(
             users.seller,
             timestamp,
@@ -877,16 +877,16 @@ contract("Cashier && VK", async addresses => {
 
           assert.equal(
             paymentDetails.paymentMethod.toString(),
-            paymentMethods.TKN_TKN,
-            "Payment Method TKN_TKN not set correctly")
+            paymentMethods.TKNTKN,
+            "Payment Method TKNTKN not set correctly")
           assert.equal(
             paymentDetails.addressTokenPrice.toString(),
             contractBSNTokenPrice.address,
-            "TKN_TKN Method Price Token Address mismatch")
+            "TKNTKN Method Price Token Address mismatch")
           assert.equal(
             paymentDetails.addressTokenDeposits.toString(),
             contractBSNTokenDeposit.address,
-            "TKN_TKN Method Deposit Token Address mismatch")
+            "TKNTKN Method Deposit Token Address mismatch")
         })
 
         it("[NEGATIVE] Should fail if token price contract address is not provided",
@@ -910,7 +910,7 @@ contract("Cashier && VK", async addresses => {
               Buffer.from(users.seller.privateKey.slice(2), 'hex'))
 
             await truffleAssert.fails(
-              contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+              contractCashier.requestCreateOrderTKNTKNWithPermit(
                 '',
                 contractBSNTokenDeposit.address,
                 txValue,
@@ -952,7 +952,7 @@ contract("Cashier && VK", async addresses => {
               Buffer.from(users.seller.privateKey.slice(2), 'hex'))
 
             await truffleAssert.fails(
-              contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+              contractCashier.requestCreateOrderTKNTKNWithPermit(
                 contractBSNTokenPrice.address,
                 '',
                 txValue,
@@ -994,7 +994,7 @@ contract("Cashier && VK", async addresses => {
               Buffer.from(users.seller.privateKey.slice(2), 'hex'))
 
             await truffleAssert.reverts(
-              contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+              contractCashier.requestCreateOrderTKNTKNWithPermit(
                 constants.ZERO_ADDRESS,
                 contractBSNTokenDeposit.address,
                 txValue,
@@ -1038,7 +1038,7 @@ contract("Cashier && VK", async addresses => {
               Buffer.from(users.seller.privateKey.slice(2), 'hex'))
 
             await truffleAssert.reverts(
-              contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+              contractCashier.requestCreateOrderTKNTKNWithPermit(
                 contractBSNTokenPrice.address,
                 constants.ZERO_ADDRESS,
                 txValue,
@@ -1081,7 +1081,7 @@ contract("Cashier && VK", async addresses => {
               Buffer.from(users.seller.privateKey.slice(2), 'hex'))
 
             await truffleAssert.reverts(
-              contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+              contractCashier.requestCreateOrderTKNTKNWithPermit(
                 contractBSNTokenPrice.address,
                 contractBSNTokenDeposit.address,
                 txValue,
@@ -1123,7 +1123,7 @@ contract("Cashier && VK", async addresses => {
               Buffer.from(users.seller.privateKey.slice(2), 'hex'))
 
             await truffleAssert.reverts(
-              contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+              contractCashier.requestCreateOrderTKNTKNWithPermit(
                 contractBSNTokenPrice.address,
                 contractBSNTokenDeposit.address,
                 txValue,
@@ -1165,7 +1165,7 @@ contract("Cashier && VK", async addresses => {
               Buffer.from(users.seller.privateKey.slice(2), 'hex'))
 
             await truffleAssert.reverts(
-              contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+              contractCashier.requestCreateOrderTKNTKNWithPermit(
                 contractBSNTokenPrice.address,
                 contractBSNTokenDeposit.address,
                 txValue,
@@ -1197,10 +1197,10 @@ contract("Cashier && VK", async addresses => {
       await deployContracts()
     })
 
-    describe("ETH_ETH", async () => {
+    describe("ETHETH", async () => {
       before(async () => {
         utils = UtilsBuilder.create()
-          .ETH_ETH()
+          .ETHETH()
           .build(
             contractERC1155ERC721,
             contractVoucherKernel,
@@ -1218,7 +1218,7 @@ contract("Cashier && VK", async addresses => {
         const txValue =
           new BN(constants.buyer_deposit).add(new BN(constants.product_price))
         let txFillOrder = await contractCashier
-          .requestVoucher_ETH_ETH(
+          .requestVoucherETHETH(
             TOKEN_SUPPLY_ID,
             users.seller.address,
             {
@@ -1245,7 +1245,7 @@ contract("Cashier && VK", async addresses => {
               .add(new BN(constants.incorrect_product_price))
 
           await truffleAssert.reverts(
-            contractCashier.requestVoucher_ETH_ETH(
+            contractCashier.requestVoucherETHETH(
               TOKEN_SUPPLY_ID,
               users.seller.address,
               {
@@ -1263,7 +1263,7 @@ contract("Cashier && VK", async addresses => {
               .add(new BN(constants.product_price))
 
           await truffleAssert.reverts(
-            contractCashier.requestVoucher_ETH_ETH(
+            contractCashier.requestVoucherETHETH(
               TOKEN_SUPPLY_ID,
               users.seller.address,
               {
@@ -1276,11 +1276,11 @@ contract("Cashier && VK", async addresses => {
     })
 
     describe("[WITH PERMIT]", () => {
-      describe("ETH_TKN", async () => {
+      describe("ETHTKN", async () => {
         before(async () => {
           utils = UtilsBuilder.create()
             .ERC20withPermit()
-            .ETH_TKN()
+            .ETHTKN()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -1324,7 +1324,7 @@ contract("Cashier && VK", async addresses => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex'))
 
           const txFillOrder = await contractCashier
-            .requestVoucher_ETH_TKN_WithPermit(
+            .requestVoucherETHTKNWithPermit(
               TOKEN_SUPPLY_ID,
               users.seller.address,
               constants.buyer_deposit,
@@ -1366,7 +1366,7 @@ contract("Cashier && VK", async addresses => {
               Buffer.from(users.buyer.privateKey.slice(2), 'hex'))
 
             await truffleAssert.reverts(
-              contractCashier.requestVoucher_ETH_TKN_WithPermit(
+              contractCashier.requestVoucherETHTKNWithPermit(
                 TOKEN_SUPPLY_ID,
                 users.seller.address,
                 constants.buyer_deposit,
@@ -1399,7 +1399,7 @@ contract("Cashier && VK", async addresses => {
               Buffer.from(users.buyer.privateKey.slice(2), 'hex'))
 
             await truffleAssert.reverts(
-              contractCashier.requestVoucher_ETH_TKN_WithPermit(
+              contractCashier.requestVoucherETHTKNWithPermit(
                 TOKEN_SUPPLY_ID,
                 users.seller.address,
                 constants.buyer_incorrect_deposit,
@@ -1415,11 +1415,11 @@ contract("Cashier && VK", async addresses => {
           })
       })
 
-      describe("TKN_TKN", () => {
+      describe("TKNTKN", () => {
         before(async () => {
           utils = UtilsBuilder.create()
             .ERC20withPermit()
-            .TKN_TKN()
+            .TKNTKN()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -1492,7 +1492,7 @@ contract("Cashier && VK", async addresses => {
           let sPrice = VRS_PRICE.s
 
           let txFillOrder = await contractCashier
-            .requestVoucher_TKN_TKN_WithPermit(
+            .requestVoucherTKNTKNWithPermit(
               TOKEN_SUPPLY_ID,
               users.seller.address,
               tokensToSend,
@@ -1561,7 +1561,7 @@ contract("Cashier && VK", async addresses => {
             let sPrice = VRS_PRICE.s
 
             await truffleAssert.reverts(
-              contractCashier.requestVoucher_TKN_TKN_WithPermit(
+              contractCashier.requestVoucherTKNTKNWithPermit(
                 TOKEN_SUPPLY_ID,
                 users.seller.address,
                 tokensToSend,
@@ -1621,7 +1621,7 @@ contract("Cashier && VK", async addresses => {
             let sPrice = VRS_PRICE.s
 
             await truffleAssert.reverts(
-              contractCashier.requestVoucher_TKN_TKN_WithPermit(
+              contractCashier.requestVoucherTKNTKNWithPermit(
                 TOKEN_SUPPLY_ID,
                 users.seller.address,
                 tokensToSend,
@@ -1638,7 +1638,7 @@ contract("Cashier && VK", async addresses => {
       })
 
       // Ignored due to deployment failure.
-      xdescribe("TKN_TKN_SAME", () => {
+      xdescribe("TKNTKNSAME", () => {
         const tokensToMintSeller =
           new BN(constants.seller_deposit)
             .mul(new BN(ORDER_QTY))
@@ -1649,7 +1649,7 @@ contract("Cashier && VK", async addresses => {
         before(async () => {
           utils = UtilsBuilder.create()
             .ERC20withPermit()
-            .TKN_TKN_SAME()
+            .TKNTKNSAME()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -1696,7 +1696,7 @@ contract("Cashier && VK", async addresses => {
           let s = VRS_TOKENS.s
 
           let txFillOrder = await contractCashier
-            .requestVoucher_TKN_TKN_Same_WithPermit(
+            .requestVoucherTKNTKNSameWithPermit(
               TOKEN_SUPPLY_ID,
               users.seller.address,
               tokensToSend,
@@ -1743,7 +1743,7 @@ contract("Cashier && VK", async addresses => {
             let s = VRS_TOKENS.s
 
             await truffleAssert.reverts(
-              contractCashier.requestVoucher_TKN_TKN_Same_WithPermit(
+              contractCashier.requestVoucherTKNTKNSameWithPermit(
                 TOKEN_SUPPLY_ID,
                 users.seller.address,
                 incorrectTokensToSign,
@@ -1781,7 +1781,7 @@ contract("Cashier && VK", async addresses => {
             let s = VRS_TOKENS.s
 
             await truffleAssert.reverts(
-              contractCashier.requestVoucher_TKN_TKN_Same_WithPermit(
+              contractCashier.requestVoucherTKNTKNSameWithPermit(
                 TOKEN_SUPPLY_ID,
                 users.seller.address,
                 incorrectTokensToSign,
@@ -1796,9 +1796,9 @@ contract("Cashier && VK", async addresses => {
 
         it("[NEGATIVE] Should revert if Price Token and Deposit Token are diff contracts",
           async () => {
-            let utilsTKN_TKN = UtilsBuilder.create()
+            let utilsTKNTKN = UtilsBuilder.create()
               .ERC20withPermit()
-              .TKN_TKN()
+              .TKNTKN()
               .build(
                 contractERC1155ERC721,
                 contractVoucherKernel,
@@ -1813,7 +1813,7 @@ contract("Cashier && VK", async addresses => {
             await contractBSNTokenPrice
               .mint(users.buyer.address, tokensToMintBuyer)
 
-            TOKEN_SUPPLY_ID = await utilsTKN_TKN.createOrder(
+            TOKEN_SUPPLY_ID = await utilsTKNTKN.createOrder(
               users.seller,
               constants.PROMISE_VALID_FROM,
               constants.PROMISE_VALID_TO,
@@ -1845,7 +1845,7 @@ contract("Cashier && VK", async addresses => {
             let s = VRS_TOKENS.s
 
             await truffleAssert.reverts(
-              contractCashier.requestVoucher_TKN_TKN_Same_WithPermit(
+              contractCashier.requestVoucherTKNTKNSameWithPermit(
                 TOKEN_SUPPLY_ID,
                 users.seller.address,
                 tokensToSend,
@@ -1860,11 +1860,11 @@ contract("Cashier && VK", async addresses => {
           })
       })
 
-      describe("TKN_ETH", () => {
+      describe("TKNETH", () => {
         before(async () => {
           utils = UtilsBuilder.create()
             .ERC20withPermit()
-            .TKN_ETH()
+            .TKNETH()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -1905,7 +1905,7 @@ contract("Cashier && VK", async addresses => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex'))
 
           let txFillOrder = await contractCashier
-            .requestVoucher_TKN_ETH_WithPermit(
+            .requestVoucherTKNETHWithPermit(
               TOKEN_SUPPLY_ID,
               users.seller.address,
               constants.product_price,
@@ -1948,7 +1948,7 @@ contract("Cashier && VK", async addresses => {
               Buffer.from(users.buyer.privateKey.slice(2), 'hex'))
 
             await truffleAssert.reverts(
-              contractCashier.requestVoucher_TKN_ETH_WithPermit(
+              contractCashier.requestVoucherTKNETHWithPermit(
                 TOKEN_SUPPLY_ID,
                 users.seller.address,
                 constants.product_price,
@@ -1982,7 +1982,7 @@ contract("Cashier && VK", async addresses => {
               Buffer.from(users.buyer.privateKey.slice(2), 'hex'))
 
             await truffleAssert.reverts(
-              contractCashier.requestVoucher_TKN_ETH_WithPermit(
+              contractCashier.requestVoucherTKNETHWithPermit(
                 TOKEN_SUPPLY_ID,
                 users.seller.address,
                 constants.incorrect_product_price,
@@ -2018,7 +2018,7 @@ contract("Cashier && VK", async addresses => {
       beforeEach(async () => {
         await deployContracts()
         utils = UtilsBuilder.create()
-          .ETH_ETH()
+          .ETHETH()
           .build(
             contractERC1155ERC721,
             contractVoucherKernel,
@@ -2140,12 +2140,12 @@ contract("Cashier && VK", async addresses => {
         })
     })
 
-    describe("ETH_ETH", () => {
+    describe("ETHETH", () => {
       beforeEach(async () => {
         await deployContracts()
 
         utils = UtilsBuilder.create()
-          .ETH_ETH()
+          .ETHETH()
           .build(
             contractERC1155ERC721,
             contractVoucherKernel,
@@ -2290,7 +2290,7 @@ contract("Cashier && VK", async addresses => {
     })
 
     describe("[WITH PERMIT]", () => {
-      describe("ETH_TKN", () => {
+      describe("ETHTKN", () => {
         let balanceBuyerFromDeposits = new BN(0)
 
         let balanceSellerFromDeposits = new BN(0)
@@ -2305,7 +2305,7 @@ contract("Cashier && VK", async addresses => {
 
           utils = UtilsBuilder.create()
             .ERC20withPermit()
-            .ETH_TKN()
+            .ETHTKN()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -2461,7 +2461,7 @@ contract("Cashier && VK", async addresses => {
           })
       })
 
-      describe("TKN_TKN", () => {
+      describe("TKNTKN", () => {
         let balanceBuyerFromPayment = new BN(0)
         let balanceBuyerFromDeposits = new BN(0)
 
@@ -2479,7 +2479,7 @@ contract("Cashier && VK", async addresses => {
 
           utils = UtilsBuilder.create()
             .ERC20withPermit()
-            .TKN_TKN()
+            .TKNTKN()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -2649,7 +2649,7 @@ contract("Cashier && VK", async addresses => {
           })
       })
 
-      describe("TKN_ETH", () => {
+      describe("TKNETH", () => {
         let balanceBuyerFromPayment = new BN(0)
         let balanceSellerFromPayment = new BN(0)
         let escrowBalanceFromPayment = new BN(0)
@@ -2663,7 +2663,7 @@ contract("Cashier && VK", async addresses => {
 
           utils = UtilsBuilder.create()
             .ERC20withPermit()
-            .TKN_ETH()
+            .TKNETH()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -2887,7 +2887,7 @@ contract("Cashier && VK", async addresses => {
         await deployContracts()
 
         utils = UtilsBuilder.create()
-          .ETH_ETH()
+          .ETHETH()
           .build(
             contractERC1155ERC721,
             contractVoucherKernel,
@@ -2928,12 +2928,12 @@ contract("Cashier && VK", async addresses => {
       })
     })
 
-    describe("ETH_ETH", async () => {
+    describe("ETHETH", async () => {
       beforeEach(async () => {
         await deployContracts()
 
         utils = UtilsBuilder.create()
-          .ETH_ETH()
+          .ETHETH()
           .build(
             contractERC1155ERC721,
             contractVoucherKernel,
@@ -3082,7 +3082,7 @@ contract("Cashier && VK", async addresses => {
     })
 
     describe("[WITH PERMIT]", () => {
-      describe("ETH_TKN", () => {
+      describe("ETHTKN", () => {
         let balanceBuyerFromDeposits = new BN(0)
         let balanceSellerFromDeposits = new BN(0)
         let escrowBalanceFromDeposits = new BN(0)
@@ -3106,7 +3106,7 @@ contract("Cashier && VK", async addresses => {
 
           utils = UtilsBuilder.create()
             .ERC20withPermit()
-            .ETH_TKN()
+            .ETHTKN()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -3325,7 +3325,7 @@ contract("Cashier && VK", async addresses => {
           })
       })
 
-      describe("TKN_TKN", () => {
+      describe("TKNTKN", () => {
         let balanceBuyerFromPayment = new BN(0)
         let balanceBuyerFromDeposits = new BN(0)
 
@@ -3365,7 +3365,7 @@ contract("Cashier && VK", async addresses => {
 
           utils = UtilsBuilder.create()
             .ERC20withPermit()
-            .TKN_TKN()
+            .TKNTKN()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
@@ -3518,7 +3518,7 @@ contract("Cashier && VK", async addresses => {
 
       })
 
-      describe("TKN_ETH", () => {
+      describe("TKNETH", () => {
         let balanceBuyerFromPayment = new BN(0)
         let balanceSellerFromPayment = new BN(0)
         let escrowBalanceFromPayment = new BN(0)
@@ -3531,7 +3531,7 @@ contract("Cashier && VK", async addresses => {
 
           utils = UtilsBuilder.create()
             .ERC20withPermit()
-            .TKN_ETH()
+            .TKNETH()
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,

@@ -10,20 +10,20 @@ class UtilsBuilder {
     return new UtilsBuilder()
   };
 
-  ETH_ETH () {
+  ETHETH () {
     this.utils.createOrder =
-      this.utils.requestCreateOrder_ETH_ETH
+      this.utils.requestCreateOrderETHETH
     this.utils.commitToBuy =
-      this.utils.commitToBuy_ETH_ETH
+      this.utils.commitToBuyETHETH
 
     return this
   }
 
   ERC20withPermit () {
-    this.ETH_TKN = this.ETH_TKN_WithPermit
-    this.TKN_TKN = this.TKN_TKN_WithPermit
-    this.TKN_ETH = this.TKN_ETH_WithPermit
-    this.TKN_TKN_SAME = this.TKN_TKN_SameWithPermit
+    this.ETHTKN = this.ETHTKNWithPermit
+    this.TKNTKN = this.TKNTKNWithPermit
+    this.TKNETH = this.TKNETHWithPermit
+    this.TKNTKNSAME = this.TKNTKNSameWithPermit
 
     return this
   }
@@ -41,38 +41,38 @@ class UtilsBuilder {
     return this.utils
   }
 
-  ETH_TKN_WithPermit () {
+  ETHTKNWithPermit () {
     this.utils.createOrder =
-      this.utils.requestCreateOrder_ETH_TKN_WithPermit
+      this.utils.requestCreateOrderETHTKNWithPermit
     this.utils.commitToBuy =
-      this.utils.commitToBuy_ETH_TKN_WithPermit
+      this.utils.commitToBuyETHTKNWithPermit
 
     return this
   }
 
-  TKN_TKN_WithPermit () {
+  TKNTKNWithPermit () {
     this.utils.createOrder =
-      this.utils.requestCreateOrder_TKN_TKN_WithPermit
+      this.utils.requestCreateOrderTKNTKNWithPermit
     this.utils.commitToBuy =
-      this.utils.commitToBuy_TKN_TKN_WithPermit
+      this.utils.commitToBuyTKNTKNWithPermit
 
     return this
   }
 
-  TKN_TKN_SameWithPermit () {
+  TKNTKNSameWithPermit () {
     this.utils.createOrder =
-      this.utils.requestCreateOrder_TKN_TKN_Same_WithPermit
+      this.utils.requestCreateOrderETHTKNSameWithPermit
     this.utils.commitToBuy =
-      this.utils.commitToBuy_TKN_TKN_Same_WithPermit
+      this.utils.commitToBuyETHTKNSameWithPermit
 
     return this
   }
 
-  TKN_ETH_WithPermit () {
+  TKNETHWithPermit () {
     this.utils.createOrder =
-      this.utils.requestCreateOrder_TKN_ETH
+      this.utils.requestCreateOrderTKNETH
     this.utils.commitToBuy =
-      this.utils.commitToBuy_TKN_ETH_WithPermit
+      this.utils.commitToBuyTKNETHWithPermit
 
     return this
   }
