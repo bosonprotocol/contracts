@@ -51,4 +51,10 @@ namespace :test do
       }, 'npm run test:integration')
     end
   end
+
+  desc "Run test coverage for contract integration tests"
+  task :coverage do
+    puts "Running test coverage for contract integration tests..."
+    sh('npm run test:coverage')
+  end
 end
