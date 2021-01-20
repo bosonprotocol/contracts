@@ -3,7 +3,7 @@ module.exports = {
     testCommand: 'mocha --timeout 5000',
     measureStatementCoverage: false,
     providerOptions: {
-        //Default Accounts with preminted 10ETH
+        // Default Accounts with preminted 10ETH
         accounts: [
             { secretKey: '0x7ab741b57e8d94dd7e1a29055646bafde7010f38a900f55bbd7647880faa6ee8',
               balance: "0x8ac7230489e80000" 
