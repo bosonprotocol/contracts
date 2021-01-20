@@ -8,7 +8,7 @@
   },
   "scripts": {
     "compile": "truffle compile --all",
-    "test:unit": "truffle test",
+    "test:integration": "truffle test --network test",
     "coverage": "node --max-old-space-size=4096 ./node_modules/.bin/truffle run coverage --network coverage",
     "migrate-dev": "truffle migrate --network=rinkeby",
     "verify-dev": "truffle run verify ERC1155ERC721 VoucherKernel Cashier BosonTokenPrice BosonTokenDeposit --network rinkeby"

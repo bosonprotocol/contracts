@@ -40,12 +40,8 @@ module.exports = function(deployer, network, accounts) {
 							console.log("Boson Token Deposit Contract Address: ", BosonTokenDeposit.address);
 						})
 					})
-					
 				});
-
 			})
 		})
 	});
-
-	
 };

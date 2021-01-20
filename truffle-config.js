@@ -47,14 +47,20 @@ module.exports = {
     //
     development: {
       host: '127.0.0.1', // Localhost (default: none)
-      port: 8545, // Standard Ethereum port (default: none)
-      network_id: '*' // Any network (default: none)
+      port: 8545,        // Standard Ethereum port (default: none)
+      network_id: '*'    // Any network (default: none)
+    },
+
+    test: {
+      host: process.env.HOST, // Localhost (default: none)
+      port: process.env.PORT, // Standard Ethereum port (default: none)
+      network_id: '*'         // Any network (default: none)
     },
 
     coverage: {
       host: '127.0.0.1', // Localhost (default: none)
-      port: 8555, // Test Coverage Port
-      network_id: '*' // Any network (default: none)
+      port: 8555,        // Test Coverage Port
+      network_id: '*'    // Any network (default: none)
     },
 
     ropsten: {

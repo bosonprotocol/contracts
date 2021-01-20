@@ -1,13 +1,17 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    childprocess (4.0.0)
     rake (13.0.3)
+    random-port (0.5.1)
 
 PLATFORMS
   x86_64-darwin-19
 
 DEPENDENCIES
+  childprocess (~> 4.0)
   rake (~> 13.0)
+  random-port (~> 0.5)
 
 BUNDLED WITH
    2.2.6
