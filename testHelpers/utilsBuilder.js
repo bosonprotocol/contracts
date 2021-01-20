@@ -6,7 +6,7 @@ class UtilsBuilder {
     this.utils = new Utils()
   }
 
-  static NEW () {
+  static create () {
     return new UtilsBuilder()
   };
 

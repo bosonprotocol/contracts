@@ -5,7 +5,7 @@ const truffleAssert = require('truffle-assertions')
 const constants = require("../testHelpers/constants")
 const timemachine = require('../testHelpers/timemachine')
 const Utils = require('../testHelpers/utils')
-const Accounts = require('../testHelpers/accounts')
+const Users = require('../testHelpers/users')
 
 const ERC1155ERC721 = artifacts.require("ERC1155ERC721")
 const VoucherKernel = artifacts.require("VoucherKernel")
@@ -14,8 +14,8 @@ const FundLimitsOracle = artifacts.require('FundLimitsOracle')
 
 let snapshot
 
-contract("Voucher tests", async accountSet => {
-  const accounts = new Accounts(accountSet)
+contract("Voucher tests", async addresses => {
+  const users = new Users(addresses)
 
   let contractERC1155ERC721,
     contractVoucherKernel,
@@ -49,22 +49,23 @@ contract("Voucher tests", async accountSet => {
     await contractVoucherKernel.setCashierAddress(
       contractCashier.address)
 
-    console.log("Seller:   " + accounts.seller)
-    console.log("Buyer:    " + accounts.buyer)
-    console.log("Attacker: " + accounts.attacker + "\n")
+    console.log("Seller:   " + users.seller.address)
+    console.log("Buyer:    " + users.buyer.address)
+    console.log("Attacker: " + users.attacker.address)
+    console.log()
   })
 
   describe('Direct minting', function () {
     it("must fail: unauthorized minting ERC-1155", async () => {
       await truffleAssert.reverts(
-        contractERC1155ERC721.mint(accounts.attacker, 666, 1, []),
+        contractERC1155ERC721.mint(users.attacker.address, 666, 1, []),
         truffleAssert.ErrorType.REVERT
       )
     })
 
     it("must fail: unauthorized minting ERC-721", async () => {
       await truffleAssert.reverts(
-        contractERC1155ERC721.mint(accounts.attacker, 666),
+        contractERC1155ERC721.mint(users.attacker.address, 666),
         truffleAssert.ErrorType.REVERT
       )
     })
@@ -81,7 +82,7 @@ contract("Voucher tests", async accountSet => {
           constants.PROMISE_DEPOSITBU1,
           constants.ORDER_QUANTITY1
         ], {
-          from: accounts.buyer,
+          from: users.buyer.address,
           to: contractCashier.address,
           value: constants.PROMISE_DEPOSITSE1
         })
@@ -104,7 +105,7 @@ contract("Voucher tests", async accountSet => {
         'LogOrderCreated',
         (ev) => {
           tokenSupplyKey1 = ev._tokenIdSupply
-          return ev._seller === accounts.buyer
+          return ev._seller === users.buyer.address
         }, "order1 not created successfully")
 
     })
@@ -119,7 +120,7 @@ contract("Voucher tests", async accountSet => {
           constants.PROMISE_DEPOSITBU2,
           constants.ORDER_QUANTITY2
         ], {
-          from: accounts.buyer,
+          from: users.buyer.address,
           to: contractCashier.address,
           value: constants.PROMISE_DEPOSITSE2
         })
@@ -129,7 +130,7 @@ contract("Voucher tests", async accountSet => {
         'LogOrderCreated',
         (ev) => {
           tokenSupplyKey2 = ev._tokenIdSupply
-          return ev._seller === accounts.buyer
+          return ev._seller === users.buyer.address
         }, "order2 not created successfully")
     })
 
@@ -137,8 +138,8 @@ contract("Voucher tests", async accountSet => {
       const txFillOrder = await contractCashier
         .requestVoucher_ETH_ETH(
           tokenSupplyKey1,
-          accounts.buyer, {
-            from: accounts.buyer,
+          users.buyer.address, {
+            from: users.buyer.address,
             to: contractCashier.address,
             value: constants.PROMISE_PRICE1 + constants.PROMISE_DEPOSITBU1
           })
@@ -149,7 +150,7 @@ contract("Voucher tests", async accountSet => {
         internalTx,
         'LogVoucherDelivered',
         (ev) => {
-          return ev._issuer === accounts.buyer
+          return ev._issuer === users.buyer.address
         }, "order1 not created successfully")
 
       const filtered = internalTx.logs
@@ -162,8 +163,8 @@ contract("Voucher tests", async accountSet => {
       const txFillOrder = await contractCashier
         .requestVoucher_ETH_ETH(
           tokenSupplyKey2,
-          accounts.buyer, {
-            from: accounts.buyer,
+          users.buyer.address, {
+            from: users.buyer.address,
             to: contractCashier.address,
             value: constants.PROMISE_PRICE2 + constants.PROMISE_DEPOSITBU2
           })
@@ -190,7 +191,7 @@ contract("Voucher tests", async accountSet => {
             constants.PROMISE_DEPOSITBU1,
             constants.ORDER_QUANTITY1
           ], {
-            from: accounts.buyer,
+            from: users.buyer.address,
             to: contractCashier.address,
             value: 0
           }),
@@ -202,8 +203,8 @@ contract("Voucher tests", async accountSet => {
       await truffleAssert.reverts(
         contractCashier.requestVoucher_ETH_ETH(
           tokenSupplyKey1,
-          accounts.buyer, {
-            from: accounts.buyer,
+          users.buyer.address, {
+            from: users.buyer.address,
             to: contractCashier.address,
             value: 0
           }),
@@ -215,7 +216,7 @@ contract("Voucher tests", async accountSet => {
   describe('Voucher tokens', function () {
     it("redeeming one voucher", async () => {
       const txRedeem = await contractVoucherKernel
-        .redeem(tokenVoucherKey1, { from: accounts.buyer })
+        .redeem(tokenVoucherKey1, { from: users.buyer.address })
 
       truffleAssert.eventEmitted(
         txRedeem,
@@ -252,7 +253,7 @@ contract("Voucher tests", async accountSet => {
 
     it("mark voucher as finalized", async () => {
       const txFinalize = await contractVoucherKernel
-        .triggerFinalizeVoucher(tokenVoucherKey1, { from: accounts.buyer })
+        .triggerFinalizeVoucher(tokenVoucherKey1, { from: users.buyer.address })
 
       truffleAssert.eventEmitted(
         txFinalize,
@@ -265,7 +266,7 @@ contract("Voucher tests", async accountSet => {
     it("must fail: unauthorized redemption", async () => {
       await truffleAssert.reverts(
         contractVoucherKernel.redeem(
-          tokenVoucherKey1, { from: accounts.attacker }),
+          tokenVoucherKey1, { from: users.attacker.address }),
         truffleAssert.ErrorType.REVERT
       )
     })
@@ -275,12 +276,12 @@ contract("Voucher tests", async accountSet => {
     it("withdraw the escrowed payment from one redeemed voucher",
       async () => {
         const escrowedBefore = await contractCashier
-          .getEscrowAmount.call(accounts.buyer)
+          .getEscrowAmount.call(users.buyer.address)
 
         await contractCashier.withdraw(tokenVoucherKey1)
 
         const escrowedAfter = await contractCashier
-          .getEscrowAmount.call(accounts.buyer)
+          .getEscrowAmount.call(users.buyer.address)
 
         assert.isBelow(
           escrowedAfter.toNumber(),
@@ -302,8 +303,8 @@ contract("Voucher tests", async accountSet => {
   })
 })
 
-contract("Voucher tests - UNHAPPY PATH", async accountSet => {
-  const accounts = new Accounts(accountSet)
+contract("Voucher tests - UNHAPPY PATH", async addresses => {
+  const users = new Users(addresses)
 
   let contractERC1155ERC721,
     contractVoucherKernel,
@@ -348,7 +349,7 @@ contract("Voucher tests - UNHAPPY PATH", async accountSet => {
         constants.PROMISE_DEPOSITBU1,
         constants.ORDER_QUANTITY1
       ], {
-        from: accounts.seller,
+        from: users.seller.address,
         to: contractCashier.address,
         value: constants.PROMISE_DEPOSITSE1
       })
@@ -358,15 +359,15 @@ contract("Voucher tests - UNHAPPY PATH", async accountSet => {
       'LogOrderCreated',
       (ev) => {
         tokenSupplyKey1 = ev._tokenIdSupply
-        return ev._seller === accounts.seller
+        return ev._seller === users.seller.address
       }, "order1 not created successfully")
 
     const txFillOrder = await contractCashier
       .requestVoucher_ETH_ETH(
         tokenSupplyKey1,
-        accounts.seller,
+        users.seller.address,
         {
-          from: accounts.buyer,
+          from: users.buyer.address,
           to: contractCashier.address,
           value: constants.PROMISE_PRICE1 + constants.PROMISE_DEPOSITBU1
         })
@@ -378,7 +379,7 @@ contract("Voucher tests - UNHAPPY PATH", async accountSet => {
       'LogVoucherDelivered',
       (ev) => {
         tokenVoucherKey1 = ev._tokenIdVoucher
-        return ev._issuer === accounts.seller
+        return ev._issuer === users.seller.address
       }, "order1 not created successfully")
   })
 
@@ -406,7 +407,7 @@ contract("Voucher tests - UNHAPPY PATH", async accountSet => {
 
         await truffleAssert.reverts(
           contractVoucherKernel.setComplainPeriod(
-            complainPeriodSeconds, { from: accounts.attacker }),
+            complainPeriodSeconds, { from: users.attacker.address }),
           truffleAssert.ErrorType.REVERT
         )
       })
@@ -432,7 +433,7 @@ contract("Voucher tests - UNHAPPY PATH", async accountSet => {
           constants.PROMISE_CANCELORFAULT_PERIOD * constants.SECONDS_IN_DAY
         await truffleAssert.reverts(
           contractVoucherKernel.setCancelFaultPeriod(
-            cancelFaultPeriodSeconds, { from: accounts.attacker }),
+            cancelFaultPeriodSeconds, { from: users.attacker.address }),
           truffleAssert.ErrorType.REVERT
         )
       })
@@ -442,7 +443,7 @@ contract("Voucher tests - UNHAPPY PATH", async accountSet => {
     it("refunding one voucher", async () => {
       const txRefund = await contractVoucherKernel.refund(
         tokenVoucherKey1, {
-          from: accounts.buyer
+          from: users.buyer.address
         })
 
       const statusAfter = await contractVoucherKernel
@@ -458,11 +459,11 @@ contract("Voucher tests - UNHAPPY PATH", async accountSet => {
     it("refunding one voucher, then complain", async () => {
       const txRefund = await contractVoucherKernel.refund(
         tokenVoucherKey1, {
-          from: accounts.buyer
+          from: users.buyer.address
         })
       const txComplain = await contractVoucherKernel.complain(
         tokenVoucherKey1, {
-          from: accounts.buyer
+          from: users.buyer.address
         })
 
       const statusAfter = await contractVoucherKernel
@@ -479,15 +480,15 @@ contract("Voucher tests - UNHAPPY PATH", async accountSet => {
       async () => {
         const txRefund = await contractVoucherKernel.refund(
           tokenVoucherKey1, {
-            from: accounts.buyer
+            from: users.buyer.address
           })
         const txComplain = await contractVoucherKernel.complain(
           tokenVoucherKey1, {
-            from: accounts.buyer
+            from: users.buyer.address
           })
         const txCoF = await contractVoucherKernel.cancelOrFault(
           tokenVoucherKey1, {
-            from: accounts.seller
+            from: users.seller.address
           })
 
         const statusAfter = await contractVoucherKernel
@@ -504,12 +505,12 @@ contract("Voucher tests - UNHAPPY PATH", async accountSet => {
     it("must fail: refund then try to redeem", async () => {
       const txRefund = await contractVoucherKernel.refund(
         tokenVoucherKey1, {
-          from: accounts.buyer
+          from: users.buyer.address
         })
 
       await truffleAssert.reverts(
         contractVoucherKernel.redeem(
-          tokenVoucherKey1, { from: accounts.buyer }),
+          tokenVoucherKey1, { from: users.buyer.address }),
         truffleAssert.ErrorType.REVERT
       )
     })
@@ -520,7 +521,7 @@ contract("Voucher tests - UNHAPPY PATH", async accountSet => {
       const txCoF = await contractVoucherKernel
         .cancelOrFault(
           tokenVoucherKey1, {
-            from: accounts.seller
+            from: users.seller.address
           })
 
       const statusAfter = await contractVoucherKernel
@@ -537,12 +538,12 @@ contract("Voucher tests - UNHAPPY PATH", async accountSet => {
       const txCoF = await contractVoucherKernel
         .cancelOrFault(
           tokenVoucherKey1, {
-            from: accounts.seller
+            from: users.seller.address
           })
 
       await truffleAssert.reverts(
         contractVoucherKernel.redeem(
-          tokenVoucherKey1, { from: accounts.buyer }),
+          tokenVoucherKey1, { from: users.buyer.address }),
         truffleAssert.ErrorType.REVERT
       )
     })
@@ -568,7 +569,7 @@ contract("Voucher tests - UNHAPPY PATH", async accountSet => {
           "end voucher status not as expected (EXPIRED)")
 
         const txComplain = await contractVoucherKernel
-          .complain(tokenVoucherKey1, { from: accounts.buyer })
+          .complain(tokenVoucherKey1, { from: users.buyer.address })
 
         statusAfter = await contractVoucherKernel
           .getVoucherStatus.call(tokenVoucherKey1)
@@ -581,7 +582,7 @@ contract("Voucher tests - UNHAPPY PATH", async accountSet => {
 
         // in the same test, because the EVM time machine is funky ...
         const txCoF = await contractVoucherKernel
-          .cancelOrFault(tokenVoucherKey1, { from: accounts.seller })
+          .cancelOrFault(tokenVoucherKey1, { from: users.seller.address })
 
         statusAfter = await contractVoucherKernel
           .getVoucherStatus.call(tokenVoucherKey1)
@@ -596,7 +597,7 @@ contract("Voucher tests - UNHAPPY PATH", async accountSet => {
         // in the same test, because the EVM time machine is funky ...
         await truffleAssert.reverts(
           contractVoucherKernel.redeem(
-            tokenVoucherKey1, { from: accounts.buyer }),
+            tokenVoucherKey1, { from: users.buyer.address }),
           truffleAssert.ErrorType.REVERT
         )
       })

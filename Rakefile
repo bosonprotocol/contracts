@@ -1,36 +1,31 @@
-require 'random-port'
-require 'childprocess'
+require_relative 'lib/ganache'
 
 task :default => :"contracts:compile"
 
 namespace :ganache do
   task :start, [:port] do |_, args|
-    port = args.port.to_s
+    port = args.port
 
     puts "Starting ganache on port #{port}..."
-    process = ChildProcess.build(
-        './node_modules/.bin/ganache-cli',
-        '--allowUnlimitedContractSize',
-        '-p', port)
-    # process.io.inherit!
-    process.leader = true
-    process.detach = true
-    process.start
-
-    FileUtils.mkdir_p('run/pid')
-    File.open("run/pid/ganache-#{port}.pid", "w") do |pidfile|
-      pidfile.write(process.pid)
-    end
+    ganache = Ganache.builder
+        .on_port(port)
+        .allowing_unlimited_contract_size
+        .build
+    ganache.start
+    puts "Started ganache on port #{port}"
+    puts "  - with pidfile at #{ganache.pidfile}"
+    puts "  - with account keys file at #{ganache.account_keys_file}"
   end
 
   task :stop, [:port] do |_, args|
-    port = args.port.to_s
+    port = args.port
 
     puts "Stopping ganache on port #{port}..."
-    pid = File.read("run/pid/ganache-#{port}.pid").to_i
-
-    Process.kill('INT', pid)
-    File.unlink("run/pid/ganache-#{port}.pid")
+    ganache = Ganache.builder
+        .on_port(port)
+        .build
+    ganache.stop
+    puts "Stopped ganache on port #{port}"
   end
 end
 
@@ -44,18 +39,16 @@ end
 namespace :test do
   desc "Run all contract integration tests"
   task :integration do
-    RandomPort::Pool.new.acquire do |port|
-      begin
-        Rake::Task[:'ganache:start'].invoke(port)
+    Ganache.on_available_port(
+        allow_unlimited_contract_size: true) do |ganache|
+      puts "Running integration tests against ganache node listening on " +
+          "#{ganache.port}..."
 
-        puts "Running integration tests against node listening on #{port}..."
-        sh({
-            "HOST" => "127.0.0.1",
-            "PORT" => "#{port}"
-        }, 'npm run test:integration')
-      ensure
-        Rake::Task[:'ganache:stop'].invoke(port)
-      end
+      sh({
+          "HOST" => "127.0.0.1",
+          "PORT" => "#{ganache.port}",
+          "ACCOUNT_KEYS_FILE" => "#{ganache.account_keys_file}"
+      }, 'npm run test:integration')
     end
   end
 end

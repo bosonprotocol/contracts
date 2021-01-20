@@ -68,7 +68,7 @@ class Utils {
 
     const { v, r, s } = ecsign(
       Buffer.from(digest.slice(2), 'hex'),
-      Buffer.from(seller.pk.slice(2), 'hex'))
+      Buffer.from(seller.privateKey.slice(2), 'hex'))
 
     let txOrder = await this.contractCashier
       .requestCreateOrder_TKN_TKN_WithPermit(
@@ -111,7 +111,7 @@ class Utils {
 
     const { v, r, s } = ecsign(
       Buffer.from(digest.slice(2), 'hex'),
-      Buffer.from(seller.pk.slice(2), 'hex'))
+      Buffer.from(seller.privateKey.slice(2), 'hex'))
 
     let txOrder = await this.contractCashier
       .requestCreateOrder_TKN_TKN_WithPermit(
@@ -153,7 +153,7 @@ class Utils {
 
     const { v, r, s } = ecsign(
       Buffer.from(digest.slice(2), 'hex'),
-      Buffer.from(seller.pk.slice(2), 'hex'))
+      Buffer.from(seller.privateKey.slice(2), 'hex'))
 
     let txOrder = await this.contractCashier
       .requestCreateOrder_ETH_TKN_WithPermit(
@@ -219,7 +219,7 @@ class Utils {
 
     let VRS_DEPOSIT = ecsign(
       Buffer.from(digestDeposit.slice(2), 'hex'),
-      Buffer.from(buyer.pk.slice(2), 'hex'))
+      Buffer.from(buyer.privateKey.slice(2), 'hex'))
 
     let vDeposit = VRS_DEPOSIT.v
     let rDeposit = VRS_DEPOSIT.r
@@ -238,7 +238,7 @@ class Utils {
 
     let VRS_PRICE = ecsign(
       Buffer.from(digestPrice.slice(2), 'hex'),
-      Buffer.from(buyer.pk.slice(2), 'hex'))
+      Buffer.from(buyer.privateKey.slice(2), 'hex'))
 
     let vPrice = VRS_PRICE.v
     let rPrice = VRS_PRICE.r
@@ -281,7 +281,7 @@ class Utils {
 
     let VRS_TX_VALUE = ecsign(
       Buffer.from(digestTxValue.slice(2), 'hex'),
-      Buffer.from(buyer.pk.slice(2), 'hex'))
+      Buffer.from(buyer.privateKey.slice(2), 'hex'))
 
     let v = VRS_TX_VALUE.v
     let r = VRS_TX_VALUE.r
@@ -321,7 +321,7 @@ class Utils {
 
     let { v, r, s } = ecsign(
       Buffer.from(digestDeposit.slice(2), 'hex'),
-      Buffer.from(buyer.pk.slice(2), 'hex'))
+      Buffer.from(buyer.privateKey.slice(2), 'hex'))
 
     let txOrder = await this.contractCashier
       .requestVoucher_ETH_TKN_WithPermit(
@@ -382,7 +382,7 @@ class Utils {
 
     let { v, r, s } = ecsign(
       Buffer.from(digestDeposit.slice(2), 'hex'),
-      Buffer.from(buyer.pk.slice(2), 'hex'))
+      Buffer.from(buyer.privateKey.slice(2), 'hex'))
 
     let txOrder = await this.contractCashier
       .requestVoucher_TKN_ETH_WithPermit(
