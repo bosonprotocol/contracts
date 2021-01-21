@@ -4,6 +4,7 @@ task :default => [
     :"contracts:compile",
     :"contracts:lint_fix",
     :"contracts:format_fix",
+    :"tests:lint_fix",
     :"tests:format_fix",
     :"tests:integration"
 ]
@@ -65,6 +66,16 @@ namespace :contracts do
 end
 
 namespace :tests do
+  desc "Lint all tests"
+  task :lint do
+    sh('npm', 'run', 'tests:lint')
+  end
+
+  desc "Lint & fix all tests"
+  task :lint_fix do
+    sh('npm', 'run', 'tests:lint-fix')
+  end
+
   desc "Format all test files"
   task :format do
     sh('npm', 'run', 'tests:format')

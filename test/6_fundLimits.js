@@ -18,7 +18,6 @@ contract('FundLimitsOracle', async (addresses) => {
     contractVoucherKernel,
     contractCashier,
     contractBSNTokenPrice,
-    contractBSNTokenDeposit,
     contractFundLimitsOracle;
   let expectedLimit;
 
@@ -44,7 +43,6 @@ contract('FundLimitsOracle', async (addresses) => {
     );
 
     contractBSNTokenPrice = await BosonToken.new('BosonTokenPrice', 'BPRC');
-    contractBSNTokenDeposit = await BosonToken.new('BosonTokenDeposit', 'BDEP');
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,

@@ -253,7 +253,7 @@ contract('Cashier && VK', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Amounts not distributed successfully'
@@ -321,7 +321,7 @@ contract('Cashier && VK', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Amounts not distributed successfully'
@@ -571,7 +571,7 @@ contract('Cashier && VK', async (addresses) => {
               truffleAssert.eventEmitted(
                 withdrawTx,
                 'LogAmountDistribution',
-                (ev) => {
+                () => {
                   return true;
                 },
                 'Amounts not distributed successfully'
@@ -639,7 +639,7 @@ contract('Cashier && VK', async (addresses) => {
               truffleAssert.eventEmitted(
                 withdrawTx,
                 'LogAmountDistribution',
-                (ev) => {
+                () => {
                   return true;
                 },
                 'Amounts not distributed successfully'
@@ -882,7 +882,7 @@ contract('Cashier && VK', async (addresses) => {
               truffleAssert.eventEmitted(
                 withdrawTx,
                 'LogAmountDistribution',
-                (ev) => {
+                () => {
                   return true;
                 },
                 'Amounts not distributed successfully'
@@ -950,7 +950,7 @@ contract('Cashier && VK', async (addresses) => {
               truffleAssert.eventEmitted(
                 withdrawTx,
                 'LogAmountDistribution',
-                (ev) => {
+                () => {
                   return true;
                 },
                 'Amounts not distributed successfully'
@@ -1192,7 +1192,7 @@ contract('Cashier && VK', async (addresses) => {
               truffleAssert.eventEmitted(
                 withdrawTx,
                 'LogAmountDistribution',
-                (ev) => {
+                () => {
                   return true;
                 },
                 'Amounts not distributed successfully'
@@ -1260,7 +1260,7 @@ contract('Cashier && VK', async (addresses) => {
               truffleAssert.eventEmitted(
                 withdrawTx,
                 'LogAmountDistribution',
-                (ev) => {
+                () => {
                   return true;
                 },
                 'Amounts not distributed successfully'

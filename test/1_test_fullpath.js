@@ -496,7 +496,7 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
 
   describe('Refunds ...', function () {
     it('refunding one voucher', async () => {
-      const txRefund = await contractVoucherKernel.refund(tokenVoucherKey1, {
+      await contractVoucherKernel.refund(tokenVoucherKey1, {
         from: users.buyer.address,
       });
 
@@ -513,15 +513,12 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     });
 
     it('refunding one voucher, then complain', async () => {
-      const txRefund = await contractVoucherKernel.refund(tokenVoucherKey1, {
+      await contractVoucherKernel.refund(tokenVoucherKey1, {
         from: users.buyer.address,
       });
-      const txComplain = await contractVoucherKernel.complain(
-        tokenVoucherKey1,
-        {
-          from: users.buyer.address,
-        }
-      );
+      await contractVoucherKernel.complain(tokenVoucherKey1, {
+        from: users.buyer.address,
+      });
 
       const statusAfter = await contractVoucherKernel.getVoucherStatus.call(
         tokenVoucherKey1
@@ -536,21 +533,15 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     });
 
     it('refunding one voucher, then complain, then cancel/fault', async () => {
-      const txRefund = await contractVoucherKernel.refund(tokenVoucherKey1, {
+      await contractVoucherKernel.refund(tokenVoucherKey1, {
         from: users.buyer.address,
       });
-      const txComplain = await contractVoucherKernel.complain(
-        tokenVoucherKey1,
-        {
-          from: users.buyer.address,
-        }
-      );
-      const txCoF = await contractVoucherKernel.cancelOrFault(
-        tokenVoucherKey1,
-        {
-          from: users.seller.address,
-        }
-      );
+      await contractVoucherKernel.complain(tokenVoucherKey1, {
+        from: users.buyer.address,
+      });
+      await contractVoucherKernel.cancelOrFault(tokenVoucherKey1, {
+        from: users.seller.address,
+      });
 
       const statusAfter = await contractVoucherKernel.getVoucherStatus.call(
         tokenVoucherKey1
@@ -566,7 +557,7 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     });
 
     it('must fail: refund then try to redeem', async () => {
-      const txRefund = await contractVoucherKernel.refund(tokenVoucherKey1, {
+      await contractVoucherKernel.refund(tokenVoucherKey1, {
         from: users.buyer.address,
       });
 
@@ -581,12 +572,9 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
 
   describe('Cancel/Fault by the seller ...', () => {
     it('canceling one voucher', async () => {
-      const txCoF = await contractVoucherKernel.cancelOrFault(
-        tokenVoucherKey1,
-        {
-          from: users.seller.address,
-        }
-      );
+      await contractVoucherKernel.cancelOrFault(tokenVoucherKey1, {
+        from: users.seller.address,
+      });
 
       const statusAfter = await contractVoucherKernel.getVoucherStatus.call(
         tokenVoucherKey1
@@ -601,12 +589,9 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     });
 
     it('must fail: cancel/fault then try to redeem', async () => {
-      const txCoF = await contractVoucherKernel.cancelOrFault(
-        tokenVoucherKey1,
-        {
-          from: users.seller.address,
-        }
-      );
+      await contractVoucherKernel.cancelOrFault(tokenVoucherKey1, {
+        from: users.seller.address,
+      });
 
       await truffleAssert.reverts(
         contractVoucherKernel.redeem(tokenVoucherKey1, {
@@ -636,10 +621,9 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
         'end voucher status not as expected (EXPIRED)'
       );
 
-      const txComplain = await contractVoucherKernel.complain(
-        tokenVoucherKey1,
-        {from: users.buyer.address}
-      );
+      await contractVoucherKernel.complain(tokenVoucherKey1, {
+        from: users.buyer.address,
+      });
 
       statusAfter = await contractVoucherKernel.getVoucherStatus.call(
         tokenVoucherKey1
@@ -653,10 +637,9 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
       );
 
       // in the same test, because the EVM time machine is funky ...
-      const txCoF = await contractVoucherKernel.cancelOrFault(
-        tokenVoucherKey1,
-        {from: users.seller.address}
-      );
+      await contractVoucherKernel.cancelOrFault(tokenVoucherKey1, {
+        from: users.seller.address,
+      });
 
       statusAfter = await contractVoucherKernel.getVoucherStatus.call(
         tokenVoucherKey1

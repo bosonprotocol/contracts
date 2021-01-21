@@ -1841,6 +1841,8 @@ contract('Cashier && VK', async (addresses) => {
           new BN(ORDER_QTY)
         );
 
+        let tokenVoucherKey1;
+
         before(async () => {
           utils = UtilsBuilder.create()
             .ERC20withPermit()
@@ -1924,6 +1926,8 @@ contract('Cashier && VK', async (addresses) => {
             },
             'order1 not created successfully'
           );
+
+          assert.isDefined(tokenVoucherKey1);
         });
 
         it('[NEGATIVE] Should not create order with incorrect price', async () => {
@@ -2162,6 +2166,8 @@ contract('Cashier && VK', async (addresses) => {
             },
             'order1 not created successfully'
           );
+
+          assert.isDefined(tokenVoucherKey);
         });
 
         it('[NEGATIVE] Should not create order with incorrect deposit', async () => {
@@ -2709,7 +2715,7 @@ contract('Cashier && VK', async (addresses) => {
           truffleAssert.eventEmitted(
             withdrawTx,
             'LogAmountDistribution',
-            (ev) => {
+            () => {
               return true;
             },
             'Event LogAmountDistribution was not emitted'
@@ -2874,7 +2880,7 @@ contract('Cashier && VK', async (addresses) => {
             }
           );
 
-          voucherID = await utils.commitToBuy(
+          const voucherID = await utils.commitToBuy(
             users.buyer,
             users.other2,
             tokenSupplyKey
@@ -2933,7 +2939,7 @@ contract('Cashier && VK', async (addresses) => {
           truffleAssert.eventEmitted(
             withdrawTx,
             'LogAmountDistribution',
-            (ev) => {
+            () => {
               return true;
             },
             'Event LogAmountDistribution was not emitted'
@@ -3186,7 +3192,7 @@ contract('Cashier && VK', async (addresses) => {
           truffleAssert.eventEmitted(
             withdrawTx,
             'LogAmountDistribution',
-            (ev) => {
+            () => {
               return true;
             },
             'Event LogAmountDistribution was not emitted'
@@ -3278,7 +3284,7 @@ contract('Cashier && VK', async (addresses) => {
       });
 
       it('Should transfer a voucher', async () => {
-        voucherID = await utils.commitToBuy(
+        const voucherID = await utils.commitToBuy(
           users.other1,
           users.seller,
           tokenSupplyKey
@@ -3329,7 +3335,7 @@ contract('Cashier && VK', async (addresses) => {
         expectedBalanceInEscrow = new BN(constants.product_price).add(
           new BN(constants.buyer_deposit)
         );
-        voucherID = await utils.commitToBuy(
+        const voucherID = await utils.commitToBuy(
           users.other1,
           users.seller,
           tokenSupplyKey
@@ -3391,7 +3397,7 @@ contract('Cashier && VK', async (addresses) => {
           new BN(4)
         );
 
-        voucherID = await utils.commitToBuy(
+        const voucherID = await utils.commitToBuy(
           users.other1,
           users.seller,
           tokenSupplyKey
@@ -3447,7 +3453,7 @@ contract('Cashier && VK', async (addresses) => {
       });
 
       it('[NEGATIVE] Old owner should not be able to interact with the voucher', async () => {
-        voucherID = await utils.commitToBuy(
+        const voucherID = await utils.commitToBuy(
           users.other1,
           users.seller,
           tokenSupplyKey
@@ -3474,7 +3480,7 @@ contract('Cashier && VK', async (addresses) => {
       });
 
       it('[NEGATIVE] Transfer should revert if Attacker tries to execute voucher transfer', async () => {
-        voucherID = await utils.commitToBuy(
+        const voucherID = await utils.commitToBuy(
           users.other1,
           users.seller,
           tokenSupplyKey
@@ -3566,13 +3572,8 @@ contract('Cashier && VK', async (addresses) => {
             escrowAmount: new BN(0),
           };
 
-          balanceBuyerFromPayment = new BN(0);
           balanceBuyerFromDeposits = new BN(0);
-
-          balanceSellerFromPayment = new BN(0);
           balanceSellerFromDeposits = new BN(0);
-
-          escrowBalanceFromPayment = new BN(0);
           escrowBalanceFromDeposits = new BN(0);
 
           cashierPaymentLeft = new BN(0);
@@ -3586,7 +3587,7 @@ contract('Cashier && VK', async (addresses) => {
 
         it('Should update escrow amounts after transfer', async () => {
           expectedBalanceInEscrow = new BN(constants.product_price);
-          voucherID = await utils.commitToBuy(
+          const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
             tokenSupplyKey
@@ -3650,7 +3651,7 @@ contract('Cashier && VK', async (addresses) => {
             constants.seller_deposit
           ).div(new BN(4));
 
-          voucherID = await utils.commitToBuy(
+          const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
             tokenSupplyKey
@@ -3733,7 +3734,7 @@ contract('Cashier && VK', async (addresses) => {
         });
 
         it('[NEGATIVE] Old owner should not be able to interact with the voucher', async () => {
-          voucherID = await utils.commitToBuy(
+          const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
             tokenSupplyKey
@@ -3760,7 +3761,7 @@ contract('Cashier && VK', async (addresses) => {
         });
 
         it('[NEGATIVE] Transfer should revert if Attacker tries to execute voucher transfer', async () => {
-          voucherID = await utils.commitToBuy(
+          const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
             tokenSupplyKey
@@ -3887,7 +3888,7 @@ contract('Cashier && VK', async (addresses) => {
           ).div(new BN(4));
           const expectedEscrowAmountPrice = new BN(0);
 
-          voucherID = await utils.commitToBuy(
+          const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
             tokenSupplyKey
@@ -3955,7 +3956,7 @@ contract('Cashier && VK', async (addresses) => {
           truffleAssert.eventEmitted(
             withdrawTx,
             'LogAmountDistribution',
-            (ev) => {
+            () => {
               return true;
             },
             'Event LogAmountDistribution was not emitted'
@@ -3963,7 +3964,7 @@ contract('Cashier && VK', async (addresses) => {
         });
 
         it('[NEGATIVE] Old owner should not be able to interact with the voucher', async () => {
-          voucherID = await utils.commitToBuy(
+          const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
             tokenSupplyKey
@@ -3990,7 +3991,7 @@ contract('Cashier && VK', async (addresses) => {
         });
 
         it('[NEGATIVE] Transfer should revert if Attacker tries to execute voucher transfer', async () => {
-          voucherID = await utils.commitToBuy(
+          const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
             tokenSupplyKey
@@ -4066,7 +4067,7 @@ contract('Cashier && VK', async (addresses) => {
 
         it('Should update escrow amounts after transfer', async () => {
           expectedBalanceInEscrow = new BN(constants.buyer_deposit);
-          voucherID = await utils.commitToBuy(
+          const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
             tokenSupplyKey
@@ -4132,7 +4133,7 @@ contract('Cashier && VK', async (addresses) => {
             constants.seller_deposit
           ).div(new BN(4));
 
-          voucherID = await utils.commitToBuy(
+          const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
             tokenSupplyKey
@@ -4217,7 +4218,7 @@ contract('Cashier && VK', async (addresses) => {
           truffleAssert.eventEmitted(
             withdrawTx,
             'LogAmountDistribution',
-            (ev) => {
+            () => {
               return true;
             },
             'Event LogAmountDistribution was not emitted'
@@ -4225,7 +4226,7 @@ contract('Cashier && VK', async (addresses) => {
         });
 
         it('[NEGATIVE] Old owner should not be able to interact with the voucher', async () => {
-          voucherID = await utils.commitToBuy(
+          const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
             tokenSupplyKey
@@ -4252,7 +4253,7 @@ contract('Cashier && VK', async (addresses) => {
         });
 
         it('[NEGATIVE] Transfer should revert if Attacker tries to execute voucher transfer', async () => {
-          voucherID = await utils.commitToBuy(
+          const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
             tokenSupplyKey

@@ -848,7 +848,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -924,7 +924,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -1004,7 +1004,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -1077,7 +1077,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -1155,7 +1155,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -1228,7 +1228,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -1305,7 +1305,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -1387,7 +1387,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -1466,7 +1466,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -1645,7 +1645,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -1704,7 +1704,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -1767,7 +1767,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -1823,7 +1823,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -1884,7 +1884,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -1939,7 +1939,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -1999,7 +1999,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -2064,7 +2064,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -2126,7 +2126,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -2139,13 +2139,8 @@ contract('Cashier withdrawals ', async (addresses) => {
         'ETH - TKN [WITH PERMIT]' +
           `${i === PAUSED_WITH_PERMIT ? PAUSED_LABEL : ''}`,
         async () => {
-          let balanceBuyerFromPayment = new BN(0);
           let balanceBuyerFromDeposits = new BN(0);
-
-          let balanceSellerFromPayment = new BN(0);
           let balanceSellerFromDeposits = new BN(0);
-
-          let escrowBalanceFromPayment = new BN(0);
           let escrowBalanceFromDeposits = new BN(0);
 
           let cashierPaymentLeft = new BN(0);
@@ -2212,13 +2207,8 @@ contract('Cashier withdrawals ', async (addresses) => {
               escrowAmount: new BN(0),
             };
 
-            balanceBuyerFromPayment = new BN(0);
             balanceBuyerFromDeposits = new BN(0);
-
-            balanceSellerFromPayment = new BN(0);
             balanceSellerFromDeposits = new BN(0);
-
-            escrowBalanceFromPayment = new BN(0);
             escrowBalanceFromDeposits = new BN(0);
 
             cashierPaymentLeft = new BN(0);
@@ -2305,7 +2295,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -2378,7 +2368,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -2457,7 +2447,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -2527,7 +2517,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -2602,7 +2592,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -2676,7 +2666,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -2754,7 +2744,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -2837,7 +2827,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -2917,7 +2907,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -3072,7 +3062,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -3165,7 +3155,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -3262,7 +3252,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -3352,7 +3342,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -3447,7 +3437,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -3537,7 +3527,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -3631,7 +3621,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -3730,7 +3720,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
@@ -3825,7 +3815,7 @@ contract('Cashier withdrawals ', async (addresses) => {
             truffleAssert.eventEmitted(
               withdrawTx,
               'LogAmountDistribution',
-              (ev) => {
+              () => {
                 return true;
               },
               'Event LogAmountDistribution was not emitted'
