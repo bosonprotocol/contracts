@@ -172,7 +172,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
     );
 
 
-    modifier onlyFromBR() {
+    modifier onlyFromRouter() {
         require(bosonRouterAddress != address(0), "UNSPECIFIED_BR");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         _;
@@ -205,7 +205,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
     * @notice Pause the process of interaction with voucherID's (ERC-721), in case of emergency.
     * Only BR contract is in control of this function.
     */
-    function pause() external override onlyFromBR {
+    function pause() external override onlyFromRouter {
         _pause();
     }
 
@@ -213,7 +213,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
     * @notice Unpause the process of interaction with voucherID's (ERC-721).
     * Only BR contract is in control of this function.
     */
-    function unpause() external override onlyFromBR {
+    function unpause() external override onlyFromRouter {
         _unpause();
     } 
     
@@ -238,7 +238,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
     ) 
         external 
         override
-        onlyFromBR
+        onlyFromRouter
         returns (uint256)
     {
         
@@ -287,7 +287,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         )
         external
         override
-        onlyFromBR
+        onlyFromRouter
     {
 
         paymentDetails[_tokenIdSupply] = VoucherPaymentMethod({
@@ -332,7 +332,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
     function fillOrder(uint256 _tokenIdSupply, address _issuer, address _holder)
         external
         override
-        onlyFromBR
+        onlyFromRouter
         
     {
         //checks
@@ -456,7 +456,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         external
         override
         whenNotPaused
-        onlyFromBR
+        onlyFromRouter
         onlyVoucherOwner(_tokenIdVoucher, _msgSender)
     {
         //check status
@@ -488,7 +488,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         external
         override
         whenNotPaused
-        onlyFromBR
+        onlyFromRouter
         onlyVoucherOwner(_tokenIdVoucher, _msgSender)
     {
         require(isStateCommitted(vouchersStatus[_tokenIdVoucher].status), "INAPPLICABLE_STATUS");  //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicableToCurrentState)
@@ -512,7 +512,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         external
         override
         whenNotPaused
-        onlyFromBR
+        onlyFromRouter
         onlyVoucherOwner(_tokenIdVoucher, _msgSender)
     {
         require(!isStatus(vouchersStatus[_tokenIdVoucher].status, idxComplain), "ALREADY_COMPLAINED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
@@ -741,7 +741,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
      * @param _newSeller   new holder of the supply
     */
     function setSupplyHolderOnTransfer(uint256 _tokenIdSupply, address _newSeller)
-        external override onlyFromBR
+        external override onlyFromRouter
     {
         bytes32 promiseKey = ordersPromise[_tokenIdSupply];
         promises[promiseKey].seller = _newSeller;
