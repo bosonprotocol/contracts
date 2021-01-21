@@ -1,70 +1,89 @@
 const axios = require('axios').default;
 const process = {
-    env: {
-        API_URL: 'http://localhost:3000'
-    }
+  env: {
+    API_URL: 'http://localhost:3000',
+  },
 };
 
 const endpoints = {
-    finalize: '/user-vouchers/finalize',
-    createPayment: '/payments/create-payment'
+  finalize: '/user-vouchers/finalize',
+  createPayment: '/payments/create-payment',
 };
 
-const Cashier = require("../build/Cashier.json");
+const Cashier = require('../build/Cashier.json');
 
 const ethers = require('ethers');
 
 const provider = new ethers.providers.JsonRpcProvider();
-const { DEPLOYER_SECRET, contracts, VOUCHER_ID, DB_VOUCHER_TO_MODIFY, SEND_TO_DB} = require('./config');
-const deployer = new ethers.Wallet(DEPLOYER_SECRET, provider); 
-
+const {
+  DEPLOYER_SECRET,
+  contracts,
+  VOUCHER_ID,
+  DB_VOUCHER_TO_MODIFY,
+  SEND_TO_DB,
+} = require('./config');
+const deployer = new ethers.Wallet(DEPLOYER_SECRET, provider);
 
 (async () => {
-    let cashierContractDeployer = new ethers.Contract(contracts.CashierContractAddress, Cashier.abi, deployer)
+  let cashierContractDeployer = new ethers.Contract(
+    contracts.CashierContractAddress,
+    Cashier.abi,
+    deployer
+  );
 
-    const txOrder = await cashierContractDeployer.withdraw([VOUCHER_ID]);
-    const receipt = await txOrder.wait()
+  const txOrder = await cashierContractDeployer.withdraw([VOUCHER_ID]);
+  const receipt = await txOrder.wait();
 
-    let events = await findEventByName(receipt, 'LogWithdrawal', '_caller', '_payee', '_payment')
+  let events = await findEventByName(
+    receipt,
+    'LogWithdrawal',
+    '_caller',
+    '_payee',
+    '_payment'
+  );
 
-    for (const key in events) {
-        events[key]._tokenIdVoucher = DB_VOUCHER_TO_MODIFY;
-    }
-    console.log('events');
-    console.log(events);
+  for (const key in events) {
+    events[key]._tokenIdVoucher = DB_VOUCHER_TO_MODIFY;
+  }
+  console.log('events');
+  console.log(events);
 
-    if (!SEND_TO_DB) return
-    await sendPayments(events)
-
-})()
+  if (!SEND_TO_DB) return;
+  await sendPayments(events);
+})();
 
 async function findEventByName(txReceipt, eventName, ...eventFields) {
-    let eventsArr = [];
+  let eventsArr = [];
 
-    for (const key in txReceipt.events) {
-        if (txReceipt.events[key].event == eventName) {
-            const event = txReceipt.events[key]
+  for (const key in txReceipt.events) {
+    if (txReceipt.events[key].event == eventName) {
+      const event = txReceipt.events[key];
 
-            const resultObj = {
-                txHash: txReceipt.transactionHash
-            }
+      const resultObj = {
+        txHash: txReceipt.transactionHash,
+      };
 
-            for (let index = 0; index < eventFields.length; index++) {
-                resultObj[eventFields[index]] = event.args[eventFields[index]].toString();
-            }
-            eventsArr.push(resultObj)
-        }
+      for (let index = 0; index < eventFields.length; index++) {
+        resultObj[eventFields[index]] = event.args[
+          eventFields[index]
+        ].toString();
+      }
+      eventsArr.push(resultObj);
     }
+  }
 
-    return eventsArr
+  return eventsArr;
 }
 
 async function sendPayments(events) {
-    try {
-        await axios.post(`${process.env.API_URL}${endpoints.createPayment}`, events)
-    } catch (error) {
-        console.log(error.response.data);
-    }
+  try {
+    await axios.post(
+      `${process.env.API_URL}${endpoints.createPayment}`,
+      events
+    );
+  } catch (error) {
+    console.log(error.response.data);
+  }
 }
 
 /** Example events arr
@@ -83,4 +102,3 @@ async function sendPayments(events) {
         _payment: '11000000000000000'
 }]
  */
-

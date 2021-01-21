@@ -3,7 +3,9 @@ require_relative 'lib/ganache'
 task :default => [
     :"contracts:compile",
     :"contracts:lint_fix",
-    :"test:integration"
+    :"contracts:format_fix",
+    :"tests:format_fix",
+    :"tests:integration"
 ]
 
 namespace :ganache do
@@ -50,9 +52,29 @@ namespace :contracts do
   task :lint_fix do
     sh('npm', 'run', 'contracts:lint-fix')
   end
+
+  desc "Format all contracts"
+  task :format do
+    sh('npm', 'run', 'contracts:format')
+  end
+
+  desc "Format & fix all contracts"
+  task :format_fix do
+    sh('npm', 'run', 'contracts:format-fix')
+  end
 end
 
-namespace :test do
+namespace :tests do
+  desc "Format all test files"
+  task :format do
+    sh('npm', 'run', 'tests:format')
+  end
+
+  desc "Format & fix all test files"
+  task :format_fix do
+    sh('npm', 'run', 'tests:format-fix')
+  end
+
   desc "Run all contract integration tests"
   task :integration do
     Ganache.on_available_port(
@@ -64,13 +86,13 @@ namespace :test do
           "HOST" => "127.0.0.1",
           "PORT" => "#{ganache.port}",
           "ACCOUNT_KEYS_FILE" => "#{ganache.account_keys_file}"
-      }, 'npm', 'run', 'test:integration')
+      }, 'npm', 'run', 'tests:integration')
     end
   end
 
   desc "Run test coverage for contract integration tests"
   task :coverage do
     puts "Running test coverage for contract integration tests..."
-    sh(['npm', 'run', 'test:coverage'])
+    sh(['npm', 'run', 'tests:coverage'])
   end
 end

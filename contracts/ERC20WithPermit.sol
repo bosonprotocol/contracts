@@ -20,7 +20,8 @@ contract ERC20WithPermit is IERC20WithPermit {
     // solhint-disable-next-line var-name-mixedcase
     bytes32 public override DOMAIN_SEPARATOR;
     // representation of keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-    bytes32 public override constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
+    bytes32 public constant override PERMIT_TYPEHASH =
+        0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
     mapping(address => uint256) public override nonces;
 
     event Approval(
@@ -126,22 +127,23 @@ contract ERC20WithPermit is IERC20WithPermit {
     ) external override {
         require(deadline >= block.timestamp, "ERC20WithPermit: EXPIRED");
 
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                DOMAIN_SEPARATOR,
-                keccak256(
-                    abi.encode( 
-                        PERMIT_TYPEHASH,
-                        owner,
-                        spender,
-                        value,
-                        nonces[owner]++,
-                        deadline
+        bytes32 digest =
+            keccak256(
+                abi.encodePacked(
+                    "\x19\x01",
+                    DOMAIN_SEPARATOR,
+                    keccak256(
+                        abi.encode(
+                            PERMIT_TYPEHASH,
+                            owner,
+                            spender,
+                            value,
+                            nonces[owner]++,
+                            deadline
+                        )
                     )
                 )
-            )
-        );
+            );
 
         address recoveredAddress = ecrecover(digest, v, r, s);
         require(

@@ -6,18 +6,18 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
-* @notice This contract is only used for, while deploying on rinkeby with verifying contracts,
-so that we have 2 distinguished contracts concerning tokens for the price of the products, and for the deposits. 
-Will not be used while deploying on prod.
-*/
+ * @notice This contract is only used for, while deploying on rinkeby with verifying contracts,
+ * so that we have 2 distinguished contracts concerning tokens for the price of the products, and for the deposits.
+ * Will not be used while deploying on prod.
+ */
 contract BosonTokenDeposit is ERC20WithPermit, AccessControl, Ownable {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     constructor(string memory name, string memory symbol)
-    public
-    ERC20WithPermit(name, symbol)
+        public
+        ERC20WithPermit(name, symbol)
     {
         _setupRole(MINTER_ROLE, owner());
         _setupRole(ADMIN_ROLE, owner());
@@ -29,8 +29,10 @@ contract BosonTokenDeposit is ERC20WithPermit, AccessControl, Ownable {
     }
 
     function mint(address to, uint256 amount) public {
-        require(hasRole(MINTER_ROLE, _msgSender()),
-            "ERC20PresetMinterPauser: must have minter role to mint");
+        require(
+            hasRole(MINTER_ROLE, _msgSender()),
+            "ERC20PresetMinterPauser: must have minter role to mint"
+        );
         _mint(to, amount);
     }
 }

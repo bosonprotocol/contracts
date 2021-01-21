@@ -11,8 +11,8 @@ contract BosonTokenPrice is ERC20WithPermit, AccessControl, Ownable {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     constructor(string memory name, string memory symbol)
-    public
-    ERC20WithPermit(name, symbol)
+        public
+        ERC20WithPermit(name, symbol)
     {
         _setupRole(MINTER_ROLE, owner());
         _setupRole(ADMIN_ROLE, owner());
@@ -24,8 +24,10 @@ contract BosonTokenPrice is ERC20WithPermit, AccessControl, Ownable {
     }
 
     function mint(address to, uint256 amount) public {
-        require(hasRole(MINTER_ROLE, _msgSender()),
-            "ERC20PresetMinterPauser: must have minter role to mint");
+        require(
+            hasRole(MINTER_ROLE, _msgSender()),
+            "ERC20PresetMinterPauser: must have minter role to mint"
+        );
         _mint(to, amount);
     }
 }

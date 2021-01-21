@@ -1,53 +1,64 @@
-
-const Cashier = require("../build/Cashier.json");
-const helpers = require('../testHelpers/constants')
+const Cashier = require('../build/Cashier.json');
+const helpers = require('../testHelpers/constants');
 
 const ethers = require('ethers');
 const provider = new ethers.providers.JsonRpcProvider();
-const { SELLER_SECRET, contracts } = require('./config');
+const {SELLER_SECRET, contracts} = require('./config');
 
-const seller = new ethers.Wallet(SELLER_SECRET, provider); 
+const seller = new ethers.Wallet(SELLER_SECRET, provider);
 
-(async() => {
-    let cashierContractSeller = new ethers.Contract(contracts.CashierContractAddress, Cashier.abi, seller)
-    const sellerDepoist = helpers.seller_deposit;
-    const qty = 50
-    const txValue = ethers.BigNumber.from(sellerDepoist.toString()).mul(qty)
+(async () => {
+  let cashierContractSeller = new ethers.Contract(
+    contracts.CashierContractAddress,
+    Cashier.abi,
+    seller
+  );
+  const sellerDepoist = helpers.seller_deposit;
+  const qty = 50;
+  const txValue = ethers.BigNumber.from(sellerDepoist.toString()).mul(qty);
 
-    let txOrder = await cashierContractSeller.requestCreateOrder(
-        helpers.ASSET_TITLE,
-        helpers.PROMISE_VALID_FROM,
-        helpers.PROMISE_VALID_TO, 
-        helpers.product_price, 
-        sellerDepoist, 
-        helpers.buyer_deposit,
-        qty, 
-        { value: txValue.toString(), gasLimit: 4600000 }); 
+  let txOrder = await cashierContractSeller.requestCreateOrder(
+    helpers.ASSET_TITLE,
+    helpers.PROMISE_VALID_FROM,
+    helpers.PROMISE_VALID_TO,
+    helpers.product_price,
+    sellerDepoist,
+    helpers.buyer_deposit,
+    qty,
+    {value: txValue.toString(), gasLimit: 4600000}
+  );
 
-    const receipt = await txOrder.wait()
-    
-    let parsedEvent = await findEventByName(receipt, 'LogOrderCreated', '_tokenIdSupply', '_seller', '_promiseId', '_quantity')
-    console.log('parsedEvent');
-    console.log(parsedEvent);
+  const receipt = await txOrder.wait();
+
+  let parsedEvent = await findEventByName(
+    receipt,
+    'LogOrderCreated',
+    '_tokenIdSupply',
+    '_seller',
+    '_promiseId',
+    '_quantity'
+  );
+  console.log('parsedEvent');
+  console.log(parsedEvent);
 })();
 
-
 async function findEventByName(txReceipt, eventName, ...eventFields) {
+  for (const key in txReceipt.events) {
+    if (txReceipt.events[key].event == eventName) {
+      const event = txReceipt.events[key];
 
-    for (const key in txReceipt.events) {
-        if (txReceipt.events[key].event == eventName) {
-            const event = txReceipt.events[key]
-            
-            const resultObj = {
-                txHash: txReceipt.transactionHash
-            }
+      const resultObj = {
+        txHash: txReceipt.transactionHash,
+      };
 
-            for (let index = 0; index < eventFields.length; index++) {
-                resultObj[eventFields[index]] = event.args[eventFields[index]].toString();
-            }
-            return resultObj
-        }
+      for (let index = 0; index < eventFields.length; index++) {
+        resultObj[eventFields[index]] = event.args[
+          eventFields[index]
+        ].toString();
+      }
+      return resultObj;
     }
+  }
 }
 
 //EXAMPLE

@@ -41,7 +41,7 @@ interface IERC20WithPermit {
     function PERMIT_TYPEHASH() external pure returns (bytes32);
 
     function nonces(address owner) external view returns (uint256);
-    
+
     function permit(
         address owner,
         address spender,
@@ -51,5 +51,4 @@ interface IERC20WithPermit {
         bytes32 r,
         bytes32 s
     ) external;
-
 }

@@ -1,53 +1,69 @@
-const Cashier = require("../build/Cashier.json");
-const helpers = require('../testHelpers/constants')
+const Cashier = require('../build/Cashier.json');
+const helpers = require('../testHelpers/constants');
 
 const ethers = require('ethers');
 const provider = new ethers.providers.JsonRpcProvider();
-const { SELLER_PUBLIC, BUYER_SECRET, contracts, TOKEN_SUPPLY_ID } = require('./config');
-const accountBuyer = new ethers.Wallet(BUYER_SECRET, provider); 
-
+const {
+  SELLER_PUBLIC,
+  BUYER_SECRET,
+  contracts,
+  TOKEN_SUPPLY_ID,
+} = require('./config');
+const accountBuyer = new ethers.Wallet(BUYER_SECRET, provider);
 
 (async () => {
+  let cashierContract_Buyer = new ethers.Contract(
+    contracts.CashierContractAddress,
+    Cashier.abi,
+    accountBuyer
+  );
 
-    let cashierContract_Buyer = new ethers.Contract(contracts.CashierContractAddress, Cashier.abi, accountBuyer)
+  const tokenSupplyKey = TOKEN_SUPPLY_ID;
 
-    const tokenSupplyKey = TOKEN_SUPPLY_ID
-    
-    const buyerDeposit = helpers.buyer_deposit;
-    const price = helpers.product_price;
-    const txValue = ethers.BigNumber.from(buyerDeposit).add(ethers.BigNumber.from(price))
+  const buyerDeposit = helpers.buyer_deposit;
+  const price = helpers.product_price;
+  const txValue = ethers.BigNumber.from(buyerDeposit).add(
+    ethers.BigNumber.from(price)
+  );
 
+  let txOrder = await cashierContract_Buyer.requestVoucher(
+    tokenSupplyKey,
+    SELLER_PUBLIC,
+    {value: txValue.toString()}
+  );
 
-    let txOrder = await cashierContract_Buyer.requestVoucher(
-        tokenSupplyKey,
-        SELLER_PUBLIC,
-        { value: txValue.toString()}
-    );
+  const receipt = await txOrder.wait();
 
-    const receipt = await txOrder.wait()
-
-    let parsedEvent = await findEventByName(receipt, 'LogVoucherDelivered', '_tokenIdSupply', '_tokenIdVoucher', '_issuer', '_holder', '_promiseId')
-    console.log('parsedEvent');
-    console.log(parsedEvent);
-
+  let parsedEvent = await findEventByName(
+    receipt,
+    'LogVoucherDelivered',
+    '_tokenIdSupply',
+    '_tokenIdVoucher',
+    '_issuer',
+    '_holder',
+    '_promiseId'
+  );
+  console.log('parsedEvent');
+  console.log(parsedEvent);
 })();
 
 async function findEventByName(txReceipt, eventName, ...eventFields) {
+  for (const key in txReceipt.events) {
+    if (txReceipt.events[key].event == eventName) {
+      const event = txReceipt.events[key];
 
-    for (const key in txReceipt.events) {
-        if (txReceipt.events[key].event == eventName) {
-            const event = txReceipt.events[key]
+      const resultObj = {
+        txHash: txReceipt.transactionHash,
+      };
 
-            const resultObj = {
-                txHash: txReceipt.transactionHash
-            }
-
-            for (let index = 0; index < eventFields.length; index++) {
-                resultObj[eventFields[index]] = event.args[eventFields[index]].toString();
-            }
-            return resultObj
-        }
+      for (let index = 0; index < eventFields.length; index++) {
+        resultObj[eventFields[index]] = event.args[
+          eventFields[index]
+        ].toString();
+      }
+      return resultObj;
     }
+  }
 }
 
 /**
