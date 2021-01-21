@@ -92,7 +92,7 @@ interface IVoucherKernel {
     * @param _issuer          Address of the token's issuer
     * @param _holder          Address of the recipient of the voucher (ERC-721)
     */
-    function fillOrder(uint256 _tokenIdSupply, address _issuer, address _holder) external;
+    function fillOrder(uint256 _tokenIdSupply, address _issuer, address _holder, uint256 _nonce) external;
 
     /**
     * @notice Mark voucher token as expired
