@@ -9,6 +9,7 @@ let utils
 const ERC1155ERC721 = artifacts.require("ERC1155ERC721")
 const VoucherKernel = artifacts.require("VoucherKernel")
 const Cashier = artifacts.require("Cashier")
+const BosonRouter = artifacts.require("BosonRouter")
 const BosonTKN = artifacts.require("BosonTokenPrice")
 const FundLimitsOracle 	= artifacts.require('FundLimitsOracle');
 
@@ -27,7 +28,13 @@ contract("Cashier withdrawals ", async accounts => {
     let Attacker = config.accounts.attacker
     let RandomUser = config.accounts.randomUser // will be used to clear tokens received after every successful test
 
-    let contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit,contractFundLimitsOracle
+    let contractERC1155ERC721,
+        contractVoucherKernel,
+        contractCashier,
+        contractBosonRouter,
+        contractBSNTokenPrice,
+        contractBSNTokenDeposit,
+        contractFundLimitsOracle
     const PAUSED_WITHPERMIT = 1;
     const PAUSED_LABEL = "[PAUSED]";
 
@@ -41,13 +48,19 @@ contract("Cashier withdrawals ", async accounts => {
         contractFundLimitsOracle = await FundLimitsOracle.new()
         contractERC1155ERC721 = await ERC1155ERC721.new()
         contractVoucherKernel = await VoucherKernel.new(contractERC1155ERC721.address)
-        contractCashier = await Cashier.new(contractVoucherKernel.address, contractERC1155ERC721.address, contractFundLimitsOracle.address)
+        contractCashier = await Cashier.new(contractVoucherKernel.address);
+        contractBosonRouter = await BosonRouter.new(contractVoucherKernel.address, contractERC1155ERC721.address, contractFundLimitsOracle.address, contractCashier.address);
         contractBSNTokenPrice = await BosonTKN.new('BosonTokenPrice', 'BPRC');
         contractBSNTokenDeposit = await BosonTKN.new('BosonTokenDeposit', 'BDEP');
 
         await contractERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true')
         await contractERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address)
+		await contractERC1155ERC721.setBosonRouterAddress(contractBosonRouter.address);
+
+		await contractVoucherKernel.setBosonRouterAddress(contractBosonRouter.address);
         await contractVoucherKernel.setCashierAddress(contractCashier.address)
+
+		await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
 
         await contractFundLimitsOracle.setTokenLimit(contractBSNTokenPrice.address, helpers.TOKEN_LIMIT)
         await contractFundLimitsOracle.setTokenLimit(contractBSNTokenDeposit.address, helpers.TOKEN_LIMIT)
@@ -57,7 +70,7 @@ contract("Cashier withdrawals ", async accounts => {
         await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
     } 
 
-    // this functions is used after each interaction with tokens to clear balances
+    // this function is used after each interaction with tokens to clear balances
     async function giveAwayToRandom() {
         const balanceBuyerFromPayment = await contractBSNTokenPrice.balanceOf(Buyer.address)
         const balanceBuyerFromDesosits = await contractBSNTokenDeposit.balanceOf(Buyer.address)
@@ -100,9 +113,9 @@ contract("Cashier withdrawals ", async accounts => {
                     escrowAmount: new BN(0)
                 }
 
-                const isPaused = await contractCashier.paused();
+                const isPaused = await contractBosonRouter.paused();
                 if (isPaused) {
-                    await contractCashier.unpause();
+                    await contractBosonRouter.unpause();
                 }
             })
 
@@ -113,7 +126,7 @@ contract("Cashier withdrawals ", async accounts => {
                     utils = UtilsBuilder
                         .NEW()
                         .ETH_ETH()
-                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier)
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter)
 
                     const timestamp = await Utils.getCurrTimestamp()
 
@@ -373,7 +386,7 @@ contract("Cashier withdrawals ", async accounts => {
                         .NEW()
                         .ERC20withPermit()
                         .TKN_TKN()
-                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, contractBSNTokenDeposit)
                     
                     const timestamp = await Utils.getCurrTimestamp()
 
@@ -801,17 +814,11 @@ contract("Cashier withdrawals ", async accounts => {
                         cashierDepositLeft = new BN(0)
 
                         await giveAwayToRandom();
-
-                        const isPaused = await contractCashier.paused();
-                        if (isPaused) {
-                            await contractCashier.unpause();
-                        }
                     })
 
             })
 
-            // Ignored due to deployment failure.
-            xdescribe(`TKN - TKN SAME [WITH PERMIT]${i == PAUSED_WITHPERMIT ? PAUSED_LABEL : ''}`, async () => {
+            describe(`TKN - TKN SAME [WITH PERMIT]${i == PAUSED_WITHPERMIT ? PAUSED_LABEL : ''}`, async () => {
 
                 let balanceBuyer = new BN(0)
                 let balanceSeller = new BN(0)
@@ -832,7 +839,7 @@ contract("Cashier withdrawals ", async accounts => {
                         .NEW()
                         .ERC20withPermit()
                         .TKN_TKN_SAME()
-                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, contractBSNTokenDeposit)
                     
                     const timestamp = await Utils.getCurrTimestamp()
 
@@ -865,11 +872,6 @@ contract("Cashier withdrawals ", async accounts => {
                     cashierBalance = new BN(0)
 
                     await giveAwayToRandom();
-
-                    const isPaused = await contractCashier.paused();
-                    if (isPaused) {
-                        await contractCashier.unpause();
-                    }
                 })
 
                 it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
@@ -1222,7 +1224,7 @@ contract("Cashier withdrawals ", async accounts => {
                         .NEW()
                         .ERC20withPermit()
                         .ETH_TKN()
-                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, contractBSNTokenDeposit)
 
                     const timestamp = await Utils.getCurrTimestamp()
 
@@ -1261,11 +1263,6 @@ contract("Cashier withdrawals ", async accounts => {
                     cashierDepositLeft = new BN(0)
 
                     await giveAwayToRandom();
-
-                    const isPaused = await contractCashier.paused();
-                    if (isPaused) {
-                        await contractCashier.unpause();
-                    }
                 })
 
                 it("COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW", async () => {
@@ -1696,7 +1693,7 @@ contract("Cashier withdrawals ", async accounts => {
                         .NEW()
                         .ERC20withPermit()
                         .TKN_ETH()
-                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, '')
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, '')
 
                     const timestamp = await Utils.getCurrTimestamp()
 
@@ -2185,7 +2182,7 @@ contract("Cashier withdrawals ", async accounts => {
                 utils = UtilsBuilder
                     .NEW()
                     .ETH_ETH()
-                    .build(contractERC1155ERC721, contractVoucherKernel, contractCashier);
+                    .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter);
 
                 const timestamp = await Utils.getCurrTimestamp()
 
@@ -2215,7 +2212,7 @@ contract("Cashier withdrawals ", async accounts => {
                     remQty--;
                 }
 
-                await contractCashier.pause();
+                await contractBosonRouter.pause();
             })
 
             it("[NEGATIVE] should revert if not called from the seller", async () => {
@@ -2274,7 +2271,7 @@ contract("Cashier withdrawals ", async accounts => {
                         .NEW()
                         .ERC20withPermit()
                         .ETH_TKN()
-                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, contractBSNTokenDeposit)
 
                     const timestamp = await Utils.getCurrTimestamp()
 
@@ -2310,7 +2307,7 @@ contract("Cashier withdrawals ", async accounts => {
                         remQty--;
                     }
 
-                    await contractCashier.pause();
+                    await contractBosonRouter.pause();
                 })
 
                 it("[NEGATIVE] should revert if not called from the seller", async () => {
@@ -2369,7 +2366,7 @@ contract("Cashier withdrawals ", async accounts => {
                         .NEW()
                         .ERC20withPermit()
                         .TKN_ETH()
-                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, '')
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, '')
 
                     const timestamp = await Utils.getCurrTimestamp()
 
@@ -2408,7 +2405,7 @@ contract("Cashier withdrawals ", async accounts => {
                         remQty--;
                     }
 
-                    await contractCashier.pause();
+                    await contractBosonRouter.pause();
                 })
 
                 it("[NEGATIVE] should revert if not called from the seller", async () => {
@@ -2466,7 +2463,7 @@ contract("Cashier withdrawals ", async accounts => {
                         .NEW()
                         .ERC20withPermit()
                         .TKN_TKN()
-                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBSNTokenPrice, contractBSNTokenDeposit)
+                        .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, contractBSNTokenDeposit)
                     
                     const timestamp = await Utils.getCurrTimestamp()
 
@@ -2508,7 +2505,7 @@ contract("Cashier withdrawals ", async accounts => {
                         remQty--;
                     }
 
-                    await contractCashier.pause();
+                    await contractBosonRouter.pause();
                 })
 
                 it("[NEGATIVE] should revert if not called from the seller", async () => {

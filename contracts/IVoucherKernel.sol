@@ -37,13 +37,54 @@ interface IVoucherKernel {
     */
     function createPaymentMethod(uint256 _tokenIdSupply, uint8 _paymentMethod, address _tokenPrice, address _tokenDeposits) external;
 
+    /**
+    * @notice Mark voucher token that the payment was released
+    * @param _tokenIdVoucher   ID of the voucher token
+    */
+    function setPaymentReleased(uint256 _tokenIdVoucher) external;
 
     /**
-    * @notice Get all necessary funds for a supply token
-    * @param _tokenIdSupply   ID of the supply token
-    * @return                  returns a tuple (Payment amount, Seller's deposit, Buyer's deposit)
+    * @notice Mark voucher token that the deposits were released
+    * @param _tokenIdVoucher   ID of the voucher token
     */
-    function getOrderCosts(uint256 _tokenIdSupply) external view returns (uint256, uint256, uint256);
+    function setDepositsReleased(uint256 _tokenIdVoucher) external;
+        
+    /**
+    * @notice Extract a standard non-fungible tokens ERC-721 from a supply stored in ERC-1155
+    * @dev Token ID is derived following the same principles for both ERC-1155 and ERC-721
+    * @param _issuer          The address of the token issuer
+    * @param _tokenIdSupply   ID of the token type
+    * @param _qty   qty that should be burned
+    */
+    function burnSupplyOnPause(address _issuer, uint256 _tokenIdSupply, uint256 _qty) external;
+
+    /**
+    * @notice Redemption of the vouchers promise
+    * @param _tokenIdVoucher   ID of the voucher
+    * @param _msgSender owner of the voucher
+    */
+    function redeem(uint256 _tokenIdVoucher, address _msgSender) external;
+
+    /**
+    * @notice Refunding a voucher
+    * @param _tokenIdVoucher   ID of the voucher
+    * @param _msgSender owner of the voucher
+    */
+    function refund(uint256 _tokenIdVoucher, address _msgSender) external;
+
+    /**
+    * @notice Issue a complain for a voucher
+    * @param _tokenIdVoucher   ID of the voucher
+    * @param _msgSender owner of the voucher
+    */
+    function complain(uint256 _tokenIdVoucher, address _msgSender) external;
+
+    /**
+    * @notice Cancel/Fault transaction by the Seller, admitting to a fault or backing out of the deal
+    * @param _tokenIdVoucher   ID of the voucher
+    * @param _msgSender owner of the voucher set (seller)
+    */
+    function cancelOrFault(uint256 _tokenIdVoucher, address _msgSender) external;
 
     /**
     * @notice Fill Voucher Order, iff funds paid, then extract & mint NFT to the voucher holder
@@ -52,6 +93,50 @@ interface IVoucherKernel {
     * @param _holder          Address of the recipient of the voucher (ERC-721)
     */
     function fillOrder(uint256 _tokenIdSupply, address _issuer, address _holder) external;
+
+    /**
+    * @notice Mark voucher token as expired
+    * @param _tokenIdVoucher   ID of the voucher token
+    */
+    function triggerExpiration(uint256 _tokenIdVoucher) external;
+
+    /**
+    * @notice Mark voucher token to the final status
+    * @param _tokenIdVoucher   ID of the voucher token
+    */
+    function triggerFinalizeVoucher(uint256 _tokenIdVoucher) external;
+
+    /**
+    * @notice Set the address of the new holder of a _tokenIdSupply on transfer
+    * @param _tokenIdSupply   _tokenIdSupply which will be transferred
+    * @param _newSeller   new holder of the supply
+    */
+    function setSupplyHolderOnTransfer(uint256 _tokenIdSupply, address _newSeller) external;
+
+    /**
+    * @notice Set the general cancelOrFault period, should be used sparingly as it has significant consequences. Here done simply for demo purposes.
+    * @param _cancelFaultPeriod   the new value for cancelOrFault period (in number of seconds)
+    */
+    function setCancelFaultPeriod(uint256 _cancelFaultPeriod) external;
+
+    /**
+    * @notice Set the address of the Cashier contract
+    * @param _cashierAddress   The address of the Cashier contract
+    */
+    function setCashierAddress(address _cashierAddress) external;
+
+    /**
+    * @notice Set the general complain period, should be used sparingly as it has significant consequences. Here done simply for demo purposes.
+    * @param _complainPeriod   the new value for complain period (in number of seconds)
+    */
+    function setComplainPeriod(uint256 _complainPeriod) external;
+
+    /**
+    * @notice Get the promise ID at specific index
+    * @param _idx  Index in the array of promise keys
+    * @return      Promise ID
+    */
+    function getPromiseKey(uint256 _idx) external view returns (bytes32);
 
     /**
     * @notice Get the address of the token where the price for the supply is held
@@ -75,11 +160,47 @@ interface IVoucherKernel {
     function getBuyerOrderCosts(uint256 _tokenIdSupply) external view returns (uint256, uint256);
 
     /**
+    * @notice Get Seller deposit 
+    * @param _tokenIdSupply   ID of the supply token
+    * @return                  returns sellers deposit
+    */
+    function getSellerDeposit(uint256 _tokenIdSupply) external view returns (uint256);
+
+    /**
     * @notice Get the promise ID from a voucher token
     * @param _tokenIdVoucher   ID of the voucher token
     * @return                  ID of the promise
     */
     function getIdSupplyFromVoucher(uint256 _tokenIdVoucher) external pure returns (uint256);
+
+    /**
+     * @notice Get the promise ID from a voucher token
+     * @param _tokenIdVoucher   ID of the voucher token
+     * @return                  ID of the promise
+     */
+    function getPromiseIdFromVoucherId(uint256 _tokenIdVoucher) external view returns (bytes32);
+
+    /**
+    * @notice Get the current supply of tokens of an account
+    * @param _account  Address to query
+    * @return          Balance
+     */
+    function getTotalSupply(address _account) external view returns (uint256);
+
+    /**
+    * @notice Get all necessary funds for a supply token
+    * @param _tokenIdSupply   ID of the supply token
+    * @return                  returns a tuple (Payment amount, Seller's deposit, Buyer's deposit)
+    */
+    function getOrderCosts(uint256 _tokenIdSupply) external view returns (uint256, uint256, uint256);
+
+    /**
+    * @notice Get the remaining quantity left in supply of tokens (e.g ERC-721 left in ERC-1155) of an account
+    * @param _tokenSupplyId  Token supply ID
+    * @param _owner    holder of the Token Supply
+    * @return          remaining quantity
+    */
+    function getRemQtyForSupply(uint _tokenSupplyId, address _owner) external view returns (uint256);
 
     /**
     * @notice Get the payment method for a particular _tokenIdSupply
@@ -103,102 +224,13 @@ interface IVoucherKernel {
     function getSupplyHolder(uint256 _tokenIdSupply) external view returns (address);
 
     /**
-     * @notice Get the holder of a voucher
-     * @param _tokenIdVoucher   ID of the voucher token
-     * @return                  Address of the holder
+    * @notice Get the holder of a voucher
+    * @param _tokenIdVoucher   ID of the voucher token
+    * @return                  Address of the holder
     */
     function getVoucherHolder(uint256 _tokenIdVoucher) external view returns (address);
 
-    /**
-    * @notice Mark voucher token that the payment was released
-    * @param _tokenIdVoucher   ID of the voucher token
-    */
-    function setPaymentReleased(uint256 _tokenIdVoucher) external;
 
-    /**
-    * @notice Mark voucher token that the deposits were released
-    * @param _tokenIdVoucher   ID of the voucher token
-    */
-    function setDepositsReleased(uint256 _tokenIdVoucher) external;
-        
-    /**
-    * @notice Get Seller deposit 
-    * @param _tokenIdSupply   ID of the supply token
-    * @return                  returns sellers deposit
-    */
-    function getSellerDeposit(uint256 _tokenIdSupply) external view returns (uint256);
-
-    /**
-    * @notice Get the remaining quantity left in supply of tokens (e.g ERC-721 left in ERC-1155) of an account
-    * @param _tokenSupplyId  Token supply ID
-    * @param _owner    holder of the Token Supply
-    * @return          remaining quantity
-    */
-    function getRemQtyForSupply(uint _tokenSupplyId, address _owner) external view returns (uint256);
-
-    /**
-    * @notice Extract a standard non-fungible tokens ERC-721 from a supply stored in ERC-1155
-    * @dev Token ID is derived following the same principles for both ERC-1155 and ERC-721
-    * @param _issuer          The address of the token issuer
-    * @param _tokenIdSupply   ID of the token type
-    * @param _qty   qty that should be burned
-    */
-    function burnSupplyOnPause(address _issuer, uint256 _tokenIdSupply, uint256 _qty) external;
-
-    /**
-    * @notice Redemption of the vouchers promise
-    * @param _tokenIdVoucher   ID of the voucher
-    */
-    function redeem(uint256 _tokenIdVoucher) external;
-
-    /**
-    * @notice Refunding a voucher
-    * @param _tokenIdVoucher   ID of the voucher
-    */
-    function refund(uint256 _tokenIdVoucher) external;
-
-    /**
-    * @notice Issue a complain for a voucher
-    * @param _tokenIdVoucher   ID of the voucher
-    */
-    function complain(uint256 _tokenIdVoucher) external;
-
-    /**
-    * @notice Cancel/Fault transaction by the Seller, admitting to a fault or backing out of the deal
-    * @param _tokenIdVoucher   ID of the voucher
-    */
-    function cancelOrFault(uint256 _tokenIdVoucher) external;
-
-    /**
-    * @notice Mark voucher token as expired
-    * @param _tokenIdVoucher   ID of the voucher token
-    */
-    function triggerExpiration(uint256 _tokenIdVoucher) external;
-
-
-    /**
-    * @notice Mark voucher token to the final status
-    * @param _tokenIdVoucher   ID of the voucher token
-    */
-    function triggerFinalizeVoucher(uint256 _tokenIdVoucher) external;
-
-    /**
-    * @notice Set the address of the new holder of a _tokenIdSupply on transfer
-    * @param _tokenIdSupply   _tokenIdSupply which will be transferred
-    * @param _newSeller   new holder of the supply
-    */
-    function setSupplyHolderOnTransfer(uint256 _tokenIdSupply, address _newSeller) external;
-
-    /**
-    * @notice Set the address of the Cashier contract
-    * @param _cashierAddress   The address of the Cashier contract
-    */
-    function setCashierAddress(address _cashierAddress) external;
-
-    /**
-    * @notice Set the general complain period, should be used sparingly as it has significant consequences. Here done simply for demo purposes.
-    * @param _complainPeriod   the new value for complain period (in number of seconds)
-    */
-    function setComplainPeriod(uint256 _complainPeriod) external;
+    function isInValidityPeriod(uint256 _tokenIdVoucher) external view returns (bool);
 
 }

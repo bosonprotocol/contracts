@@ -16,7 +16,7 @@ Migrations are using HDWalletProvider, install it if you need it:
 [Migrations script](./migrations/2_deploy_contracts.js) for Truffle also does this initialization:
 - ERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true')
 - ERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address)
-- VoucherKernel.setCashierAddress(contractCashier.address)
+- VoucherKernel.setBosonRouterAddress(bosonRouter.address)
 
 ## Deployed contracts
 Contract are deployed on Kovan testnet at addresses:  

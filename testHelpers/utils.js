@@ -20,10 +20,11 @@ class Utils {
         this.deadline = toWei(1)
     }
 
-    setContracts(erc1155721, voucherKernel, cashier, bsnTokenPrice, bsnTokenDeposit) {
+    setContracts(erc1155721, voucherKernel, cashier, bsnRouter, bsnTokenPrice, bsnTokenDeposit) {
         this.contractERC1155ERC721 = erc1155721
         this.contractVoucherKernel = voucherKernel
         this.contractCashier = cashier
+        this.contractBSNRouter = bsnRouter
         this.contractBSNTokenPrice = bsnTokenPrice
         this.contractBSNTokenDeposit = bsnTokenDeposit
         this.contractBSNTokenSAME = bsnTokenPrice
@@ -32,7 +33,7 @@ class Utils {
     async requestCreateOrder_ETH_ETH(seller, from, to, sellerDeposit, qty, returnTx = false) {
         const txValue = new BN(sellerDeposit).mul(new BN(qty))
 
-        let txOrder = await this.contractCashier.requestCreateOrder_ETH_ETH(
+        let txOrder = await this.contractBSNRouter.requestCreateOrder_ETH_ETH(
             [from, 
             to, 
             helpers.product_price, 
@@ -56,7 +57,7 @@ class Utils {
         const digest = await getApprovalDigest(
             this.contractBSNTokenSAME,
             seller.address,
-            this.contractCashier.address,
+            this.contractBSNRouter.address,
             txValue,
             nonce,
             this.deadline
@@ -66,7 +67,7 @@ class Utils {
             Buffer.from(digest.slice(2), 'hex'),
             Buffer.from(seller.pk.slice(2), 'hex'));
        
-        let txOrder = await this.contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+        let txOrder = await this.contractBSNRouter.requestCreateOrder_TKN_TKN_WithPermit(
             this.contractBSNTokenSAME.address,
             this.contractBSNTokenSAME.address,
             txValue,
@@ -97,7 +98,7 @@ class Utils {
         const digest = await getApprovalDigest(
             this.contractBSNTokenDeposit,
             seller.address,
-            this.contractCashier.address,
+            this.contractBSNRouter.address,
             txValue,
             nonce,
             this.deadline
@@ -107,7 +108,7 @@ class Utils {
             Buffer.from(digest.slice(2), 'hex'),
             Buffer.from(seller.pk.slice(2), 'hex'));
        
-        let txOrder = await this.contractCashier.requestCreateOrder_TKN_TKN_WithPermit(
+        let txOrder = await this.contractBSNRouter.requestCreateOrder_TKN_TKN_WithPermit(
             this.contractBSNTokenPrice.address,
             this.contractBSNTokenDeposit.address,
             txValue,
@@ -136,7 +137,7 @@ class Utils {
         const digest = await getApprovalDigest(
             this.contractBSNTokenDeposit,
             seller.address,
-            this.contractCashier.address,
+            this.contractBSNRouter.address,
             txValue,
             nonce,
             this.deadline
@@ -147,7 +148,7 @@ class Utils {
             Buffer.from(seller.pk.slice(2), 'hex'));
 
 
-        let txOrder = await this.contractCashier.requestCreateOrder_ETH_TKN_WithPermit(
+        let txOrder = await this.contractBSNRouter.requestCreateOrder_ETH_TKN_WithPermit(
             this.contractBSNTokenDeposit.address,
             txValue,
             this.deadline,
@@ -171,7 +172,7 @@ class Utils {
     async requestCreateOrder_TKN_ETH(seller, from, to, sellerDeposit, qty) {
         const txValue = new BN(sellerDeposit).mul(new BN(qty));
 
-        let txOrder = await this.contractCashier.requestCreateOrder_TKN_ETH(
+        let txOrder = await this.contractBSNRouter.requestCreateOrder_TKN_ETH(
             this.contractBSNTokenPrice.address,
             [
                 from,
@@ -197,7 +198,7 @@ class Utils {
         const digestDeposit = await getApprovalDigest(
             this.contractBSNTokenDeposit,
             buyer.address,
-            this.contractCashier.address,
+            this.contractBSNRouter.address,
             helpers.buyer_deposit,
             nonce1,
             this.deadline
@@ -216,7 +217,7 @@ class Utils {
         const digestPrice = await getApprovalDigest(
             this.contractBSNTokenPrice,
             buyer.address,
-            this.contractCashier.address,
+            this.contractBSNRouter.address,
             helpers.product_price,
             nonce2,
             this.deadline
@@ -230,7 +231,7 @@ class Utils {
         let rPrice = VRS_PRICE.r
         let sPrice = VRS_PRICE.s
 
-        let CommitTx = await this.contractCashier.requestVoucher_TKN_TKN_WithPermit(
+        let CommitTx = await this.contractBSNRouter.requestVoucher_TKN_TKN_WithPermit(
             tokenSupplyId,
             seller.address,
             txValue,
@@ -252,7 +253,7 @@ class Utils {
         const digestTxValue = await getApprovalDigest(
             this.contractBSNTokenSAME,
             buyer.address,
-            this.contractCashier.address,
+            this.contractBSNRouter.address,
             txValue,
             nonce,
             this.deadline
@@ -266,7 +267,7 @@ class Utils {
         let r = VRS_TX_VALUE.r
         let s = VRS_TX_VALUE.s
 
-        let CommitTx = await this.contractCashier.requestVoucher_TKN_TKN_Same_WithPermit(
+        let CommitTx = await this.contractBSNRouter.requestVoucher_TKN_TKN_Same_WithPermit(
             tokenSupplyId,
             seller.address,
             txValue,
@@ -286,7 +287,7 @@ class Utils {
         const digestDeposit = await getApprovalDigest(
             this.contractBSNTokenDeposit,
             buyer.address,
-            this.contractCashier.address,
+            this.contractBSNRouter.address,
             helpers.buyer_deposit,
             nonce1,
             this.deadline
@@ -297,7 +298,7 @@ class Utils {
             Buffer.from(buyer.pk.slice(2), 'hex'));
 
 
-        let txOrder = await this.contractCashier.requestVoucher_ETH_TKN_WithPermit(
+        let txOrder = await this.contractBSNRouter.requestVoucher_ETH_TKN_WithPermit(
             tokenSupplyId,
             seller.address,
             helpers.buyer_deposit,
@@ -315,7 +316,7 @@ class Utils {
     async commitToBuy_ETH_ETH(buyer, seller, tokenSupplyId) {
         const txValue = new BN(helpers.buyer_deposit).add(new BN(helpers.product_price))
 
-        let CommitTx = await this.contractCashier.requestVoucher_ETH_ETH(tokenSupplyId, seller.address, { from: buyer.address, value: txValue.toString() });
+        let CommitTx = await this.contractBSNRouter.requestVoucher_ETH_ETH(tokenSupplyId, seller.address, { from: buyer.address, value: txValue.toString() });
 
         let nestedValue = (await truffleAssert.createTransactionResult(this.contractVoucherKernel, CommitTx.tx)).logs
 
@@ -329,7 +330,7 @@ class Utils {
         const digestDeposit = await getApprovalDigest(
             this.contractBSNTokenPrice,
             buyer.address,
-            this.contractCashier.address,
+            this.contractBSNRouter.address,
             helpers.product_price,
             nonce1,
             this.deadline
@@ -340,7 +341,7 @@ class Utils {
             Buffer.from(buyer.pk.slice(2), 'hex'));
 
 
-        let txOrder = await this.contractCashier.requestVoucher_TKN_ETH_WithPermit(
+        let txOrder = await this.contractBSNRouter.requestVoucher_TKN_ETH_WithPermit(
             tokenSupplyId,
             seller.address,
             helpers.product_price,
@@ -356,19 +357,19 @@ class Utils {
     }
 
     async refund(voucherID, buyer) {
-        await this.contractVoucherKernel.refund(voucherID, { from: buyer });
+        await this.contractBSNRouter.refund(voucherID, { from: buyer });
     }
 
     async redeem(voucherID, buyer) {
-        await this.contractVoucherKernel.redeem(voucherID, { from: buyer });
+        await this.contractBSNRouter.redeem(voucherID, { from: buyer });
     }
 
     async complain(voucherID, buyer) {
-        await this.contractVoucherKernel.complain(voucherID, { from: buyer });
+        await this.contractBSNRouter.complain(voucherID, { from: buyer });
     }
 
     async cancel(voucherID, seller) {
-        await this.contractVoucherKernel.cancelOrFault(voucherID, { from: seller });
+        await this.contractBSNRouter.cancelOrFault(voucherID, { from: seller });
     }
 
     async finalize(voucherID, deployer) {
@@ -388,7 +389,7 @@ class Utils {
     }
 
     async pause(deployer) {
-        await this.contractCashier.pause({from: deployer})
+        await this.contractBSNRouter.pause({from: deployer})
     }
 
     async safeTransfer721(oldVoucherOwner, newVoucherOwner, voucherID, from) {

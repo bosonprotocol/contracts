@@ -33,6 +33,21 @@ contract usingHelpers {
         uint256 complainPeriodStart;
         uint256 cancelFaultPeriodStart;
     }
+
+    struct VoucherDetails {
+        uint256 tokenIdSupply;
+        uint256 tokenIdVoucher;
+        address payable issuer;
+        address payable holder;
+        uint256 price;
+        uint256 depositSe;
+        uint256 depositBu;
+        uint256 amount2pool;
+        uint256 amount2issuer;
+        uint256 amount2holder;
+        uint8   paymentMethod;
+        VoucherStatus currStatus;
+    }
     
     
     function isStateCommitted(uint8 _status)
