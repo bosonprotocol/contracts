@@ -122,6 +122,6 @@ namespace :tests do
   desc "Run test coverage for contract unit tests"
   task :coverage => [:'dependencies:install'] do
     puts "Running test coverage for contract unit tests..."
-    sh(['npm', 'run', 'tests:coverage'])
+    sh('npm', 'run', 'tests:coverage')
   end
 end
