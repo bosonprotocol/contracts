@@ -9,8 +9,8 @@ import "./IERC1155.sol";
 import "./IERC1155TokenReceiver.sol";
 import "./IERC721.sol";
 import "./IERC721TokenReceiver.sol";
-import "./ICashier.sol";
 import "./IERC1155ERC721.sol";
+import "./IBosonRouter.sol";
 
 //preparing for ERC-1066, ERC-1444, EIP-838
 
@@ -25,7 +25,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
     //min security
     address public owner; //contract owner
     address public voucherKernelAddress; //address of the VoucherKernel contract
-    address public cashier; //Cashier contract
+    address public bosonRouterAddress; //address of the BosonRouter contract
 
     //standard reqs
     //ERC-1155
@@ -47,7 +47,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
 
     event LogVoucherKernelSet(address _newVoucherKernel, address _triggeredBy);
 
-    event LogCashierSet(address _newCashier, address _triggeredBy);
+    event LogBosonRouterSet(address _newBosonRouter, address _triggeredBy);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "UNAUTHORIZED_O"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
@@ -90,13 +90,22 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
             "UNAUTHORIZED_ST"
         ); //hex"10"FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
 
-        ICashier(cashier)._beforeERC1155Transfer(_from, _tokenId, _value);
+        IBosonRouter(bosonRouterAddress)._beforeERC1155Transfer(
+            _from,
+            _tokenId,
+            _value
+        );
 
         // SafeMath throws with insufficient funds or if _id is not valid (balance will be 0)
         balances[_tokenId][_from] = balances[_tokenId][_from].sub(_value);
         balances[_tokenId][_to] = _value.add(balances[_tokenId][_to]);
 
-        ICashier(cashier)._onERC1155Transfer(_from, _to, _tokenId, _value);
+        IBosonRouter(bosonRouterAddress)._onERC1155Transfer(
+            _from,
+            _to,
+            _tokenId,
+            _value
+        );
 
         emit TransferSingle(msg.sender, _from, _to, _tokenId, _value);
 
@@ -208,7 +217,11 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
 
         owners721[_tokenId] = _to;
 
-        ICashier(cashier)._onERC721Transfer(_from, _to, _tokenId);
+        IBosonRouter(bosonRouterAddress)._onERC721Transfer(
+            _from,
+            _to,
+            _tokenId
+        );
 
         emit Transfer(_from, _to, _tokenId);
     }
@@ -286,13 +299,22 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
             uint256 tokenId = _tokenIds[i];
             uint256 value = _values[i];
 
-            ICashier(cashier)._beforeERC1155Transfer(_from, tokenId, value);
+            IBosonRouter(bosonRouterAddress)._beforeERC1155Transfer(
+                _from,
+                tokenId,
+                value
+            );
 
             // SafeMath throws with insufficient funds or if _id is not valid (balance will be 0)
             balances[tokenId][_from] = balances[tokenId][_from].sub(value);
             balances[tokenId][_to] = value.add(balances[tokenId][_to]);
 
-            ICashier(cashier)._onERC1155Transfer(_from, _to, tokenId, value);
+            IBosonRouter(bosonRouterAddress)._onERC1155Transfer(
+                _from,
+                _to,
+                tokenId,
+                value
+            );
         }
 
         emit TransferBatch(msg.sender, _from, _to, _tokenIds, _values);
@@ -769,7 +791,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
 
     /**
      * @notice Set the address of the VoucherKernel contract
-     * @param _voucherKernelAddress   The address of the Cashier contract
+     * @param _voucherKernelAddress   The address of the Voucher Kernel contract
      */
     function setVoucherKernelAddress(address _voucherKernelAddress)
         external
@@ -783,16 +805,19 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
     }
 
     /**
-     * @notice Set the address of the Cashier contract
-     * @param _cashier   The Cashier contract
+     * @notice Set the address of the Boson Router contract
+     * @param _bosonRouterAddress   The Boson Router  contract
      */
-    function setCashierContract(address _cashier) external onlyOwner {
-        cashier = _cashier;
-        emit LogCashierSet(_cashier, msg.sender);
+    function setBosonRouterAddress(address _bosonRouterAddress)
+        external
+        onlyOwner
+    {
+        bosonRouterAddress = _bosonRouterAddress;
+        emit LogBosonRouterSet(_bosonRouterAddress, msg.sender);
     }
 
-    function getCashierAddress() public view returns (address) {
-        address(cashier);
+    function getBosonRouterAddress() public view returns (address) {
+        address(bosonRouterAddress);
     }
 
     /**

@@ -10,6 +10,7 @@ const Users = require('../testHelpers/users');
 const ERC1155ERC721 = artifacts.require('ERC1155ERC721');
 const VoucherKernel = artifacts.require('VoucherKernel');
 const Cashier = artifacts.require('Cashier');
+const BosonRouter = artifacts.require('BosonRouter');
 const FundLimitsOracle = artifacts.require('FundLimitsOracle');
 
 let snapshot;
@@ -20,10 +21,13 @@ contract('Voucher tests', async (addresses) => {
   let contractERC1155ERC721,
     contractVoucherKernel,
     contractCashier,
+    contractBosonRouter,
     contractFundLimitsOracle;
   let tokenSupplyKey1, tokenSupplyKey2, tokenVoucherKey1, tokenVoucherKey2;
 
   before('setup contracts for tests', async () => {
+    const sixtySeconds = 60;
+
     snapshot = await timemachine.takeSnapshot();
 
     const timestamp = await Utils.getCurrTimestamp();
@@ -35,10 +39,12 @@ contract('Voucher tests', async (addresses) => {
     contractVoucherKernel = await VoucherKernel.new(
       contractERC1155ERC721.address
     );
-    contractCashier = await Cashier.new(
+    contractCashier = await Cashier.new(contractVoucherKernel.address);
+    contractBosonRouter = await BosonRouter.new(
       contractVoucherKernel.address,
       contractERC1155ERC721.address,
-      contractFundLimitsOracle.address
+      contractFundLimitsOracle.address,
+      contractCashier.address
     );
 
     await contractERC1155ERC721.setApprovalForAll(
@@ -48,7 +54,19 @@ contract('Voucher tests', async (addresses) => {
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
+    await contractERC1155ERC721.setBosonRouterAddress(
+      contractBosonRouter.address
+    );
+
+    await contractVoucherKernel.setBosonRouterAddress(
+      contractBosonRouter.address
+    );
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
+
+    await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
+
+    await contractVoucherKernel.setComplainPeriod(sixtySeconds);
+    await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
 
     console.log('Seller:   ' + users.seller.address);
     console.log('Buyer:    ' + users.buyer.address);
@@ -74,7 +92,7 @@ contract('Voucher tests', async (addresses) => {
 
   describe('Orders (aka supply tokens - ERC1155)', () => {
     it('adding one new order / promise', async () => {
-      const txOrder = await contractCashier.requestCreateOrderETHETH(
+      const txOrder = await contractBosonRouter.requestCreateOrderETHETH(
         [
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
@@ -84,7 +102,7 @@ contract('Voucher tests', async (addresses) => {
           constants.ORDER_QUANTITY1,
         ],
         {
-          from: users.buyer.address,
+          from: users.seller.address,
           to: contractCashier.address,
           value: constants.PROMISE_DEPOSITSE1,
         }
@@ -98,7 +116,7 @@ contract('Voucher tests', async (addresses) => {
       // }, "order1 not created successfully");
 
       // // instead, we check that the escrow increased for the seller
-      // let escrowAmount = await contractCashier.getEscrowAmount.call(Seller);
+      // let escrowAmount = await contractBosonRouter.getEscrowAmount.call(Seller);
       // assert.isAbove(escrowAmount.toNumber(), 0,
       //   "seller's escrowed deposit should be more than zero");
 
@@ -108,14 +126,14 @@ contract('Voucher tests', async (addresses) => {
         'LogOrderCreated',
         (ev) => {
           tokenSupplyKey1 = ev._tokenIdSupply;
-          return ev._seller === users.buyer.address;
+          return ev._seller === users.seller.address;
         },
         'order1 not created successfully'
       );
     });
 
     it('adding second order', async () => {
-      const txOrder = await contractCashier.requestCreateOrderETHETH(
+      const txOrder = await contractBosonRouter.requestCreateOrderETHETH(
         [
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
@@ -125,7 +143,7 @@ contract('Voucher tests', async (addresses) => {
           constants.ORDER_QUANTITY2,
         ],
         {
-          from: users.buyer.address,
+          from: users.seller.address,
           to: contractCashier.address,
           value: constants.PROMISE_DEPOSITSE2,
         }
@@ -136,19 +154,19 @@ contract('Voucher tests', async (addresses) => {
         'LogOrderCreated',
         (ev) => {
           tokenSupplyKey2 = ev._tokenIdSupply;
-          return ev._seller === users.buyer.address;
+          return ev._seller === users.seller.address;
         },
         'order2 not created successfully'
       );
     });
 
     it('fill one order (aka buy a voucher)', async () => {
-      const txFillOrder = await contractCashier.requestVoucherETHETH(
+      const txFillOrder = await contractBosonRouter.requestVoucherETHETH(
         tokenSupplyKey1,
-        users.buyer.address,
+        users.seller.address,
         {
           from: users.buyer.address,
-          to: contractCashier.address,
+          to: contractBosonRouter.address,
           value: constants.PROMISE_PRICE1 + constants.PROMISE_DEPOSITBU1,
         }
       );
@@ -161,7 +179,7 @@ contract('Voucher tests', async (addresses) => {
         internalTx,
         'LogVoucherDelivered',
         (ev) => {
-          return ev._issuer === users.buyer.address;
+          return ev._issuer === users.seller.address;
         },
         'order1 not created successfully'
       );
@@ -174,12 +192,12 @@ contract('Voucher tests', async (addresses) => {
     });
 
     it('fill second order (aka buy a voucher)', async () => {
-      const txFillOrder = await contractCashier.requestVoucherETHETH(
+      const txFillOrder = await contractBosonRouter.requestVoucherETHETH(
         tokenSupplyKey2,
-        users.buyer.address,
+        users.seller.address,
         {
           from: users.buyer.address,
-          to: contractCashier.address,
+          to: contractBosonRouter.address,
           value: constants.PROMISE_PRICE2 + constants.PROMISE_DEPOSITBU2,
         }
       );
@@ -201,7 +219,7 @@ contract('Voucher tests', async (addresses) => {
 
     it('must fail: adding new order with incorrect value sent', async () => {
       await truffleAssert.reverts(
-        contractCashier.requestCreateOrderETHETH(
+        contractBosonRouter.requestCreateOrderETHETH(
           [
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
@@ -211,8 +229,8 @@ contract('Voucher tests', async (addresses) => {
             constants.ORDER_QUANTITY1,
           ],
           {
-            from: users.buyer.address,
-            to: contractCashier.address,
+            from: users.seller.address,
+            to: contractBosonRouter.address,
             value: 0,
           }
         ),
@@ -222,12 +240,12 @@ contract('Voucher tests', async (addresses) => {
 
     it('must fail: fill an order with incorrect value', async () => {
       await truffleAssert.reverts(
-        contractCashier.requestVoucherETHETH(
+        contractBosonRouter.requestVoucherETHETH(
           tokenSupplyKey1,
-          users.buyer.address,
+          users.seller.address,
           {
             from: users.buyer.address,
-            to: contractCashier.address,
+            to: contractBosonRouter.address,
             value: 0,
           }
         ),
@@ -238,12 +256,16 @@ contract('Voucher tests', async (addresses) => {
 
   describe('Voucher tokens', function () {
     it('redeeming one voucher', async () => {
-      const txRedeem = await contractVoucherKernel.redeem(tokenVoucherKey1, {
+      const txRedeem = await contractBosonRouter.redeem(tokenVoucherKey1, {
         from: users.buyer.address,
       });
+      const internalTx = await truffleAssert.createTransactionResult(
+        contractVoucherKernel,
+        txRedeem.tx
+      );
 
       truffleAssert.eventEmitted(
-        txRedeem,
+        internalTx,
         'LogVoucherRedeemed',
         (ev) => {
           return ev._tokenIdVoucher.toString() === tokenVoucherKey1.toString();
@@ -298,7 +320,7 @@ contract('Voucher tests', async (addresses) => {
 
     it('must fail: unauthorized redemption', async () => {
       await truffleAssert.reverts(
-        contractVoucherKernel.redeem(tokenVoucherKey1, {
+        contractBosonRouter.redeem(tokenVoucherKey1, {
           from: users.attacker.address,
         }),
         truffleAssert.ErrorType.REVERT
@@ -344,28 +366,31 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
   let contractERC1155ERC721,
     contractVoucherKernel,
     contractCashier,
+    contractBosonRouter,
     contractFundLimitsOracle;
   let tokenSupplyKey1, tokenVoucherKey1;
 
   before('setup promise dates based on the block timestamp', async () => {
+    const sixtySeconds = 60;
+
     snapshot = await timemachine.takeSnapshot();
 
     const timestamp = await Utils.getCurrTimestamp();
 
     constants.PROMISE_VALID_FROM = timestamp;
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
-  });
 
-  beforeEach('setup contracts for tests', async () => {
     contractFundLimitsOracle = await FundLimitsOracle.new();
     contractERC1155ERC721 = await ERC1155ERC721.new();
     contractVoucherKernel = await VoucherKernel.new(
       contractERC1155ERC721.address
     );
-    contractCashier = await Cashier.new(
+    contractCashier = await Cashier.new(contractVoucherKernel.address);
+    contractBosonRouter = await BosonRouter.new(
       contractVoucherKernel.address,
       contractERC1155ERC721.address,
-      contractFundLimitsOracle.address
+      contractFundLimitsOracle.address,
+      contractCashier.address
     );
 
     await contractERC1155ERC721.setApprovalForAll(
@@ -375,9 +400,23 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
+    await contractERC1155ERC721.setBosonRouterAddress(
+      contractBosonRouter.address
+    );
+
+    await contractVoucherKernel.setBosonRouterAddress(
+      contractBosonRouter.address
+    );
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
-    const txOrder = await contractCashier.requestCreateOrderETHETH(
+    await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
+
+    await contractVoucherKernel.setComplainPeriod(sixtySeconds);
+    await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
+  });
+
+  beforeEach('setup contracts for tests', async () => {
+    const txOrder = await contractBosonRouter.requestCreateOrderETHETH(
       [
         constants.PROMISE_VALID_FROM,
         constants.PROMISE_VALID_TO,
@@ -388,7 +427,7 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
       ],
       {
         from: users.seller.address,
-        to: contractCashier.address,
+        to: contractBosonRouter.address,
         value: constants.PROMISE_DEPOSITSE1,
       }
     );
@@ -403,12 +442,12 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
       'order1 not created successfully'
     );
 
-    const txFillOrder = await contractCashier.requestVoucherETHETH(
+    const txFillOrder = await contractBosonRouter.requestVoucherETHETH(
       tokenSupplyKey1,
       users.seller.address,
       {
         from: users.buyer.address,
-        to: contractCashier.address,
+        to: contractBosonRouter.address,
         value: constants.PROMISE_PRICE1 + constants.PROMISE_DEPOSITBU1,
       }
     );
@@ -496,7 +535,7 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
 
   describe('Refunds ...', function () {
     it('refunding one voucher', async () => {
-      await contractVoucherKernel.refund(tokenVoucherKey1, {
+      await contractBosonRouter.refund(tokenVoucherKey1, {
         from: users.buyer.address,
       });
 
@@ -513,10 +552,10 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     });
 
     it('refunding one voucher, then complain', async () => {
-      await contractVoucherKernel.refund(tokenVoucherKey1, {
+      await contractBosonRouter.refund(tokenVoucherKey1, {
         from: users.buyer.address,
       });
-      await contractVoucherKernel.complain(tokenVoucherKey1, {
+      await contractBosonRouter.complain(tokenVoucherKey1, {
         from: users.buyer.address,
       });
 
@@ -533,13 +572,13 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     });
 
     it('refunding one voucher, then complain, then cancel/fault', async () => {
-      await contractVoucherKernel.refund(tokenVoucherKey1, {
+      await contractBosonRouter.refund(tokenVoucherKey1, {
         from: users.buyer.address,
       });
-      await contractVoucherKernel.complain(tokenVoucherKey1, {
+      await contractBosonRouter.complain(tokenVoucherKey1, {
         from: users.buyer.address,
       });
-      await contractVoucherKernel.cancelOrFault(tokenVoucherKey1, {
+      await contractBosonRouter.cancelOrFault(tokenVoucherKey1, {
         from: users.seller.address,
       });
 
@@ -557,12 +596,12 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     });
 
     it('must fail: refund then try to redeem', async () => {
-      await contractVoucherKernel.refund(tokenVoucherKey1, {
+      await contractBosonRouter.refund(tokenVoucherKey1, {
         from: users.buyer.address,
       });
 
       await truffleAssert.reverts(
-        contractVoucherKernel.redeem(tokenVoucherKey1, {
+        contractBosonRouter.redeem(tokenVoucherKey1, {
           from: users.buyer.address,
         }),
         truffleAssert.ErrorType.REVERT
@@ -572,7 +611,7 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
 
   describe('Cancel/Fault by the seller ...', () => {
     it('canceling one voucher', async () => {
-      await contractVoucherKernel.cancelOrFault(tokenVoucherKey1, {
+      await contractBosonRouter.cancelOrFault(tokenVoucherKey1, {
         from: users.seller.address,
       });
 
@@ -589,12 +628,12 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     });
 
     it('must fail: cancel/fault then try to redeem', async () => {
-      await contractVoucherKernel.cancelOrFault(tokenVoucherKey1, {
+      await contractBosonRouter.cancelOrFault(tokenVoucherKey1, {
         from: users.seller.address,
       });
 
       await truffleAssert.reverts(
-        contractVoucherKernel.redeem(tokenVoucherKey1, {
+        contractBosonRouter.redeem(tokenVoucherKey1, {
           from: users.buyer.address,
         }),
         truffleAssert.ErrorType.REVERT
@@ -621,7 +660,7 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
         'end voucher status not as expected (EXPIRED)'
       );
 
-      await contractVoucherKernel.complain(tokenVoucherKey1, {
+      await contractBosonRouter.complain(tokenVoucherKey1, {
         from: users.buyer.address,
       });
 
@@ -637,7 +676,7 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
       );
 
       // in the same test, because the EVM time machine is funky ...
-      await contractVoucherKernel.cancelOrFault(tokenVoucherKey1, {
+      await contractBosonRouter.cancelOrFault(tokenVoucherKey1, {
         from: users.seller.address,
       });
 
@@ -655,7 +694,7 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
 
       // in the same test, because the EVM time machine is funky ...
       await truffleAssert.reverts(
-        contractVoucherKernel.redeem(tokenVoucherKey1, {
+        contractBosonRouter.redeem(tokenVoucherKey1, {
           from: users.buyer.address,
         }),
         truffleAssert.ErrorType.REVERT

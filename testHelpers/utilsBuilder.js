@@ -21,16 +21,24 @@ class UtilsBuilder {
     this.ETHTKN = this.ETHTKNWithPermit;
     this.TKNTKN = this.TKNTKNWithPermit;
     this.TKNETH = this.TKNETHWithPermit;
-    this.TKNTKNSAME = this.TKNTKNSameWithPermit;
+    this.TKNTKNSame = this.TKNTKNSameWithPermit;
 
     return this;
   }
 
-  build(erc1155721, voucherKernel, cashier, bsnTokenPrice, bsnTokenDeposit) {
+  build(
+    erc1155721,
+    voucherKernel,
+    cashier,
+    bsnRouter,
+    bsnTokenPrice,
+    bsnTokenDeposit
+  ) {
     this.utils.setContracts(
       erc1155721,
       voucherKernel,
       cashier,
+      bsnRouter,
       bsnTokenPrice,
       bsnTokenDeposit
     );
@@ -54,7 +62,7 @@ class UtilsBuilder {
 
   TKNTKNSameWithPermit() {
     this.utils.createOrder = this.utils.requestCreateOrderETHTKNSameWithPermit;
-    this.utils.commitToBuy = this.utils.commitToBuyETHTKNSameWithPermit;
+    this.utils.commitToBuy = this.utils.commitToBuyTKNTKNSameWithPermit;
 
     return this;
   }

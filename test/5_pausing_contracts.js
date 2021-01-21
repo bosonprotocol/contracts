@@ -10,10 +10,12 @@ const Utils = require('../testHelpers/utils');
 const ERC1155ERC721 = artifacts.require('ERC1155ERC721');
 const VoucherKernel = artifacts.require('VoucherKernel');
 const Cashier = artifacts.require('Cashier');
+const BosonRouter = artifacts.require('BosonRouter');
 const BosonTKN = artifacts.require('BosonTokenPrice');
 const FundLimitsOracle = artifacts.require('FundLimitsOracle');
 
 const BN = web3.utils.BN;
+
 let utils;
 
 let TOKEN_SUPPLY_ID;
@@ -22,29 +24,29 @@ let VOUCHER_ID;
 contract('Cashier && VK', async (addresses) => {
   const users = new Users(addresses);
 
-  let Attacker = users.attacker;
-
   let contractERC1155ERC721,
     contractVoucherKernel,
     contractCashier,
+    contractBosonRouter,
     contractBSNTokenPrice,
     contractBSNTokenDeposit,
     contractFundLimitsOracle;
+
   let tokensToMint;
   let timestamp;
 
   async function deployContracts() {
-    const sixtySeconds = 60;
-
     contractFundLimitsOracle = await FundLimitsOracle.new();
     contractERC1155ERC721 = await ERC1155ERC721.new();
     contractVoucherKernel = await VoucherKernel.new(
       contractERC1155ERC721.address
     );
-    contractCashier = await Cashier.new(
+    contractCashier = await Cashier.new(contractVoucherKernel.address);
+    contractBosonRouter = await BosonRouter.new(
       contractVoucherKernel.address,
       contractERC1155ERC721.address,
-      contractFundLimitsOracle.address
+      contractFundLimitsOracle.address,
+      contractCashier.address
     );
     contractBSNTokenPrice = await BosonTKN.new('BosonTokenPrice', 'BPRC');
     contractBSNTokenDeposit = await BosonTKN.new('BosonTokenDeposit', 'BDEP');
@@ -56,10 +58,19 @@ contract('Cashier && VK', async (addresses) => {
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
+    await contractERC1155ERC721.setBosonRouterAddress(
+      contractBosonRouter.address
+    );
+
+    await contractVoucherKernel.setBosonRouterAddress(
+      contractBosonRouter.address
+    );
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
-    await contractVoucherKernel.setComplainPeriod(sixtySeconds);
-    await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
+    await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
+
+    await contractVoucherKernel.setComplainPeriod(60); //60 seconds
+    await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
 
     await contractFundLimitsOracle.setTokenLimit(
       contractBSNTokenPrice.address,
@@ -73,53 +84,54 @@ contract('Cashier && VK', async (addresses) => {
 
     utils = UtilsBuilder.create()
       .ETHETH()
-      .build(contractERC1155ERC721, contractVoucherKernel, contractCashier);
-
+      .build(
+        contractERC1155ERC721,
+        contractVoucherKernel,
+        contractCashier,
+        contractBosonRouter
+      );
     timestamp = await Utils.getCurrTimestamp();
   }
 
   describe('Pausing Scenarios', function () {
-    describe('CASHIER', () => {
+    describe('BOSON ROUTER', () => {
       describe('COMMON PAUSING', () => {
         before(async () => {
           await deployContracts();
         });
 
         it('Should not be paused on deployment', async () => {
-          const isPaused = await contractCashier.paused();
-
+          const isPaused = await contractBosonRouter.paused();
           assert.isFalse(isPaused);
         });
 
         it('Owner should pause the contract', async () => {
-          await contractCashier.pause();
+          await contractBosonRouter.pause();
 
-          const isPaused = await contractCashier.paused();
-
+          const isPaused = await contractBosonRouter.paused();
           assert.isTrue(isPaused);
         });
 
         it('Owner should unpause the contract', async () => {
-          await contractCashier.pause();
-          await contractCashier.unpause();
+          await contractBosonRouter.pause();
+          await contractBosonRouter.unpause();
 
-          const isPaused = await contractCashier.paused();
-
+          const isPaused = await contractBosonRouter.paused();
           assert.isFalse(isPaused);
         });
 
         it('[NEGATIVE] Attacker should not be able to pause the contract', async () => {
           await truffleAssert.reverts(
-            contractCashier.pause({from: Attacker.address}),
+            contractBosonRouter.pause({from: users.attacker.address}),
             truffleAssert.ErrorType.REVERT
           );
         });
 
         it('[NEGATIVE] Attacker should not be able to unpause the contract', async () => {
-          await contractCashier.pause();
+          await contractBosonRouter.pause();
 
           await truffleAssert.reverts(
-            contractCashier.unpause({from: Attacker.address}),
+            contractBosonRouter.unpause({from: users.attacker.address}),
             truffleAssert.ErrorType.REVERT
           );
         });
@@ -133,38 +145,25 @@ contract('Cashier && VK', async (addresses) => {
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
-              contractCashier
+              contractCashier,
+              contractBosonRouter
             );
-
-          const timestamp = await Utils.getCurrTimestamp();
-
-          TOKEN_SUPPLY_ID = await utils.createOrder(
-            users.seller,
-            timestamp,
-            timestamp + constants.SECONDS_IN_DAY,
-            constants.seller_deposit,
-            constants.QTY_10
-          );
         });
 
-        it(
-          '[NEGATIVE] Should not create voucher supply when ' +
-            'contract is paused',
-          async () => {
-            await contractCashier.pause();
+        it('[NEGATIVE] Should not create voucher supply when contract is paused', async () => {
+          await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              ),
-              truffleAssert.ErrorType.REVERT
-            );
-          }
-        );
+          await truffleAssert.reverts(
+            utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            ),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
 
         it('Should create voucher supply when contract is unpaused', async () => {
           TOKEN_SUPPLY_ID = await utils.createOrder(
@@ -187,236 +186,13 @@ contract('Cashier && VK', async (addresses) => {
             constants.QTY_1
           );
 
-          await contractCashier.pause();
+          await contractBosonRouter.pause();
 
           await truffleAssert.reverts(
             utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
             truffleAssert.ErrorType.REVERT
           );
         });
-
-        it('[NEGATIVE] Should not process withdrawals when paused', async () => {
-          TOKEN_SUPPLY_ID = await utils.createOrder(
-            users.seller,
-            timestamp,
-            timestamp + constants.SECONDS_IN_DAY,
-            constants.seller_deposit,
-            constants.QTY_1
-          );
-
-          const voucherID = await utils.commitToBuy(
-            users.buyer,
-            users.seller,
-            TOKEN_SUPPLY_ID
-          );
-          await utils.refund(voucherID, users.buyer.address);
-
-          await timemachine.advanceTimeSeconds(60);
-          await utils.finalize(voucherID, users.deployer.address);
-
-          await contractCashier.pause();
-
-          await truffleAssert.reverts(
-            utils.withdraw(voucherID, users.deployer.address),
-            truffleAssert.ErrorType.REVERT
-          );
-        });
-
-        it(
-          'withdrawWhenPaused - Buyer should be able to withdraw ' +
-            'funds when paused',
-          async () => {
-            TOKEN_SUPPLY_ID = await utils.createOrder(
-              users.seller,
-              timestamp,
-              timestamp + constants.SECONDS_IN_DAY,
-              constants.seller_deposit,
-              constants.QTY_1
-            );
-
-            const voucherID = await utils.commitToBuy(
-              users.buyer,
-              users.seller,
-              TOKEN_SUPPLY_ID
-            );
-            await utils.refund(voucherID, users.buyer.address);
-
-            await timemachine.advanceTimeSeconds(60);
-            await utils.finalize(voucherID, users.deployer.address);
-
-            await contractCashier.pause();
-            const withdrawTx = await utils.withdrawWhenPaused(
-              voucherID,
-              users.buyer.address
-            );
-
-            truffleAssert.eventEmitted(
-              withdrawTx,
-              'LogAmountDistribution',
-              () => {
-                return true;
-              },
-              'Amounts not distributed successfully'
-            );
-          }
-        );
-
-        it(
-          '[NEGATIVE] withdrawWhenPaused - Buyer should not be ' +
-            'able to withdraw funds when not paused',
-          async () => {
-            TOKEN_SUPPLY_ID = await utils.createOrder(
-              users.seller,
-              timestamp,
-              timestamp + constants.SECONDS_IN_DAY,
-              constants.seller_deposit,
-              constants.QTY_1
-            );
-
-            const voucherID = await utils.commitToBuy(
-              users.buyer,
-              users.seller,
-              TOKEN_SUPPLY_ID
-            );
-            await utils.refund(voucherID, users.buyer.address);
-
-            await timemachine.advanceTimeSeconds(60);
-            await utils.finalize(voucherID, users.deployer.address);
-
-            await truffleAssert.reverts(
-              utils.withdrawWhenPaused(voucherID, users.buyer.address),
-              truffleAssert.ErrorType.REVERT
-            );
-          }
-        );
-
-        it(
-          'withdrawWhenPaused - Seller should be able to withdraw ' +
-            'funds when paused',
-          async () => {
-            TOKEN_SUPPLY_ID = await utils.createOrder(
-              users.seller,
-              timestamp,
-              timestamp + constants.SECONDS_IN_DAY,
-              constants.seller_deposit,
-              constants.QTY_1
-            );
-
-            const voucherID = await utils.commitToBuy(
-              users.buyer,
-              users.seller,
-              TOKEN_SUPPLY_ID
-            );
-            await utils.refund(voucherID, users.buyer.address);
-
-            await timemachine.advanceTimeSeconds(60);
-            await utils.finalize(voucherID, users.deployer.address);
-
-            await contractCashier.pause();
-            const withdrawTx = await utils.withdrawWhenPaused(
-              voucherID,
-              users.seller.address
-            );
-
-            truffleAssert.eventEmitted(
-              withdrawTx,
-              'LogAmountDistribution',
-              () => {
-                return true;
-              },
-              'Amounts not distributed successfully'
-            );
-          }
-        );
-
-        it(
-          '[NEGATIVE] withdrawWhenPaused - Seller should not be ' +
-            'able to withdraw funds when not paused',
-          async () => {
-            TOKEN_SUPPLY_ID = await utils.createOrder(
-              users.seller,
-              timestamp,
-              timestamp + constants.SECONDS_IN_DAY,
-              constants.seller_deposit,
-              constants.QTY_1
-            );
-
-            const voucherID = await utils.commitToBuy(
-              users.buyer,
-              users.seller,
-              TOKEN_SUPPLY_ID
-            );
-            await utils.refund(voucherID, users.buyer.address);
-
-            await timemachine.advanceTimeSeconds(60);
-            await utils.finalize(voucherID, users.deployer.address);
-
-            await truffleAssert.reverts(
-              utils.withdrawWhenPaused(voucherID, users.seller.address),
-              truffleAssert.ErrorType.REVERT
-            );
-          }
-        );
-
-        it(
-          '[NEGATIVE] withdrawWhenPaused - Attacker should not be ' +
-            'able to withdraw funds when paused',
-          async () => {
-            TOKEN_SUPPLY_ID = await utils.createOrder(
-              users.seller,
-              timestamp,
-              timestamp + constants.SECONDS_IN_DAY,
-              constants.seller_deposit,
-              constants.QTY_1
-            );
-
-            const voucherID = await utils.commitToBuy(
-              users.buyer,
-              users.seller,
-              TOKEN_SUPPLY_ID
-            );
-            await utils.refund(voucherID, users.buyer.address);
-
-            await timemachine.advanceTimeSeconds(60);
-            await utils.finalize(voucherID, users.deployer.address);
-
-            await contractCashier.pause();
-
-            await truffleAssert.reverts(
-              utils.withdrawWhenPaused(voucherID, Attacker.address),
-              truffleAssert.ErrorType.REVERT
-            );
-          }
-        );
-
-        it(
-          '[NEGATIVE] withdrawWhenPaused - Attacker should not be ' +
-            'able to withdraw funds when not paused',
-          async () => {
-            TOKEN_SUPPLY_ID = await utils.createOrder(
-              users.seller,
-              timestamp,
-              timestamp + constants.SECONDS_IN_DAY,
-              constants.seller_deposit,
-              constants.QTY_1
-            );
-
-            const voucherID = await utils.commitToBuy(
-              users.buyer,
-              users.seller,
-              TOKEN_SUPPLY_ID
-            );
-            await utils.refund(voucherID, users.buyer.address);
-
-            await timemachine.advanceTimeSeconds(60);
-            await utils.finalize(voucherID, users.deployer.address);
-
-            await truffleAssert.reverts(
-              utils.withdrawWhenPaused(voucherID, Attacker.address),
-              truffleAssert.ErrorType.REVERT
-            );
-          }
-        );
       });
 
       describe('[WITH PERMIT]', () => {
@@ -431,11 +207,10 @@ contract('Cashier && VK', async (addresses) => {
                 contractERC1155ERC721,
                 contractVoucherKernel,
                 contractCashier,
+                contractBosonRouter,
                 contractBSNTokenPrice,
                 contractBSNTokenDeposit
               );
-
-            const timestamp = await Utils.getCurrTimestamp();
 
             tokensToMint = new BN(constants.product_price).mul(
               new BN(constants.QTY_10)
@@ -451,34 +226,22 @@ contract('Cashier && VK', async (addresses) => {
               users.buyer.address,
               tokensToMint
             );
-
-            TOKEN_SUPPLY_ID = await utils.createOrder(
-              users.seller,
-              timestamp,
-              timestamp + constants.SECONDS_IN_DAY,
-              constants.seller_deposit,
-              constants.QTY_10
-            );
           });
 
-          it(
-            '[NEGATIVE] Should not create voucher supply when ' +
-              'contract is paused',
-            async () => {
-              await contractCashier.pause();
+          it('[NEGATIVE] Should not create voucher supply when contract is paused', async () => {
+            await contractBosonRouter.pause();
 
-              await truffleAssert.reverts(
-                utils.createOrder(
-                  users.seller,
-                  timestamp,
-                  timestamp + constants.SECONDS_IN_DAY,
-                  constants.seller_deposit,
-                  constants.QTY_1
-                ),
-                truffleAssert.ErrorType.REVERT
-              );
-            }
-          );
+            await truffleAssert.reverts(
+              utils.createOrder(
+                users.seller,
+                timestamp,
+                timestamp + constants.SECONDS_IN_DAY,
+                constants.seller_deposit,
+                constants.QTY_1
+              ),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
 
           it('Should create voucher supply when contract is unpaused', async () => {
             TOKEN_SUPPLY_ID = await utils.createOrder(
@@ -492,28 +255,7 @@ contract('Cashier && VK', async (addresses) => {
             assert.isNotEmpty(TOKEN_SUPPLY_ID);
           });
 
-          it(
-            '[NEGATIVE] Should not create voucherID from Buyer ' +
-              'when paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              await contractCashier.pause();
-
-              await truffleAssert.reverts(
-                utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
-                truffleAssert.ErrorType.REVERT
-              );
-            }
-          );
-
-          it('[NEGATIVE] Should not process withdrawals when paused', async () => {
+          it('[NEGATIVE] Should not create voucherID for Buyer when paused', async () => {
             TOKEN_SUPPLY_ID = await utils.createOrder(
               users.seller,
               timestamp,
@@ -522,219 +264,13 @@ contract('Cashier && VK', async (addresses) => {
               constants.QTY_1
             );
 
-            const voucherID = await utils.commitToBuy(
-              users.buyer,
-              users.seller,
-              TOKEN_SUPPLY_ID
-            );
-            await utils.refund(voucherID, users.buyer.address);
-
-            await timemachine.advanceTimeSeconds(60);
-            await utils.finalize(voucherID, users.deployer.address);
-
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
-              utils.withdraw(voucherID, users.deployer.address),
+              utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
               truffleAssert.ErrorType.REVERT
             );
           });
-
-          it(
-            'withdrawWhenPaused - Buyer should be able to ' +
-              'withdraw funds when paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await contractCashier.pause();
-              const withdrawTx = await utils.withdrawWhenPaused(
-                voucherID,
-                users.buyer.address
-              );
-
-              truffleAssert.eventEmitted(
-                withdrawTx,
-                'LogAmountDistribution',
-                () => {
-                  return true;
-                },
-                'Amounts not distributed successfully'
-              );
-            }
-          );
-
-          it(
-            '[NEGATIVE] withdrawWhenPaused - Buyer should not be ' +
-              'able to withdraw funds when not paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await truffleAssert.reverts(
-                utils.withdrawWhenPaused(voucherID, users.buyer.address),
-                truffleAssert.ErrorType.REVERT
-              );
-            }
-          );
-
-          it(
-            'withdrawWhenPaused - Seller should be able to ' +
-              'withdraw funds when paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await contractCashier.pause();
-              const withdrawTx = await utils.withdrawWhenPaused(
-                voucherID,
-                users.seller.address
-              );
-
-              truffleAssert.eventEmitted(
-                withdrawTx,
-                'LogAmountDistribution',
-                () => {
-                  return true;
-                },
-                'Amounts not distributed successfully'
-              );
-            }
-          );
-
-          it(
-            '[NEGATIVE] withdrawWhenPaused - Seller should not be ' +
-              'able to withdraw funds when not paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await truffleAssert.reverts(
-                utils.withdrawWhenPaused(voucherID, users.seller.address),
-                truffleAssert.ErrorType.REVERT
-              );
-            }
-          );
-
-          it(
-            '[NEGATIVE] withdrawWhenPaused - Attacker should not be ' +
-              'able to withdraw funds when paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await contractCashier.pause();
-
-              await truffleAssert.reverts(
-                utils.withdrawWhenPaused(voucherID, Attacker.address),
-                truffleAssert.ErrorType.REVERT
-              );
-            }
-          );
-
-          it(
-            '[NEGATIVE] withdrawWhenPaused - Attacker should not ' +
-              'be able to withdraw funds when not paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await truffleAssert.reverts(
-                utils.withdrawWhenPaused(voucherID, Attacker.address),
-                truffleAssert.ErrorType.REVERT
-              );
-            }
-          );
         });
 
         describe('TKNETH', () => {
@@ -747,6 +283,7 @@ contract('Cashier && VK', async (addresses) => {
                 contractERC1155ERC721,
                 contractVoucherKernel,
                 contractCashier,
+                contractBosonRouter,
                 contractBSNTokenPrice,
                 ''
               );
@@ -772,24 +309,20 @@ contract('Cashier && VK', async (addresses) => {
             );
           });
 
-          it(
-            '[NEGATIVE] Should not create voucher supply when ' +
-              'contract is paused',
-            async () => {
-              await contractCashier.pause();
+          it('[NEGATIVE] Should not create voucher supply when contract is paused', async () => {
+            await contractBosonRouter.pause();
 
-              await truffleAssert.reverts(
-                utils.createOrder(
-                  users.seller,
-                  timestamp,
-                  timestamp + constants.SECONDS_IN_DAY,
-                  constants.seller_deposit,
-                  constants.QTY_1
-                ),
-                truffleAssert.ErrorType.REVERT
-              );
-            }
-          );
+            await truffleAssert.reverts(
+              utils.createOrder(
+                users.seller,
+                timestamp,
+                timestamp + constants.SECONDS_IN_DAY,
+                constants.seller_deposit,
+                constants.QTY_1
+              ),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
 
           it('Should create voucher supply when contract is unpaused', async () => {
             TOKEN_SUPPLY_ID = await utils.createOrder(
@@ -803,28 +336,7 @@ contract('Cashier && VK', async (addresses) => {
             assert.isNotEmpty(TOKEN_SUPPLY_ID);
           });
 
-          it(
-            '[NEGATIVE] Should not create voucherID from Buyer ' +
-              'when paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              await contractCashier.pause();
-
-              await truffleAssert.reverts(
-                utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
-                truffleAssert.ErrorType.REVERT
-              );
-            }
-          );
-
-          it('[NEGATIVE] Should not process withdrawals when paused', async () => {
+          it('[NEGATIVE] Should not create voucherID for Buyer when paused', async () => {
             TOKEN_SUPPLY_ID = await utils.createOrder(
               users.seller,
               timestamp,
@@ -833,219 +345,13 @@ contract('Cashier && VK', async (addresses) => {
               constants.QTY_1
             );
 
-            const voucherID = await utils.commitToBuy(
-              users.buyer,
-              users.seller,
-              TOKEN_SUPPLY_ID
-            );
-            await utils.refund(voucherID, users.buyer.address);
-
-            await timemachine.advanceTimeSeconds(60);
-            await utils.finalize(voucherID, users.deployer.address);
-
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
-              utils.withdraw(voucherID, users.deployer.address),
+              utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
               truffleAssert.ErrorType.REVERT
             );
           });
-
-          it(
-            'withdrawWhenPaused - Buyer should be able to withdraw ' +
-              'funds when paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await contractCashier.pause();
-              const withdrawTx = await utils.withdrawWhenPaused(
-                voucherID,
-                users.buyer.address
-              );
-
-              truffleAssert.eventEmitted(
-                withdrawTx,
-                'LogAmountDistribution',
-                () => {
-                  return true;
-                },
-                'Amounts not distributed successfully'
-              );
-            }
-          );
-
-          it(
-            '[NEGATIVE] withdrawWhenPaused - Buyer should not be ' +
-              'able to withdraw funds when not paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await truffleAssert.reverts(
-                utils.withdrawWhenPaused(voucherID, users.buyer.address),
-                truffleAssert.ErrorType.REVERT
-              );
-            }
-          );
-
-          it(
-            'withdrawWhenPaused - Seller should be able to withdraw ' +
-              'funds when paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await contractCashier.pause();
-              const withdrawTx = await utils.withdrawWhenPaused(
-                voucherID,
-                users.seller.address
-              );
-
-              truffleAssert.eventEmitted(
-                withdrawTx,
-                'LogAmountDistribution',
-                () => {
-                  return true;
-                },
-                'Amounts not distributed successfully'
-              );
-            }
-          );
-
-          it(
-            '[NEGATIVE] withdrawWhenPaused - Seller should not be ' +
-              'able to withdraw funds when not paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await truffleAssert.reverts(
-                utils.withdrawWhenPaused(voucherID, users.seller.address),
-                truffleAssert.ErrorType.REVERT
-              );
-            }
-          );
-
-          it(
-            '[NEGATIVE] withdrawWhenPaused - Attacker should not be ' +
-              'able to withdraw funds when paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await contractCashier.pause();
-
-              await truffleAssert.reverts(
-                utils.withdrawWhenPaused(voucherID, Attacker.address),
-                truffleAssert.ErrorType.REVERT
-              );
-            }
-          );
-
-          it(
-            '[NEGATIVE] withdrawWhenPaused - Attacker should not ' +
-              'be able to withdraw funds when not paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await truffleAssert.reverts(
-                utils.withdrawWhenPaused(voucherID, Attacker.address),
-                truffleAssert.ErrorType.REVERT
-              );
-            }
-          );
         });
 
         describe('TKNTKN', () => {
@@ -1058,6 +364,7 @@ contract('Cashier && VK', async (addresses) => {
                 contractERC1155ERC721,
                 contractVoucherKernel,
                 contractCashier,
+                contractBosonRouter,
                 contractBSNTokenPrice,
                 contractBSNTokenDeposit
               );
@@ -1086,24 +393,20 @@ contract('Cashier && VK', async (addresses) => {
             );
           });
 
-          it(
-            '[NEGATIVE] Should not create voucher supply when ' +
-              'contract is paused',
-            async () => {
-              await contractCashier.pause();
+          it('[NEGATIVE] Should not create voucher supply when contract is paused', async () => {
+            await contractBosonRouter.pause();
 
-              await truffleAssert.reverts(
-                utils.createOrder(
-                  users.seller,
-                  timestamp,
-                  timestamp + constants.SECONDS_IN_DAY,
-                  constants.seller_deposit,
-                  constants.QTY_1
-                ),
-                truffleAssert.ErrorType.REVERT
-              );
-            }
-          );
+            await truffleAssert.reverts(
+              utils.createOrder(
+                users.seller,
+                timestamp,
+                timestamp + constants.SECONDS_IN_DAY,
+                constants.seller_deposit,
+                constants.QTY_1
+              ),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
 
           it('Should create voucher supply when contract is unpaused', async () => {
             TOKEN_SUPPLY_ID = await utils.createOrder(
@@ -1117,7 +420,7 @@ contract('Cashier && VK', async (addresses) => {
             assert.isNotEmpty(TOKEN_SUPPLY_ID);
           });
 
-          it('[NEGATIVE] Should not create voucherID from Buyer when paused', async () => {
+          it('[NEGATIVE] Should not create voucherID for Buyer when paused', async () => {
             TOKEN_SUPPLY_ID = await utils.createOrder(
               users.seller,
               timestamp,
@@ -1126,236 +429,13 @@ contract('Cashier && VK', async (addresses) => {
               constants.QTY_1
             );
 
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
               utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
               truffleAssert.ErrorType.REVERT
             );
           });
-
-          it('[NEGATIVE] Should not process withdrawals when paused', async () => {
-            TOKEN_SUPPLY_ID = await utils.createOrder(
-              users.seller,
-              timestamp,
-              timestamp + constants.SECONDS_IN_DAY,
-              constants.seller_deposit,
-              constants.QTY_1
-            );
-
-            const voucherID = await utils.commitToBuy(
-              users.buyer,
-              users.seller,
-              TOKEN_SUPPLY_ID
-            );
-            await utils.refund(voucherID, users.buyer.address);
-
-            await timemachine.advanceTimeSeconds(60);
-            await utils.finalize(voucherID, users.deployer.address);
-
-            await contractCashier.pause();
-
-            await truffleAssert.reverts(
-              utils.withdraw(voucherID, users.deployer.address),
-              truffleAssert.ErrorType.REVERT
-            );
-          });
-
-          it(
-            'withdrawWhenPaused - Buyer should be able to withdraw ' +
-              'funds when paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await contractCashier.pause();
-              const withdrawTx = await utils.withdrawWhenPaused(
-                voucherID,
-                users.buyer.address
-              );
-
-              truffleAssert.eventEmitted(
-                withdrawTx,
-                'LogAmountDistribution',
-                () => {
-                  return true;
-                },
-                'Amounts not distributed successfully'
-              );
-            }
-          );
-
-          it(
-            '[NEGATIVE] withdrawWhenPaused - Buyer should not be ' +
-              'able to withdraw funds when not paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await truffleAssert.reverts(
-                utils.withdrawWhenPaused(voucherID, users.buyer.address),
-                truffleAssert.ErrorType.REVERT
-              );
-            }
-          );
-
-          it(
-            'withdrawWhenPaused - Seller should be able to withdraw ' +
-              'funds when paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await contractCashier.pause();
-              const withdrawTx = await utils.withdrawWhenPaused(
-                voucherID,
-                users.seller.address
-              );
-
-              truffleAssert.eventEmitted(
-                withdrawTx,
-                'LogAmountDistribution',
-                () => {
-                  return true;
-                },
-                'Amounts not distributed successfully'
-              );
-            }
-          );
-
-          it(
-            '[NEGATIVE] withdrawWhenPaused - Seller should not be ' +
-              'able to withdraw funds when not paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await truffleAssert.reverts(
-                utils.withdrawWhenPaused(voucherID, users.seller.address),
-                truffleAssert.ErrorType.REVERT
-              );
-            }
-          );
-
-          it(
-            '[NEGATIVE] withdrawWhenPaused - Attacker should not be ' +
-              'able to withdraw funds when paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await contractCashier.pause();
-
-              await truffleAssert.reverts(
-                utils.withdrawWhenPaused(voucherID, Attacker.address),
-                truffleAssert.ErrorType.REVERT
-              );
-            }
-          );
-
-          it(
-            '[NEGATIVE] withdrawWhenPaused - Attacker should not be ' +
-              'able to withdraw funds when not paused',
-            async () => {
-              TOKEN_SUPPLY_ID = await utils.createOrder(
-                users.seller,
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.seller_deposit,
-                constants.QTY_1
-              );
-
-              const voucherID = await utils.commitToBuy(
-                users.buyer,
-                users.seller,
-                TOKEN_SUPPLY_ID
-              );
-              await utils.refund(voucherID, users.buyer.address);
-
-              await timemachine.advanceTimeSeconds(60);
-              await utils.finalize(voucherID, users.deployer.address);
-
-              await truffleAssert.reverts(
-                utils.withdrawWhenPaused(voucherID, Attacker.address),
-                truffleAssert.ErrorType.REVERT
-              );
-            }
-          );
         });
       });
     });
@@ -1371,16 +451,16 @@ contract('Cashier && VK', async (addresses) => {
           assert.isFalse(isPaused);
         });
 
-        it('Should be paused from cashier', async () => {
-          await contractCashier.pause();
+        it('Should be paused from BR', async () => {
+          await contractBosonRouter.pause();
 
           const isPaused = await contractVoucherKernel.paused();
           assert.isTrue(isPaused);
         });
 
-        it('Should be unpaused from cashier', async () => {
-          await contractCashier.pause();
-          await contractCashier.unpause();
+        it('Should be unpaused from BR', async () => {
+          await contractBosonRouter.pause();
+          await contractBosonRouter.unpause();
 
           const isPaused = await contractVoucherKernel.paused();
           assert.isFalse(isPaused);
@@ -1393,7 +473,7 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
-        it('[NEGATIVE] Pause should not be called directly', async () => {
+        it('[NEGATIVE] Unpause should not be called directly', async () => {
           await truffleAssert.reverts(
             contractVoucherKernel.unpause(),
             truffleAssert.ErrorType.REVERT
@@ -1410,7 +490,8 @@ contract('Cashier && VK', async (addresses) => {
             .build(
               contractERC1155ERC721,
               contractVoucherKernel,
-              contractCashier
+              contractCashier,
+              contractBosonRouter
             );
 
           const timestamp = await Utils.getCurrTimestamp();
@@ -1431,7 +512,7 @@ contract('Cashier && VK', async (addresses) => {
             TOKEN_SUPPLY_ID
           );
 
-          await contractCashier.pause();
+          await contractBosonRouter.pause();
 
           await truffleAssert.reverts(
             utils.refund(VOUCHER_ID, users.buyer.address),
@@ -1448,7 +529,7 @@ contract('Cashier && VK', async (addresses) => {
 
           await utils.refund(VOUCHER_ID, users.buyer.address);
 
-          await contractCashier.pause();
+          await contractBosonRouter.pause();
 
           await truffleAssert.reverts(
             utils.complain(VOUCHER_ID, users.buyer.address),
@@ -1463,7 +544,7 @@ contract('Cashier && VK', async (addresses) => {
             TOKEN_SUPPLY_ID
           );
 
-          await contractCashier.pause();
+          await contractBosonRouter.pause();
 
           await truffleAssert.reverts(
             utils.redeem(VOUCHER_ID, users.buyer.address),
@@ -1477,10 +558,9 @@ contract('Cashier && VK', async (addresses) => {
             users.seller,
             TOKEN_SUPPLY_ID
           );
-
           await utils.redeem(VOUCHER_ID, users.buyer.address);
 
-          await contractCashier.pause();
+          await contractBosonRouter.pause();
 
           await truffleAssert.reverts(
             utils.cancel(VOUCHER_ID, users.seller.address),
@@ -1501,6 +581,7 @@ contract('Cashier && VK', async (addresses) => {
                 contractERC1155ERC721,
                 contractVoucherKernel,
                 contractCashier,
+                contractBosonRouter,
                 contractBSNTokenPrice,
                 contractBSNTokenDeposit
               );
@@ -1538,7 +619,7 @@ contract('Cashier && VK', async (addresses) => {
               TOKEN_SUPPLY_ID
             );
 
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
               utils.refund(VOUCHER_ID, users.buyer.address),
@@ -1555,7 +636,7 @@ contract('Cashier && VK', async (addresses) => {
 
             await utils.refund(VOUCHER_ID, users.buyer.address);
 
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
               utils.complain(VOUCHER_ID, users.buyer.address),
@@ -1570,7 +651,7 @@ contract('Cashier && VK', async (addresses) => {
               TOKEN_SUPPLY_ID
             );
 
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
               utils.redeem(VOUCHER_ID, users.buyer.address),
@@ -1586,7 +667,7 @@ contract('Cashier && VK', async (addresses) => {
             );
             await utils.redeem(VOUCHER_ID, users.buyer.address);
 
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
               utils.cancel(VOUCHER_ID, users.seller.address),
@@ -1605,6 +686,7 @@ contract('Cashier && VK', async (addresses) => {
                 contractERC1155ERC721,
                 contractVoucherKernel,
                 contractCashier,
+                contractBosonRouter,
                 contractBSNTokenPrice,
                 ''
               );
@@ -1637,7 +719,7 @@ contract('Cashier && VK', async (addresses) => {
               TOKEN_SUPPLY_ID
             );
 
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
               utils.refund(VOUCHER_ID, users.buyer.address),
@@ -1654,7 +736,7 @@ contract('Cashier && VK', async (addresses) => {
 
             await utils.refund(VOUCHER_ID, users.buyer.address);
 
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
               utils.complain(VOUCHER_ID, users.buyer.address),
@@ -1669,7 +751,7 @@ contract('Cashier && VK', async (addresses) => {
               TOKEN_SUPPLY_ID
             );
 
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
               utils.redeem(VOUCHER_ID, users.buyer.address),
@@ -1685,7 +767,7 @@ contract('Cashier && VK', async (addresses) => {
             );
             await utils.redeem(VOUCHER_ID, users.buyer.address);
 
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
               utils.cancel(VOUCHER_ID, users.seller.address),
@@ -1704,6 +786,7 @@ contract('Cashier && VK', async (addresses) => {
                 contractERC1155ERC721,
                 contractVoucherKernel,
                 contractCashier,
+                contractBosonRouter,
                 contractBSNTokenPrice,
                 contractBSNTokenDeposit
               );
@@ -1746,7 +829,7 @@ contract('Cashier && VK', async (addresses) => {
               TOKEN_SUPPLY_ID
             );
 
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
               utils.refund(VOUCHER_ID, users.buyer.address),
@@ -1763,7 +846,7 @@ contract('Cashier && VK', async (addresses) => {
 
             await utils.refund(VOUCHER_ID, users.buyer.address);
 
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
               utils.complain(VOUCHER_ID, users.buyer.address),
@@ -1778,7 +861,7 @@ contract('Cashier && VK', async (addresses) => {
               TOKEN_SUPPLY_ID
             );
 
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
               utils.redeem(VOUCHER_ID, users.buyer.address),
@@ -1794,7 +877,7 @@ contract('Cashier && VK', async (addresses) => {
             );
             await utils.redeem(VOUCHER_ID, users.buyer.address);
 
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
               utils.cancel(VOUCHER_ID, users.seller.address),
@@ -1803,17 +886,17 @@ contract('Cashier && VK', async (addresses) => {
           });
         });
 
-        // Ignored due to deployment failure.
-        xdescribe('TKNTKNSAME', () => {
+        describe('TKNTKN Same', () => {
           before(async () => {
             await deployContracts();
             utils = UtilsBuilder.create()
               .ERC20withPermit()
-              .TKNTKNSAME()
+              .TKNTKNSame()
               .build(
                 contractERC1155ERC721,
                 contractVoucherKernel,
                 contractCashier,
+                contractBosonRouter,
                 contractBSNTokenPrice,
                 contractBSNTokenDeposit
               );
@@ -1825,12 +908,12 @@ contract('Cashier && VK', async (addresses) => {
             );
 
             await utils.mintTokens(
-              'contractBSNTokenSAME',
+              'contractBSNTokenSame',
               users.seller.address,
               tokensToMint
             );
             await utils.mintTokens(
-              'contractBSNTokenSAME',
+              'contractBSNTokenSame',
               users.buyer.address,
               tokensToMint
             );
@@ -1851,7 +934,7 @@ contract('Cashier && VK', async (addresses) => {
               TOKEN_SUPPLY_ID
             );
 
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
               utils.refund(VOUCHER_ID, users.buyer.address),
@@ -1868,7 +951,7 @@ contract('Cashier && VK', async (addresses) => {
 
             await utils.refund(VOUCHER_ID, users.buyer.address);
 
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
               utils.complain(VOUCHER_ID, users.buyer.address),
@@ -1883,7 +966,7 @@ contract('Cashier && VK', async (addresses) => {
               TOKEN_SUPPLY_ID
             );
 
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
               utils.redeem(VOUCHER_ID, users.buyer.address),
@@ -1899,7 +982,7 @@ contract('Cashier && VK', async (addresses) => {
             );
             await utils.redeem(VOUCHER_ID, users.buyer.address);
 
-            await contractCashier.pause();
+            await contractBosonRouter.pause();
 
             await truffleAssert.reverts(
               utils.cancel(VOUCHER_ID, users.seller.address),
@@ -1910,10 +993,964 @@ contract('Cashier && VK', async (addresses) => {
       });
     });
 
+    describe('CASHIER', () => {
+      describe('COMMON PAUSING', () => {
+        before(async () => {
+          await deployContracts();
+        });
+
+        it('Should not be paused on deployment', async () => {
+          const isPaused = await contractCashier.paused();
+          assert.isFalse(isPaused);
+        });
+
+        it('Should be paused from BR', async () => {
+          await contractBosonRouter.pause();
+
+          const isPaused = await contractCashier.paused();
+          assert.isTrue(isPaused);
+        });
+
+        it('Should be unpaused from BR', async () => {
+          await contractBosonRouter.pause();
+          await contractBosonRouter.unpause();
+
+          const isPaused = await contractCashier.paused();
+          assert.isFalse(isPaused);
+        });
+
+        it('[NEGATIVE] Pause should not be called directly', async () => {
+          await truffleAssert.reverts(
+            contractCashier.pause(),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+
+        it('[NEGATIVE] Unpause should not be called directly', async () => {
+          await truffleAssert.reverts(
+            contractCashier.unpause(),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+      });
+
+      describe('ETHETH', () => {
+        before(async () => {
+          await deployContracts();
+          utils = UtilsBuilder.create()
+            .ETHETH()
+            .build(
+              contractERC1155ERC721,
+              contractVoucherKernel,
+              contractCashier,
+              contractBosonRouter
+            );
+        });
+
+        it('[NEGATIVE] Should not process withdrawals when paused', async () => {
+          TOKEN_SUPPLY_ID = await utils.createOrder(
+            users.seller,
+            timestamp,
+            timestamp + constants.SECONDS_IN_DAY,
+            constants.seller_deposit,
+            constants.QTY_1
+          );
+
+          const voucherID = await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID
+          );
+          await utils.refund(voucherID, users.buyer.address);
+
+          await timemachine.advanceTimeSeconds(60);
+          await utils.finalize(voucherID, users.deployer.address);
+
+          await contractBosonRouter.pause();
+
+          await truffleAssert.reverts(
+            utils.withdraw(voucherID, users.deployer.address),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+
+        it('withdrawWhenPaused - Buyer should be able to withdraw funds when paused', async () => {
+          TOKEN_SUPPLY_ID = await utils.createOrder(
+            users.seller,
+            timestamp,
+            timestamp + constants.SECONDS_IN_DAY,
+            constants.seller_deposit,
+            constants.QTY_1
+          );
+
+          const voucherID = await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID
+          );
+          await utils.refund(voucherID, users.buyer.address);
+
+          await timemachine.advanceTimeSeconds(60);
+          await utils.finalize(voucherID, users.deployer.address);
+
+          await contractBosonRouter.pause();
+          const withdrawTx = await utils.withdrawWhenPaused(
+            voucherID,
+            users.buyer.address
+          );
+
+          truffleAssert.eventEmitted(
+            withdrawTx,
+            'LogAmountDistribution',
+            () => {
+              return true;
+            },
+            'Amounts not distributed successfully'
+          );
+        });
+
+        it('[NEGATIVE] withdrawWhenPaused - Buyer should not be able to withdraw funds when not paused', async () => {
+          TOKEN_SUPPLY_ID = await utils.createOrder(
+            users.seller,
+            timestamp,
+            timestamp + constants.SECONDS_IN_DAY,
+            constants.seller_deposit,
+            constants.QTY_1
+          );
+
+          const voucherID = await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID
+          );
+          await utils.refund(voucherID, users.buyer.address);
+
+          await timemachine.advanceTimeSeconds(60);
+          await utils.finalize(voucherID, users.deployer.address);
+
+          await truffleAssert.reverts(
+            utils.withdrawWhenPaused(voucherID, users.buyer.address),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+
+        it('withdrawWhenPaused - Seller should be able to withdraw funds when paused', async () => {
+          TOKEN_SUPPLY_ID = await utils.createOrder(
+            users.seller,
+            timestamp,
+            timestamp + constants.SECONDS_IN_DAY,
+            constants.seller_deposit,
+            constants.QTY_1
+          );
+
+          const voucherID = await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID
+          );
+          await utils.refund(voucherID, users.buyer.address);
+
+          await timemachine.advanceTimeSeconds(60);
+          await utils.finalize(voucherID, users.deployer.address);
+
+          await contractBosonRouter.pause();
+          const withdrawTx = await utils.withdrawWhenPaused(
+            voucherID,
+            users.seller.address
+          );
+
+          truffleAssert.eventEmitted(
+            withdrawTx,
+            'LogAmountDistribution',
+            () => {
+              return true;
+            },
+            'Amounts not distributed successfully'
+          );
+        });
+
+        it('[NEGATIVE] withdrawWhenPaused - Seller should not be able to withdraw funds when not paused', async () => {
+          TOKEN_SUPPLY_ID = await utils.createOrder(
+            users.seller,
+            timestamp,
+            timestamp + constants.SECONDS_IN_DAY,
+            constants.seller_deposit,
+            constants.QTY_1
+          );
+
+          const voucherID = await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID
+          );
+          await utils.refund(voucherID, users.buyer.address);
+
+          await timemachine.advanceTimeSeconds(60);
+          await utils.finalize(voucherID, users.deployer.address);
+
+          await truffleAssert.reverts(
+            utils.withdrawWhenPaused(voucherID, users.seller.address),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+
+        it('[NEGATIVE] withdrawWhenPaused - Attacker should not be able to withdraw funds when paused', async () => {
+          TOKEN_SUPPLY_ID = await utils.createOrder(
+            users.seller,
+            timestamp,
+            timestamp + constants.SECONDS_IN_DAY,
+            constants.seller_deposit,
+            constants.QTY_1
+          );
+
+          const voucherID = await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID
+          );
+          await utils.refund(voucherID, users.buyer.address);
+
+          await timemachine.advanceTimeSeconds(60);
+          await utils.finalize(voucherID, users.deployer.address);
+
+          await contractBosonRouter.pause();
+
+          await truffleAssert.reverts(
+            utils.withdrawWhenPaused(voucherID, users.attacker.address),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+
+        it('[NEGATIVE] withdrawWhenPaused - Attacker should not be able to withdraw funds when not paused', async () => {
+          TOKEN_SUPPLY_ID = await utils.createOrder(
+            users.seller,
+            timestamp,
+            timestamp + constants.SECONDS_IN_DAY,
+            constants.seller_deposit,
+            constants.QTY_1
+          );
+
+          const voucherID = await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID
+          );
+          await utils.refund(voucherID, users.buyer.address);
+
+          await timemachine.advanceTimeSeconds(60);
+          await utils.finalize(voucherID, users.deployer.address);
+
+          await truffleAssert.reverts(
+            utils.withdrawWhenPaused(voucherID, users.attacker.address),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+      });
+
+      describe('[WITH PERMIT]', () => {
+        describe('ETHTKN', () => {
+          before(async () => {
+            await deployContracts();
+
+            utils = UtilsBuilder.create()
+              .ERC20withPermit()
+              .ETHTKN()
+              .build(
+                contractERC1155ERC721,
+                contractVoucherKernel,
+                contractCashier,
+                contractBosonRouter,
+                contractBSNTokenPrice,
+                contractBSNTokenDeposit
+              );
+
+            tokensToMint = new BN(constants.product_price).mul(
+              new BN(constants.QTY_10)
+            );
+
+            await utils.mintTokens(
+              'contractBSNTokenDeposit',
+              users.seller.address,
+              tokensToMint
+            );
+            await utils.mintTokens(
+              'contractBSNTokenDeposit',
+              users.buyer.address,
+              tokensToMint
+            );
+          });
+
+          it('[NEGATIVE] Should not process withdrawals when paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await contractBosonRouter.pause();
+
+            await truffleAssert.reverts(
+              utils.withdraw(voucherID, users.deployer.address),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
+
+          it('withdrawWhenPaused - Buyer should be able to withdraw funds when paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await contractBosonRouter.pause();
+            const withdrawTx = await utils.withdrawWhenPaused(
+              voucherID,
+              users.buyer.address
+            );
+
+            truffleAssert.eventEmitted(
+              withdrawTx,
+              'LogAmountDistribution',
+              () => {
+                return true;
+              },
+              'Amounts not distributed successfully'
+            );
+          });
+
+          it('[NEGATIVE] withdrawWhenPaused - Buyer should not be able to withdraw funds when not paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await truffleAssert.reverts(
+              utils.withdrawWhenPaused(voucherID, users.buyer.address),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
+
+          it('withdrawWhenPaused - Seller should be able to withdraw funds when paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await contractBosonRouter.pause();
+            const withdrawTx = await utils.withdrawWhenPaused(
+              voucherID,
+              users.seller.address
+            );
+
+            truffleAssert.eventEmitted(
+              withdrawTx,
+              'LogAmountDistribution',
+              () => {
+                return true;
+              },
+              'Amounts not distributed successfully'
+            );
+          });
+
+          it('[NEGATIVE] withdrawWhenPaused - Seller should not be able to withdraw funds when not paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await truffleAssert.reverts(
+              utils.withdrawWhenPaused(voucherID, users.seller.address),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
+
+          it('[NEGATIVE] withdrawWhenPaused - Attacker should not be able to withdraw funds when paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await contractBosonRouter.pause();
+
+            await truffleAssert.reverts(
+              utils.withdrawWhenPaused(voucherID, users.attacker.address),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
+
+          it('[NEGATIVE] withdrawWhenPaused - Attacker should not be able to withdraw funds when not paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await truffleAssert.reverts(
+              utils.withdrawWhenPaused(voucherID, users.attacker.address),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
+        });
+
+        describe('TKNETH', () => {
+          before(async () => {
+            await deployContracts();
+            utils = UtilsBuilder.create()
+              .ERC20withPermit()
+              .TKNETH()
+              .build(
+                contractERC1155ERC721,
+                contractVoucherKernel,
+                contractCashier,
+                contractBosonRouter,
+                contractBSNTokenPrice,
+                ''
+              );
+
+            tokensToMint = new BN(constants.product_price).mul(
+              new BN(constants.QTY_10)
+            );
+
+            await utils.mintTokens(
+              'contractBSNTokenPrice',
+              users.buyer.address,
+              tokensToMint
+            );
+          });
+
+          it('[NEGATIVE] Should not process withdrawals when paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await contractBosonRouter.pause();
+
+            await truffleAssert.reverts(
+              utils.withdraw(voucherID, users.deployer.address),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
+
+          it('withdrawWhenPaused - Buyer should be able to withdraw funds when paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await contractBosonRouter.pause();
+            const withdrawTx = await utils.withdrawWhenPaused(
+              voucherID,
+              users.buyer.address
+            );
+
+            truffleAssert.eventEmitted(
+              withdrawTx,
+              'LogAmountDistribution',
+              () => {
+                return true;
+              },
+              'Amounts not distributed successfully'
+            );
+          });
+
+          it('[NEGATIVE] withdrawWhenPaused - Buyer should not be able to withdraw funds when not paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await truffleAssert.reverts(
+              utils.withdrawWhenPaused(voucherID, users.buyer.address),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
+
+          it('withdrawWhenPaused - Seller should be able to withdraw funds when paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await contractBosonRouter.pause();
+            const withdrawTx = await utils.withdrawWhenPaused(
+              voucherID,
+              users.seller.address
+            );
+
+            truffleAssert.eventEmitted(
+              withdrawTx,
+              'LogAmountDistribution',
+              () => {
+                return true;
+              },
+              'Amounts not distributed successfully'
+            );
+          });
+
+          it('[NEGATIVE] withdrawWhenPaused - Seller should not be able to withdraw funds when not paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await truffleAssert.reverts(
+              utils.withdrawWhenPaused(voucherID, users.seller.address),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
+
+          it('[NEGATIVE] withdrawWhenPaused - Attacker should not be able to withdraw funds when paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await contractBosonRouter.pause();
+
+            await truffleAssert.reverts(
+              utils.withdrawWhenPaused(voucherID, users.attacker.address),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
+
+          it('[NEGATIVE] withdrawWhenPaused - Attacker should not be able to withdraw funds when not paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await truffleAssert.reverts(
+              utils.withdrawWhenPaused(voucherID, users.attacker.address),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
+        });
+
+        describe('TKNTKN', () => {
+          before(async () => {
+            await deployContracts();
+            utils = UtilsBuilder.create()
+              .ERC20withPermit()
+              .TKNTKN()
+              .build(
+                contractERC1155ERC721,
+                contractVoucherKernel,
+                contractCashier,
+                contractBosonRouter,
+                contractBSNTokenPrice,
+                contractBSNTokenDeposit
+              );
+
+            tokensToMint = new BN(constants.seller_deposit).mul(
+              new BN(constants.QTY_10)
+            );
+            tokensToMint = new BN(constants.product_price).mul(
+              new BN(constants.QTY_10)
+            );
+
+            await utils.mintTokens(
+              'contractBSNTokenDeposit',
+              users.seller.address,
+              tokensToMint
+            );
+            await utils.mintTokens(
+              'contractBSNTokenPrice',
+              users.buyer.address,
+              tokensToMint
+            );
+            await utils.mintTokens(
+              'contractBSNTokenDeposit',
+              users.buyer.address,
+              tokensToMint
+            );
+          });
+
+          it('[NEGATIVE] Should not process withdrawals when paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await contractBosonRouter.pause();
+
+            await truffleAssert.reverts(
+              utils.withdraw(voucherID, users.deployer.address),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
+
+          it('withdrawWhenPaused - Buyer should be able to withdraw funds when paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await contractBosonRouter.pause();
+            const withdrawTx = await utils.withdrawWhenPaused(
+              voucherID,
+              users.buyer.address
+            );
+
+            truffleAssert.eventEmitted(
+              withdrawTx,
+              'LogAmountDistribution',
+              () => {
+                return true;
+              },
+              'Amounts not distributed successfully'
+            );
+          });
+
+          it('[NEGATIVE] withdrawWhenPaused - Buyer should not be able to withdraw funds when not paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await truffleAssert.reverts(
+              utils.withdrawWhenPaused(voucherID, users.buyer.address),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
+
+          it('withdrawWhenPaused - Seller should be able to withdraw funds when paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await contractBosonRouter.pause();
+            const withdrawTx = await utils.withdrawWhenPaused(
+              voucherID,
+              users.seller.address
+            );
+
+            truffleAssert.eventEmitted(
+              withdrawTx,
+              'LogAmountDistribution',
+              () => {
+                return true;
+              },
+              'Amounts not distributed successfully'
+            );
+          });
+
+          it('[NEGATIVE] withdrawWhenPaused - Seller should not be able to withdraw funds when not paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await truffleAssert.reverts(
+              utils.withdrawWhenPaused(voucherID, users.seller.address),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
+
+          it('[NEGATIVE] withdrawWhenPaused - Attacker should not be able to withdraw funds when paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await contractBosonRouter.pause();
+
+            await truffleAssert.reverts(
+              utils.withdrawWhenPaused(voucherID, users.attacker.address),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
+
+          it('[NEGATIVE] withdrawWhenPaused - Attacker should not be able to withdraw funds when not paused', async () => {
+            TOKEN_SUPPLY_ID = await utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.seller_deposit,
+              constants.QTY_1
+            );
+
+            const voucherID = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID
+            );
+            await utils.refund(voucherID, users.buyer.address);
+
+            await timemachine.advanceTimeSeconds(60);
+            await utils.finalize(voucherID, users.deployer.address);
+
+            await truffleAssert.reverts(
+              utils.withdrawWhenPaused(voucherID, users.attacker.address),
+              truffleAssert.ErrorType.REVERT
+            );
+          });
+        });
+      });
+    });
+
     afterEach(async () => {
-      const isPaused = await contractCashier.paused();
+      const isPaused = await contractBosonRouter.paused();
       if (isPaused) {
-        await contractCashier.unpause();
+        await contractBosonRouter.unpause();
       }
     });
   });

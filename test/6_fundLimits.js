@@ -8,6 +8,7 @@ const Utils = require('../testHelpers/utils');
 const ERC1155ERC721 = artifacts.require('ERC1155ERC721');
 const VoucherKernel = artifacts.require('VoucherKernel');
 const Cashier = artifacts.require('Cashier');
+const BosonRouter = artifacts.require('BosonRouter');
 const BosonToken = artifacts.require('BosonTokenPrice');
 const FundLimitsOracle = artifacts.require('FundLimitsOracle');
 
@@ -17,6 +18,7 @@ contract('FundLimitsOracle', async (addresses) => {
   let contractERC1155ERC721,
     contractVoucherKernel,
     contractCashier,
+    contractBosonRouter,
     contractBSNTokenPrice,
     contractFundLimitsOracle;
   let expectedLimit;
@@ -36,10 +38,12 @@ contract('FundLimitsOracle', async (addresses) => {
     contractVoucherKernel = await VoucherKernel.new(
       contractERC1155ERC721.address
     );
-    contractCashier = await Cashier.new(
+    contractCashier = await Cashier.new(contractVoucherKernel.address);
+    contractBosonRouter = await BosonRouter.new(
       contractVoucherKernel.address,
       contractERC1155ERC721.address,
-      contractFundLimitsOracle.address
+      contractFundLimitsOracle.address,
+      contractCashier.address
     );
 
     contractBSNTokenPrice = await BosonToken.new('BosonTokenPrice', 'BPRC');
@@ -51,7 +55,16 @@ contract('FundLimitsOracle', async (addresses) => {
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
+    await contractERC1155ERC721.setBosonRouterAddress(
+      contractBosonRouter.address
+    );
+
+    await contractVoucherKernel.setBosonRouterAddress(
+      contractBosonRouter.address
+    );
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
+
+    await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
   }
 
   describe('FundLimitsOracle interaction', () => {

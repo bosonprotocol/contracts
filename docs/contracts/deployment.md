@@ -7,7 +7,7 @@ this initialization:
 
 - ERC1155ERC721.setApprovalForAll(contractVoucherKernel.address, 'true')
 - ERC1155ERC721.setVoucherKernelAddress(contractVoucherKernel.address)
-- VoucherKernel.setCashierAddress(contractCashier.address)
+- VoucherKernel.setBosonRouterAddress(bosonRouter.address)
 
 ## Deployment addresses
 
