@@ -82,7 +82,7 @@ contract("Cashier && VK", async accounts => {
 		await contractFundLimitsOracle.setETHLimit(helpers.ETHER_LIMIT)
 	}
 
-	describe.only('TOKEN SUPPLY CREATION (Voucher batch creation)', () =>  {
+	describe('TOKEN SUPPLY CREATION (Voucher batch creation)', () =>  {
 
 		let remQty = helpers.QTY_10
 		let vouchersToBuy = 5
@@ -1043,7 +1043,7 @@ contract("Cashier && VK", async accounts => {
 		})
 	})
 
-	describe.only("VOUCHER CREATION (Commit to buy)", () => {
+	describe("VOUCHER CREATION (Commit to buy)", () => {
 		const ORDER_QTY = 5
 		let TOKEN_SUPPLY_ID;
 
