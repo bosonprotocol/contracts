@@ -109,6 +109,9 @@ contract("Cashier && VK", async accounts => {
                     .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter);
 
 				timestamp = await Utils.getCurrTimestamp()
+
+				const nonce = await contractBosonRouter.getNonce(Seller.address)
+				assert.equal(nonce.toString(), 0, "Seller nonce is not as expected");
 				
                 tokenSupplyKey = await utils.createOrder(
 					Seller, 
@@ -117,6 +120,13 @@ contract("Cashier && VK", async accounts => {
 					helpers.seller_deposit,
 					helpers.QTY_10)
 			})
+
+			it("Seller nonce should be incremented after order is created", async () => {
+                const nonce = await contractBosonRouter.getNonce(Seller.address)
+				
+                assert.equal(nonce.toString(), 1, "Seller nonce is not as expected")
+			})
+
 
 			it("ESCROW has correct initial balance", async () => {
                 const expectedBalance = new BN(helpers.seller_deposit).mul(new BN(remQty))
@@ -256,6 +266,10 @@ contract("Cashier && VK", async accounts => {
 					await utils.mintTokens('contractBSNTokenDeposit', Buyer.address, tokensToMint);
 					
 					timestamp = await Utils.getCurrTimestamp()
+
+					const nonce = await contractBosonRouter.getNonce(Seller.address)
+					assert.equal(nonce.toString(), 0, "Seller nonce is not as expected");
+
 					tokenSupplyKey = await utils.createOrder(
                         Seller,
                         timestamp,
@@ -264,6 +278,12 @@ contract("Cashier && VK", async accounts => {
                         helpers.QTY_10
 					)
 
+				})
+
+				it("Seller nonce should be incremented after order is created", async () => {
+					const nonce = await contractBosonRouter.getNonce(Seller.address)
+					
+					assert.equal(nonce.toString(), 1, "Seller nonce is not as expected")
 				})
 
 				it("ESCROW has correct initial balance", async () => {
@@ -504,6 +524,9 @@ contract("Cashier && VK", async accounts => {
 
 					timestamp = await Utils.getCurrTimestamp()
 
+					const nonce = await contractBosonRouter.getNonce(Seller.address)
+					assert.equal(nonce.toString(), 0, "Seller nonce is not as expected");
+
                     const tokensToMint = new BN(helpers.product_price).mul(new BN(helpers.QTY_10))
                     await utils.mintTokens('contractBSNTokenPrice', Buyer.address, tokensToMint);
 
@@ -514,6 +537,12 @@ contract("Cashier && VK", async accounts => {
                         helpers.seller_deposit,
                         helpers.QTY_10
 					)
+				})
+
+				it("Seller nonce should be incremented after order is created", async () => {
+					const nonce = await contractBosonRouter.getNonce(Seller.address)
+					
+					assert.equal(nonce.toString(), 1, "Seller nonce is not as expected")
 				})
 
 				it("ESCROW has correct initial balance", async () => {
@@ -672,7 +701,10 @@ contract("Cashier && VK", async accounts => {
                         .TKN_TKN()
                         .build(contractERC1155ERC721, contractVoucherKernel, contractCashier, contractBosonRouter, contractBSNTokenPrice, contractBSNTokenDeposit)
                     
-                    timestamp = await Utils.getCurrTimestamp()
+					timestamp = await Utils.getCurrTimestamp()
+
+					const nonce = await contractBosonRouter.getNonce(Seller.address)
+					assert.equal(nonce.toString(), 0, "Seller nonce is not as expected");
 
                     const tokensToMint = new BN(helpers.product_price).mul(new BN(helpers.QTY_20))
 
@@ -687,6 +719,12 @@ contract("Cashier && VK", async accounts => {
                         helpers.seller_deposit,
                         helpers.QTY_10
 					)
+				})
+
+				it("Seller nonce should be incremented after order is created", async () => {
+					const nonce = await contractBosonRouter.getNonce(Seller.address)
+					
+					assert.equal(nonce.toString(), 1, "Seller nonce is not as expected")
 				})
 
 				it("ESCROW has correct initial balance", async () => {
@@ -1022,6 +1060,12 @@ contract("Cashier && VK", async accounts => {
 				TOKEN_SUPPLY_ID = await utils.createOrder(Seller, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.seller_deposit, helpers.QTY_10)
 			})
 
+			it("Buyer nonce should be zero initially", async () =>{
+				const nonce = await contractBosonRouter.getNonce(Buyer.address)
+
+                assert.equal(nonce.toString(), 0, "Buyer nonce is not as expected")
+			})
+
 			it("Should create order", async () => {
 				const txValue = new BN(helpers.buyer_deposit).add(new BN(helpers.product_price))
 				let txFillOrder = await contractBosonRouter.requestVoucher_ETH_ETH(
@@ -1037,6 +1081,12 @@ contract("Cashier && VK", async accounts => {
 					tokenVoucherKey = ev._tokenIdVoucher
 					return ev._issuer === Seller.address;
 				}, "order1 not created successfully");
+			})
+
+			it("Buyer nonce should be incremented after requesting a voucher", async () =>{
+				const nonce = await contractBosonRouter.getNonce(Buyer.address)
+
+                assert.equal(nonce.toString(), 1, "Buyer nonce is not as expected")
 			})
 
 			it("Cashier Contract has correct amount of funds", async () => {
@@ -1105,6 +1155,12 @@ contract("Cashier && VK", async accounts => {
 				
 				})
 
+				it("Buyer nonce should be zero initially", async () =>{
+					const nonce = await contractBosonRouter.getNonce(Buyer.address)
+	
+					assert.equal(nonce.toString(), 0, "Buyer nonce is not as expected")
+				})
+
 				it("Should create order", async () => {
 					const nonce = await contractBSNTokenDeposit.nonces(Buyer.address);
 					const digestDeposit = await getApprovalDigest(
@@ -1135,6 +1191,12 @@ contract("Cashier && VK", async accounts => {
 						tokenVoucherKey = ev._tokenIdVoucher
 						return ev._issuer === Seller.address;
 					}, "order1 not created successfully");
+				})
+
+				it("Buyer nonce should be incremented after requesting a voucher", async () =>{
+					const nonce = await contractBosonRouter.getNonce(Buyer.address)
+	
+					assert.equal(nonce.toString(), 1, "Buyer nonce is not as expected")
 				})
 
 				it("Cashier Contract has correct amount of funds", async () => {
@@ -1236,6 +1298,12 @@ contract("Cashier && VK", async accounts => {
 				
 				})
 
+				it("Buyer nonce should be zero initially", async () =>{
+					const nonce = await contractBosonRouter.getNonce(Buyer.address)
+	
+					assert.equal(nonce.toString(), 0, "Buyer nonce is not as expected")
+				})
+
 				it("Should create order", async () => {
 					const nonce1 = await contractBSNTokenDeposit.nonces(Buyer.address);
 					const tokensToSend = new BN(helpers.product_price).add(new BN(helpers.buyer_deposit))
@@ -1291,6 +1359,12 @@ contract("Cashier && VK", async accounts => {
 						tokenVoucherKey = ev._tokenIdVoucher
 						return ev._issuer === Seller.address;
 					}, "order1 not created successfully");
+				})
+
+				it("Buyer nonce should be incremented after requesting a voucher", async () =>{
+					const nonce = await contractBosonRouter.getNonce(Buyer.address)
+	
+					assert.equal(nonce.toString(), 1, "Buyer nonce is not as expected")
 				})
 
 				it("Cashier Contract has correct amount of funds", async () => {
@@ -1438,6 +1512,12 @@ contract("Cashier && VK", async accounts => {
 				
 				})
 
+				it("Buyer nonce should be zero initially", async () =>{
+					const nonce = await contractBosonRouter.getNonce(Buyer.address)
+	
+					assert.equal(nonce.toString(), 0, "Buyer nonce is not as expected")
+				})
+
 				it("Should create voucher", async () => {
 
 					const nonce = await utils.contractBSNTokenSAME.nonces(Buyer.address);
@@ -1474,6 +1554,12 @@ contract("Cashier && VK", async accounts => {
 						tokenVoucherKey1 = ev._tokenIdVoucher
 						return ev._issuer === Seller.address;
 					}, "order1 not created successfully");
+				})
+
+				it("Buyer nonce should be incremented after requesting a voucher", async () =>{
+					const nonce = await contractBosonRouter.getNonce(Buyer.address)
+	
+					assert.equal(nonce.toString(), 1, "Buyer nonce is not as expected")
 				})
 
 				it("Cashier Contract has correct amount of funds", async () => {
@@ -1632,6 +1718,12 @@ contract("Cashier && VK", async accounts => {
 
 				})
 
+				it("Buyer nonce should be zero initially", async () =>{
+					const nonce = await contractBosonRouter.getNonce(Buyer.address)
+	
+					assert.equal(nonce.toString(), 0, "Buyer nonce is not as expected")
+				})
+
 				it("Should create order", async () => {
 					const nonce = await contractBSNTokenPrice.nonces(Buyer.address);
 
@@ -1663,6 +1755,12 @@ contract("Cashier && VK", async accounts => {
 						tokenVoucherKey = ev._tokenIdVoucher
 						return ev._issuer === Seller.address;
 					}, "order1 not created successfully");
+				})
+
+				it("Buyer nonce should be incremented after requesting a voucher", async () =>{
+					const nonce = await contractBosonRouter.getNonce(Buyer.address)
+	
+					assert.equal(nonce.toString(), 1, "Buyer nonce is not as expected")
 				})
 
 				it("Cashier Contract has correct amount of funds", async () => {
