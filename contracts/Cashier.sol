@@ -50,7 +50,7 @@ contract Cashier is ICashier, usingHelpers, ReentrancyGuard, Ownable, Pausable {
         PaymentType _type
     );
 
-    modifier onlyFromBR() {
+    modifier onlyFromRouter() {
         require(bosonRouterAddress != address(0), "UNSPECIFIED_BR");  //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR");   //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         _;
@@ -78,7 +78,7 @@ contract Cashier is ICashier, usingHelpers, ReentrancyGuard, Ownable, Pausable {
     * @notice Pause the process of interaction with voucherID's (ERC-721), in case of emergency.
     * Only BR contract is in control of this function.
     */
-    function pause() external override onlyFromBR {
+    function pause() external override onlyFromRouter {
         _pause();
     }
 
@@ -86,7 +86,7 @@ contract Cashier is ICashier, usingHelpers, ReentrancyGuard, Ownable, Pausable {
     * @notice Unpause the process of interaction with voucherID's (ERC-721).
     * Only BR contract is in control of this function.
     */
-    function unpause() external override onlyFromBR {
+    function unpause() external override onlyFromRouter {
         _unpause();
     } 
 
@@ -563,7 +563,7 @@ contract Cashier is ICashier, usingHelpers, ReentrancyGuard, Ownable, Pausable {
     function updateEscrowAmount(address _account, uint256 _newAmount) 
         external
         override
-        onlyFromBR
+        onlyFromRouter
     {
         escrow[_account] = _newAmount;
     }
