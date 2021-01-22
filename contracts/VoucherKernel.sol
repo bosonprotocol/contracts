@@ -329,9 +329,9 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
     * @param _tokenIdSupply   ID of the supply token (ERC-1155)
     * @param _issuer          Address of the token's issuer
     * @param _holder          Address of the recipient of the voucher (ERC-721)
-    * @param _nonce           ID of the current interaction with the smart contract for a specific user
+    * @param _txId           ID of the current interaction with the smart contract for a specific user
     */
-    function fillOrder(uint256 _tokenIdSupply, address _issuer, address _holder, uint256 _nonce)
+    function fillOrder(uint256 _tokenIdSupply, address _issuer, address _holder, uint256 _txId)
         external
         override
         onlyFromRouter
@@ -343,7 +343,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, usingHelpers {
         //close order
         uint256 voucherTokenId = extract721(_issuer, _holder, _tokenIdSupply);
 
-        emit LogVoucherDelivered(_tokenIdSupply, voucherTokenId, _issuer, _holder, getPromiseIdFromVoucherId(voucherTokenId), _nonce);
+        emit LogVoucherDelivered(_tokenIdSupply, voucherTokenId, _issuer, _holder, getPromiseIdFromVoucherId(voucherTokenId), _txId);
     }
     
     

@@ -82,7 +82,7 @@ contract("Cashier && VK", async accounts => {
 		await contractFundLimitsOracle.setETHLimit(helpers.ETHER_LIMIT)
 	}
 
-	describe('TOKEN SUPPLY CREATION (Voucher batch creation)', () =>  {
+	describe.only('TOKEN SUPPLY CREATION (Voucher batch creation)', () =>  {
 
 		let remQty = helpers.QTY_10
 		let vouchersToBuy = 5
@@ -110,8 +110,8 @@ contract("Cashier && VK", async accounts => {
 
 				timestamp = await Utils.getCurrTimestamp()
 
-				const nonce = await contractBosonRouter.getNonce(Seller.address)
-				assert.equal(nonce.toString(), 0, "Seller nonce is not as expected");
+				const transactionID = await contractBosonRouter.transactionIDs(Seller.address)
+				assert.equal(transactionID.toString(), 0, "Seller transaction ID is not as expected");
 				
                 tokenSupplyKey = await utils.createOrder(
 					Seller, 
@@ -121,12 +121,11 @@ contract("Cashier && VK", async accounts => {
 					helpers.QTY_10)
 			})
 
-			it("Seller nonce should be incremented after order is created", async () => {
-                const nonce = await contractBosonRouter.getNonce(Seller.address)
+			it("Seller transaction ID should be incremented after order is created", async () => {
+                const transactionID = await contractBosonRouter.transactionIDs(Seller.address)
 				
-                assert.equal(nonce.toString(), 1, "Seller nonce is not as expected")
+                assert.equal(transactionID.toString(), 1, "Seller transaction ID is not as expected")
 			})
-
 
 			it("ESCROW has correct initial balance", async () => {
                 const expectedBalance = new BN(helpers.seller_deposit).mul(new BN(remQty))
@@ -267,8 +266,8 @@ contract("Cashier && VK", async accounts => {
 					
 					timestamp = await Utils.getCurrTimestamp()
 
-					const nonce = await contractBosonRouter.getNonce(Seller.address)
-					assert.equal(nonce.toString(), 0, "Seller nonce is not as expected");
+					const transactionID = await contractBosonRouter.transactionIDs(Seller.address)
+					assert.equal(transactionID.toString(), 0, "Seller transaction ID is not as expected");
 
 					tokenSupplyKey = await utils.createOrder(
                         Seller,
@@ -280,10 +279,10 @@ contract("Cashier && VK", async accounts => {
 
 				})
 
-				it("Seller nonce should be incremented after order is created", async () => {
-					const nonce = await contractBosonRouter.getNonce(Seller.address)
+				it("Seller transaction ID should be incremented after order is created", async () => {
+					const transactionID = await contractBosonRouter.transactionIDs(Seller.address)
 					
-					assert.equal(nonce.toString(), 1, "Seller nonce is not as expected")
+					assert.equal(transactionID.toString(), 1, "Seller transaction ID is not as expected")
 				})
 
 				it("ESCROW has correct initial balance", async () => {
@@ -524,8 +523,8 @@ contract("Cashier && VK", async accounts => {
 
 					timestamp = await Utils.getCurrTimestamp()
 
-					const nonce = await contractBosonRouter.getNonce(Seller.address)
-					assert.equal(nonce.toString(), 0, "Seller nonce is not as expected");
+					const transactionID = await contractBosonRouter.transactionIDs(Seller.address)
+					assert.equal(transactionID.toString(), 0, "Seller transaction ID is not as expected");
 
                     const tokensToMint = new BN(helpers.product_price).mul(new BN(helpers.QTY_10))
                     await utils.mintTokens('contractBSNTokenPrice', Buyer.address, tokensToMint);
@@ -539,10 +538,10 @@ contract("Cashier && VK", async accounts => {
 					)
 				})
 
-				it("Seller nonce should be incremented after order is created", async () => {
-					const nonce = await contractBosonRouter.getNonce(Seller.address)
+				it("Seller transaction ID should be incremented after order is created", async () => {
+					const transactionID = await contractBosonRouter.transactionIDs(Seller.address)
 					
-					assert.equal(nonce.toString(), 1, "Seller nonce is not as expected")
+					assert.equal(transactionID.toString(), 1, "Seller transaction ID is not as expected")
 				})
 
 				it("ESCROW has correct initial balance", async () => {
@@ -703,8 +702,8 @@ contract("Cashier && VK", async accounts => {
                     
 					timestamp = await Utils.getCurrTimestamp()
 
-					const nonce = await contractBosonRouter.getNonce(Seller.address)
-					assert.equal(nonce.toString(), 0, "Seller nonce is not as expected");
+					const transactionID = await contractBosonRouter.transactionIDs(Seller.address)
+					assert.equal(transactionID.toString(), 0, "Seller transaction ID is not as expected");
 
                     const tokensToMint = new BN(helpers.product_price).mul(new BN(helpers.QTY_20))
 
@@ -721,10 +720,10 @@ contract("Cashier && VK", async accounts => {
 					)
 				})
 
-				it("Seller nonce should be incremented after order is created", async () => {
-					const nonce = await contractBosonRouter.getNonce(Seller.address)
+				it("Seller transaction ID should be incremented after order is created", async () => {
+					const transactionID = await contractBosonRouter.transactionIDs(Seller.address)
 					
-					assert.equal(nonce.toString(), 1, "Seller nonce is not as expected")
+					assert.equal(transactionID.toString(), 1, "Seller transaction ID is not as expected")
 				})
 
 				it("ESCROW has correct initial balance", async () => {
@@ -1044,7 +1043,7 @@ contract("Cashier && VK", async accounts => {
 		})
 	})
 
-	describe("VOUCHER CREATION (Commit to buy)", () => {
+	describe.only("VOUCHER CREATION (Commit to buy)", () => {
 		const ORDER_QTY = 5
 		let TOKEN_SUPPLY_ID;
 
@@ -1060,10 +1059,10 @@ contract("Cashier && VK", async accounts => {
 				TOKEN_SUPPLY_ID = await utils.createOrder(Seller, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.seller_deposit, helpers.QTY_10)
 			})
 
-			it("Buyer nonce should be zero initially", async () =>{
-				const nonce = await contractBosonRouter.getNonce(Buyer.address)
+			it("Buyer transaction ID should be zero initially", async () =>{
+				const transactionID = await contractBosonRouter.transactionIDs(Buyer.address)
 
-                assert.equal(nonce.toString(), 0, "Buyer nonce is not as expected")
+                assert.equal(transactionID.toString(), 0, "Buyer transaction ID is not as expected")
 			})
 
 			it("Should create order", async () => {
@@ -1083,10 +1082,10 @@ contract("Cashier && VK", async accounts => {
 				}, "order1 not created successfully");
 			})
 
-			it("Buyer nonce should be incremented after requesting a voucher", async () =>{
-				const nonce = await contractBosonRouter.getNonce(Buyer.address)
+			it("Buyer transaction ID should be incremented after requesting a voucher", async () =>{
+				const transactionID = await contractBosonRouter.transactionIDs(Buyer.address)
 
-                assert.equal(nonce.toString(), 1, "Buyer nonce is not as expected")
+                assert.equal(transactionID.toString(), 1, "Buyer transaction ID is not as expected")
 			})
 
 			it("Cashier Contract has correct amount of funds", async () => {
@@ -1155,10 +1154,10 @@ contract("Cashier && VK", async accounts => {
 				
 				})
 
-				it("Buyer nonce should be zero initially", async () =>{
-					const nonce = await contractBosonRouter.getNonce(Buyer.address)
+				it("Buyer transaction ID should be zero initially", async () =>{
+					const transactionID = await contractBosonRouter.transactionIDs(Buyer.address)
 	
-					assert.equal(nonce.toString(), 0, "Buyer nonce is not as expected")
+					assert.equal(transactionID.toString(), 0, "Buyer transaction ID is not as expected")
 				})
 
 				it("Should create order", async () => {
@@ -1193,10 +1192,10 @@ contract("Cashier && VK", async accounts => {
 					}, "order1 not created successfully");
 				})
 
-				it("Buyer nonce should be incremented after requesting a voucher", async () =>{
-					const nonce = await contractBosonRouter.getNonce(Buyer.address)
+				it("Buyer transaction ID should be incremented after requesting a voucher", async () =>{
+					const transactionID = await contractBosonRouter.transactionIDs(Buyer.address)
 	
-					assert.equal(nonce.toString(), 1, "Buyer nonce is not as expected")
+					assert.equal(transactionID.toString(), 1, "Buyer transaction ID is not as expected")
 				})
 
 				it("Cashier Contract has correct amount of funds", async () => {
@@ -1298,10 +1297,10 @@ contract("Cashier && VK", async accounts => {
 				
 				})
 
-				it("Buyer nonce should be zero initially", async () =>{
-					const nonce = await contractBosonRouter.getNonce(Buyer.address)
+				it("Buyer transaction ID should be zero initially", async () =>{
+					const transactionID = await contractBosonRouter.transactionIDs(Buyer.address)
 	
-					assert.equal(nonce.toString(), 0, "Buyer nonce is not as expected")
+					assert.equal(transactionID.toString(), 0, "Buyer transaction ID is not as expected")
 				})
 
 				it("Should create order", async () => {
@@ -1361,10 +1360,10 @@ contract("Cashier && VK", async accounts => {
 					}, "order1 not created successfully");
 				})
 
-				it("Buyer nonce should be incremented after requesting a voucher", async () =>{
-					const nonce = await contractBosonRouter.getNonce(Buyer.address)
+				it("Buyer transaction ID should be incremented after requesting a voucher", async () =>{
+					const transactionID = await contractBosonRouter.transactionIDs(Buyer.address)
 	
-					assert.equal(nonce.toString(), 1, "Buyer nonce is not as expected")
+					assert.equal(transactionID.toString(), 1, "Buyer transaction ID is not as expected")
 				})
 
 				it("Cashier Contract has correct amount of funds", async () => {
@@ -1512,10 +1511,10 @@ contract("Cashier && VK", async accounts => {
 				
 				})
 
-				it("Buyer nonce should be zero initially", async () =>{
-					const nonce = await contractBosonRouter.getNonce(Buyer.address)
+				it("Buyer transaction ID should be zero initially", async () =>{
+					const transactionID = await contractBosonRouter.transactionIDs(Buyer.address)
 	
-					assert.equal(nonce.toString(), 0, "Buyer nonce is not as expected")
+					assert.equal(transactionID.toString(), 0, "Buyer transaction ID is not as expected")
 				})
 
 				it("Should create voucher", async () => {
@@ -1556,10 +1555,10 @@ contract("Cashier && VK", async accounts => {
 					}, "order1 not created successfully");
 				})
 
-				it("Buyer nonce should be incremented after requesting a voucher", async () =>{
-					const nonce = await contractBosonRouter.getNonce(Buyer.address)
+				it("Buyer transaction ID should be incremented after requesting a voucher", async () =>{
+					const transactionID = await contractBosonRouter.transactionIDs(Buyer.address)
 	
-					assert.equal(nonce.toString(), 1, "Buyer nonce is not as expected")
+					assert.equal(transactionID.toString(), 1, "Buyer transaction ID is not as expected")
 				})
 
 				it("Cashier Contract has correct amount of funds", async () => {
@@ -1718,10 +1717,10 @@ contract("Cashier && VK", async accounts => {
 
 				})
 
-				it("Buyer nonce should be zero initially", async () =>{
-					const nonce = await contractBosonRouter.getNonce(Buyer.address)
+				it("Buyer transaction ID should be zero initially", async () =>{
+					const transactionID = await contractBosonRouter.transactionIDs(Buyer.address)
 	
-					assert.equal(nonce.toString(), 0, "Buyer nonce is not as expected")
+					assert.equal(transactionID.toString(), 0, "Buyer transaction ID is not as expected")
 				})
 
 				it("Should create order", async () => {
@@ -1757,10 +1756,10 @@ contract("Cashier && VK", async accounts => {
 					}, "order1 not created successfully");
 				})
 
-				it("Buyer nonce should be incremented after requesting a voucher", async () =>{
-					const nonce = await contractBosonRouter.getNonce(Buyer.address)
+				it("Buyer transaction ID should be incremented after requesting a voucher", async () =>{
+					const transactionID = await contractBosonRouter.transactionIDs(Buyer.address)
 	
-					assert.equal(nonce.toString(), 1, "Buyer nonce is not as expected")
+					assert.equal(transactionID.toString(), 1, "Buyer transaction ID is not as expected")
 				})
 
 				it("Cashier Contract has correct amount of funds", async () => {

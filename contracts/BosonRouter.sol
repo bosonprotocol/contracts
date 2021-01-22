@@ -24,7 +24,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
     using Address for address payable;
     using SafeMath for uint;
 
-    mapping (address => uint256) public nonces;
+    mapping (address => uint256) public transactionIDs; // whenever a seller or a buyer interacts with the smart contract, a personal txID is emitted from an event.
     
     address public cashierAddress;
     address public voucherKernel;
@@ -36,7 +36,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         address _seller,
         uint256 _quantity,
         uint8 _paymentType,
-        uint256 _nonce
+        uint256 _transactionID
     );
 
     event LogTokenContractSet(
@@ -140,7 +140,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
 
         require(payable(cashierAddress).send(msg.value));
 
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETH_ETH, nonces[msg.sender]++);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETH_ETH, transactionIDs[msg.sender]++);
     }
 
     function requestCreateOrder_TKN_TKN_WithPermit(
@@ -173,7 +173,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
 
         IERC20WithPermit(_tokenDepositAddress).transferFrom(msg.sender, address(cashierAddress), _tokensSent);
         
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKN_TKN, nonces[msg.sender]++);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKN_TKN, transactionIDs[msg.sender]++);
     }
 
     function requestCreateOrder_ETH_TKN_WithPermit(
@@ -204,7 +204,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
 
         IERC20WithPermit(_tokenDepositAddress).transferFrom(msg.sender, address(cashierAddress), _tokensSent);
         
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETH_TKN, nonces[msg.sender]++);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETH_TKN, transactionIDs[msg.sender]++);
     }
 
     function requestCreateOrder_TKN_ETH(
@@ -231,7 +231,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
 
         require(payable(cashierAddress).send(msg.value));
 
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKN_ETH, nonces[msg.sender]++);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKN_ETH, transactionIDs[msg.sender]++);
     }
     
     /**
@@ -252,7 +252,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         (uint256 price, uint256 depositSe, uint256 depositBu) = IVoucherKernel(voucherKernel).getOrderCosts(_tokenIdSupply);
         require(price.add(depositBu) == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender, nonces[msg.sender]++);
+        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender, transactionIDs[msg.sender]++);
 
         //record funds in escrow ...
         uint256 amount = ICashier(cashierAddress).getEscrowAmount(msg.sender);
@@ -285,7 +285,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), price, deadline, vPrice, rPrice, sPrice);
         IERC20WithPermit(tokenDepositAddress).permit(msg.sender, address(this), depositBu, deadline, vDeposit, rDeposit, sDeposit);
 
-        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender, nonces[msg.sender]++);
+        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender, transactionIDs[msg.sender]++);
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(msg.sender, address(cashierAddress), price);
         IERC20WithPermit(tokenDepositAddress).transferFrom(msg.sender, address(cashierAddress), depositBu);
@@ -316,7 +316,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         // practically it's not of importance to each we are sending the funds
         IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
 
-        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender, nonces[msg.sender]++);
+        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender, transactionIDs[msg.sender]++);
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(msg.sender, address(cashierAddress), _tokensSent);
     }
@@ -343,7 +343,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         address tokenDepositAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(_tokenIdSupply);
         IERC20WithPermit(tokenDepositAddress).permit(msg.sender, address(this), _tokensDeposit, deadline, v, r, s);
 
-        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender, nonces[msg.sender]++);
+        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender, transactionIDs[msg.sender]++);
 
         IERC20WithPermit(tokenDepositAddress).transferFrom(msg.sender, address(cashierAddress), _tokensDeposit);
 
@@ -376,7 +376,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         address tokenPriceAddress = IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
         IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), price, deadline, v, r, s);
 
-        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender, nonces[msg.sender]++);
+        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender, transactionIDs[msg.sender]++);
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(msg.sender, address(cashierAddress), price);
 
@@ -537,9 +537,5 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         tokensContractAddress = _tokensContractAddress;
         emit LogTokenContractSet(_tokensContractAddress, msg.sender);
     }
-
-
-    function getNonce(address _address) external view returns (uint256) {
-        return nonces[_address];
-    }
+    
 }
