@@ -16,7 +16,6 @@ import "./ICashier.sol";
 
 /**
  * @title Contract for managing funds
- * @dev Warning: the contract hasn't been audited yet!
  *  Roughly following OpenZeppelin's Escrow at https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/payment/
  */
 contract BosonRouter is
