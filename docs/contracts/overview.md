@@ -6,8 +6,9 @@ are based on two NFT standards,
 [ERC-721](https://eips.ethereum.org/EIPS/eip-721).  
 
 Main contracts:  
+* BosonRouter: creation of VoucherSets and Vouchers  
 * BosonToken: ERC-20 contract for the native Boson Protocol token  
-* Cashier: funds-related functions  
+* Cashier: escrow management  
 * ERC1155ERC721: token factory  
 * VoucherKernel: main business logic  
 * UsingHelpers: common utils as structures  
@@ -39,12 +40,12 @@ lifecycle (defined in
 ### Happy path
 
 The process starts with Seller making an offer - minting a VoucherSet, which is 
-represented as ERC-1155 token: `Cashier.requestCreateOrder()`. The Seller sets 
+represented as ERC-1155 token: `BosonRouter.requestCreateOrder()`. The Seller sets 
 the expiration period of the whole VoucherSet.  
 
 Then the Buyer purchases the Voucher, i.e. is committing to redeem it at some 
 point later - this means an ERC-721 token is extracted from a VoucherSet: 
-`Cashier.requestVoucher()`.  
+`BosonRouter.requestVoucher()`.  
 
 The Buyer redeems the voucher, thus releasing the payment amount to the Seller: 
 `VoucherKernel.redeem()`.  
