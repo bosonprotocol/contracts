@@ -81,3 +81,4 @@ Note: if you use zsh instead of bash, change `~/.bashrc` above to `~/.zshrc`
 and use `rbenv init - zsh`.
 
 
+Note: if you use Fedora, see installation instructions at [Installing Ruby and Rails with rbenv](https://developer.fedoraproject.org/start/sw/web-app/rails.html).
