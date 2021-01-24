@@ -1,41 +1,48 @@
-
-const VoucherKernel = require("../build/VoucherKernel.json");
+const VoucherKernel = require('../build/VoucherKernel.json');
 
 const ethers = require('ethers');
 const provider = new ethers.providers.JsonRpcProvider();
-const { SELLER_SECRET, VOUCHER_ID, contracts } = require('./config');
+const {SELLER_SECRET, VOUCHER_ID, contracts} = require('./config');
 
 const seller = new ethers.Wallet(SELLER_SECRET, provider);
 
-(async() => {
-    let voucherKernelContract_Seller = new ethers.Contract(contracts.VoucherKernelContractAddress, VoucherKernel.abi, seller)
-    
-    let txOrder = await voucherKernelContract_Seller.cancelOrFault(VOUCHER_ID)
+(async () => {
+  let voucherKernelContract_Seller = new ethers.Contract(
+    contracts.VoucherKernelContractAddress,
+    VoucherKernel.abi,
+    seller
+  );
 
-    const receipt = await txOrder.wait()
-    
-    let parsedEvent = await findEventByName(receipt, 'LogVoucherFaultCancel', '_tokenIdVoucher')
-    console.log('parsedEvent');
-    console.log(parsedEvent);
-    
+  let txOrder = await voucherKernelContract_Seller.cancelOrFault(VOUCHER_ID);
+
+  const receipt = await txOrder.wait();
+
+  let parsedEvent = await findEventByName(
+    receipt,
+    'LogVoucherFaultCancel',
+    '_tokenIdVoucher'
+  );
+  console.log('parsedEvent');
+  console.log(parsedEvent);
 })();
 
 async function findEventByName(txReceipt, eventName, ...eventFields) {
+  for (const key in txReceipt.events) {
+    if (txReceipt.events[key].event == eventName) {
+      const event = txReceipt.events[key];
 
-    for (const key in txReceipt.events) {
-        if (txReceipt.events[key].event == eventName) {
-            const event = txReceipt.events[key]
-            
-            const resultObj = {
-                txHash: txReceipt.transactionHash
-            }
+      const resultObj = {
+        txHash: txReceipt.transactionHash,
+      };
 
-            for (let index = 0; index < eventFields.length; index++) {
-                resultObj[eventFields[index]] = event.args[eventFields[index]].toString();
-            }
-            return resultObj
-        }
+      for (let index = 0; index < eventFields.length; index++) {
+        resultObj[eventFields[index]] = event.args[
+          eventFields[index]
+        ].toString();
+      }
+      return resultObj;
     }
+  }
 }
 
 //EXAMPLE

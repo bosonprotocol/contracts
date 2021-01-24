@@ -3,7 +3,6 @@
 pragma solidity >=0.6.6 <0.7.0;
 
 interface IERC1155ERC721 {
-
     /**
      * @notice Mint an amount of a desired token
      * Currently no restrictions as to who is allowed to mint - so, it is external.
@@ -13,8 +12,13 @@ interface IERC1155ERC721 {
      * @param _value    Amount of the token to be minted
      * @param _data     Additional data forwarded to onERC1155BatchReceived if _to is a contract
      */
-    function mint(address _to, uint256 _tokenId, uint256 _value, bytes calldata _data) external;
-        
+    function mint(
+        address _to,
+        uint256 _tokenId,
+        uint256 _value,
+        bytes calldata _data
+    ) external;
+
     /**
      * @notice Burn an amount of tokens with the given ID
      * @dev ERC-1155
@@ -22,7 +26,11 @@ interface IERC1155ERC721 {
      * @param _tokenId  ID of the token
      * @param _value    Amount of the token
      */
-    function burn(address _account, uint256 _tokenId, uint256 _value) external;
+    function burn(
+        address _account,
+        uint256 _tokenId,
+        uint256 _value
+    ) external;
 
     /**
      * @notice Function to mint tokens.
@@ -32,5 +40,4 @@ interface IERC1155ERC721 {
      * @return A boolean that indicates if the operation was successful.
      */
     function mint(address to, uint256 tokenId) external returns (bool);
-
 }

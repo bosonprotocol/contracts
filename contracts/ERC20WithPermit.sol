@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
-pragma solidity >=0.6.6;
+pragma solidity >=0.6.6 <0.7.0;
 
 import "./IERC20WithPermit.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -9,14 +9,19 @@ contract ERC20WithPermit is IERC20WithPermit {
 
     string public override name;
     string public override symbol;
+    // solhint-disable-next-line const-name-snakecase
     uint8 public constant override decimals = 18;
 
     uint256 public override totalSupply;
     mapping(address => uint256) public override balanceOf;
     mapping(address => mapping(address => uint256)) public override allowance;
 
-    bytes32 public override DOMAIN_SEPARATOR; //prevents collision of identical structures. Formed in the initialization of the contract 
-    bytes32 public override constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9; //representation of keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+    // prevents collision of identical structures. Formed in the initialization of the contract
+    // solhint-disable-next-line var-name-mixedcase
+    bytes32 public override DOMAIN_SEPARATOR;
+    // representation of keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+    bytes32 public constant override PERMIT_TYPEHASH =
+        0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
     mapping(address => uint256) public override nonces;
 
     event Approval(
@@ -122,22 +127,23 @@ contract ERC20WithPermit is IERC20WithPermit {
     ) external override {
         require(deadline >= block.timestamp, "ERC20WithPermit: EXPIRED");
 
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                DOMAIN_SEPARATOR,
-                keccak256(
-                    abi.encode( 
-                        PERMIT_TYPEHASH,
-                        owner,
-                        spender,
-                        value,
-                        nonces[owner]++,
-                        deadline
+        bytes32 digest =
+            keccak256(
+                abi.encodePacked(
+                    "\x19\x01",
+                    DOMAIN_SEPARATOR,
+                    keccak256(
+                        abi.encode(
+                            PERMIT_TYPEHASH,
+                            owner,
+                            spender,
+                            value,
+                            nonces[owner]++,
+                            deadline
+                        )
                     )
                 )
-            )
-        );
+            );
 
         address recoveredAddress = ecrecover(digest, v, r, s);
         require(
