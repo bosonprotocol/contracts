@@ -1,4 +1,4 @@
-const helpers = require('./constants');
+const constants = require('./constants');
 const BN = web3.utils.BN;
 const truffleAssert = require('truffle-assertions');
 
@@ -44,9 +44,9 @@ class Utils {
       [
         from,
         to,
-        helpers.product_price,
+        constants.product_price,
         sellerDeposit,
-        helpers.buyer_deposit,
+        constants.buyer_deposit,
         qty,
       ],
       {
@@ -94,9 +94,9 @@ class Utils {
       [
         from,
         to,
-        helpers.product_price,
+        constants.product_price,
         sellerDeposit,
-        helpers.buyer_deposit,
+        constants.buyer_deposit,
         qty,
       ],
       {
@@ -143,9 +143,9 @@ class Utils {
       [
         from,
         to,
-        helpers.product_price,
+        constants.product_price,
         sellerDeposit,
-        helpers.buyer_deposit,
+        constants.buyer_deposit,
         qty,
       ],
       {
@@ -191,9 +191,9 @@ class Utils {
       [
         from,
         to,
-        helpers.product_price,
+        constants.product_price,
         sellerDeposit,
-        helpers.buyer_deposit,
+        constants.buyer_deposit,
         qty,
       ],
       {
@@ -212,9 +212,9 @@ class Utils {
       [
         from,
         to,
-        helpers.product_price,
+        constants.product_price,
         sellerDeposit,
-        helpers.buyer_deposit,
+        constants.buyer_deposit,
         qty,
       ],
       {
@@ -227,8 +227,8 @@ class Utils {
   }
 
   async commitToBuyTKNTKNWithPermit(buyer, seller, tokenSupplyId) {
-    const txValue = new BN(helpers.buyer_deposit).add(
-      new BN(helpers.product_price)
+    const txValue = new BN(constants.buyer_deposit).add(
+      new BN(constants.product_price)
     );
     const nonce1 = await this.contractBSNTokenDeposit.nonces(buyer.address);
 
@@ -236,7 +236,7 @@ class Utils {
       this.contractBSNTokenDeposit,
       buyer.address,
       this.contractBSNRouter.address,
-      helpers.buyer_deposit,
+      constants.buyer_deposit,
       nonce1,
       this.deadline
     );
@@ -256,7 +256,7 @@ class Utils {
       this.contractBSNTokenPrice,
       buyer.address,
       this.contractBSNRouter.address,
-      helpers.product_price,
+      constants.product_price,
       nonce2,
       this.deadline
     );
@@ -299,8 +299,8 @@ class Utils {
   }
 
   async commitToBuyTKNTKNSameWithPermit(buyer, seller, tokenSupplyId) {
-    const txValue = new BN(helpers.buyer_deposit).add(
-      new BN(helpers.product_price)
+    const txValue = new BN(constants.buyer_deposit).add(
+      new BN(constants.product_price)
     );
     const nonce = await this.contractBSNTokenSame.nonces(buyer.address);
 
@@ -354,7 +354,7 @@ class Utils {
       this.contractBSNTokenDeposit,
       buyer.address,
       this.contractBSNRouter.address,
-      helpers.buyer_deposit,
+      constants.buyer_deposit,
       nonce1,
       this.deadline
     );
@@ -367,12 +367,12 @@ class Utils {
     let txOrder = await this.contractBSNRouter.requestVoucherETHTKNWithPermit(
       tokenSupplyId,
       seller.address,
-      helpers.buyer_deposit,
+      constants.buyer_deposit,
       this.deadline,
       v,
       r,
       s,
-      {from: buyer.address, value: helpers.product_price.toString()}
+      {from: buyer.address, value: constants.product_price.toString()}
     );
 
     let nestedValue = (
@@ -390,8 +390,8 @@ class Utils {
   }
 
   async commitToBuyETHETH(buyer, seller, tokenSupplyId) {
-    const txValue = new BN(helpers.buyer_deposit).add(
-      new BN(helpers.product_price)
+    const txValue = new BN(constants.buyer_deposit).add(
+      new BN(constants.product_price)
     );
 
     let CommitTx = await this.contractBSNRouter.requestVoucherETHETH(
@@ -424,7 +424,7 @@ class Utils {
       this.contractBSNTokenPrice,
       buyer.address,
       this.contractBSNRouter.address,
-      helpers.product_price,
+      constants.product_price,
       nonce1,
       this.deadline
     );
@@ -437,12 +437,12 @@ class Utils {
     let txOrder = await this.contractBSNRouter.requestVoucherTKNETHWithPermit(
       tokenSupplyId,
       seller.address,
-      helpers.product_price,
+      constants.product_price,
       this.deadline,
       v,
       r,
       s,
-      {from: buyer.address, value: helpers.buyer_deposit}
+      {from: buyer.address, value: constants.buyer_deposit}
     );
 
     let nestedValue = (
