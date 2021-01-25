@@ -3,20 +3,18 @@
 pragma solidity >=0.6.6 <0.7.0;
 
 interface ICashier {
-
     /**
-    * @notice Pause the Cashier && the Voucher Kernel contracts in case of emergency.
-    * All functions related to creating new batch, requestVoucher or withdraw will be paused, hence cannot be executed. 
-    * There is special function for withdrawing funds if contract is paused.
-    */
+     * @notice Pause the Cashier && the Voucher Kernel contracts in case of emergency.
+     * All functions related to creating new batch, requestVoucher or withdraw will be paused, hence cannot be executed.
+     * There is special function for withdrawing funds if contract is paused.
+     */
     function pause() external;
-    
-    /**
-    * @notice Unpause the Cashier && the Voucher Kernel contracts.
-    * All functions related to creating new batch, requestVoucher or withdraw will be unpaused.
-    */
-    function unpause() external;
 
+    /**
+     * @notice Unpause the Cashier && the Voucher Kernel contracts.
+     * All functions related to creating new batch, requestVoucher or withdraw will be unpaused.
+     */
+    function unpause() external;
 
     /**
      * @notice Trigger withdrawals of what funds are releasable
@@ -34,36 +32,34 @@ interface ICashier {
      */
     function withdrawWhenPaused(uint256 _tokenIdVoucher) external;
 
-
     /**
-    * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the contracts are paused.
-    * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
-    */
+     * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the contracts are paused.
+     * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
+     */
     function withdrawDeposits(uint256 _tokenIdSupply) external;
-
 
     /**
      * @notice Trigger withdrawals of pooled funds
-     */ 
+     */
     function withdrawPool() external;
 
     /**
-    * @notice Get the amount in escrow of an address
-    * @param _account  The address of an account to query
-    */
+     * @notice Get the amount in escrow of an address
+     * @param _account  The address of an account to query
+     * @return          The balance in escrow
+     */
     function getEscrowAmount(address _account) external view returns (uint256);
 
     /**
-    * @notice Update the amount in escrow of an address wit the new value, based on VoucherSet/Voucher interaction
-    * @param _account  The address of an account to query
-    * @param _newAmount  New amount to be set
-    */
+     * @notice Update the amount in escrow of an address wit the new value, based on VoucherSet/Voucher interaction
+     * @param _account  The address of an account to query
+     * @param _newAmount  New amount to be set
+     */
     function updateEscrowAmount(address _account, uint256 _newAmount) external;
 
-     /**
+    /**
      * @notice Set the address of the BR contract
      * @param _bosonRouterAddress   The address of the Cashier contract
      */
     function setBosonRouterAddress(address _bosonRouterAddress) external;
-
 }

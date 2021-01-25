@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./IVoucherKernel.sol";
-import "./usingHelpers.sol";
+import "./UsingHelpers.sol";
 import "./IERC20WithPermit.sol";
 import "./ERC1155ERC721.sol";
 import "./IFundLimitsOracle.sol";
@@ -16,16 +16,22 @@ import "./ICashier.sol";
 
 /**
  * @title Contract for managing funds
- * @dev Warning: the contract hasn't been audited yet!
  *  Roughly following OpenZeppelin's Escrow at https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/payment/
  */
-contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, Ownable
-    {
+contract BosonRouter is
+    IBosonRouter,
+    UsingHelpers,
+    Pausable,
+    ReentrancyGuard,
+    Ownable
+{
     using Address for address payable;
     using SafeMath for uint;
 
     mapping (address => uint256) public transactionIDs; // whenever a seller or a buyer interacts with the smart contract, a personal txID is emitted from an event.
     
+    using SafeMath for uint256;
+
     address public cashierAddress;
     address public voucherKernel;
     address public tokensContractAddress;
@@ -39,10 +45,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         uint256 _transactionID
     );
 
-    event LogTokenContractSet(
-        address _newTokenContract,
-        address _triggeredBy
-    );
+    event LogTokenContractSet(address _newTokenContract, address _triggeredBy);
 
     modifier notZeroAddress(address tokenAddress) {
         require(tokenAddress != address(0), "INVALID_TOKEN_ADDRESS");
@@ -53,13 +56,25 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         require(msg.sender == tokensContractAddress, "UNAUTHORIZED_TK");
         _;
     }
-    
-    function notAboveETHLimit(uint256 value) internal view{
-        require(value <= IFundLimitsOracle(fundLimitsOracle).getETHLimit(), "VALUE_ABOVE_ETH_LIMIT");    
+
+    function notAboveETHLimit(uint256 value) internal view {
+        require(
+            value <= IFundLimitsOracle(fundLimitsOracle).getETHLimit(),
+            "VALUE_ABOVE_ETH_LIMIT"
+        );
     }
 
-    function notAboveTokenLimit(address _tokenAddress, uint256 value) internal view{
-        require(value <= IFundLimitsOracle(fundLimitsOracle).getTokenLimit(_tokenAddress), "VALUE_ABOVE_TKN_LIMIT");    
+    function notAboveTokenLimit(address _tokenAddress, uint256 value)
+        internal
+        view
+    {
+        require(
+            value <=
+                IFundLimitsOracle(fundLimitsOracle).getTokenLimit(
+                    _tokenAddress
+                ),
+            "VALUE_ABOVE_TKN_LIMIT"
+        );
     }
 
     constructor(
@@ -67,21 +82,18 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         address _tokensContractAddress,
         address _fundLimitsOracle,
         address _cashierAddress
-    ) 
-        public 
-    {
+    ) public {
         voucherKernel = _voucherKernel;
         tokensContractAddress = _tokensContractAddress;
         fundLimitsOracle = _fundLimitsOracle;
         cashierAddress = _cashierAddress;
     }
-    
 
     /**
-    * @notice Pause the Cashier && the Voucher Kernel contracts in case of emergency.
-    * All functions related to creating new batch, requestVoucher or withdraw will be paused, hence cannot be executed. 
-    * There is special function for withdrawing funds if contract is paused.
-    */
+     * @notice Pause the Cashier && the Voucher Kernel contracts in case of emergency.
+     * All functions related to creating new batch, requestVoucher or withdraw will be paused, hence cannot be executed.
+     * There is special function for withdrawing funds if contract is paused.
+     */
     function pause() external override onlyOwner {
         _pause();
         IVoucherKernel(voucherKernel).pause();
@@ -89,14 +101,14 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
     }
 
     /**
-    * @notice Unpause the Cashier && the Voucher Kernel contracts.
-    * All functions related to creating new batch, requestVoucher or withdraw will be unpaused.
-    */
+     * @notice Unpause the Cashier && the Voucher Kernel contracts.
+     * All functions related to creating new batch, requestVoucher or withdraw will be unpaused.
+     */
     function unpause() external override onlyOwner {
         _unpause();
         IVoucherKernel(voucherKernel).unpause();
         ICashier(cashierAddress).unpause();
-    } 
+    }
 
     /**
      * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
@@ -112,38 +124,55 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         uint256 _depositBu = metadata[4];
         uint256 _quantity = metadata[5];
      */
-    function requestCreateOrder_ETH_ETH(uint256[] calldata metadata)
+    function requestCreateOrderETHETH(uint256[] calldata metadata)
         external
         payable
         override
         whenNotPaused
     {
-        notAboveETHLimit(metadata[2]); 
+        notAboveETHLimit(metadata[2]);
         notAboveETHLimit(metadata[3]);
         notAboveETHLimit(metadata[4]);
-        require(metadata[3].mul(metadata[5])  == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(metadata[3].mul(metadata[5]) == msg.value, "INCORRECT_FUNDS");
+        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel).createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
-        
-        IVoucherKernel(voucherKernel).createPaymentMethod(tokenIdSupply, ETH_ETH, address(0), address(0));
+        uint256 tokenIdSupply =
+            IVoucherKernel(voucherKernel).createTokenSupplyID(
+                msg.sender,
+                metadata[0],
+                metadata[1],
+                metadata[2],
+                metadata[3],
+                metadata[4],
+                metadata[5]
+            );
+
+        IVoucherKernel(voucherKernel).createPaymentMethod(
+            tokenIdSupply,
+            ETHETH,
+            address(0),
+            address(0)
+        );
 
         //checks
         //(i) this is for separate promise allocation, not in prototype
         //uint256 depositSe = IVoucherKernel(voucherKernel).getPromiseDepositSe(promiseId);
         //require(depositSe * _quantity == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         //(ii) prototype check
-        
-        
+
         //record funds in escrow ...
         uint256 amount = ICashier(cashierAddress).getEscrowAmount(msg.sender);
-        ICashier(cashierAddress).updateEscrowAmount(msg.sender, amount.add(msg.value));
+        ICashier(cashierAddress).updateEscrowAmount(
+            msg.sender,
+            amount.add(msg.value)
+        );
 
         require(payable(cashierAddress).send(msg.value));
 
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETH_ETH, transactionIDs[msg.sender]++);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHETH, transactionIDs[msg.sender]++);
     }
 
-    function requestCreateOrder_TKN_TKN_WithPermit(
+    function requestCreateOrderTKNTKNWithPermit(
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent,
@@ -152,31 +181,58 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         bytes32 r,
         bytes32 s,
         uint256[] calldata metadata
-        )
-        notZeroAddress(_tokenPriceAddress)
-        notZeroAddress(_tokenDepositAddress)
+    )
         external
         override
+        notZeroAddress(_tokenPriceAddress)
+        notZeroAddress(_tokenDepositAddress)
         whenNotPaused
     {
         notAboveTokenLimit(_tokenPriceAddress, metadata[2]);
         notAboveTokenLimit(_tokenDepositAddress, metadata[3]);
         notAboveTokenLimit(_tokenDepositAddress, metadata[4]);
 
-        require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-        
-        IERC20WithPermit(_tokenDepositAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
-        
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel).createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
-        
-        IVoucherKernel(voucherKernel).createPaymentMethod(tokenIdSupply, TKN_TKN, _tokenPriceAddress, _tokenDepositAddress);
+        require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");
+        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        IERC20WithPermit(_tokenDepositAddress).transferFrom(msg.sender, address(cashierAddress), _tokensSent);
-        
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKN_TKN, transactionIDs[msg.sender]++);
+        IERC20WithPermit(_tokenDepositAddress).permit(
+            msg.sender,
+            address(this),
+            _tokensSent,
+            deadline,
+            v,
+            r,
+            s
+        );
+
+        uint256 tokenIdSupply =
+            IVoucherKernel(voucherKernel).createTokenSupplyID(
+                msg.sender,
+                metadata[0],
+                metadata[1],
+                metadata[2],
+                metadata[3],
+                metadata[4],
+                metadata[5]
+            );
+
+        IVoucherKernel(voucherKernel).createPaymentMethod(
+            tokenIdSupply,
+            TKNTKN,
+            _tokenPriceAddress,
+            _tokenDepositAddress
+        );
+
+        IERC20WithPermit(_tokenDepositAddress).transferFrom(
+            msg.sender,
+            address(cashierAddress),
+            _tokensSent
+        );
+
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNTKN, transactionIDs[msg.sender]++);
     }
 
-    function requestCreateOrder_ETH_TKN_WithPermit(
+    function requestCreateOrderETHTKNWithPermit(
         address _tokenDepositAddress,
         uint256 _tokensSent,
         uint256 deadline,
@@ -184,62 +240,102 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         bytes32 r,
         bytes32 s,
         uint256[] calldata metadata
-        )
-        notZeroAddress(_tokenDepositAddress)
-        external
-        override
-        whenNotPaused
-    {
-        notAboveETHLimit(metadata[2]); 
+    ) external override notZeroAddress(_tokenDepositAddress) whenNotPaused {
+        notAboveETHLimit(metadata[2]);
         notAboveTokenLimit(_tokenDepositAddress, metadata[3]);
         notAboveTokenLimit(_tokenDepositAddress, metadata[4]);
 
-        require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-        
-        IERC20WithPermit(_tokenDepositAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
-        
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel).createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
-        
-        IVoucherKernel(voucherKernel).createPaymentMethod(tokenIdSupply, ETH_TKN, address(0), _tokenDepositAddress);
+        require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");
+        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        IERC20WithPermit(_tokenDepositAddress).transferFrom(msg.sender, address(cashierAddress), _tokensSent);
-        
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETH_TKN, transactionIDs[msg.sender]++);
+        IERC20WithPermit(_tokenDepositAddress).permit(
+            msg.sender,
+            address(this),
+            _tokensSent,
+            deadline,
+            v,
+            r,
+            s
+        );
+
+        uint256 tokenIdSupply =
+            IVoucherKernel(voucherKernel).createTokenSupplyID(
+                msg.sender,
+                metadata[0],
+                metadata[1],
+                metadata[2],
+                metadata[3],
+                metadata[4],
+                metadata[5]
+            );
+
+        IVoucherKernel(voucherKernel).createPaymentMethod(
+            tokenIdSupply,
+            ETHTKN,
+            address(0),
+            _tokenDepositAddress
+        );
+
+        IERC20WithPermit(_tokenDepositAddress).transferFrom(
+            msg.sender,
+            address(cashierAddress),
+            _tokensSent
+        );
+
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHTKN, transactionIDs[msg.sender]++);
     }
 
-    function requestCreateOrder_TKN_ETH(
+    function requestCreateOrderTKNETH(
         address _tokenPriceAddress,
         uint256[] calldata metadata
-        )
-        notZeroAddress(_tokenPriceAddress)
+    )
         external
         payable
         override
+        notZeroAddress(_tokenPriceAddress)
         whenNotPaused
     {
         notAboveTokenLimit(_tokenPriceAddress, metadata[2]);
         notAboveETHLimit(metadata[3]);
         notAboveETHLimit(metadata[4]);
 
-        require(metadata[3].mul(metadata[5]) == msg.value, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-        
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel).createTokenSupplyID(msg.sender, metadata[0], metadata[1], metadata[2], metadata[3], metadata[4], metadata[5]);
-        IVoucherKernel(voucherKernel).createPaymentMethod(tokenIdSupply, TKN_ETH, _tokenPriceAddress, address(0));
+        require(metadata[3].mul(metadata[5]) == msg.value, "INCORRECT_FUNDS");
+        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+
+        uint256 tokenIdSupply =
+            IVoucherKernel(voucherKernel).createTokenSupplyID(
+                msg.sender,
+                metadata[0],
+                metadata[1],
+                metadata[2],
+                metadata[3],
+                metadata[4],
+                metadata[5]
+            );
+        IVoucherKernel(voucherKernel).createPaymentMethod(
+            tokenIdSupply,
+            TKNETH,
+            _tokenPriceAddress,
+            address(0)
+        );
 
         uint256 amount = ICashier(cashierAddress).getEscrowAmount(msg.sender);
-        ICashier(cashierAddress).updateEscrowAmount(msg.sender, amount.add(msg.value));
+        ICashier(cashierAddress).updateEscrowAmount(
+            msg.sender,
+            amount.add(msg.value)
+        );
 
         require(payable(cashierAddress).send(msg.value));
 
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKN_ETH, transactionIDs[msg.sender]++);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNETH, transactionIDs[msg.sender]++);
     }
-    
+
     /**
      * @notice Consumer requests/buys a voucher by filling an order and receiving a Voucher Token in return
      * @param _tokenIdSupply    ID of the supply token
      * @param _issuer           Address of the issuer of the supply token
      */
-    function requestVoucher_ETH_ETH(uint256 _tokenIdSupply, address _issuer)
+    function requestVoucherETHETH(uint256 _tokenIdSupply, address _issuer)
         external
         payable
         override
@@ -249,288 +345,417 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
         uint256 weiReceived = msg.value;
 
         //checks
-        (uint256 price, uint256 depositSe, uint256 depositBu) = IVoucherKernel(voucherKernel).getOrderCosts(_tokenIdSupply);
-        require(price.add(depositBu) == weiReceived, "INCORRECT_FUNDS");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        (uint256 price, , uint256 depositBu) =
+            IVoucherKernel(voucherKernel).getOrderCosts(_tokenIdSupply);
+        require(price.add(depositBu) == weiReceived, "INCORRECT_FUNDS");
+        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender, transactionIDs[msg.sender]++);
+        IVoucherKernel(voucherKernel).fillOrder(
+            _tokenIdSupply,
+            _issuer,
+            msg.sender,
+            transactionIDs[msg.sender]++
+        );
 
         //record funds in escrow ...
         uint256 amount = ICashier(cashierAddress).getEscrowAmount(msg.sender);
-        ICashier(cashierAddress).updateEscrowAmount(msg.sender, amount.add(weiReceived));
+        ICashier(cashierAddress).updateEscrowAmount(
+            msg.sender,
+            amount.add(weiReceived)
+        );
 
         require(payable(cashierAddress).send(msg.value));
     }
-    
-    function requestVoucher_TKN_TKN_WithPermit(
-        uint256 _tokenIdSupply, 
+
+    function requestVoucherTKNTKNWithPermit(
+        uint256 _tokenIdSupply,
         address _issuer,
         uint256 _tokensSent,
         uint256 deadline,
-        uint8 vPrice, bytes32 rPrice, bytes32 sPrice, // tokenPrice
-        uint8 vDeposit, bytes32 rDeposit, bytes32 sDeposit  // tokenDeposits
-        )
-        external
-        override
-        nonReentrant
-        whenNotPaused
-    {
-
+        uint8 vPrice,
+        bytes32 rPrice,
+        bytes32 sPrice, // tokenPrice
+        uint8 vDeposit,
+        bytes32 rDeposit,
+        bytes32 sDeposit // tokenDeposits
+    ) external override nonReentrant whenNotPaused {
         //checks
-        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
+        (uint256 price, uint256 depositBu) =
+            IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
         require(_tokensSent.sub(depositBu) == price, "INCORRECT_FUNDS");
 
-        address tokenPriceAddress = IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
-        address tokenDepositAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(_tokenIdSupply);
+        address tokenPriceAddress =
+            IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
+        address tokenDepositAddress =
+            IVoucherKernel(voucherKernel).getVoucherDepositToken(
+                _tokenIdSupply
+            );
 
-        IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), price, deadline, vPrice, rPrice, sPrice);
-        IERC20WithPermit(tokenDepositAddress).permit(msg.sender, address(this), depositBu, deadline, vDeposit, rDeposit, sDeposit);
+        IERC20WithPermit(tokenPriceAddress).permit(
+            msg.sender,
+            address(this),
+            price,
+            deadline,
+            vPrice,
+            rPrice,
+            sPrice
+        );
+        IERC20WithPermit(tokenDepositAddress).permit(
+            msg.sender,
+            address(this),
+            depositBu,
+            deadline,
+            vDeposit,
+            rDeposit,
+            sDeposit
+        );
 
-        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender, transactionIDs[msg.sender]++);
+        IVoucherKernel(voucherKernel).fillOrder(
+            _tokenIdSupply,
+            _issuer,
+            msg.sender,
+            transactionIDs[msg.sender]++
+        );
 
-        IERC20WithPermit(tokenPriceAddress).transferFrom(msg.sender, address(cashierAddress), price);
-        IERC20WithPermit(tokenDepositAddress).transferFrom(msg.sender, address(cashierAddress), depositBu);
+        IERC20WithPermit(tokenPriceAddress).transferFrom(
+            msg.sender,
+            address(cashierAddress),
+            price
+        );
+        IERC20WithPermit(tokenDepositAddress).transferFrom(
+            msg.sender,
+            address(cashierAddress),
+            depositBu
+        );
     }
 
-    function requestVoucher_TKN_TKN_Same_WithPermit(
-        uint256 _tokenIdSupply, 
+    function requestVoucherTKNTKNSameWithPermit(
+        uint256 _tokenIdSupply,
         address _issuer,
         uint256 _tokensSent,
         uint256 deadline,
-        uint8 v, bytes32 r, bytes32 s
-        )
-        external
-        override
-        nonReentrant
-        whenNotPaused
-    {
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external override nonReentrant whenNotPaused {
         //checks
-        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
+        (uint256 price, uint256 depositBu) =
+            IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
         require(_tokensSent.sub(depositBu) == price, "INCORRECT_FUNDS");
 
-        address tokenPriceAddress = IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
-        address tokenDepositAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(_tokenIdSupply);
+        address tokenPriceAddress =
+            IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
+        address tokenDepositAddress =
+            IVoucherKernel(voucherKernel).getVoucherDepositToken(
+                _tokenIdSupply
+            );
 
         require(tokenPriceAddress == tokenDepositAddress, "INVALID_CALL");
 
-        // If tokenPriceAddress && tokenPriceAddress are the same 
+        // If tokenPriceAddress && tokenPriceAddress are the same
         // practically it's not of importance to each we are sending the funds
-        IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), _tokensSent, deadline, v, r, s);
+        IERC20WithPermit(tokenPriceAddress).permit(
+            msg.sender,
+            address(this),
+            _tokensSent,
+            deadline,
+            v,
+            r,
+            s
+        );
 
-        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender, transactionIDs[msg.sender]++);
+        IVoucherKernel(voucherKernel).fillOrder(
+            _tokenIdSupply,
+            _issuer,
+            msg.sender,
+            transactionIDs[msg.sender]++
+        );
 
-        IERC20WithPermit(tokenPriceAddress).transferFrom(msg.sender, address(cashierAddress), _tokensSent);
+        IERC20WithPermit(tokenPriceAddress).transferFrom(
+            msg.sender,
+            address(cashierAddress),
+            _tokensSent
+        );
     }
 
-    function requestVoucher_ETH_TKN_WithPermit(
-        uint256 _tokenIdSupply, 
+    function requestVoucherETHTKNWithPermit(
+        uint256 _tokenIdSupply,
         address _issuer,
         uint256 _tokensDeposit,
         uint256 deadline,
-        uint8 v, bytes32 r, bytes32 s
-        )
-        external
-        payable
-        override
-        nonReentrant
-        whenNotPaused
-    {
-
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external payable override nonReentrant whenNotPaused {
         //checks
-        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
-        require(price == msg.value, "INCORRECT_PRICE");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-        require(depositBu == _tokensDeposit, "INCORRECT_DE");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        (uint256 price, uint256 depositBu) =
+            IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
+        require(price == msg.value, "INCORRECT_PRICE");
+        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(depositBu == _tokensDeposit, "INCORRECT_DE");
+        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        address tokenDepositAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(_tokenIdSupply);
-        IERC20WithPermit(tokenDepositAddress).permit(msg.sender, address(this), _tokensDeposit, deadline, v, r, s);
+        address tokenDepositAddress =
+            IVoucherKernel(voucherKernel).getVoucherDepositToken(
+                _tokenIdSupply
+            );
+        IERC20WithPermit(tokenDepositAddress).permit(
+            msg.sender,
+            address(this),
+            _tokensDeposit,
+            deadline,
+            v,
+            r,
+            s
+        );
 
-        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender, transactionIDs[msg.sender]++);
+        IVoucherKernel(voucherKernel).fillOrder(
+            _tokenIdSupply,
+            _issuer,
+            msg.sender,
+            transactionIDs[msg.sender]++
+        );
 
-        IERC20WithPermit(tokenDepositAddress).transferFrom(msg.sender, address(cashierAddress), _tokensDeposit);
+        IERC20WithPermit(tokenDepositAddress).transferFrom(
+            msg.sender,
+            address(cashierAddress),
+            _tokensDeposit
+        );
 
-         //record funds in escrow ...
+        //record funds in escrow ...
         uint256 amount = ICashier(cashierAddress).getEscrowAmount(msg.sender);
-        ICashier(cashierAddress).updateEscrowAmount(msg.sender, amount.add(msg.value));
+        ICashier(cashierAddress).updateEscrowAmount(
+            msg.sender,
+            amount.add(msg.value)
+        );
 
         require(payable(cashierAddress).send(msg.value));
     }
 
-    function requestVoucher_TKN_ETH_WithPermit(
-        uint256 _tokenIdSupply, 
+    function requestVoucherTKNETHWithPermit(
+        uint256 _tokenIdSupply,
         address _issuer,
         uint256 _tokensPrice,
         uint256 deadline,
-        uint8 v, bytes32 r, bytes32 s
-        )
-        external
-        payable
-        override
-        nonReentrant
-        whenNotPaused
-    {
-
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external payable override nonReentrant whenNotPaused {
         //checks
-        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
-        require(price == _tokensPrice, "INCORRECT_PRICE");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-        require(depositBu == msg.value, "INCORRECT_DE");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        (uint256 price, uint256 depositBu) =
+            IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
+        require(price == _tokensPrice, "INCORRECT_PRICE");
+        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        require(depositBu == msg.value, "INCORRECT_DE");
+        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        address tokenPriceAddress = IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
-        IERC20WithPermit(tokenPriceAddress).permit(msg.sender, address(this), price, deadline, v, r, s);
+        address tokenPriceAddress =
+            IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
+        IERC20WithPermit(tokenPriceAddress).permit(
+            msg.sender,
+            address(this),
+            price,
+            deadline,
+            v,
+            r,
+            s
+        );
 
-        IVoucherKernel(voucherKernel).fillOrder(_tokenIdSupply, _issuer, msg.sender, transactionIDs[msg.sender]++);
+        IVoucherKernel(voucherKernel).fillOrder(
+            _tokenIdSupply,
+            _issuer,
+            msg.sender,
+            transactionIDs[msg.sender]++
+        );
 
-        IERC20WithPermit(tokenPriceAddress).transferFrom(msg.sender, address(cashierAddress), price);
+        IERC20WithPermit(tokenPriceAddress).transferFrom(
+            msg.sender,
+            address(cashierAddress),
+            price
+        );
 
-         //record funds in escrow ...
+        //record funds in escrow ...
         uint256 amount = ICashier(cashierAddress).getEscrowAmount(msg.sender);
-        ICashier(cashierAddress).updateEscrowAmount(msg.sender, amount.add(msg.value));
+        ICashier(cashierAddress).updateEscrowAmount(
+            msg.sender,
+            amount.add(msg.value)
+        );
 
         require(payable(cashierAddress).send(msg.value));
     }
 
     /**
-    * @notice Redemption of the vouchers promise
-    * @param _tokenIdVoucher   ID of the voucher
-    */
-    function redeem(uint256 _tokenIdVoucher)
-        external
-        override
-    {
+     * @notice Redemption of the vouchers promise
+     * @param _tokenIdVoucher   ID of the voucher
+     */
+    function redeem(uint256 _tokenIdVoucher) external override {
         IVoucherKernel(voucherKernel).redeem(_tokenIdVoucher, msg.sender);
     }
 
     /**
-    * @notice Refunding a voucher
-    * @param _tokenIdVoucher   ID of the voucher
-    */
-    function refund(uint256 _tokenIdVoucher)
-        external
-        override
-    {
+     * @notice Refunding a voucher
+     * @param _tokenIdVoucher   ID of the voucher
+     */
+    function refund(uint256 _tokenIdVoucher) external override {
         IVoucherKernel(voucherKernel).refund(_tokenIdVoucher, msg.sender);
     }
 
     /**
-    * @notice Issue a complain for a voucher
-    * @param _tokenIdVoucher   ID of the voucher
-    */
-    function complain(uint256 _tokenIdVoucher) 
-        external
-        override
-    {
+     * @notice Issue a complain for a voucher
+     * @param _tokenIdVoucher   ID of the voucher
+     */
+    function complain(uint256 _tokenIdVoucher) external override {
         IVoucherKernel(voucherKernel).complain(_tokenIdVoucher, msg.sender);
     }
 
     /**
-    * @notice Cancel/Fault transaction by the Seller, admitting to a fault or backing out of the deal
-    * @param _tokenIdVoucher   ID of the voucher
-    */
-    function cancelOrFault(uint256 _tokenIdVoucher)
-        external
-        override
-    {
-        IVoucherKernel(voucherKernel).cancelOrFault(_tokenIdVoucher, msg.sender);
+     * @notice Cancel/Fault transaction by the Seller, admitting to a fault or backing out of the deal
+     * @param _tokenIdVoucher   ID of the voucher
+     */
+    function cancelOrFault(uint256 _tokenIdVoucher) external override {
+        IVoucherKernel(voucherKernel).cancelOrFault(
+            _tokenIdVoucher,
+            msg.sender
+        );
     }
 
     /**
-    * @notice Hook which will be triggered when a _tokenIdVoucher will be transferred. Escrow funds should be allocated to the new owner.
-    * @param _from prev owner of the _tokenIdVoucher
-    * @param _to next owner of the _tokenIdVoucher
-    * @param _tokenIdVoucher _tokenIdVoucher that has been transferred
-    */
-    function _onERC721Transfer(address _from, address _to, uint256 _tokenIdVoucher) 
-        external
-        override
-        onlyTokensContract
-    {
-        uint256 tokenSupplyId = IVoucherKernel(voucherKernel).getIdSupplyFromVoucher(_tokenIdVoucher);
-        uint8 paymentType = IVoucherKernel(voucherKernel).getVoucherPaymentMethod(tokenSupplyId);
+     * @notice Hook which will be triggered when a _tokenIdVoucher will be transferred. Escrow funds should be allocated to the new owner.
+     * @param _from prev owner of the _tokenIdVoucher
+     * @param _to next owner of the _tokenIdVoucher
+     * @param _tokenIdVoucher _tokenIdVoucher that has been transferred
+     */
+    function _onERC721Transfer(
+        address _from,
+        address _to,
+        uint256 _tokenIdVoucher
+    ) external override onlyTokensContract {
+        uint256 tokenSupplyId =
+            IVoucherKernel(voucherKernel).getIdSupplyFromVoucher(
+                _tokenIdVoucher
+            );
+        uint8 paymentType =
+            IVoucherKernel(voucherKernel).getVoucherPaymentMethod(
+                tokenSupplyId
+            );
 
-        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel).getBuyerOrderCosts(tokenSupplyId);
+        (uint256 price, uint256 depositBu) =
+            IVoucherKernel(voucherKernel).getBuyerOrderCosts(tokenSupplyId);
 
-        if(paymentType == ETH_ETH)
-        {
+        if (paymentType == ETHETH) {
             uint256 totalAmount = price.add(depositBu);
 
             uint256 amount = ICashier(cashierAddress).getEscrowAmount(_from);
-            ICashier(cashierAddress).updateEscrowAmount(_from, amount.sub(totalAmount));
+            ICashier(cashierAddress).updateEscrowAmount(
+                _from,
+                amount.sub(totalAmount)
+            );
 
             amount = ICashier(cashierAddress).getEscrowAmount(_to);
-            ICashier(cashierAddress).updateEscrowAmount(_to, amount.add(totalAmount));
+            ICashier(cashierAddress).updateEscrowAmount(
+                _to,
+                amount.add(totalAmount)
+            );
         }
 
-        if(paymentType == ETH_TKN) {
+        if (paymentType == ETHTKN) {
             uint256 amount = ICashier(cashierAddress).getEscrowAmount(_from);
-            ICashier(cashierAddress).updateEscrowAmount(_from, amount.sub(price));
+            ICashier(cashierAddress).updateEscrowAmount(
+                _from,
+                amount.sub(price)
+            );
 
             amount = ICashier(cashierAddress).getEscrowAmount(_to);
             ICashier(cashierAddress).updateEscrowAmount(_to, amount.add(price));
         }
 
-        if(paymentType == TKN_ETH) {
+        if (paymentType == TKNETH) {
             uint256 amount = ICashier(cashierAddress).getEscrowAmount(_from);
-            ICashier(cashierAddress).updateEscrowAmount(_from, amount.sub(depositBu));
+            ICashier(cashierAddress).updateEscrowAmount(
+                _from,
+                amount.sub(depositBu)
+            );
 
             amount = ICashier(cashierAddress).getEscrowAmount(_to);
-            ICashier(cashierAddress).updateEscrowAmount(_to, amount.add(depositBu));
+            ICashier(cashierAddress).updateEscrowAmount(
+                _to,
+                amount.add(depositBu)
+            );
         }
 
         transactionIDs[_to]++;
     }
 
-
     /**
-    * @notice Pre-validation when a transfer from the the Tokens contract is triggered. Only the whole supply is allowed for transfer, otherwise reverts.
-    * @param _from owner of the _tokenSupplyId
-    * @param _tokenSupplyId _tokenSupplyId which will be validated
-    * @param _value qty which is desired to be transferred
-    */
-    function _beforeERC1155Transfer(address _from, uint256 _tokenSupplyId, uint256 _value) 
-        external
-        view
-        override
-        onlyTokensContract
-    {
-        uint256 _tokenSupplyQty = IVoucherKernel(voucherKernel).getRemQtyForSupply(_tokenSupplyId, _from);
+     * @notice Pre-validation when a transfer from the the Tokens contract is triggered. Only the whole supply is allowed for transfer, otherwise reverts.
+     * @param _from owner of the _tokenSupplyId
+     * @param _tokenSupplyId _tokenSupplyId which will be validated
+     * @param _value qty which is desired to be transferred
+     */
+    function _beforeERC1155Transfer(
+        address _from,
+        uint256 _tokenSupplyId,
+        uint256 _value
+    ) external view override onlyTokensContract {
+        uint256 _tokenSupplyQty =
+            IVoucherKernel(voucherKernel).getRemQtyForSupply(
+                _tokenSupplyId,
+                _from
+            );
         require(_tokenSupplyQty == _value, "INVALID_QTY");
     }
 
     /**
-    * @notice After the transfer happens the _tokenSupplyId should be updated in the promise. Escrow funds for the seller's deposits (If in ETH) should be allocated to the new owner as well.
-    * @param _from prev owner of the _tokenSupplyId
-    * @param _to nex owner of the _tokenSupplyId
-    * @param _tokenSupplyId _tokenSupplyId for transfer
-    * @param _value qty which has been transferred
-    */
-    function _onERC1155Transfer(address _from, address _to, uint256 _tokenSupplyId, uint256 _value) 
-        external
-        override
-        onlyTokensContract
-    {
-        uint8 paymentType = IVoucherKernel(voucherKernel).getVoucherPaymentMethod(_tokenSupplyId);
+     * @notice After the transfer happens the _tokenSupplyId should be updated in the promise. Escrow funds for the seller's deposits (If in ETH) should be allocated to the new owner as well.
+     * @param _from prev owner of the _tokenSupplyId
+     * @param _to nex owner of the _tokenSupplyId
+     * @param _tokenSupplyId _tokenSupplyId for transfer
+     * @param _value qty which has been transferred
+     */
+    function _onERC1155Transfer(
+        address _from,
+        address _to,
+        uint256 _tokenSupplyId,
+        uint256 _value
+    ) external override onlyTokensContract {
+        uint8 paymentType =
+            IVoucherKernel(voucherKernel).getVoucherPaymentMethod(
+                _tokenSupplyId
+            );
 
-        if(paymentType == ETH_ETH || paymentType == TKN_ETH) {
-            uint256 depositSe = IVoucherKernel(voucherKernel).getSellerDeposit(_tokenSupplyId);
+        if (paymentType == ETHETH || paymentType == TKNETH) {
+            uint256 depositSe =
+                IVoucherKernel(voucherKernel).getSellerDeposit(_tokenSupplyId);
             uint256 totalAmount = depositSe.mul(_value);
 
             uint256 amount = ICashier(cashierAddress).getEscrowAmount(_from);
-            ICashier(cashierAddress).updateEscrowAmount(_from, amount.sub(totalAmount));
+            ICashier(cashierAddress).updateEscrowAmount(
+                _from,
+                amount.sub(totalAmount)
+            );
 
             amount = ICashier(cashierAddress).getEscrowAmount(_to);
-            ICashier(cashierAddress).updateEscrowAmount(_to, amount.add(totalAmount));
+            ICashier(cashierAddress).updateEscrowAmount(
+                _to,
+                amount.add(totalAmount)
+            );
         }
 
         transactionIDs[_to]++;
-        IVoucherKernel(voucherKernel).setSupplyHolderOnTransfer(_tokenSupplyId, _to);
+        IVoucherKernel(voucherKernel).setSupplyHolderOnTransfer(
+            _tokenSupplyId,
+            _to
+        );
     }
 
     // // // // // // // //
-    // UTILS 
-    // // // // // // // //  
-        
+    // UTILS
+    // // // // // // // //
+
     /**
      * @notice Set the address of the ERC1155ERC721 contract
      * @param _tokensContractAddress   The address of the ERC1155ERC721 contract
-    */
+     */
     function setTokenContractAddress(address _tokensContractAddress)
         external
         override

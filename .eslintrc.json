@@ -1,0 +1,19 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "prettier"
+  ],
+  "env": {
+    "node": true,
+    "es6": true,
+    "commonjs": true,
+    "mocha": true,
+    "truffle/globals": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2018
+  },
+  "plugins": [
+    "truffle"
+  ]
+}

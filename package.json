@@ -7,10 +7,19 @@
     "test": "test"
   },
   "scripts": {
-    "test": "truffle test",
-    "coverage": "node --max-old-space-size=4096 ./node_modules/.bin/truffle run coverage --network coverage",
-    "migrate-dev": "truffle migrate --network=rinkeby",
-    "verify-dev": "truffle run verify FundLimitsOracle ERC1155ERC721 VoucherKernel Cashier BosonRouter BosonTokenPrice BosonTokenDeposit --network rinkeby"
+    "contracts:compile": "truffle compile --all",
+    "contracts:lint": "solhint contracts/**/*.sol -w 32",
+    "contracts:lint-fix": "solhint contracts/**/*.sol -w 32 --fix",
+    "contracts:format": "prettier --list-different contracts/**/*.sol",
+    "contracts:format-fix": "prettier --write contracts/**/*.sol",
+    "contracts:migrate:dev": "truffle migrate --network=rinkeby",
+    "contracts:verify:dev": "truffle run verify FundLimitsOracle ERC1155ERC721 VoucherKernel Cashier BosonRouter BosonTokenPrice BosonTokenDeposit --network rinkeby",
+    "tests:lint": "eslint test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js",
+    "tests:lint-fix": "eslint --fix test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js",
+    "tests:format": "prettier --list-different test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js",
+    "tests:format-fix": "prettier --write test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js",
+    "tests:unit": "truffle test --network test",
+    "tests:coverage": "node --max-old-space-size=4096 ./node_modules/.bin/truffle run coverage --network coverage"
   },
   "repository": {
     "type": "git",
@@ -24,18 +33,22 @@
   "homepage": "https://github.com/bosonprotocol/bsn-core-prototype#readme",
   "dependencies": {
     "@openzeppelin/contracts": "^3.2.0",
-    "ethers": "5.0.4",
-    "truffle-assertions": "^0.9.2",
-    "truffle-hdwallet-provider": "^1.0.17"
-  },
-  "devDependencies": {
     "@truffle/hdwallet-provider": "^1.2.0",
+    "axios": "^0.20.0",
     "chai": "^4.2.0",
     "dotenv": "^8.2.0",
+    "eslint": "^7.18.0",
+    "eslint-plugin-truffle": "^0.3.1",
+    "eslint-config-prettier": "^7.2.0",
     "ethereumjs-util": "^7.0.7",
+    "ethers": "5.0.4",
     "mocha": "^8.2.1",
+    "prettier": "^2.2.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.3",
+    "solhint": "^3.3.2",
     "solidity-coverage": "^0.7.12",
     "truffle": "5.1.10",
+    "truffle-assertions": "^0.9.2",
     "truffle-plugin-verify": "^0.5.2"
   }
 }

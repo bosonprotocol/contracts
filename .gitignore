@@ -7,6 +7,7 @@ node_modules
 /build
 .etherlime-store
 /localDeploy
+/run
 
 # Secrets
 .secret
@@ -21,8 +22,8 @@ node_modules
 *.ipr
 .idea/
 
-#Test Coverage
+# Test Coverage
 coverage*
 
-#Personal Preferences
+# Personal Preferences
 .vscode

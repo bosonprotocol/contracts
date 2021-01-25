@@ -1,67 +1,78 @@
-
 // @ts-nocheck
-const Utils = require('./utils')
+const Utils = require('./utils');
 
 class UtilsBuilder {
+  constructor() {
+    this.utils = new Utils();
+  }
 
-    constructor() {
-        this.utils = new Utils()
-    }
+  static create() {
+    return new UtilsBuilder();
+  }
 
-    static NEW ()  {
-       return new UtilsBuilder()
-    };
+  ETHETH() {
+    this.utils.createOrder = this.utils.requestCreateOrderETHETH;
+    this.utils.commitToBuy = this.utils.commitToBuyETHETH;
 
-    ETH_ETH () {
-        this.utils.createOrder = this.utils.requestCreateOrder_ETH_ETH
-        this.utils.commitToBuy = this.utils.commitToBuy_ETH_ETH
-        
-        return this
-    }
+    return this;
+  }
 
-    ERC20withPermit () {
-        this.ETH_TKN = this.ETH_TKN_WithPermit
-        this.TKN_TKN = this.TKN_TKN_WithPermit
-        this.TKN_ETH = this.TKN_ETH_WithPermit
-        this.TKN_TKN_SAME = this.TKN_TKN_SameWithPermit
+  ERC20withPermit() {
+    this.ETHTKN = this.ETHTKNWithPermit;
+    this.TKNTKN = this.TKNTKNWithPermit;
+    this.TKNETH = this.TKNETHWithPermit;
+    this.TKNTKNSame = this.TKNTKNSameWithPermit;
 
-        return this
-    }
+    return this;
+  }
 
-    build(erc1155721, voucherKernel, cashier, bsnRouter, bsnTokenPrice, bsnTokenDeposit) {
-        this.utils.setContracts(erc1155721, voucherKernel, cashier, bsnRouter, bsnTokenPrice, bsnTokenDeposit);
-        return this.utils;
-    }
+  build(
+    erc1155721,
+    voucherKernel,
+    cashier,
+    bsnRouter,
+    bsnTokenPrice,
+    bsnTokenDeposit
+  ) {
+    this.utils.setContracts(
+      erc1155721,
+      voucherKernel,
+      cashier,
+      bsnRouter,
+      bsnTokenPrice,
+      bsnTokenDeposit
+    );
 
-    ETH_TKN_WithPermit() {
-        this.utils.createOrder = this.utils.requestCreateOrder_ETH_TKN_WithPermit
-        this.utils.commitToBuy = this.utils.commitToBuy_ETH_TKN_WithPermit
-        
-        return this
-    }
+    return this.utils;
+  }
 
-    TKN_TKN_WithPermit() {
-        this.utils.createOrder = this.utils.requestCreateOrder_TKN_TKN_WithPermit
-        this.utils.commitToBuy = this.utils.commitToBuy_TKN_TKN_WithPermit
+  ETHTKNWithPermit() {
+    this.utils.createOrder = this.utils.requestCreateOrderETHTKNWithPermit;
+    this.utils.commitToBuy = this.utils.commitToBuyETHTKNWithPermit;
 
-        return this
-    }
+    return this;
+  }
 
-    TKN_TKN_SameWithPermit() {
-        this.utils.createOrder = this.utils.requestCreateOrder_TKN_TKN_Same_WithPermit
-        this.utils.commitToBuy = this.utils.commitToBuy_TKN_TKN_Same_WithPermit
+  TKNTKNWithPermit() {
+    this.utils.createOrder = this.utils.requestCreateOrderTKNTKNWithPermit;
+    this.utils.commitToBuy = this.utils.commitToBuyTKNTKNWithPermit;
 
-        return this
-    }
+    return this;
+  }
 
-    TKN_ETH_WithPermit() {
-        this.utils.createOrder = this.utils.requestCreateOrder_TKN_ETH
-        this.utils.commitToBuy = this.utils.commitToBuy_TKN_ETH_WithPermit
+  TKNTKNSameWithPermit() {
+    this.utils.createOrder = this.utils.requestCreateOrderETHTKNSameWithPermit;
+    this.utils.commitToBuy = this.utils.commitToBuyTKNTKNSameWithPermit;
 
-        return this
-    }
+    return this;
+  }
 
-    
+  TKNETHWithPermit() {
+    this.utils.createOrder = this.utils.requestCreateOrderTKNETH;
+    this.utils.commitToBuy = this.utils.commitToBuyTKNETHWithPermit;
+
+    return this;
+  }
 }
 
 module.exports = UtilsBuilder;
