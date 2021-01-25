@@ -1949,7 +1949,7 @@ contract("Cashier && VK", async accounts => {
 				tokenSupplyKey = await utils.createOrder(OldSupplyOwner, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.seller_deposit, helpers.QTY_1)
 			})
 
-			it("New Supply Owner transaction ID should incremented properly", async () => {
+			it("New Supply Owner transaction ID should be incremented properly", async () => {
 
 				let transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
                 assert.equal(transactionID.toString(), 0, "New Supply Owner transaction ID is not as expected")
@@ -2084,7 +2084,7 @@ contract("Cashier && VK", async accounts => {
 					
 				}
 
-				it("New Supply Owner transaction ID should incremented properly", async () => {
+				it("New Supply Owner transaction ID should be incremented properly", async () => {
 
 					let transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
 					assert.equal(transactionID.toString(), 0, "New Supply Owner transaction ID is not as expected")
@@ -2228,7 +2228,7 @@ contract("Cashier && VK", async accounts => {
 				
 				}
 
-				it("New Supply Owner transaction ID should incremented properly", async () => {
+				it("New Supply Owner transaction ID should be incremented properly", async () => {
 
 					let transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
 					assert.equal(transactionID.toString(), 0, "New Supply Owner transaction ID is not as expected")
@@ -2346,7 +2346,7 @@ contract("Cashier && VK", async accounts => {
                     cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(utils.contractCashier.address)
 				}
 				
-				it("New Supply Owner transaction ID should incremented properly", async () => {
+				it("New Supply Owner transaction ID should be incremented properly", async () => {
 
 					let transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
 					assert.equal(transactionID.toString(), 0, "New Supply Owner transaction ID is not as expected")
@@ -2521,6 +2521,18 @@ contract("Cashier && VK", async accounts => {
 				tokenSupplyKey = await utils.createOrder(Seller, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.seller_deposit, helpers.QTY_10)
 			})
 
+			it("New Voucher Owner transaction ID should be incremented properly", async () => {
+				voucherID = await utils.commitToBuy(OldVoucherOwner, Seller, tokenSupplyKey)
+
+				let transactionID = await contractBosonRouter.transactionIDs(NewVoucherOwner.address)
+				assert.equal(transactionID.toString(), 0, "New Voucher Owner transaction ID is not as expected")
+				
+				await utils.safeTransfer721(OldVoucherOwner.address, NewVoucherOwner.address, voucherID, {from: OldVoucherOwner.address})
+
+				transactionID = await contractBosonRouter.transactionIDs(NewVoucherOwner.address)
+				assert.equal(transactionID.toString(), 1, "New Voucher Owner transaction ID is not as expected")
+			})
+
 			it("Should update escrow amounts after transfer", async () => {
 				
 				expectedBalanceInEscrow = new BN(helpers.product_price).add(new BN(helpers.buyer_deposit))
@@ -2667,6 +2679,18 @@ contract("Cashier && VK", async accounts => {
                         await contractCashier.unpause();
                     }
 				
+				})
+
+				it("New Voucher Owner transaction ID should be incremented properly", async () => {
+					voucherID = await utils.commitToBuy(OldVoucherOwner, Seller, tokenSupplyKey)
+	
+					let transactionID = await contractBosonRouter.transactionIDs(NewVoucherOwner.address)
+					assert.equal(transactionID.toString(), 0, "New Voucher Owner transaction ID is not as expected")
+					
+					await utils.safeTransfer721(OldVoucherOwner.address, NewVoucherOwner.address, voucherID, {from: OldVoucherOwner.address})
+	
+					transactionID = await contractBosonRouter.transactionIDs(NewVoucherOwner.address)
+					assert.equal(transactionID.toString(), 1, "New Voucher Owner transaction ID is not as expected")
 				})
 				
 				it("Should update escrow amounts after transfer", async () => {
@@ -2821,6 +2845,18 @@ contract("Cashier && VK", async accounts => {
 					)
 				})
 
+				it("New Voucher Owner transaction ID should be incremented properly", async () => {
+					voucherID = await utils.commitToBuy(OldVoucherOwner, Seller, tokenSupplyKey)
+	
+					let transactionID = await contractBosonRouter.transactionIDs(NewVoucherOwner.address)
+					assert.equal(transactionID.toString(), 0, "New Voucher Owner transaction ID is not as expected")
+					
+					await utils.safeTransfer721(OldVoucherOwner.address, NewVoucherOwner.address, voucherID, {from: OldVoucherOwner.address})
+	
+					transactionID = await contractBosonRouter.transactionIDs(NewVoucherOwner.address)
+					assert.equal(transactionID.toString(), 1, "New Voucher Owner transaction ID is not as expected")
+				})
+
 				it("Should finalize 1 voucher to ensure payments are sent to the new owner", async () => {
 	
 					const expectedBuyerPrice = new BN(helpers.product_price) // 0.3
@@ -2930,7 +2966,19 @@ contract("Cashier && VK", async accounts => {
                     balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(Seller.address)
                     escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(Deployer.address)
                     cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(utils.contractCashier.address)
-                }
+				}
+				
+				it("New Voucher Owner transaction ID should be incremented properly", async () => {
+					voucherID = await utils.commitToBuy(OldVoucherOwner, Seller, tokenSupplyKey)
+	
+					let transactionID = await contractBosonRouter.transactionIDs(NewVoucherOwner.address)
+					assert.equal(transactionID.toString(), 0, "New Voucher Owner transaction ID is not as expected")
+					
+					await utils.safeTransfer721(OldVoucherOwner.address, NewVoucherOwner.address, voucherID, {from: OldVoucherOwner.address})
+	
+					transactionID = await contractBosonRouter.transactionIDs(NewVoucherOwner.address)
+					assert.equal(transactionID.toString(), 1, "New Voucher Owner transaction ID is not as expected")
+				})
 
 				it("Should update escrow amounts after transfer", async () => {
 
