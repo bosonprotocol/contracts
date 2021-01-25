@@ -1954,7 +1954,7 @@ contract("Cashier && VK", async accounts => {
 				let transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
                 assert.equal(transactionID.toString(), 0, "New Supply Owner transaction ID is not as expected")
 
-				utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+				await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 			 	transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
 
                 assert.equal(transactionID.toString(), 1, "New Supply Owner transaction ID is not as expected")
@@ -1970,7 +1970,7 @@ contract("Cashier && VK", async accounts => {
 				assert.isTrue(actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow), "Old owner balance from escrow does not match")
 				assert.isTrue(actualNewOwnerBalanceFromEscrow.eq(ZERO), "New owner balance from escrow does not match")
 
-				utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+				await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 
 				actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(OldSupplyOwner.address)
 				actualNewOwnerBalanceFromEscrow = await contractCashier.escrow(NewSupplyOwner.address)
@@ -1986,7 +1986,7 @@ contract("Cashier && VK", async accounts => {
 				const expectedSellerAmount = new BN(helpers.seller_deposit).add(new BN(helpers.product_price)) // 0.35
 				const expectedEscrowAmount = new BN(0) // 0
 
-				utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+				await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 				
 				const voucherID = await utils.commitToBuy(Buyer, NewSupplyOwner, tokenSupplyKey)
 
@@ -2010,7 +2010,7 @@ contract("Cashier && VK", async accounts => {
 
 			it("New owner should be able to COF", async () => {
 
-				utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+				await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 				
 				const voucherID = await utils.commitToBuy(Buyer, NewSupplyOwner, tokenSupplyKey)
 
@@ -2021,7 +2021,7 @@ contract("Cashier && VK", async accounts => {
 
 			it("[NEGATIVE] Old owner should not be able to COF", async () => {
 
-				utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+				await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 				
 				const voucherID = await utils.commitToBuy(Buyer, NewSupplyOwner, tokenSupplyKey)
 
@@ -2089,7 +2089,7 @@ contract("Cashier && VK", async accounts => {
 					let transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
 					assert.equal(transactionID.toString(), 0, "New Supply Owner transaction ID is not as expected")
 	
-					utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+					await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 					transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
 	
 					assert.equal(transactionID.toString(), 1, "New Supply Owner transaction ID is not as expected")
@@ -2102,7 +2102,7 @@ contract("Cashier && VK", async accounts => {
                     const expectedSellerDeposit = new BN(helpers.seller_deposit) // 0.05
 					const expectedEscrowAmountDeposit = new BN(0)
 					
-					utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+					await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 
 					const voucherID = await utils.commitToBuy(
                         Buyer,
@@ -2144,7 +2144,7 @@ contract("Cashier && VK", async accounts => {
 
 				it("New owner should be able to COF", async () => {
 
-					utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+					await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 					
 					const voucherID = await utils.commitToBuy(Buyer, NewSupplyOwner, tokenSupplyKey)
 
@@ -2155,7 +2155,7 @@ contract("Cashier && VK", async accounts => {
 
 				it("[NEGATIVE] Old owner should not be able to COF", async () => {
 
-					utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+					await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 					
 					const voucherID = await utils.commitToBuy(Buyer, NewSupplyOwner, tokenSupplyKey)
 
@@ -2233,7 +2233,7 @@ contract("Cashier && VK", async accounts => {
 					let transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
 					assert.equal(transactionID.toString(), 0, "New Supply Owner transaction ID is not as expected")
 	
-					utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+					await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 					transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
 	
 					assert.equal(transactionID.toString(), 1, "New Supply Owner transaction ID is not as expected")
@@ -2248,7 +2248,7 @@ contract("Cashier && VK", async accounts => {
                     const expectedEscrowAmountDeposit = new BN(0) 
                     const expectedEscrowAmountPrice = new BN(0)
 					
-					utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+					await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 					
 					voucherID = await utils.commitToBuy(Buyer, NewSupplyOwner, tokenSupplyKey)
 					
@@ -2283,7 +2283,7 @@ contract("Cashier && VK", async accounts => {
 
 				it("New owner should be able to COF", async () => {
 
-					utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+					await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 					
 					const voucherID = await utils.commitToBuy(Buyer, NewSupplyOwner, tokenSupplyKey)
 	
@@ -2294,7 +2294,7 @@ contract("Cashier && VK", async accounts => {
 	
 				it("[NEGATIVE] Old owner should not be able to COF", async () => {
 	
-					utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+					await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 					
 					const voucherID = await utils.commitToBuy(Buyer, NewSupplyOwner, tokenSupplyKey)
 	
@@ -2351,7 +2351,7 @@ contract("Cashier && VK", async accounts => {
 					let transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
 					assert.equal(transactionID.toString(), 0, "New Supply Owner transaction ID is not as expected")
 	
-					utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+					await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 					transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
 	
 					assert.equal(transactionID.toString(), 1, "New Supply Owner transaction ID is not as expected")
@@ -2367,7 +2367,7 @@ contract("Cashier && VK", async accounts => {
 					assert.isTrue(actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow), "Old owner balance from escrow does not match")
 					assert.isTrue(actualNewOwnerBalanceFromEscrow.eq(ZERO), "New owner balance from escrow does not match")
 	
-					utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+					await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 	
 					actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(OldSupplyOwner.address)
 					actualNewOwnerBalanceFromEscrow = await contractCashier.escrow(NewSupplyOwner.address)
@@ -2385,7 +2385,7 @@ contract("Cashier && VK", async accounts => {
                     const expectedSellerDeposit = new BN(helpers.seller_deposit) // 0.05
 					const expectedEscrowAmountDeposit = new BN(0)
 					
-					utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+					await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 
 					const voucherID = await utils.commitToBuy(
                         Buyer,
@@ -2428,7 +2428,7 @@ contract("Cashier && VK", async accounts => {
 
 				it("New owner should be able to COF", async () => {
 
-					utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+					await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 					
 					const voucherID = await utils.commitToBuy(Buyer, NewSupplyOwner, tokenSupplyKey)
 	
@@ -2439,7 +2439,7 @@ contract("Cashier && VK", async accounts => {
 	
 				it("[NEGATIVE] Old owner should not be able to COF", async () => {
 	
-					utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+					await utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 					
 					const voucherID = await utils.commitToBuy(Buyer, NewSupplyOwner, tokenSupplyKey)
 	
