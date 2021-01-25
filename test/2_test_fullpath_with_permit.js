@@ -1949,6 +1949,17 @@ contract("Cashier && VK", async accounts => {
 				tokenSupplyKey = await utils.createOrder(OldSupplyOwner, helpers.PROMISE_VALID_FROM, helpers.PROMISE_VALID_TO, helpers.seller_deposit, helpers.QTY_1)
 			})
 
+			it("New Supply Owner transaction ID should incremented properly", async () => {
+
+				let transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
+                assert.equal(transactionID.toString(), 0, "New Supply Owner transaction ID is not as expected")
+
+				utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+			 	transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
+
+                assert.equal(transactionID.toString(), 1, "New Supply Owner transaction ID is not as expected")
+			})
+
 			it("Should update escrow amounts after transfer", async () => {
 
 				expectedBalanceInEscrow = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_1))
@@ -1959,7 +1970,7 @@ contract("Cashier && VK", async accounts => {
 				assert.isTrue(actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow), "Old owner balance from escrow does not match")
 				assert.isTrue(actualNewOwnerBalanceFromEscrow.eq(ZERO), "New owner balance from escrow does not match")
 
-				utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address}),
+				utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
 
 				actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(OldSupplyOwner.address)
 				actualNewOwnerBalanceFromEscrow = await contractCashier.escrow(NewSupplyOwner.address)
@@ -2072,6 +2083,17 @@ contract("Cashier && VK", async accounts => {
 					cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(utils.contractCashier.address)
 					
 				}
+
+				it("New Supply Owner transaction ID should incremented properly", async () => {
+
+					let transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
+					assert.equal(transactionID.toString(), 0, "New Supply Owner transaction ID is not as expected")
+	
+					utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+					transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
+	
+					assert.equal(transactionID.toString(), 1, "New Supply Owner transaction ID is not as expected")
+				})
 				
 				it("Should finalize 1 voucher to ensure payments are sent to the new owner", async () => {
 
@@ -2205,6 +2227,17 @@ contract("Cashier && VK", async accounts => {
                     cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(utils.contractCashier.address)
 				
 				}
+
+				it("New Supply Owner transaction ID should incremented properly", async () => {
+
+					let transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
+					assert.equal(transactionID.toString(), 0, "New Supply Owner transaction ID is not as expected")
+	
+					utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+					transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
+	
+					assert.equal(transactionID.toString(), 1, "New Supply Owner transaction ID is not as expected")
+				})
 				
 				it("Should finalize 1 voucher to ensure payments are sent to the new owner", async () => {
 
@@ -2311,7 +2344,18 @@ contract("Cashier && VK", async accounts => {
                     balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(NewSupplyOwner.address)
                     escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(Deployer.address)
                     cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(utils.contractCashier.address)
-                }
+				}
+				
+				it("New Supply Owner transaction ID should incremented properly", async () => {
+
+					let transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
+					assert.equal(transactionID.toString(), 0, "New Supply Owner transaction ID is not as expected")
+	
+					utils.safeTransfer1155(OldSupplyOwner.address, NewSupplyOwner.address, tokenSupplyKey, helpers.QTY_1, {from: OldSupplyOwner.address})
+					transactionID = await contractBosonRouter.transactionIDs(NewSupplyOwner.address)
+	
+					assert.equal(transactionID.toString(), 1, "New Supply Owner transaction ID is not as expected")
+				})
 				
 				it("Should update escrow amounts after transfer", async () => {
 

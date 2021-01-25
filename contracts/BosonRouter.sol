@@ -473,6 +473,8 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
             amount = ICashier(cashierAddress).getEscrowAmount(_to);
             ICashier(cashierAddress).updateEscrowAmount(_to, amount.add(depositBu));
         }
+
+        transactionIDs[_to]++;
     }
 
 
@@ -517,6 +519,7 @@ contract BosonRouter is IBosonRouter, usingHelpers, Pausable, ReentrancyGuard, O
             ICashier(cashierAddress).updateEscrowAmount(_to, amount.add(totalAmount));
         }
 
+        transactionIDs[_to]++;
         IVoucherKernel(voucherKernel).setSupplyHolderOnTransfer(_tokenSupplyId, _to);
     }
 
