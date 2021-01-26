@@ -10,7 +10,7 @@ ci_storage_bucket_encryption: "AES256"
 concourse_url: "https://ci-server.rdm-management.redeemeum.io"
 concourse_team: "bosonprotocol"
 
-node_repository_base_url: "%{hiera('rdm_management_account_id')}.dkr.ecr.%{hiera('region')}.amazonaws.com"
+image_repository_base_url: "%{hiera('rdm_management_account_id')}.dkr.ecr.%{hiera('region')}.amazonaws.com"
 
 node_builder_image_repository_name: "rdm/node-builder"
 node_builder_image_repository_url: "%{hiera('image_repository_base_url')}/%{hiera('node_builder_image_repository_name')}"
