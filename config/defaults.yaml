@@ -5,7 +5,8 @@ region: "eu-west-2"
 component: "contracts"
 deployment_identifier: "%{deployment_type}-%{deployment_label}"
 
-source_repository_url: "git@github.com:bosonprotocol/bsn-core-prototype.git"
+source_repository_name: "bosonprotocol/contracts"
+source_repository_url: "git@github.com:%{hiera('source_repository_name')}.git"
 source_repository_branch: "master"
 
 rdm_management_account_id: "031036423983"
