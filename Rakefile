@@ -151,7 +151,7 @@ end
 
 namespace :ci do
   RakeFly.define_project_tasks(
-      pipeline: 'bsn-core-prototype',
+      pipeline: 'bsn-core-prototype-master',
       argument_names: [:ci_deployment_type, :ci_deployment_label]
   ) do |t, args|
     configuration = configuration
@@ -163,7 +163,7 @@ namespace :ci do
     t.username = configuration.concourse_username
     t.password = configuration.concourse_password
 
-    t.config = 'pipelines/pipeline.yaml'
+    t.config = 'pipelines/master/pipeline.yaml'
 
     t.vars = configuration.vars
     t.var_files = [

@@ -40,7 +40,7 @@ jobs:
           - get: node-builder-image
       - task: build
         image: node-builder-image
-        file: source/pipelines/build/task.yaml
+        file: source/pipelines/shared/build/task.yaml
 
     on_success: &on_success
       put: notify-success
@@ -76,7 +76,7 @@ jobs:
           - get: node-builder-image
       - task: test
         image: node-builder-image
-        file: source/pipelines/test/task.yaml
+        file: source/pipelines/shared/test/task.yaml
 
     on_success: *on_success
     on_failure: *on_failure
