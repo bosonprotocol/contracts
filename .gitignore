@@ -8,6 +8,7 @@ node_modules
 .etherlime-store
 /localDeploy
 /run
+/vendor
 
 # Secrets
 .secret

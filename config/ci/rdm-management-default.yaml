@@ -1,0 +1,16 @@
+---
+ci_account_id: "%{hiera('rdm_management_account_id')}"
+
+ci_deployment_identifier: "%{ci_deployment_type}-%{ci_deployment_label}"
+
+ci_storage_bucket_name: "rdm-%{hiera('component')}-%{hiera('ci_deployment_identifier')}"
+ci_storage_bucket_region: "%{hiera('region')}"
+ci_storage_bucket_encryption: "AES256"
+
+concourse_url: "https://ci-server.rdm-management.redeemeum.io"
+concourse_team: "bosonprotocol"
+
+image_repository_base_url: "%{hiera('rdm_management_account_id')}.dkr.ecr.%{hiera('region')}.amazonaws.com"
+
+node_builder_image_repository_name: "rdm/node-builder"
+node_builder_image_repository_url: "%{hiera('image_repository_base_url')}/%{hiera('node_builder_image_repository_name')}"

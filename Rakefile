@@ -1,11 +1,34 @@
+require 'confidante'
+require 'rake_fly'
+
 require_relative 'lib/ganache'
 
+configuration = Confidante.configuration
+
+RakeFly.define_installation_tasks(version: '6.7.2')
+
 task :default => [
+    :build_fix,
+    :test
+]
+
+task :build => [
+    :"contracts:compile",
+    :"contracts:lint",
+    :"contracts:format",
+    :"tests:lint",
+    :"tests:format"
+]
+
+task :build_fix => [
     :"contracts:compile",
     :"contracts:lint_fix",
     :"contracts:format_fix",
     :"tests:lint_fix",
-    :"tests:format_fix",
+    :"tests:format_fix"
+]
+
+task :test => [
     :"tests:unit"
 ]
 
@@ -123,5 +146,32 @@ namespace :tests do
   task :coverage => [:'dependencies:install'] do
     puts "Running test coverage for contract unit tests..."
     sh('npm', 'run', 'tests:coverage')
+  end
+end
+
+namespace :ci do
+  RakeFly.define_project_tasks(
+      pipeline: 'bsn-core-prototype',
+      argument_names: [:ci_deployment_type, :ci_deployment_label]
+  ) do |t, args|
+    configuration = configuration
+        .for_scope(args.to_h.merge(role: 'pipeline'))
+    ci_deployment_identifier = configuration.ci_deployment_identifier
+
+    t.concourse_url = configuration.concourse_url
+    t.team = configuration.concourse_team
+    t.username = configuration.concourse_username
+    t.password = configuration.concourse_password
+
+    t.config = 'pipelines/pipeline.yaml'
+
+    t.vars = configuration.vars
+    t.var_files = [
+        'config/secrets/pipeline/constants.yaml',
+        "config/secrets/pipeline/#{ci_deployment_identifier}.yaml"
+    ]
+
+    t.non_interactive = true
+    t.home_directory = 'build/fly'
   end
 end
