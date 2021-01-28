@@ -6,4 +6,4 @@ inputs:
 
 run:
   dir: /source
-  path: ./pipelines/build/task.sh
+  path: ./pipelines/shared/test/task.sh

@@ -1,0 +1,16 @@
+---
+vars:
+  source_repository_name: "%{hiera('source_repository_name')}"
+  source_repository_url: "%{hiera('source_repository_url')}"
+  source_repository_branch: "%{hiera('source_repository_branch')}"
+
+  node_builder_image_repository_url: "%{hiera('node_builder_image_repository_url')}"
+
+  slack_success_channel: "#builds"
+  slack_success_message: "<%{hiera('concourse_url')}/builds/$BUILD_ID|$BUILD_TEAM_NAME:$BUILD_PIPELINE_NAME:$BUILD_JOB_NAME [$BUILD_NAME]> _successful_! :clap:."
+  slack_error_channel: "#engineering"
+  slack_error_message: "<%{hiera('concourse_url')}/builds/$BUILD_ID|$BUILD_TEAM_NAME:$BUILD_PIPELINE_NAME:$BUILD_JOB_NAME [$BUILD_NAME]> *errored*! :cry:."
+  slack_failure_channel: "#engineering"
+  slack_failure_message: "<%{hiera('concourse_url')}/builds/$BUILD_ID|$BUILD_TEAM_NAME:$BUILD_PIPELINE_NAME:$BUILD_JOB_NAME [$BUILD_NAME]> *failed*! :cry:."
+  slack_abort_channel: "#engineering"
+  slack_abort_message: "<%{hiera('concourse_url')}/builds/$BUILD_ID|$BUILD_TEAM_NAME:$BUILD_PIPELINE_NAME:$BUILD_JOB_NAME [$BUILD_NAME]> *aborted*! :warning:."
