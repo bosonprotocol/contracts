@@ -90,7 +90,7 @@ contract('Voucher tests', async (addresses) => {
     });
   });
 
-  describe('Orders (aka supply tokens - ERC1155)', () => {
+  describe('Voucher Sets (ERC1155)', () => {
     it('adding one new order / promise', async () => {
       const txOrder = await contractBosonRouter.requestCreateOrderETHETH(
         [
@@ -108,19 +108,6 @@ contract('Voucher tests', async (addresses) => {
         }
       );
 
-      // // would need truffle-events as the event emitted is from a nested
-      // // contract, so truffle-assert doesn't detect it
-      // truffleAssert.eventEmitted(txOrder, 'LogOrderCreated', (ev) => {
-      //     tokenSupplyKey = ev._tokenIdSupply;
-      //     return ev._seller === Seller;
-      // }, "order1 not created successfully");
-
-      // // instead, we check that the escrow increased for the seller
-      // let escrowAmount = await contractBosonRouter.getEscrowAmount.call(Seller);
-      // assert.isAbove(escrowAmount.toNumber(), 0,
-      //   "seller's escrowed deposit should be more than zero");
-
-      // move events from VoucherKernel to Cashier:
       truffleAssert.eventEmitted(
         txOrder,
         'LogOrderCreated',
@@ -160,7 +147,7 @@ contract('Voucher tests', async (addresses) => {
       );
     });
 
-    it('fill one order (aka buy a voucher)', async () => {
+    it('fill one order (aka commit to buy a voucher)', async () => {
       const txFillOrder = await contractBosonRouter.requestVoucherETHETH(
         tokenSupplyKey1,
         users.seller.address,
@@ -191,7 +178,7 @@ contract('Voucher tests', async (addresses) => {
       tokenVoucherKey1 = filtered.returnValues['_tokenIdVoucher'];
     });
 
-    it('fill second order (aka buy a voucher)', async () => {
+    it('fill second order (aka commit to buy a voucher)', async () => {
       const txFillOrder = await contractBosonRouter.requestVoucherETHETH(
         tokenSupplyKey2,
         users.seller.address,
@@ -254,7 +241,7 @@ contract('Voucher tests', async (addresses) => {
     });
   });
 
-  describe('Voucher tokens', function () {
+  describe('Vouchers (ERC721)', function () {
     it('redeeming one voucher', async () => {
       const txRedeem = await contractBosonRouter.redeem(tokenVoucherKey1, {
         from: users.buyer.address,
