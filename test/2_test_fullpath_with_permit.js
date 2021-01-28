@@ -1,8 +1,6 @@
 const {assert} = require('chai');
 const {ecsign} = require('ethereumjs-util');
 const truffleAssert = require('truffle-assertions');
-// later consider using
-// https://github.com/OpenZeppelin/openzeppelin-test-helpers
 
 const constants = require('../testHelpers/constants');
 const timemachine = require('../testHelpers/timemachine');
@@ -22,7 +20,7 @@ const BN = web3.utils.BN;
 
 let utils;
 
-contract('Cashier && VK', async (addresses) => {
+contract('Cashier and VoucherKernel', async (addresses) => {
   const users = new Users(addresses);
 
   let contractERC1155ERC721,
