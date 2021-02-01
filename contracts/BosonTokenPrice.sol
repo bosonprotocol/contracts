@@ -18,12 +18,12 @@ contract BosonTokenPrice is ERC20WithPermit, AccessControl {
         public
         ERC20WithPermit(name, symbol)
     {
-        _setupRole(MINTER_ROLE, owner());
-        _setupRole(ADMIN_ROLE, owner());
+        _setupRole(MINTER_ROLE, _msgSender());
+        _setupRole(ADMIN_ROLE, _msgSender());
         _setRoleAdmin(MINTER_ROLE, ADMIN_ROLE);
     }
 
-    function grantMinterRole(address _to) public onlyOwner {
+    function grantMinterRole(address _to) public {
         grantRole(MINTER_ROLE, _to);
     }
 
