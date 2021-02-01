@@ -3,8 +3,10 @@ pragma solidity >=0.6.6 <0.7.0;
 
 import "./IERC20WithPermit.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
-contract ERC20WithPermit is IERC20WithPermit {
+
+contract ERC20WithPermit is IERC20WithPermit, Pausable {
     using SafeMath for uint256;
 
     string public override name;
@@ -87,6 +89,7 @@ contract ERC20WithPermit is IERC20WithPermit {
     function approve(address spender, uint256 value)
         external
         override
+        whenNotPaused
         returns (bool)
     {
         _approve(msg.sender, spender, value);
@@ -96,6 +99,7 @@ contract ERC20WithPermit is IERC20WithPermit {
     function transfer(address to, uint256 value)
         external
         override
+        whenNotPaused
         returns (bool)
     {
         _transfer(msg.sender, to, value);
@@ -106,7 +110,7 @@ contract ERC20WithPermit is IERC20WithPermit {
         address from,
         address to,
         uint256 value
-    ) external override returns (bool) {
+    ) external override whenNotPaused returns (bool) {
         if (allowance[from][msg.sender] != uint256(-1)) {
             allowance[from][msg.sender] = allowance[from][msg.sender].sub(
                 value
@@ -124,7 +128,7 @@ contract ERC20WithPermit is IERC20WithPermit {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external override {
+    ) external override whenNotPaused {
         require(deadline >= block.timestamp, "ERC20WithPermit: EXPIRED");
 
         bytes32 digest =

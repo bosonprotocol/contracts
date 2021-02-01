@@ -3,9 +3,13 @@ pragma solidity >=0.6.6 <0.7.0;
 
 import "./ERC20WithPermit.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract BosonTokenPrice is ERC20WithPermit, AccessControl, Ownable {
+/**
+ * @notice MOCK Token Contract. This contract is only used for, while deploying on rinkeby with verifying contracts,
+ * so that we have 2 distinguished contracts concerning tokens for the price of the products, and for the deposits.
+ * Will not be used while deploying on prod.
+ */
+contract BosonTokenPrice is ERC20WithPermit, AccessControl {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");

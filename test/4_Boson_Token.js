@@ -7,37 +7,49 @@ const constants = require('../testHelpers/constants');
 const Users = require('../testHelpers/users');
 const {toWei, getApprovalDigest} = require('../testHelpers/permitUtils');
 
-const BosonToken = artifacts.require('BosonTokenPrice');
+const BosonToken = artifacts.require("BosonToken");
 
 contract('Boson token', (addresses) => {
   const users = new Users(addresses);
 
   let BosonTokenContract, bosonContractAddress;
 
-  beforeEach(async () => {
-    BosonTokenContract = await BosonToken.new('BOSON TOKEN', 'BSNT');
-    bosonContractAddress = BosonTokenContract.address;
-  });
-
   describe('Boson Token', async () => {
-    const ADMIN_ROLE = ethers.utils.keccak256(
-      ethers.utils.toUtf8Bytes('ADMIN_ROLE')
-    );
+    const DEFAULT_ADMIN_ROLE = '0x0000000000000000000000000000000000000000000000000000000000000000'
     const MINTER_ROLE = ethers.utils.keccak256(
       ethers.utils.toUtf8Bytes('MINTER_ROLE')
     );
+    const PAUSER_ROLE = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes("PAUSER_ROLE")
+    );
 
-    it('Only Deployer Should have admin and minter rights initially ', async () => {
+    before(async () => {
+      BosonTokenContract = await BosonToken.new('BOSON TOKEN', 'BSNT');
+    });
+
+    it("Should be unpaused on deploy", async () =>{
+      const paused = await BosonTokenContract.paused();
+
+      assert.isFalse(paused)
+    })
+
+    it('Only Deployer Should have admin, minter, pauser rights initially ', async () => {
       const buyerIsAdmin = await BosonTokenContract.hasRole(
-        ADMIN_ROLE,
+        DEFAULT_ADMIN_ROLE,
         users.buyer.address
       );
       const buyerIsMinter = await BosonTokenContract.hasRole(
         MINTER_ROLE,
         users.buyer.address
       );
+
+      const buyerIsPauser = await BosonTokenContract.hasRole(
+        PAUSER_ROLE,
+        users.buyer.address
+      );
+
       const deployerIsAdmin = await BosonTokenContract.hasRole(
-        ADMIN_ROLE,
+        DEFAULT_ADMIN_ROLE,
         users.deployer.address
       );
       const deployerIsMinter = await BosonTokenContract.hasRole(
@@ -45,11 +57,18 @@ contract('Boson token', (addresses) => {
         users.deployer.address
       );
 
+      const deployerIsPauser = await BosonTokenContract.hasRole(
+        PAUSER_ROLE,
+        users.deployer.address
+      );
+
       assert.isTrue(deployerIsAdmin);
       assert.isTrue(deployerIsMinter);
+      assert.isTrue(deployerIsPauser);
 
       assert.isFalse(buyerIsAdmin);
       assert.isFalse(buyerIsMinter);
+      assert.isFalse(buyerIsPauser);
     });
 
     it('should revert if unauthorized address tries to mint tokens ', async () => {
@@ -60,15 +79,29 @@ contract('Boson token', (addresses) => {
       );
     });
 
-    it('should grant minter role to address', async () => {
-      await BosonTokenContract.grantMinterRole(users.buyer.address);
+    it('should grant roles to address', async () => {
+      await BosonTokenContract.grantRole(MINTER_ROLE, users.buyer.address);
+      await BosonTokenContract.grantRole(PAUSER_ROLE, users.buyer.address);
+      await BosonTokenContract.grantRole(DEFAULT_ADMIN_ROLE, users.buyer.address);
 
       const buyerIsMinter = await BosonTokenContract.hasRole(
         MINTER_ROLE,
         users.buyer.address
       );
 
+      const buyerIsPauser = await BosonTokenContract.hasRole(
+        PAUSER_ROLE,
+        users.buyer.address
+      );
+
+      const buyerIsAdmin = await BosonTokenContract.hasRole(
+        DEFAULT_ADMIN_ROLE,
+        users.buyer.address
+      );
+
       assert.isTrue(buyerIsMinter);
+      assert.isTrue(buyerIsPauser);
+      assert.isTrue(buyerIsAdmin);
     });
 
     it('should mint tokens after minter role is granted', async () => {
@@ -90,7 +123,44 @@ contract('Boson token', (addresses) => {
       );
     });
 
+    it("Should revoke roles for deployer", async () => {
+      await BosonTokenContract.revokeRole(MINTER_ROLE, users.deployer.address);
+      await BosonTokenContract.revokeRole(PAUSER_ROLE, users.deployer.address);
+      await BosonTokenContract.revokeRole(DEFAULT_ADMIN_ROLE, users.deployer.address);
+
+      const deployerIsAdmin = await BosonTokenContract.hasRole(
+        DEFAULT_ADMIN_ROLE,
+        users.deployer.address
+      );
+      const deployerIsMinter = await BosonTokenContract.hasRole(
+        MINTER_ROLE,
+        users.deployer.address
+      );
+
+      const deployerIsPauser = await BosonTokenContract.hasRole(
+        PAUSER_ROLE,
+        users.deployer.address
+      );
+
+      assert.isFalse(deployerIsAdmin);
+      assert.isFalse(deployerIsMinter);
+      assert.isFalse(deployerIsPauser);
+    })
+
+    it("[NEGATIVE] Deployer should not be able to grant roles after admin access is revoked", async () => {
+      await truffleAssert.reverts(
+        BosonTokenContract.grantRole(MINTER_ROLE, users.buyer.address),
+        truffleAssert.ErrorType.REVERT
+      )
+    })
+
     describe('[PERMIT]', async () => {
+
+      before(async () => {
+        BosonTokenContract = await BosonToken.new('BOSON TOKEN', 'BSNT');
+        bosonContractAddress = BosonTokenContract.address;
+      })
+
       it('Should approve successfully', async () => {
         const balanceToApprove = 1200;
         const nonce = await BosonTokenContract.nonces(users.buyer.address);
@@ -375,51 +445,69 @@ contract('Boson token', (addresses) => {
           )
         );
       });
-    });
 
-    describe('[OWNERSHIP]', async () => {
-      it('Deployer should be owner initially', async () => {
-        const owner = await BosonTokenContract.owner();
+      describe("PAUSED", async () => {
 
-        assert.equal(owner, users.deployer.address, 'Deployer is not an owner');
-      });
+        before(async () => {
+          await BosonTokenContract.pause();
+        })
 
-      it('Should transfer ownership', async () => {
-        await BosonTokenContract.transferOwnership(users.other1.address);
-        const newOwner = await BosonTokenContract.owner();
+        it("Token Contract should be paused", async () => {
+          let isPaused = await BosonTokenContract.paused();
+          assert.isTrue(isPaused)
+        })
 
-        assert.equal(
-          newOwner,
-          users.other1.address,
-          'ownership has not been transferred'
-        );
-      });
-
-      it('Should renounce ownership', async () => {
-        const owner = await BosonTokenContract.owner();
-
-        await BosonTokenContract.renounceOwnership({from: owner});
-
-        const newOwner = await BosonTokenContract.owner();
-
-        assert.equal(
-          newOwner,
-          constants.ZERO_ADDRESS,
-          'ownership has not been renounced'
-        );
-      });
-
-      it(
-        '[NEGATIVE] Should revert if calling a function which is ' +
-          'allowed only from owner',
-        async () => {
+        it("[NEGATIVE] Approve should not be executable when paused", async () => {
           await truffleAssert.reverts(
-            BosonTokenContract.grantMinterRole(users.buyer.address, {
-              from: users.attacker.address,
-            })
+            BosonTokenContract.approve(users.seller.address, 1000),
+            truffleAssert.ErrorType.REVERT
+          )
+        })
+
+        it("[NEGATIVE] Transfer should not be executable when paused", async () => {
+          await truffleAssert.reverts(
+            BosonTokenContract.transfer(users.seller.address, 1000),
+            truffleAssert.ErrorType.REVERT          )
+        })
+
+        it("[NEGATIVE] TransferFrom should not be executable when paused", async () => {
+          await truffleAssert.reverts(
+            BosonTokenContract.transferFrom(users.seller.address, users.buyer.address, 1000),
+            truffleAssert.ErrorType.REVERT          )
+        })
+
+        it("[NEGATIVE] Permit should not be executable when paused", async () => {
+          const balanceToApprove = 1200;
+          const nonce = await BosonTokenContract.nonces(users.buyer.address);
+          const deadline = toWei(1);
+          const digest = await getApprovalDigest(
+            BosonTokenContract,
+            users.buyer.address,
+            bosonContractAddress,
+            balanceToApprove,
+            nonce,
+            deadline
           );
-        }
-      );
+
+          const {v, r, s} = ecsign(
+            Buffer.from(digest.slice(2), 'hex'),
+            Buffer.from(users.buyer.privateKey.slice(2), 'hex')
+          );
+
+          await truffleAssert.reverts(
+            BosonTokenContract.permit( users.buyer.address,
+              bosonContractAddress,
+              balanceToApprove,
+              deadline,
+              v,
+              r,
+              s,
+              {from: users.buyer.address}),
+            truffleAssert.ErrorType.REVERT
+          
+          )
+        })
+      })
     });
   });
 });
