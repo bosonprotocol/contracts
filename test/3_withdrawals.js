@@ -114,32 +114,44 @@ contract('Cashier withdrawals ', async (addresses) => {
     await contractBSNTokenPrice.transfer(
       users.other1.address,
       balanceBuyerFromPayment,
-      {from: users.buyer.address}
+      {
+        from: users.buyer.address,
+      }
     );
     await contractBSNTokenDeposit.transfer(
       users.other1.address,
       balanceBuyerFromDesosits,
-      {from: users.buyer.address}
+      {
+        from: users.buyer.address,
+      }
     );
     await contractBSNTokenPrice.transfer(
       users.other1.address,
       balanceSellerFromPayment,
-      {from: users.seller.address}
+      {
+        from: users.seller.address,
+      }
     );
     await contractBSNTokenDeposit.transfer(
       users.other1.address,
       balanceSellerFromDesosits,
-      {from: users.seller.address}
+      {
+        from: users.seller.address,
+      }
     );
     await contractBSNTokenPrice.transfer(
       users.other1.address,
       escrowBalanceFromPayment,
-      {from: users.deployer.address}
+      {
+        from: users.deployer.address,
+      }
     );
     await contractBSNTokenDeposit.transfer(
       users.other1.address,
       escrowBalanceFromDeposits,
-      {from: users.deployer.address}
+      {
+        from: users.deployer.address,
+      }
     );
   }
 
@@ -742,6 +754,28 @@ contract('Cashier withdrawals ', async (addresses) => {
             helpers.seller_deposit,
             supplyQty
           );
+        });
+
+        afterEach(async () => {
+          distributedAmounts = {
+            buyerAmount: new BN(0),
+            sellerAmount: new BN(0),
+            escrowAmount: new BN(0),
+          };
+
+          balanceBuyerFromPayment = new BN(0);
+          balanceBuyerFromDeposits = new BN(0);
+
+          balanceSellerFromPayment = new BN(0);
+          balanceSellerFromDeposits = new BN(0);
+
+          escrowBalanceFromPayment = new BN(0);
+          escrowBalanceFromDeposits = new BN(0);
+
+          cashierPaymentLeft = new BN(0);
+          cashierDepositLeft = new BN(0);
+
+          await giveAwayToRandom();
         });
 
         it('COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -1411,28 +1445,6 @@ contract('Cashier withdrawals ', async (addresses) => {
             },
             'Event LogAmountDistribution was not emitted'
           );
-        });
-
-        afterEach(async () => {
-          distributedAmounts = {
-            buyerAmount: new BN(0),
-            sellerAmount: new BN(0),
-            escrowAmount: new BN(0),
-          };
-
-          balanceBuyerFromPayment = new BN(0);
-          balanceBuyerFromDeposits = new BN(0);
-
-          balanceSellerFromPayment = new BN(0);
-          balanceSellerFromDeposits = new BN(0);
-
-          escrowBalanceFromPayment = new BN(0);
-          escrowBalanceFromDeposits = new BN(0);
-
-          cashierPaymentLeft = new BN(0);
-          cashierDepositLeft = new BN(0);
-
-          await giveAwayToRandom();
         });
       });
 
@@ -3653,6 +3665,605 @@ contract('Cashier withdrawals ', async (addresses) => {
     });
   }
 
+  describe('Seller cancels uncommitted voucher set', () => {
+    let remQty = 10;
+    let voucherToBuyBeforeBurn = 5;
+    let tokensToMintSeller, tokensToMintBuyer;
+
+    describe('ETHETH', async () => {
+      before(async () => {
+        await deployContracts();
+
+        utils = UtilsBuilder.create()
+          .ETHETH()
+          .build(
+            contractERC1155ERC721,
+            contractVoucherKernel,
+            contractCashier,
+            contractBosonRouter
+          );
+
+        const timestamp = await Utils.getCurrTimestamp();
+
+        TOKEN_SUPPLY_ID = await utils.createOrder(
+          users.seller,
+          timestamp,
+          timestamp + helpers.SECONDS_IN_DAY,
+          helpers.seller_deposit,
+          helpers.QTY_10
+        );
+
+        for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
+          await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+          remQty--;
+        }
+      });
+
+      after(() => {
+        remQty = 10;
+        voucherToBuyBeforeBurn = 5;
+      });
+
+      it('[NEGATIVE] should revert if not called from the seller', async () => {
+        await truffleAssert.reverts(
+          contractBosonRouter.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID, {
+            from: users.attacker.address,
+          }),
+          truffleAssert.ErrorType.REVERT
+        );
+      });
+
+      it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
+        let withdrawTx = await contractBosonRouter.requestCancelOrFaultVoucherSet(
+          TOKEN_SUPPLY_ID,
+          {
+            from: users.seller.address,
+          }
+        );
+
+        let internalTx = await truffleAssert.createTransactionResult(
+          contractCashier,
+          withdrawTx.tx
+        );
+
+        const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
+          new BN(remQty)
+        );
+        truffleAssert.eventEmitted(
+          internalTx,
+          'LogWithdrawal',
+          (ev) => {
+            assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
+            assert.isTrue(ev._payment.eq(expectedSellerDeposit));
+
+            return true;
+          },
+          'Event LogWithdrawal was not emitted'
+        );
+      });
+
+      it('Escrow should have correct balance after burning the rest of the supply', async () => {
+        const expectedBalance = new BN(helpers.seller_deposit).mul(
+          new BN(voucherToBuyBeforeBurn)
+        );
+        const escrowAmount = await contractCashier.getEscrowAmount(
+          users.seller.address
+        );
+
+        assert.isTrue(
+          escrowAmount.eq(expectedBalance),
+          'Escrow amount is incorrect'
+        );
+      });
+
+      it('Remaining QTY for Token Supply should be ZERO', async () => {
+        let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+          TOKEN_SUPPLY_ID,
+          users.seller.address
+        );
+
+        assert.isTrue(
+          remainingQtyInContract.eq(new BN(0)),
+          'Escrow amount is incorrect'
+        );
+      });
+
+      it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
+        await truffleAssert.reverts(
+          utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
+          truffleAssert.ErrorType.REVERT
+        );
+      });
+
+      it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
+        await truffleAssert.reverts(
+          contractBosonRouter.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID, {
+            from: users.seller.address,
+          }),
+          truffleAssert.ErrorType.REVERT
+        );
+      });
+
+      it('[NEGATIVE] Should revert if called when contract is paused', async () => {
+        await contractBosonRouter.pause();
+
+        await truffleAssert.reverts(
+          contractBosonRouter.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID, {
+            from: users.seller.address,
+          }),
+          truffleAssert.ErrorType.REVERT
+        );
+      });
+    });
+
+    describe('[WITH PERMIT]', () => {
+      describe('TKNTKN', async () => {
+        before(async () => {
+          await deployContracts();
+          utils = UtilsBuilder.create()
+            .ERC20withPermit()
+            .TKNTKN()
+            .build(
+              contractERC1155ERC721,
+              contractVoucherKernel,
+              contractCashier,
+              contractBosonRouter,
+              contractBSNTokenPrice,
+              contractBSNTokenDeposit
+            );
+
+          const timestamp = await Utils.getCurrTimestamp();
+
+          tokensToMintSeller = new BN(helpers.seller_deposit).mul(
+            new BN(helpers.QTY_10)
+          );
+          tokensToMintBuyer = new BN(helpers.product_price).mul(
+            new BN(helpers.QTY_10)
+          );
+
+          await utils.mintTokens(
+            'contractBSNTokenDeposit',
+            users.seller.address,
+            tokensToMintSeller
+          );
+          await utils.mintTokens(
+            'contractBSNTokenPrice',
+            users.buyer.address,
+            tokensToMintBuyer
+          );
+
+          await utils.mintTokens(
+            'contractBSNTokenDeposit',
+            users.buyer.address,
+            tokensToMintBuyer
+          );
+
+          TOKEN_SUPPLY_ID = await utils.createOrder(
+            users.seller,
+            timestamp,
+            timestamp + helpers.SECONDS_IN_DAY,
+            helpers.seller_deposit,
+            helpers.QTY_10
+          );
+
+          for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
+            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+            remQty--;
+          }
+        });
+
+        after(() => {
+          remQty = 10;
+          voucherToBuyBeforeBurn = 5;
+        });
+
+        it('[NEGATIVE] should revert if not called from the seller', async () => {
+          await truffleAssert.reverts(
+            contractBosonRouter.requestCancelOrFaultVoucherSet(
+              TOKEN_SUPPLY_ID,
+              {
+                from: users.attacker.address,
+              }
+            ),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+
+        it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
+          let withdrawTx = await contractBosonRouter.requestCancelOrFaultVoucherSet(
+            TOKEN_SUPPLY_ID,
+            {
+              from: users.seller.address,
+            }
+          );
+
+          const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
+            new BN(remQty)
+          );
+
+          const internalTx = await truffleAssert.createTransactionResult(
+            contractBSNTokenDeposit,
+            withdrawTx.tx
+          );
+
+          truffleAssert.eventEmitted(
+            internalTx,
+            'Transfer',
+            (ev) => {
+              assert.equal(ev.to, users.seller.address, 'Incorrect Payee');
+              assert.isTrue(ev.value.eq(expectedSellerDeposit));
+
+              return true;
+            },
+            'Event Transfer was not emitted'
+          );
+        });
+
+        it('Escrow should have correct balance after burning the rest of the supply', async () => {
+          const expectedBalance = new BN(helpers.seller_deposit).mul(
+            new BN(voucherToBuyBeforeBurn)
+          );
+          const escrowAmount = await contractBSNTokenDeposit.balanceOf(
+            users.seller.address
+          );
+
+          assert.isTrue(
+            escrowAmount.eq(expectedBalance),
+            'Escrow amount is incorrect'
+          );
+        });
+
+        it('Remaining QTY for Token Supply should be ZERO', async () => {
+          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+            TOKEN_SUPPLY_ID,
+            users.seller.address
+          );
+
+          assert.isTrue(
+            remainingQtyInContract.eq(new BN(0)),
+            'Escrow amount is incorrect'
+          );
+        });
+
+        it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
+          await truffleAssert.reverts(
+            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+
+        it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
+          await truffleAssert.reverts(
+            contractBosonRouter.requestCancelOrFaultVoucherSet(
+              TOKEN_SUPPLY_ID,
+              {
+                from: users.seller.address,
+              }
+            ),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+
+        it('[NEGATIVE] Should revert if called when contract is paused', async () => {
+          await contractBosonRouter.pause();
+
+          await truffleAssert.reverts(
+            contractBosonRouter.requestCancelOrFaultVoucherSet(
+              TOKEN_SUPPLY_ID,
+              {
+                from: users.seller.address,
+              }
+            ),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+      });
+
+      describe('ETHTKN', async () => {
+        before(async () => {
+          await deployContracts();
+          utils = UtilsBuilder.create()
+            .ERC20withPermit()
+            .ETHTKN()
+            .build(
+              contractERC1155ERC721,
+              contractVoucherKernel,
+              contractCashier,
+              contractBosonRouter,
+              contractBSNTokenPrice,
+              contractBSNTokenDeposit
+            );
+
+          const timestamp = await Utils.getCurrTimestamp();
+
+          tokensToMintSeller = new BN(helpers.seller_deposit).mul(
+            new BN(helpers.QTY_10)
+          );
+          tokensToMintBuyer = new BN(helpers.product_price).mul(
+            new BN(helpers.QTY_10)
+          );
+
+          await utils.mintTokens(
+            'contractBSNTokenDeposit',
+            users.seller.address,
+            tokensToMintSeller
+          );
+          await utils.mintTokens(
+            'contractBSNTokenDeposit',
+            users.buyer.address,
+            tokensToMintBuyer
+          );
+
+          TOKEN_SUPPLY_ID = await utils.createOrder(
+            users.seller,
+            timestamp,
+            timestamp + helpers.SECONDS_IN_DAY,
+            helpers.seller_deposit,
+            helpers.QTY_10
+          );
+
+          for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
+            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+            remQty--;
+          }
+        });
+
+        after(() => {
+          remQty = 10;
+          voucherToBuyBeforeBurn = 5;
+        });
+
+        it('[NEGATIVE] should revert if not called from the seller', async () => {
+          await truffleAssert.reverts(
+            contractBosonRouter.requestCancelOrFaultVoucherSet(
+              TOKEN_SUPPLY_ID,
+              {
+                from: users.attacker.address,
+              }
+            ),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+
+        it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
+          let withdrawTx = await contractBosonRouter.requestCancelOrFaultVoucherSet(
+            TOKEN_SUPPLY_ID,
+            {
+              from: users.seller.address,
+            }
+          );
+
+          const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
+            new BN(remQty)
+          );
+
+          const internalTx = await truffleAssert.createTransactionResult(
+            contractBSNTokenDeposit,
+            withdrawTx.tx
+          );
+
+          truffleAssert.eventEmitted(
+            internalTx,
+            'Transfer',
+            (ev) => {
+              assert.equal(ev.to, users.seller.address, 'Incorrect Payee');
+              assert.isTrue(ev.value.eq(expectedSellerDeposit));
+
+              return true;
+            },
+            'Event Transfer was not emitted'
+          );
+        });
+
+        it('Escrow should have correct balance after burning the rest of the supply', async () => {
+          const expectedBalance = new BN(helpers.seller_deposit).mul(
+            new BN(voucherToBuyBeforeBurn)
+          );
+          const escrowAmount = await contractBSNTokenDeposit.balanceOf(
+            users.seller.address
+          );
+
+          assert.isTrue(
+            escrowAmount.eq(expectedBalance),
+            'Escrow amount is incorrect'
+          );
+        });
+
+        it('Remaining QTY for Token Supply should be ZERO', async () => {
+          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+            TOKEN_SUPPLY_ID,
+            users.seller.address
+          );
+
+          assert.isTrue(
+            remainingQtyInContract.eq(new BN(0)),
+            'Escrow amount is incorrect'
+          );
+        });
+
+        it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
+          await truffleAssert.reverts(
+            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+
+        it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
+          await truffleAssert.reverts(
+            contractBosonRouter.requestCancelOrFaultVoucherSet(
+              TOKEN_SUPPLY_ID,
+              {
+                from: users.seller.address,
+              }
+            ),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+
+        it('[NEGATIVE] Should revert if called when contract is paused', async () => {
+          await contractBosonRouter.pause();
+
+          await truffleAssert.reverts(
+            contractBosonRouter.requestCancelOrFaultVoucherSet(
+              TOKEN_SUPPLY_ID,
+              {
+                from: users.seller.address,
+              }
+            ),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+      });
+
+      describe('TKNETH', async () => {
+        before(async () => {
+          await deployContracts();
+          utils = UtilsBuilder.create()
+            .ERC20withPermit()
+            .TKNETH()
+            .build(
+              contractERC1155ERC721,
+              contractVoucherKernel,
+              contractCashier,
+              contractBosonRouter,
+              contractBSNTokenPrice,
+              ''
+            );
+
+          const timestamp = await Utils.getCurrTimestamp();
+
+          tokensToMintBuyer = new BN(helpers.product_price).mul(
+            new BN(helpers.QTY_10)
+          );
+
+          await utils.mintTokens(
+            'contractBSNTokenPrice',
+            users.buyer.address,
+            tokensToMintBuyer
+          );
+
+          TOKEN_SUPPLY_ID = await utils.createOrder(
+            users.seller,
+            timestamp,
+            timestamp + helpers.SECONDS_IN_DAY,
+            helpers.seller_deposit,
+            helpers.QTY_10
+          );
+
+          for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
+            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+            remQty--;
+          }
+        });
+
+        after(() => {
+          remQty = 10;
+          voucherToBuyBeforeBurn = 5;
+        });
+
+        it('[NEGATIVE] should revert if not called from the seller', async () => {
+          await truffleAssert.reverts(
+            contractBosonRouter.requestCancelOrFaultVoucherSet(
+              TOKEN_SUPPLY_ID,
+              {
+                from: users.attacker.address,
+              }
+            ),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+
+        it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
+          let withdrawTx = await contractBosonRouter.requestCancelOrFaultVoucherSet(
+            TOKEN_SUPPLY_ID,
+            {
+              from: users.seller.address,
+            }
+          );
+
+          const internalTx = await truffleAssert.createTransactionResult(
+            contractCashier,
+            withdrawTx.tx
+          );
+          const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
+            new BN(remQty)
+          );
+          truffleAssert.eventEmitted(
+            internalTx,
+            'LogWithdrawal',
+            (ev) => {
+              assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
+              assert.isTrue(ev._payment.eq(expectedSellerDeposit));
+
+              return true;
+            },
+            'Event LogWithdrawal was not emitted'
+          );
+        });
+
+        it('Escrow should have correct balance after burning the rest of the supply', async () => {
+          const expectedBalance = new BN(helpers.seller_deposit).mul(
+            new BN(voucherToBuyBeforeBurn)
+          );
+          const escrowAmount = await contractCashier.getEscrowAmount(
+            users.seller.address
+          );
+
+          assert.isTrue(
+            escrowAmount.eq(expectedBalance),
+            'Escrow amount is incorrect'
+          );
+        });
+
+        it('Remaining QTY for Token Supply should be ZERO', async () => {
+          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+            TOKEN_SUPPLY_ID,
+            users.seller.address
+          );
+
+          assert.isTrue(
+            remainingQtyInContract.eq(new BN(0)),
+            'Escrow amount is incorrect'
+          );
+        });
+
+        it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
+          await truffleAssert.reverts(
+            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+
+        it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
+          await truffleAssert.reverts(
+            contractBosonRouter.requestCancelOrFaultVoucherSet(
+              TOKEN_SUPPLY_ID,
+              {
+                from: users.seller.address,
+              }
+            ),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+
+        it('[NEGATIVE] Should revert if called when contract is paused', async () => {
+          await contractBosonRouter.pause();
+
+          await truffleAssert.reverts(
+            contractBosonRouter.requestCancelOrFaultVoucherSet(
+              TOKEN_SUPPLY_ID,
+              {
+                from: users.seller.address,
+              }
+            ),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+      });
+    });
+  });
+
+  //TODO THESE TEST SHOULD BE REVISED / DELETED AFTER WE DECIDE HOW LOCKED SELLER DEPOSITS WILL BE SPREAD ON PAUSED CONTRACTS
   describe('[WHEN PAUSED] Seller withdraws deposit locked in escrow', async () => {
     let remQty = 10;
     let voucherToBuyBeforeBurn = 5;
@@ -3689,7 +4300,7 @@ contract('Cashier withdrawals ', async (addresses) => {
 
       it('[NEGATIVE] Should revert if called when contract is not paused', async () => {
         await truffleAssert.reverts(
-          contractCashier.withdrawDeposits(TOKEN_SUPPLY_ID, {
+          contractCashier.withdrawDepositsSePaused(TOKEN_SUPPLY_ID, {
             from: users.seller.address,
           }),
           truffleAssert.ErrorType.REVERT
@@ -3711,7 +4322,7 @@ contract('Cashier withdrawals ', async (addresses) => {
 
       it('[NEGATIVE] should revert if not called from the seller', async () => {
         await truffleAssert.reverts(
-          contractCashier.withdrawDeposits(TOKEN_SUPPLY_ID, {
+          contractCashier.withdrawDepositsSePaused(TOKEN_SUPPLY_ID, {
             from: users.attacker.address,
           }),
           truffleAssert.ErrorType.REVERT
@@ -3719,9 +4330,11 @@ contract('Cashier withdrawals ', async (addresses) => {
       });
 
       it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
-        let withdrawTx = await contractCashier.withdrawDeposits(
+        let withdrawTx = await contractCashier.withdrawDepositsSePaused(
           TOKEN_SUPPLY_ID,
-          {from: users.seller.address}
+          {
+            from: users.seller.address,
+          }
         );
         const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
           new BN(remQty)
@@ -3774,7 +4387,7 @@ contract('Cashier withdrawals ', async (addresses) => {
 
       it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
         await truffleAssert.reverts(
-          contractCashier.withdrawDeposits(TOKEN_SUPPLY_ID, {
+          contractCashier.withdrawDepositsSePaused(TOKEN_SUPPLY_ID, {
             from: users.seller.address,
           }),
           truffleAssert.ErrorType.REVERT
@@ -3834,7 +4447,7 @@ contract('Cashier withdrawals ', async (addresses) => {
 
         it('[NEGATIVE] Should revert if called when contract is not paused', async () => {
           await truffleAssert.reverts(
-            contractCashier.withdrawDeposits(TOKEN_SUPPLY_ID, {
+            contractCashier.withdrawDepositsSePaused(TOKEN_SUPPLY_ID, {
               from: users.seller.address,
             }),
             truffleAssert.ErrorType.REVERT
@@ -3856,7 +4469,7 @@ contract('Cashier withdrawals ', async (addresses) => {
 
         it('[NEGATIVE] should revert if not called from the seller', async () => {
           await truffleAssert.reverts(
-            contractCashier.withdrawDeposits(TOKEN_SUPPLY_ID, {
+            contractCashier.withdrawDepositsSePaused(TOKEN_SUPPLY_ID, {
               from: users.attacker.address,
             }),
             truffleAssert.ErrorType.REVERT
@@ -3864,9 +4477,11 @@ contract('Cashier withdrawals ', async (addresses) => {
         });
 
         it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
-          let withdrawTx = await contractCashier.withdrawDeposits(
+          let withdrawTx = await contractCashier.withdrawDepositsSePaused(
             TOKEN_SUPPLY_ID,
-            {from: users.seller.address}
+            {
+              from: users.seller.address,
+            }
           );
           const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
             new BN(remQty)
@@ -3924,7 +4539,7 @@ contract('Cashier withdrawals ', async (addresses) => {
 
         it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
           await truffleAssert.reverts(
-            contractCashier.withdrawDeposits(TOKEN_SUPPLY_ID, {
+            contractCashier.withdrawDepositsSePaused(TOKEN_SUPPLY_ID, {
               from: users.seller.address,
             }),
             truffleAssert.ErrorType.REVERT
@@ -3975,7 +4590,7 @@ contract('Cashier withdrawals ', async (addresses) => {
 
         it('[NEGATIVE] Should revert if called when contract is not paused', async () => {
           await truffleAssert.reverts(
-            contractCashier.withdrawDeposits(TOKEN_SUPPLY_ID, {
+            contractCashier.withdrawDepositsSePaused(TOKEN_SUPPLY_ID, {
               from: users.seller.address,
             }),
             truffleAssert.ErrorType.REVERT
@@ -3997,7 +4612,7 @@ contract('Cashier withdrawals ', async (addresses) => {
 
         it('[NEGATIVE] should revert if not called from the seller', async () => {
           await truffleAssert.reverts(
-            contractCashier.withdrawDeposits(TOKEN_SUPPLY_ID, {
+            contractCashier.withdrawDepositsSePaused(TOKEN_SUPPLY_ID, {
               from: users.attacker.address,
             }),
             truffleAssert.ErrorType.REVERT
@@ -4005,9 +4620,11 @@ contract('Cashier withdrawals ', async (addresses) => {
         });
 
         it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
-          let withdrawTx = await contractCashier.withdrawDeposits(
+          let withdrawTx = await contractCashier.withdrawDepositsSePaused(
             TOKEN_SUPPLY_ID,
-            {from: users.seller.address}
+            {
+              from: users.seller.address,
+            }
           );
           const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
             new BN(remQty)
@@ -4060,7 +4677,7 @@ contract('Cashier withdrawals ', async (addresses) => {
 
         it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
           await truffleAssert.reverts(
-            contractCashier.withdrawDeposits(TOKEN_SUPPLY_ID, {
+            contractCashier.withdrawDepositsSePaused(TOKEN_SUPPLY_ID, {
               from: users.seller.address,
             }),
             truffleAssert.ErrorType.REVERT
@@ -4124,7 +4741,7 @@ contract('Cashier withdrawals ', async (addresses) => {
 
         it('[NEGATIVE] Should revert if called when contract is not paused', async () => {
           await truffleAssert.reverts(
-            contractCashier.withdrawDeposits(TOKEN_SUPPLY_ID, {
+            contractCashier.withdrawDepositsSePaused(TOKEN_SUPPLY_ID, {
               from: users.seller.address,
             }),
             truffleAssert.ErrorType.REVERT
@@ -4146,7 +4763,7 @@ contract('Cashier withdrawals ', async (addresses) => {
 
         it('[NEGATIVE] should revert if not called from the seller', async () => {
           await truffleAssert.reverts(
-            contractCashier.withdrawDeposits(TOKEN_SUPPLY_ID, {
+            contractCashier.withdrawDepositsSePaused(TOKEN_SUPPLY_ID, {
               from: users.attacker.address,
             }),
             truffleAssert.ErrorType.REVERT
@@ -4154,9 +4771,11 @@ contract('Cashier withdrawals ', async (addresses) => {
         });
 
         it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
-          let withdrawTx = await contractCashier.withdrawDeposits(
+          let withdrawTx = await contractCashier.withdrawDepositsSePaused(
             TOKEN_SUPPLY_ID,
-            {from: users.seller.address}
+            {
+              from: users.seller.address,
+            }
           );
           const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
             new BN(remQty)
@@ -4214,7 +4833,7 @@ contract('Cashier withdrawals ', async (addresses) => {
 
         it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
           await truffleAssert.reverts(
-            contractCashier.withdrawDeposits(TOKEN_SUPPLY_ID, {
+            contractCashier.withdrawDepositsSePaused(TOKEN_SUPPLY_ID, {
               from: users.seller.address,
             }),
             truffleAssert.ErrorType.REVERT

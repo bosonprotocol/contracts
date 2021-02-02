@@ -305,7 +305,9 @@ contract('Voucher tests', async (addresses) => {
     it('mark voucher as finalized', async () => {
       const txFinalize = await contractVoucherKernel.triggerFinalizeVoucher(
         tokenVoucherKey1,
-        {from: users.buyer.address}
+        {
+          from: users.buyer.address,
+        }
       );
 
       truffleAssert.eventEmitted(

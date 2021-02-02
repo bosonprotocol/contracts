@@ -145,6 +145,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         address _triggeredBy
     );
 
+    event LogVoucherSetFaultCancel(uint256 _tokenIdSupply);
+
     event LogFundsReleased(
         uint256 _tokenIdVoucher,
         uint8 _type //0 .. payment, 1 .. deposits
@@ -707,6 +709,32 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         emit LogVoucherFaultCancel(_tokenIdVoucher);
     }
 
+    /**
+     * @notice Cancel/Fault transaction by the Seller, cancelling the remaining uncommitted voucher set so that seller prevents buyers from committing to vouchers for items no longer in exchange.
+     * @param _tokenIdSupply   ID of the voucher set
+     * @param _issuer   owner of the voucher
+     */
+    function cancelOrFaultVoucherSet(uint256 _tokenIdSupply, address _issuer)
+        external
+        override
+        onlyFromRouter
+        whenNotPaused
+        returns (uint256)
+    {
+        require(getSupplyHolder(_tokenIdSupply) == _issuer, "UNAUTHORIZED_COF");
+
+        uint256 remQty = getRemQtyForSupply(_tokenIdSupply, _issuer);
+
+        require(remQty > 0, "OFFER_EMPTY");
+
+        IERC1155ERC721(tokensContract).burn(_issuer, _tokenIdSupply, remQty);
+        accountSupply[_issuer] = accountSupply[_issuer].sub(remQty);
+
+        emit LogVoucherSetFaultCancel(_tokenIdSupply);
+
+        return remQty;
+    }
+
     // // // // // // // //
     // BACK-END PROCESS
     // // // // // // // //
@@ -975,7 +1003,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @return          remaining quantity
      */
     function getRemQtyForSupply(uint256 _tokenSupplyId, address _owner)
-        external
+        public
         view
         override
         returns (uint256)

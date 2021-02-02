@@ -104,6 +104,8 @@ interface IBosonRouter {
         bytes32 s
     ) external payable;
 
+    function requestCancelOrFaultVoucherSet(uint256 _tokenIdSupply) external;
+
     /**
      * @notice Redemption of the vouchers promise
      * @param _tokenIdVoucher   ID of the voucher

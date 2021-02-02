@@ -574,6 +574,24 @@ contract BosonRouter is
         require(payable(cashierAddress).send(msg.value));
     }
 
+    function requestCancelOrFaultVoucherSet(uint256 _tokenIdSupply)
+        external
+        override
+        nonReentrant
+        whenNotPaused
+    {
+        uint256 _burnedSupplyQty =
+            IVoucherKernel(voucherKernel).cancelOrFaultVoucherSet(
+                _tokenIdSupply,
+                msg.sender
+            );
+        ICashier(cashierAddress).withdrawDepositsSe(
+            _tokenIdSupply,
+            _burnedSupplyQty,
+            msg.sender
+        );
+    }
+
     /**
      * @notice Redemption of the vouchers promise
      * @param _tokenIdVoucher   ID of the voucher
