@@ -5,7 +5,6 @@ import "./IERC20WithPermit.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
-
 contract ERC20WithPermit is IERC20WithPermit, Pausable {
     using SafeMath for uint256;
 
