@@ -69,7 +69,7 @@ jobs:
         - put: status
           params:
             path: source
-            state: failed
+            state: failure
             context: "CI Pipeline"
             description: "Build failed."
         - put: notify-failure
@@ -82,7 +82,7 @@ jobs:
         - put: status
           params:
             path: source
-            state: failed
+            state: failure
             context: "CI Pipeline"
             description: "Build errored."
         - put: notify-failure
@@ -95,7 +95,7 @@ jobs:
         - put: status
           params:
             path: source
-            state: failed
+            state: failure
             context: "CI Pipeline"
             description: "Build aborted."
         - put: notify-failure
@@ -133,7 +133,7 @@ jobs:
         - put: status
           params:
             path: source
-            state: failed
+            state: failure
             context: "CI Pipeline"
             description: "Test failed."
         - put: notify-failure
@@ -146,7 +146,7 @@ jobs:
         - put: status
           params:
             path: source
-            state: failed
+            state: failure
             context: "CI Pipeline"
             description: "Test errored."
         - put: notify-failure
@@ -159,7 +159,7 @@ jobs:
         - put: status
           params:
             path: source
-            state: failed
+            state: failure
             context: "CI Pipeline"
             description: "Test aborted."
         - put: notify-failure
