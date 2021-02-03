@@ -160,6 +160,26 @@ contract('Boson token', (addresses) => {
       );
     });
 
+    it("Self account should have the availability to renounce it's role", async () => {
+      let buyerIsPauser = await BosonTokenContract.hasRole(
+        PAUSER_ROLE,
+        users.buyer.address
+      );
+
+      assert.isTrue(buyerIsPauser);
+
+      await BosonTokenContract.renounceRole(PAUSER_ROLE, users.buyer.address, {
+        from: users.buyer.address,
+      });
+
+      buyerIsPauser = await BosonTokenContract.hasRole(
+        PAUSER_ROLE,
+        users.buyer.address
+      );
+
+      assert.isFalse(buyerIsPauser);
+    });
+
     describe('[PERMIT]', async () => {
       before(async () => {
         BosonTokenContract = await BosonToken.new('BOSON TOKEN', 'BSNT');

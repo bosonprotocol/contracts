@@ -574,6 +574,10 @@ contract BosonRouter is
         require(payable(cashierAddress).send(msg.value));
     }
 
+    /**
+     * @notice Seller burns the remaining supply and withdrawal of the locked deposits for them are being sent back.
+     * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
+     */
     function requestCancelOrFaultVoucherSet(uint256 _tokenIdSupply)
         external
         override
