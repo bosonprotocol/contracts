@@ -26,10 +26,10 @@ contract BosonRouter is
     Ownable
 {
     using Address for address payable;
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
-    mapping (address => uint256) public transactionIDs; // whenever a seller or a buyer interacts with the smart contract, a personal txID is emitted from an event.
-    
+    mapping(address => uint256) public correlationIds; // whenever a seller or a buyer interacts with the smart contract, a personal txID is emitted from an event.
+
     using SafeMath for uint256;
 
     address public cashierAddress;
@@ -42,7 +42,7 @@ contract BosonRouter is
         address _seller,
         uint256 _quantity,
         uint8 _paymentType,
-        uint256 _transactionID
+        uint256 _correlationId
     );
 
     event LogTokenContractSet(address _newTokenContract, address _triggeredBy);
@@ -169,7 +169,13 @@ contract BosonRouter is
 
         require(payable(cashierAddress).send(msg.value));
 
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHETH, transactionIDs[msg.sender]++);
+        emit LogOrderCreated(
+            tokenIdSupply,
+            msg.sender,
+            metadata[5],
+            ETHETH,
+            correlationIds[msg.sender]++
+        );
     }
 
     function requestCreateOrderTKNTKNWithPermit(
@@ -229,7 +235,13 @@ contract BosonRouter is
             _tokensSent
         );
 
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNTKN, transactionIDs[msg.sender]++);
+        emit LogOrderCreated(
+            tokenIdSupply,
+            msg.sender,
+            metadata[5],
+            TKNTKN,
+            correlationIds[msg.sender]++
+        );
     }
 
     function requestCreateOrderETHTKNWithPermit(
@@ -282,7 +294,13 @@ contract BosonRouter is
             _tokensSent
         );
 
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHTKN, transactionIDs[msg.sender]++);
+        emit LogOrderCreated(
+            tokenIdSupply,
+            msg.sender,
+            metadata[5],
+            ETHTKN,
+            correlationIds[msg.sender]++
+        );
     }
 
     function requestCreateOrderTKNETH(
@@ -327,7 +345,13 @@ contract BosonRouter is
 
         require(payable(cashierAddress).send(msg.value));
 
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNETH, transactionIDs[msg.sender]++);
+        emit LogOrderCreated(
+            tokenIdSupply,
+            msg.sender,
+            metadata[5],
+            TKNETH,
+            correlationIds[msg.sender]++
+        );
     }
 
     /**
@@ -354,7 +378,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            transactionIDs[msg.sender]++
+            correlationIds[msg.sender]++
         );
 
         //record funds in escrow ...
@@ -414,7 +438,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            transactionIDs[msg.sender]++
+            correlationIds[msg.sender]++
         );
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(
@@ -468,7 +492,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            transactionIDs[msg.sender]++
+            correlationIds[msg.sender]++
         );
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(
@@ -513,7 +537,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            transactionIDs[msg.sender]++
+            correlationIds[msg.sender]++
         );
 
         IERC20WithPermit(tokenDepositAddress).transferFrom(
@@ -565,7 +589,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            transactionIDs[msg.sender]++
+            correlationIds[msg.sender]++
         );
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(
@@ -683,7 +707,7 @@ contract BosonRouter is
             );
         }
 
-        transactionIDs[_to]++;
+        correlationIds[_to]++;
     }
 
     /**
@@ -741,7 +765,7 @@ contract BosonRouter is
             );
         }
 
-        transactionIDs[_to]++;
+        correlationIds[_to]++;
         IVoucherKernel(voucherKernel).setSupplyHolderOnTransfer(
             _tokenSupplyId,
             _to
@@ -765,5 +789,4 @@ contract BosonRouter is
         tokensContractAddress = _tokensContractAddress;
         emit LogTokenContractSet(_tokensContractAddress, msg.sender);
     }
-    
 }

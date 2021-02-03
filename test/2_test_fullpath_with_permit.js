@@ -133,8 +133,14 @@ contract('Cashier && VK', async (addresses) => {
 
         timestamp = await Utils.getCurrTimestamp();
 
-        const transactionID = await contractBosonRouter.transactionIDs(users.seller.address)
-				assert.equal(transactionID.toString(), 0, "Seller transaction ID is not as expected");
+        const correlationId = await contractBosonRouter.correlationIds(
+          users.seller.address
+        );
+        assert.equal(
+          correlationId.toString(),
+          0,
+          'Seller correlationId is not as expected'
+        );
 
         tokenSupplyKey = await utils.createOrder(
           users.seller,
@@ -145,11 +151,17 @@ contract('Cashier && VK', async (addresses) => {
         );
       });
 
-      it("Seller transaction ID should be incremented after order is created", async () => {
-        const transactionID = await contractBosonRouter.transactionIDs(users.seller.address)
+      it('Seller correlationId should be incremented after order is created', async () => {
+        const correlationId = await contractBosonRouter.correlationIds(
+          users.seller.address
+        );
 
-        assert.equal(transactionID.toString(), 1, "Seller transaction ID is not as expected")
-      })
+        assert.equal(
+          correlationId.toString(),
+          1,
+          'Seller correlationId is not as expected'
+        );
+      });
 
       it('ESCROW has correct initial balance', async () => {
         const expectedBalance = new BN(constants.seller_deposit).mul(
@@ -355,8 +367,14 @@ contract('Cashier && VK', async (addresses) => {
             tokensToMint
           );
 
-          const transactionID = await contractBosonRouter.transactionIDs(users.seller.address)
-					assert.equal(transactionID.toString(), 0, "Seller transaction ID is not as expected");
+          const correlationId = await contractBosonRouter.correlationIds(
+            users.seller.address
+          );
+          assert.equal(
+            correlationId.toString(),
+            0,
+            'Seller correlationId is not as expected'
+          );
 
           timestamp = await Utils.getCurrTimestamp();
           tokenSupplyKey = await utils.createOrder(
@@ -368,11 +386,17 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
-        it("Seller transaction ID should be incremented after order is created", async () => {
-					const transactionID = await contractBosonRouter.transactionIDs(users.seller.address)
-					
-					assert.equal(transactionID.toString(), 1, "Seller transaction ID is not as expected")
-				})
+        it('Seller correlationId should be incremented after order is created', async () => {
+          const correlationId = await contractBosonRouter.correlationIds(
+            users.seller.address
+          );
+
+          assert.equal(
+            correlationId.toString(),
+            1,
+            'Seller correlationId is not as expected'
+          );
+        });
 
         it('ESCROW has correct initial balance', async () => {
           const expectedBalance = new BN(constants.seller_deposit).mul(
@@ -683,8 +707,14 @@ contract('Cashier && VK', async (addresses) => {
               ''
             );
 
-          const transactionID = await contractBosonRouter.transactionIDs(users.seller.address)
-					assert.equal(transactionID.toString(), 0, "Seller transaction ID is not as expected");
+          const correlationId = await contractBosonRouter.correlationIds(
+            users.seller.address
+          );
+          assert.equal(
+            correlationId.toString(),
+            0,
+            'Seller correlationIds is not as expected'
+          );
 
           timestamp = await Utils.getCurrTimestamp();
 
@@ -706,11 +736,17 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
-        it("Seller transaction ID should be incremented after order is created", async () => {
-					const transactionID = await contractBosonRouter.transactionIDs(users.seller.address)
-					
-					assert.equal(transactionID.toString(), 1, "Seller transaction ID is not as expected")
-				})
+        it('Seller correlationId should be incremented after order is created', async () => {
+          const correlationId = await contractBosonRouter.correlationIds(
+            users.seller.address
+          );
+
+          assert.equal(
+            correlationId.toString(),
+            1,
+            'Seller correlationId is not as expected'
+          );
+        });
 
         it('ESCROW has correct initial balance', async () => {
           const expectedBalance = new BN(constants.seller_deposit).mul(
@@ -919,8 +955,14 @@ contract('Cashier && VK', async (addresses) => {
               contractBSNTokenDeposit
             );
 
-          const transactionID = await contractBosonRouter.transactionIDs(users.seller.address)
-					assert.equal(transactionID.toString(), 0, "Seller transaction ID is not as expected");
+          const correlationId = await contractBosonRouter.correlationIds(
+            users.seller.address
+          );
+          assert.equal(
+            correlationId.toString(),
+            0,
+            'Seller correlationId is not as expected'
+          );
 
           timestamp = await Utils.getCurrTimestamp();
 
@@ -953,11 +995,17 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
-        it("Seller transaction ID should be incremented after order is created", async () => {
-					const transactionID = await contractBosonRouter.transactionIDs(users.seller.address)
-					
-					assert.equal(transactionID.toString(), 1, "Seller transaction ID is not as expected")
-				})
+        it('Seller correlationId should be incremented after order is created', async () => {
+          const correlationId = await contractBosonRouter.correlationIds(
+            users.seller.address
+          );
+
+          assert.equal(
+            correlationId.toString(),
+            1,
+            'Seller correlationId is not as expected'
+          );
+        });
 
         it('ESCROW has correct initial balance', async () => {
           const expectedBalance = new BN(constants.seller_deposit).mul(
@@ -1372,11 +1420,17 @@ contract('Cashier && VK', async (addresses) => {
         );
       });
 
-      it("Buyer transaction ID should be zero initially", async () =>{
-				const transactionID = await contractBosonRouter.transactionIDs(users.buyer.address)
+      it('Buyer correlationId should be zero initially', async () => {
+        const correlationId = await contractBosonRouter.correlationIds(
+          users.buyer.address
+        );
 
-        assert.equal(transactionID.toString(), 0, "Buyer transaction ID is not as expected")
-			})
+        assert.equal(
+          correlationId.toString(),
+          0,
+          'Buyer correlationId is not as expected'
+        );
+      });
 
       it('Should create order', async () => {
         const txValue = new BN(constants.buyer_deposit).add(
@@ -1407,11 +1461,17 @@ contract('Cashier && VK', async (addresses) => {
         );
       });
 
-      it("Buyer transaction ID should be incremented after requesting a voucher", async () =>{
-				const transactionID = await contractBosonRouter.transactionIDs(users.buyer.address)
+      it('Buyer correlationId should be incremented after requesting a voucher', async () => {
+        const correlationId = await contractBosonRouter.correlationIds(
+          users.buyer.address
+        );
 
-        assert.equal(transactionID.toString(), 1, "Buyer transaction ID is not as expected")
-			})
+        assert.equal(
+          correlationId.toString(),
+          1,
+          'Buyer correlationId is not as expected'
+        );
+      });
 
       it('Cashier Contract has correct amount of funds', async () => {
         const sellerDeposits = new BN(constants.seller_deposit).mul(
@@ -1505,11 +1565,17 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
-        it("Buyer transaction ID should be zero initially", async () =>{
-          const transactionID = await contractBosonRouter.transactionIDs(users.buyer.address)
-  
-          assert.equal(transactionID.toString(), 0, "Buyer transaction ID is not as expected")
-        })
+        it('Buyer correlationId should be zero initially', async () => {
+          const correlationId = await contractBosonRouter.correlationIds(
+            users.buyer.address
+          );
+
+          assert.equal(
+            correlationId.toString(),
+            0,
+            'Buyer correlationId is not as expected'
+          );
+        });
 
         it('Should create order', async () => {
           const nonce = await contractBSNTokenDeposit.nonces(
@@ -1556,12 +1622,17 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
-        it("Buyer transaction ID should be incremented after requesting a voucher", async () =>{
-          const transactionID = await contractBosonRouter.transactionIDs(users.buyer.address)
-  
-          assert.equal(transactionID.toString(), 1, "Buyer transaction ID is not as expected")
-        })
-  
+        it('Buyer correlationId should be incremented after requesting a voucher', async () => {
+          const correlationId = await contractBosonRouter.correlationIds(
+            users.buyer.address
+          );
+
+          assert.equal(
+            correlationId.toString(),
+            1,
+            'Buyer correlationId is not as expected'
+          );
+        });
 
         it('Cashier Contract has correct amount of funds', async () => {
           const expectedETHBalance = new BN(constants.product_price);
@@ -1704,11 +1775,17 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
-        it("Buyer transaction ID should be zero initially", async () =>{
-          const transactionID = await contractBosonRouter.transactionIDs(users.buyer.address)
-  
-          assert.equal(transactionID.toString(), 0, "Buyer transaction ID is not as expected")
-        })
+        it('Buyer correlationId should be zero initially', async () => {
+          const correlationId = await contractBosonRouter.correlationIds(
+            users.buyer.address
+          );
+
+          assert.equal(
+            correlationId.toString(),
+            0,
+            'Buyer correlationId is not as expected'
+          );
+        });
 
         it('Should create order', async () => {
           const nonce1 = await contractBSNTokenDeposit.nonces(
@@ -1788,11 +1865,17 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
-        it("Buyer transaction ID should be incremented after requesting a voucher", async () =>{
-          const transactionID = await contractBosonRouter.transactionIDs(users.buyer.address)
-  
-          assert.equal(transactionID.toString(), 1, "Buyer transaction ID is not as expected")
-        })
+        it('Buyer correlationId should be incremented after requesting a voucher', async () => {
+          const correlationId = await contractBosonRouter.correlationIds(
+            users.buyer.address
+          );
+
+          assert.equal(
+            correlationId.toString(),
+            1,
+            'Buyer correlationId is not as expected'
+          );
+        });
 
         it('Cashier Contract has correct amount of funds', async () => {
           const cashierPriceTokenBalance = await contractBSNTokenPrice.balanceOf(
@@ -1994,11 +2077,17 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
-        it("Buyer transaction ID should be zero initially", async () =>{
-          const transactionID = await contractBosonRouter.transactionIDs(users.buyer.address)
-  
-          assert.equal(transactionID.toString(), 0, "Buyer transaction ID is not as expected")
-        })
+        it('Buyer correlationId should be zero initially', async () => {
+          const correlationId = await contractBosonRouter.correlationIds(
+            users.buyer.address
+          );
+
+          assert.equal(
+            correlationId.toString(),
+            0,
+            'Buyer correlationId is not as expected'
+          );
+        });
 
         it('Should create voucher', async () => {
           const nonce = await utils.contractBSNTokenSame.nonces(
@@ -2055,11 +2144,17 @@ contract('Cashier && VK', async (addresses) => {
           assert.isDefined(tokenVoucherKey1);
         });
 
-        it("Buyer transaction ID should be incremented after requesting a voucher", async () =>{
-          const transactionID = await contractBosonRouter.transactionIDs(users.buyer.address)
-  
-          assert.equal(transactionID.toString(), 1, "Buyer transaction ID is not as expected")
-        })
+        it('Buyer correlationId should be incremented after requesting a voucher', async () => {
+          const correlationId = await contractBosonRouter.correlationIds(
+            users.buyer.address
+          );
+
+          assert.equal(
+            correlationId.toString(),
+            1,
+            'Buyer correlationId is not as expected'
+          );
+        });
 
         it('Cashier Contract has correct amount of funds', async () => {
           const cashierTokenBalanceSame = await utils.contractBSNTokenSame.balanceOf(
@@ -2269,11 +2364,17 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
-        it("Buyer transaction ID should be zero initially", async () =>{
-          const transactionID = await contractBosonRouter.transactionIDs(users.buyer.address)
-  
-          assert.equal(transactionID.toString(), 0, "Buyer transaction ID is not as expected")
-        })
+        it('Buyer correlationId should be zero initially', async () => {
+          const correlationId = await contractBosonRouter.correlationIds(
+            users.buyer.address
+          );
+
+          assert.equal(
+            correlationId.toString(),
+            0,
+            'Buyer correlationId is not as expected'
+          );
+        });
 
         it('Should create order', async () => {
           const nonce = await contractBSNTokenPrice.nonces(users.buyer.address);
@@ -2321,11 +2422,17 @@ contract('Cashier && VK', async (addresses) => {
           assert.isDefined(tokenVoucherKey);
         });
 
-        it("Buyer transaction ID should be incremented after requesting a voucher", async () =>{
-          const transactionID = await contractBosonRouter.transactionIDs(users.buyer.address)
-  
-          assert.equal(transactionID.toString(), 1, "Buyer transaction ID is not as expected")
-        })
+        it('Buyer correlationId should be incremented after requesting a voucher', async () => {
+          const correlationId = await contractBosonRouter.correlationIds(
+            users.buyer.address
+          );
+
+          assert.equal(
+            correlationId.toString(),
+            1,
+            'Buyer correlationId is not as expected'
+          );
+        });
 
         it('Cashier Contract has correct amount of funds', async () => {
           const cashierDepositETH = await web3.eth.getBalance(
@@ -2589,23 +2696,34 @@ contract('Cashier && VK', async (addresses) => {
         );
       });
 
-      it("New Supply Owner transaction ID should be incremented properly", async () => {
+      it('New Supply Owner correlationId should be incremented properly', async () => {
+        let correlationId = await contractBosonRouter.correlationIds(
+          users.other2.address
+        );
+        assert.equal(
+          correlationId.toString(),
+          0,
+          'New Supply Owner correlationId is not as expected'
+        );
 
-				let transactionID = await contractBosonRouter.transactionIDs(users.other2.address)
-        assert.equal(transactionID.toString(), 0, "New Supply Owner transaction ID is not as expected")
-
-				await utils.safeTransfer1155(
+        await utils.safeTransfer1155(
           users.other1.address,
           users.other2.address,
           tokenSupplyKey,
           constants.QTY_1,
           {from: users.other1.address}
-        )
+        );
 
-			 	transactionID = await contractBosonRouter.transactionIDs(users.other2.address)
+        correlationId = await contractBosonRouter.correlationIds(
+          users.other2.address
+        );
 
-        assert.equal(transactionID.toString(), 1, "New Supply Owner transaction ID is not as expected")
-			})
+        assert.equal(
+          correlationId.toString(),
+          1,
+          'New Supply Owner correlationId is not as expected'
+        );
+      });
 
       it('Should update escrow amounts after transfer', async () => {
         expectedBalanceInEscrow = new BN(constants.seller_deposit).mul(
@@ -2824,24 +2942,34 @@ contract('Cashier && VK', async (addresses) => {
           );
         }
 
-        it("New Supply Owner transaction ID should be incremented properly", async () => {
+        it('New Supply Owner correlationId should be incremented properly', async () => {
+          let correlationId = await contractBosonRouter.correlationIds(
+            users.other2.address
+          );
+          assert.equal(
+            correlationId.toString(),
+            0,
+            'New Supply Owner correlationId is not as expected'
+          );
 
-          let transactionID = await contractBosonRouter.transactionIDs(users.other2.address)
-          assert.equal(transactionID.toString(), 0, "New Supply Owner transaction ID is not as expected")
-  
           await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
             {from: users.other1.address}
-          )
-  
-           transactionID = await contractBosonRouter.transactionIDs(users.other2.address)
-  
-          assert.equal(transactionID.toString(), 1, "New Supply Owner transaction ID is not as expected")
-        })
-  
+          );
+
+          correlationId = await contractBosonRouter.correlationIds(
+            users.other2.address
+          );
+
+          assert.equal(
+            correlationId.toString(),
+            1,
+            'New Supply Owner correlationId is not as expected'
+          );
+        });
 
         it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
           const expectedBuyerDeposit = new BN(constants.buyer_deposit); // 0.04
@@ -3056,24 +3184,34 @@ contract('Cashier && VK', async (addresses) => {
           );
         }
 
-        it("New Supply Owner transaction ID should be incremented properly", async () => {
+        it('New Supply Owner correlationId should be incremented properly', async () => {
+          let correlationId = await contractBosonRouter.correlationIds(
+            users.other2.address
+          );
+          assert.equal(
+            correlationId.toString(),
+            0,
+            'New Supply Owner correlationId is not as expected'
+          );
 
-          let transactionID = await contractBosonRouter.transactionIDs(users.other2.address)
-          assert.equal(transactionID.toString(), 0, "New Supply Owner transaction ID is not as expected")
-  
           await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
             {from: users.other1.address}
-          )
-  
-           transactionID = await contractBosonRouter.transactionIDs(users.other2.address)
-  
-          assert.equal(transactionID.toString(), 1, "New Supply Owner transaction ID is not as expected")
-        })
-  
+          );
+
+          correlationId = await contractBosonRouter.correlationIds(
+            users.other2.address
+          );
+
+          assert.equal(
+            correlationId.toString(),
+            1,
+            'New Supply Owner correlationId is not as expected'
+          );
+        });
 
         it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
           const expectedBuyerPrice = new BN(0);
@@ -3256,24 +3394,34 @@ contract('Cashier && VK', async (addresses) => {
           );
         }
 
-        it("New Supply Owner transaction ID should be incremented properly", async () => {
+        it('New Supply Owner correlationId should be incremented properly', async () => {
+          let correlationId = await contractBosonRouter.correlationIds(
+            users.other2.address
+          );
+          assert.equal(
+            correlationId.toString(),
+            0,
+            'New Supply Owner correlationId is not as expected'
+          );
 
-          let transactionID = await contractBosonRouter.transactionIDs(users.other2.address)
-          assert.equal(transactionID.toString(), 0, "New Supply Owner transaction ID is not as expected")
-  
           await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
             {from: users.other1.address}
-          )
-  
-           transactionID = await contractBosonRouter.transactionIDs(users.other2.address)
-  
-          assert.equal(transactionID.toString(), 1, "New Supply Owner transaction ID is not as expected")
-        })
-  
+          );
+
+          correlationId = await contractBosonRouter.correlationIds(
+            users.other2.address
+          );
+
+          assert.equal(
+            correlationId.toString(),
+            1,
+            'New Supply Owner correlationId is not as expected'
+          );
+        });
 
         it('Should update escrow amounts after transfer', async () => {
           expectedBalanceInEscrow = new BN(constants.seller_deposit).mul(
@@ -3504,7 +3652,6 @@ contract('Cashier && VK', async (addresses) => {
         );
       });
 
-
       it('Should transfer a voucher', async () => {
         const voucherID = await utils.commitToBuy(
           users.other1,
@@ -3556,26 +3703,38 @@ contract('Cashier && VK', async (addresses) => {
         );
       });
 
-      it("New Voucher Owner transaction ID should be incremented properly", async () => {
-				const voucherID = await utils.commitToBuy(
+      it('New Voucher Owner correlationId should be incremented properly', async () => {
+        const voucherID = await utils.commitToBuy(
           users.other1,
           users.seller,
           tokenSupplyKey
         );
 
-				let transactionID = await contractBosonRouter.transactionIDs(users.other2.address)
-				assert.equal(transactionID.toString(), 0, "New Voucher Owner transaction ID is not as expected")
-				
-				await utils.safeTransfer721(
+        let correlationId = await contractBosonRouter.correlationIds(
+          users.other2.address
+        );
+        assert.equal(
+          correlationId.toString(),
+          0,
+          'New Voucher Owner correlationId is not as expected'
+        );
+
+        await utils.safeTransfer721(
           users.other1.address,
           users.other2.address,
           voucherID,
           {from: users.other1.address}
         );
 
-				transactionID = await contractBosonRouter.transactionIDs(users.other2.address)
-				assert.equal(transactionID.toString(), 1, "New Voucher Owner transaction ID is not as expected")
-			})
+        correlationId = await contractBosonRouter.correlationIds(
+          users.other2.address
+        );
+        assert.equal(
+          correlationId.toString(),
+          1,
+          'New Voucher Owner correlationId is not as expected'
+        );
+      });
 
       it('Should update escrow amounts after transfer', async () => {
         expectedBalanceInEscrow = new BN(constants.product_price).add(
@@ -3821,26 +3980,38 @@ contract('Cashier && VK', async (addresses) => {
           }
         });
 
-        it("New Voucher Owner transaction ID should be incremented properly", async () => {
+        it('New Voucher Owner correlationId should be incremented properly', async () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
             tokenSupplyKey
           );
-  
-          let transactionID = await contractBosonRouter.transactionIDs(users.other2.address)
-          assert.equal(transactionID.toString(), 0, "New Voucher Owner transaction ID is not as expected")
-          
+
+          let correlationId = await contractBosonRouter.correlationIds(
+            users.other2.address
+          );
+          assert.equal(
+            correlationId.toString(),
+            0,
+            'New Voucher Owner correlationId is not as expected'
+          );
+
           await utils.safeTransfer721(
             users.other1.address,
             users.other2.address,
             voucherID,
             {from: users.other1.address}
           );
-  
-          transactionID = await contractBosonRouter.transactionIDs(users.other2.address)
-          assert.equal(transactionID.toString(), 1, "New Voucher Owner transaction ID is not as expected")
-        })
+
+          correlationId = await contractBosonRouter.correlationIds(
+            users.other2.address
+          );
+          assert.equal(
+            correlationId.toString(),
+            1,
+            'New Voucher Owner correlationId is not as expected'
+          );
+        });
 
         it('Should update escrow amounts after transfer', async () => {
           expectedBalanceInEscrow = new BN(constants.product_price);
@@ -4115,26 +4286,38 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
-        it("New Voucher Owner transaction ID should be incremented properly", async () => {
+        it('New Voucher Owner correlationId should be incremented properly', async () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
             tokenSupplyKey
           );
-  
-          let transactionID = await contractBosonRouter.transactionIDs(users.other2.address)
-          assert.equal(transactionID.toString(), 0, "New Voucher Owner transaction ID is not as expected")
-          
+
+          let correlationId = await contractBosonRouter.correlationIds(
+            users.other2.address
+          );
+          assert.equal(
+            correlationId.toString(),
+            0,
+            'New Voucher Owner correlationId is not as expected'
+          );
+
           await utils.safeTransfer721(
             users.other1.address,
             users.other2.address,
             voucherID,
             {from: users.other1.address}
           );
-  
-          transactionID = await contractBosonRouter.transactionIDs(users.other2.address)
-          assert.equal(transactionID.toString(), 1, "New Voucher Owner transaction ID is not as expected")
-        })
+
+          correlationId = await contractBosonRouter.correlationIds(
+            users.other2.address
+          );
+          assert.equal(
+            correlationId.toString(),
+            1,
+            'New Voucher Owner correlationId is not as expected'
+          );
+        });
 
         it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
           const expectedBuyerPrice = new BN(constants.product_price); // 0.3
@@ -4322,26 +4505,38 @@ contract('Cashier && VK', async (addresses) => {
           );
         }
 
-        it("New Voucher Owner transaction ID should be incremented properly", async () => {
+        it('New Voucher Owner correlationId should be incremented properly', async () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
             tokenSupplyKey
           );
-  
-          let transactionID = await contractBosonRouter.transactionIDs(users.other2.address)
-          assert.equal(transactionID.toString(), 0, "New Voucher Owner transaction ID is not as expected")
-          
+
+          let correlationId = await contractBosonRouter.correlationIds(
+            users.other2.address
+          );
+          assert.equal(
+            correlationId.toString(),
+            0,
+            'New Voucher Owner correlationId is not as expected'
+          );
+
           await utils.safeTransfer721(
             users.other1.address,
             users.other2.address,
             voucherID,
             {from: users.other1.address}
           );
-  
-          transactionID = await contractBosonRouter.transactionIDs(users.other2.address)
-          assert.equal(transactionID.toString(), 1, "New Voucher Owner transaction ID is not as expected")
-        })
+
+          correlationId = await contractBosonRouter.correlationIds(
+            users.other2.address
+          );
+          assert.equal(
+            correlationId.toString(),
+            1,
+            'New Voucher Owner correlationId is not as expected'
+          );
+        });
 
         it('Should update escrow amounts after transfer', async () => {
           expectedBalanceInEscrow = new BN(constants.buyer_deposit);

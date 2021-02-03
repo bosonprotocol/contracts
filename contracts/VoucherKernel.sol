@@ -113,7 +113,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         address _issuer,
         address _holder,
         bytes32 _promiseId,
-        uint256 _nonce
+        uint256 _correlationId
     );
 
     event LogVoucherRedeemed(
@@ -310,13 +310,13 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @param _tokenIdSupply   ID of the supply token (ERC-1155)
      * @param _issuer          Address of the token's issuer
      * @param _holder          Address of the recipient of the voucher (ERC-721)
-     * @param _txId           ID of the current interaction with the smart contract for a specific user
+     * @param _correlationId           ID of the current interaction with the smart contract for a specific user
      */
     function fillOrder(
         uint256 _tokenIdSupply,
         address _issuer,
         address _holder,
-        uint256 _txId
+        uint256 _correlationId
     ) external override onlyFromRouter {
         //checks
         checkOrderFillable(_tokenIdSupply, _issuer, _holder);
@@ -330,7 +330,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
             _issuer,
             _holder,
             getPromiseIdFromVoucherId(voucherTokenId),
-            _txId
+            _correlationId
         );
     }
 
