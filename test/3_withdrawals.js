@@ -11,7 +11,7 @@ const ERC1155ERC721 = artifacts.require('ERC1155ERC721');
 const VoucherKernel = artifacts.require('VoucherKernel');
 const Cashier = artifacts.require('Cashier');
 const BosonRouter = artifacts.require('BosonRouter');
-const BosonTKN = artifacts.require('BosonTokenPrice');
+const BosonTKN = artifacts.require('BosonToken');
 const FundLimitsOracle = artifacts.require('FundLimitsOracle');
 
 const BN = web3.utils.BN;
@@ -114,32 +114,44 @@ contract('Cashier withdrawals ', async (addresses) => {
     await contractBSNTokenPrice.transfer(
       users.other1.address,
       balanceBuyerFromPayment,
-      {from: users.buyer.address}
+      {
+        from: users.buyer.address,
+      }
     );
     await contractBSNTokenDeposit.transfer(
       users.other1.address,
       balanceBuyerFromDesosits,
-      {from: users.buyer.address}
+      {
+        from: users.buyer.address,
+      }
     );
     await contractBSNTokenPrice.transfer(
       users.other1.address,
       balanceSellerFromPayment,
-      {from: users.seller.address}
+      {
+        from: users.seller.address,
+      }
     );
     await contractBSNTokenDeposit.transfer(
       users.other1.address,
       balanceSellerFromDesosits,
-      {from: users.seller.address}
+      {
+        from: users.seller.address,
+      }
     );
     await contractBSNTokenPrice.transfer(
       users.other1.address,
       escrowBalanceFromPayment,
-      {from: users.deployer.address}
+      {
+        from: users.deployer.address,
+      }
     );
     await contractBSNTokenDeposit.transfer(
       users.other1.address,
       escrowBalanceFromDeposits,
-      {from: users.deployer.address}
+      {
+        from: users.deployer.address,
+      }
     );
   }
 
@@ -3866,7 +3878,9 @@ contract('Cashier withdrawals ', async (addresses) => {
         it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
           let withdrawTx = await contractCashier.withdrawDeposits(
             TOKEN_SUPPLY_ID,
-            {from: users.seller.address}
+            {
+              from: users.seller.address,
+            }
           );
           const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
             new BN(remQty)
@@ -4007,7 +4021,9 @@ contract('Cashier withdrawals ', async (addresses) => {
         it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
           let withdrawTx = await contractCashier.withdrawDeposits(
             TOKEN_SUPPLY_ID,
-            {from: users.seller.address}
+            {
+              from: users.seller.address,
+            }
           );
           const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
             new BN(remQty)
@@ -4156,7 +4172,9 @@ contract('Cashier withdrawals ', async (addresses) => {
         it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
           let withdrawTx = await contractCashier.withdrawDeposits(
             TOKEN_SUPPLY_ID,
-            {from: users.seller.address}
+            {
+              from: users.seller.address,
+            }
           );
           const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
             new BN(remQty)

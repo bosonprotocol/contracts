@@ -9,7 +9,7 @@ const ERC1155ERC721 = artifacts.require('ERC1155ERC721');
 const VoucherKernel = artifacts.require('VoucherKernel');
 const Cashier = artifacts.require('Cashier');
 const BosonRouter = artifacts.require('BosonRouter');
-const BosonToken = artifacts.require('BosonTokenPrice');
+const BosonToken = artifacts.require('BosonToken');
 const FundLimitsOracle = artifacts.require('FundLimitsOracle');
 
 contract('FundLimitsOracle', async (addresses) => {

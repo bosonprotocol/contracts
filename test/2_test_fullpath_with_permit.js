@@ -15,7 +15,7 @@ const ERC1155ERC721 = artifacts.require('ERC1155ERC721');
 const VoucherKernel = artifacts.require('VoucherKernel');
 const Cashier = artifacts.require('Cashier');
 const BosonRouter = artifacts.require('BosonRouter');
-const BosonToken = artifacts.require('BosonTokenPrice');
+const BosonToken = artifacts.require('BosonToken');
 const FundLimitsOracle = artifacts.require('FundLimitsOracle');
 
 const BN = web3.utils.BN;
@@ -1393,7 +1393,10 @@ contract('Cashier && VK', async (addresses) => {
           contractBosonRouter.requestVoucherETHETH(
             TOKEN_SUPPLY_ID,
             users.seller.address,
-            {from: users.buyer.address, value: txValue}
+            {
+              from: users.buyer.address,
+              value: txValue,
+            }
           ),
           truffleAssert.ErrorType.REVERT
         );
@@ -1408,7 +1411,10 @@ contract('Cashier && VK', async (addresses) => {
           contractBosonRouter.requestVoucherETHETH(
             TOKEN_SUPPLY_ID,
             users.seller.address,
-            {from: users.buyer.address, value: txValue}
+            {
+              from: users.buyer.address,
+              value: txValue,
+            }
           ),
           truffleAssert.ErrorType.REVERT
         );
@@ -2518,7 +2524,9 @@ contract('Cashier && VK', async (addresses) => {
           users.other2.address,
           tokenSupplyKey,
           constants.QTY_1,
-          {from: users.other1.address}
+          {
+            from: users.other1.address,
+          }
         ),
           (actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
             users.other1.address
@@ -2549,7 +2557,9 @@ contract('Cashier && VK', async (addresses) => {
           users.other2.address,
           tokenSupplyKey,
           constants.QTY_1,
-          {from: users.other1.address}
+          {
+            from: users.other1.address,
+          }
         );
 
         const voucherID = await utils.commitToBuy(
@@ -2604,7 +2614,9 @@ contract('Cashier && VK', async (addresses) => {
           users.other2.address,
           tokenSupplyKey,
           constants.QTY_1,
-          {from: users.other1.address}
+          {
+            from: users.other1.address,
+          }
         );
 
         const voucherID = await utils.commitToBuy(
@@ -2624,7 +2636,9 @@ contract('Cashier && VK', async (addresses) => {
           users.other2.address,
           tokenSupplyKey,
           constants.QTY_1,
-          {from: users.other1.address}
+          {
+            from: users.other1.address,
+          }
         );
 
         const voucherID = await utils.commitToBuy(
@@ -3343,7 +3357,9 @@ contract('Cashier && VK', async (addresses) => {
           users.other1.address,
           users.other2.address,
           voucherID,
-          {from: users.other1.address}
+          {
+            from: users.other1.address,
+          }
         );
 
         truffleAssert.eventEmitted(
@@ -3413,7 +3429,9 @@ contract('Cashier && VK', async (addresses) => {
           users.other1.address,
           users.other2.address,
           voucherID,
-          {from: users.other1.address}
+          {
+            from: users.other1.address,
+          }
         );
 
         actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
@@ -3454,7 +3472,9 @@ contract('Cashier && VK', async (addresses) => {
           users.other1.address,
           users.other2.address,
           voucherID,
-          {from: users.other1.address}
+          {
+            from: users.other1.address,
+          }
         );
 
         await utils.refund(voucherID, users.other2.address);
@@ -3508,7 +3528,9 @@ contract('Cashier && VK', async (addresses) => {
           users.other1.address,
           users.other2.address,
           voucherID,
-          {from: users.other1.address}
+          {
+            from: users.other1.address,
+          }
         );
 
         await truffleAssert.reverts(
@@ -3534,7 +3556,9 @@ contract('Cashier && VK', async (addresses) => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.attacker.address}
+            {
+              from: users.attacker.address,
+            }
           ),
           truffleAssert.ErrorType.REVERT
         );
@@ -3655,7 +3679,9 @@ contract('Cashier && VK', async (addresses) => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            {
+              from: users.other1.address,
+            }
           );
 
           actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
@@ -3697,7 +3723,9 @@ contract('Cashier && VK', async (addresses) => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            {
+              from: users.other1.address,
+            }
           );
 
           await utils.refund(voucherID, users.other2.address);
@@ -3777,7 +3805,9 @@ contract('Cashier && VK', async (addresses) => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            {
+              from: users.other1.address,
+            }
           );
 
           await truffleAssert.reverts(
@@ -3803,7 +3833,9 @@ contract('Cashier && VK', async (addresses) => {
               users.other1.address,
               users.other2.address,
               voucherID,
-              {from: users.attacker.address}
+              {
+                from: users.attacker.address,
+              }
             ),
             truffleAssert.ErrorType.REVERT
           );
@@ -3924,7 +3956,9 @@ contract('Cashier && VK', async (addresses) => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            {
+              from: users.other1.address,
+            }
           );
 
           await utils.refund(voucherID, users.other2.address);
@@ -3998,7 +4032,9 @@ contract('Cashier && VK', async (addresses) => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            {
+              from: users.other1.address,
+            }
           );
 
           await truffleAssert.reverts(
@@ -4024,7 +4060,9 @@ contract('Cashier && VK', async (addresses) => {
               users.other1.address,
               users.other2.address,
               voucherID,
-              {from: users.attacker.address}
+              {
+                from: users.attacker.address,
+              }
             ),
             truffleAssert.ErrorType.REVERT
           );
@@ -4114,7 +4152,9 @@ contract('Cashier && VK', async (addresses) => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            {
+              from: users.other1.address,
+            }
           ),
             (actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
               users.other1.address
@@ -4157,7 +4197,9 @@ contract('Cashier && VK', async (addresses) => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            {
+              from: users.other1.address,
+            }
           ),
             await utils.refund(voucherID, users.other2.address);
           await utils.complain(voucherID, users.other2.address);
@@ -4247,7 +4289,9 @@ contract('Cashier && VK', async (addresses) => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            {
+              from: users.other1.address,
+            }
           ),
             await truffleAssert.reverts(
               utils.redeem(voucherID, users.other1.address),
@@ -4272,7 +4316,9 @@ contract('Cashier && VK', async (addresses) => {
               users.other1.address,
               users.other2.address,
               voucherID,
-              {from: users.attacker.address}
+              {
+                from: users.attacker.address,
+              }
             ),
             truffleAssert.ErrorType.REVERT
           );
