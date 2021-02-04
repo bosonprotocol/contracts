@@ -101,7 +101,6 @@ contract('Cashier && VK', async (addresses) => {
       constants.TOKEN_LIMIT
     );
     await contractFundLimitsOracle.setETHLimit(constants.ETHER_LIMIT);
-
   }
 
   describe('TOKEN SUPPLY CREATION (Voucher batch creation)', () => {
@@ -2372,58 +2371,84 @@ contract('Cashier && VK', async (addresses) => {
       });
 
       it('Buyer should not be able to commit after expiry date has passed', async () => {
-        await timemachine.advanceTimeSeconds(constants.PROMISE_VALID_TO + ONE_MINUTE);
+        await timemachine.advanceTimeSeconds(
+          constants.PROMISE_VALID_TO + ONE_MINUTE
+        );
 
         await truffleAssert.reverts(
           utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
           truffleAssert.ErrorType.reverts
-        )
+        );
       });
-      
+
       it('Seller should not be able to cancel after complain and expiry periods have passed', async () => {
-        const voucherID = await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
-        await timemachine.advanceTimeSeconds(constants.PROMISE_VALID_TO + cancelPeriod + complainPeriod);
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+        await timemachine.advanceTimeSeconds(
+          constants.PROMISE_VALID_TO + cancelPeriod + complainPeriod
+        );
 
         await truffleAssert.reverts(
           utils.cancel(voucherID, users.seller.address),
           truffleAssert.ErrorType.reverts
-        )
+        );
       });
 
       it('Buyer should not be able to refund after expiry date has passed', async () => {
-        const voucherID = await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
 
-        await timemachine.advanceTimeSeconds(constants.PROMISE_VALID_TO + ONE_MINUTE);
+        await timemachine.advanceTimeSeconds(
+          constants.PROMISE_VALID_TO + ONE_MINUTE
+        );
 
         await truffleAssert.reverts(
           utils.refund(voucherID, users.buyer.address),
           truffleAssert.ErrorType.reverts
-        )
+        );
       });
 
       it('Buyer should not be able to redeem after expiry date has passed', async () => {
-        const voucherID = await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
 
-        await timemachine.advanceTimeSeconds(constants.PROMISE_VALID_TO + ONE_MINUTE);
+        await timemachine.advanceTimeSeconds(
+          constants.PROMISE_VALID_TO + ONE_MINUTE
+        );
 
         await truffleAssert.reverts(
           utils.redeem(voucherID, users.buyer.address),
           truffleAssert.ErrorType.reverts
-        )
+        );
       });
 
       it('Buyer should not be able to complain after complain and cancel periods have passed', async () => {
-        const voucherID = await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
-        await utils.redeem(voucherID, users.buyer.address)
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+        await utils.redeem(voucherID, users.buyer.address);
 
-        await timemachine.advanceTimeSeconds(complainPeriod + cancelPeriod + ONE_MINUTE);
+        await timemachine.advanceTimeSeconds(
+          complainPeriod + cancelPeriod + ONE_MINUTE
+        );
 
         await truffleAssert.reverts(
           utils.complain(voucherID, users.buyer.address),
           truffleAssert.ErrorType.reverts
-        )
+        );
       });
-    })
+    });
   });
 
   describe('TOKEN SUPPLY TRANSFER', () => {

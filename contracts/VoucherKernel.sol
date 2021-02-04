@@ -24,7 +24,7 @@ import "./UsingHelpers.sol";
  *  - The usage of block.timestamp is honored since vouchers are defined with day-precision and the demo app is not covering all edge cases.
  *      See: https://ethereum.stackexchange.com/questions/5924/how-do-ethereum-mining-nodes-maintain-a-time-consistent-with-the-network/5931#5931
  */
- // solhint-disable-next-line
+// solhint-disable-next-line
 contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     using Address for address;
     using SafeMath for uint256;
@@ -215,6 +215,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         uint256 _quantity
     ) external override onlyFromRouter returns (uint256) {
         require(_validFrom <= _validTo, "INVALID_VALIDITY_FROM"); //hex"26" FISSION.code(FISSION.Category.Find, FISSION.Status.Above_Range_Overflow)
+        // solhint-disable-next-line not-rely-on-time
         require(_validTo >= block.timestamp, "INVALID_VALIDITY_TO"); //hex"24" FISSION.code(FISSION.Category.Find, FISSION.Status.BelowRange_Underflow)
 
         bytes32 key;
@@ -361,8 +362,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
 
         bytes32 promiseKey = ordersPromise[_tokenIdSupply];
 
-        require(promises[promiseKey].validFrom <= block.timestamp, "OFFER_NOT_STARTED");
-        require(promises[promiseKey].validTo >= block.timestamp, "OFFER_EXPIRED");
+        require(
+            promises[promiseKey].validFrom <= block.timestamp,
+            "OFFER_NOT_STARTED"
+        );
+        require(
+            promises[promiseKey].validTo >= block.timestamp,
+            "OFFER_EXPIRED"
+        );
     }
 
     /**
@@ -451,6 +458,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
 
         return _tokenType;
     }
+
+    /* solhint-disable */
 
     /**
      * @notice Redemption of the vouchers promise
@@ -833,6 +842,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         }
         //
     }
+
+    /* solhint-enable */
 
     // // // // // // // //
     // UTILS
