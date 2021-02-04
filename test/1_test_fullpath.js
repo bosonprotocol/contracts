@@ -348,13 +348,6 @@ contract('Voucher tests', async (addresses) => {
         'escrowed amount not decreased'
       );
     });
-
-    // it("must fail: unauthorized withdrawal of escrowed pool", async () => {
-    // 	await truffleAssert.reverts(
-    //	  contractCashier.withdrawPool({from: Attacker}),
-    // 		truffleAssert.ErrorType.REVERT
-    // 	);
-    // });
   });
 
   after(async () => {
