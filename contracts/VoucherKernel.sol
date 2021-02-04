@@ -24,6 +24,7 @@ import "./UsingHelpers.sol";
  *  - The usage of block.timestamp is honored since vouchers are defined with day-precision and the demo app is not covering all edge cases.
  *      See: https://ethereum.stackexchange.com/questions/5924/how-do-ethereum-mining-nodes-maintain-a-time-consistent-with-the-network/5931#5931
  */
+ // solhint-disable-next-line
 contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     using Address for address;
     using SafeMath for uint256;
@@ -357,6 +358,11 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
             IERC1155(tokensContract).balanceOf(_issuer, _tokenIdSupply) > 0,
             "OFFER_EMPTY"
         ); //hex"40" FISSION.code(FISSION.Category.Availability, FISSION.Status.Unavailable)
+
+        bytes32 promiseKey = ordersPromise[_tokenIdSupply];
+
+        require(promises[promiseKey].validFrom <= block.timestamp, "OFFER_NOT_STARTED");
+        require(promises[promiseKey].validTo >= block.timestamp, "OFFER_EXPIRED");
     }
 
     /**
