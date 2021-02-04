@@ -162,7 +162,8 @@ contract BosonRouter is
             amount.add(msg.value)
         );
 
-        require(payable(cashierAddress).send(msg.value));
+        (bool success,) = payable(cashierAddress).call{value: msg.value}("");
+        require(success);
 
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHETH);
     }
@@ -320,7 +321,8 @@ contract BosonRouter is
             amount.add(msg.value)
         );
 
-        require(payable(cashierAddress).send(msg.value));
+        (bool success,) = payable(cashierAddress).call{value: msg.value}("");
+        require(success);
 
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNETH);
     }
@@ -358,7 +360,8 @@ contract BosonRouter is
             amount.add(weiReceived)
         );
 
-        require(payable(cashierAddress).send(msg.value));
+        (bool success,) = payable(cashierAddress).call{value: msg.value}("");
+        require(success);
     }
 
     function requestVoucherTKNTKNWithPermit(
@@ -520,7 +523,8 @@ contract BosonRouter is
             amount.add(msg.value)
         );
 
-        require(payable(cashierAddress).send(msg.value));
+        (bool success,) = payable(cashierAddress).call{value: msg.value}("");
+        require(success);
     }
 
     function requestVoucherTKNETHWithPermit(
@@ -571,7 +575,8 @@ contract BosonRouter is
             amount.add(msg.value)
         );
 
-        require(payable(cashierAddress).send(msg.value));
+        (bool success,) = payable(cashierAddress).call{value: msg.value}("");
+        require(success);
     }
 
     /**
