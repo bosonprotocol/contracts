@@ -51,11 +51,6 @@ interface ICashier {
     function withdrawDepositsSePaused(uint256 _tokenIdSupply) external;
 
     /**
-     * @notice Trigger withdrawals of pooled funds
-     */
-    function withdrawPool() external;
-
-    /**
      * @notice Get the amount in escrow of an address
      * @param _account  The address of an account to query
      * @return          The balance in escrow

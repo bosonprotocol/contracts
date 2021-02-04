@@ -730,20 +730,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Trigger withdrawals of pooled funds
-     */
-    function withdrawPool() external override onlyOwner nonReentrant {
-        //TODO: more requires needed?
-
-        if (escrow[owner()] > 0) {
-            address payable poolAddress = address(uint160(owner())); //this is required as we could not implicitly cast the owner address to payable
-            uint256 amount = escrow[poolAddress];
-            escrow[poolAddress] = 0;
-            _withdraw(poolAddress, amount);
-        }
-    }
-
-    /**
      * @notice Internal function for withdrawing.
      * As unbelievable as it is, neither .send() nor .transfer() are now secure to use due to EIP-1884
      *  So now transferring funds via the last remaining option: .call()
