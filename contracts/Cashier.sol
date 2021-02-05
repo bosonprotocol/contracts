@@ -21,11 +21,13 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
     address public voucherKernel;
     address public bosonRouterAddress;
+    bool public allowManualWithdrawOnDisaster;
 
     enum PaymentType {PAYMENT, DEPOSIT_SELLER, DEPOSIT_BUYER}
 
     mapping(address => uint256) public escrow; // both types of deposits AND payments >> can be released token-by-token if checks pass
     // slashedDepositPool can be obtained through getEscrowAmount(poolAddress)
+    mapping (address => mapping (address => uint256)) public escrowTokens; //token address => mgsSender => amount
 
     uint256 internal constant CANCELFAULT_SPLIT = 2; //for POC purposes, this is hardcoded; e.g. each party gets depositSe / 2
 
@@ -40,7 +42,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         PaymentType _type
     );
 
-    event LogTokenContractSet(address _newTokenContract, address _triggeredBy);
+    event LogAllowManualWithdraw(bool _allowManualWithdrawOnDisaster, address _triggeredBy);
+    event LogWithdrawEthOnDisaster(uint256 _amount, address _triggeredBy);
+    event LogWithdrawTokensOnDisaster(uint256 _amount, address _tokenAddress, address _triggeredBy);
 
     modifier onlyFromRouter() {
         require(bosonRouterAddress != address(0), "UNSPECIFIED_BR"); // hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
@@ -55,6 +59,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
     constructor(address _voucherKernel) public {
         voucherKernel = _voucherKernel;
+        allowManualWithdrawOnDisaster = false;
     }
 
     /**
@@ -71,6 +76,45 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      */
     function unpause() external override onlyFromRouter {
         _unpause();
+    }
+
+    //TODO Do we need a functionality to disable manual withdrawn once we enable it? 
+    function allowManualWithdraw() 
+        external
+        onlyOwner
+        whenPaused {
+        allowManualWithdrawOnDisaster = true;
+        LogAllowManualWithdraw(allowManualWithdrawOnDisaster, msg.sender);
+    }
+
+    function withdrawEthOnDisaster() external whenPaused {
+        require(allowManualWithdrawOnDisaster, "Owner did not allow manual withdraw");
+
+        uint256 amount = escrow[msg.sender];
+
+        require(amount > 0, "ESCROW_EMPTY");
+        escrow[msg.sender] = 0;
+        msg.sender.sendValue(amount);
+
+        LogWithdrawEthOnDisaster(amount, msg.sender);
+    }
+
+    function withdrawTokensOnDisaster(address token) external whenPaused {
+        require(allowManualWithdrawOnDisaster, "Owner did not allow manual withdraw");
+
+        uint256 amount = IERC20WithPermit(token).balanceOf(msg.sender);
+        require(amount > 0, "ESCROW_EMPTY");
+        
+        IERC20WithPermit(token).transfer(msg.sender, amount);
+        LogWithdrawTokensOnDisaster(amount, token, msg.sender);
+    }
+
+    function testWith(address token) external view returns (uint256){
+        return IERC20WithPermit(token).balanceOf(msg.sender);
+    }
+
+    function close() external onlyOwner returns (uint256){
+        selfdestruct(msg.sender);
     }
 
     /**
@@ -743,6 +787,20 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
+     * @notice Update the amount in escrowTokens of an address with the new value, based on VoucherSet/Voucher interaction
+     * @param _token  The address of a token to query
+     * @param _account  The address of an account to query
+     * @param _newAmount  New amount to be set
+     */
+    function updateEscrowTokensAmount(address _token, address _account, uint256 _newAmount)
+        external
+        override
+        onlyFromRouter
+    {
+        escrowTokens[_token][_account] = _newAmount;
+    }
+
+    /**
      * @notice Only accept ETH via fallback from the BR Contract
      */
     receive() external payable {
@@ -765,5 +823,20 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         returns (uint256)
     {
         return escrow[_account];
+    }
+
+     /**
+     * @notice Get the amount in escrow of an address
+     * @param _token  The address of a token to query
+     * @param _account  The address of an account to query
+     * @return          The balance in escrow
+     */
+    function getEscrowTokensAmount(address _token, address _account)
+        external
+        view
+        override
+        returns (uint256)
+    {
+        return escrowTokens[_token][_account];
     }
 }

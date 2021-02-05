@@ -4241,4 +4241,228 @@ contract('Cashier withdrawals ', async (addresses) => {
       });
     });
   });
+
+  describe("Withdraw on disaster", () => {
+    let vouchersToBuy = 5;
+
+    describe("Common", () => {
+      before(async () => {
+        await deployContracts();
+        utils = UtilsBuilder.create()
+            .ETHETH()
+            .build(
+              contractERC1155ERC721,
+              contractVoucherKernel,
+              contractCashier,
+              contractBosonRouter
+            );
+
+        const timestamp = await Utils.getCurrTimestamp();
+
+        TOKEN_SUPPLY_ID = await utils.createOrder(
+          users.seller,
+          timestamp,
+          timestamp + helpers.SECONDS_IN_DAY,
+          helpers.seller_deposit,
+          helpers.QTY_10
+        );
+        
+      })
+
+      it("[NEGATIVE] ManualWithdraw should not be executable when contract is not paused", async() => {
+        await truffleAssert.reverts(
+          contractCashier.allowManualWithdraw(),
+          truffleAssert.ErrorType.REVERT
+        )
+      })
+
+      it("[NEGATIVE] ManualWithdraw should not be executable from attacker", async() => {
+        await contractBosonRouter.pause();
+
+        await truffleAssert.reverts(
+          contractCashier.allowManualWithdraw({from: users.attacker.address}),
+          truffleAssert.ErrorType.REVERT
+        )
+      })
+    })
+
+    describe("Withdraw ETH", () => {
+      before(async () => {
+        await deployContracts();
+        utils = UtilsBuilder.create()
+            .ETHETH()
+            .build(
+              contractERC1155ERC721,
+              contractVoucherKernel,
+              contractCashier,
+              contractBosonRouter
+            );
+
+          const timestamp = await Utils.getCurrTimestamp();
+
+          TOKEN_SUPPLY_ID = await utils.createOrder(
+            users.seller,
+            timestamp,
+            timestamp + helpers.SECONDS_IN_DAY,
+            helpers.seller_deposit,
+            helpers.QTY_10
+          );
+
+          for (let i = 0; i < vouchersToBuy; i++) {
+            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+          }
+
+          await contractBosonRouter.pause();
+      })
+
+      it("[NEGATIVE] withdrawEthOnDisaster should not be executable before admin allows to", async() => {
+        await truffleAssert.reverts(
+          contractCashier.withdrawEthOnDisaster({from: users.buyer.address}),
+          truffleAssert.ErrorType.REVERT
+        )
+      })
+
+      it("Admin should be able to allow manual withdraw", async () => {
+        const tx = await contractCashier.allowManualWithdraw()
+
+        truffleAssert.eventEmitted(tx, 'LogAllowManualWithdraw', ev => {
+          return ev._triggeredBy == users.deployer.address
+        })
+      })
+
+      it("Buyer should be able to withdraw all the funds locked in escrow", async() => {
+        const expectedBuyerBalance = (new BN(helpers.product_price).add(new BN(helpers.buyer_deposit))).mul(new BN(vouchersToBuy))
+        const tx = await contractCashier.withdrawEthOnDisaster({from: users.buyer.address})
+
+        truffleAssert.eventEmitted(tx, 'LogWithdrawEthOnDisaster', ev => {
+          assert.equal(expectedBuyerBalance.toString(), ev._amount.toString(), "Buyer withdrawn funds don't match")
+          assert.equal(users.buyer.address, ev._triggeredBy, "LogWithdrawEthOnDisaster not triggered properly")
+
+          return true;
+        })
+      })
+
+      it("Seller should be able to withdraw all the funds locked in escrow", async() => {
+        const expectedSellerBalance = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_10))
+        const tx = await contractCashier.withdrawEthOnDisaster({from: users.seller.address})
+
+        truffleAssert.eventEmitted(tx, 'LogWithdrawEthOnDisaster', ev => {
+          assert.equal(expectedSellerBalance.toString(), ev._amount.toString(), "Buyer withdrawn funds don't match")
+          assert.equal(users.seller.address, ev._triggeredBy, "LogWithdrawEthOnDisaster not triggered properly")
+
+          return true;
+        })
+
+      })
+
+      it("Escrow amount should revert if funds already withdrawn for account", async() => {
+        await truffleAssert.reverts(
+          contractCashier.withdrawEthOnDisaster({from: users.buyer.address}),
+          truffleAssert.ErrorType.REVERT
+        )
+      })
+
+
+      
+    })
+
+    //[WIP]
+    describe("Withdraw TKN", () => {
+      before(async () => {
+        await deployContracts();
+        utils = UtilsBuilder.create()
+            .ERC20withPermit()
+            .TKNTKN()
+            .build(
+              contractERC1155ERC721,
+              contractVoucherKernel,
+              contractCashier,
+              contractBosonRouter,
+              contractBSNTokenPrice,
+              contractBSNTokenDeposit
+            );
+
+        const timestamp = await Utils.getCurrTimestamp();
+
+        tokensToMintSeller = new BN(helpers.seller_deposit).mul(
+          new BN(helpers.QTY_10)
+        );
+        tokensToMintBuyer = new BN(helpers.product_price).mul(
+          new BN(helpers.QTY_10)
+        );
+
+        await utils.mintTokens(
+          'contractBSNTokenDeposit',
+          users.seller.address,
+          tokensToMintSeller
+        );
+        await utils.mintTokens(
+          'contractBSNTokenPrice',
+          users.buyer.address,
+          tokensToMintBuyer
+        );
+        await utils.mintTokens(
+          'contractBSNTokenDeposit',
+          users.buyer.address,
+          tokensToMintBuyer
+        );
+
+        TOKEN_SUPPLY_ID = await utils.createOrder(
+          users.seller,
+          timestamp,
+          timestamp + helpers.SECONDS_IN_DAY,
+          helpers.seller_deposit,
+          helpers.QTY_10
+        );
+
+        for (let i = 0; i < 6; i++) {
+          await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+        }
+
+        await contractBosonRouter.pause();
+      })
+
+     
+
+      it("[NEGATIVE] withdrawTokensOnDisaster should not be executable before admin allows to", async() => {
+        await truffleAssert.reverts(
+          contractCashier.withdrawTokensOnDisaster(contractBSNTokenPrice.address, {from: users.buyer.address}),
+          truffleAssert.ErrorType.REVERT
+        )
+      })
+
+      it("Admin should be able to allow manual withdraw", async () => {
+        const tx = await contractCashier.allowManualWithdraw()
+
+        truffleAssert.eventEmitted(tx, 'LogAllowManualWithdraw', ev => {
+          return ev._triggeredBy == users.deployer.address
+        })
+      })
+
+      it("Seller should be able to withdraw all the funds locked in escrow", async() => {
+        const expectedSellerBalance = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_10))
+        const tx = await contractCashier.withdrawEthOnDisaster({from: users.seller.address})
+
+        truffleAssert.eventEmitted(tx, 'LogWithdrawEthOnDisaster', ev => {
+          assert.equal(expectedSellerBalance.toString(), ev._amount.toString(), "Buyer withdrawn funds don't match")
+          assert.equal(users.seller.address, ev._triggeredBy, "LogWithdrawEthOnDisaster not triggered properly")
+
+          return true;
+        })
+
+      })
+
+      it("Escrow amount should revert if funds already withdrawn for account", async() => {
+        await truffleAssert.reverts(
+          contractCashier.withdrawEthOnDisaster({from: users.buyer.address}),
+          truffleAssert.ErrorType.REVERT
+        )
+      })
+
+
+      
+    })
+
+   
+  })
 });

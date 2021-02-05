@@ -224,6 +224,14 @@ contract BosonRouter is
             _tokensSent
         );
 
+        //record funds in escrowTokens ...
+        uint256 amount = ICashier(cashierAddress).getEscrowTokensAmount(_tokenDepositAddress, msg.sender);
+        ICashier(cashierAddress).updateEscrowTokensAmount(
+            _tokenDepositAddress,
+            msg.sender,
+            amount.add(_tokensSent)
+        );
+
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNTKN);
     }
 
@@ -275,6 +283,14 @@ contract BosonRouter is
             msg.sender,
             address(cashierAddress),
             _tokensSent
+        );
+
+        //record funds in escrowTokens ...
+        uint256 amount = ICashier(cashierAddress).getEscrowTokensAmount(_tokenDepositAddress, msg.sender);
+        ICashier(cashierAddress).updateEscrowTokensAmount(
+            _tokenDepositAddress,
+            msg.sender,
+            amount.add(_tokensSent)
         );
 
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHTKN);
@@ -420,6 +436,22 @@ contract BosonRouter is
             address(cashierAddress),
             depositBu
         );
+
+        //record funds in escrowTokens for the Price token...
+        uint256 amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenPriceAddress, msg.sender);
+        ICashier(cashierAddress).updateEscrowTokensAmount(
+            tokenPriceAddress,
+            msg.sender,
+            amount.add(price)
+        );
+        
+        //record funds in escrowTokens for the Deposit token...
+        amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenDepositAddress, msg.sender);
+        ICashier(cashierAddress).updateEscrowTokensAmount(
+            tokenDepositAddress,
+            msg.sender,
+            amount.add(depositBu)
+        );
     }
 
     function requestVoucherTKNTKNSameWithPermit(
@@ -467,6 +499,14 @@ contract BosonRouter is
             msg.sender,
             address(cashierAddress),
             _tokensSent
+        );
+
+        //record funds in escrowTokens ...
+        uint256 amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenPriceAddress, msg.sender);
+        ICashier(cashierAddress).updateEscrowTokensAmount(
+            tokenPriceAddress,
+            msg.sender,
+            amount.add(_tokensSent)
         );
     }
 
@@ -520,6 +560,14 @@ contract BosonRouter is
             amount.add(msg.value)
         );
 
+        //record funds in escrowTokens ...
+        amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenDepositAddress, msg.sender);
+        ICashier(cashierAddress).updateEscrowTokensAmount(
+            tokenDepositAddress,
+            msg.sender,
+            amount.add(_tokensDeposit)
+        );
+
         payable(cashierAddress).sendValue(msg.value);
     }
 
@@ -569,6 +617,14 @@ contract BosonRouter is
         ICashier(cashierAddress).updateEscrowAmount(
             msg.sender,
             amount.add(msg.value)
+        );
+
+        //record funds in escrowTokens ...
+        amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenPriceAddress, msg.sender);
+        ICashier(cashierAddress).updateEscrowTokensAmount(
+            tokenPriceAddress,
+            msg.sender,
+            amount.add(price)
         );
 
         payable(cashierAddress).sendValue(msg.value);
@@ -629,48 +685,87 @@ contract BosonRouter is
                 tokenSupplyId
             );
 
+        uint256 amount;
+        address tokenAddress;
+
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(tokenSupplyId);
 
         if (paymentType == ETHETH) {
             uint256 totalAmount = price.add(depositBu);
 
-            uint256 amount = ICashier(cashierAddress).getEscrowAmount(_from);
-            ICashier(cashierAddress).updateEscrowAmount(
-                _from,
-                amount.sub(totalAmount)
-            );
+            amount = ICashier(cashierAddress).getEscrowAmount(_from);
+            ICashier(cashierAddress).updateEscrowAmount(_from, amount.sub(totalAmount));
 
             amount = ICashier(cashierAddress).getEscrowAmount(_to);
-            ICashier(cashierAddress).updateEscrowAmount(
-                _to,
-                amount.add(totalAmount)
-            );
+            ICashier(cashierAddress).updateEscrowAmount(_to,amount.add(totalAmount));
         }
 
         if (paymentType == ETHTKN) {
-            uint256 amount = ICashier(cashierAddress).getEscrowAmount(_from);
-            ICashier(cashierAddress).updateEscrowAmount(
-                _from,
-                amount.sub(price)
-            );
+
+            // update price funds in ETH
+            amount = ICashier(cashierAddress).getEscrowAmount(_from);
+            ICashier(cashierAddress).updateEscrowAmount(_from,amount.sub(price));
 
             amount = ICashier(cashierAddress).getEscrowAmount(_to);
             ICashier(cashierAddress).updateEscrowAmount(_to, amount.add(price));
+
+            // update deposit funds in Token
+            tokenAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(
+                tokenSupplyId
+            );
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _from);
+            ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _from, amount.sub(depositBu));
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _to);
+            ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _to,amount.add(depositBu));
         }
 
         if (paymentType == TKNETH) {
-            uint256 amount = ICashier(cashierAddress).getEscrowAmount(_from);
-            ICashier(cashierAddress).updateEscrowAmount(
-                _from,
-                amount.sub(depositBu)
+            // update price funds in Token
+            tokenAddress = IVoucherKernel(voucherKernel).getVoucherPriceToken(
+                tokenSupplyId
             );
 
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _from);
+            ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _from, amount.sub(price));
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _to);
+            ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _to,amount.add(price));
+
+            update deposit funds in ETH
+            amount = ICashier(cashierAddress).getEscrowAmount(_from);
+            ICashier(cashierAddress).updateEscrowAmount(_from,amount.sub(depositBu));
+
             amount = ICashier(cashierAddress).getEscrowAmount(_to);
-            ICashier(cashierAddress).updateEscrowAmount(
-                _to,
-                amount.add(depositBu)
+            ICashier(cashierAddress).updateEscrowAmount(_to, amount.add(depositBu));
+        }
+
+        if (paymentType == TKNTKN) {
+
+            // update price funds in Token
+            tokenAddress = IVoucherKernel(voucherKernel).getVoucherPriceToken(
+                tokenSupplyId
             );
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _from);
+            ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _from, amount.sub(price));
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _to);
+            ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _to,amount.add(price));
+
+            // update Deposit funds in Token
+            tokenAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(
+                tokenSupplyId
+            );
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _from);
+            ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _from, amount.sub(depositBu));
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _to);
+            ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _to,amount.add(depositBu));
+
         }
     }
 
@@ -711,22 +806,36 @@ contract BosonRouter is
                 _tokenSupplyId
             );
 
-        if (paymentType == ETHETH || paymentType == TKNETH) {
-            uint256 depositSe =
-                IVoucherKernel(voucherKernel).getSellerDeposit(_tokenSupplyId);
-            uint256 totalAmount = depositSe.mul(_value);
+        uint256 depositSe;
+        uint256 totalAmount;
+        uint256 amount;
 
-            uint256 amount = ICashier(cashierAddress).getEscrowAmount(_from);
-            ICashier(cashierAddress).updateEscrowAmount(
-                _from,
-                amount.sub(totalAmount)
-            );
+        if (paymentType == ETHETH || paymentType == TKNETH) {
+            depositSe = IVoucherKernel(voucherKernel).getSellerDeposit(_tokenSupplyId);
+            totalAmount = depositSe.mul(_value);
+
+            amount = ICashier(cashierAddress).getEscrowAmount(_from);
+            ICashier(cashierAddress).updateEscrowAmount(_from,amount.sub(totalAmount));
 
             amount = ICashier(cashierAddress).getEscrowAmount(_to);
-            ICashier(cashierAddress).updateEscrowAmount(
-                _to,
-                amount.add(totalAmount)
+            ICashier(cashierAddress).updateEscrowAmount(_to,amount.add(totalAmount));
+        }
+
+        if (paymentType == ETHTKN || paymentType == TKNTKN) {
+
+            address tokenDepositAddress =
+            IVoucherKernel(voucherKernel).getVoucherDepositToken(
+                _tokenSupplyId
             );
+
+            depositSe =IVoucherKernel(voucherKernel).getSellerDeposit(_tokenSupplyId);
+            totalAmount = depositSe.mul(_value);
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenDepositAddress, _from);
+            ICashier(cashierAddress).updateEscrowTokensAmount(tokenDepositAddress,_from,amount.sub(totalAmount));
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenDepositAddress, _to);
+            ICashier(cashierAddress).updateEscrowTokensAmount(tokenDepositAddress,_to,amount.add(totalAmount));
         }
 
         IVoucherKernel(voucherKernel).setSupplyHolderOnTransfer(
