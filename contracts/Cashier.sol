@@ -690,7 +690,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
         if (paymentMethod == ETHETH || paymentMethod == TKNETH) {
             escrow[msg.sender] = escrow[msg.sender].sub(depositAmount);
-            _withdrawDeposits(seller, depositAmount);
         }
 
         if (paymentMethod == ETHTKN || paymentMethod == TKNTKN) {
@@ -699,23 +698,10 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                     _tokenIdSupply
                 );
 
-            //TODO here escrowtokens should be updated
-            IERC20WithPermit(addressTokenDeposits).transfer(
-                seller,
-                depositAmount
-            );
+            escrowTokens[addressTokenDeposits][msg.sender] = escrowTokens[addressTokenDeposits][msg.sender].sub(depositAmount);
         }
-    }
 
-    function _withdrawDeposits(address payable _recipient, uint256 _amount)
-        internal
-    {
-        require(_recipient != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(_amount > 0, "");
-
-        _recipient.sendValue(_amount);
-
-        emit LogWithdrawal(msg.sender, _recipient, _amount);
+        _withdrawDeposits(msg.sender, depositAmount, paymentMethod, _tokenIdSupply);
     }
 
     /**
@@ -727,7 +713,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         internal 
     {
         require(_recipient != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(_amount > 0, "kor pay");
+        require(_amount > 0, "");
 
         if(_paymentMethod == ETHETH || _paymentMethod == ETHTKN) {
             payable(_recipient).sendValue(_amount);
@@ -752,7 +738,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      */
     function _withdrawDeposits(address _recipient, uint256 _amount, uint8 _paymentMethod, uint256 _tokenIdSupply) internal {
         require(_recipient != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(_amount > 0, "kor dep");
+        require(_amount > 0, "");
 
         if(_paymentMethod == ETHETH || _paymentMethod == TKNETH) {
             payable(_recipient).sendValue(_amount);

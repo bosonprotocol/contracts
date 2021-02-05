@@ -3665,7 +3665,7 @@ contract('Cashier withdrawals ', async (addresses) => {
     });
   }
 
-  describe('[WHEN PAUSED] Seller withdraws deposit locked in escrow', async () => {
+  describe.only('[WHEN PAUSED] Seller withdraws deposit locked in escrow', async () => {
     let remQty = 10;
     let voucherToBuyBeforeBurn = 5;
     let tokensToMintSeller, tokensToMintBuyer;
@@ -3903,7 +3903,7 @@ contract('Cashier withdrawals ', async (addresses) => {
           );
         });
 
-        it('Escrow should have correct balance after burning the rest of the supply', async () => {
+        it('Tokens should be returned to seller after burning the rest of the supply', async () => {
           const expectedBalance = new BN(helpers.seller_deposit).mul(
             new BN(voucherToBuyBeforeBurn)
           );
@@ -3911,6 +3911,21 @@ contract('Cashier withdrawals ', async (addresses) => {
             users.seller.address
           );
 
+          assert.isTrue(
+            escrowAmount.eq(expectedBalance),
+            'Escrow amount is incorrect'
+          );
+        });
+
+        it('Escrow should have correct balance after burning the rest of the supply', async () => {
+          const expectedBalance = new BN(helpers.seller_deposit).mul(
+            new BN(voucherToBuyBeforeBurn)
+          );
+          const escrowAmount = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          );
+  
           assert.isTrue(
             escrowAmount.eq(expectedBalance),
             'Escrow amount is incorrect'
@@ -4197,7 +4212,7 @@ contract('Cashier withdrawals ', async (addresses) => {
           );
         });
 
-        it('Escrow should have correct balance after burning the rest of the supply', async () => {
+        it('Tokens should be returned to seller after burning the rest of the supply', async () => {
           const expectedBalance = new BN(helpers.seller_deposit).mul(
             new BN(voucherToBuyBeforeBurn)
           );
@@ -4205,6 +4220,21 @@ contract('Cashier withdrawals ', async (addresses) => {
             users.seller.address
           );
 
+          assert.isTrue(
+            escrowAmount.eq(expectedBalance),
+            'Escrow amount is incorrect'
+          );
+        });
+
+        it('Escrow should have correct balance after burning the rest of the supply', async () => {
+          const expectedBalance = new BN(helpers.seller_deposit).mul(
+            new BN(voucherToBuyBeforeBurn)
+          );
+          const escrowAmount = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          );
+  
           assert.isTrue(
             escrowAmount.eq(expectedBalance),
             'Escrow amount is incorrect'
@@ -4421,8 +4451,6 @@ contract('Cashier withdrawals ', async (addresses) => {
 
         await contractBosonRouter.pause();
       })
-
-     
 
       it("[NEGATIVE] withdrawTokensOnDisaster should not be executable before admin allows to", async() => {
         await truffleAssert.reverts(
