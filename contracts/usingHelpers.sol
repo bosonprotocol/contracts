@@ -34,9 +34,12 @@ contract UsingHelpers {
         uint256 price;
         uint256 depositSe;
         uint256 depositBu;
-        uint256 amount2pool;
-        uint256 amount2issuer;
-        uint256 amount2holder;
+        uint256 price2pool;
+        uint256 deposit2pool;
+        uint256 price2issuer;
+        uint256 deposit2issuer;
+        uint256 price2holder;
+        uint256 deposit2holder;
         uint8 paymentMethod;
         VoucherStatus currStatus;
     }

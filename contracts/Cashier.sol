@@ -189,17 +189,24 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             releaseDeposits(voucherDetails);
         }
 
-        if (voucherDetails.amount2pool > 0) {
-            address payable poolAddress = payable(owner()); //this is required as we could not implicitly cast the owner address to payable
-            _withdraw(poolAddress, voucherDetails.amount2pool);
+        if (voucherDetails.deposit2pool > 0) {
+            _withdrawDeposits(owner(), voucherDetails.deposit2pool, voucherDetails.paymentMethod, voucherDetails.tokenIdSupply);
         }
 
-        if (voucherDetails.amount2issuer > 0) {
-            _withdraw(voucherDetails.issuer, voucherDetails.amount2issuer);
+        if (voucherDetails.price2issuer > 0) {
+            _withdrawPayments(voucherDetails.issuer, voucherDetails.price2issuer, voucherDetails.paymentMethod, voucherDetails.tokenIdSupply);
         }
 
-        if (voucherDetails.amount2holder > 0) {
-            _withdraw(voucherDetails.holder, voucherDetails.amount2holder);
+        if (voucherDetails.deposit2issuer > 0) {
+            _withdrawDeposits(voucherDetails.issuer, voucherDetails.deposit2issuer, voucherDetails.paymentMethod, voucherDetails.tokenIdSupply);
+        }
+
+        if (voucherDetails.price2holder > 0) {
+            _withdrawPayments(voucherDetails.holder, voucherDetails.price2holder, voucherDetails.paymentMethod, voucherDetails.tokenIdSupply);
+        }
+
+        if (voucherDetails.deposit2holder > 0) {
+            _withdrawDeposits(voucherDetails.holder, voucherDetails.deposit2holder, voucherDetails.paymentMethod, voucherDetails.tokenIdSupply);
         }
 
         delete voucherDetails;
@@ -280,17 +287,24 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             releaseDeposits(voucherDetails);
         }
 
-        if (voucherDetails.amount2pool > 0) {
-            address payable poolAddress = payable(owner());
-            _withdraw(poolAddress, voucherDetails.amount2pool);
+        if (voucherDetails.deposit2pool > 0) {
+            _withdrawDeposits(owner(), voucherDetails.deposit2pool, voucherDetails.paymentMethod, voucherDetails.tokenIdSupply);
         }
 
-        if (voucherDetails.amount2issuer > 0) {
-            _withdraw(voucherDetails.issuer, voucherDetails.amount2issuer);
+        if (voucherDetails.price2issuer > 0) {
+            _withdrawPayments(voucherDetails.issuer, voucherDetails.price2issuer, voucherDetails.paymentMethod, voucherDetails.tokenIdSupply);
         }
 
-        if (voucherDetails.amount2holder > 0) {
-            _withdraw(voucherDetails.holder, voucherDetails.amount2holder);
+        if (voucherDetails.deposit2issuer > 0) {
+            _withdrawDeposits(voucherDetails.issuer, voucherDetails.deposit2issuer, voucherDetails.paymentMethod, voucherDetails.tokenIdSupply);
+        }
+
+        if (voucherDetails.price2holder > 0) {
+            _withdrawPayments(voucherDetails.holder, voucherDetails.price2holder, voucherDetails.paymentMethod, voucherDetails.tokenIdSupply);
+        }
+
+        if (voucherDetails.deposit2holder > 0) {
+            _withdrawDeposits(voucherDetails.holder, voucherDetails.deposit2holder, voucherDetails.paymentMethod, voucherDetails.tokenIdSupply);
         }
 
         delete voucherDetails;
@@ -317,10 +331,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == ETHTKN
         ) {
             escrow[voucherDetails.holder] -= voucherDetails.price;
-            voucherDetails.amount2issuer += voucherDetails.price;
         }
-
-        // TODO Chris - Can we have the same approach as above, first collect all amounts in one variable and do the payout at the end? So we save gas from multiple transfers
         if (
             voucherDetails.paymentMethod == TKNETH ||
             voucherDetails.paymentMethod == TKNTKN
@@ -329,11 +340,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 IVoucherKernel(voucherKernel).getVoucherPriceToken(
                     voucherDetails.tokenIdSupply
                 );
-            IERC20WithPermit(addressTokenPrice).transfer(
-                voucherDetails.issuer,
-                voucherDetails.price
-            );
+
+            escrowTokens[addressTokenPrice][voucherDetails.holder] -= voucherDetails.price;
         }
+
+        voucherDetails.price2issuer += voucherDetails.price;
 
         IVoucherKernel(voucherKernel).setPaymentReleased(
             voucherDetails.tokenIdVoucher
@@ -355,7 +366,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == ETHTKN
         ) {
             escrow[voucherDetails.holder] -= voucherDetails.price;
-            voucherDetails.amount2holder += voucherDetails.price;
         }
 
         if (
@@ -366,11 +376,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 IVoucherKernel(voucherKernel).getVoucherPriceToken(
                     voucherDetails.tokenIdSupply
                 );
-            IERC20WithPermit(addressTokenPrice).transfer(
-                voucherDetails.holder,
-                voucherDetails.price
-            );
+
+            escrowTokens[addressTokenPrice][voucherDetails.holder] -= voucherDetails.price;
         }
+
+        voucherDetails.price2holder += voucherDetails.price;
 
         IVoucherKernel(voucherKernel).setPaymentReleased(
             voucherDetails.tokenIdVoucher
@@ -428,15 +438,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 voucherDetails.paymentMethod == TKNETH
             ) {
                 escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
-                tFraction = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
-                voucherDetails.amount2holder += tFraction; //Bu gets, say, a half
-                voucherDetails.amount2issuer += tFraction.div(
-                    CANCELFAULT_SPLIT
-                ); //Se gets, say, a quarter
-                voucherDetails.amount2pool +=
-                    voucherDetails.depositSe -
-                    tFraction -
-                    tFraction.div(CANCELFAULT_SPLIT); //slashing the rest
             }
 
             if (
@@ -448,23 +449,13 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                         voucherDetails.tokenIdSupply
                     );
 
-                tFraction = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
-
-                IERC20WithPermit(addressTokenDeposits).transfer(
-                    voucherDetails.holder,
-                    tFraction
-                );
-                IERC20WithPermit(addressTokenDeposits).transfer(
-                    voucherDetails.issuer,
-                    tFraction.div(CANCELFAULT_SPLIT)
-                );
-                IERC20WithPermit(addressTokenDeposits).transfer(
-                    owner(),
-                    voucherDetails.depositSe -
-                        tFraction -
-                        tFraction.div(CANCELFAULT_SPLIT)
-                );
+                escrowTokens[addressTokenDeposits][voucherDetails.issuer] -= voucherDetails.depositSe;
             }
+
+            tFraction = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+            voucherDetails.deposit2holder += tFraction; //Bu gets, say, a half
+            voucherDetails.deposit2issuer += tFraction.div(CANCELFAULT_SPLIT); //Se gets, say, a quarter
+            voucherDetails.deposit2pool +=voucherDetails.depositSe - tFraction - tFraction.div(CANCELFAULT_SPLIT); //slashing the rest
 
             LogAmountDistribution(
                 voucherDetails.tokenIdVoucher,
@@ -495,17 +486,16 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 voucherDetails.paymentMethod == TKNETH
             ) {
                 escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
-                voucherDetails.amount2pool += voucherDetails.depositSe;
             } else {
                 address addressTokenDeposits =
                     IVoucherKernel(voucherKernel).getVoucherDepositToken(
                         voucherDetails.tokenIdSupply
                     );
-                IERC20WithPermit(addressTokenDeposits).transfer(
-                    owner(),
-                    voucherDetails.depositSe
-                );
+
+                escrowTokens[addressTokenDeposits][voucherDetails.issuer] -= voucherDetails.depositSe;
             }
+
+            voucherDetails.deposit2pool += voucherDetails.depositSe;
 
             LogAmountDistribution(
                 voucherDetails.tokenIdVoucher,
@@ -524,12 +514,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == TKNETH
         ) {
             escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
-            voucherDetails.amount2issuer += voucherDetails.depositSe.div(
-                CANCELFAULT_SPLIT
-            );
-            voucherDetails.amount2holder +=
-                voucherDetails.depositSe -
-                voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
         }
 
         if (
@@ -541,16 +525,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                     voucherDetails.tokenIdSupply
                 );
 
-            IERC20WithPermit(addressTokenDeposits).transfer(
-                voucherDetails.issuer,
-                voucherDetails.depositSe.div(CANCELFAULT_SPLIT)
-            );
-            IERC20WithPermit(addressTokenDeposits).transfer(
-                voucherDetails.holder,
-                voucherDetails.depositSe -
-                    voucherDetails.depositSe.div(CANCELFAULT_SPLIT)
-            );
+            escrowTokens[addressTokenDeposits][voucherDetails.issuer] -= voucherDetails.depositSe;
         }
+
+        voucherDetails.deposit2issuer += voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+        voucherDetails.deposit2holder +=voucherDetails.depositSe - voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher,
@@ -576,7 +555,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == TKNETH
         ) {
             escrow[voucherDetails.issuer] -= voucherDetails.depositSe;
-            voucherDetails.amount2issuer += voucherDetails.depositSe;
         }
 
         if (
@@ -587,11 +565,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 IVoucherKernel(voucherKernel).getVoucherDepositToken(
                     voucherDetails.tokenIdSupply
                 );
-            IERC20WithPermit(addressTokenDeposits).transfer(
-                voucherDetails.issuer,
-                voucherDetails.depositSe
-            );
+
+            escrowTokens[addressTokenDeposits][voucherDetails.issuer] -= voucherDetails.depositSe;
         }
+
+        voucherDetails.deposit2issuer += voucherDetails.depositSe;
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher,
@@ -609,7 +587,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == TKNETH
         ) {
             escrow[voucherDetails.holder] -= voucherDetails.depositBu;
-            voucherDetails.amount2holder += voucherDetails.depositBu;
         }
 
         if (
@@ -620,11 +597,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 IVoucherKernel(voucherKernel).getVoucherDepositToken(
                     voucherDetails.tokenIdSupply
                 );
-            IERC20WithPermit(addressTokenDeposits).transfer(
-                voucherDetails.holder,
-                voucherDetails.depositBu
-            );
+
+            escrowTokens[addressTokenDeposits][voucherDetails.holder] -= voucherDetails.depositBu;
         }
+
+        voucherDetails.deposit2holder += voucherDetails.depositBu;
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher,
@@ -642,7 +619,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == TKNETH
         ) {
             escrow[voucherDetails.holder] -= voucherDetails.depositBu;
-            voucherDetails.amount2pool += voucherDetails.depositBu;
         }
 
         if (
@@ -653,11 +629,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 IVoucherKernel(voucherKernel).getVoucherDepositToken(
                     voucherDetails.tokenIdSupply
                 );
-            IERC20WithPermit(addressTokenDeposits).transfer(
-                owner(),
-                voucherDetails.depositBu
-            );
+
+            escrowTokens[addressTokenDeposits][voucherDetails.holder] -= voucherDetails.depositBu;
         }
+
+        voucherDetails.deposit2pool += voucherDetails.depositBu;
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher,
@@ -722,28 +698,13 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 IVoucherKernel(voucherKernel).getVoucherDepositToken(
                     _tokenIdSupply
                 );
+
+            //TODO here escrowtokens should be updated
             IERC20WithPermit(addressTokenDeposits).transfer(
                 seller,
                 depositAmount
             );
         }
-    }
-
-    /**
-     * @notice Internal function for withdrawing.
-     * As unbelievable as it is, neither .send() nor .transfer() are now secure to use due to EIP-1884
-     *  So now transferring funds via the last remaining option: .call()
-     *  See https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/
-     * @param _recipient    address of the account receiving funds from the escrow
-     * @param _amount       amount to be released from escrow
-     */
-    function _withdraw(address payable _recipient, uint256 _amount) internal {
-        require(_recipient != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(_amount > 0, "");
-
-        _recipient.sendValue(_amount);
-
-        emit LogWithdrawal(msg.sender, _recipient, _amount);
     }
 
     function _withdrawDeposits(address payable _recipient, uint256 _amount)
@@ -755,6 +716,58 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         _recipient.sendValue(_amount);
 
         emit LogWithdrawal(msg.sender, _recipient, _amount);
+    }
+
+    /**
+     * @notice Internal function for withdrawing payments.
+     * @param _recipient    address of the account receiving funds from the escrow
+     * @param _amount       amount to be released from escrow
+     */
+    function _withdrawPayments(address _recipient, uint256 _amount, uint8 _paymentMethod, uint256 _tokenIdSupply) 
+        internal 
+    {
+        require(_recipient != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_amount > 0, "kor pay");
+
+        if(_paymentMethod == ETHETH || _paymentMethod == ETHTKN) {
+            payable(_recipient).sendValue(_amount);
+            emit LogWithdrawal(msg.sender, _recipient, _amount);
+        }
+
+        if(_paymentMethod == TKNETH || _paymentMethod == TKNTKN) {
+            address addressTokenPrice = IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
+
+            IERC20WithPermit(addressTokenPrice).transfer(
+                _recipient,
+                _amount
+            );
+        }
+
+    }
+
+    /**
+     * @notice Internal function for withdrawing deposits.
+     * @param _recipient    address of the account receiving funds from the escrow
+     * @param _amount       amount to be released from escrow
+     */
+    function _withdrawDeposits(address _recipient, uint256 _amount, uint8 _paymentMethod, uint256 _tokenIdSupply) internal {
+        require(_recipient != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_amount > 0, "kor dep");
+
+        if(_paymentMethod == ETHETH || _paymentMethod == TKNETH) {
+            payable(_recipient).sendValue(_amount);
+            emit LogWithdrawal(msg.sender, _recipient, _amount);
+
+        }
+
+        if(_paymentMethod == ETHTKN || _paymentMethod == TKNTKN) {
+            address addressTokenDeposits = IVoucherKernel(voucherKernel).getVoucherDepositToken(_tokenIdSupply);
+            IERC20WithPermit(addressTokenDeposits).transfer(
+                _recipient,
+                _amount
+            );
+        }
+
     }
 
     /**

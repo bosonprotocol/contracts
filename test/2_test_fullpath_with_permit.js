@@ -4357,7 +4357,7 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
-        it.only('Should update escrow amounts after transfer', async () => {
+        it('Should update escrow amounts after transfer', async () => {
           let expectedBalanceInEscrowTknPrice = new BN(constants.product_price);
           let expectedBalanceInEscrowTknDeposit = new BN(constants.buyer_deposit);
           const voucherID = await utils.commitToBuy(

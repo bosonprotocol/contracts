@@ -165,7 +165,7 @@ contract('Cashier withdrawals ', async (addresses) => {
   }
 
   for (let i = 0; i <= PAUSED_WITHPERMIT; i++) {
-    describe('Withdraw scenarios', async () => {
+    describe.only('Withdraw scenarios', async () => {
       before(async () => {
         await deployContracts();
       });
@@ -4242,7 +4242,7 @@ contract('Cashier withdrawals ', async (addresses) => {
     });
   });
 
-  describe("Withdraw on disaster", () => {
+  xdescribe("Withdraw on disaster", () => {
     let vouchersToBuy = 5;
 
     describe("Common", () => {

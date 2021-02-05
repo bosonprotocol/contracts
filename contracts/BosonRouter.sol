@@ -734,7 +734,7 @@ contract BosonRouter is
             amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _to);
             ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _to,amount.add(price));
 
-            update deposit funds in ETH
+            // update deposit funds in ETH
             amount = ICashier(cashierAddress).getEscrowAmount(_from);
             ICashier(cashierAddress).updateEscrowAmount(_from,amount.sub(depositBu));
 
@@ -763,8 +763,9 @@ contract BosonRouter is
             amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _from);
             ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _from, amount.sub(depositBu));
 
-            amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _to);
-            ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _to,amount.add(depositBu));
+            //TODO hitting out of gas just for 2 lines .. need further optimization
+            // amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _to);
+            // ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _to,amount.add(depositBu));
 
         }
     }
