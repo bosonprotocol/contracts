@@ -21,7 +21,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
     address public voucherKernel;
     address public bosonRouterAddress;
-    bool public allowManualWithdrawOnDisaster;
+    bool public disasterState;
 
     enum PaymentType {PAYMENT, DEPOSIT_SELLER, DEPOSIT_BUYER}
 
@@ -48,7 +48,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         PaymentType _type
     );
 
-    event LogAllowManualWithdraw(bool _allowManualWithdrawOnDisaster, address _triggeredBy);
+    event LogDisasterStateSet(bool _disasterState, address _triggeredBy);
     event LogWithdrawEthOnDisaster(uint256 _amount, address _triggeredBy);
     event LogWithdrawTokensOnDisaster(uint256 _amount, address _tokenAddress, address _triggeredBy);
 
@@ -65,7 +65,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
     constructor(address _voucherKernel) public {
         voucherKernel = _voucherKernel;
-        allowManualWithdrawOnDisaster = false;
+        disasterState = false;
     }
 
     /**
@@ -84,17 +84,24 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         _unpause();
     }
 
-    //TODO Do we need a functionality to disable manual withdrawn once we enable it? 
-    function allowManualWithdraw() 
+     function canUnpause() external view override returns (bool) {
+        return !disasterState;
+    }
+
+    /**
+     * @notice Once this functions is triggered, contracts cannot be unpaused anymore
+     * Only BR contract is in control of this function.
+     */
+    function setDisasterState()
         external
         onlyOwner
         whenPaused {
-        allowManualWithdrawOnDisaster = true;
-        LogAllowManualWithdraw(allowManualWithdrawOnDisaster, msg.sender);
+        disasterState = true;
+        LogDisasterStateSet(disasterState, msg.sender);
     }
 
     function withdrawEthOnDisaster() external whenPaused {
-        require(allowManualWithdrawOnDisaster, "Owner did not allow manual withdraw");
+        require(disasterState, "Owner did not allow manual withdraw");
 
         uint256 amount = escrow[msg.sender];
 
@@ -106,7 +113,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     function withdrawTokensOnDisaster(address token) external whenPaused notZeroAddress(token) {
-        require(allowManualWithdrawOnDisaster, "Owner did not allow manual withdraw");
+        require(disasterState, "Owner did not allow manual withdraw");
 
         uint256 amount = escrowTokens[token][msg.sender];
         require(amount > 0, "ESCROW_EMPTY");
@@ -141,7 +148,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
     /**
      * @notice Trigger withdrawals of what funds are releasable
-     * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
+     * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas. Must be either the seller or the buyer 
      * @dev This function would be optimized a lot, here verbose for readability.
      * @param _tokenIdVoucher an ID of a voucher token (ERC-721) to try withdraw funds from
      */

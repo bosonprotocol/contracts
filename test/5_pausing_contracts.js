@@ -1032,6 +1032,22 @@ contract('Cashier && VK', async (addresses) => {
             truffleAssert.ErrorType.REVERT
           );
         });
+
+        it("Owner should set the Cashier to disaster state", async () => {
+          await contractBosonRouter.pause();
+          const tx = await contractCashier.setDisasterState();
+
+          truffleAssert.eventEmitted(tx, 'LogDisasterStateSet', ev => {
+            return ev._triggeredBy == users.deployer.address
+          })
+        })
+
+        it("Should not be unpaused after disaster", async () => {
+          await truffleAssert.reverts(
+            contractBosonRouter.unpause(),
+            truffleAssert.ErrorType.REVERT
+          )
+        })
       });
 
       describe('ETHETH', () => {
@@ -1949,7 +1965,9 @@ contract('Cashier && VK', async (addresses) => {
 
     afterEach(async () => {
       const isPaused = await contractBosonRouter.paused();
-      if (isPaused) {
+      const isUnpauseable = await contractCashier.canUnpause();
+
+      if (isPaused && isUnpauseable) {
         await contractBosonRouter.unpause();
       }
     });

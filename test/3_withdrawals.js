@@ -4930,18 +4930,18 @@ contract('Cashier withdrawals ', async (addresses) => {
         
       })
 
-      it("[NEGATIVE] ManualWithdraw should not be executable when contract is not paused", async() => {
+      it("[NEGATIVE] Disaster state should not be set when contract is not paused", async() => {
         await truffleAssert.reverts(
-          contractCashier.allowManualWithdraw(),
+          contractCashier.setDisasterState(),
           truffleAssert.ErrorType.REVERT
         )
       })
 
-      it("[NEGATIVE] ManualWithdraw should not be executable from attacker", async() => {
+      it("[NEGATIVE] Disaster state should not be set from attacker", async() => {
         await contractBosonRouter.pause();
 
         await truffleAssert.reverts(
-          contractCashier.allowManualWithdraw({from: users.attacker.address}),
+          contractCashier.setDisasterState({from: users.attacker.address}),
           truffleAssert.ErrorType.REVERT
         )
       })
@@ -4983,10 +4983,10 @@ contract('Cashier withdrawals ', async (addresses) => {
         )
       })
 
-      it("Admin should be able to allow manual withdraw", async () => {
-        const tx = await contractCashier.allowManualWithdraw()
+      it("Admin should be able to set the Cashier at disaster state", async () => {
+        const tx = await contractCashier.setDisasterState()
 
-        truffleAssert.eventEmitted(tx, 'LogAllowManualWithdraw', ev => {
+        truffleAssert.eventEmitted(tx, 'LogDisasterStateSet', ev => {
           return ev._triggeredBy == users.deployer.address
         })
       })
@@ -5086,10 +5086,10 @@ contract('Cashier withdrawals ', async (addresses) => {
         )
       })
 
-      it("Admin should be able to allow manual withdraw", async () => {
-        const tx = await contractCashier.allowManualWithdraw()
+      it("Admin should be able to set the Cashier at disaster state", async () => {
+        const tx = await contractCashier.setDisasterState()
 
-        truffleAssert.eventEmitted(tx, 'LogAllowManualWithdraw', ev => {
+        truffleAssert.eventEmitted(tx, 'LogDisasterStateSet', ev => {
           return ev._triggeredBy == users.deployer.address
         })
       })

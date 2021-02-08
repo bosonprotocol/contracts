@@ -16,6 +16,8 @@ interface ICashier {
      */
     function unpause() external;
 
+    function canUnpause() external view returns (bool);
+
     /**
      * @notice Trigger withdrawals of what funds are releasable
      * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
@@ -26,7 +28,7 @@ interface ICashier {
 
     /**
      * @notice Trigger withdrawals of what funds are releasable
-     * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
+     * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas. Must be either the seller or the buyer 
      * @dev This function would be optimized a lot, here verbose for readability.
      * @param _tokenIdVoucher an ID of a voucher token (ERC-721) to try withdraw funds from
      */

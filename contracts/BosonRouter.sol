@@ -100,6 +100,8 @@ contract BosonRouter is
      * All functions related to creating new batch, requestVoucher or withdraw will be unpaused.
      */
     function unpause() external override onlyOwner {
+        require(ICashier(cashierAddress).canUnpause(), "Contracts unpauseable!");
+
         _unpause();
         IVoucherKernel(voucherKernel).unpause();
         ICashier(cashierAddress).unpause();
@@ -774,11 +776,12 @@ contract BosonRouter is
             amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _from);
             ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _from, amount.sub(price));
 
-            amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _to);
-            ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _to,amount.add(price));
-
 
             //TODO hitting out of gas ... need further optimization
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _to);
+            // ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _to,amount.add(price));
+
+
             // // update Deposit funds in Token
             // tokenAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(
             //     tokenSupplyId
