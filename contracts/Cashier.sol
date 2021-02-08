@@ -33,7 +33,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
     event LogWithdrawal(address _caller, address _payee, uint256 _payment);
 
-    event LogWithdrawDepositsSe(uint256 _tokenIdSupply, uint256 _burnedQty, address _triggeredBy);
+    event LogWithdrawDepositsSe(
+        uint256 _tokenIdSupply,
+        uint256 _burnedQty,
+        address _triggeredBy
+    );
 
     event LogAmountDistribution(
         uint256 indexed _tokenIdVoucher,
@@ -673,7 +677,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
         if (paymentMethod == ETHETH || paymentMethod == TKNETH) {
             escrow[msg.sender] = escrow[msg.sender].sub(depositAmount);
-            _withdrawDepositsSePaused(seller, depositAmount);
+            _withdraw(seller, depositAmount);
         }
 
         if (paymentMethod == ETHTKN || paymentMethod == TKNTKN) {
@@ -716,7 +720,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
         if (paymentMethod == ETHETH || paymentMethod == TKNETH) {
             escrow[_msgSender] = escrow[_msgSender].sub(depositAmount);
-            _withdrawDepositsSe(_msgSender, depositAmount);
+            _withdraw(_msgSender, depositAmount);
         }
 
         if (paymentMethod == ETHTKN || paymentMethod == TKNTKN) {
@@ -744,29 +748,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     function _withdraw(address payable _recipient, uint256 _amount) internal {
         require(_recipient != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         require(_amount > 0, "");
-
-        _recipient.sendValue(_amount);
-
-        emit LogWithdrawal(msg.sender, _recipient, _amount);
-    }
-
-    function _withdrawDepositsSe(address payable _recipient, uint256 _amount)
-        internal
-    {
-        require(_recipient != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(_amount > 0, "UNSPECIFIED_AMOUNT");
-
-        _recipient.sendValue(_amount);
-
-        emit LogWithdrawal(msg.sender, _recipient, _amount);
-    }
-
-    function _withdrawDepositsSePaused(
-        address payable _recipient,
-        uint256 _amount
-    ) internal {
-        require(_recipient != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(_amount > 0, "UNSPECIFIED_AMOUNT");
 
         _recipient.sendValue(_amount);
 
