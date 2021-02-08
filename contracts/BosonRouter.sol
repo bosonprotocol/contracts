@@ -575,6 +575,28 @@ contract BosonRouter is
     }
 
     /**
+     * @notice Seller burns the remaining supply in case it's no longer in exchange and withdrawal of the locked deposits for them are being sent back.
+     * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
+     */
+    function requestCancelOrFaultVoucherSet(uint256 _tokenIdSupply)
+        external
+        override
+        nonReentrant
+        whenNotPaused
+    {
+        uint256 _burnedSupplyQty =
+            IVoucherKernel(voucherKernel).cancelOrFaultVoucherSet(
+                _tokenIdSupply,
+                msg.sender
+            );
+        ICashier(cashierAddress).withdrawDepositsSe(
+            _tokenIdSupply,
+            _burnedSupplyQty,
+            msg.sender
+        );
+    }
+
+    /**
      * @notice Redemption of the vouchers promise
      * @param _tokenIdVoucher   ID of the voucher
      */

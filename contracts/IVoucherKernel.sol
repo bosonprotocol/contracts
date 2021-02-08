@@ -104,6 +104,15 @@ interface IVoucherKernel {
         external;
 
     /**
+     * @notice Cancel/Fault transaction by the Seller, cancelling the remaining uncommitted voucher set so that seller prevents buyers from committing to vouchers for items no longer in exchange.
+     * @param _tokenIdSupply   ID of the voucher
+     * @param _issuer   owner of the voucher
+     */
+    function cancelOrFaultVoucherSet(uint256 _tokenIdSupply, address _issuer)
+        external
+        returns (uint256);
+
+    /**
      * @notice Fill Voucher Order, iff funds paid, then extract & mint NFT to the voucher holder
      * @param _tokenIdSupply   ID of the supply token (ERC-1155)
      * @param _issuer          Address of the token's issuer

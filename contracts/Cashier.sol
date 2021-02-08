@@ -33,6 +33,12 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
     event LogWithdrawal(address _caller, address _payee, uint256 _payment);
 
+    event LogWithdrawDepositsSe(
+        uint256 _tokenIdSupply,
+        uint256 _burnedQty,
+        address _triggeredBy
+    );
+
     event LogAmountDistribution(
         uint256 indexed _tokenIdVoucher,
         address _to,
@@ -624,10 +630,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
+     * TODO Needs further specification on how to be implemented if contract is paused. Stays here for reference.
      * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the contracts are paused.
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
      */
-    function withdrawDeposits(uint256 _tokenIdSupply)
+    function withdrawDepositsSePaused(uint256 _tokenIdSupply)
         external
         override
         nonReentrant
@@ -670,7 +677,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
         if (paymentMethod == ETHETH || paymentMethod == TKNETH) {
             escrow[msg.sender] = escrow[msg.sender].sub(depositAmount);
-            _withdrawDeposits(seller, depositAmount);
+            _withdraw(seller, depositAmount);
         }
 
         if (paymentMethod == ETHTKN || paymentMethod == TKNTKN) {
@@ -686,6 +693,51 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
+     * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the voucher set is no longer in exchange.
+     * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
+     * @param _burnedQty burned quantity that the deposits should be withdrawn for
+     * @param _msgSender owner of the voucher set
+     */
+    function withdrawDepositsSe(
+        uint256 _tokenIdSupply,
+        uint256 _burnedQty,
+        address payable _msgSender
+    ) external override nonReentrant onlyFromRouter {
+        uint256 deposit =
+            IVoucherKernel(voucherKernel).getSellerDeposit(_tokenIdSupply);
+
+        uint256 depositAmount = deposit.mul(_burnedQty);
+
+        uint8 paymentMethod =
+            IVoucherKernel(voucherKernel).getVoucherPaymentMethod(
+                _tokenIdSupply
+            );
+
+        require(
+            paymentMethod > 0 && paymentMethod <= 4,
+            "INVALID PAYMENT METHOD"
+        );
+
+        if (paymentMethod == ETHETH || paymentMethod == TKNETH) {
+            escrow[_msgSender] = escrow[_msgSender].sub(depositAmount);
+            _withdraw(_msgSender, depositAmount);
+        }
+
+        if (paymentMethod == ETHTKN || paymentMethod == TKNTKN) {
+            address addressTokenDeposits =
+                IVoucherKernel(voucherKernel).getVoucherDepositToken(
+                    _tokenIdSupply
+                );
+            IERC20WithPermit(addressTokenDeposits).transfer(
+                _msgSender,
+                depositAmount
+            );
+        }
+
+        LogWithdrawDepositsSe(_tokenIdSupply, _burnedQty, _msgSender);
+    }
+
+    /**
      * @notice Internal function for withdrawing.
      * As unbelievable as it is, neither .send() nor .transfer() are now secure to use due to EIP-1884
      *  So now transferring funds via the last remaining option: .call()
@@ -694,17 +746,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @param _amount       amount to be released from escrow
      */
     function _withdraw(address payable _recipient, uint256 _amount) internal {
-        require(_recipient != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(_amount > 0, "");
-
-        _recipient.sendValue(_amount);
-
-        emit LogWithdrawal(msg.sender, _recipient, _amount);
-    }
-
-    function _withdrawDeposits(address payable _recipient, uint256 _amount)
-        internal
-    {
         require(_recipient != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         require(_amount > 0, "");
 
