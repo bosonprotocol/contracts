@@ -136,6 +136,35 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         nonReentrant
         whenNotPaused
     {
+        _withdraw(_tokenIdVoucher);
+    }
+
+    /**
+     * @notice Trigger withdrawals of what funds are releasable
+     * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
+     * @dev This function would be optimized a lot, here verbose for readability.
+     * @param _tokenIdVoucher an ID of a voucher token (ERC-721) to try withdraw funds from
+     */
+    function withdrawWhenPaused(uint256 _tokenIdVoucher)
+        external
+        override
+        nonReentrant
+        whenPaused
+    {
+        uint256 tokenIdSupply = IVoucherKernel(voucherKernel).getIdSupplyFromVoucher(_tokenIdVoucher);
+        address issuer = IVoucherKernel(voucherKernel).getSupplyHolder(tokenIdSupply);
+        address holder = IVoucherKernel(voucherKernel).getVoucherHolder(_tokenIdVoucher);
+
+        require(
+            msg.sender == issuer ||
+                msg.sender == holder,
+            "INVALID CALLER"
+        ); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+
+        _withdraw(_tokenIdVoucher);
+    }
+
+    function _withdraw(uint256 _tokenIdVoucher) internal {
         //TODO: more checks
         //TODO: check to pass 2 diff holders and how the amounts will be distributed
 
@@ -182,104 +211,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 voucherDetails.tokenIdVoucher
             )
         );
-
-        //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
-        if (!voucherDetails.currStatus.isPaymentReleased) {
-            releasePayments(voucherDetails);
-        }
-
-        //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status
-        if (
-            !voucherDetails.currStatus.isDepositsReleased &&
-            isStatus(voucherDetails.currStatus.status, IDX_FINAL)
-        ) {
-            releaseDeposits(voucherDetails);
-        }
-
-        if (voucherDetails.deposit2pool > 0) {
-            _withdrawDeposits(owner(), voucherDetails.deposit2pool, voucherDetails.paymentMethod, voucherDetails.tokenIdSupply);
-        }
-
-        if (voucherDetails.price2issuer > 0) {
-            _withdrawPayments(voucherDetails.issuer, voucherDetails.price2issuer, voucherDetails.paymentMethod, voucherDetails.tokenIdSupply);
-        }
-
-        if (voucherDetails.deposit2issuer > 0) {
-            _withdrawDeposits(voucherDetails.issuer, voucherDetails.deposit2issuer, voucherDetails.paymentMethod, voucherDetails.tokenIdSupply);
-        }
-
-        if (voucherDetails.price2holder > 0) {
-            _withdrawPayments(voucherDetails.holder, voucherDetails.price2holder, voucherDetails.paymentMethod, voucherDetails.tokenIdSupply);
-        }
-
-        if (voucherDetails.deposit2holder > 0) {
-            _withdrawDeposits(voucherDetails.holder, voucherDetails.deposit2holder, voucherDetails.paymentMethod, voucherDetails.tokenIdSupply);
-        }
-
-        delete voucherDetails;
-    }
-
-    /**
-     * @notice Trigger withdrawals of what funds are releasable
-     * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
-     * @dev This function would be optimized a lot, here verbose for readability.
-     * @param _tokenIdVoucher an ID of a voucher token (ERC-721) to try withdraw funds from
-     */
-    function withdrawWhenPaused(uint256 _tokenIdVoucher)
-        external
-        override
-        nonReentrant
-        whenPaused
-    {
-        VoucherDetails memory voucherDetails;
-
-        //in the future might want to (i) check the gasleft() (but UNGAS proposal might make it impossible), and/or (ii) set upper loop limit to sth like .length < 2**15
-        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-
-        voucherDetails.tokenIdVoucher = _tokenIdVoucher;
-        voucherDetails.tokenIdSupply = IVoucherKernel(voucherKernel)
-            .getIdSupplyFromVoucher(voucherDetails.tokenIdVoucher);
-        voucherDetails.paymentMethod = IVoucherKernel(voucherKernel)
-            .getVoucherPaymentMethod(voucherDetails.tokenIdSupply);
-
-        require(
-            voucherDetails.paymentMethod > 0 &&
-                voucherDetails.paymentMethod <= 4,
-            "INVALID PAYMENT METHOD"
-        );
-
-        (
-            voucherDetails.currStatus.status,
-            voucherDetails.currStatus.isPaymentReleased,
-            voucherDetails.currStatus.isDepositsReleased
-        ) = IVoucherKernel(voucherKernel).getVoucherStatus(
-            voucherDetails.tokenIdVoucher
-        );
-
-        (
-            voucherDetails.price,
-            voucherDetails.depositSe,
-            voucherDetails.depositBu
-        ) = IVoucherKernel(voucherKernel).getOrderCosts(
-            voucherDetails.tokenIdSupply
-        );
-
-        voucherDetails.issuer = payable(
-            IVoucherKernel(voucherKernel).getSupplyHolder(
-                voucherDetails.tokenIdSupply
-            )
-        );
-        voucherDetails.holder = payable(
-            IVoucherKernel(voucherKernel).getVoucherHolder(
-                voucherDetails.tokenIdVoucher
-            )
-        );
-
-        require(
-            msg.sender == voucherDetails.issuer ||
-                msg.sender == voucherDetails.holder,
-            "INVALID CALLER"
-        ); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
 
         //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
         if (!voucherDetails.currStatus.isPaymentReleased) {
@@ -698,7 +629,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
         if (paymentMethod == ETHETH || paymentMethod == TKNETH) {
             escrow[msg.sender] = escrow[msg.sender].sub(depositAmount);
-            // _withdraw(seller, depositAmount);
         }
 
         if (paymentMethod == ETHTKN || paymentMethod == TKNTKN) {
