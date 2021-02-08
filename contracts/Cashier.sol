@@ -99,12 +99,13 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         LogWithdrawEthOnDisaster(amount, msg.sender);
     }
 
-    function withdrawTokensOnDisaster(address token) external whenPaused {
+    function withdrawTokensOnDisaster(address token) external whenPaused notZeroAddress(token) {
         require(allowManualWithdrawOnDisaster, "Owner did not allow manual withdraw");
 
-        uint256 amount = IERC20WithPermit(token).balanceOf(msg.sender);
+        uint256 amount = escrowTokens[token][msg.sender];
         require(amount > 0, "ESCROW_EMPTY");
-        
+        escrowTokens[token][msg.sender] = 0;
+
         IERC20WithPermit(token).transfer(msg.sender, amount);
         LogWithdrawTokensOnDisaster(amount, token, msg.sender);
     }
@@ -113,7 +114,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         return IERC20WithPermit(token).balanceOf(msg.sender);
     }
 
-    function close() external onlyOwner returns (uint256){
+    function close() external onlyOwner whenPaused returns (uint256){
         selfdestruct(msg.sender);
     }
 

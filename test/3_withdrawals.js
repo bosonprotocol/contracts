@@ -165,7 +165,7 @@ contract('Cashier withdrawals ', async (addresses) => {
   }
 
   for (let i = 0; i <= PAUSED_WITHPERMIT; i++) {
-    describe.only('Withdraw scenarios', async () => {
+    describe('Withdraw scenarios', async () => {
       before(async () => {
         await deployContracts();
       });
@@ -3665,7 +3665,7 @@ contract('Cashier withdrawals ', async (addresses) => {
     });
   }
 
-  describe.only('[WHEN PAUSED] Seller withdraws deposit locked in escrow', async () => {
+  describe('[WHEN PAUSED] Seller withdraws deposit locked in escrow', async () => {
     let remQty = 10;
     let voucherToBuyBeforeBurn = 5;
     let tokensToMintSeller, tokensToMintBuyer;
@@ -4272,8 +4272,8 @@ contract('Cashier withdrawals ', async (addresses) => {
     });
   });
 
-  xdescribe("Withdraw on disaster", () => {
-    let vouchersToBuy = 5;
+  describe("Withdraw on disaster", () => {
+    let vouchersToBuy = 4;
 
     describe("Common", () => {
       before(async () => {
@@ -4385,18 +4385,14 @@ contract('Cashier withdrawals ', async (addresses) => {
 
       })
 
-      it("Escrow amount should revert if funds already withdrawn for account", async() => {
+      it("[NEGATIVE] withdrawEthOnDisaster should revert if funds already withdrawn for an account", async() => {
         await truffleAssert.reverts(
           contractCashier.withdrawEthOnDisaster({from: users.buyer.address}),
           truffleAssert.ErrorType.REVERT
         )
       })
-
-
-      
     })
 
-    //[WIP]
     describe("Withdraw TKN", () => {
       before(async () => {
         await deployContracts();
@@ -4445,7 +4441,7 @@ contract('Cashier withdrawals ', async (addresses) => {
           helpers.QTY_10
         );
 
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < vouchersToBuy; i++) {
           await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
         }
 
@@ -4467,30 +4463,51 @@ contract('Cashier withdrawals ', async (addresses) => {
         })
       })
 
+      it("Buyer should be able to withdraw all the funds locked in escrow", async() => {
+        const expectedTknPrice = new BN(helpers.product_price).mul(new BN(vouchersToBuy))
+        const expectedTknDeposit = new BN(helpers.buyer_deposit).mul(new BN(vouchersToBuy))
+
+        const txTknPrice = await contractCashier.withdrawTokensOnDisaster(contractBSNTokenPrice.address, {from: users.buyer.address})
+        const txTknDeposit = await contractCashier.withdrawTokensOnDisaster(contractBSNTokenDeposit.address, {from: users.buyer.address})
+
+        let balanceBuyerAfterWithdraw = await contractBSNTokenPrice.balanceOf(users.buyer.address)
+        console.log('balanceBuyerAfterWithdraw: ', balanceBuyerAfterWithdraw.toString());
+
+        truffleAssert.eventEmitted(txTknPrice, 'LogWithdrawTokensOnDisaster', ev => {
+          assert.equal(expectedTknPrice.toString(), ev._amount.toString(), "Buyer withdrawn funds don't match")
+          assert.equal(users.buyer.address, ev._triggeredBy, "LogWithdrawTokensOnDisaster not triggered properly")
+
+          return true;
+        })
+
+        truffleAssert.eventEmitted(txTknDeposit, 'LogWithdrawTokensOnDisaster', ev => {
+          assert.equal(expectedTknDeposit.toString(), ev._amount.toString(), "Buyer withdrawn funds don't match")
+          assert.equal(users.buyer.address, ev._triggeredBy, "LogWithdrawTokensOnDisaster not triggered properly")
+
+          return true;
+        })
+      })
+
       it("Seller should be able to withdraw all the funds locked in escrow", async() => {
         const expectedSellerBalance = new BN(helpers.seller_deposit).mul(new BN(helpers.QTY_10))
-        const tx = await contractCashier.withdrawEthOnDisaster({from: users.seller.address})
+        const tx = await contractCashier.withdrawTokensOnDisaster(contractBSNTokenDeposit.address, {from: users.seller.address})
 
-        truffleAssert.eventEmitted(tx, 'LogWithdrawEthOnDisaster', ev => {
+        truffleAssert.eventEmitted(tx, 'LogWithdrawTokensOnDisaster', ev => {
           assert.equal(expectedSellerBalance.toString(), ev._amount.toString(), "Buyer withdrawn funds don't match")
-          assert.equal(users.seller.address, ev._triggeredBy, "LogWithdrawEthOnDisaster not triggered properly")
+          assert.equal(users.seller.address, ev._triggeredBy, "LogWithdrawTokensOnDisaster not triggered properly")
 
           return true;
         })
 
       })
 
-      it("Escrow amount should revert if funds already withdrawn for account", async() => {
+      it("Escrow amount should revert if funds already withdrawn for an account", async() => {
         await truffleAssert.reverts(
-          contractCashier.withdrawEthOnDisaster({from: users.buyer.address}),
+          contractCashier.withdrawTokensOnDisaster(contractBSNTokenPrice.address, {from: users.buyer.address}),
           truffleAssert.ErrorType.REVERT
         )
       })
-
-
       
     })
-
-   
   })
 });
