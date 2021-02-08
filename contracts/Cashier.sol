@@ -35,6 +35,12 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
     event LogWithdrawal(address _caller, address _payee, uint256 _payment);
 
+    event LogWithdrawDepositsSe(
+        uint256 _tokenIdSupply,
+        uint256 _burnedQty,
+        address _triggeredBy
+    );
+
     event LogAmountDistribution(
         uint256 indexed _tokenIdVoucher,
         address _to,
@@ -645,10 +651,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
+     * TODO Needs further specification on how to be implemented if contract is paused. Stays here for reference.
      * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the contracts are paused.
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
      */
-    function withdrawDeposits(uint256 _tokenIdSupply)
+    function withdrawDepositsSePaused(uint256 _tokenIdSupply)
         external
         override
         nonReentrant
@@ -691,6 +698,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
         if (paymentMethod == ETHETH || paymentMethod == TKNETH) {
             escrow[msg.sender] = escrow[msg.sender].sub(depositAmount);
+            // _withdraw(seller, depositAmount);
         }
 
         if (paymentMethod == ETHTKN || paymentMethod == TKNTKN) {
@@ -703,10 +711,58 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         }
 
         _withdrawDeposits(msg.sender, depositAmount, paymentMethod, _tokenIdSupply);
+        LogWithdrawDepositsSe(_tokenIdSupply, remQty, msg.sender);
     }
 
     /**
      * @notice Internal function for withdrawing payments.
+     * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the voucher set is no longer in exchange.
+     * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
+     * @param _burnedQty burned quantity that the deposits should be withdrawn for
+     * @param _msgSender owner of the voucher set
+     */
+    function withdrawDepositsSe(
+        uint256 _tokenIdSupply,
+        uint256 _burnedQty,
+        address payable _msgSender
+    ) external override nonReentrant onlyFromRouter {
+        uint256 deposit =
+            IVoucherKernel(voucherKernel).getSellerDeposit(_tokenIdSupply);
+
+        uint256 depositAmount = deposit.mul(_burnedQty);
+
+        uint8 paymentMethod =
+            IVoucherKernel(voucherKernel).getVoucherPaymentMethod(
+                _tokenIdSupply
+            );
+
+        require(
+            paymentMethod > 0 && paymentMethod <= 4,
+            "INVALID PAYMENT METHOD"
+        );
+
+        if (paymentMethod == ETHETH || paymentMethod == TKNETH) {
+            escrow[_msgSender] = escrow[_msgSender].sub(depositAmount);
+        }
+
+        if (paymentMethod == ETHTKN || paymentMethod == TKNTKN) {
+            address addressTokenDeposits =
+                IVoucherKernel(voucherKernel).getVoucherDepositToken(
+                    _tokenIdSupply
+                );
+
+            escrowTokens[addressTokenDeposits][_msgSender] = escrowTokens[addressTokenDeposits][_msgSender].sub(depositAmount);
+        }
+
+        _withdrawDeposits(_msgSender, depositAmount, paymentMethod, _tokenIdSupply);
+        LogWithdrawDepositsSe(_tokenIdSupply, _burnedQty, _msgSender);
+    }
+
+    /**
+     * @notice Internal function for withdrawing.
+     * As unbelievable as it is, neither .send() nor .transfer() are now secure to use due to EIP-1884
+     *  So now transferring funds via the last remaining option: .call()
+     *  See https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/
      * @param _recipient    address of the account receiving funds from the escrow
      * @param _amount       amount to be released from escrow
      */

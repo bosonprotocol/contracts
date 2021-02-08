@@ -631,6 +631,28 @@ contract BosonRouter is
     }
 
     /**
+     * @notice Seller burns the remaining supply in case it's no longer in exchange and withdrawal of the locked deposits for them are being sent back.
+     * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
+     */
+    function requestCancelOrFaultVoucherSet(uint256 _tokenIdSupply)
+        external
+        override
+        nonReentrant
+        whenNotPaused
+    {
+        uint256 _burnedSupplyQty =
+            IVoucherKernel(voucherKernel).cancelOrFaultVoucherSet(
+                _tokenIdSupply,
+                msg.sender
+            );
+        ICashier(cashierAddress).withdrawDepositsSe(
+            _tokenIdSupply,
+            _burnedSupplyQty,
+            msg.sender
+        );
+    }
+
+    /**
      * @notice Redemption of the vouchers promise
      * @param _tokenIdVoucher   ID of the voucher
      */
@@ -755,15 +777,16 @@ contract BosonRouter is
             amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _to);
             ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _to,amount.add(price));
 
-            // update Deposit funds in Token
-            tokenAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                tokenSupplyId
-            );
 
-            amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _from);
-            ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _from, amount.sub(depositBu));
+            //TODO hitting out of gas ... need further optimization
+            // // update Deposit funds in Token
+            // tokenAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(
+            //     tokenSupplyId
+            // );
 
-            //TODO hitting out of gas just for 2 lines .. need further optimization
+            // amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _from);
+            // ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _from, amount.sub(depositBu));
+
             // amount = ICashier(cashierAddress).getEscrowTokensAmount(tokenAddress, _to);
             // ICashier(cashierAddress).updateEscrowTokensAmount(tokenAddress, _to,amount.add(depositBu));
 
