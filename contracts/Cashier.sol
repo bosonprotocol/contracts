@@ -33,6 +33,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
     event LogWithdrawal(address _caller, address _payee, uint256 _payment);
 
+    event LogWithdrawDepositsSe(uint256 _tokenIdSupply, uint256 _burnedQty, address _triggeredBy);
+
     event LogAmountDistribution(
         uint256 indexed _tokenIdVoucher,
         address _to,
@@ -687,7 +689,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the contracts are paused.
+     * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the voucher set is no longer in exchange.
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
      * @param _burnedQty burned quantity that the deposits should be withdrawn for
      * @param _msgSender owner of the voucher set
@@ -727,6 +729,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 depositAmount
             );
         }
+
+        LogWithdrawDepositsSe(_tokenIdSupply, _burnedQty, _msgSender);
     }
 
     /**
