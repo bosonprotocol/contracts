@@ -152,7 +152,7 @@ contract('Cashier withdrawals ', async (addresses) => {
     );
   }
 
-  describe.only('Withdraw scenarios', async () => {
+  describe('Withdraw scenarios', async () => {
     before(async () => {
       await deployContracts();
     });
