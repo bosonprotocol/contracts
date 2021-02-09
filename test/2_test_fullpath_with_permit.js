@@ -1422,8 +1422,12 @@ contract('Cashier && VK', async (addresses) => {
           new BN(constants.buyer_deposit)
         );
 
-        const escrowSeller = await contractCashier.getEscrowAmount(users.seller.address)
-        const escrowBuyer = await contractCashier.getEscrowAmount(users.buyer.address)
+        const escrowSeller = await contractCashier.getEscrowAmount(
+          users.seller.address
+        );
+        const escrowBuyer = await contractCashier.getEscrowAmount(
+          users.buyer.address
+        );
 
         assert.isTrue(
           new BN(sellerDeposits).eq(escrowSeller),
@@ -1590,18 +1594,26 @@ contract('Cashier && VK', async (addresses) => {
           const sellerDeposits = new BN(constants.seller_deposit).mul(
             new BN(ORDER_QTY)
           );
-          const buyerETHSent = new BN(constants.product_price)
-          const buyerTKNSent = new BN(constants.buyer_deposit)
-  
-          const escrowSellerTkn = await contractCashier.getEscrowTokensAmount(contractBSNTokenDeposit.address, users.seller.address)
-          const escrowBuyerEth = await contractCashier.getEscrowAmount(users.buyer.address)
-          const escrowBuyerTkn = await contractCashier.getEscrowTokensAmount(contractBSNTokenDeposit.address, users.buyer.address)
-            
+          const buyerETHSent = new BN(constants.product_price);
+          const buyerTKNSent = new BN(constants.buyer_deposit);
+
+          const escrowSellerTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          );
+          const escrowBuyerEth = await contractCashier.getEscrowAmount(
+            users.buyer.address
+          );
+          const escrowBuyerTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.buyer.address
+          );
+
           assert.isTrue(
             new BN(sellerDeposits).eq(escrowSellerTkn),
             'Escrow amount is incorrect'
           );
-  
+
           assert.isTrue(
             new BN(buyerETHSent).eq(escrowBuyerEth),
             'Escrow amount is incorrect'
@@ -1836,18 +1848,27 @@ contract('Cashier && VK', async (addresses) => {
           const sellerDeposits = new BN(constants.seller_deposit).mul(
             new BN(ORDER_QTY)
           );
-          const buyerTknPriceSent = new BN(constants.product_price)
-          const buyerTknDepositSent = new BN(constants.buyer_deposit)
-  
-          const escrowSellerTknDeposit = await contractCashier.getEscrowTokensAmount(contractBSNTokenDeposit.address, users.seller.address)
-          const escrowBuyerTknPrice = await contractCashier.getEscrowTokensAmount(contractBSNTokenPrice.address, users.buyer.address)
-          const escrowBuyerTknDeposit = await contractCashier.getEscrowTokensAmount(contractBSNTokenDeposit.address, users.buyer.address)
-            
+          const buyerTknPriceSent = new BN(constants.product_price);
+          const buyerTknDepositSent = new BN(constants.buyer_deposit);
+
+          const escrowSellerTknDeposit = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          );
+          const escrowBuyerTknPrice = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.buyer.address
+          );
+          const escrowBuyerTknDeposit = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.buyer.address
+          );
+
           assert.isTrue(
             new BN(sellerDeposits).eq(escrowSellerTknDeposit),
             'Escrow amount is incorrect'
           );
-  
+
           assert.isTrue(
             new BN(buyerTknPriceSent).eq(escrowBuyerTknPrice),
             'Escrow amount is incorrect'
@@ -2113,15 +2134,21 @@ contract('Cashier && VK', async (addresses) => {
           const buyerTknSent = new BN(constants.product_price).add(
             new BN(constants.buyer_deposit)
           );
-  
-          const escrowSellerTknDeposit = await contractCashier.getEscrowTokensAmount(utils.contractBSNTokenSame.address, users.seller.address)
-          const escrowBuyerTkn = await contractCashier.getEscrowTokensAmount(utils.contractBSNTokenSame.address, users.buyer.address)
-            
+
+          const escrowSellerTknDeposit = await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.seller.address
+          );
+          const escrowBuyerTkn = await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.buyer.address
+          );
+
           assert.isTrue(
             new BN(sellerDeposits).eq(escrowSellerTknDeposit),
             'Escrow amount is incorrect'
           );
-  
+
           assert.isTrue(
             new BN(buyerTknSent).eq(escrowBuyerTkn),
             'Escrow amount is incorrect'
@@ -2396,18 +2423,25 @@ contract('Cashier && VK', async (addresses) => {
             new BN(ORDER_QTY)
           );
 
-          const buyerTknSent = new BN(constants.product_price)
-          const buyerEthSent = new BN(constants.buyer_deposit)
-  
-          const escrowSeller = await contractCashier.getEscrowAmount(users.seller.address)
-          const escrowBuyerEth = await contractCashier.getEscrowAmount(users.buyer.address)
-          const escrowBuyerTkn = await contractCashier.getEscrowTokensAmount(contractBSNTokenPrice.address, users.buyer.address)
-  
+          const buyerTknSent = new BN(constants.product_price);
+          const buyerEthSent = new BN(constants.buyer_deposit);
+
+          const escrowSeller = await contractCashier.getEscrowAmount(
+            users.seller.address
+          );
+          const escrowBuyerEth = await contractCashier.getEscrowAmount(
+            users.buyer.address
+          );
+          const escrowBuyerTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.buyer.address
+          );
+
           assert.isTrue(
             new BN(sellerDeposits).eq(escrowSeller),
             'Escrow amount is incorrect'
           );
-  
+
           assert.isTrue(
             new BN(buyerEthSent).eq(escrowBuyerEth),
             'Escrow amount is incorrect'
@@ -3001,7 +3035,7 @@ contract('Cashier && VK', async (addresses) => {
           expectedBalanceInEscrow = new BN(constants.seller_deposit).mul(
             new BN(constants.QTY_1)
           );
-  
+
           actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
             contractBSNTokenDeposit.address,
             users.other1.address
@@ -3010,7 +3044,7 @@ contract('Cashier && VK', async (addresses) => {
             contractBSNTokenDeposit.address,
             users.other2.address
           );
-  
+
           assert.isTrue(
             actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
             'Old owner balance from escrow does not match'
@@ -3019,7 +3053,7 @@ contract('Cashier && VK', async (addresses) => {
             actualNewOwnerBalanceFromEscrow.eq(ZERO),
             'New owner balance from escrow does not match'
           );
-  
+
           utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
@@ -3037,7 +3071,7 @@ contract('Cashier && VK', async (addresses) => {
             contractBSNTokenDeposit.address,
             users.other2.address
           );
-  
+
           assert.isTrue(
             actualOldOwnerBalanceFromEscrow.eq(ZERO),
             'Old owner balance from escrow does not match'
@@ -3265,7 +3299,7 @@ contract('Cashier && VK', async (addresses) => {
           expectedBalanceInEscrow = new BN(constants.seller_deposit).mul(
             new BN(constants.QTY_1)
           );
-  
+
           actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
             contractBSNTokenDeposit.address,
             users.other1.address
@@ -3274,7 +3308,7 @@ contract('Cashier && VK', async (addresses) => {
             contractBSNTokenDeposit.address,
             users.other2.address
           );
-  
+
           assert.isTrue(
             actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
             'Old owner balance from escrow does not match'
@@ -3283,7 +3317,7 @@ contract('Cashier && VK', async (addresses) => {
             actualNewOwnerBalanceFromEscrow.eq(ZERO),
             'New owner balance from escrow does not match'
           );
-  
+
           utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
@@ -3301,7 +3335,7 @@ contract('Cashier && VK', async (addresses) => {
             contractBSNTokenDeposit.address,
             users.other2.address
           );
-  
+
           assert.isTrue(
             actualOldOwnerBalanceFromEscrow.eq(ZERO),
             'Old owner balance from escrow does not match'
@@ -3311,7 +3345,6 @@ contract('Cashier && VK', async (addresses) => {
             'New owner balance from escrow does not match'
           );
         });
-
 
         it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
           const expectedBuyerPrice = new BN(0);
@@ -3684,13 +3717,11 @@ contract('Cashier && VK', async (addresses) => {
     });
   });
 
-
   //need to be optimized. Currently we have commented functionality in the 721 transfer, hence these tests are excluded
   xdescribe('VOUCHER TRANSFER', () => {
     let actualOldOwnerBalanceFromEscrowEth = new BN(0);
     let actualOldOwnerBalanceFromEscrowTkn = new BN(0);
     let actualNewOwnerBalanceFromEscrowEth = new BN(0);
-    let actualNewOwnerBalanceFromEscrow = new BN(0);
     let actualNewOwnerBalanceFromEscrowTkn = new BN(0);
 
     afterEach(() => {
@@ -3700,9 +3731,10 @@ contract('Cashier && VK', async (addresses) => {
         escrowAmount: new BN(0),
       };
 
-      actualOldOwnerBalanceFromEscrow = new BN(0);
-      actualNewOwnerBalanceFromEscrow = new BN(0);
-      expectedBalanceInEscrow = new BN(0);
+      actualOldOwnerBalanceFromEscrowEth = new BN(0);
+      actualOldOwnerBalanceFromEscrowTkn = new BN(0);
+      actualNewOwnerBalanceFromEscrowEth = new BN(0);
+      actualNewOwnerBalanceFromEscrowTkn = new BN(0);
     });
 
     describe('Common transfer', () => {
@@ -3781,7 +3813,7 @@ contract('Cashier && VK', async (addresses) => {
       });
 
       it('Should update escrow amounts after transfer', async () => {
-        expectedBalanceInEscrow = new BN(constants.product_price).add(
+        const expectedBalanceInEscrow = new BN(constants.product_price).add(
           new BN(constants.buyer_deposit)
         );
         const voucherID = await utils.commitToBuy(
@@ -3790,19 +3822,19 @@ contract('Cashier && VK', async (addresses) => {
           tokenSupplyKey
         );
 
-        actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
+        actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
           users.other1.address
         );
-        actualNewOwnerBalanceFromEscrow = await contractCashier.escrow(
+        actualNewOwnerBalanceFromEscrowEth = await contractCashier.escrow(
           users.other2.address
         );
 
         assert.isTrue(
-          actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
+          actualOldOwnerBalanceFromEscrowEth.eq(expectedBalanceInEscrow),
           'Old owner balance from escrow does not match'
         );
         assert.isTrue(
-          actualNewOwnerBalanceFromEscrow.eq(ZERO),
+          actualNewOwnerBalanceFromEscrowEth.eq(ZERO),
           'New owner balance from escrow does not match'
         );
 
@@ -3815,19 +3847,19 @@ contract('Cashier && VK', async (addresses) => {
           }
         );
 
-        actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
+        actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
           users.other1.address
         );
-        actualNewOwnerBalanceFromEscrow = await contractCashier.escrow(
+        actualNewOwnerBalanceFromEscrowEth = await contractCashier.escrow(
           users.other2.address
         );
 
         assert.isTrue(
-          actualOldOwnerBalanceFromEscrow.eq(ZERO),
+          actualOldOwnerBalanceFromEscrowEth.eq(ZERO),
           'Old owner balance from escrow does not match'
         );
         assert.isTrue(
-          actualNewOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
+          actualNewOwnerBalanceFromEscrowEth.eq(expectedBalanceInEscrow),
           'New owner balance from escrow does not match'
         );
       });
@@ -4033,8 +4065,8 @@ contract('Cashier && VK', async (addresses) => {
         });
 
         it('Should update escrow amounts after transfer', async () => {
-          expectedBalanceInEscrowEth = new BN(constants.product_price);
-          expectedBalanceInEscrowTkn = new BN(constants.buyer_deposit);
+          const expectedBalanceInEscrowEth = new BN(constants.product_price);
+          const expectedBalanceInEscrowTkn = new BN(constants.buyer_deposit);
 
           const voucherID = await utils.commitToBuy(
             users.other1,
@@ -4361,7 +4393,9 @@ contract('Cashier && VK', async (addresses) => {
 
         it('Should update escrow amounts after transfer', async () => {
           let expectedBalanceInEscrowTknPrice = new BN(constants.product_price);
-          let expectedBalanceInEscrowTknDeposit = new BN(constants.buyer_deposit);
+          let expectedBalanceInEscrowTknDeposit = new BN(
+            constants.buyer_deposit
+          );
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
@@ -4389,12 +4423,16 @@ contract('Cashier && VK', async (addresses) => {
           );
 
           assert.isTrue(
-            actualOldOwnerBalanceFromEscrowTknPrice.eq(expectedBalanceInEscrowTknPrice),
+            actualOldOwnerBalanceFromEscrowTknPrice.eq(
+              expectedBalanceInEscrowTknPrice
+            ),
             'Old owner balance from escrow does not match'
           );
 
           assert.isTrue(
-            actualOldOwnerBalanceFromEscrowTknDeposit.eq(expectedBalanceInEscrowTknDeposit),
+            actualOldOwnerBalanceFromEscrowTknDeposit.eq(
+              expectedBalanceInEscrowTknDeposit
+            ),
             'Old owner balance from escrow does not match'
           );
 
@@ -4420,13 +4458,13 @@ contract('Cashier && VK', async (addresses) => {
               contractBSNTokenPrice.address,
               users.other1.address
             ));
-          
-            actualOldOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenDeposit.address,
-              users.other1.address
-            );
-          
-            actualNewOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
+
+          actualOldOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other1.address
+          );
+
+          actualNewOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
             contractBSNTokenPrice.address,
             users.other2.address
           );
@@ -4447,12 +4485,16 @@ contract('Cashier && VK', async (addresses) => {
           );
 
           assert.isTrue(
-            actualNewOwnerBalanceFromEscrowTknPrice.eq(expectedBalanceInEscrowTknPrice),
+            actualNewOwnerBalanceFromEscrowTknPrice.eq(
+              expectedBalanceInEscrowTknPrice
+            ),
             'New owner balance from escrow does not match'
           );
 
           assert.isTrue(
-            actualNewOwnerBalanceFromEscrowTknDeposit.eq(expectedBalanceInEscrowTknDeposit),
+            actualNewOwnerBalanceFromEscrowTknDeposit.eq(
+              expectedBalanceInEscrowTknDeposit
+            ),
             'New owner balance from escrow does not match'
           );
         });
@@ -4650,8 +4692,8 @@ contract('Cashier && VK', async (addresses) => {
         }
 
         it('Should update escrow amounts after transfer', async () => {
-          expectedBalanceInEscrowEth = new BN(constants.buyer_deposit);
-          expectedBalanceInEscrowTkn = new BN(constants.product_price);
+          const expectedBalanceInEscrowEth = new BN(constants.buyer_deposit);
+          const expectedBalanceInEscrowTkn = new BN(constants.product_price);
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
@@ -4707,13 +4749,13 @@ contract('Cashier && VK', async (addresses) => {
             (actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
               users.other1.address
             ));
-          
-            actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenPrice.address,
-              users.other1.address
-            );
-          
-            actualNewOwnerBalanceFromEscrowEth = await contractCashier.escrow(
+
+          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.other1.address
+          );
+
+          actualNewOwnerBalanceFromEscrowEth = await contractCashier.escrow(
             users.other2.address
           );
 

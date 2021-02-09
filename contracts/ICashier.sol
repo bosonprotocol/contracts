@@ -39,12 +39,6 @@ interface ICashier {
     ) external;
 
     /**
-     * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the contracts are paused.
-     * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
-     */
-    function withdrawDepositsSePaused(uint256 _tokenIdSupply) external;
-
-    /**
      * @notice Get the amount in escrow of an address
      * @param _account  The address of an account to query
      * @return          The balance in escrow
@@ -64,8 +58,11 @@ interface ICashier {
      * @param _account  The address of an account to query
      * @param _newAmount  New amount to be set
      */
-    function updateEscrowTokensAmount(address _token, address _account, uint256 _newAmount)
-        external;
+    function updateEscrowTokensAmount(
+        address _token,
+        address _account,
+        uint256 _newAmount
+    ) external;
 
     /**
      * @notice Get the amount in escrow of an address
@@ -74,7 +71,9 @@ interface ICashier {
      * @return          The balance in escrow
      */
     function getEscrowTokensAmount(address _token, address _account)
-        external view returns (uint256);
+        external
+        view
+        returns (uint256);
 
     /**
      * @notice Set the address of the BR contract

@@ -1033,21 +1033,21 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
-        it("Owner should set the Cashier to disaster state", async () => {
+        it('Owner should set the Cashier to disaster state', async () => {
           await contractBosonRouter.pause();
           const tx = await contractCashier.setDisasterState();
 
-          truffleAssert.eventEmitted(tx, 'LogDisasterStateSet', ev => {
-            return ev._triggeredBy == users.deployer.address
-          })
-        })
+          truffleAssert.eventEmitted(tx, 'LogDisasterStateSet', (ev) => {
+            return ev._triggeredBy == users.deployer.address;
+          });
+        });
 
-        it("Should not be unpaused after disaster", async () => {
+        it('Should not be unpaused after disaster', async () => {
           await truffleAssert.reverts(
             contractBosonRouter.unpause(),
             truffleAssert.ErrorType.REVERT
-          )
-        })
+          );
+        });
       });
 
       describe('ETHETH', () => {
