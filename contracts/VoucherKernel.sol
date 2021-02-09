@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-pragma solidity >=0.6.6 <0.7.0;
+pragma solidity 0.7.1;
 
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -174,7 +174,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         _;
     }
 
-    constructor(address _tokensContract) public {
+    constructor(address _tokensContract) {
         tokensContract = _tokensContract;
 
         complainPeriod = 7 * 1 days;

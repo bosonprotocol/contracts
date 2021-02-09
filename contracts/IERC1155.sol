@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-pragma solidity >=0.6.6 <0.7.0;
+pragma solidity 0.7.1;
 
 /**
     @title ERC-1155 Multi Token Standard
@@ -43,15 +43,6 @@ interface IERC1155 {
         address indexed _to,
         uint256[] _ids,
         uint256[] _values
-    );
-
-    /**
-        @dev MUST emit when approval for a second party/operator address to manage all tokens for an owner address is enabled or disabled (absence of an event assumes disabled).        
-    */
-    event ApprovalForAll(
-        address indexed _owner,
-        address indexed _operator,
-        bool _approved
     );
 
     /**
