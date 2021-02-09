@@ -27,14 +27,6 @@ interface ICashier {
     function withdraw(uint256 _tokenIdVoucher) external;
 
     /**
-     * @notice Trigger withdrawals of what funds are releasable
-     * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas. Must be either the seller or the buyer 
-     * @dev This function would be optimized a lot, here verbose for readability.
-     * @param _tokenIdVoucher an ID of a voucher token (ERC-721) to try withdraw funds from
-     */
-    function withdrawWhenPaused(uint256 _tokenIdVoucher) external;
-
-    /**
      * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the contracts are paused.
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
      * @param _burnedQty burned quantity that the deposits should be withdrawn for

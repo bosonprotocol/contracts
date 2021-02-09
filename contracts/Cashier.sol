@@ -143,35 +143,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         nonReentrant
         whenNotPaused
     {
-        _withdraw(_tokenIdVoucher);
-    }
-
-    /**
-     * @notice Trigger withdrawals of what funds are releasable
-     * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas. Must be either the seller or the buyer 
-     * @dev This function would be optimized a lot, here verbose for readability.
-     * @param _tokenIdVoucher an ID of a voucher token (ERC-721) to try withdraw funds from
-     */
-    function withdrawWhenPaused(uint256 _tokenIdVoucher)
-        external
-        override
-        nonReentrant
-        whenPaused
-    {
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel).getIdSupplyFromVoucher(_tokenIdVoucher);
-        address issuer = IVoucherKernel(voucherKernel).getSupplyHolder(tokenIdSupply);
-        address holder = IVoucherKernel(voucherKernel).getVoucherHolder(_tokenIdVoucher);
-
-        require(
-            msg.sender == issuer ||
-                msg.sender == holder,
-            "INVALID CALLER"
-        ); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-
-        _withdraw(_tokenIdVoucher);
-    }
-
-    function _withdraw(uint256 _tokenIdVoucher) internal {
         //TODO: more checks
         //TODO: check to pass 2 diff holders and how the amounts will be distributed
 
