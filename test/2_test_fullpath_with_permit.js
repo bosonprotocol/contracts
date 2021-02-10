@@ -540,7 +540,7 @@ contract('Cashier && VK', async (addresses) => {
           const digest = await getApprovalDigest(
             contractBSNTokenDeposit,
             users.seller.address,
-            contractCashier.address,
+            contractBosonRouter.address,
             txValue,
             nonce,
             deadline
@@ -585,7 +585,7 @@ contract('Cashier && VK', async (addresses) => {
           const digest = await getApprovalDigest(
             contractBSNTokenDeposit,
             users.seller.address,
-            contractCashier.address,
+            contractBosonRouter.address,
             txValue,
             nonce,
             deadline
@@ -630,7 +630,7 @@ contract('Cashier && VK', async (addresses) => {
           const digest = await getApprovalDigest(
             contractBSNTokenDeposit,
             users.seller.address,
-            contractCashier.address,
+            contractBosonRouter.address,
             txValue,
             nonce,
             deadline
@@ -1214,7 +1214,7 @@ contract('Cashier && VK', async (addresses) => {
           const digest = await getApprovalDigest(
             contractBSNTokenDeposit,
             users.seller.address,
-            contractCashier.address,
+            contractBosonRouter.address,
             txValue,
             nonce,
             deadline
@@ -1259,7 +1259,7 @@ contract('Cashier && VK', async (addresses) => {
           const digest = await getApprovalDigest(
             contractBSNTokenDeposit,
             users.seller.address,
-            contractCashier.address,
+            contractBosonRouter.address,
             txValue,
             nonce,
             deadline
@@ -1304,7 +1304,7 @@ contract('Cashier && VK', async (addresses) => {
           const digest = await getApprovalDigest(
             contractBSNTokenDeposit,
             users.seller.address,
-            contractCashier.address,
+            contractBosonRouter.address,
             txValue,
             nonce,
             deadline

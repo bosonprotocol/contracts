@@ -128,9 +128,9 @@ contract BosonRouter is
         override
         whenNotPaused
     {
-        notAboveETHLimit(metadata[2]);
-        notAboveETHLimit(metadata[3]);
-        notAboveETHLimit(metadata[4]);
+        notAboveETHLimit(metadata[2].mul(metadata[5]));
+        notAboveETHLimit(metadata[3].mul(metadata[5]));
+        notAboveETHLimit(metadata[4].mul(metadata[5]));
         require(metadata[3].mul(metadata[5]) == msg.value, "INCORRECT_FUNDS");
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
@@ -182,9 +182,9 @@ contract BosonRouter is
     ) external override whenNotPaused {
         notZeroAddress(_tokenPriceAddress);
         notZeroAddress(_tokenDepositAddress);
-        notAboveTokenLimit(_tokenPriceAddress, metadata[2]);
-        notAboveTokenLimit(_tokenDepositAddress, metadata[3]);
-        notAboveTokenLimit(_tokenDepositAddress, metadata[4]);
+        notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
+        notAboveTokenLimit(_tokenDepositAddress, metadata[3].mul(metadata[5]));
+        notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
 
         require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
@@ -248,9 +248,9 @@ contract BosonRouter is
         uint256[] calldata metadata
     ) external override whenNotPaused {
         notZeroAddress(_tokenDepositAddress);
-        notAboveETHLimit(metadata[2]);
-        notAboveTokenLimit(_tokenDepositAddress, metadata[3]);
-        notAboveTokenLimit(_tokenDepositAddress, metadata[4]);
+        notAboveETHLimit(metadata[2].mul(metadata[5]));
+        notAboveTokenLimit(_tokenDepositAddress, metadata[3].mul(metadata[5]));
+        notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
 
         require(metadata[3].mul(metadata[5]) == _tokensSent, "INCORRECT_FUNDS");
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
@@ -309,9 +309,9 @@ contract BosonRouter is
         uint256[] calldata metadata
     ) external payable override whenNotPaused {
         notZeroAddress(_tokenPriceAddress);
-        notAboveTokenLimit(_tokenPriceAddress, metadata[2]);
-        notAboveETHLimit(metadata[3]);
-        notAboveETHLimit(metadata[4]);
+        notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
+        notAboveETHLimit(metadata[3].mul(metadata[5]));
+        notAboveETHLimit(metadata[4].mul(metadata[5]));
 
         require(metadata[3].mul(metadata[5]) == msg.value, "INCORRECT_FUNDS");
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
