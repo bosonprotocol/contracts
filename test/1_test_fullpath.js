@@ -305,7 +305,9 @@ contract('Voucher tests', async (addresses) => {
     it('mark voucher as finalized', async () => {
       const txFinalize = await contractVoucherKernel.triggerFinalizeVoucher(
         tokenVoucherKey1,
-        {from: users.buyer.address}
+        {
+          from: users.buyer.address,
+        }
       );
 
       truffleAssert.eventEmitted(
@@ -346,13 +348,6 @@ contract('Voucher tests', async (addresses) => {
         'escrowed amount not decreased'
       );
     });
-
-    // it("must fail: unauthorized withdrawal of escrowed pool", async () => {
-    // 	await truffleAssert.reverts(
-    //	  contractCashier.withdrawPool({from: Attacker}),
-    // 		truffleAssert.ErrorType.REVERT
-    // 	);
-    // });
   });
 
   after(async () => {

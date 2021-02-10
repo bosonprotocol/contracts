@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-pragma solidity >=0.6.6 <0.7.0;
+pragma solidity 0.7.1;
 
 interface IVoucherKernel {
     /**
@@ -102,6 +102,15 @@ interface IVoucherKernel {
      */
     function cancelOrFault(uint256 _tokenIdVoucher, address _msgSender)
         external;
+
+    /**
+     * @notice Cancel/Fault transaction by the Seller, cancelling the remaining uncommitted voucher set so that seller prevents buyers from committing to vouchers for items no longer in exchange.
+     * @param _tokenIdSupply   ID of the voucher
+     * @param _issuer   owner of the voucher
+     */
+    function cancelOrFaultVoucherSet(uint256 _tokenIdSupply, address _issuer)
+        external
+        returns (uint256);
 
     /**
      * @notice Fill Voucher Order, iff funds paid, then extract & mint NFT to the voucher holder

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-pragma solidity >=0.6.6 <0.7.0;
+pragma solidity 0.7.1;
 
 import "./IERC165.sol";
 
@@ -28,14 +28,6 @@ abstract contract IERC721 is IERC165 {
         address indexed _owner,
         address indexed _approved,
         uint256 indexed _tokenId
-    );
-
-    /// @dev This emits when an operator is enabled or disabled for an owner.
-    ///  The operator can manage all NFTs of the owner.
-    event ApprovalForAll(
-        address indexed _owner,
-        address indexed _operator,
-        bool _approved
     );
 
     /// @notice Count all NFTs assigned to an owner

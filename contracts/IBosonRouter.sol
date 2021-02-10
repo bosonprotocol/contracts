@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-pragma solidity >=0.6.6 <0.7.0;
+pragma solidity 0.7.1;
 
 interface IBosonRouter {
     //TODO Write comments
@@ -103,6 +103,12 @@ interface IBosonRouter {
         bytes32 r,
         bytes32 s
     ) external payable;
+
+    /**
+     * @notice Seller burns the remaining supply and withdrawal of the locked deposits for them are being sent back.
+     * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
+     */
+    function requestCancelOrFaultVoucherSet(uint256 _tokenIdSupply) external;
 
     /**
      * @notice Redemption of the vouchers promise

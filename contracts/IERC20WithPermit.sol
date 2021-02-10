@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
-pragma solidity >=0.6.6 <0.7.0;
+pragma solidity 0.7.1;
 
 interface IERC20WithPermit {
     event Approval(
@@ -9,9 +9,9 @@ interface IERC20WithPermit {
     );
     event Transfer(address indexed from, address indexed to, uint256 value);
 
-    function name() external pure returns (string memory);
+    function name() external view returns (string memory);
 
-    function symbol() external pure returns (string memory);
+    function symbol() external view returns (string memory);
 
     function decimals() external pure returns (uint8);
 

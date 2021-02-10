@@ -23,7 +23,7 @@ currencies used in that particular function (e.g.
 The journey through the NFT lifecycle is presented on a simplified diagram 
 below.  
 
-![Simplified exchange mechanism](docs/assets/exchange-diagram-simplified.png)  
+![Simplified exchange mechanism](../assets/exchange-diagram-simplified.png)  
 
 Voucher's status is defined in 7 bits that are set depending on the path in its 
 lifecycle (defined in 

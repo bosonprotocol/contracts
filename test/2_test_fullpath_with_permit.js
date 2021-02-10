@@ -15,7 +15,7 @@ const ERC1155ERC721 = artifacts.require('ERC1155ERC721');
 const VoucherKernel = artifacts.require('VoucherKernel');
 const Cashier = artifacts.require('Cashier');
 const BosonRouter = artifacts.require('BosonRouter');
-const BosonToken = artifacts.require('BosonTokenPrice');
+const BosonToken = artifacts.require('BosonToken');
 const FundLimitsOracle = artifacts.require('FundLimitsOracle');
 
 const BN = web3.utils.BN;
@@ -398,7 +398,7 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
-        it('ESCROW has correct initial balance', async () => {
+        it('Cashier has correct balance in Deposit Contract', async () => {
           const expectedBalance = new BN(constants.seller_deposit).mul(
             new BN(constants.QTY_10)
           );
@@ -408,6 +408,21 @@ contract('Cashier && VK', async (addresses) => {
 
           assert.isTrue(
             escrowAmount.eq(expectedBalance),
+            'Escrow amount is incorrect'
+          );
+        });
+
+        it('escrowTokens has correct balance', async () => {
+          const expectedBalance = new BN(constants.seller_deposit).mul(
+            new BN(constants.QTY_10)
+          );
+          const escrowTokens = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          );
+
+          assert.isTrue(
+            escrowTokens.eq(expectedBalance),
             'Escrow amount is incorrect'
           );
         });
@@ -748,7 +763,7 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
-        it('ESCROW has correct initial balance', async () => {
+        it('ESCROW has correct balance', async () => {
           const expectedBalance = new BN(constants.seller_deposit).mul(
             new BN(remQty)
           );
@@ -1007,7 +1022,7 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
-        it('ESCROW has correct initial balance', async () => {
+        it('Cashier has correct balance in Deposit Contract', async () => {
           const expectedBalance = new BN(constants.seller_deposit).mul(
             new BN(remQty)
           );
@@ -1017,6 +1032,21 @@ contract('Cashier && VK', async (addresses) => {
 
           assert.isTrue(
             escrowAmount.eq(expectedBalance),
+            'Escrow amount is incorrect'
+          );
+        });
+
+        it('escrowTokens has correct balance', async () => {
+          const expectedBalance = new BN(constants.seller_deposit).mul(
+            new BN(constants.QTY_10)
+          );
+          const escrowTokens = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          );
+
+          assert.isTrue(
+            escrowTokens.eq(expectedBalance),
             'Escrow amount is incorrect'
           );
         });
@@ -1492,6 +1522,32 @@ contract('Cashier && VK', async (addresses) => {
         );
       });
 
+      it('Escrow should be updated', async () => {
+        const sellerDeposits = new BN(constants.seller_deposit).mul(
+          new BN(constants.QTY_10)
+        );
+        const buyerETHSent = new BN(constants.product_price).add(
+          new BN(constants.buyer_deposit)
+        );
+
+        const escrowSeller = await contractCashier.getEscrowAmount(
+          users.seller.address
+        );
+        const escrowBuyer = await contractCashier.getEscrowAmount(
+          users.buyer.address
+        );
+
+        assert.isTrue(
+          new BN(sellerDeposits).eq(escrowSeller),
+          'Escrow amount is incorrect'
+        );
+
+        assert.isTrue(
+          new BN(buyerETHSent).eq(escrowBuyer),
+          'Escrow amount is incorrect'
+        );
+      });
+
       it('[NEGATIVE] Should not create order with incorrect price', async () => {
         const txValue = new BN(constants.buyer_deposit).add(
           new BN(constants.incorrect_product_price)
@@ -1501,7 +1557,10 @@ contract('Cashier && VK', async (addresses) => {
           contractBosonRouter.requestVoucherETHETH(
             TOKEN_SUPPLY_ID,
             users.seller.address,
-            {from: users.buyer.address, value: txValue}
+            {
+              from: users.buyer.address,
+              value: txValue,
+            }
           ),
           truffleAssert.ErrorType.REVERT
         );
@@ -1516,7 +1575,10 @@ contract('Cashier && VK', async (addresses) => {
           contractBosonRouter.requestVoucherETHETH(
             TOKEN_SUPPLY_ID,
             users.seller.address,
-            {from: users.buyer.address, value: txValue}
+            {
+              from: users.buyer.address,
+              value: txValue,
+            }
           ),
           truffleAssert.ErrorType.REVERT
         );
@@ -1656,6 +1718,41 @@ contract('Cashier && VK', async (addresses) => {
           );
           assert.isTrue(
             expectedTokenBalance.eq(cashierDepositTokenBalance),
+            'Escrow amount is incorrect'
+          );
+        });
+
+        it('Escrows should be updated', async () => {
+          const sellerDeposits = new BN(constants.seller_deposit).mul(
+            new BN(ORDER_QTY)
+          );
+          const buyerETHSent = new BN(constants.product_price);
+          const buyerTKNSent = new BN(constants.buyer_deposit);
+
+          const escrowSellerTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          );
+          const escrowBuyerEth = await contractCashier.getEscrowAmount(
+            users.buyer.address
+          );
+          const escrowBuyerTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.buyer.address
+          );
+
+          assert.isTrue(
+            new BN(sellerDeposits).eq(escrowSellerTkn),
+            'Escrow amount is incorrect'
+          );
+
+          assert.isTrue(
+            new BN(buyerETHSent).eq(escrowBuyerEth),
+            'Escrow amount is incorrect'
+          );
+
+          assert.isTrue(
+            new BN(buyerTKNSent).eq(escrowBuyerTkn),
             'Escrow amount is incorrect'
           );
         });
@@ -1899,6 +1996,42 @@ contract('Cashier && VK', async (addresses) => {
           );
           assert.isTrue(
             new BN(cashierDepositTokenBalance).eq(expectedDepositBalance),
+            'Escrow amount is incorrect'
+          );
+        });
+
+        it('Escrows should be updated', async () => {
+          const sellerDeposits = new BN(constants.seller_deposit).mul(
+            new BN(ORDER_QTY)
+          );
+          const buyerTknPriceSent = new BN(constants.product_price);
+          const buyerTknDepositSent = new BN(constants.buyer_deposit);
+
+          const escrowSellerTknDeposit = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          );
+          const escrowBuyerTknPrice = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.buyer.address
+          );
+          const escrowBuyerTknDeposit = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.buyer.address
+          );
+
+          assert.isTrue(
+            new BN(sellerDeposits).eq(escrowSellerTknDeposit),
+            'Escrow amount is incorrect'
+          );
+
+          assert.isTrue(
+            new BN(buyerTknPriceSent).eq(escrowBuyerTknPrice),
+            'Escrow amount is incorrect'
+          );
+
+          assert.isTrue(
+            new BN(buyerTknDepositSent).eq(escrowBuyerTknDeposit),
             'Escrow amount is incorrect'
           );
         });
@@ -2171,6 +2304,34 @@ contract('Cashier && VK', async (addresses) => {
           assert.isTrue(
             new BN(cashierTokenBalanceSame).eq(expectedDepositBalance),
             'Cashier amount is incorrect'
+          );
+        });
+
+        it('Escrows should be updated', async () => {
+          const sellerDeposits = new BN(constants.seller_deposit).mul(
+            new BN(ORDER_QTY)
+          );
+          const buyerTknSent = new BN(constants.product_price).add(
+            new BN(constants.buyer_deposit)
+          );
+
+          const escrowSellerTknDeposit = await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.seller.address
+          );
+          const escrowBuyerTkn = await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.buyer.address
+          );
+
+          assert.isTrue(
+            new BN(sellerDeposits).eq(escrowSellerTknDeposit),
+            'Escrow amount is incorrect'
+          );
+
+          assert.isTrue(
+            new BN(buyerTknSent).eq(escrowBuyerTkn),
+            'Escrow amount is incorrect'
           );
         });
 
@@ -2461,6 +2622,41 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
+        it('Escrow should be updated', async () => {
+          const sellerDeposits = new BN(constants.seller_deposit).mul(
+            new BN(ORDER_QTY)
+          );
+
+          const buyerTknSent = new BN(constants.product_price);
+          const buyerEthSent = new BN(constants.buyer_deposit);
+
+          const escrowSeller = await contractCashier.getEscrowAmount(
+            users.seller.address
+          );
+          const escrowBuyerEth = await contractCashier.getEscrowAmount(
+            users.buyer.address
+          );
+          const escrowBuyerTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.buyer.address
+          );
+
+          assert.isTrue(
+            new BN(sellerDeposits).eq(escrowSeller),
+            'Escrow amount is incorrect'
+          );
+
+          assert.isTrue(
+            new BN(buyerEthSent).eq(escrowBuyerEth),
+            'Escrow amount is incorrect'
+          );
+
+          assert.isTrue(
+            new BN(buyerTknSent).eq(escrowBuyerTkn),
+            'Escrow amount is incorrect'
+          );
+        });
+
         it('[NEGATIVE] Should not create order with incorrect deposit', async () => {
           const nonce = await contractBSNTokenPrice.nonces(users.buyer.address);
 
@@ -2527,6 +2723,124 @@ contract('Cashier && VK', async (addresses) => {
             truffleAssert.ErrorType.REVERT
           );
         });
+      });
+    });
+
+    describe('[NEGATIVE] Common voucher interactions after expiry', () => {
+      const ONE_MINUTE = 60;
+      const TWO_MINUTES = 120;
+      const cancelPeriod = ONE_MINUTE;
+      const complainPeriod = ONE_MINUTE;
+      let snapshot;
+
+      beforeEach(async () => {
+        await deployContracts();
+        utils = UtilsBuilder.create()
+          .ETHETH()
+          .build(
+            contractERC1155ERC721,
+            contractVoucherKernel,
+            contractCashier,
+            contractBosonRouter
+          );
+
+        snapshot = await timemachine.takeSnapshot();
+
+        const timestamp = await Utils.getCurrTimestamp();
+
+        constants.PROMISE_VALID_FROM = timestamp;
+        constants.PROMISE_VALID_TO = timestamp + TWO_MINUTES;
+
+        TOKEN_SUPPLY_ID = await utils.createOrder(
+          users.seller,
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.seller_deposit,
+          constants.QTY_10
+        );
+      });
+
+      afterEach(async () => {
+        await timemachine.revertToSnapShot(snapshot.id);
+      });
+
+      it('Buyer should not be able to commit after expiry date has passed', async () => {
+        await timemachine.advanceTimeSeconds(
+          constants.PROMISE_VALID_TO + ONE_MINUTE
+        );
+
+        await truffleAssert.reverts(
+          utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
+          truffleAssert.ErrorType.reverts
+        );
+      });
+
+      it('Seller should not be able to cancel after complain and expiry periods have passed', async () => {
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+        await timemachine.advanceTimeSeconds(
+          constants.PROMISE_VALID_TO + cancelPeriod + complainPeriod
+        );
+
+        await truffleAssert.reverts(
+          utils.cancel(voucherID, users.seller.address),
+          truffleAssert.ErrorType.reverts
+        );
+      });
+
+      it('Buyer should not be able to refund after expiry date has passed', async () => {
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await timemachine.advanceTimeSeconds(
+          constants.PROMISE_VALID_TO + ONE_MINUTE
+        );
+
+        await truffleAssert.reverts(
+          utils.refund(voucherID, users.buyer.address),
+          truffleAssert.ErrorType.reverts
+        );
+      });
+
+      it('Buyer should not be able to redeem after expiry date has passed', async () => {
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await timemachine.advanceTimeSeconds(
+          constants.PROMISE_VALID_TO + ONE_MINUTE
+        );
+
+        await truffleAssert.reverts(
+          utils.redeem(voucherID, users.buyer.address),
+          truffleAssert.ErrorType.reverts
+        );
+      });
+
+      it('Buyer should not be able to complain after complain and cancel periods have passed', async () => {
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+        await utils.redeem(voucherID, users.buyer.address);
+
+        await timemachine.advanceTimeSeconds(
+          complainPeriod + cancelPeriod + ONE_MINUTE
+        );
+
+        await truffleAssert.reverts(
+          utils.complain(voucherID, users.buyer.address),
+          truffleAssert.ErrorType.reverts
+        );
       });
     });
   });
@@ -2751,7 +3065,9 @@ contract('Cashier && VK', async (addresses) => {
           users.other2.address,
           tokenSupplyKey,
           constants.QTY_1,
-          {from: users.other1.address}
+          {
+            from: users.other1.address,
+          }
         ),
           (actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
             users.other1.address
@@ -2782,7 +3098,9 @@ contract('Cashier && VK', async (addresses) => {
           users.other2.address,
           tokenSupplyKey,
           constants.QTY_1,
-          {from: users.other1.address}
+          {
+            from: users.other1.address,
+          }
         );
 
         const voucherID = await utils.commitToBuy(
@@ -2837,7 +3155,9 @@ contract('Cashier && VK', async (addresses) => {
           users.other2.address,
           tokenSupplyKey,
           constants.QTY_1,
-          {from: users.other1.address}
+          {
+            from: users.other1.address,
+          }
         );
 
         const voucherID = await utils.commitToBuy(
@@ -2857,7 +3177,9 @@ contract('Cashier && VK', async (addresses) => {
           users.other2.address,
           tokenSupplyKey,
           constants.QTY_1,
-          {from: users.other1.address}
+          {
+            from: users.other1.address,
+          }
         );
 
         const voucherID = await utils.commitToBuy(
@@ -2968,6 +3290,57 @@ contract('Cashier && VK', async (addresses) => {
             correlationId.toString(),
             1,
             'New Supply Owner correlationId is not as expected'
+          );
+        });
+
+        it('Should update escrow amounts after transfer', async () => {
+          expectedBalanceInEscrow = new BN(constants.seller_deposit).mul(
+            new BN(constants.QTY_1)
+          );
+
+          actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other1.address
+          );
+          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other2.address
+          );
+
+          assert.isTrue(
+            actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
+            'Old owner balance from escrow does not match'
+          );
+          assert.isTrue(
+            actualNewOwnerBalanceFromEscrow.eq(ZERO),
+            'New owner balance from escrow does not match'
+          );
+
+          utils.safeTransfer1155(
+            users.other1.address,
+            users.other2.address,
+            tokenSupplyKey,
+            constants.QTY_1,
+            {
+              from: users.other1.address,
+            }
+          ),
+            (actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other1.address
+            ));
+          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other2.address
+          );
+
+          assert.isTrue(
+            actualOldOwnerBalanceFromEscrow.eq(ZERO),
+            'Old owner balance from escrow does not match'
+          );
+          assert.isTrue(
+            actualNewOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
+            'New owner balance from escrow does not match'
           );
         });
 
@@ -3210,6 +3583,57 @@ contract('Cashier && VK', async (addresses) => {
             correlationId.toString(),
             1,
             'New Supply Owner correlationId is not as expected'
+          );
+        });
+
+        it('Should update escrow amounts after transfer', async () => {
+          expectedBalanceInEscrow = new BN(constants.seller_deposit).mul(
+            new BN(constants.QTY_1)
+          );
+
+          actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other1.address
+          );
+          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other2.address
+          );
+
+          assert.isTrue(
+            actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
+            'Old owner balance from escrow does not match'
+          );
+          assert.isTrue(
+            actualNewOwnerBalanceFromEscrow.eq(ZERO),
+            'New owner balance from escrow does not match'
+          );
+
+          utils.safeTransfer1155(
+            users.other1.address,
+            users.other2.address,
+            tokenSupplyKey,
+            constants.QTY_1,
+            {
+              from: users.other1.address,
+            }
+          ),
+            (actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other1.address
+            ));
+          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other2.address
+          );
+
+          assert.isTrue(
+            actualOldOwnerBalanceFromEscrow.eq(ZERO),
+            'Old owner balance from escrow does not match'
+          );
+          assert.isTrue(
+            actualNewOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
+            'New owner balance from escrow does not match'
           );
         });
 
@@ -3614,9 +4038,10 @@ contract('Cashier && VK', async (addresses) => {
   });
 
   describe('VOUCHER TRANSFER', () => {
-    let actualOldOwnerBalanceFromEscrow = new BN(0);
-    let actualNewOwnerBalanceFromEscrow = new BN(0);
-    let expectedBalanceInEscrow = new BN(0);
+    let actualOldOwnerBalanceFromEscrowEth = new BN(0);
+    let actualOldOwnerBalanceFromEscrowTkn = new BN(0);
+    let actualNewOwnerBalanceFromEscrowEth = new BN(0);
+    let actualNewOwnerBalanceFromEscrowTkn = new BN(0);
 
     afterEach(() => {
       distributedAmounts = {
@@ -3625,9 +4050,10 @@ contract('Cashier && VK', async (addresses) => {
         escrowAmount: new BN(0),
       };
 
-      actualOldOwnerBalanceFromEscrow = new BN(0);
-      actualNewOwnerBalanceFromEscrow = new BN(0);
-      expectedBalanceInEscrow = new BN(0);
+      actualOldOwnerBalanceFromEscrowEth = new BN(0);
+      actualOldOwnerBalanceFromEscrowTkn = new BN(0);
+      actualNewOwnerBalanceFromEscrowEth = new BN(0);
+      actualNewOwnerBalanceFromEscrowTkn = new BN(0);
     });
 
     describe('Common transfer', () => {
@@ -3663,7 +4089,9 @@ contract('Cashier && VK', async (addresses) => {
           users.other1.address,
           users.other2.address,
           voucherID,
-          {from: users.other1.address}
+          {
+            from: users.other1.address,
+          }
         );
 
         truffleAssert.eventEmitted(
@@ -3737,7 +4165,7 @@ contract('Cashier && VK', async (addresses) => {
       });
 
       it('Should update escrow amounts after transfer', async () => {
-        expectedBalanceInEscrow = new BN(constants.product_price).add(
+        const expectedBalanceInEscrow = new BN(constants.product_price).add(
           new BN(constants.buyer_deposit)
         );
         const voucherID = await utils.commitToBuy(
@@ -3746,19 +4174,19 @@ contract('Cashier && VK', async (addresses) => {
           tokenSupplyKey
         );
 
-        actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
+        actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
           users.other1.address
         );
-        actualNewOwnerBalanceFromEscrow = await contractCashier.escrow(
+        actualNewOwnerBalanceFromEscrowEth = await contractCashier.escrow(
           users.other2.address
         );
 
         assert.isTrue(
-          actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
+          actualOldOwnerBalanceFromEscrowEth.eq(expectedBalanceInEscrow),
           'Old owner balance from escrow does not match'
         );
         assert.isTrue(
-          actualNewOwnerBalanceFromEscrow.eq(ZERO),
+          actualNewOwnerBalanceFromEscrowEth.eq(ZERO),
           'New owner balance from escrow does not match'
         );
 
@@ -3766,22 +4194,24 @@ contract('Cashier && VK', async (addresses) => {
           users.other1.address,
           users.other2.address,
           voucherID,
-          {from: users.other1.address}
+          {
+            from: users.other1.address,
+          }
         );
 
-        actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
+        actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
           users.other1.address
         );
-        actualNewOwnerBalanceFromEscrow = await contractCashier.escrow(
+        actualNewOwnerBalanceFromEscrowEth = await contractCashier.escrow(
           users.other2.address
         );
 
         assert.isTrue(
-          actualOldOwnerBalanceFromEscrow.eq(ZERO),
+          actualOldOwnerBalanceFromEscrowEth.eq(ZERO),
           'Old owner balance from escrow does not match'
         );
         assert.isTrue(
-          actualNewOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
+          actualNewOwnerBalanceFromEscrowEth.eq(expectedBalanceInEscrow),
           'New owner balance from escrow does not match'
         );
       });
@@ -3807,7 +4237,9 @@ contract('Cashier && VK', async (addresses) => {
           users.other1.address,
           users.other2.address,
           voucherID,
-          {from: users.other1.address}
+          {
+            from: users.other1.address,
+          }
         );
 
         await utils.refund(voucherID, users.other2.address);
@@ -3861,7 +4293,9 @@ contract('Cashier && VK', async (addresses) => {
           users.other1.address,
           users.other2.address,
           voucherID,
-          {from: users.other1.address}
+          {
+            from: users.other1.address,
+          }
         );
 
         await truffleAssert.reverts(
@@ -3887,7 +4321,9 @@ contract('Cashier && VK', async (addresses) => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.attacker.address}
+            {
+              from: users.attacker.address,
+            }
           ),
           truffleAssert.ErrorType.REVERT
         );
@@ -4014,26 +4450,50 @@ contract('Cashier && VK', async (addresses) => {
         });
 
         it('Should update escrow amounts after transfer', async () => {
-          expectedBalanceInEscrow = new BN(constants.product_price);
+          const expectedBalanceInEscrowEth = new BN(constants.product_price);
+          const expectedBalanceInEscrowTkn = new BN(constants.buyer_deposit);
+
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
             tokenSupplyKey
           );
 
-          actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
+          actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
             users.other1.address
           );
-          actualNewOwnerBalanceFromEscrow = await contractCashier.escrow(
+
+          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other1.address
+          );
+
+          actualNewOwnerBalanceFromEscrowEth = await contractCashier.escrow(
+            users.other2.address
+          );
+
+          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
             users.other2.address
           );
 
           assert.isTrue(
-            actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
+            actualOldOwnerBalanceFromEscrowEth.eq(expectedBalanceInEscrowEth),
             'Old owner balance from escrow does not match'
           );
+
           assert.isTrue(
-            actualNewOwnerBalanceFromEscrow.eq(ZERO),
+            actualOldOwnerBalanceFromEscrowTkn.eq(expectedBalanceInEscrowTkn),
+            'Old owner balance from escrow does not match'
+          );
+
+          assert.isTrue(
+            actualNewOwnerBalanceFromEscrowEth.eq(ZERO),
+            'New owner balance from escrow does not match'
+          );
+
+          assert.isTrue(
+            actualNewOwnerBalanceFromEscrowTkn.eq(ZERO),
             'New owner balance from escrow does not match'
           );
 
@@ -4041,22 +4501,46 @@ contract('Cashier && VK', async (addresses) => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            {
+              from: users.other1.address,
+            }
           );
 
-          actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
+          actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
             users.other1.address
           );
-          actualNewOwnerBalanceFromEscrow = await contractCashier.escrow(
+
+          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other1.address
+          );
+
+          actualNewOwnerBalanceFromEscrowEth = await contractCashier.escrow(
+            users.other2.address
+          );
+
+          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
             users.other2.address
           );
 
           assert.isTrue(
-            actualOldOwnerBalanceFromEscrow.eq(ZERO),
+            actualOldOwnerBalanceFromEscrowEth.eq(ZERO),
             'Old owner balance from escrow does not match'
           );
+
           assert.isTrue(
-            actualNewOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
+            actualOldOwnerBalanceFromEscrowTkn.eq(ZERO),
+            'Old owner balance from escrow does not match'
+          );
+
+          assert.isTrue(
+            actualNewOwnerBalanceFromEscrowEth.eq(expectedBalanceInEscrowEth),
+            'New owner balance from escrow does not match'
+          );
+
+          assert.isTrue(
+            actualNewOwnerBalanceFromEscrowTkn.eq(expectedBalanceInEscrowTkn),
             'New owner balance from escrow does not match'
           );
         });
@@ -4083,7 +4567,9 @@ contract('Cashier && VK', async (addresses) => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            {
+              from: users.other1.address,
+            }
           );
 
           await utils.refund(voucherID, users.other2.address);
@@ -4163,7 +4649,9 @@ contract('Cashier && VK', async (addresses) => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            {
+              from: users.other1.address,
+            }
           );
 
           await truffleAssert.reverts(
@@ -4189,7 +4677,9 @@ contract('Cashier && VK', async (addresses) => {
               users.other1.address,
               users.other2.address,
               voucherID,
-              {from: users.attacker.address}
+              {
+                from: users.attacker.address,
+              }
             ),
             truffleAssert.ErrorType.REVERT
           );
@@ -4319,6 +4809,114 @@ contract('Cashier && VK', async (addresses) => {
           );
         });
 
+        it('Should update escrow amounts after transfer', async () => {
+          let expectedBalanceInEscrowTknPrice = new BN(constants.product_price);
+          let expectedBalanceInEscrowTknDeposit = new BN(
+            constants.buyer_deposit
+          );
+          const voucherID = await utils.commitToBuy(
+            users.other1,
+            users.seller,
+            tokenSupplyKey
+          );
+
+          let actualOldOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.other1.address
+          );
+
+          let actualOldOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other1.address
+          );
+
+          let actualNewOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.other2.address
+          );
+
+          let actualNewOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other2.address
+          );
+
+          assert.isTrue(
+            actualOldOwnerBalanceFromEscrowTknPrice.eq(
+              expectedBalanceInEscrowTknPrice
+            ),
+            'Old owner balance from escrow does not match'
+          );
+
+          assert.isTrue(
+            actualOldOwnerBalanceFromEscrowTknDeposit.eq(
+              expectedBalanceInEscrowTknDeposit
+            ),
+            'Old owner balance from escrow does not match'
+          );
+
+          assert.isTrue(
+            actualNewOwnerBalanceFromEscrowTknPrice.eq(ZERO),
+            'New owner balance from escrow does not match'
+          );
+
+          assert.isTrue(
+            actualNewOwnerBalanceFromEscrowTknDeposit.eq(ZERO),
+            'New owner balance from escrow does not match'
+          );
+
+          await utils.safeTransfer721(
+            users.other1.address,
+            users.other2.address,
+            voucherID,
+            {
+              from: users.other1.address,
+            }
+          ),
+            (actualOldOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenPrice.address,
+              users.other1.address
+            ));
+
+          actualOldOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other1.address
+          );
+
+          actualNewOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.other2.address
+          );
+
+          actualNewOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other2.address
+          );
+
+          assert.isTrue(
+            actualOldOwnerBalanceFromEscrowTknPrice.eq(ZERO),
+            'Old owner balance from escrow does not match'
+          );
+
+          assert.isTrue(
+            actualOldOwnerBalanceFromEscrowTknDeposit.eq(ZERO),
+            'Old owner balance from escrow does not match'
+          );
+
+          assert.isTrue(
+            actualNewOwnerBalanceFromEscrowTknPrice.eq(
+              expectedBalanceInEscrowTknPrice
+            ),
+            'New owner balance from escrow does not match'
+          );
+
+          assert.isTrue(
+            actualNewOwnerBalanceFromEscrowTknDeposit.eq(
+              expectedBalanceInEscrowTknDeposit
+            ),
+            'New owner balance from escrow does not match'
+          );
+        });
+
         it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
           const expectedBuyerPrice = new BN(constants.product_price); // 0.3
           const expectedBuyerDeposit = new BN(constants.buyer_deposit).add(
@@ -4417,7 +5015,9 @@ contract('Cashier && VK', async (addresses) => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            {
+              from: users.other1.address,
+            }
           );
 
           await truffleAssert.reverts(
@@ -4443,7 +5043,9 @@ contract('Cashier && VK', async (addresses) => {
               users.other1.address,
               users.other2.address,
               voucherID,
-              {from: users.attacker.address}
+              {
+                from: users.attacker.address,
+              }
             ),
             truffleAssert.ErrorType.REVERT
           );
@@ -4539,26 +5141,49 @@ contract('Cashier && VK', async (addresses) => {
         });
 
         it('Should update escrow amounts after transfer', async () => {
-          expectedBalanceInEscrow = new BN(constants.buyer_deposit);
+          const expectedBalanceInEscrowEth = new BN(constants.buyer_deposit);
+          const expectedBalanceInEscrowTkn = new BN(constants.product_price);
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
             tokenSupplyKey
           );
 
-          actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
+          actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
             users.other1.address
           );
-          actualNewOwnerBalanceFromEscrow = await contractCashier.escrow(
+
+          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.other1.address
+          );
+
+          actualNewOwnerBalanceFromEscrowEth = await contractCashier.escrow(
+            users.other2.address
+          );
+
+          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
             users.other2.address
           );
 
           assert.isTrue(
-            actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
+            actualOldOwnerBalanceFromEscrowEth.eq(expectedBalanceInEscrowEth),
             'Old owner balance from escrow does not match'
           );
+
           assert.isTrue(
-            actualNewOwnerBalanceFromEscrow.eq(ZERO),
+            actualOldOwnerBalanceFromEscrowTkn.eq(expectedBalanceInEscrowTkn),
+            'Old owner balance from escrow does not match'
+          );
+
+          assert.isTrue(
+            actualNewOwnerBalanceFromEscrowEth.eq(ZERO),
+            'New owner balance from escrow does not match'
+          );
+
+          assert.isTrue(
+            actualNewOwnerBalanceFromEscrowTkn.eq(ZERO),
             'New owner balance from escrow does not match'
           );
 
@@ -4566,21 +5191,45 @@ contract('Cashier && VK', async (addresses) => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            {
+              from: users.other1.address,
+            }
           ),
-            (actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
+            (actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
               users.other1.address
             ));
-          actualNewOwnerBalanceFromEscrow = await contractCashier.escrow(
+
+          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.other1.address
+          );
+
+          actualNewOwnerBalanceFromEscrowEth = await contractCashier.escrow(
+            users.other2.address
+          );
+
+          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
             users.other2.address
           );
 
           assert.isTrue(
-            actualOldOwnerBalanceFromEscrow.eq(ZERO),
+            actualOldOwnerBalanceFromEscrowEth.eq(ZERO),
             'Old owner balance from escrow does not match'
           );
+
           assert.isTrue(
-            actualNewOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
+            actualOldOwnerBalanceFromEscrowTkn.eq(ZERO),
+            'Old owner balance from escrow does not match'
+          );
+
+          assert.isTrue(
+            actualNewOwnerBalanceFromEscrowEth.eq(expectedBalanceInEscrowEth),
+            'New owner balance from escrow does not match'
+          );
+
+          assert.isTrue(
+            actualNewOwnerBalanceFromEscrowTkn.eq(expectedBalanceInEscrowTkn),
             'New owner balance from escrow does not match'
           );
         });
@@ -4609,7 +5258,9 @@ contract('Cashier && VK', async (addresses) => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            {
+              from: users.other1.address,
+            }
           ),
             await utils.refund(voucherID, users.other2.address);
           await utils.complain(voucherID, users.other2.address);
@@ -4699,7 +5350,9 @@ contract('Cashier && VK', async (addresses) => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            {
+              from: users.other1.address,
+            }
           ),
             await truffleAssert.reverts(
               utils.redeem(voucherID, users.other1.address),
@@ -4724,7 +5377,9 @@ contract('Cashier && VK', async (addresses) => {
               users.other1.address,
               users.other2.address,
               voucherID,
-              {from: users.attacker.address}
+              {
+                from: users.attacker.address,
+              }
             ),
             truffleAssert.ErrorType.REVERT
           );

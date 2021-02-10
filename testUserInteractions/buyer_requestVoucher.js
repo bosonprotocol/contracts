@@ -29,7 +29,9 @@ const accountBuyer = new ethers.Wallet(BUYER_SECRET, provider);
   let txOrder = await cashierContract_Buyer.requestVoucher(
     tokenSupplyKey,
     SELLER_PUBLIC,
-    {value: txValue.toString()}
+    {
+      value: txValue.toString(),
+    }
   );
 
   const receipt = await txOrder.wait();

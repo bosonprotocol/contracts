@@ -489,16 +489,6 @@ class Utils {
     return tx;
   }
 
-  async withdrawWhenPaused(voucherID, executor) {
-    const tx = await this.contractCashier.withdrawWhenPaused(voucherID, {
-      from: executor,
-    });
-
-    console.log('GAS USED: ', tx.receipt.gasUsed);
-
-    return tx;
-  }
-
   async pause(deployer) {
     await this.contractBSNRouter.pause({from: deployer});
   }

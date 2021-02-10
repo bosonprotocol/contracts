@@ -1,0 +1,84 @@
+resource_types:
+  - name: slack-notification
+    type: docker-image
+    source:
+      repository: cfcommunity/slack-notification-resource
+      tag: latest
+
+resources:
+  - name: source
+    type: git
+    source:
+      uri: ((source_repository_url))
+      branch: ((source_repository_branch))
+      private_key: ((git_ssh_key))
+
+  - name: node-builder-image
+    type: docker-image
+    source:
+      repository: ((node_builder_image_repository_url))
+      aws_access_key_id: ((aws_access_key_id))
+      aws_secret_access_key: ((aws_secret_access_key))
+
+  - name: notify-success
+    type: slack-notification
+    source:
+      url: ((slack_builds_webhook_url))
+
+  - name: notify-failure
+    type: slack-notification
+    source:
+      url: ((slack_engineering_webhook_url))
+
+jobs:
+  - name: build
+    serial: true
+    plan:
+      - in_parallel:
+          - get: source
+            trigger: true
+          - get: node-builder-image
+      - task: build
+        image: node-builder-image
+        file: source/pipelines/shared/build/task.yaml
+
+    on_success: &on_success
+      put: notify-success
+      params:
+        text: ((slack_success_message))
+        channel: ((slack_success_channel))
+
+    on_failure: &on_failure
+      put: notify-failure
+      params:
+        text: ((slack_failure_message))
+        channel: ((slack_failure_channel))
+
+    on_error: &on_error
+      put: notify-failure
+      params:
+        text: ((slack_error_message))
+        channel: ((slack_error_channel))
+
+    on_abort: &on_abort
+      put: notify-failure
+      params:
+        text: ((slack_abort_message))
+        channel: ((slack_abort_channel))
+
+  - name: test
+    plan:
+      - in_parallel:
+          - get: source
+            trigger: true
+            passed:
+              - build
+          - get: node-builder-image
+      - task: test
+        image: node-builder-image
+        file: source/pipelines/shared/test/task.yaml
+
+    on_success: *on_success
+    on_failure: *on_failure
+    on_error: *on_error
+    on_abort: *on_abort

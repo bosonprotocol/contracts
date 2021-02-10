@@ -1,1 +1,2 @@
-*.sol linguist-language=Solidity 
+config/secrets/** filter=git-crypt diff=git-crypt
+*.sol linguist-language=Solidity

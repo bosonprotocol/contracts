@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-pragma solidity >=0.6.6 <0.7.0;
+pragma solidity 0.7.1;
 
 interface IERC1155ERC721 {
     /**
@@ -40,4 +40,13 @@ interface IERC1155ERC721 {
      * @return A boolean that indicates if the operation was successful.
      */
     function mint(address to, uint256 tokenId) external returns (bool);
+
+    /**
+        @dev MUST emit when approval for a second party/operator address to manage all tokens for an owner address is enabled or disabled (absence of an event assumes disabled).        
+    */
+    event ApprovalForAll(
+        address indexed _owner,
+        address indexed _operator,
+        bool _approved
+    );
 }

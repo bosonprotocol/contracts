@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
-pragma solidity >=0.6.6 <0.7.0;
+pragma solidity 0.7.1;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -47,14 +47,12 @@ contract BosonRouter is
 
     event LogTokenContractSet(address _newTokenContract, address _triggeredBy);
 
-    modifier notZeroAddress(address tokenAddress) {
+    function notZeroAddress(address tokenAddress) private pure {
         require(tokenAddress != address(0), "INVALID_TOKEN_ADDRESS");
-        _;
     }
 
-    modifier onlyTokensContract() {
+    function onlyTokensContract() private view {
         require(msg.sender == tokensContractAddress, "UNAUTHORIZED_TK");
-        _;
     }
 
     function notAboveETHLimit(uint256 value) internal view {
@@ -82,7 +80,7 @@ contract BosonRouter is
         address _tokensContractAddress,
         address _fundLimitsOracle,
         address _cashierAddress
-    ) public {
+    ) {
         voucherKernel = _voucherKernel;
         tokensContractAddress = _tokensContractAddress;
         fundLimitsOracle = _fundLimitsOracle;
@@ -105,6 +103,11 @@ contract BosonRouter is
      * All functions related to creating new batch, requestVoucher or withdraw will be unpaused.
      */
     function unpause() external override onlyOwner {
+        require(
+            ICashier(cashierAddress).canUnpause(),
+            "Contracts unpauseable!"
+        );
+
         _unpause();
         IVoucherKernel(voucherKernel).unpause();
         ICashier(cashierAddress).unpause();
@@ -167,7 +170,7 @@ contract BosonRouter is
             amount.add(msg.value)
         );
 
-        require(payable(cashierAddress).send(msg.value));
+        payable(cashierAddress).sendValue(msg.value);
 
         emit LogOrderCreated(
             tokenIdSupply,
@@ -187,13 +190,9 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s,
         uint256[] calldata metadata
-    )
-        external
-        override
-        notZeroAddress(_tokenPriceAddress)
-        notZeroAddress(_tokenDepositAddress)
-        whenNotPaused
-    {
+    ) external override whenNotPaused {
+        notZeroAddress(_tokenPriceAddress);
+        notZeroAddress(_tokenDepositAddress);
         notAboveTokenLimit(_tokenPriceAddress, metadata[2]);
         notAboveTokenLimit(_tokenDepositAddress, metadata[3]);
         notAboveTokenLimit(_tokenDepositAddress, metadata[4]);
@@ -235,6 +234,18 @@ contract BosonRouter is
             _tokensSent
         );
 
+        //record funds in escrowTokens ...
+        uint256 amount =
+            ICashier(cashierAddress).getEscrowTokensAmount(
+                _tokenDepositAddress,
+                msg.sender
+            );
+        ICashier(cashierAddress).updateEscrowTokensAmount(
+            _tokenDepositAddress,
+            msg.sender,
+            amount.add(_tokensSent)
+        );
+
         emit LogOrderCreated(
             tokenIdSupply,
             msg.sender,
@@ -252,7 +263,8 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s,
         uint256[] calldata metadata
-    ) external override notZeroAddress(_tokenDepositAddress) whenNotPaused {
+    ) external override whenNotPaused {
+        notZeroAddress(_tokenDepositAddress);
         notAboveETHLimit(metadata[2]);
         notAboveTokenLimit(_tokenDepositAddress, metadata[3]);
         notAboveTokenLimit(_tokenDepositAddress, metadata[4]);
@@ -294,6 +306,18 @@ contract BosonRouter is
             _tokensSent
         );
 
+        //record funds in escrowTokens ...
+        uint256 amount =
+            ICashier(cashierAddress).getEscrowTokensAmount(
+                _tokenDepositAddress,
+                msg.sender
+            );
+        ICashier(cashierAddress).updateEscrowTokensAmount(
+            _tokenDepositAddress,
+            msg.sender,
+            amount.add(_tokensSent)
+        );
+
         emit LogOrderCreated(
             tokenIdSupply,
             msg.sender,
@@ -306,13 +330,8 @@ contract BosonRouter is
     function requestCreateOrderTKNETH(
         address _tokenPriceAddress,
         uint256[] calldata metadata
-    )
-        external
-        payable
-        override
-        notZeroAddress(_tokenPriceAddress)
-        whenNotPaused
-    {
+    ) external payable override whenNotPaused {
+        notZeroAddress(_tokenPriceAddress);
         notAboveTokenLimit(_tokenPriceAddress, metadata[2]);
         notAboveETHLimit(metadata[3]);
         notAboveETHLimit(metadata[4]);
@@ -343,7 +362,7 @@ contract BosonRouter is
             amount.add(msg.value)
         );
 
-        require(payable(cashierAddress).send(msg.value));
+        payable(cashierAddress).sendValue(msg.value);
 
         emit LogOrderCreated(
             tokenIdSupply,
@@ -388,7 +407,7 @@ contract BosonRouter is
             amount.add(weiReceived)
         );
 
-        require(payable(cashierAddress).send(msg.value));
+        payable(cashierAddress).sendValue(msg.value);
     }
 
     function requestVoucherTKNTKNWithPermit(
@@ -451,6 +470,29 @@ contract BosonRouter is
             address(cashierAddress),
             depositBu
         );
+
+        //record funds in escrowTokens for the Price token...
+        uint256 amount =
+            ICashier(cashierAddress).getEscrowTokensAmount(
+                tokenPriceAddress,
+                msg.sender
+            );
+        ICashier(cashierAddress).updateEscrowTokensAmount(
+            tokenPriceAddress,
+            msg.sender,
+            amount.add(price)
+        );
+
+        //record funds in escrowTokens for the Deposit token...
+        amount = ICashier(cashierAddress).getEscrowTokensAmount(
+            tokenDepositAddress,
+            msg.sender
+        );
+        ICashier(cashierAddress).updateEscrowTokensAmount(
+            tokenDepositAddress,
+            msg.sender,
+            amount.add(depositBu)
+        );
     }
 
     function requestVoucherTKNTKNSameWithPermit(
@@ -499,6 +541,18 @@ contract BosonRouter is
             msg.sender,
             address(cashierAddress),
             _tokensSent
+        );
+
+        //record funds in escrowTokens ...
+        uint256 amount =
+            ICashier(cashierAddress).getEscrowTokensAmount(
+                tokenPriceAddress,
+                msg.sender
+            );
+        ICashier(cashierAddress).updateEscrowTokensAmount(
+            tokenPriceAddress,
+            msg.sender,
+            amount.add(_tokensSent)
         );
     }
 
@@ -553,7 +607,18 @@ contract BosonRouter is
             amount.add(msg.value)
         );
 
-        require(payable(cashierAddress).send(msg.value));
+        //record funds in escrowTokens ...
+        amount = ICashier(cashierAddress).getEscrowTokensAmount(
+            tokenDepositAddress,
+            msg.sender
+        );
+        ICashier(cashierAddress).updateEscrowTokensAmount(
+            tokenDepositAddress,
+            msg.sender,
+            amount.add(_tokensDeposit)
+        );
+
+        payable(cashierAddress).sendValue(msg.value);
     }
 
     function requestVoucherTKNETHWithPermit(
@@ -605,7 +670,40 @@ contract BosonRouter is
             amount.add(msg.value)
         );
 
-        require(payable(cashierAddress).send(msg.value));
+        //record funds in escrowTokens ...
+        amount = ICashier(cashierAddress).getEscrowTokensAmount(
+            tokenPriceAddress,
+            msg.sender
+        );
+        ICashier(cashierAddress).updateEscrowTokensAmount(
+            tokenPriceAddress,
+            msg.sender,
+            amount.add(price)
+        );
+
+        payable(cashierAddress).sendValue(msg.value);
+    }
+
+    /**
+     * @notice Seller burns the remaining supply in case it's no longer in exchange and withdrawal of the locked deposits for them are being sent back.
+     * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
+     */
+    function requestCancelOrFaultVoucherSet(uint256 _tokenIdSupply)
+        external
+        override
+        nonReentrant
+        whenNotPaused
+    {
+        uint256 _burnedSupplyQty =
+            IVoucherKernel(voucherKernel).cancelOrFaultVoucherSet(
+                _tokenIdSupply,
+                msg.sender
+            );
+        ICashier(cashierAddress).withdrawDepositsSe(
+            _tokenIdSupply,
+            _burnedSupplyQty,
+            msg.sender
+        );
     }
 
     /**
@@ -653,7 +751,8 @@ contract BosonRouter is
         address _from,
         address _to,
         uint256 _tokenIdVoucher
-    ) external override onlyTokensContract {
+    ) external override {
+        onlyTokensContract();
         uint256 tokenSupplyId =
             IVoucherKernel(voucherKernel).getIdSupplyFromVoucher(
                 _tokenIdVoucher
@@ -663,13 +762,16 @@ contract BosonRouter is
                 tokenSupplyId
             );
 
+        uint256 amount;
+        address tokenAddress;
+
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(tokenSupplyId);
 
         if (paymentType == ETHETH) {
             uint256 totalAmount = price.add(depositBu);
 
-            uint256 amount = ICashier(cashierAddress).getEscrowAmount(_from);
+            amount = ICashier(cashierAddress).getEscrowAmount(_from);
             ICashier(cashierAddress).updateEscrowAmount(
                 _from,
                 amount.sub(totalAmount)
@@ -683,7 +785,7 @@ contract BosonRouter is
         }
 
         if (paymentType == ETHTKN) {
-            uint256 amount = ICashier(cashierAddress).getEscrowAmount(_from);
+            amount = ICashier(cashierAddress).getEscrowAmount(_from);
             ICashier(cashierAddress).updateEscrowAmount(
                 _from,
                 amount.sub(price)
@@ -691,10 +793,58 @@ contract BosonRouter is
 
             amount = ICashier(cashierAddress).getEscrowAmount(_to);
             ICashier(cashierAddress).updateEscrowAmount(_to, amount.add(price));
+
+            tokenAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(
+                tokenSupplyId
+            );
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(
+                tokenAddress,
+                _from
+            );
+            ICashier(cashierAddress).updateEscrowTokensAmount(
+                tokenAddress,
+                _from,
+                amount.sub(depositBu)
+            );
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(
+                tokenAddress,
+                _to
+            );
+            ICashier(cashierAddress).updateEscrowTokensAmount(
+                tokenAddress,
+                _to,
+                amount.add(depositBu)
+            );
         }
 
         if (paymentType == TKNETH) {
-            uint256 amount = ICashier(cashierAddress).getEscrowAmount(_from);
+            tokenAddress = IVoucherKernel(voucherKernel).getVoucherPriceToken(
+                tokenSupplyId
+            );
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(
+                tokenAddress,
+                _from
+            );
+            ICashier(cashierAddress).updateEscrowTokensAmount(
+                tokenAddress,
+                _from,
+                amount.sub(price)
+            );
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(
+                tokenAddress,
+                _to
+            );
+            ICashier(cashierAddress).updateEscrowTokensAmount(
+                tokenAddress,
+                _to,
+                amount.add(price)
+            );
+
+            amount = ICashier(cashierAddress).getEscrowAmount(_from);
             ICashier(cashierAddress).updateEscrowAmount(
                 _from,
                 amount.sub(depositBu)
@@ -702,6 +852,56 @@ contract BosonRouter is
 
             amount = ICashier(cashierAddress).getEscrowAmount(_to);
             ICashier(cashierAddress).updateEscrowAmount(
+                _to,
+                amount.add(depositBu)
+            );
+        }
+
+        if (paymentType == TKNTKN) {
+            tokenAddress = IVoucherKernel(voucherKernel).getVoucherPriceToken(
+                tokenSupplyId
+            );
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(
+                tokenAddress,
+                _from
+            );
+            ICashier(cashierAddress).updateEscrowTokensAmount(
+                tokenAddress,
+                _from,
+                amount.sub(price)
+            );
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(
+                tokenAddress,
+                _to
+            );
+            ICashier(cashierAddress).updateEscrowTokensAmount(
+                tokenAddress,
+                _to,
+                amount.add(price)
+            );
+
+            tokenAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(
+                tokenSupplyId
+            );
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(
+                tokenAddress,
+                _from
+            );
+            ICashier(cashierAddress).updateEscrowTokensAmount(
+                tokenAddress,
+                _from,
+                amount.sub(depositBu)
+            );
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(
+                tokenAddress,
+                _to
+            );
+            ICashier(cashierAddress).updateEscrowTokensAmount(
+                tokenAddress,
                 _to,
                 amount.add(depositBu)
             );
@@ -720,7 +920,8 @@ contract BosonRouter is
         address _from,
         uint256 _tokenSupplyId,
         uint256 _value
-    ) external view override onlyTokensContract {
+    ) external view override {
+        onlyTokensContract();
         uint256 _tokenSupplyQty =
             IVoucherKernel(voucherKernel).getRemQtyForSupply(
                 _tokenSupplyId,
@@ -741,18 +942,24 @@ contract BosonRouter is
         address _to,
         uint256 _tokenSupplyId,
         uint256 _value
-    ) external override onlyTokensContract {
+    ) external override {
+        onlyTokensContract();
         uint8 paymentType =
             IVoucherKernel(voucherKernel).getVoucherPaymentMethod(
                 _tokenSupplyId
             );
 
-        if (paymentType == ETHETH || paymentType == TKNETH) {
-            uint256 depositSe =
-                IVoucherKernel(voucherKernel).getSellerDeposit(_tokenSupplyId);
-            uint256 totalAmount = depositSe.mul(_value);
+        uint256 depositSe;
+        uint256 totalAmount;
+        uint256 amount;
 
-            uint256 amount = ICashier(cashierAddress).getEscrowAmount(_from);
+        if (paymentType == ETHETH || paymentType == TKNETH) {
+            depositSe = IVoucherKernel(voucherKernel).getSellerDeposit(
+                _tokenSupplyId
+            );
+            totalAmount = depositSe.mul(_value);
+
+            amount = ICashier(cashierAddress).getEscrowAmount(_from);
             ICashier(cashierAddress).updateEscrowAmount(
                 _from,
                 amount.sub(totalAmount)
@@ -765,11 +972,44 @@ contract BosonRouter is
             );
         }
 
-        correlationIds[_to]++;
+        if (paymentType == ETHTKN || paymentType == TKNTKN) {
+            address tokenDepositAddress =
+                IVoucherKernel(voucherKernel).getVoucherDepositToken(
+                    _tokenSupplyId
+                );
+
+            depositSe = IVoucherKernel(voucherKernel).getSellerDeposit(
+                _tokenSupplyId
+            );
+            totalAmount = depositSe.mul(_value);
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(
+                tokenDepositAddress,
+                _from
+            );
+            ICashier(cashierAddress).updateEscrowTokensAmount(
+                tokenDepositAddress,
+                _from,
+                amount.sub(totalAmount)
+            );
+
+            amount = ICashier(cashierAddress).getEscrowTokensAmount(
+                tokenDepositAddress,
+                _to
+            );
+            ICashier(cashierAddress).updateEscrowTokensAmount(
+                tokenDepositAddress,
+                _to,
+                amount.add(totalAmount)
+            );
+        }
+
         IVoucherKernel(voucherKernel).setSupplyHolderOnTransfer(
             _tokenSupplyId,
             _to
         );
+
+        correlationIds[_to]++;
     }
 
     // // // // // // // //
@@ -784,8 +1024,8 @@ contract BosonRouter is
         external
         override
         onlyOwner
-        notZeroAddress(_tokensContractAddress)
     {
+        notZeroAddress(_tokensContractAddress);
         tokensContractAddress = _tokensContractAddress;
         emit LogTokenContractSet(_tokensContractAddress, msg.sender);
     }

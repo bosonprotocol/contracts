@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-pragma solidity >=0.6.6 <0.7.0;
+pragma solidity 0.7.1;
 
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -24,6 +24,7 @@ import "./UsingHelpers.sol";
  *  - The usage of block.timestamp is honored since vouchers are defined with day-precision and the demo app is not covering all edge cases.
  *      See: https://ethereum.stackexchange.com/questions/5924/how-do-ethereum-mining-nodes-maintain-a-time-consistent-with-the-network/5931#5931
  */
+// solhint-disable-next-line
 contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     using Address for address;
     using SafeMath for uint256;
@@ -146,6 +147,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         address _triggeredBy
     );
 
+    event LogVoucherSetFaultCancel(uint256 _tokenIdSupply);
+
     event LogFundsReleased(
         uint256 _tokenIdVoucher,
         uint8 _type //0 .. payment, 1 .. deposits
@@ -172,7 +175,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         _;
     }
 
-    constructor(address _tokensContract) public {
+    constructor(address _tokensContract) {
         tokensContract = _tokensContract;
 
         complainPeriod = 7 * 1 days;
@@ -215,6 +218,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         uint256 _quantity
     ) external override onlyFromRouter returns (uint256) {
         require(_validFrom <= _validTo, "INVALID_VALIDITY_FROM"); //hex"26" FISSION.code(FISSION.Category.Find, FISSION.Status.Above_Range_Overflow)
+        // solhint-disable-next-line not-rely-on-time
         require(_validTo >= block.timestamp, "INVALID_VALIDITY_TO"); //hex"24" FISSION.code(FISSION.Category.Find, FISSION.Status.BelowRange_Underflow)
 
         bytes32 key;
@@ -361,6 +365,17 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
             IERC1155(tokensContract).balanceOf(_issuer, _tokenIdSupply) > 0,
             "OFFER_EMPTY"
         ); //hex"40" FISSION.code(FISSION.Category.Availability, FISSION.Status.Unavailable)
+
+        bytes32 promiseKey = ordersPromise[_tokenIdSupply];
+
+        require(
+            promises[promiseKey].validFrom <= block.timestamp,
+            "OFFER_NOT_STARTED"
+        );
+        require(
+            promises[promiseKey].validTo >= block.timestamp,
+            "OFFER_EXPIRED"
+        );
     }
 
     /**
@@ -449,6 +464,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
 
         return _tokenType;
     }
+
+    /* solhint-disable */
 
     /**
      * @notice Redemption of the vouchers promise
@@ -711,6 +728,32 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         emit LogVoucherFaultCancel(_tokenIdVoucher);
     }
 
+    /**
+     * @notice Cancel/Fault transaction by the Seller, cancelling the remaining uncommitted voucher set so that seller prevents buyers from committing to vouchers for items no longer in exchange.
+     * @param _tokenIdSupply   ID of the voucher set
+     * @param _issuer   owner of the voucher
+     */
+    function cancelOrFaultVoucherSet(uint256 _tokenIdSupply, address _issuer)
+        external
+        override
+        onlyFromRouter
+        whenNotPaused
+        returns (uint256)
+    {
+        require(getSupplyHolder(_tokenIdSupply) == _issuer, "UNAUTHORIZED_COF");
+
+        uint256 remQty = getRemQtyForSupply(_tokenIdSupply, _issuer);
+
+        require(remQty > 0, "OFFER_EMPTY");
+
+        IERC1155ERC721(tokensContract).burn(_issuer, _tokenIdSupply, remQty);
+        accountSupply[_issuer] = accountSupply[_issuer].sub(remQty);
+
+        emit LogVoucherSetFaultCancel(_tokenIdSupply);
+
+        return remQty;
+    }
+
     // // // // // // // //
     // BACK-END PROCESS
     // // // // // // // //
@@ -831,6 +874,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         }
         //
     }
+
+    /* solhint-enable */
 
     // // // // // // // //
     // UTILS
@@ -979,7 +1024,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @return          remaining quantity
      */
     function getRemQtyForSupply(uint256 _tokenSupplyId, address _owner)
-        external
+        public
         view
         override
         returns (uint256)

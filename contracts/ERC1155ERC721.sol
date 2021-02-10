@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-pragma solidity >=0.6.6 <0.7.0;
+pragma solidity 0.7.1;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -63,7 +63,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
         _;
     }
 
-    constructor() public {
+    constructor() {
         owner = msg.sender;
     }
 
@@ -495,7 +495,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
      */
     function supportsInterface(bytes4 _interfaceId)
         external
-        view
+        pure
         override
         returns (bool)
     {

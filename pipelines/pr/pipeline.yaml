@@ -1,0 +1,168 @@
+resource_types:
+  - name: slack-notification
+    type: docker-image
+    source:
+      repository: cfcommunity/slack-notification-resource
+      tag: latest
+
+  - name: github-status
+    type: docker-image
+    source:
+      repository: resource/github-status
+
+resources:
+  - name: source
+    type: git
+    source:
+      uri: ((source_repository_url))
+      branch: ((source_repository_branch))
+      private_key: ((git_ssh_key))
+
+  - name: status
+    type: github-status
+    source:
+      repo: ((source_repository_name))
+      access_token: ((github_access_token))
+
+  - name: node-builder-image
+    type: docker-image
+    source:
+      repository: ((node_builder_image_repository_url))
+      aws_access_key_id: ((aws_access_key_id))
+      aws_secret_access_key: ((aws_secret_access_key))
+
+  - name: notify-success
+    type: slack-notification
+    source:
+      url: ((slack_builds_webhook_url))
+
+  - name: notify-failure
+    type: slack-notification
+    source:
+      url: ((slack_engineering_webhook_url))
+
+jobs:
+  - name: build
+    plan:
+      - in_parallel:
+          - get: source
+            trigger: true
+          - get: node-builder-image
+      - put: status
+        params:
+          path: source
+          state: pending
+          context: "CI Pipeline"
+          description: "Running build..."
+      - task: build
+        image: node-builder-image
+        file: source/pipelines/shared/build/task.yaml
+
+    on_success:
+      put: notify-success
+      params:
+        text: ((slack_success_message))
+        channel: ((slack_success_channel))
+
+    on_failure:
+      do:
+        - put: status
+          params:
+            path: source
+            state: failure
+            context: "CI Pipeline"
+            description: "Build failed."
+        - put: notify-failure
+          params:
+            text: ((slack_failure_message))
+            channel: ((slack_failure_channel))
+
+    on_error:
+      do:
+        - put: status
+          params:
+            path: source
+            state: failure
+            context: "CI Pipeline"
+            description: "Build errored."
+        - put: notify-failure
+          params:
+            text: ((slack_error_message))
+            channel: ((slack_error_channel))
+
+    on_abort:
+      do:
+        - put: status
+          params:
+            path: source
+            state: failure
+            context: "CI Pipeline"
+            description: "Build aborted."
+        - put: notify-failure
+          params:
+            text: ((slack_abort_message))
+            channel: ((slack_abort_channel))
+
+  - name: test
+    plan:
+      - in_parallel:
+          - get: source
+            trigger: true
+            passed:
+              - build
+          - get: node-builder-image
+      - task: test
+        image: node-builder-image
+        file: source/pipelines/shared/test/task.yaml
+
+    on_success:
+      do:
+        - put: status
+          params:
+            path: source
+            state: success
+            context: "CI Pipeline"
+            description: "Pipeline succeeded."
+        - put: notify-success
+          params:
+            text: ((slack_success_message))
+            channel: ((slack_success_channel))
+
+    on_failure:
+      do:
+        - put: status
+          params:
+            path: source
+            state: failure
+            context: "CI Pipeline"
+            description: "Test failed."
+        - put: notify-failure
+          params:
+            text: ((slack_failure_message))
+            channel: ((slack_failure_channel))
+
+    on_error:
+      do:
+        - put: status
+          params:
+            path: source
+            state: failure
+            context: "CI Pipeline"
+            description: "Test errored."
+        - put: notify-failure
+          params:
+            text: ((slack_error_message))
+            channel: ((slack_error_channel))
+
+    on_abort:
+      do:
+        - put: status
+          params:
+            path: source
+            state: failure
+            context: "CI Pipeline"
+            description: "Test aborted."
+        - put: notify-failure
+          params:
+            text: ((slack_abort_message))
+            channel: ((slack_abort_channel))
