@@ -751,7 +751,6 @@ contract BosonRouter is
         }
 
         if (paymentType == ETHTKN) {
-            // update price funds in ETH
             amount = ICashier(cashierAddress).getEscrowAmount(_from);
             ICashier(cashierAddress).updateEscrowAmount(
                 _from,
@@ -761,7 +760,6 @@ contract BosonRouter is
             amount = ICashier(cashierAddress).getEscrowAmount(_to);
             ICashier(cashierAddress).updateEscrowAmount(_to, amount.add(price));
 
-            // update deposit funds in Token
             tokenAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(
                 tokenSupplyId
             );
@@ -788,7 +786,6 @@ contract BosonRouter is
         }
 
         if (paymentType == TKNETH) {
-            // update price funds in Token
             tokenAddress = IVoucherKernel(voucherKernel).getVoucherPriceToken(
                 tokenSupplyId
             );
@@ -813,7 +810,6 @@ contract BosonRouter is
                 amount.add(price)
             );
 
-            // update deposit funds in ETH
             amount = ICashier(cashierAddress).getEscrowAmount(_from);
             ICashier(cashierAddress).updateEscrowAmount(
                 _from,
@@ -828,7 +824,6 @@ contract BosonRouter is
         }
 
         if (paymentType == TKNTKN) {
-            // update price funds in Token
             tokenAddress = IVoucherKernel(voucherKernel).getVoucherPriceToken(
                 tokenSupplyId
             );
@@ -843,7 +838,6 @@ contract BosonRouter is
                 amount.sub(price)
             );
 
-            //TODO hitting out of gas ... need further optimization
             amount = ICashier(cashierAddress).getEscrowTokensAmount(
                 tokenAddress,
                 _to
@@ -854,7 +848,6 @@ contract BosonRouter is
                 amount.add(price)
             );
 
-            // update Deposit funds in Token
             tokenAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(
                 tokenSupplyId
             );

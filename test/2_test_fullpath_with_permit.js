@@ -3717,7 +3717,6 @@ contract('Cashier && VK', async (addresses) => {
     });
   });
 
-  //need to be optimized. Currently we have commented functionality in the 721 transfer, hence these tests are excluded
   describe('VOUCHER TRANSFER', () => {
     let actualOldOwnerBalanceFromEscrowEth = new BN(0);
     let actualOldOwnerBalanceFromEscrowTkn = new BN(0);
