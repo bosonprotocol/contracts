@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
-pragma solidity >=0.6.6 <0.7.0;
+pragma solidity 0.7.1;
 
 import "./ERC20WithPermit.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -9,7 +9,6 @@ contract BosonToken is ERC20WithPermit, AccessControl {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     constructor(string memory name, string memory symbol)
-        public
         ERC20WithPermit(name, symbol)
     {
         _setupRole(MINTER_ROLE, _msgSender());

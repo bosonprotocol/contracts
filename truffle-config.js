@@ -125,7 +125,8 @@ module.exports = {
 
   plugins: [
     "solidity-coverage",
-    "truffle-plugin-verify"
+    "truffle-plugin-verify",
+    "truffle-contract-size"
   ],
 
   api_keys: {
@@ -139,13 +140,13 @@ module.exports = {
   compilers: {
     solc: {
       // Fetch exact version from solc-bin (default: truffle's version)
-      version: '0.6.6',
+      version: '>=0.6.0 <0.8.0',
 
       // See the solidity docs for advice about optimization and evmVersion
       settings: {
         optimizer: {
           enabled: true,
-          runs: 200
+          runs: 10
         }
       }
     }

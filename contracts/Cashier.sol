@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
-pragma solidity >=0.6.6 <0.7.0;
+pragma solidity 0.7.1;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -67,7 +67,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         _;
     }
 
-    constructor(address _voucherKernel) public {
+    constructor(address _voucherKernel) {
         voucherKernel = _voucherKernel;
         disasterState = false;
     }
