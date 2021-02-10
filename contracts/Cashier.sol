@@ -35,12 +35,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
     event LogWithdrawal(address _caller, address _payee, uint256 _payment);
 
-    event LogWithdrawDepositsSe(
-        uint256 _tokenIdSupply,
-        uint256 _burnedQty,
-        address _triggeredBy
-    );
-
     event LogAmountDistribution(
         uint256 indexed _tokenIdVoucher,
         address _to,
@@ -657,7 +651,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             paymentMethod,
             _tokenIdSupply
         );
-        LogWithdrawDepositsSe(_tokenIdSupply, _burnedQty, _msgSender);
     }
 
     /**

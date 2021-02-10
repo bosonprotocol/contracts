@@ -1458,15 +1458,25 @@ contract('Cashier && VK', async (addresses) => {
       );
     });
 
-    it("Seller correlationId should be incremented after supply is cancelled", async () => {
-      let prevCorrId = await contractBosonRouter.correlationIds(users.seller.address)
+    it('Seller correlationId should be incremented after supply is cancelled', async () => {
+      let prevCorrId = await contractBosonRouter.correlationIds(
+        users.seller.address
+      );
 
-      await contractBosonRouter.requestCancelOrFaultVoucherSet(tokenSupplyKey, {from: users.seller.address})
-      let nextCorrId = await contractBosonRouter.correlationIds(users.seller.address)
+      await contractBosonRouter.requestCancelOrFaultVoucherSet(tokenSupplyKey, {
+        from: users.seller.address,
+      });
+      let nextCorrId = await contractBosonRouter.correlationIds(
+        users.seller.address
+      );
 
-      assert.equal(new BN(prevCorrId).add(new BN(1)).toString(), nextCorrId.toString(), 'correlationId not incremented!')
-    })
-  })
+      assert.equal(
+        new BN(prevCorrId).add(new BN(1)).toString(),
+        nextCorrId.toString(),
+        'correlationId not incremented!'
+      );
+    });
+  });
 
   describe('VOUCHER CREATION (Commit to buy)', () => {
     const ORDER_QTY = 5;

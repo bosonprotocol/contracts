@@ -147,7 +147,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         address _triggeredBy
     );
 
-    event LogVoucherSetFaultCancel(uint256 _tokenIdSupply);
+    event LogVoucherSetFaultCancel(uint256 _tokenIdSupply, address _issuer);
 
     event LogFundsReleased(
         uint256 _tokenIdVoucher,
@@ -749,7 +749,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         IERC1155ERC721(tokensContract).burn(_issuer, _tokenIdSupply, remQty);
         accountSupply[_issuer] = accountSupply[_issuer].sub(remQty);
 
-        emit LogVoucherSetFaultCancel(_tokenIdSupply);
+        emit LogVoucherSetFaultCancel(_tokenIdSupply, _issuer);
 
         return remQty;
     }
