@@ -1425,6 +1425,49 @@ contract('Cashier && VK', async (addresses) => {
     });
   });
 
+  describe('TOKEN SUPPLY CANCELLATION', () => {
+    before(async () => {
+      await deployContracts();
+
+      utils = UtilsBuilder.create()
+        .ETHETH()
+        .build(
+          contractERC1155ERC721,
+          contractVoucherKernel,
+          contractCashier,
+          contractBosonRouter
+        );
+
+      timestamp = await Utils.getCurrTimestamp();
+
+      const correlationId = await contractBosonRouter.correlationIds(
+        users.seller.address
+      );
+      assert.equal(
+        correlationId.toString(),
+        0,
+        'Seller correlationId is not as expected'
+      );
+
+      tokenSupplyKey = await utils.createOrder(
+        users.seller,
+        timestamp,
+        timestamp + constants.SECONDS_IN_DAY,
+        constants.seller_deposit,
+        constants.QTY_10
+      );
+    });
+
+    it("Seller correlationId should be incremented after supply is cancelled", async () => {
+      let prevCorrId = await contractBosonRouter.correlationIds(users.seller.address)
+
+      await contractBosonRouter.requestCancelOrFaultVoucherSet(tokenSupplyKey, {from: users.seller.address})
+      let nextCorrId = await contractBosonRouter.correlationIds(users.seller.address)
+
+      assert.equal(new BN(prevCorrId).add(new BN(1)).toString(), nextCorrId.toString(), 'correlationId not incremented!')
+    })
+  })
+
   describe('VOUCHER CREATION (Commit to buy)', () => {
     const ORDER_QTY = 5;
     let TOKEN_SUPPLY_ID;
