@@ -7,9 +7,9 @@ on your development machine:
 
 * git
 * direnv
-* Node (10.23.0)
+* Node (12.20)
 * NPM (> 6)
-* Ruby (2.7.2)
+* Ruby (2.7)
 * Bundler (> 2)
 
 ## Installation

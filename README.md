@@ -21,9 +21,9 @@ For local development of the contracts, your development machine will need a few
 tools installed.
 
 At a minimum, you'll need:
-* Node (10.23.0)
+* Node (12.20)
 * NPM (> 6)
-* Ruby (2.7.2)
+* Ruby (2.7)
 * Bundler (> 2)
 
 For instructions on how to get set up with these specific versions:
