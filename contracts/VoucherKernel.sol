@@ -365,10 +365,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         bytes32 promiseKey = ordersPromise[_tokenIdSupply];
 
         require(
-            promises[promiseKey].validFrom <= block.timestamp,
-            "OFFER_NOT_STARTED"
-        );
-        require(
             promises[promiseKey].validTo >= block.timestamp,
             "OFFER_EXPIRED"
         );
