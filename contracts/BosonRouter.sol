@@ -75,7 +75,7 @@ contract BosonRouter is
                 IFundLimitsOracle(fundLimitsOracle).getTokenLimit(
                     _tokenAddress
                 ),
-            "ABOVEL" //above limit
+            "AB_L" //above limit
         );
     }
 
@@ -163,7 +163,7 @@ contract BosonRouter is
         //checks
         //(i) this is for separate promise allocation, not in prototype
         //uint256 depositSe = IVoucherKernel(voucherKernel).getPromiseDepositSe(promiseId);
-        //require(depositSe * _quantity == weiReceived, "WRONG");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        //require(depositSe * _quantity == weiReceived, "IN_FU");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         //(ii) prototype check
 
         //record funds in escrow ...
