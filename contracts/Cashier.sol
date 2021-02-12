@@ -95,7 +95,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         LogDisasterStateSet(disasterState, msg.sender);
     }
 
-    function withdrawEthOnDisaster() external whenPaused {
+    function withdrawEthOnDisaster() external whenPaused nonReentrant {
         require(disasterState, "Owner did not allow manual withdraw");
 
         uint256 amount = escrow[msg.sender];
@@ -110,6 +110,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     function withdrawTokensOnDisaster(address token)
         external
         whenPaused
+        nonReentrant
         notZeroAddress(token)
     {
         require(disasterState, "Owner did not allow manual withdraw");
