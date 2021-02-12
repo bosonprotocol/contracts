@@ -109,7 +109,7 @@ contract BosonRouter is
      */
     function unpause() external override {
         onlyRouterOwner();
-        require(ICashier(cashierAddress).canUnpause(), "BANNED");
+        require(ICashier(cashierAddress).canUnpause(), "UP_NA"); //unpaused not allowed
 
         _unpause();
         IVoucherKernel(voucherKernel).unpause();
