@@ -2956,6 +2956,45 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         );
       });
 
+      it('Should transfer voucher supply to self and balance should be the same', async () => {
+        let balanceBeforeTransfer = await contractERC1155ERC721.balanceOf(
+          users.other1.address,
+          tokenSupplyKey
+        );
+
+        let transferTx = await utils.safeTransfer1155(
+          users.other1.address,
+          users.other1.address,
+          tokenSupplyKey,
+          constants.QTY_10,
+          {from: users.other1.address}
+        );
+
+        let balanceAfterTransfer = await contractERC1155ERC721.balanceOf(
+          users.other1.address,
+          tokenSupplyKey
+        );
+
+        assert.isTrue(
+          balanceBeforeTransfer.eq(balanceAfterTransfer),
+          'Balance mismatch!'
+        );
+
+        truffleAssert.eventEmitted(
+          transferTx,
+          'TransferSingle',
+          (ev) => {
+            assert.equal(ev._from, users.other1.address);
+            assert.equal(ev._to, users.other1.address);
+            assert.equal(ev._id.toString(), tokenSupplyKey);
+            assert.equal(ev._value.toString(), constants.QTY_10);
+
+            return true;
+          },
+          'TransferSingle not emitted'
+        );
+      });
+
       it('[NEGATIVE] Should revert if owner tries to transfer voucher supply partially', async () => {
         await truffleAssert.reverts(
           utils.safeTransfer1155(
@@ -2997,6 +3036,51 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           (ev) => {
             assert.equal(ev._from, users.other1.address);
             assert.equal(ev._to, users.other2.address);
+            assert.equal(
+              JSON.stringify(ev._ids),
+              JSON.stringify([new BN(tokenSupplyKey)])
+            );
+            assert.equal(
+              JSON.stringify(ev._values),
+              JSON.stringify([new BN(constants.QTY_10)])
+            );
+
+            return true;
+          },
+          'TransferSingle not emitted'
+        );
+      });
+
+      it('Should transfer batch voucher supply to self and balance should be the same', async () => {
+        let balanceBeforeTransfer = await contractERC1155ERC721.balanceOf(
+          users.other1.address,
+          tokenSupplyKey
+        );
+
+        let transferTx = await utils.safeBatchTransfer1155(
+          users.other1.address,
+          users.other1.address,
+          [tokenSupplyKey],
+          [constants.QTY_10],
+          {from: users.other1.address}
+        );
+
+        let balanceAfterTransfer = await contractERC1155ERC721.balanceOf(
+          users.other1.address,
+          tokenSupplyKey
+        );
+
+        assert.isTrue(
+          balanceBeforeTransfer.eq(balanceAfterTransfer),
+          'Balance mismatch!'
+        );
+
+        truffleAssert.eventEmitted(
+          transferTx,
+          'TransferBatch',
+          (ev) => {
+            assert.equal(ev._from, users.other1.address);
+            assert.equal(ev._to, users.other1.address);
             assert.equal(
               JSON.stringify(ev._ids),
               JSON.stringify([new BN(tokenSupplyKey)])
@@ -4151,6 +4235,48 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           (ev) => {
             assert.equal(ev._from, users.other1.address);
             assert.equal(ev._to, users.other2.address);
+            assert.equal(ev._tokenId.toString(), voucherID);
+
+            return true;
+          },
+          'Transfer not emitted'
+        );
+      });
+
+      it('Should transfer voucher to self and balance should be the same', async () => {
+        const methodSignature = 'balanceOf(' + 'address)';
+        const balanceOf = contractERC1155ERC721.methods[methodSignature];
+
+        const voucherID = await utils.commitToBuy(
+          users.other1,
+          users.seller,
+          tokenSupplyKey
+        );
+
+        let balanceBeforeTransfer = await balanceOf(users.other1.address);
+
+        let transferTx = await utils.safeTransfer721(
+          users.other1.address,
+          users.other1.address,
+          voucherID,
+          {
+            from: users.other1.address,
+          }
+        );
+
+        let balanceAfterTransfer = await balanceOf(users.other1.address);
+
+        assert.isTrue(
+          balanceBeforeTransfer.eq(balanceAfterTransfer),
+          'Balance mismatch!'
+        );
+
+        truffleAssert.eventEmitted(
+          transferTx,
+          'Transfer',
+          (ev) => {
+            assert.equal(ev._from, users.other1.address);
+            assert.equal(ev._to, users.other1.address);
             assert.equal(ev._tokenId.toString(), voucherID);
 
             return true;
