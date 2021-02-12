@@ -113,7 +113,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         uint256 _tokenIdVoucher,
         address _issuer,
         address _holder,
-        bytes32 _promiseId
+        bytes32 _promiseId,
+        uint256 _correlationId
     );
 
     event LogVoucherRedeemed(
@@ -146,7 +147,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         address _triggeredBy
     );
 
-    event LogVoucherSetFaultCancel(uint256 _tokenIdSupply);
+    event LogVoucherSetFaultCancel(uint256 _tokenIdSupply, address _issuer);
 
     event LogFundsReleased(
         uint256 _tokenIdVoucher,
@@ -313,11 +314,13 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @param _tokenIdSupply   ID of the supply token (ERC-1155)
      * @param _issuer          Address of the token's issuer
      * @param _holder          Address of the recipient of the voucher (ERC-721)
+     * @param _correlationId           ID of the current interaction with the smart contract for a specific user
      */
     function fillOrder(
         uint256 _tokenIdSupply,
         address _issuer,
-        address _holder
+        address _holder,
+        uint256 _correlationId
     ) external override onlyFromRouter {
         //checks
         checkOrderFillable(_tokenIdSupply, _issuer, _holder);
@@ -330,7 +333,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
             voucherTokenId,
             _issuer,
             _holder,
-            getPromiseIdFromVoucherId(voucherTokenId)
+            getPromiseIdFromVoucherId(voucherTokenId),
+            _correlationId
         );
     }
 
@@ -741,7 +745,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         IERC1155ERC721(tokensContract).burn(_issuer, _tokenIdSupply, remQty);
         accountSupply[_issuer] = accountSupply[_issuer].sub(remQty);
 
-        emit LogVoucherSetFaultCancel(_tokenIdSupply);
+        emit LogVoucherSetFaultCancel(_tokenIdSupply, _issuer);
 
         return remQty;
     }
