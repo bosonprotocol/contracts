@@ -19,7 +19,7 @@ import "./UsingHelpers.sol";
 /**
  * @title VoucherKernel contract is controlling the core business logic
  * @dev Notes:
- *  - Since this is a demo app, it is not yet optimized.
+ *  - Since this is a reference app, it is not yet optimized.
  *      In the next phase, the bulk raw data will be packed into a single bytes32 field and/or pushed off-chain.
  *  - The usage of block.timestamp is honored since vouchers are defined with day-precision and the demo app is not covering all edge cases.
  *      See: https://ethereum.stackexchange.com/questions/5924/how-do-ethereum-mining-nodes-maintain-a-time-consistent-with-the-network/5931#5931
@@ -34,7 +34,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     //AssetRegistry assetRegistry;
     address public tokensContract;
 
-    //promise for an asset could be reusable, but simplified here for brevitbytes32
+    //promise for an asset could be reusable, but simplified here for brevity
     struct Promise {
         bytes32 promiseId;
         uint256 nonce; //the asset that is offered
@@ -64,7 +64,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     bytes32[] public promiseKeys;
 
     mapping(address => uint256) public accountSupply;
-    mapping(uint256 => bytes32) public ordersPromise; //mapping between an order (supply token) and a promise
+    mapping(uint256 => bytes32) public ordersPromise; //mapping between an order (supply a.k.a. VoucherSet token) and a promise
 
     mapping(uint256 => VoucherStatus) public vouchersStatus; //recording the vouchers evolution
     mapping(uint256 => address) public voucherIssuers; //issuers of vouchers // TODO on refactoring this must be removed as if we are to transfer 1155, issuer should be fetched from the promise, not from the 721
@@ -89,7 +89,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     Fungibles: 0, followed by 127-bit FT type ID, in the upper 128 bits, followed by 0 in lower 128-bits
     <0><uint127: base token id><uint128: 0>
     
-    Non-fungible supply tokens: 1, followed by 127-bit NFT type ID, in the upper 128 bits, followed by 0 in lower 128-bits
+    Non-fungible VoucherSets (supply tokens): 1, followed by 127-bit NFT type ID, in the upper 128 bits, followed by 0 in lower 128-bits
     <1><uint127: base token id><uint128: 0    
     
     Non-fungible vouchers: 1, followed by 127-bit NFT type ID, in the upper 128 bits, followed by a 1-based index of an NFT token ID.
@@ -200,7 +200,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
 
     /**
      * @notice Creating a new promise for goods or services.
-     * Can be reused, e.g. for making different batches of these (but not in prototype).
+     * Can be reused, e.g. for making different batches of these (in the future).
      * @param _seller      seller of the promise
      * @param _validFrom   Start of valid period
      * @param _validTo     End of valid period
@@ -368,10 +368,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
 
         bytes32 promiseKey = ordersPromise[_tokenIdSupply];
 
-        require(
-            promises[promiseKey].validFrom <= block.timestamp,
-            "OFFER_NOT_STARTED"
-        );
         require(
             promises[promiseKey].validTo >= block.timestamp,
             "OFFER_EXPIRED"
