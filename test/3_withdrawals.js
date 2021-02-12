@@ -11,7 +11,7 @@ const ERC1155ERC721 = artifacts.require('ERC1155ERC721');
 const VoucherKernel = artifacts.require('VoucherKernel');
 const Cashier = artifacts.require('Cashier');
 const BosonRouter = artifacts.require('BosonRouter');
-const BosonTKN = artifacts.require('BosonToken');
+const MockERC20Permit = artifacts.require('MockERC20Permit');
 const FundLimitsOracle = artifacts.require('FundLimitsOracle');
 
 const BN = web3.utils.BN;
@@ -50,8 +50,14 @@ contract('Cashier withdrawals ', async (addresses) => {
       contractFundLimitsOracle.address,
       contractCashier.address
     );
-    contractBSNTokenPrice = await BosonTKN.new('BosonTokenPrice', 'BPRC');
-    contractBSNTokenDeposit = await BosonTKN.new('BosonTokenDeposit', 'BDEP');
+    contractBSNTokenPrice = await MockERC20Permit.new(
+      'BosonTokenPrice',
+      'BPRC'
+    );
+    contractBSNTokenDeposit = await MockERC20Permit.new(
+      'BosonTokenDeposit',
+      'BDEP'
+    );
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,

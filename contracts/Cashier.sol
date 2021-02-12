@@ -6,10 +6,10 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "./IVoucherKernel.sol";
+import "./interfaces/IVoucherKernel.sol";
+import "./interfaces/IERC20WithPermit.sol";
+import "./interfaces/ICashier.sol";
 import "./UsingHelpers.sol";
-import "./IERC20WithPermit.sol";
-import "./ICashier.sol";
 
 /**
  * @title Contract for managing funds

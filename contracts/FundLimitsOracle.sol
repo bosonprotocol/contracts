@@ -2,7 +2,7 @@
 pragma solidity 0.7.1;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./IFundLimitsOracle.sol";
+import "./interfaces/IFundLimitsOracle.sol";
 
 contract FundLimitsOracle is Ownable, IFundLimitsOracle {
     uint256 private ethLimit;

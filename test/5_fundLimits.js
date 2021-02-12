@@ -9,7 +9,7 @@ const ERC1155ERC721 = artifacts.require('ERC1155ERC721');
 const VoucherKernel = artifacts.require('VoucherKernel');
 const Cashier = artifacts.require('Cashier');
 const BosonRouter = artifacts.require('BosonRouter');
-const BosonToken = artifacts.require('BosonToken');
+const MockERC20Permit = artifacts.require('MockERC20Permit');
 const FundLimitsOracle = artifacts.require('FundLimitsOracle');
 
 contract('FundLimitsOracle', async (addresses) => {
@@ -46,7 +46,10 @@ contract('FundLimitsOracle', async (addresses) => {
       contractCashier.address
     );
 
-    contractBSNTokenPrice = await BosonToken.new('BosonTokenPrice', 'BPRC');
+    contractBSNTokenPrice = await MockERC20Permit.new(
+      'BosonTokenPrice',
+      'BPRC'
+    );
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
