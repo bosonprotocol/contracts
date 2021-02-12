@@ -712,6 +712,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
                     tPromise.validTo + complainPeriod + cancelFaultPeriod,
                 "COFPERIOD_EXPIRED"
             ); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
+            vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp; //complain period starts
         } else {
             revert("INAPPLICABLE_STATUS"); //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicableToCurrentState)
         }

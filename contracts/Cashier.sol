@@ -123,10 +123,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         LogWithdrawTokensOnDisaster(amount, token, msg.sender);
     }
 
-    function testWith(address token) external view returns (uint256) {
-        return IERC20WithPermit(token).balanceOf(msg.sender);
-    }
-
     /**
      * @notice Trigger withdrawals of what funds are releasable
      * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
