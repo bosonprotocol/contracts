@@ -3012,6 +3012,42 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         );
       });
 
+      it('Should transfer batch voucher supply to self and value should be the same', async () => {
+        let balanceBeforeTransfer = await contractERC1155ERC721.balanceOf(users.other1.address, tokenSupplyKey)
+
+        let transferTx = await utils.safeBatchTransfer1155(
+          users.other1.address,
+          users.other1.address,
+          [tokenSupplyKey],
+          [constants.QTY_10],
+          {from: users.other1.address}
+        );
+
+        let balanceAfterTransfer = await contractERC1155ERC721.balanceOf(users.other1.address, tokenSupplyKey)
+
+        assert.isTrue(balanceBeforeTransfer.eq(balanceAfterTransfer), "Balance mismatch!")
+
+        truffleAssert.eventEmitted(
+          transferTx,
+          'TransferBatch',
+          (ev) => {
+            assert.equal(ev._from, users.other1.address);
+            assert.equal(ev._to, users.other1.address);
+            assert.equal(
+              JSON.stringify(ev._ids),
+              JSON.stringify([new BN(tokenSupplyKey)])
+            );
+            assert.equal(
+              JSON.stringify(ev._values),
+              JSON.stringify([new BN(constants.QTY_10)])
+            );
+
+            return true;
+          },
+          'TransferSingle not emitted'
+        );
+      });
+
       it('[NEGATIVE] Should revert if owner tries to transfer voucher supply batch partially', async () => {
         await truffleAssert.reverts(
           utils.safeBatchTransfer1155(
