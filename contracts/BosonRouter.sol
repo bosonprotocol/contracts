@@ -6,13 +6,13 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "./IVoucherKernel.sol";
-import "./UsingHelpers.sol";
-import "./IERC20WithPermit.sol";
+import "./interfaces/IVoucherKernel.sol";
+import "./interfaces/IERC20WithPermit.sol";
+import "./interfaces/IFundLimitsOracle.sol";
+import "./interfaces/IBosonRouter.sol";
+import "./interfaces/ICashier.sol";
 import "./ERC1155ERC721.sol";
-import "./IFundLimitsOracle.sol";
-import "./IBosonRouter.sol";
-import "./ICashier.sol";
+import "./UsingHelpers.sol";
 
 /**
  * @title Contract for managing funds

@@ -6,12 +6,12 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./IERC1155.sol";
-import "./IERC165.sol";
-import "./IERC721.sol";
-import "./IERC1155ERC721.sol";
-import "./IERC721TokenReceiver.sol";
-import "./IVoucherKernel.sol";
+import "./interfaces/IERC1155.sol";
+import "./interfaces/IERC165.sol";
+import "./interfaces/IERC721.sol";
+import "./interfaces/IERC1155ERC721.sol";
+import "./interfaces/IERC721TokenReceiver.sol";
+import "./interfaces/IVoucherKernel.sol";
 import "./UsingHelpers.sol";
 
 //preparing for ERC-1066, ERC-1444, EIP-838

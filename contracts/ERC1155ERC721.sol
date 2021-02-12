@@ -5,12 +5,12 @@ pragma solidity 0.7.1;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-import "./IERC1155.sol";
-import "./IERC1155TokenReceiver.sol";
-import "./IERC721.sol";
-import "./IERC721TokenReceiver.sol";
-import "./IERC1155ERC721.sol";
-import "./IBosonRouter.sol";
+import "./interfaces/IERC1155.sol";
+import "./interfaces/IERC1155TokenReceiver.sol";
+import "./interfaces/IERC721.sol";
+import "./interfaces/IERC721TokenReceiver.sol";
+import "./interfaces/IERC1155ERC721.sol";
+import "./interfaces/IBosonRouter.sol";
 
 //preparing for ERC-1066, ERC-1444, EIP-838
 
