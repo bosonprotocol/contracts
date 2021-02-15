@@ -2821,7 +2821,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         await timemachine.revertToSnapShot(snapshot.id);
       });
 
-      it('Buyer should not be able to commit after expiry date has passed', async () => {
+      it('[!COMMIT] Buyer should not be able to commit after expiry date has passed', async () => {
         await timemachine.advanceTimeSeconds(
           constants.PROMISE_VALID_TO + ONE_MINUTE
         );
@@ -2832,7 +2832,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         );
       });
 
-      it('Seller should not be able to cancel after complain and expiry periods have passed', async () => {
+      it('[COMMIT->!CANCEL] Seller should not be able to cancel after complain and expiry periods have passed', async () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
@@ -2848,7 +2848,24 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         );
       });
 
-      it('Buyer should not be able to refund after expiry date has passed', async () => {
+      it('[COMMIT->CANCEL->!COMPLAIN] Buyer should not be able to complain after complain period has passed', async () => {
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await utils.cancel(voucherID, users.seller.address);
+
+        await timemachine.advanceTimeSeconds(complainPeriod + ONE_MINUTE);
+
+        await truffleAssert.reverts(
+          utils.cancel(voucherID, users.seller.address),
+          truffleAssert.ErrorType.reverts
+        );
+      });
+
+      it('[COMMIT->!REFUND] Buyer should not be able to refund after expiry date has passed', async () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
@@ -2865,7 +2882,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         );
       });
 
-      it('Buyer should not be able to redeem after expiry date has passed', async () => {
+      it('[COMMIT->!REDEEM] Buyer should not be able to redeem after expiry date has passed', async () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
@@ -2882,7 +2899,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         );
       });
 
-      it('Buyer should not be able to complain after complain and cancel periods have passed', async () => {
+      it('[COMMIT->REDEEM->!COMPLAIN] Buyer should not be able to complain after complain and cancel periods have passed', async () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
@@ -2893,6 +2910,131 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         await timemachine.advanceTimeSeconds(
           complainPeriod + cancelPeriod + ONE_MINUTE
         );
+
+        await truffleAssert.reverts(
+          utils.complain(voucherID, users.buyer.address),
+          truffleAssert.ErrorType.reverts
+        );
+      });
+
+      it('[COMMIT->REDEEM->!CANCEL] Seller should not be able to cancel after complain and cancel periods have passed', async () => {
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+        await utils.redeem(voucherID, users.buyer.address);
+
+        await timemachine.advanceTimeSeconds(
+          complainPeriod + cancelPeriod + ONE_MINUTE
+        );
+
+        await truffleAssert.reverts(
+          utils.cancel(voucherID, users.seller.address),
+          truffleAssert.ErrorType.reverts
+        );
+      });
+
+      it('[COMMIT->REDEEM->CANCEL->!COMPLAIN] Buyer should not be able to complain after complain period has passed', async () => {
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+        await utils.redeem(voucherID, users.buyer.address);
+        await utils.cancel(voucherID, users.seller.address),
+          await timemachine.advanceTimeSeconds(complainPeriod + ONE_MINUTE);
+
+        await truffleAssert.reverts(
+          utils.complain(voucherID, users.buyer.address),
+          truffleAssert.ErrorType.reverts
+        );
+      });
+
+      it('[COMMIT->REDEEM->COMPLAIN->!CANCEL] Seller should not be able to cancel after cancel period has passed', async () => {
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await utils.redeem(voucherID, users.buyer.address);
+        await utils.complain(voucherID, users.buyer.address),
+          await timemachine.advanceTimeSeconds(cancelPeriod + ONE_MINUTE);
+
+        await truffleAssert.reverts(
+          utils.cancel(voucherID, users.seller.address),
+          truffleAssert.ErrorType.reverts
+        );
+      });
+
+      it('[COMMIT->REFUND->!CANCEL] Seller should not be able to cancel after cancel & complain periods expire', async () => {
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await utils.refund(voucherID, users.buyer.address);
+
+        await timemachine.advanceTimeSeconds(
+          complainPeriod + cancelPeriod + ONE_MINUTE
+        );
+
+        await truffleAssert.reverts(
+          utils.cancel(voucherID, users.seller.address),
+          truffleAssert.ErrorType.reverts
+        );
+      });
+
+      it('[COMMIT->REFUND->!COMPLAIN] Buyer should not be able to complain after complain and expiry periods have passed', async () => {
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await utils.refund(voucherID, users.buyer.address);
+
+        await timemachine.advanceTimeSeconds(
+          complainPeriod + cancelPeriod + ONE_MINUTE
+        );
+
+        await truffleAssert.reverts(
+          utils.complain(voucherID, users.buyer.address),
+          truffleAssert.ErrorType.reverts
+        );
+      });
+
+      it('[COMMIT->REFUND->COMPLAIN->!CANCEL] Seller should not be able to cancel after cancel period has passed', async () => {
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await utils.refund(voucherID, users.buyer.address);
+        await utils.complain(voucherID, users.buyer.address);
+
+        await timemachine.advanceTimeSeconds(cancelPeriod + ONE_MINUTE);
+
+        await truffleAssert.reverts(
+          utils.cancel(voucherID, users.seller.address),
+          truffleAssert.ErrorType.reverts
+        );
+      });
+
+      it('[COMMIT->REFUND->CANCEL->!COMPLAIN] Buyer should not be able to complain after complain period has passed', async () => {
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await utils.refund(voucherID, users.buyer.address);
+        await utils.cancel(voucherID, users.seller.address);
+
+        await timemachine.advanceTimeSeconds(complainPeriod + ONE_MINUTE);
 
         await truffleAssert.reverts(
           utils.complain(voucherID, users.buyer.address),

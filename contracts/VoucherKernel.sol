@@ -489,6 +489,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         //check collection code and/or assign collector
 
         vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;
+        vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block.timestamp;
         vouchersStatus[_tokenIdVoucher].status = setChange(
             vouchersStatus[_tokenIdVoucher].status,
             IDX_REDEEM
@@ -525,7 +526,9 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         //check validity period
         isInValidityPeriod(_tokenIdVoucher);
 
+        //set initial cancel / complain periods
         vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;
+        vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block.timestamp; 
         vouchersStatus[_tokenIdVoucher].status = setChange(
             vouchersStatus[_tokenIdVoucher].status,
             IDX_REFUND
@@ -587,7 +590,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
             }
 
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block
-                .timestamp;
+                .timestamp; //reset cancel period
             vouchersStatus[_tokenIdVoucher].status = setChange(
                 vouchersStatus[_tokenIdVoucher].status,
                 IDX_COMPLAIN
@@ -616,7 +619,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
             }
 
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block
-                .timestamp;
+                .timestamp; //reset cancel period
             vouchersStatus[_tokenIdVoucher].status = setChange(
                 vouchersStatus[_tokenIdVoucher].status,
                 IDX_COMPLAIN
