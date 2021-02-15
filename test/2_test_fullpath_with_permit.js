@@ -2860,7 +2860,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         await timemachine.advanceTimeSeconds(complainPeriod + ONE_MINUTE);
 
         await truffleAssert.reverts(
-          utils.cancel(voucherID, users.seller.address),
+          utils.complain(voucherID, users.buyer.address),
           truffleAssert.ErrorType.reverts
         );
       });
@@ -2960,7 +2960,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
 
         await utils.redeem(voucherID, users.buyer.address);
         await utils.complain(voucherID, users.buyer.address),
-          await timemachine.advanceTimeSeconds(cancelPeriod + ONE_MINUTE);
+        await timemachine.advanceTimeSeconds(cancelPeriod + ONE_MINUTE);
 
         await truffleAssert.reverts(
           utils.cancel(voucherID, users.seller.address),
