@@ -2,6 +2,8 @@
 
 <h1 align="center">Boson Protocol Contracts</h1>
 
+[![Gitter chat](https://badges.gitter.im/bosonprotocol.png)](https://gitter.im/bosonprotocol/community)
+
 Smart contracts for Boson Protocol.
 
 **Table of Contents**
