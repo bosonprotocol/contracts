@@ -30,6 +30,8 @@ contract ERC20WithPermit is IERC20WithPermit, Pausable {
         symbol = _symbol;
 
         uint256 chainId;
+
+        // solhint-disable-next-line
         assembly {
             chainId := chainid()
         }
@@ -121,6 +123,7 @@ contract ERC20WithPermit is IERC20WithPermit, Pausable {
         bytes32 r,
         bytes32 s
     ) external override whenNotPaused {
+        // solhint-disable-next-line
         require(deadline >= block.timestamp, "ERC20WithPermit: EXPIRED");
 
         bytes32 digest =
