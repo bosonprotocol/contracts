@@ -82,6 +82,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         _unpause();
     }
 
+    /**
+     * If once disaster state has been set to true, the contract could never be unpaused.
+     */
     function canUnpause() external view override returns (bool) {
         return !disasterState;
     }
@@ -95,6 +98,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         LogDisasterStateSet(disasterState, msg.sender);
     }
 
+    /**
+     * @notice In case of a disaster this function allow the caller to withdraw all pooled funds kept in the escrow for the address provided. Funds are sent in ETH
+     */
     function withdrawEthOnDisaster() external whenPaused nonReentrant {
         require(disasterState, "Owner did not allow manual withdraw");
 
@@ -107,6 +113,10 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         LogWithdrawEthOnDisaster(amount, msg.sender);
     }
 
+    /**
+     * @notice In case of a disaster this function allow the caller to withdraw all pooled funds kept in the escrowTokens for the address provided.
+     * @param token address of a token, that the caller sent the funds, while interacting with voucher or voucher-set
+     */
     function withdrawTokensOnDisaster(address token)
         external
         whenPaused
@@ -243,6 +253,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         delete voucherDetails;
     }
 
+    /**
+     * @notice Release of payments, for a voucher which payments had not been released already.
+     * Based on the voucher status(e.g. redeemed, refunded, etc), the voucher price will be sent to either buyer or seller.
+     * @param voucherDetails keeps all required information of the voucher which the payment should be released for.
+     */
     function releasePayments(VoucherDetails memory voucherDetails) internal {
         if (isStatus(voucherDetails.currStatus.status, IDX_REDEEM)) {
             releasePaymentToSeller(voucherDetails);
@@ -256,6 +271,10 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         }
     }
 
+    /**
+     * @notice Following function `releasePayments`, if certain conditions for the voucher status are met, the voucher price will be sent to the seller
+     * @param voucherDetails keeps all required information of the voucher which the payment should be released for.
+     */
     function releasePaymentToSeller(VoucherDetails memory voucherDetails)
         internal
     {
@@ -293,6 +312,10 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         );
     }
 
+    /**
+     * @notice Following function `releasePayments`, if certain conditions for the voucher status are met, the voucher price will be sent to the buyer
+     * @param voucherDetails keeps all required information of the voucher, which the payment should be released for.
+     */
     function releasePaymentToBuyer(VoucherDetails memory voucherDetails)
         internal
     {
@@ -331,6 +354,12 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         );
     }
 
+    /**
+     * @notice Release of deposits, for a voucher which deposits had not been released already, and had been marked as `finalized`
+     * Based on the voucher status(e.g. complained, redeemed, refunded, etc), the voucher deposits will be sent to either buyer, seller, or pool owner.
+     * Depending on the payment type (e.g ETH, or Token) escrow funds will be held in the `escrow` || escrowTokens mappings
+     * @param voucherDetails keeps all required information of the voucher which the deposits should be released for.
+    */
     function releaseDeposits(VoucherDetails memory voucherDetails) internal {
         //first, depositSe
         if (isStatus(voucherDetails.currStatus.status, IDX_COMPLAIN)) {
@@ -363,6 +392,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         );
     }
 
+    /**
+     * @notice Following function `releaseDeposits` this function will be triggered if a voucher had been complained by the buyer.
+     * Also checks if the voucher had been cancelled
+     * @param voucherDetails keeps all required information of the voucher which the payment should be released for.
+    */
     function distributeIssuerDepositOnHolderComplain(
         VoucherDetails memory voucherDetails
     ) internal {
@@ -450,6 +484,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         }
     }
 
+    /**
+     * @notice Following function `releaseDeposits` this function will be triggered if a voucher had been cancelled by the seller.
+     * Will be triggered if the voucher had not been complained.
+     * @param voucherDetails keeps all required information of the voucher which the deposits should be released for.
+    */
     function distributeIssuerDepositOnIssuerCancel(
         VoucherDetails memory voucherDetails
     ) internal {
@@ -497,6 +536,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         );
     }
 
+    /**
+     * @notice Following function `releaseDeposits` this function will be triggered if no complain, nor cancel had been made.
+     * All seller deposit is returned to seller.
+     * @param voucherDetails keeps all required information of the voucher which the deposits should be released for.
+    */
     function distributeFullIssuerDeposit(VoucherDetails memory voucherDetails)
         internal
     {
@@ -531,6 +575,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         );
     }
 
+    /**
+     * @notice Following function `releaseDeposits` this function will be triggered if voucher had been redeemed, or the seller had cancelled.
+     * All buyer deposit is returned to buyer.
+     * @param voucherDetails keeps all required information of the voucher which the deposits should be released for.
+    */
     function distributeFullHolderDeposit(VoucherDetails memory voucherDetails)
         internal
     {
@@ -565,6 +614,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         );
     }
 
+    /**
+     * @notice Following function `releaseDeposits` this function will be triggered if voucher had not been redeemed or cancelled after finalization.
+     * @param voucherDetails keeps all required information of the voucher which the deposits should be released for.
+     * All buyer deposit goes to Boson.
+    */
     function distributeHolderDepositOnNotRedeemedNotCancelled(
         VoucherDetails memory voucherDetails
     ) internal {
@@ -600,7 +654,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Internal function for withdrawing payments.
+     * @notice External function for withdrawing deposits. Caller must be the seller of the goods, otherwise reverts. 
      * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the voucher set is no longer in exchange.
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
      * @param _burnedQty burned quantity that the deposits should be withdrawn for
@@ -651,12 +705,14 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Internal function for withdrawing.
+     * @notice Internal function for withdrawing payments.
      * As unbelievable as it is, neither .send() nor .transfer() are now secure to use due to EIP-1884
      *  So now transferring funds via the last remaining option: .call()
      *  See https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/
      * @param _recipient    address of the account receiving funds from the escrow
      * @param _amount       amount to be released from escrow
+     * @param _paymentMethod payment method that should be used to determine, how to do the payouts
+     * @param _tokenIdSupply       _tokenIdSupply of the voucher set this is related to
      */
     function _withdrawPayments(
         address _recipient,
@@ -686,6 +742,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @notice Internal function for withdrawing deposits.
      * @param _recipient    address of the account receiving funds from the escrow
      * @param _amount       amount to be released from escrow
+     * @param _paymentMethod       ampayment method that should be used to determine, how to do the payouts
+     * @param _tokenIdSupply       _tokenIdSupply of the voucher set this is related to
      */
     function _withdrawDeposits(
         address _recipient,
@@ -730,7 +788,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Update the amount in escrow of an address wit the new value, based on VoucherSet/Voucher interaction
+     * @notice Update the amount in escrow of an address with the new value, based on VoucherSet/Voucher interaction
      * @param _account  The address of an account to query
      * @param _newAmount  New amount to be set
      */

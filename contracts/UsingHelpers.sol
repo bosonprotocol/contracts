@@ -29,8 +29,8 @@ contract UsingHelpers {
     struct VoucherDetails {
         uint256 tokenIdSupply;
         uint256 tokenIdVoucher;
-        address payable issuer;
-        address payable holder;
+        address issuer;
+        address holder;
         uint256 price;
         uint256 depositSe;
         uint256 depositBu;
@@ -52,10 +52,18 @@ contract UsingHelpers {
         uint256 cancelFaultPeriodStart;
     }
 
+    /**
+     * @notice Based on its lifecycle, voucher can have many different statuses. Checks whether a voucher has been ever committed.
+     * @param _status current status of a voucher.
+     */
     function isStateCommitted(uint8 _status) internal pure returns (bool) {
         return _status == setChange(0, IDX_COMMIT);
     }
 
+    /**
+     * @notice Based on its lifecycle, voucher can have many different statuses. Checks whether a voucher has been ever redeemed.
+     * @param _status current status of a voucher.
+     */
     function isStateRedemptionSigned(uint8 _status)
         internal
         pure
@@ -64,18 +72,36 @@ contract UsingHelpers {
         return _status == setChange(setChange(0, IDX_COMMIT), IDX_REDEEM);
     }
 
+    /**
+     * @notice Based on its lifecycle, voucher can have many different statuses. Checks whether a voucher has been ever refunded.
+     * @param _status current status of a voucher.
+     */
     function isStateRefunded(uint8 _status) internal pure returns (bool) {
         return _status == setChange(setChange(0, IDX_COMMIT), IDX_REFUND);
     }
 
+    /**
+     * @notice Based on its lifecycle, voucher can have many different statuses. Checks whether a voucher has expired.
+     * @param _status current status of a voucher.
+     */
     function isStateExpired(uint8 _status) internal pure returns (bool) {
         return _status == setChange(setChange(0, IDX_COMMIT), IDX_EXPIRE);
     }
 
+    /**
+     * @notice Based on its lifecycle, voucher can have many different statuses. Checks the current status a voucher is at.
+     * @param _status current status of a voucher.
+     * @param _idx status to compare.
+     */
     function isStatus(uint8 _status, uint8 _idx) internal pure returns (bool) {
         return (_status >> _idx) & ONE == 1;
     }
 
+    /**
+     * @notice Set voucher status.
+     * @param _status previous status.
+     * @param _changeIdx next status.
+     */
     function setChange(uint8 _status, uint8 _changeIdx)
         internal
         pure

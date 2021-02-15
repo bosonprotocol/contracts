@@ -1176,7 +1176,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     }
 
     /**
-     *
+     * @notice Checks whether a buyer can redeem / refund tokenIdVoucher
+     * @param _tokenIdVoucher ID of the voucher token
      */
     function isInValidityPeriod(uint256 _tokenIdVoucher)
         public
