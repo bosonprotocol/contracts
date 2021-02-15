@@ -27,6 +27,8 @@ At a minimum, you'll need:
 * NPM (> 6)
 * Ruby (2.7)
 * Bundler (> 2)
+* Git
+* direnv
 
 For instructions on how to get set up with these specific versions:
 * See the [OS X guide](docs/setup/osx.md) if you are on a Mac.
