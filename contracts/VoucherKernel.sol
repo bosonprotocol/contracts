@@ -1179,7 +1179,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     }
 
     /**
-     *
+     * @notice Checks whether a voucher is in valid period for redemption (between start date and end date)
+     * @param _tokenIdVoucher ID of the voucher token
      */
     function isInValidityPeriod(uint256 _tokenIdVoucher)
         public

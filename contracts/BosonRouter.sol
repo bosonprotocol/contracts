@@ -47,14 +47,32 @@ contract BosonRouter is
 
     event LogTokenContractSet(address _newTokenContract, address _triggeredBy);
 
+
+    /**
+     * @notice Acts as a modifier, but it's cheaper. Checking if a non-zero address is provided, otherwise reverts.
+     */
     function notZeroAddress(address tokenAddress) private pure {
         require(tokenAddress != address(0), "0_A"); //zero address
     }
 
+    /**
+     * @notice Acts as a modifier, but it's cheaper. The only caller must be tokensContractAddress, otherwise reverts.
+     */
     function onlyTokensContract() private view {
         require(msg.sender == tokensContractAddress, "UN_TK"); // Unauthorized token address
     }
 
+    /**
+     * @notice Acts as a modifier, but it's cheaper. Replacement of onlyOwner modifier. If the caller is not the owner of the contract, reverts.
+     */
+    function onlyRouterOwner() internal view {
+        require(owner() == _msgSender(), "NOTO"); //not owner
+    }
+
+    /**
+     * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the FundLimitsOracle.
+     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the FundLimitsOracle (ETH).
+     */
     function notAboveETHLimit(uint256 value) internal view {
         require(
             value <= IFundLimitsOracle(fundLimitsOracle).getETHLimit(),
@@ -62,10 +80,11 @@ contract BosonRouter is
         );
     }
 
-    function onlyRouterOwner() internal view {
-        require(owner() == _msgSender(), "NOTO"); //not owner
-    }
-
+    /**
+     * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the FundLimitsOracle.
+     * @param _tokenAddress the token address which, we are getting the limits for.
+     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the FundLimitsOracle (ETH).
+     */
     function notAboveTokenLimit(address _tokenAddress, uint256 value)
         internal
         view
