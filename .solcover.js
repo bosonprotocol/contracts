@@ -5,7 +5,7 @@ const privateKeys =
 const accounts = Object.entries(privateKeys)
   .map(entry => ({
       secretKey: `0x${entry[1]}`,
-      balance: '0x8ac7230489e80000'
+      balance: '0x01158e460913d00000'
   }))
 
 module.exports = {
