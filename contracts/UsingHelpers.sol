@@ -53,7 +53,7 @@ contract UsingHelpers {
     }
 
     /**
-     * @notice Based on its lifecycle, voucher can have many different statuses. Checks whether a voucher has been ever committed.
+     * @notice Based on its lifecycle, voucher can have many different statuses. Checks whether a voucher is in Committed state.
      * @param _status current status of a voucher.
      */
     function isStateCommitted(uint8 _status) internal pure returns (bool) {
@@ -61,7 +61,7 @@ contract UsingHelpers {
     }
 
     /**
-     * @notice Based on its lifecycle, voucher can have many different statuses. Checks whether a voucher has been ever redeemed.
+     * @notice Based on its lifecycle, voucher can have many different statuses. Checks whether a voucher is in RedemptionSigned state.
      * @param _status current status of a voucher.
      */
     function isStateRedemptionSigned(uint8 _status)
@@ -73,7 +73,7 @@ contract UsingHelpers {
     }
 
     /**
-     * @notice Based on its lifecycle, voucher can have many different statuses. Checks whether a voucher has been ever refunded.
+     * @notice Based on its lifecycle, voucher can have many different statuses. Checks whether a voucher is in Refunded state.
      * @param _status current status of a voucher.
      */
     function isStateRefunded(uint8 _status) internal pure returns (bool) {
@@ -81,7 +81,7 @@ contract UsingHelpers {
     }
 
     /**
-     * @notice Based on its lifecycle, voucher can have many different statuses. Checks whether a voucher has expired.
+     * @notice Based on its lifecycle, voucher can have many different statuses. Checks whether a voucher is in Expired state.
      * @param _status current status of a voucher.
      */
     function isStateExpired(uint8 _status) internal pure returns (bool) {

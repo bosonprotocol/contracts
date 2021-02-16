@@ -83,7 +83,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * If once disaster state has been set to true, the contract could never be unpaused.
+     * @notice If once disaster state has been set to true, the contract could never be unpaused.
      */
     function canUnpause() external view override returns (bool) {
         return !disasterState;
