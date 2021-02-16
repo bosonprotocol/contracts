@@ -4,7 +4,7 @@
 
 [![Gitter chat](https://badges.gitter.im/bosonprotocol.png)](https://gitter.im/bosonprotocol/community)
 
-Smart contracts for Boson Protocol.
+This is the place for smart contracts that are implementing Boson Protocol.  
 
 **Table of Contents**
 
@@ -155,7 +155,8 @@ Similarly, for the tests, to perform the same tasks:
 ## Documentation
 
 For an overview of the contracts and their responsibilities, see 
-[Overview](docs/contracts/overview.md).
+[Overview](docs/contracts/overview.md).  
+The whitepaper is available through the project's [website](https://www.bosonprotocol.io/).
 
 ## Contributing
 

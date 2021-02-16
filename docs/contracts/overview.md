@@ -5,29 +5,54 @@ are based on two NFT standards,
 [ERC-1155](https://eips.ethereum.org/EIPS/eip-1155) and 
 [ERC-721](https://eips.ethereum.org/EIPS/eip-721).  
 
+> Note: Seller makes an offer by minting an ERC-1155 Voucher Set that holds a supply of specified quantity of assets. Buyer taking that offer is implying that a singleton Voucher will be extracted from the originating Voucher Set, thus minting an ERC-721.  
+
+## Contracts description
 Main contracts:  
-* BosonRouter: creation of VoucherSets and Vouchers  
-* BosonToken: ERC-20 contract for the native Boson Protocol token  
-* Cashier: escrow management  
+* BosonRouter: user interface of Boson Protocol  
+* Cashier: escrow and funds management  
 * ERC1155ERC721: token factory  
+* FundLimitsOracle: restrictions on the allowed escrowed amounts  
 * VoucherKernel: main business logic  
-* UsingHelpers: common utils as structures  
+* UsingHelpers: common utilities  
 
-Supported currencies are currently ETH and BSN tokens therefore functions 
-dealing with funds have appendices such as ETHETH or ETHTKN to denote the 
-currencies used in that particular function (e.g. 
-`function requestCreateOrderETHETH(uint256[] calldata metadata)`).  
+![Boson Protocol inheritance tree](../assets/bosonprotocol-inheritance.png)  
+Control graph of contracts is [available here](../assets/bosonprotocol-graph.png) 
 
-## Transactions flow
+There are three types of funds in Boson Protocol, one for the payment and two security deposits:  
+* price of the asset  
+* Seller's deposit  
+* Buyer's deposit  
+
+Supported **currencies** are currently: ETH and $BOSON tokens.
+> Note: Functions dealing with funds have appendices such as ETHETH or ETHTKN to denote the currencies used in that particular function. Two examples below.  
+ETH as the payment currenct and ETH as the deposits currency example:  
+`function requestCreateOrderETHETH(uint256[] calldata metadata)`  
+$BOSON token ("TKN") as the payment currenct and ETH as the deposits currency example:  
+`function requestCreateOrderTKNETH(uint256[] calldata metadata)`  
+
+
+## Transaction flow
 
 The journey through the NFT lifecycle is presented on a simplified diagram 
 below.  
 
 ![Simplified exchange mechanism](../assets/exchange-diagram-simplified.png)  
 
+
+
+### Wait periods  
+A detailed game tree is [available here](../assets/exchange-diagram.png), where three different wait periods are also visible:  
+* voucher's validity period - start and end date when the voucher can be redeemed  
+* complain period - during which Buyer can complain  
+* cancelOrFault period - during which Seller can issue a cancel-or-fault transaction
+
+Validity period is set by the Seller when creating an offer. Complain and cancelOrFault periods are global for the whole Boson Protocol in VoucherKernel.  
+
+### Voucher lifecycle  
 Voucher's status is defined in 7 bits that are set depending on the path in its 
 lifecycle (defined in 
-[UsingHelpers.sol](https://github.com/bosonprotocol/bsn-core-prototype/blob/master/contracts/UsingHelpers.sol#L29)):  
+[UsingHelpers.sol](https://github.com/bosonprotocol/bsn-core-prototype/blob/master/contracts/UsingHelpers.sol#L47)):  
 
 7:COMMITTED  
 6:REDEEMED  
@@ -36,6 +61,8 @@ lifecycle (defined in
 3:COMPLAINED  
 2:CANCELORFAULT  
 1:FINAL  
+
+There are few additional, technical flags, as well, to record the status of the funds of a particular vouchers and to record the timestamps of wait periods triggering.  
 
 ### Happy path
 
