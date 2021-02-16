@@ -4,7 +4,9 @@
 
 [![Gitter chat](https://badges.gitter.im/bosonprotocol.png)](https://gitter.im/bosonprotocol/community)
 
-This is the place for smart contracts that are implementing Boson Protocol.  
+This is the place for smart contracts that are implementing Boson Protocol. You are invited to learn more about the project through its code and perhaps test locally how you might use it within your own project. When you are ready to integrate with Boson Protocol on a live network, you can find the latest deployment details here, as well.
+
+> Note: the code is pending an audit.  
 
 **Table of Contents**
 
