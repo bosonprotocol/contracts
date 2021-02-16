@@ -29,6 +29,7 @@ Supported **currencies** are currently: ETH and $BOSON tokens.
 
 ETH as the payment currenct and ETH as the deposits currency example:  
 `function requestCreateOrderETHETH(uint256[] calldata metadata)`  
+
 $BOSON token ("TKN") as the payment currenct and ETH as the deposits currency example:  
 `function requestCreateOrderTKNETH(uint256[] calldata metadata)`  
 
@@ -40,29 +41,42 @@ below.
 
 ![Simplified exchange mechanism](../assets/exchange-diagram-simplified.png)  
 
-A detailed game tree is [available here](../assets/exchange-diagram.png), showcasing the actions that a Seller and a Buyer can make. Note, that the order of some of these transactions is not prescribed, e.g. a Seller can do a CancelOrFault transaction independently on any Buyer action.  
+A detailed game tree is [available here](../assets/exchange-diagram.png), showcasing the actions that a Seller and a Buyer can make. The order of some of these transactions is not prescribed, e.g. a Seller can do a CancelOrFault transaction independently on any Buyer action.  
 
-> Note: while the current exchange mechanism is in our opinion quite robust, it is by no means set it stone, rather it will be evolving in the future still. We are already working on some improvements and are actively pursuing research in this area.  
+> Note: while the current exchange mechanism is in our opinion quite robust, it is by no means set in stone, rather it will be evolving in the future still. We are already working on some improvements and are actively pursuing research in this area.  
 
 
 ### Process
 1. The process starts when the Seller makes an offer to sell something. He is making a promise to execute the exchange of his non-monetary asset for a monetary asset of a Buyer at a later point in time. He has some skin in the game, pressuring him to deliver what was promised, as a Seller's deposit. The offer can be for an arbitrary amount of items, thus the Seller specifies the quantity of available things that all bear similar properties, we say such an offer is a Voucher Set.  
+> making an offer = creating a Voucher Set = minting ERC-2255 NFT
 ```
-making an offer = creating a Voucher Set = minting ERC-2255 NFT
+BosonRouter.requestCreateOrderETHETH()  
 ```
 2. The Buyer discovers the offer and decides to purchase a single Voucher. In doing so, she commits to redeem that voucher in the future by putting the Buyer's amount of security deposit in escrow, alongside the payment amount.
+> commit to buy a voucher = creating a Voucher from a Voucher Set = minting ERC-721 NFT  out of the parent ERC-1155  
 ```
-commit to buy a voucher = creating a Voucher from a Voucher Set = minting ERC-721 NFT  out of the parent ERC-1155  
+BosonRouter.requestVoucherETHETH()  
 ```
 3. The Buyer can then choose to `redeem` the voucher and exchange the payment amount for the item received, or can choose to `refund` the voucher, thus getting the payment back, but also potentially losing the deposit, or can choose to not do anything (she can just forget about it), in which case the voucher `expires`.
-
+```
+BosonRouter.redeem() // or BosonRouter.refund() or wait till background service calls VoucherKernel.triggerExpiration()  
+```
 4. The Buyer can then `complain`, signaling dissatisfaction of the promise execution. In doing so, the Seller get penalized.  
-
+```
+BosonRouter.complain()  
+```
 5. The Seller can at any time, independently from Buyer, issue a `cancelOrFault` transaction, which can cancel the current offer and/or admit fault in a quality delivery, thus admitting part of his deposit to be sent to Buyer as a recourse.  
-
+```
+BosonRouter.cancelOrFault()  
+```
 6. Wait periods start ticking at various points in the game tree. Once passed, they are marked for each Voucher and ultimately the Voucher is `finalized`, meaning neither Buyer nor Seller can use it anymore.  
-
+```
+BosonRouter.triggerFinalizeVoucher()  
+```
 7. Finally, funds in escrow are released according to the Voucher's status.   
+```
+Cashier.withdraw()  
+```
 
 
 ### Wait periods  
