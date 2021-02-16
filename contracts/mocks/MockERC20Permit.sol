@@ -14,8 +14,6 @@ contract MockERC20Permit is ERC20WithPermit, AccessControl {
         _setupRole(MINTER_ROLE, _msgSender());
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setupRole(PAUSER_ROLE, _msgSender());
-
-        // TODO set initial fixed supply
     }
 
     function mint(address to, uint256 amount) public {

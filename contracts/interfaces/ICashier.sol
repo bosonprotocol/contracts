@@ -27,7 +27,8 @@ interface ICashier {
     function withdraw(uint256 _tokenIdVoucher) external;
 
     /**
-     * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the contracts are paused.
+     * @notice External function for withdrawing deposits. Caller must be the seller of the goods, otherwise reverts.
+     * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the voucher set is no longer in exchange.
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
      * @param _burnedQty burned quantity that the deposits should be withdrawn for
      * @param _msgSender owner of the voucher set
@@ -46,7 +47,7 @@ interface ICashier {
     function getEscrowAmount(address _account) external view returns (uint256);
 
     /**
-     * @notice Update the amount in escrow of an address wit the new value, based on VoucherSet/Voucher interaction
+     * @notice Update the amount in escrow of an address with the new value, based on VoucherSet/Voucher interaction
      * @param _account  The address of an account to query
      * @param _newAmount  New amount to be set
      */
