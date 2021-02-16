@@ -40,6 +40,8 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
     mapping(address => mapping(address => bool)) private operatorApprovals; //approval of accounts of an operator
     //metadata is shared, too (but ERC-1155 and ERC-721 have different metadata extension reqs)
     string internal metadataBase;
+    string internal metadata1155Route;
+    string internal metadata721Route;
 
     //ERC-1155 metadata event: URIs are defined in RFC 3986. The URI MUST point to a JSON file that conforms to the ERC-1155 Metadata URI JSON Schema.
     //not used ATM
@@ -742,6 +744,22 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
     }
 
     /**
+     * @notice Setting the URL route for ERC1155 tokens metadata
+     * @param _newRoute   New route to be used
+     */
+    function _set1155Route(string memory _newRoute) public onlyOwner {
+        metadata1155Route = _newRoute;
+    }
+
+    /**
+     * @notice Setting the URL route for ERC721 tokens metadata
+     * @param _newRoute   New route to be used
+     */
+    function _set721Route(string memory _newRoute) public onlyOwner {
+        metadata721Route = _newRoute;
+    }
+
+    /**
      * @notice A distinct Uniform Resource Identifier (URI) for a given token.
      * @dev ERC-1155
      * URIs are defined in RFC 3986. The URI MUST point to a JSON file that conforms to the "ERC-1155 Metadata URI JSON Schema".
@@ -751,7 +769,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
     function uri(uint256 _tokenId) external view returns (string memory) {
         return
             string(
-                abi.encodePacked(metadataBase, _uint2str(_tokenId), ".json")
+                abi.encodePacked(metadataBase, metadata1155Route, _uint2str(_tokenId))
             );
     }
 
@@ -781,7 +799,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
         require(owners721[_tokenId] != address(0), "INVALID_ID");
         return
             string(
-                abi.encodePacked(metadataBase, _uint2str(_tokenId), ".json")
+                abi.encodePacked(metadataBase, metadata721Route, _uint2str(_tokenId))
             );
     }
 
