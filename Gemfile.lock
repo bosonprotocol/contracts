@@ -100,6 +100,7 @@ GEM
 PLATFORMS
   x86_64-darwin-19
   x86_64-darwin-20
+  x86_64-linux
 
 DEPENDENCIES
   childprocess (~> 4.0)
@@ -109,4 +110,4 @@ DEPENDENCIES
   random-port (~> 0.5)
 
 BUNDLED WITH
-   2.2.6
+   2.2.10

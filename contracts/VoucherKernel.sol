@@ -831,7 +831,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
                 mark = true;
             } else if (
                 block.timestamp >=
-                vouchersStatus[_tokenIdVoucher].complainPeriodStart +
+                vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart +
                     cancelFaultPeriod
             ) {
                 //if COMPLAIN: then final after cof period
