@@ -29,7 +29,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     // slashedDepositPool can be obtained through getEscrowAmount(poolAddress)
     mapping(address => mapping(address => uint256)) public escrowTokens; //token address => mgsSender => amount
 
-    uint256 internal constant CANCELFAULT_SPLIT = 2; //for POC purposes, this is hardcoded; e.g. each party gets depositSe / 2
+    uint256 internal constant CANCELFAULT_SPLIT = 2; //this is hardcoded; e.g. each party gets depositSe / 2
 
     event LogBosonRouterSet(address _newBosonRouter, address _triggeredBy);
 
@@ -145,12 +145,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         nonReentrant
         whenNotPaused
     {
-        //TODO: more checks
-        //TODO: check to pass 2 diff holders and how the amounts will be distributed
-
         VoucherDetails memory voucherDetails;
 
-        //in the future might want to (i) check the gasleft() (but UNGAS proposal might make it impossible), and/or (ii) set upper loop limit to sth like .length < 2**15
         require(_tokenIdVoucher != 0, "UNSPECIFIED_ID"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
 
         voucherDetails.tokenIdVoucher = _tokenIdVoucher;
@@ -426,8 +422,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             }
 
             tFraction = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
-            voucherDetails.deposit2holder += tFraction; //Bu gets, say, a half
-            voucherDetails.deposit2issuer += tFraction.div(CANCELFAULT_SPLIT); //Se gets, say, a quarter
+            voucherDetails.deposit2holder += tFraction; //Bu gets a half
+            voucherDetails.deposit2issuer += tFraction.div(CANCELFAULT_SPLIT); //Se gets a quarter
             voucherDetails.deposit2pool +=
                 voucherDetails.depositSe -
                 tFraction -
@@ -742,7 +738,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @notice Internal function for withdrawing deposits.
      * @param _recipient    address of the account receiving funds from the escrow
      * @param _amount       amount to be released from escrow
-     * @param _paymentMethod       ampayment method that should be used to determine, how to do the payouts
+     * @param _paymentMethod       payment method that should be used to determine, how to do the payouts
      * @param _tokenIdSupply       _tokenIdSupply of the voucher set this is related to
      */
     function _withdrawDeposits(
