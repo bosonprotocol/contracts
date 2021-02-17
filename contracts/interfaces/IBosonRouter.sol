@@ -3,7 +3,6 @@
 pragma solidity 0.7.1;
 
 interface IBosonRouter {
-    //TODO Write comments
     function pause() external;
 
     function unpause() external;

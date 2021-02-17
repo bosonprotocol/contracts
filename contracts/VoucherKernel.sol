@@ -21,15 +21,13 @@ import "./UsingHelpers.sol";
  * @dev Notes:
  *  - Since this is a reference app, it is not yet optimized.
  *      In the next phase, the bulk raw data will be packed into a single bytes32 field and/or pushed off-chain.
- *  - The usage of block.timestamp is honored since vouchers are defined with day-precision and the demo app is not covering all edge cases.
+ *  - The usage of block.timestamp is honored since vouchers are defined currently with day-precision.
  *      See: https://ethereum.stackexchange.com/questions/5924/how-do-ethereum-mining-nodes-maintain-a-time-consistent-with-the-network/5931#5931
  */
 // solhint-disable-next-line
 contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     using Address for address;
     using SafeMath for uint256;
-    //using Counters for Counters.Counter;
-    //Counters.Counter private voucherTokenId; //unique IDs for voucher tokens
 
     //AssetRegistry assetRegistry;
     address public tokensContract;
@@ -67,7 +65,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     mapping(uint256 => bytes32) public ordersPromise; //mapping between an order (supply a.k.a. VoucherSet token) and a promise
 
     mapping(uint256 => VoucherStatus) public vouchersStatus; //recording the vouchers evolution
-    mapping(uint256 => address) public voucherIssuers; //issuers of vouchers // TODO on refactoring this must be removed as if we are to transfer 1155, issuer should be fetched from the promise, not from the 721
 
     //standard reqs
     mapping(uint256 => mapping(address => uint256)) private balances; //balance of token ids of an account
@@ -96,8 +93,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     <1><uint127: base token id><uint128: index of non-fungible>
     */
 
-    uint256 public complainPeriod; //for demo purposes, this is fixed/set by owner
-    uint256 public cancelFaultPeriod; //for demo purposes, this is fixed/set by owner
+    uint256 public complainPeriod;
+    uint256 public cancelFaultPeriod;
 
     event LogPromiseCreated(
         bytes32 indexed _promiseId,
@@ -252,7 +249,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
             tokenNonces[_seller],
             _seller,
             _validFrom,
-            _validTo, //_price, _depositSe, _depositBu, _complainPeriod, _cancelFaultPeriod,
+            _validTo,
             promiseKeys.length - 1
         );
 
@@ -417,7 +414,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
 
         //mint voucher NFT as ERC-721
         IERC1155ERC721(tokensContract).mint(_to, voucherTokenId);
-        voucherIssuers[voucherTokenId] = _issuer; //TODO THIS MIGHT NOT BE REQUIRED ANYMORE
 
         return voucherTokenId;
     }
@@ -455,9 +451,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
             _tokenType = typeId << 128; //upper bit is not set, followed by sequence, leaving lower 128-bits as 0
         }
 
-        //not needed:
-        //assert(typeId<max_uint127); //used all available space for types"
-
         return _tokenType;
     }
 
@@ -485,8 +478,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         isInValidityPeriod(_tokenIdVoucher);
         Promise memory tPromise =
             promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
-
-        //check collection code and/or assign collector
 
         vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;
         vouchersStatus[_tokenIdVoucher].status = setChange(
@@ -789,7 +780,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @notice Mark voucher token as expired
      * @param _tokenIdVoucher   ID of the voucher token
      */
-    //TODO: refactor to support array of inputs
     function triggerExpiration(uint256 _tokenIdVoucher) external override {
         require(_tokenIdVoucher != 0, "UNSPECIFIED_ID"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
 
@@ -813,7 +803,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @notice Mark voucher token to the final status
      * @param _tokenIdVoucher   ID of the voucher token
      */
-    //TODO: refactor to support array of inputs
     function triggerFinalizeVoucher(uint256 _tokenIdVoucher) external override {
         require(_tokenIdVoucher != 0, "UNSPECIFIED_ID"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
 
@@ -869,7 +858,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
             );
             emit LogFinalizeVoucher(_tokenIdVoucher, msg.sender);
         }
-        //
     }
 
     /* solhint-enable */
@@ -997,21 +985,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
 
         uint256 tokenIdSupply = getIdSupplyFromVoucher(_tokenIdVoucher);
         return promises[ordersPromise[tokenIdSupply]].promiseId;
-    }
-
-    /**
-     * @notice Get the current supply of tokens of an account
-     * @param _account  Address to query
-     * @return          Balance
-     */
-    //TODO: might not need it
-    function getTotalSupply(address _account)
-        public
-        view
-        override
-        returns (uint256)
-    {
-        return accountSupply[_account];
     }
 
     /**

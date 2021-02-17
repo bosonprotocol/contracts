@@ -234,13 +234,6 @@ interface IVoucherKernel {
         returns (bytes32);
 
     /**
-     * @notice Get the current supply of tokens of an account
-     * @param _account  Address to query
-     * @return          Balance
-     */
-    function getTotalSupply(address _account) external view returns (uint256);
-
-    /**
      * @notice Get all necessary funds for a supply token
      * @param _tokenIdSupply   ID of the supply token
      * @return                  returns a tuple (Payment amount, Seller's deposit, Buyer's deposit)
