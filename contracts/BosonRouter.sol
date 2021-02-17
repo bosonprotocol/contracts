@@ -15,8 +15,7 @@ import "./ERC1155ERC721.sol";
 import "./UsingHelpers.sol";
 
 /**
- * @title Contract for managing funds
- *  Roughly following OpenZeppelin's Escrow at https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/payment/
+ * @title Contract for interacting with Boson Protocol from the user's perspective.
  */
 contract BosonRouter is
     IBosonRouter,
