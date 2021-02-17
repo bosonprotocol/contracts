@@ -65,6 +65,11 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
         _;
     }
 
+    modifier notZeroAddress(address _address) {
+        require(_address != address(0), "ZERO_ADDRESS");
+        _;
+    }
+
     constructor() {
         owner = msg.sender;
     }
@@ -814,9 +819,8 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
     function setVoucherKernelAddress(address _voucherKernelAddress)
         external
         onlyOwner
+        notZeroAddress(_voucherKernelAddress)
     {
-        require(_voucherKernelAddress != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-
         voucherKernelAddress = _voucherKernelAddress;
 
         emit LogVoucherKernelSet(_voucherKernelAddress, msg.sender);
@@ -829,13 +833,10 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
     function setBosonRouterAddress(address _bosonRouterAddress)
         external
         onlyOwner
+        notZeroAddress(_bosonRouterAddress)
     {
         bosonRouterAddress = _bosonRouterAddress;
         emit LogBosonRouterSet(_bosonRouterAddress, msg.sender);
-    }
-
-    function getBosonRouterAddress() public view returns (address) {
-        address(bosonRouterAddress);
     }
 
     /**

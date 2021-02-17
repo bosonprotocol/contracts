@@ -389,7 +389,7 @@ class Utils {
     return filtered.returnValues['_tokenIdVoucher'];
   }
 
-  async commitToBuyETHETH(buyer, seller, tokenSupplyId) {
+  async commitToBuyETHETH(buyer, seller, tokenSupplyId, returnTx = false) {
     const txValue = new BN(constants.buyer_deposit).add(
       new BN(constants.product_price)
     );
@@ -414,7 +414,7 @@ class Utils {
       (e) => e.event === 'LogVoucherDelivered'
     )[0];
 
-    return filtered.returnValues['_tokenIdVoucher'];
+    return returnTx ? CommitTx : filtered.returnValues['_tokenIdVoucher'];
   }
 
   async commitToBuyTKNETHWithPermit(buyer, seller, tokenSupplyId) {
