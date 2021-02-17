@@ -8,8 +8,8 @@
   },
   "scripts": {
     "contracts:compile": "truffle compile --all",
-    "contracts:lint": "solhint contracts/**/*.sol -w 32",
-    "contracts:lint-fix": "solhint contracts/**/*.sol -w 32 --fix",
+    "contracts:lint": "solhint contracts/**/*.sol -w 0",
+    "contracts:lint-fix": "solhint contracts/**/*.sol -w 0 --fix",
     "contracts:format": "prettier --list-different contracts/**/*.sol",
     "contracts:format-fix": "prettier --write contracts/**/*.sol",
     "contracts:migrate:dev": "truffle migrate --network=rinkeby",
