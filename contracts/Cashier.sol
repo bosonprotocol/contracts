@@ -29,7 +29,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     // slashedDepositPool can be obtained through getEscrowAmount(poolAddress)
     mapping(address => mapping(address => uint256)) public escrowTokens; //token address => mgsSender => amount
 
-    uint256 internal constant CANCELFAULT_SPLIT = 2; //this is hardcoded; e.g. each party gets depositSe / 2
+    uint256 internal constant CANCELFAULT_SPLIT = 2; //for POC purposes, this is hardcoded; e.g. each party gets depositSe / 2
 
     event LogBosonRouterSet(address _newBosonRouter, address _triggeredBy);
 
@@ -422,8 +422,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             }
 
             tFraction = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
-            voucherDetails.deposit2holder += tFraction; //Bu gets a half
-            voucherDetails.deposit2issuer += tFraction.div(CANCELFAULT_SPLIT); //Se gets a quarter
+            voucherDetails.deposit2holder += tFraction; //Bu gets, say, a half
+            voucherDetails.deposit2issuer += tFraction.div(CANCELFAULT_SPLIT); //Se gets, say, a quarter
             voucherDetails.deposit2pool +=
                 voucherDetails.depositSe -
                 tFraction -

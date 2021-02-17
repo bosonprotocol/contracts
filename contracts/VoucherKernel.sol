@@ -21,7 +21,7 @@ import "./UsingHelpers.sol";
  * @dev Notes:
  *  - Since this is a reference app, it is not yet optimized.
  *      In the next phase, the bulk raw data will be packed into a single bytes32 field and/or pushed off-chain.
- *  - The usage of block.timestamp is honored since vouchers are defined with day-precision and the demo app is not covering all edge cases. TODO Should this comment stay?
+ *  - The usage of block.timestamp is honored since vouchers are defined currently with day-precision.
  *      See: https://ethereum.stackexchange.com/questions/5924/how-do-ethereum-mining-nodes-maintain-a-time-consistent-with-the-network/5931#5931
  */
 // solhint-disable-next-line
@@ -93,8 +93,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     <1><uint127: base token id><uint128: index of non-fungible>
     */
 
-    uint256 public complainPeriod; //for demo purposes, this is fixed/set by owner // TODO Should this comment stay
-    uint256 public cancelFaultPeriod; //for demo purposes, this is fixed/set by owner // TODO Should this comment stay
+    uint256 public complainPeriod;
+    uint256 public cancelFaultPeriod;
 
     event LogPromiseCreated(
         bytes32 indexed _promiseId,
