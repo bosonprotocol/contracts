@@ -47,7 +47,6 @@ contract BosonRouter is
 
     event LogTokenContractSet(address _newTokenContract, address _triggeredBy);
 
-
     /**
      * @notice Acts as a modifier, but it's cheaper. Checking if a non-zero address is provided, otherwise reverts.
      */
@@ -139,7 +138,7 @@ contract BosonRouter is
      * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
         @param metadata metadata which is required for creation of a voucher
         Metadata array is used as in some scenarios we need several more params, as we need to recover 
-        owner address in order to permit the contract to transfer funds in his behalf. 
+        owner address in order to permit the contract to transfer funds on his behalf. 
         Since the params get too many, we end up in situation that the stack is too deep.
         
         uint256 _validFrom = metadata[0];
@@ -178,12 +177,6 @@ contract BosonRouter is
             address(0),
             address(0)
         );
-
-        //checks
-        //(i) this is for separate promise allocation, not in prototype
-        //uint256 depositSe = IVoucherKernel(voucherKernel).getPromiseDepositSe(promiseId);
-        //require(depositSe * _quantity == weiReceived, "IN_FU");   //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-        //(ii) prototype check
 
         //record funds in escrow ...
         uint256 amount = ICashier(cashierAddress).getEscrowAmount(msg.sender);
@@ -444,7 +437,7 @@ contract BosonRouter is
         bytes32 rDeposit,
         bytes32 sDeposit // tokenDeposits
     ) external override nonReentrant whenNotPaused {
-        //checks
+
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
         require(_tokensSent.sub(depositBu) == price, "IN_FU"); //invalid funds
@@ -526,7 +519,7 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s
     ) external override nonReentrant whenNotPaused {
-        //checks
+
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
         require(_tokensSent.sub(depositBu) == price, "IN_FU"); //invalid funds
@@ -587,7 +580,7 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s
     ) external payable override nonReentrant whenNotPaused {
-        //checks
+
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
         require(price == msg.value, "IN_P"); //invalid price
@@ -652,7 +645,7 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s
     ) external payable override nonReentrant whenNotPaused {
-        //checks
+
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
         require(price == _tokensPrice, "IN_P"); //invalid price
