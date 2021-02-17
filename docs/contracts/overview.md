@@ -48,7 +48,7 @@ A detailed game tree is [available here](../assets/exchange-diagram.png), showca
 
 ### Process
 1. The process starts when the Seller makes an offer to sell something. He is making a promise to execute the exchange of his non-monetary asset for a monetary asset of a Buyer at a later point in time. He has some skin in the game, pressuring him to deliver what was promised, as a Seller's deposit. The offer can be for an arbitrary amount of items, thus the Seller specifies the quantity of available things that all bear similar properties, we say such an offer is a Voucher Set.  
-> making an offer = creating a Voucher Set = minting ERC-2255 NFT
+> making an offer = creating a Voucher Set = minting ERC-1155 NFT
 ```
 BosonRouter.requestCreateOrderETHETH()  
 ```
