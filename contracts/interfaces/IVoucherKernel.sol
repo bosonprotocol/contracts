@@ -310,4 +310,13 @@ interface IVoucherKernel {
         external
         view
         returns (bool);
+
+    /**
+     * @notice Checks whether a voucher is in valid state to be transferred. If either payments or deposits are released, voucher could not be transferred
+     * @param _tokenIdVoucher ID of the voucher token
+     */
+    function isVoucherTransferable(uint256 _tokenIdVoucher)
+        external
+        view
+        returns (bool);
 }
