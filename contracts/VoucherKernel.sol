@@ -1166,4 +1166,15 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
 
         return true;
     }
+
+    /**
+     * @notice Checks whether a voucher is in valid state to be transferred. If either payments or deposits are released, voucher could not be transferred
+     * @param _tokenIdVoucher ID of the voucher token
+     */
+    function isVoucherTransferable(uint256 _tokenIdVoucher) public override view returns (bool) {
+        return !(
+            vouchersStatus[_tokenIdVoucher].isPaymentReleased || 
+            vouchersStatus[_tokenIdVoucher].isDepositsReleased
+        );
+    }
 }

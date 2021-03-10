@@ -4607,6 +4607,33 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         );
       });
 
+      it('[NEGATIVE] Should not transfer a voucher if payments / deposits are released', async () => {
+        const voucherID = await utils.commitToBuy(
+          users.other1,
+          users.seller,
+          tokenSupplyKey
+        );
+
+        await utils.refund(voucherID, users.other1.address);
+        await utils.complain(voucherID, users.other1.address);
+        await utils.cancel(voucherID, users.seller.address);
+        await utils.finalize(voucherID, users.deployer.address);
+
+        await utils.withdraw(voucherID, users.deployer.address);
+
+        await truffleAssert.reverts(
+          utils.safeTransfer721(
+            users.other1.address,
+            users.other2.address,
+            voucherID,
+            {
+              from: users.other1.address,
+            }
+          ),
+          truffleAssert.ErrorType.REVERT
+        );
+      });
+
       it('[NEGATIVE] Old owner should not be able to interact with the voucher', async () => {
         const voucherID = await utils.commitToBuy(
           users.other1,
@@ -4960,6 +4987,33 @@ contract('Cashier and VoucherKernel', async (addresses) => {
               return true;
             },
             'Amounts not distributed successfully'
+          );
+        });
+
+        it('[NEGATIVE] Should not transfer a voucher if payments / deposits are released', async () => {
+          const voucherID = await utils.commitToBuy(
+            users.other1,
+            users.seller,
+            tokenSupplyKey
+          );
+
+          await utils.refund(voucherID, users.other1.address);
+          await utils.complain(voucherID, users.other1.address);
+          await utils.cancel(voucherID, users.seller.address);
+          await utils.finalize(voucherID, users.deployer.address);
+
+          await utils.withdraw(voucherID, users.deployer.address);
+
+          await truffleAssert.reverts(
+            utils.safeTransfer721(
+              users.other1.address,
+              users.other2.address,
+              voucherID,
+              {
+                from: users.other1.address,
+              }
+            ),
+            truffleAssert.ErrorType.REVERT
           );
         });
 
@@ -5329,6 +5383,33 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           );
         });
 
+        it('[NEGATIVE] Should not transfer a voucher if payments / deposits are released', async () => {
+          const voucherID = await utils.commitToBuy(
+            users.other1,
+            users.seller,
+            tokenSupplyKey
+          );
+
+          await utils.refund(voucherID, users.other1.address);
+          await utils.complain(voucherID, users.other1.address);
+          await utils.cancel(voucherID, users.seller.address);
+          await utils.finalize(voucherID, users.deployer.address);
+
+          await utils.withdraw(voucherID, users.deployer.address);
+
+          await truffleAssert.reverts(
+            utils.safeTransfer721(
+              users.other1.address,
+              users.other2.address,
+              voucherID,
+              {
+                from: users.other1.address,
+              }
+            ),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+
         it('[NEGATIVE] Old owner should not be able to interact with the voucher', async () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
@@ -5661,6 +5742,33 @@ contract('Cashier and VoucherKernel', async (addresses) => {
               return true;
             },
             'Event LogAmountDistribution was not emitted'
+          );
+        });
+
+        it('[NEGATIVE] Should not transfer a voucher if payments / deposits are released', async () => {
+          const voucherID = await utils.commitToBuy(
+            users.other1,
+            users.seller,
+            tokenSupplyKey
+          );
+
+          await utils.refund(voucherID, users.other1.address);
+          await utils.complain(voucherID, users.other1.address);
+          await utils.cancel(voucherID, users.seller.address);
+          await utils.finalize(voucherID, users.deployer.address);
+
+          await utils.withdraw(voucherID, users.deployer.address);
+
+          await truffleAssert.reverts(
+            utils.safeTransfer721(
+              users.other1.address,
+              users.other2.address,
+              voucherID,
+              {
+                from: users.other1.address,
+              }
+            ),
+            truffleAssert.ErrorType.REVERT
           );
         });
 
