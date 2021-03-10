@@ -102,6 +102,11 @@ contract BosonRouter is
         address _fundLimitsOracle,
         address _cashierAddress
     ) {
+        notZeroAddress(_voucherKernel);
+        notZeroAddress(_tokensContractAddress);
+        notZeroAddress(_fundLimitsOracle);
+        notZeroAddress(_cashierAddress);
+
         voucherKernel = _voucherKernel;
         tokensContractAddress = _tokensContractAddress;
         fundLimitsOracle = _fundLimitsOracle;
