@@ -215,7 +215,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     ) external override onlyFromRouter returns (uint256) {
         require(_validFrom <= _validTo, "INVALID_VALIDITY_FROM"); //hex"26" FISSION.code(FISSION.Category.Find, FISSION.Status.Above_Range_Overflow)
         // solhint-disable-next-line not-rely-on-time
-        require(_validTo >= block.timestamp, "INVALID_VALIDITY_TO"); //hex"24" FISSION.code(FISSION.Category.Find, FISSION.Status.BelowRange_Underflow)
+        require(_validTo >= block.timestamp + 5 minutes, "INVALID_VALIDITY_TO"); //hex"24" FISSION.code(FISSION.Category.Find, FISSION.Status.BelowRange_Underflow)
 
         bytes32 key;
         key = keccak256(
