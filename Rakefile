@@ -239,7 +239,7 @@ namespace :ci do
 
         t.target = configuration.concourse_team
         t.team = configuration.concourse_team
-        t.pipeline = "contracts-pr-#{branch}"
+        t.pipeline = "contracts-pr-#{to_pipeline_name(branch)}"
 
         t.config = 'pipelines/pr/pipeline.yaml'
 
@@ -298,4 +298,8 @@ end
 
 def pr_metadata_state
   pr_metadata_value("state")
+end
+
+def to_pipeline_name(string)
+  string.gsub(/[^a-zA-Z0-9_-]/, "_")
 end
