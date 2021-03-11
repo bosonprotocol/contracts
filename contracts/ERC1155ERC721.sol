@@ -11,6 +11,7 @@ import "./interfaces/IERC721.sol";
 import "./interfaces/IERC721TokenReceiver.sol";
 import "./interfaces/IERC1155ERC721.sol";
 import "./interfaces/IBosonRouter.sol";
+import "./interfaces/IVoucherKernel.sol";
 
 //preparing for ERC-1066, ERC-1444, EIP-838
 
@@ -223,6 +224,8 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
         balance721[_to]++;
 
         owners721[_tokenId] = _to;
+
+        require(IVoucherKernel(voucherKernelAddress).isVoucherTransferable(_tokenId), "FUNDS_RELEASED");
 
         IBosonRouter(bosonRouterAddress)._onERC721Transfer(
             _from,
