@@ -155,6 +155,19 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         );
       });
 
+      it('[NEGATIVE] Should revert if validTo is set below 5 minutes from now', async () => {
+        await truffleAssert.reverts(
+          utils.createOrder(
+            users.seller,
+            timestamp,
+            timestamp + constants.ONE_MINUTE,
+            constants.seller_deposit,
+            constants.QTY_10
+          ),
+          truffleAssert.ErrorType.REVERT
+        );
+      });
+
       it('Seller correlationId should be incremented after order is created', async () => {
         const correlationId = await contractBosonRouter.correlationIds(
           users.seller.address
@@ -387,6 +400,19 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             timestamp + constants.SECONDS_IN_DAY,
             constants.seller_deposit,
             constants.QTY_10
+          );
+        });
+
+        it('[NEGATIVE] Should revert if validTo is set below 5 minutes from now', async () => {
+          await truffleAssert.reverts(
+            utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.ONE_MINUTE,
+              constants.seller_deposit,
+              constants.QTY_10
+            ),
+            truffleAssert.ErrorType.REVERT
           );
         });
 
@@ -755,6 +781,19 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           );
         });
 
+        it('[NEGATIVE] Should revert if validTo is set below 5 minutes from now', async () => {
+          await truffleAssert.reverts(
+            utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.ONE_MINUTE,
+              constants.seller_deposit,
+              constants.QTY_10
+            ),
+            truffleAssert.ErrorType.REVERT
+          );
+        });
+
         it('Seller correlationId should be incremented after order is created', async () => {
           const correlationId = await contractBosonRouter.correlationIds(
             users.seller.address
@@ -1011,6 +1050,19 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             timestamp + constants.SECONDS_IN_DAY,
             constants.seller_deposit,
             constants.QTY_10
+          );
+        });
+
+        it('[NEGATIVE] Should revert if validTo is set below 5 minutes from now', async () => {
+          await truffleAssert.reverts(
+            utils.createOrder(
+              users.seller,
+              timestamp,
+              timestamp + constants.ONE_MINUTE,
+              constants.seller_deposit,
+              constants.QTY_10
+            ),
+            truffleAssert.ErrorType.REVERT
           );
         });
 
@@ -2784,10 +2836,9 @@ contract('Cashier and VoucherKernel', async (addresses) => {
     });
 
     describe('[NEGATIVE] Common voucher interactions after expiry', () => {
-      const ONE_MINUTE = 60;
-      const TWO_MINUTES = 120;
-      const cancelPeriod = ONE_MINUTE;
-      const complainPeriod = ONE_MINUTE;
+      const TEN_MINUTES = 10 * constants.ONE_MINUTE;
+      const cancelPeriod = constants.ONE_MINUTE;
+      const complainPeriod = constants.ONE_MINUTE;
       let snapshot;
 
       beforeEach(async () => {
@@ -2806,7 +2857,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         const timestamp = await Utils.getCurrTimestamp();
 
         constants.PROMISE_VALID_FROM = timestamp;
-        constants.PROMISE_VALID_TO = timestamp + TWO_MINUTES;
+        constants.PROMISE_VALID_TO = timestamp + TEN_MINUTES;
 
         TOKEN_SUPPLY_ID = await utils.createOrder(
           users.seller,
@@ -2823,7 +2874,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
 
       it('[!COMMIT] Buyer should not be able to commit after expiry date has passed', async () => {
         await timemachine.advanceTimeSeconds(
-          constants.PROMISE_VALID_TO + ONE_MINUTE
+          constants.PROMISE_VALID_TO + constants.ONE_MINUTE
         );
 
         await truffleAssert.reverts(
@@ -2857,7 +2908,9 @@ contract('Cashier and VoucherKernel', async (addresses) => {
 
         await utils.cancel(voucherID, users.seller.address);
 
-        await timemachine.advanceTimeSeconds(complainPeriod + ONE_MINUTE);
+        await timemachine.advanceTimeSeconds(
+          complainPeriod + constants.ONE_MINUTE
+        );
 
         await truffleAssert.reverts(
           utils.complain(voucherID, users.buyer.address),
@@ -2873,7 +2926,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         );
 
         await timemachine.advanceTimeSeconds(
-          constants.PROMISE_VALID_TO + ONE_MINUTE
+          constants.PROMISE_VALID_TO + constants.ONE_MINUTE
         );
 
         await truffleAssert.reverts(
@@ -2890,7 +2943,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         );
 
         await timemachine.advanceTimeSeconds(
-          constants.PROMISE_VALID_TO + ONE_MINUTE
+          constants.PROMISE_VALID_TO + constants.ONE_MINUTE
         );
 
         await truffleAssert.reverts(
@@ -2908,7 +2961,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         await utils.redeem(voucherID, users.buyer.address);
 
         await timemachine.advanceTimeSeconds(
-          complainPeriod + cancelPeriod + ONE_MINUTE
+          complainPeriod + cancelPeriod + constants.ONE_MINUTE
         );
 
         await truffleAssert.reverts(
@@ -2926,7 +2979,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         await utils.redeem(voucherID, users.buyer.address);
 
         await timemachine.advanceTimeSeconds(
-          complainPeriod + cancelPeriod + ONE_MINUTE
+          complainPeriod + cancelPeriod + constants.ONE_MINUTE
         );
 
         await truffleAssert.reverts(
@@ -2943,7 +2996,9 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         );
         await utils.redeem(voucherID, users.buyer.address);
         await utils.cancel(voucherID, users.seller.address),
-          await timemachine.advanceTimeSeconds(complainPeriod + ONE_MINUTE);
+          await timemachine.advanceTimeSeconds(
+            complainPeriod + constants.ONE_MINUTE
+          );
 
         await truffleAssert.reverts(
           utils.complain(voucherID, users.buyer.address),
@@ -2960,7 +3015,9 @@ contract('Cashier and VoucherKernel', async (addresses) => {
 
         await utils.redeem(voucherID, users.buyer.address);
         await utils.complain(voucherID, users.buyer.address),
-          await timemachine.advanceTimeSeconds(cancelPeriod + ONE_MINUTE);
+          await timemachine.advanceTimeSeconds(
+            cancelPeriod + constants.ONE_MINUTE
+          );
 
         await truffleAssert.reverts(
           utils.cancel(voucherID, users.seller.address),
@@ -2978,7 +3035,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         await utils.refund(voucherID, users.buyer.address);
 
         await timemachine.advanceTimeSeconds(
-          complainPeriod + cancelPeriod + ONE_MINUTE
+          complainPeriod + cancelPeriod + constants.ONE_MINUTE
         );
 
         await truffleAssert.reverts(
@@ -2997,7 +3054,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         await utils.refund(voucherID, users.buyer.address);
 
         await timemachine.advanceTimeSeconds(
-          complainPeriod + cancelPeriod + ONE_MINUTE
+          complainPeriod + cancelPeriod + constants.ONE_MINUTE
         );
 
         await truffleAssert.reverts(
@@ -3016,7 +3073,9 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         await utils.refund(voucherID, users.buyer.address);
         await utils.complain(voucherID, users.buyer.address);
 
-        await timemachine.advanceTimeSeconds(cancelPeriod + ONE_MINUTE);
+        await timemachine.advanceTimeSeconds(
+          cancelPeriod + constants.ONE_MINUTE
+        );
 
         await truffleAssert.reverts(
           utils.cancel(voucherID, users.seller.address),
@@ -3034,7 +3093,9 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         await utils.refund(voucherID, users.buyer.address);
         await utils.cancel(voucherID, users.seller.address);
 
-        await timemachine.advanceTimeSeconds(complainPeriod + ONE_MINUTE);
+        await timemachine.advanceTimeSeconds(
+          complainPeriod + constants.ONE_MINUTE
+        );
 
         await truffleAssert.reverts(
           utils.complain(voucherID, users.buyer.address),
