@@ -61,7 +61,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
 
     bytes32[] public promiseKeys;
 
-    mapping(address => uint256) public accountSupply;
     mapping(uint256 => bytes32) public ordersPromise; //mapping between an order (supply a.k.a. VoucherSet token) and a promise
 
     mapping(uint256 => VoucherStatus) public vouchersStatus; //recording the vouchers evolution
@@ -216,7 +215,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     ) external override onlyFromRouter returns (uint256) {
         require(_validFrom <= _validTo, "INVALID_VALIDITY_FROM"); //hex"26" FISSION.code(FISSION.Category.Find, FISSION.Status.Above_Range_Overflow)
         // solhint-disable-next-line not-rely-on-time
-        require(_validTo >= block.timestamp, "INVALID_VALIDITY_TO"); //hex"24" FISSION.code(FISSION.Category.Find, FISSION.Status.BelowRange_Underflow)
+        require(_validTo >= block.timestamp + 5 minutes, "INVALID_VALIDITY_TO"); //"Minimum order validity is set to prevent any potential attack from flash-loans or similar." //hex"24" FISSION.code(FISSION.Category.Find, FISSION.Status.BelowRange_Underflow)
 
         bytes32 key;
         key = keccak256(
@@ -293,15 +292,15 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         require(_quantity > 0, "INVALID_QUANTITY"); //hex"24" FISSION.code(FISSION.Category.Find, FISSION.Status.BelowRange_Underflow)
 
         uint256 tokenIdSupply = generateTokenType(true); //create & assign a new non-fungible type
+
+        ordersPromise[tokenIdSupply] = _promiseId;
+
         IERC1155ERC721(tokensContract).mint(
             _seller,
             tokenIdSupply,
             _quantity,
             ""
         );
-
-        ordersPromise[tokenIdSupply] = _promiseId;
-        accountSupply[_seller] += _quantity;
 
         return tokenIdSupply;
     }
@@ -398,7 +397,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         }
 
         IERC1155ERC721(tokensContract).burn(_issuer, _tokenIdSupply, 1); // This is hardcoded as 1 on purpose
-        accountSupply[_issuer]--;
 
         //calculate tokenId
         uint256 voucherTokenId =
@@ -431,7 +429,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         uint256 _qty
     ) external override whenPaused onlyFromCashier {
         IERC1155ERC721(tokensContract).burn(_issuer, _tokenIdSupply, _qty);
-        accountSupply[_issuer] = accountSupply[_issuer].sub(_qty);
     }
 
     /**
@@ -735,7 +732,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         require(remQty > 0, "OFFER_EMPTY");
 
         IERC1155ERC721(tokensContract).burn(_issuer, _tokenIdSupply, remQty);
-        accountSupply[_issuer] = accountSupply[_issuer].sub(remQty);
 
         emit LogVoucherSetFaultCancel(_tokenIdSupply, _issuer);
 
