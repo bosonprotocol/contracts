@@ -4,9 +4,16 @@
 
 [![Gitter chat](https://badges.gitter.im/bosonprotocol.png)](https://gitter.im/bosonprotocol/community)
 
-This is the place for smart contracts that are implementing Boson Protocol. You are invited to learn more about the project through its code and perhaps test locally how you might use it within your own project. When you are ready to integrate with Boson Protocol on a live network, you will soon be able to find the latest deployment details here, as well.
+This is the place for smart contracts that are implementing Boson Protocol. You 
+are invited to learn more about the project through its code and perhaps test 
+locally how you might use it within your own project. When you are ready to 
+integrate with Boson Protocol on a live network, you will soon be able to find 
+the latest deployment details here, as well.
 
-> Note: the contracts are not yet deployed on Ethereum mainnet or other main networks.  
+> Note: the contracts are not yet deployed on Ethereum mainnet or other main networks.
+
+For more details about how Boson Protocol works and how you might make use of
+it, please see the [documentation site](https://docs.bosonprotocol.io/).  
 
 **Table of Contents**
 
