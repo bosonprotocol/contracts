@@ -50,21 +50,21 @@ contract BosonRouter is
      * @notice Acts as a modifier, but it's cheaper. Checking if a non-zero address is provided, otherwise reverts.
      */
     function notZeroAddress(address tokenAddress) private pure {
-        require(tokenAddress != address(0), "0_A"); //zero address
+        require(tokenAddress != address(0), "0A"); //zero address
     }
 
     /**
      * @notice Acts as a modifier, but it's cheaper. The only caller must be tokensContractAddress, otherwise reverts.
      */
     function onlyTokensContract() private view {
-        require(msg.sender == tokensContractAddress, "UN_TK"); // Unauthorized token address
+        require(msg.sender == tokensContractAddress, "UT"); // Unauthorized token address
     }
 
     /**
      * @notice Acts as a modifier, but it's cheaper. Replacement of onlyOwner modifier. If the caller is not the owner of the contract, reverts.
      */
     function onlyRouterOwner() internal view {
-        require(owner() == _msgSender(), "NOTO"); //not owner
+        require(owner() == _msgSender(), "NO"); //not owner
     }
 
     /**
@@ -74,7 +74,7 @@ contract BosonRouter is
     function notAboveETHLimit(uint256 value) internal view {
         require(
             value <= IFundLimitsOracle(fundLimitsOracle).getETHLimit(),
-            "AB_L" // above limit
+            "AL" // above limit
         );
     }
 
@@ -92,7 +92,7 @@ contract BosonRouter is
                 IFundLimitsOracle(fundLimitsOracle).getTokenLimit(
                     _tokenAddress
                 ),
-            "AB_L" //above limit
+            "AL" //above limit
         );
     }
 
@@ -131,7 +131,7 @@ contract BosonRouter is
      */
     function unpause() external override {
         onlyRouterOwner();
-        require(ICashier(cashierAddress).canUnpause(), "UP_NA"); //unpaused not allowed
+        require(ICashier(cashierAddress).canUnpause(), "UF"); //unpaused forbidden
 
         _unpause();
         IVoucherKernel(voucherKernel).unpause();
@@ -161,7 +161,7 @@ contract BosonRouter is
         notAboveETHLimit(metadata[2].mul(metadata[5]));
         notAboveETHLimit(metadata[3].mul(metadata[5]));
         notAboveETHLimit(metadata[4].mul(metadata[5]));
-        require(metadata[3].mul(metadata[5]) == msg.value, "IN_FU"); //invalid funds
+        require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         uint256 tokenIdSupply =
@@ -216,7 +216,7 @@ contract BosonRouter is
         notAboveTokenLimit(_tokenDepositAddress, metadata[3].mul(metadata[5]));
         notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
 
-        require(metadata[3].mul(metadata[5]) == _tokensSent, "IN_FU"); //invalid funds
+        require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         IERC20WithPermit(_tokenDepositAddress).permit(
@@ -288,7 +288,7 @@ contract BosonRouter is
         notAboveTokenLimit(_tokenDepositAddress, metadata[3].mul(metadata[5]));
         notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
 
-        require(metadata[3].mul(metadata[5]) == _tokensSent, "IN_FU"); //invalid funds
+        require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         IERC20WithPermit(_tokenDepositAddress).permit(
@@ -355,7 +355,7 @@ contract BosonRouter is
         notAboveETHLimit(metadata[3].mul(metadata[5]));
         notAboveETHLimit(metadata[4].mul(metadata[5]));
 
-        require(metadata[3].mul(metadata[5]) == msg.value, "IN_FU"); //invalid funds
+        require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         uint256 tokenIdSupply =
@@ -409,7 +409,7 @@ contract BosonRouter is
         //checks
         (uint256 price, , uint256 depositBu) =
             IVoucherKernel(voucherKernel).getOrderCosts(_tokenIdSupply);
-        require(price.add(depositBu) == weiReceived, "IN_FU"); //invalid funds
+        require(price.add(depositBu) == weiReceived, "IF"); //invalid funds
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         IVoucherKernel(voucherKernel).fillOrder(
@@ -445,7 +445,7 @@ contract BosonRouter is
 
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
-        require(_tokensSent.sub(depositBu) == price, "IN_FU"); //invalid funds
+        require(_tokensSent.sub(depositBu) == price, "IF"); //invalid funds
 
         address tokenPriceAddress =
             IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
@@ -528,7 +528,7 @@ contract BosonRouter is
 
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
-        require(_tokensSent.sub(depositBu) == price, "IN_FU"); //invalid funds
+        require(_tokensSent.sub(depositBu) == price, "IF"); //invalid funds
 
         address tokenPriceAddress =
             IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
@@ -537,7 +537,7 @@ contract BosonRouter is
                 _tokenIdSupply
             );
 
-        require(tokenPriceAddress == tokenDepositAddress, "IN_C"); //invalid caller
+        require(tokenPriceAddress == tokenDepositAddress, "IC"); //invalid caller
 
         // If tokenPriceAddress && tokenPriceAddress are the same
         // practically it's not of importance to each we are sending the funds
@@ -590,9 +590,9 @@ contract BosonRouter is
 
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
-        require(price == msg.value, "IN_P"); //invalid price
+        require(price == msg.value, "IP"); //invalid price
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-        require(depositBu == _tokensDeposit, "IN_D"); // invalid deposit
+        require(depositBu == _tokensDeposit, "ID"); // invalid deposit
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         address tokenDepositAddress =
@@ -656,9 +656,9 @@ contract BosonRouter is
 
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
-        require(price == _tokensPrice, "IN_P"); //invalid price
+        require(price == _tokensPrice, "IP"); //invalid price
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-        require(depositBu == msg.value, "IN_DE"); // invalid deposit
+        require(depositBu == msg.value, "ID"); // invalid deposit
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         address tokenPriceAddress =
@@ -953,7 +953,7 @@ contract BosonRouter is
                 _tokenSupplyId,
                 _from
             );
-        require(_tokenSupplyQty == _value, "IN_QTY"); //invalid qty
+        require(_tokenSupplyQty == _value, "IQ"); //invalid qty
     }
 
     /**

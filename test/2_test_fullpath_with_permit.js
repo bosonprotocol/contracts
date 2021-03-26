@@ -1600,28 +1600,24 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         );
       });
 
-      it("[NEGATIVE] Should not create order from a wrong payment type", async () => {
-        
+      it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
         let utilsTknEth = UtilsBuilder.create()
-        .ERC20withPermit()
-        .TKNETH()
-        .build(
-          contractERC1155ERC721,
-          contractVoucherKernel,
-          contractCashier,
-          contractBosonRouter,
-          contractBSNTokenPrice,
-          contractBSNTokenDeposit
-        );
-  
-        await truffleAssert.reverts(
-          utilsTknEth.commitToBuy(users.buyer,
-            users.seller,
-            TOKEN_SUPPLY_ID),
-          truffleAssert.ErrorType.REVERT
-        )
+          .ERC20withPermit()
+          .TKNETH()
+          .build(
+            contractERC1155ERC721,
+            contractVoucherKernel,
+            contractCashier,
+            contractBosonRouter,
+            contractBSNTokenPrice,
+            contractBSNTokenDeposit
+          );
 
-      })
+        await truffleAssert.reverts(
+          utilsTknEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
+          truffleAssert.ErrorType.REVERT
+        );
+      });
 
       it('Buyer correlationId should be incremented after requesting a voucher', async () => {
         const correlationId = await contractBosonRouter.correlationIds(
@@ -1816,27 +1812,24 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           );
         });
 
-        it("[NEGATIVE] Should not create order from a wrong payment type", async () => {
-        
+        it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
           let utilsEthEth = UtilsBuilder.create()
-          .ERC20withPermit()
-          .ETHETH()
-          .build(
-            contractERC1155ERC721,
-            contractVoucherKernel,
-            contractCashier,
-            contractBosonRouter,
-            contractBSNTokenPrice,
-            contractBSNTokenDeposit
-          );
+            .ERC20withPermit()
+            .ETHETH()
+            .build(
+              contractERC1155ERC721,
+              contractVoucherKernel,
+              contractCashier,
+              contractBosonRouter,
+              contractBSNTokenPrice,
+              contractBSNTokenDeposit
+            );
 
           await truffleAssert.reverts(
-            utilsEthEth.commitToBuy(users.buyer,
-              users.seller,
-              TOKEN_SUPPLY_ID),
+            utilsEthEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
             truffleAssert.ErrorType.REVERT
-          )
-        })
+          );
+        });
 
         it('Buyer correlationId should be incremented after requesting a voucher', async () => {
           const correlationId = await contractBosonRouter.correlationIds(
@@ -2116,28 +2109,24 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           );
         });
 
-        it("[NEGATIVE] Should not create order from a wrong payment type", async () => {
-        
+        it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
           let utilsEthTkn = UtilsBuilder.create()
-          .ERC20withPermit()
-          .ETHTKN()
-          .build(
-            contractERC1155ERC721,
-            contractVoucherKernel,
-            contractCashier,
-            contractBosonRouter,
-            contractBSNTokenPrice,
-            contractBSNTokenDeposit
-          );
+            .ERC20withPermit()
+            .ETHTKN()
+            .build(
+              contractERC1155ERC721,
+              contractVoucherKernel,
+              contractCashier,
+              contractBosonRouter,
+              contractBSNTokenPrice,
+              contractBSNTokenDeposit
+            );
 
           await truffleAssert.reverts(
-            utilsEthTkn.commitToBuy(users.buyer,
-              users.seller,
-              TOKEN_SUPPLY_ID),
+            utilsEthTkn.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
             truffleAssert.ErrorType.REVERT
-          )
-        })
-
+          );
+        });
 
         it('Buyer correlationId should be incremented after requesting a voucher', async () => {
           const correlationId = await contractBosonRouter.correlationIds(
@@ -2454,27 +2443,24 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           assert.isDefined(tokenVoucherKey1);
         });
 
-        it("[NEGATIVE] Should not create order from a wrong payment type", async () => {
-        
+        it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
           let utilsEthEth = UtilsBuilder.create()
-          .ERC20withPermit()
-          .ETHETH()
-          .build(
-            contractERC1155ERC721,
-            contractVoucherKernel,
-            contractCashier,
-            contractBosonRouter,
-            contractBSNTokenPrice,
-            contractBSNTokenDeposit
-          );
+            .ERC20withPermit()
+            .ETHETH()
+            .build(
+              contractERC1155ERC721,
+              contractVoucherKernel,
+              contractCashier,
+              contractBosonRouter,
+              contractBSNTokenPrice,
+              contractBSNTokenDeposit
+            );
 
           await truffleAssert.reverts(
-            utilsEthEth.commitToBuy(users.buyer,
-              users.seller,
-              TOKEN_SUPPLY_ID),
+            utilsEthEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
             truffleAssert.ErrorType.REVERT
-          )
-        })
+          );
+        });
 
         it('Buyer correlationId should be incremented after requesting a voucher', async () => {
           const correlationId = await contractBosonRouter.correlationIds(
@@ -2782,26 +2768,24 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           assert.isDefined(tokenVoucherKey);
         });
 
-        it("[NEGATIVE] Should not create order from a wrong payment type", async () => {
+        it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
           let utilsEthEth = UtilsBuilder.create()
-          .ERC20withPermit()
-          .ETHETH()
-          .build(
-            contractERC1155ERC721,
-            contractVoucherKernel,
-            contractCashier,
-            contractBosonRouter,
-            contractBSNTokenPrice,
-            contractBSNTokenDeposit
-          );
+            .ERC20withPermit()
+            .ETHETH()
+            .build(
+              contractERC1155ERC721,
+              contractVoucherKernel,
+              contractCashier,
+              contractBosonRouter,
+              contractBSNTokenPrice,
+              contractBSNTokenDeposit
+            );
 
           await truffleAssert.reverts(
-            utilsEthEth.commitToBuy(users.buyer,
-              users.seller,
-              TOKEN_SUPPLY_ID),
+            utilsEthEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
             truffleAssert.ErrorType.REVERT
-          )
-        })
+          );
+        });
 
         it('Buyer correlationId should be incremented after requesting a voucher', async () => {
           const correlationId = await contractBosonRouter.correlationIds(
