@@ -123,6 +123,7 @@ interface IVoucherKernel {
         uint256 _tokenIdSupply,
         address _issuer,
         address _holder,
+        uint8 _paymentMethod,
         uint256 _correlationId
     ) external;
 

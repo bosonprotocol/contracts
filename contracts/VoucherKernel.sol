@@ -316,9 +316,13 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         uint256 _tokenIdSupply,
         address _issuer,
         address _holder,
+        uint8 _paymentMethod,
         uint256 _correlationId
     ) external override onlyFromRouter {
+        uint8 paymentMethod = getVoucherPaymentMethod(_tokenIdSupply);
+
         //checks
+        require(paymentMethod == _paymentMethod, "Incorrect Payment Method");
         checkOrderFillable(_tokenIdSupply, _issuer, _holder);
 
         //close order

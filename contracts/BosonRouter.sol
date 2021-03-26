@@ -416,6 +416,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
+            ETHETH,
             correlationIds[msg.sender]++
         );
 
@@ -476,6 +477,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
+            TKNTKN,
             correlationIds[msg.sender]++
         );
 
@@ -553,6 +555,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
+            TKNTKN,
             correlationIds[msg.sender]++
         );
 
@@ -610,6 +613,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
+            ETHTKN,
             correlationIds[msg.sender]++
         );
 
@@ -673,6 +677,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
+            TKNETH,
             correlationIds[msg.sender]++
         );
 
