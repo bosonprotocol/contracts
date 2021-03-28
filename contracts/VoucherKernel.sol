@@ -310,6 +310,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @param _tokenIdSupply   ID of the supply token (ERC-1155)
      * @param _issuer          Address of the token's issuer
      * @param _holder          Address of the recipient of the voucher (ERC-721)
+     * @param _paymentMethod   method being used for that particular order that needs to be fulfilled
      * @param _correlationId           ID of the current interaction with the smart contract for a specific user
      */
     function fillOrder(
