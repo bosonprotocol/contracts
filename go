@@ -37,7 +37,7 @@ for nvm_dir in ${nvm_dirs[@]}; do
     set +e
     # shellcheck disable=SC1090
     source "$nvm_script" >/dev/null 2>&1
-    nvm use "$node_full_version" >/dev/null 2>&1
+    nvm use "$node_loose_version" >/dev/null 2>&1
     set -e
     break
   fi

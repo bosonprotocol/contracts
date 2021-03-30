@@ -170,20 +170,20 @@ namespace :ci do
 
   namespace :pipeline do
     RakeFly.define_pipeline_tasks(
-        namespace: :master,
+        namespace: :main,
         argument_names: [
             :ci_deployment_type,
             :ci_deployment_label]
     ) do |t, args|
       configuration = configuration
-          .for_scope(args.to_h.merge(role: 'master-pipeline'))
+          .for_scope(args.to_h.merge(role: 'main-pipeline'))
       ci_deployment_type = configuration.ci_deployment_identifier
 
       t.target = configuration.concourse_team
       t.team = configuration.concourse_team
-      t.pipeline = "contracts-master"
+      t.pipeline = "contracts-main"
 
-      t.config = 'pipelines/master/pipeline.yaml'
+      t.config = 'pipelines/main/pipeline.yaml'
 
       t.vars = configuration.vars
       t.var_files = [
@@ -280,7 +280,7 @@ namespace :ci do
   namespace :pipelines do
     desc "Push all pipelines"
     task :push, [:ci_deployment_type, :ci_deployment_label] do |_, args|
-      Rake::Task[:"ci:pipeline:master:push"].invoke(*args)
+      Rake::Task[:"ci:pipeline:main:push"].invoke(*args)
       Rake::Task[:"ci:pipeline:builder:push"].invoke(*args)
     end
   end
