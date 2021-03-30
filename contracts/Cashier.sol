@@ -2,12 +2,13 @@
 pragma solidity 0.7.1;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IVoucherKernel.sol";
-import "./interfaces/IERC20WithPermit.sol";
 import "./interfaces/ICashier.sol";
 import "./UsingHelpers.sol";
 
@@ -16,6 +17,7 @@ import "./UsingHelpers.sol";
  * Roughly following OpenZeppelin's Escrow at https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/payment/
  */
 contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
+    using SafeERC20 for IERC20;
     using Address for address payable;
     using SafeMath for uint256;
 
@@ -129,8 +131,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         require(amount > 0, "ESCROW_EMPTY");
         escrowTokens[token][msg.sender] = 0;
 
-        // solhint-disable-next-line
-        require(IERC20WithPermit(token).transfer(msg.sender, amount));
+        SafeERC20.safeTransfer(IERC20(token), msg.sender, amount);
         LogWithdrawTokensOnDisaster(amount, token, msg.sender);
     }
 
@@ -742,8 +743,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                     _tokenIdSupply
                 );
 
-            // solhint-disable-next-line
-            require(IERC20WithPermit(addressTokenPrice).transfer(_recipient, _amount));
+            SafeERC20.safeTransfer(IERC20(addressTokenPrice), _recipient, _amount);
         }
     }
 
@@ -773,11 +773,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 IVoucherKernel(voucherKernel).getVoucherDepositToken(
                     _tokenIdSupply
                 );
-            // solhint-disable-next-line
-            require(IERC20WithPermit(addressTokenDeposits).transfer(
-                _recipient,
-                _amount
-            ));
+
+            SafeERC20.safeTransfer(IERC20(addressTokenDeposits), _recipient, _amount);
         }
     }
 
