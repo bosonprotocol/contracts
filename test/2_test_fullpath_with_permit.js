@@ -3437,7 +3437,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         ); // 0.35
         const expectedEscrowAmount = new BN(0); // 0
 
-        utils.safeTransfer1155(
+        await utils.safeTransfer1155(
           users.other1.address,
           users.other2.address,
           tokenSupplyKey,
@@ -3494,7 +3494,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
       });
 
       it('New owner should be able to COF', async () => {
-        utils.safeTransfer1155(
+        await utils.safeTransfer1155(
           users.other1.address,
           users.other2.address,
           tokenSupplyKey,
@@ -3516,7 +3516,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
       });
 
       it('[NEGATIVE] Old owner should not be able to COF', async () => {
-        utils.safeTransfer1155(
+        await utils.safeTransfer1155(
           users.other1.address,
           users.other2.address,
           tokenSupplyKey,
@@ -3660,7 +3660,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             'New owner balance from escrow does not match'
           );
 
-          utils.safeTransfer1155(
+          await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
@@ -3694,7 +3694,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           const expectedSellerDeposit = new BN(constants.seller_deposit); // 0.05
           const expectedEscrowAmountDeposit = new BN(0);
 
-          utils.safeTransfer1155(
+          await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
@@ -3768,7 +3768,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('New owner should be able to COF', async () => {
-          utils.safeTransfer1155(
+          await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
@@ -3788,7 +3788,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('[NEGATIVE] Old owner should not be able to COF', async () => {
-          utils.safeTransfer1155(
+          await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
@@ -3953,7 +3953,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             'New owner balance from escrow does not match'
           );
 
-          utils.safeTransfer1155(
+          await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
@@ -3989,7 +3989,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           const expectedEscrowAmountDeposit = new BN(0);
           const expectedEscrowAmountPrice = new BN(0);
 
-          utils.safeTransfer1155(
+          await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
@@ -4064,7 +4064,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('New owner should be able to COF', async () => {
-          utils.safeTransfer1155(
+          await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
@@ -4084,7 +4084,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('[NEGATIVE] Old owner should not be able to COF', async () => {
-          utils.safeTransfer1155(
+          await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
@@ -4212,7 +4212,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             'New owner balance from escrow does not match'
           );
 
-          utils.safeTransfer1155(
+          await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
@@ -4245,7 +4245,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           const expectedSellerDeposit = new BN(constants.seller_deposit); // 0.05
           const expectedEscrowAmountDeposit = new BN(0);
 
-          utils.safeTransfer1155(
+          await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
@@ -4336,7 +4336,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('New owner should be able to COF', async () => {
-          utils.safeTransfer1155(
+          await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
@@ -4356,7 +4356,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('[NEGATIVE] Old owner should not be able to COF', async () => {
-          utils.safeTransfer1155(
+          await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,

@@ -9,6 +9,8 @@ node_modules
 /localDeploy
 /run
 /vendor
+/artifacts
+/cache
 
 # Secrets
 .secret

@@ -7,7 +7,7 @@ const Cashier = artifacts.require("Cashier");
 const BosonRouter = artifacts.require("BosonRouter")
 const FundLimitsOracle = artifacts.require('FundLimitsOracle');
 
-module.exports = function(deployer, network, accounts) {
+module.exports = async function(deployer, network, accounts) {
     console.log("network: ", network);
     console.log("accounts: ", accounts);
 
