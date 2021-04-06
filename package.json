@@ -12,8 +12,8 @@
     "contracts:lint-fix": "solhint contracts/**/*.sol -w 0 --fix",
     "contracts:format": "prettier --list-different contracts/**/*.sol",
     "contracts:format-fix": "prettier --write contracts/**/*.sol",
-    "contracts:migrate:dev": "truffle migrate --network=rinkeby",
-    "contracts:verify:dev": "truffle run verify FundLimitsOracle ERC1155ERC721 VoucherKernel Cashier BosonRouter BosonTokenPrice BosonTokenDeposit --network rinkeby",
+    "contracts:migrate:dev": "npx hardhat deploy --network rinkeby",
+    "contracts:verify:dev": "npx hardhat contracts-verify --network rinkeby",
     "tests:lint": "eslint test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js",
     "tests:lint-fix": "eslint --fix test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js",
     "tests:format": "prettier --list-different test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js",
@@ -55,6 +55,7 @@
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-etherscan": "^2.1.1",
     "@nomiclabs/hardhat-truffle5": "^2.0.0",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@nomiclabs/hardhat-web3": "^2.0.0",
