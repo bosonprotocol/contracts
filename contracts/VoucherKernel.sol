@@ -59,7 +59,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     mapping(address => uint256) public tokenNonces; //mapping between seller address and its own nonces. Every time seller creates supply ID it gets incremented. Used to avoid duplicate ID's
     mapping(uint256 => VoucherPaymentMethod) public paymentDetails; // tokenSupplyId to VoucherPaymentMethod
 
-    bytes32[] public promiseKeys;
+    bytes32[] promiseKeys;
 
     mapping(uint256 => bytes32) public ordersPromise; //mapping between an order (supply a.k.a. VoucherSet token) and a promise
 
@@ -705,7 +705,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
                     tPromise.validTo + complainPeriod + cancelFaultPeriod,
                 "COFPERIOD_EXPIRED"
             ); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
-            vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp; //complain period starts
+            vouchersStatus[_tokenIdVoucher].complainPeriodStart = block
+                .timestamp; //complain period starts
         } else {
             revert("INAPPLICABLE_STATUS"); //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicableToCurrentState)
         }
@@ -1172,10 +1173,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @notice Checks whether a voucher is in valid state to be transferred. If either payments or deposits are released, voucher could not be transferred
      * @param _tokenIdVoucher ID of the voucher token
      */
-    function isVoucherTransferable(uint256 _tokenIdVoucher) public override view returns (bool) {
-        return !(
-            vouchersStatus[_tokenIdVoucher].isPaymentReleased || 
-            vouchersStatus[_tokenIdVoucher].isDepositsReleased
-        );
+    function isVoucherTransferable(uint256 _tokenIdVoucher)
+        public
+        view
+        override
+        returns (bool)
+    {
+        return
+            !(vouchersStatus[_tokenIdVoucher].isPaymentReleased ||
+                vouchersStatus[_tokenIdVoucher].isDepositsReleased);
     }
 }
