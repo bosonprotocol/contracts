@@ -29,7 +29,7 @@ async function verifyContracts() {
     try {
         await hre.run('verify:verify', {
             address: contracts.voucherKernel,
-            constructorArguments: [erc1155erc721.address]
+            constructorArguments: [contracts.erc1155erc721]
         })
     } catch (error) {
         logError('VoucherKernel', error.message)

@@ -1,14 +1,14 @@
-require("@nomiclabs/hardhat-truffle5"); // todo do not use truffle plugin for tests
-require("@nomiclabs/hardhat-etherscan");
+require('dotenv').config();
 require("solidity-coverage");
 require('hardhat-contract-sizer');
-require('dotenv').config();
-
- require("@nomiclabs/hardhat-waffle");
- require("@nomiclabs/hardhat-ethers");
+require("@nomiclabs/hardhat-truffle5");
+require("@nomiclabs/hardhat-etherscan");
+require("@nomiclabs/hardhat-ethers");
+require("@nomiclabs/hardhat-web3")
+require("@nomiclabs/hardhat-waffle");
 
 const { task } = require("hardhat/config");
-const {getAccounts, getAccountsWithBalance} = require('./config/getAccounts') //todo getAccounts might not be required
+const {getAccountsWithBalance} = require('./config/getAccounts') //todo getAccounts might not be required
 
 const INFURA_KEY = process.env.INFURA_API_KEY;
 const DEPLOYER_PRIVATE_KEY = process.env.PK;

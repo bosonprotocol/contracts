@@ -10,14 +10,6 @@ function getAccountsWithBalance(secretPropName) {
     ))
 }
 
-function getAccounts() {
-    return Object.entries(privateKeys)
-        .map(
-            entry => `0x${entry[1]}`
-        )
-}
-
 module.exports = {
-    getAccounts,
     getAccountsWithBalance,
 };

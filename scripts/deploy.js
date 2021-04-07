@@ -5,7 +5,7 @@ const fs = require('fs')
 const hre = require('hardhat')
 const ethers = hre.ethers;
 
-module.exports = async function(deployer, network, accounts) {
+module.exports = async function() {
     const ERC1155ERC721 = await ethers.getContractFactory("ERC1155ERC721");
     const VoucherKernel = await ethers.getContractFactory("VoucherKernel");
     const Cashier = await ethers.getContractFactory("Cashier");
