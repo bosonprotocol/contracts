@@ -8,7 +8,7 @@ require("@nomiclabs/hardhat-web3")
 require("@nomiclabs/hardhat-waffle");
 
 const { task } = require("hardhat/config");
-const {getAccountsWithBalance} = require('./config/getAccounts') //todo getAccounts might not be required
+const { getAccountsWithBalance } = require('./config/getAccounts')
 
 const INFURA_KEY = process.env.INFURA_API_KEY;
 const DEPLOYER_PRIVATE_KEY = process.env.PK;
@@ -18,7 +18,7 @@ const lazyImport = async (module) => {
 }
 
 task("deploy", "Deploy contracts on a provided network")
-	.setAction( async (args) => {
+	.setAction( async () => {
 		const deploymentScript = await lazyImport('./scripts/deploy')
 		await deploymentScript();
 	})
@@ -26,7 +26,7 @@ task("deploy", "Deploy contracts on a provided network")
 task("contracts-verify", "Verify already deployed contracts. Bear in mind that at least couple of blocks should be mined before execution!")
 	.setAction(async () => {
 		const verifyScript = await lazyImport('./scripts/verify')
-		await verifyScript()
+		await verifyScript();
 	})
 
 module.exports = {

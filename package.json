@@ -15,9 +15,9 @@
     "contracts:migrate:dev": "npx hardhat deploy --network rinkeby",
     "contracts:verify:dev": "npx hardhat contracts-verify --network rinkeby",
     "tests:lint": "eslint test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js",
-    "tests:lint-fix": "eslint --fix test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js",
-    "tests:format": "prettier --list-different test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js",
-    "tests:format-fix": "prettier --write test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js",
+    "tests:lint-fix": "eslint --fix test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js scripts/**/*.js config/**/*.js",
+    "tests:format": "prettier --list-different test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js scripts/**/*.js config/**/*.js",
+    "tests:format-fix": "prettier --write test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js scripts/**/*.js config/**/*.js",
     "tests:unit": "hardhat test --network test",
     "tests:coverage": "npx hardhat coverage",
     "contracts:size": "hardhat size-contracts"
