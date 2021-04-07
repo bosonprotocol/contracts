@@ -219,7 +219,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
 
         bytes32 key;
         key = keccak256(
-            abi.encodePacked(tokenNonces[_seller]++, _validFrom, _validTo)
+            abi.encodePacked(_seller, tokenNonces[_seller]++, _validFrom, _validTo)
         );
 
         if (promiseKeys.length > 0) {
