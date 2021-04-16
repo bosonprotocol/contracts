@@ -25,7 +25,7 @@ contract('Voucher tests', async (addresses) => {
     contractCashier,
     contractBosonRouter,
     contractFundLimitsOracle;
-  let tokenSupplyKey1, tokenSupplyKey2, tokenVoucherKey1, tokenVoucherKey2;
+  let tokenSupplyKey1, tokenSupplyKey2, tokenVoucherKey1, tokenVoucherKey2, promiseId1, promiseId2;
 
   before('setup contracts for tests', async () => {
     const sixtySeconds = 60;
@@ -115,8 +115,10 @@ contract('Voucher tests', async (addresses) => {
         'LogOrderCreated',
         (ev) => {
           tokenSupplyKey1 = ev._tokenIdSupply;
-          return ev._seller === users.seller.address && ev._quantity == constants.ORDER_QUANTITY1 && ev._paymentType == 1
-                 && ev._correlationId == 0;  
+          return ev._seller === users.seller.address 
+                 && ev._quantity.eq(new BN(constants.ORDER_QUANTITY1)) 
+                 && ev._paymentType.eq(new BN(1))
+                 && ev._correlationId.eq(new BN(0));  
         },
         'order1 event incorrect'
       );
@@ -127,16 +129,17 @@ contract('Voucher tests', async (addresses) => {
       );
 
 
-      let promiseId;
-
       truffleAssert.eventEmitted(
         internalVoucherKernelTx,
         'LogPromiseCreated',
         (ev) => {
-          promiseId = ev._promiseId;
-          return ev._promiseId > 0 && ev._nonce.eq(new BN(1)) && ev._seller === users.seller.address && 
-                 ev._validFrom == constants.PROMISE_VALID_FROM && ev._validTo == constants.PROMISE_VALID_TO &&
-                 ev._idx.eq(new BN(0));
+          promiseId1 = ev._promiseId;
+          return ev._promiseId > 0 
+                 && ev._nonce.eq(new BN(1)) 
+                 && ev._seller === users.seller.address 
+                 && ev._validFrom.eq( new BN(constants.PROMISE_VALID_FROM)) 
+                 && ev._validTo.eq(new BN(constants.PROMISE_VALID_TO)) 
+                 && ev._idx.eq(new BN(0));
         },
         'promise event incorrect'
       );
@@ -150,18 +153,21 @@ contract('Voucher tests', async (addresses) => {
         internalTokenTx,
         'TransferSingle',
         (ev) => {
-          return ev._operator === contractVoucherKernel.address && ev._from === constants.ZERO_ADDRESS
-                 && ev._to == users.seller.address && ev._id.eq(tokenSupplyKey1) && ev._value.eq(new BN(constants.ORDER_QUANTITY1));
+          return ev._operator === contractVoucherKernel.address 
+                 && ev._from === constants.ZERO_ADDRESS
+                 && ev._to == users.seller.address 
+                 && ev._id.eq(tokenSupplyKey1) 
+                 && ev._value.eq(new BN(constants.ORDER_QUANTITY1));
         },
         'transfer event incorrect'
       );
 
       //Check BosonRouter state
-      //assert.equal(await contractBosonRouter.correlationIds(users.seller.address), 0, "Correlation Id incorrect"); //fails because it is 1 instead of 0
+      assert.equal(await contractBosonRouter.correlationIds(users.seller.address), 1, "Correlation Id incorrect");
 
       //Check VocherKernel State
-      const promise = await contractVoucherKernel.promises(promiseId);
-      assert.equal(promise.promiseId, promiseId, "Promise Id incorrect");
+      const promise = await contractVoucherKernel.promises(promiseId1);
+      assert.equal(promise.promiseId, promiseId1, "Promise Id incorrect");
       promise.nonce.eq(new BN(1));
       assert.strictEqual(promise.seller, users.seller.address, "Seller incorrect");
       promise.validFrom.eq(new BN(constants.PROMISE_VALID_FROM));
@@ -172,7 +178,7 @@ contract('Voucher tests', async (addresses) => {
       promise.idx.eq(new BN(1));
 
       const orderPromiseId = await contractVoucherKernel.ordersPromise(tokenSupplyKey1);
-      assert.strictEqual(orderPromiseId, promiseId, "Order Promise Id incorrect");
+      assert.strictEqual(orderPromiseId, promiseId1, "Order Promise Id incorrect");
 
       const tokenNonce = await contractVoucherKernel.tokenNonces(users.seller.address);
       tokenNonce.eq(new BN(1));
@@ -183,23 +189,7 @@ contract('Voucher tests', async (addresses) => {
  
     });
 
-    it.only('adding second order', async () => {
-      const txOrder1 = await contractBosonRouter.requestCreateOrderETHETH(
-        [
-          constants.PROMISE_VALID_FROM,
-          constants.PROMISE_VALID_TO,
-          constants.PROMISE_PRICE1,
-          constants.PROMISE_DEPOSITSE1,
-          constants.PROMISE_DEPOSITBU1,
-          constants.ORDER_QUANTITY1,
-        ],
-        {
-          from: users.seller.address,
-          to: contractCashier.address,
-          value: constants.PROMISE_DEPOSITSE1,
-        }
-      );
-
+    it('adding second order', async () => {
       const txOrder = await contractBosonRouter.requestCreateOrderETHETH(
         [
           constants.PROMISE_VALID_FROM,
@@ -221,8 +211,10 @@ contract('Voucher tests', async (addresses) => {
         'LogOrderCreated',
         (ev) => {
           tokenSupplyKey2 = ev._tokenIdSupply;
-          return ev._seller === users.seller.address && ev._quantity == constants.ORDER_QUANTITY2 && ev._paymentType == 1
-                 && ev._correlationId == 1; 
+          return ev._seller === users.seller.address 
+                 && ev._quantity.eq(new BN(constants.ORDER_QUANTITY2)) 
+                 && ev._paymentType.eq(new BN(1))
+                 && ev._correlationId.eq(new BN(1)); 
         },
         'order1 event incorrect'
       );
@@ -233,15 +225,16 @@ contract('Voucher tests', async (addresses) => {
       );
 
 
-      let promiseId2;
-
       truffleAssert.eventEmitted(
         internalVoucherKernelTx,
         'LogPromiseCreated',
         (ev) => {
           promiseId2 = ev._promiseId;
-          return ev._promiseId > 0 && ev._nonce.eq(new BN(2)) && ev._seller === users.seller.address 
-                 && ev._validFrom == constants.PROMISE_VALID_FROM && ev._validTo == constants.PROMISE_VALID_TO
+          return ev._promiseId > 0 
+                 && ev._nonce.eq(new BN(2)) 
+                 && ev._seller === users.seller.address 
+                 && ev._validFrom.eq(new BN(constants.PROMISE_VALID_FROM)) 
+                 && ev._validTo.eq(new BN(constants.PROMISE_VALID_TO))
                  && ev._idx.eq(new BN(1)); 
         },
         'promise event incorrect'
@@ -256,18 +249,21 @@ contract('Voucher tests', async (addresses) => {
         internalTokenTx,
         'TransferSingle',
         (ev) => {
-          return ev._operator === contractVoucherKernel.address && ev._from === constants.ZERO_ADDRESS
-                 && ev._to == users.seller.address && ev._id.eq(tokenSupplyKey2) && ev._value.eq(new BN(constants.ORDER_QUANTITY2));
+          return ev._operator === contractVoucherKernel.address 
+                 && ev._from === constants.ZERO_ADDRESS
+                 && ev._to == users.seller.address 
+                 && ev._id.eq(tokenSupplyKey2) 
+                 && ev._value.eq(new BN(constants.ORDER_QUANTITY2));
         },
         'transfer event incorrect'
       );
 
       //Check BosonRouter state
-      //assert.equal(await contractBosonRouter.correlationIds(users.seller.address), 1, "Correlation Id incorrect"); //fails because it is 2 instead of 1
+      assert.equal(await contractBosonRouter.correlationIds(users.seller.address), 2, "Correlation Id incorrect");
 
       //Check VocherKernel State
       const promise = await contractVoucherKernel.promises(promiseId2);
-      assert.equal(promise.promiseId, promiseId2, "Promise Id incorrect");
+      assert.strictEqual(promise.promiseId, promiseId2, "Promise Id incorrect");
       promise.nonce.eq(new BN(2));
       assert.strictEqual(promise.seller, users.seller.address, "Seller incorrect");
       promise.validFrom.eq(new BN(constants.PROMISE_VALID_FROM));
@@ -304,20 +300,57 @@ contract('Voucher tests', async (addresses) => {
         txFillOrder.tx
       );
 
+
       truffleAssert.eventEmitted(
         internalTx,
         'LogVoucherDelivered',
         (ev) => {
-          return ev._issuer === users.seller.address;
+          tokenVoucherKey1 = ev._tokenIdVoucher;
+          return ev._tokenIdSupply.eq(tokenSupplyKey1) 
+                 && ev._tokenIdVoucher.gt(new BN(0)) 
+                 && ev._issuer === users.seller.address
+                 && ev._holder === users.buyer.address 
+                 && ev._promiseId === promiseId1 
+                 && ev._correlationId.eq(new BN(0)); 
         },
         'order1 not created successfully'
       );
 
-      const filtered = internalTx.logs.filter(
-        (e) => e.event === 'LogVoucherDelivered'
-      )[0];
+      const internalTokenTx = await truffleAssert.createTransactionResult(
+        contractERC1155ERC721,
+        txFillOrder.tx
+      );
 
-      tokenVoucherKey1 = filtered.returnValues['_tokenIdVoucher'];
+      truffleAssert.eventEmitted(
+        internalTokenTx,
+        'TransferSingle',
+        (ev) => {
+          return ev._operator === contractVoucherKernel.address 
+                 && ev._from === users.seller.address 
+                 && ev._to === constants.ZERO_ADDRESS
+                 && ev._id.eq(tokenSupplyKey1) 
+                 && ev._value.eq(new BN(1));
+        },
+        'transfer event incorrect'
+      );
+
+      //Check BosonRouter state
+      assert.equal(await contractBosonRouter.correlationIds(users.buyer.address), 1, "Correlation Id incorrect"); 
+
+      //Check Voucher Kernel state
+      const voucherStatus = await contractVoucherKernel.vouchersStatus(tokenVoucherKey1);
+      voucherStatus.status.eq(7);
+      assert.isFalse(voucherStatus.isPaymentReleased, "Payment released not false");
+      assert.isFalse(voucherStatus.isDepositsReleased, "Deposit released not false");
+
+      //Check ERC1155ERC721 state
+      const sellerERC1155ERC721Balance = await contractERC1155ERC721.balanceOf(users.seller.address, tokenSupplyKey1);
+      sellerERC1155ERC721Balance.eq(new BN(0));
+
+      const buerERC1155ERC721Balance = await contractERC1155ERC721.balanceOf(users.buyer.address, tokenSupplyKey1);
+      buerERC1155ERC721Balance.eq(new BN(1));
+
+
     });
 
     it('fill second order (aka commit to buy a voucher)', async () => {
@@ -340,11 +373,53 @@ contract('Voucher tests', async (addresses) => {
         'LogVoucherDelivered',
         (ev) => {
           tokenVoucherKey2 = ev._tokenIdVoucher;
-          return ev._tokenIdSupply.toString() === tokenSupplyKey2.toString();
+          return ev._tokenIdSupply.eq(tokenSupplyKey2)
+               && ev._tokenIdVoucher.gt(new BN(0)) 
+               && ev._issuer === users.seller.address
+               && ev._holder === users.buyer.address 
+               && ev._promiseId === promiseId2 
+               && ev._correlationId.eq(new BN(1)); 
         },
-        'order1 not filled successfully'
+        'order2 not filled successfully'
       );
+
+        
+      const internalTokenTx = await truffleAssert.createTransactionResult(
+        contractERC1155ERC721,
+        txFillOrder.tx
+      );
+
+      truffleAssert.eventEmitted(
+        internalTokenTx,
+        'TransferSingle',
+        (ev) => {
+          return ev._operator === contractVoucherKernel.address 
+                 && ev._from === users.seller.address 
+                 && ev._to === constants.ZERO_ADDRESS
+                 && ev._id.eq(tokenSupplyKey2) 
+                 && ev._value.eq(new BN(1));
+        },
+        'transfer event incorrect'
+      );
+
+      //Check BosonRouter state
+      assert.equal(await contractBosonRouter.correlationIds(users.buyer.address), 2, "Correlation Id incorrect"); 
+
+      //Check Voucher Kernel state
+      const voucherStatus = await contractVoucherKernel.vouchersStatus(tokenVoucherKey2);
+      voucherStatus.status.eq(7);
+      assert.isFalse(voucherStatus.isPaymentReleased, "Payment released not false");
+      assert.isFalse(voucherStatus.isDepositsReleased, "Deposit released not false");
+
+      //Check ERC1155ERC721 state
+      const sellerERC1155ERC721Balance = await contractERC1155ERC721.balanceOf(users.seller.address, tokenSupplyKey2);
+      sellerERC1155ERC721Balance.eq(new BN(0));
+
+      const buerERC1155ERC721Balance = await contractERC1155ERC721.balanceOf(users.buyer.address, tokenSupplyKey2);
+      buerERC1155ERC721Balance.eq(new BN(1));
     });
+
+
 
     it('must fail: adding new order with incorrect value sent', async () => {
       await truffleAssert.reverts(
