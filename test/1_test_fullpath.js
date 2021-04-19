@@ -92,7 +92,7 @@ contract('Voucher tests', async (addresses) => {
     });
   });
 
-  describe('Voucher Sets (ERC1155)', () => {
+  describe('Create Voucher Sets (ERC1155)', () => {
     it('adding one new order / promise', async () => {
       const txOrder = await contractBosonRouter.requestCreateOrderETHETH(
         [
@@ -110,12 +110,15 @@ contract('Voucher tests', async (addresses) => {
         }
       );
 
+      let tokenSupplyKey1;
+
       truffleAssert.eventEmitted(
         txOrder,
         'LogOrderCreated',
         (ev) => {
           tokenSupplyKey1 = ev._tokenIdSupply;
-          return ev._seller === users.seller.address 
+          return ev._tokenIdSupply.gt(new BN(0))
+                 && ev._seller === users.seller.address 
                  && ev._quantity.eq(new BN(constants.ORDER_QUANTITY1)) 
                  && ev._paymentType.eq(new BN(1))
                  && ev._correlationId.eq(new BN(0));  
@@ -128,6 +131,7 @@ contract('Voucher tests', async (addresses) => {
         txOrder.tx
       );
 
+      let promiseId1;
 
       truffleAssert.eventEmitted(
         internalVoucherKernelTx,
@@ -189,8 +193,26 @@ contract('Voucher tests', async (addresses) => {
  
     });
 
-    it('adding second order', async () => {
-      const txOrder = await contractBosonRouter.requestCreateOrderETHETH(
+    it('adding two new orders / promises', async () => {
+      //Create 1st order
+      const txOrder1 = await contractBosonRouter.requestCreateOrderETHETH(
+        [
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITSE1,
+          constants.PROMISE_DEPOSITBU1,
+          constants.ORDER_QUANTITY1,
+        ],
+        {
+          from: users.seller.address,
+          to: contractCashier.address,
+          value: constants.PROMISE_DEPOSITSE1,
+        }
+      );
+      
+      //Create 2nd order
+      const txOrder2 = await contractBosonRouter.requestCreateOrderETHETH(
         [
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
@@ -207,11 +229,12 @@ contract('Voucher tests', async (addresses) => {
       );
 
       truffleAssert.eventEmitted(
-        txOrder,
+        txOrder2,
         'LogOrderCreated',
         (ev) => {
           tokenSupplyKey2 = ev._tokenIdSupply;
-          return ev._seller === users.seller.address 
+          return ev._tokenIdSupply.gt(new BN(0))
+                 && ev._seller === users.seller.address 
                  && ev._quantity.eq(new BN(constants.ORDER_QUANTITY2)) 
                  && ev._paymentType.eq(new BN(1))
                  && ev._correlationId.eq(new BN(1)); 
@@ -221,10 +244,11 @@ contract('Voucher tests', async (addresses) => {
 
       const internalVoucherKernelTx = await truffleAssert.createTransactionResult(
         contractVoucherKernel,
-        txOrder.tx
+        txOrder2.tx
       );
 
-
+      let promiseId2;
+      
       truffleAssert.eventEmitted(
         internalVoucherKernelTx,
         'LogPromiseCreated',
@@ -242,7 +266,7 @@ contract('Voucher tests', async (addresses) => {
 
       const internalTokenTx = await truffleAssert.createTransactionResult(
         contractERC1155ERC721,
-        txOrder.tx
+        txOrder2.tx
       );
 
       truffleAssert.eventEmitted(
@@ -284,8 +308,97 @@ contract('Voucher tests', async (addresses) => {
       sellerERC1155ERC721Balance.eq(new BN(2));
  
     });
+  });
+  
+  describe('Commit to buy a voucher (ERC1155)', () => {
+    beforeEach('setup contracts for tests', async () => {
+      //Create first voucher set
+      const txOrder = await contractBosonRouter.requestCreateOrderETHETH(
+        [
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITSE1,
+          constants.PROMISE_DEPOSITBU1,
+          constants.ORDER_QUANTITY1,
+        ],
+        {
+          from: users.seller.address,
+          to: contractBosonRouter.address,
+          value: constants.PROMISE_DEPOSITSE1,
+        }
+      );
+  
+      truffleAssert.eventEmitted(
+        txOrder,
+        'LogOrderCreated',
+        (ev) => {
+          tokenSupplyKey1 = ev._tokenIdSupply;
+          return ev._seller === users.seller.address;
+        },
+        'order1 not created successfully'
+      );
+
+      const internalVoucherKernelTx = await truffleAssert.createTransactionResult(
+        contractVoucherKernel,
+        txOrder.tx
+      );
+
+      truffleAssert.eventEmitted(
+        internalVoucherKernelTx,
+        'LogPromiseCreated',
+        (ev) => {
+          promiseId1 = ev._promiseId;
+          return ev._promiseId > 0;
+        },
+        'promise event incorrect'
+      );
+
+        //Create 2nd voucher set
+        const txOrder2 = await contractBosonRouter.requestCreateOrderETHETH(
+          [
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_PRICE2,
+            constants.PROMISE_DEPOSITSE2,
+            constants.PROMISE_DEPOSITBU2,
+            constants.ORDER_QUANTITY2,
+          ],
+          {
+            from: users.seller.address,
+            to: contractCashier.address,
+            value: constants.PROMISE_DEPOSITSE2,
+          }
+        );
+  
+        truffleAssert.eventEmitted(
+          txOrder2,
+          'LogOrderCreated',
+          (ev) => {
+            tokenSupplyKey2 = ev._tokenIdSupply;
+            return ev._tokenIdSupply.gt(new BN(0)); 
+          },
+          'order1 event incorrect'
+        );
+  
+        const internalVoucherKernelTx2 = await truffleAssert.createTransactionResult(
+          contractVoucherKernel,
+          txOrder2.tx
+        );
+        
+        truffleAssert.eventEmitted(
+          internalVoucherKernelTx2,
+          'LogPromiseCreated',
+          (ev) => {
+            promiseId2 = ev._promiseId;
+            return ev._promiseId > 0; 
+          },
+          'promise event incorrect'
+        );
+    });
 
     it('fill one order (aka commit to buy a voucher)', async () => {
+      //Buyer commits
       const txFillOrder = await contractBosonRouter.requestVoucherETHETH(
         tokenSupplyKey1,
         users.seller.address,
@@ -300,12 +413,13 @@ contract('Voucher tests', async (addresses) => {
         txFillOrder.tx
       );
 
+      let tokenVoucherKey;
 
       truffleAssert.eventEmitted(
         internalTx,
         'LogVoucherDelivered',
         (ev) => {
-          tokenVoucherKey1 = ev._tokenIdVoucher;
+          tokenVoucherKey = ev._tokenIdVoucher;
           return ev._tokenIdSupply.eq(tokenSupplyKey1) 
                  && ev._tokenIdVoucher.gt(new BN(0)) 
                  && ev._issuer === users.seller.address
@@ -338,7 +452,7 @@ contract('Voucher tests', async (addresses) => {
       assert.equal(await contractBosonRouter.correlationIds(users.buyer.address), 1, "Correlation Id incorrect"); 
 
       //Check Voucher Kernel state
-      const voucherStatus = await contractVoucherKernel.vouchersStatus(tokenVoucherKey1);
+      const voucherStatus = await contractVoucherKernel.vouchersStatus(tokenVoucherKey);
       voucherStatus.status.eq(7);
       assert.isFalse(voucherStatus.isPaymentReleased, "Payment released not false");
       assert.isFalse(voucherStatus.isDepositsReleased, "Deposit released not false");
@@ -368,17 +482,19 @@ contract('Voucher tests', async (addresses) => {
         txFillOrder.tx
       );
 
+      let tokenVoucherKey;
+
       truffleAssert.eventEmitted(
         internalTx,
         'LogVoucherDelivered',
         (ev) => {
-          tokenVoucherKey2 = ev._tokenIdVoucher;
+          tokenVoucherKey = ev._tokenIdVoucher;
           return ev._tokenIdSupply.eq(tokenSupplyKey2)
                && ev._tokenIdVoucher.gt(new BN(0)) 
                && ev._issuer === users.seller.address
                && ev._holder === users.buyer.address 
                && ev._promiseId === promiseId2 
-               && ev._correlationId.eq(new BN(1)); 
+               && ev._correlationId.eq(new BN(0)); 
         },
         'order2 not filled successfully'
       );
@@ -403,10 +519,10 @@ contract('Voucher tests', async (addresses) => {
       );
 
       //Check BosonRouter state
-      assert.equal(await contractBosonRouter.correlationIds(users.buyer.address), 2, "Correlation Id incorrect"); 
+      assert.equal(await contractBosonRouter.correlationIds(users.buyer.address), 1, "Correlation Id incorrect"); 
 
       //Check Voucher Kernel state
-      const voucherStatus = await contractVoucherKernel.vouchersStatus(tokenVoucherKey2);
+      const voucherStatus = await contractVoucherKernel.vouchersStatus(tokenVoucherKey);
       voucherStatus.status.eq(7);
       assert.isFalse(voucherStatus.isPaymentReleased, "Payment released not false");
       assert.isFalse(voucherStatus.isDepositsReleased, "Deposit released not false");
@@ -459,6 +575,131 @@ contract('Voucher tests', async (addresses) => {
   });
 
   describe('Vouchers (ERC721)', function () {
+    beforeEach('setup contracts for tests', async () => {
+      //Create first voucher set
+      const txOrder = await contractBosonRouter.requestCreateOrderETHETH(
+        [
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITSE1,
+          constants.PROMISE_DEPOSITBU1,
+          constants.ORDER_QUANTITY1,
+        ],
+        {
+          from: users.seller.address,
+          to: contractBosonRouter.address,
+          value: constants.PROMISE_DEPOSITSE1,
+        }
+      );
+  
+      truffleAssert.eventEmitted(
+        txOrder,
+        'LogOrderCreated',
+        (ev) => {
+          tokenSupplyKey1 = ev._tokenIdSupply;
+          return ev._seller === users.seller.address;
+        },
+        'order1 not created successfully'
+      );
+
+      const internalVoucherKernelTx = await truffleAssert.createTransactionResult(
+        contractVoucherKernel,
+        txOrder.tx
+      );
+
+      truffleAssert.eventEmitted(
+        internalVoucherKernelTx,
+        'LogPromiseCreated',
+        (ev) => {
+          promiseId1 = ev._promiseId;
+          return ev._promiseId > 0;
+        },
+        'promise event incorrect'
+      );
+
+      //Buyer commits - voucher set 1
+      const txFillOrder = await contractBosonRouter.requestVoucherETHETH(
+        tokenSupplyKey1,
+        users.seller.address,
+        {
+          from: users.buyer.address,
+          to: contractBosonRouter.address,
+          value: constants.PROMISE_PRICE1 + constants.PROMISE_DEPOSITBU1,
+        }
+      );
+
+      const internalTx = await truffleAssert.createTransactionResult(
+        contractVoucherKernel,
+        txFillOrder.tx
+      );
+
+      truffleAssert.eventEmitted(
+        internalTx,
+        'LogVoucherDelivered',
+        (ev) => {
+          tokenVoucherKey1 = ev._tokenIdVoucher;
+          return ev._tokenIdSupply.eq(tokenSupplyKey1); 
+        },
+        'order1 not created successfully'
+      );
+      
+        //Create 2nd voucher set
+        const txOrder2 = await contractBosonRouter.requestCreateOrderETHETH(
+          [
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_PRICE2,
+            constants.PROMISE_DEPOSITSE2,
+            constants.PROMISE_DEPOSITBU2,
+            constants.ORDER_QUANTITY2,
+          ],
+          {
+            from: users.seller.address,
+            to: contractCashier.address,
+            value: constants.PROMISE_DEPOSITSE2,
+          }
+        );
+  
+        truffleAssert.eventEmitted(
+          txOrder2,
+          'LogOrderCreated',
+          (ev) => {
+            tokenSupplyKey2 = ev._tokenIdSupply;
+            return ev._tokenIdSupply.gt(new BN(0)); 
+          },
+          'order1 event incorrect'
+        );
+
+        //Buyer commits - Voucher Set 2
+        const txFillOrder2 = await contractBosonRouter.requestVoucherETHETH(
+          tokenSupplyKey2,
+          users.seller.address,
+          {
+            from: users.buyer.address,
+            to: contractBosonRouter.address,
+            value: constants.PROMISE_PRICE2 + constants.PROMISE_DEPOSITBU2,
+          }
+        );
+        const internalTx2 = await truffleAssert.createTransactionResult(
+          contractVoucherKernel,
+          txFillOrder2.tx
+        );
+  
+  
+        truffleAssert.eventEmitted(
+          internalTx2,
+          'LogVoucherDelivered',
+          (ev) => {
+            tokenVoucherKey2 = ev._tokenIdVoucher;
+            return ev._tokenIdSupply.eq(tokenSupplyKey2); 
+          },
+          'order2 not filled successfully'
+        );
+      
+    });
+
+
     it('redeeming one voucher', async () => {
       const txRedeem = await contractBosonRouter.redeem(tokenVoucherKey1, {
         from: users.buyer.address,
@@ -472,10 +713,21 @@ contract('Voucher tests', async (addresses) => {
         internalTx,
         'LogVoucherRedeemed',
         (ev) => {
-          return ev._tokenIdVoucher.toString() === tokenVoucherKey1.toString();
+          return ev._tokenIdVoucher.eq(tokenVoucherKey1)
+                 && ev._holder === users.buyer.address
+                 && ev._promiseId == promiseId1;
         },
         'voucher not redeemed successfully'
       );
+
+      //Check VoucherKernel state
+      const voucherStatus = await contractVoucherKernel.vouchersStatus(tokenVoucherKey1);
+      voucherStatus.status.eq(6);
+      const transaction = await web3.eth.getTransaction(txRedeem.tx);
+      const transactionBlock = await web3.eth.getBlock(transaction.blockNumber);
+      voucherStatus.complainPeriodStart.eq(transactionBlock.timestamp);
+  
+
     });
 
     it('mark non-redeemed voucher as expired', async () => {
@@ -492,8 +744,19 @@ contract('Voucher tests', async (addresses) => {
 
       // fast-forward for a year
       await timemachine.advanceTimeSeconds(constants.SECONDS_IN_DAY * 365);
-      await contractVoucherKernel.triggerExpiration(tokenVoucherKey2);
+      const expTx = await contractVoucherKernel.triggerExpiration(tokenVoucherKey2);
 
+      truffleAssert.eventEmitted(
+        expTx,
+        'LogExpirationTriggered',
+        (ev) => {
+          return ev._tokenIdVoucher.eq(tokenVoucherKey2)
+                 && ev._triggeredBy === users.deployer.address; 
+        },
+        'expiration not triggered successfully'
+      );
+
+      //Check VoucherKernel state
       const statusAfter = await contractVoucherKernel.getVoucherStatus.call(
         tokenVoucherKey2
       );
@@ -507,6 +770,13 @@ contract('Voucher tests', async (addresses) => {
     });
 
     it('mark voucher as finalized', async () => {
+      const txRedeem = await contractBosonRouter.redeem(tokenVoucherKey1, {
+        from: users.buyer.address,
+      });
+
+      //fast forward 8 days (complain period is 7)
+      await timemachine.advanceTimeSeconds(constants.SECONDS_IN_DAY * 8);
+
       const txFinalize = await contractVoucherKernel.triggerFinalizeVoucher(
         tokenVoucherKey1,
         {
@@ -518,10 +788,16 @@ contract('Voucher tests', async (addresses) => {
         txFinalize,
         'LogFinalizeVoucher',
         (ev) => {
-          return ev._tokenIdVoucher.toString() === tokenVoucherKey1.toString();
+          return ev._tokenIdVoucher.eq(tokenVoucherKey1);
         },
         'voucher not finalized successfully'
       );
+
+
+      //Check VoucherKernel state
+      const voucherStatus = await contractVoucherKernel.vouchersStatus(tokenVoucherKey1);
+      voucherStatus.status.eq(1);
+
     });
 
     it('must fail: unauthorized redemption', async () => {
