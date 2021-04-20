@@ -27,10 +27,8 @@ contract('Voucher tests', async (addresses) => {
     contractFundLimitsOracle;
   let tokenSupplyKey1, tokenSupplyKey2, tokenVoucherKey1, tokenVoucherKey2, promiseId1, promiseId2;
 
-  before('setup contracts for tests', async () => {
+  beforeEach('setup contracts for tests', async () => {
     const sixtySeconds = 60;
-
-    snapshot = await timemachine.takeSnapshot();
 
     const timestamp = await Utils.getCurrTimestamp();
     constants.PROMISE_VALID_FROM = timestamp;
@@ -93,6 +91,7 @@ contract('Voucher tests', async (addresses) => {
   });
 
   describe('Create Voucher Sets (ERC1155)', () => {
+
     it('adding one new order / promise', async () => {
       const txOrder = await contractBosonRouter.requestCreateOrderETHETH(
         [
@@ -334,7 +333,7 @@ contract('Voucher tests', async (addresses) => {
         'LogOrderCreated',
         (ev) => {
           tokenSupplyKey1 = ev._tokenIdSupply;
-          return ev._seller === users.seller.address;
+          return ev._tokenIdSupply.gt(new BN(0));
         },
         'order1 not created successfully'
       );
@@ -598,7 +597,7 @@ contract('Voucher tests', async (addresses) => {
         'LogOrderCreated',
         (ev) => {
           tokenSupplyKey1 = ev._tokenIdSupply;
-          return ev._seller === users.seller.address;
+          return ev._tokenIdSupply.gt(new BN(0));
         },
         'order1 not created successfully'
       );
@@ -639,63 +638,69 @@ contract('Voucher tests', async (addresses) => {
         'LogVoucherDelivered',
         (ev) => {
           tokenVoucherKey1 = ev._tokenIdVoucher;
-          return ev._tokenIdSupply.eq(tokenSupplyKey1); 
+          return ev._tokenIdVoucher.gt(new BN(0)); 
         },
         'order1 not created successfully'
       );
       
-        //Create 2nd voucher set
-        const txOrder2 = await contractBosonRouter.requestCreateOrderETHETH(
-          [
-            constants.PROMISE_VALID_FROM,
-            constants.PROMISE_VALID_TO,
-            constants.PROMISE_PRICE2,
-            constants.PROMISE_DEPOSITSE2,
-            constants.PROMISE_DEPOSITBU2,
-            constants.ORDER_QUANTITY2,
-          ],
-          {
-            from: users.seller.address,
-            to: contractCashier.address,
-            value: constants.PROMISE_DEPOSITSE2,
-          }
-        );
-  
-        truffleAssert.eventEmitted(
-          txOrder2,
-          'LogOrderCreated',
-          (ev) => {
-            tokenSupplyKey2 = ev._tokenIdSupply;
-            return ev._tokenIdSupply.gt(new BN(0)); 
-          },
-          'order1 event incorrect'
-        );
+      //Create 2nd voucher set
+      const txOrder2 = await contractBosonRouter.requestCreateOrderETHETH(
+        [
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_PRICE2,
+          constants.PROMISE_DEPOSITSE2,
+          constants.PROMISE_DEPOSITBU2,
+          constants.ORDER_QUANTITY2,
+        ],
+        {
+          from: users.seller.address,
+          to: contractCashier.address,
+          value: constants.PROMISE_DEPOSITSE2,
+        }
+      );
 
-        //Buyer commits - Voucher Set 2
-        const txFillOrder2 = await contractBosonRouter.requestVoucherETHETH(
-          tokenSupplyKey2,
-          users.seller.address,
-          {
-            from: users.buyer.address,
-            to: contractBosonRouter.address,
-            value: constants.PROMISE_PRICE2 + constants.PROMISE_DEPOSITBU2,
-          }
-        );
-        const internalTx2 = await truffleAssert.createTransactionResult(
-          contractVoucherKernel,
-          txFillOrder2.tx
-        );
-  
-  
-        truffleAssert.eventEmitted(
-          internalTx2,
-          'LogVoucherDelivered',
-          (ev) => {
-            tokenVoucherKey2 = ev._tokenIdVoucher;
-            return ev._tokenIdSupply.eq(tokenSupplyKey2); 
-          },
-          'order2 not filled successfully'
-        );
+      truffleAssert.eventEmitted(
+        txOrder2,
+        'LogOrderCreated',
+        (ev) => {
+          tokenSupplyKey2 = ev._tokenIdSupply;
+          return ev._tokenIdSupply.gt(new BN(0)); 
+            return ev._tokenIdSupply.gt(new BN(0)); 
+          return ev._tokenIdSupply.gt(new BN(0)); 
+            return ev._tokenIdSupply.gt(new BN(0)); 
+          return ev._tokenIdSupply.gt(new BN(0)); 
+            return ev._tokenIdSupply.gt(new BN(0)); 
+          return ev._tokenIdSupply.gt(new BN(0)); 
+        },
+        'order1 event incorrect'
+      );
+
+      //Buyer commits - Voucher Set 2
+      const txFillOrder2 = await contractBosonRouter.requestVoucherETHETH(
+        tokenSupplyKey2,
+        users.seller.address,
+        {
+          from: users.buyer.address,
+          to: contractBosonRouter.address,
+          value: constants.PROMISE_PRICE2 + constants.PROMISE_DEPOSITBU2,
+        }
+      );
+      const internalTx2 = await truffleAssert.createTransactionResult(
+        contractVoucherKernel,
+        txFillOrder2.tx
+      );
+
+
+      truffleAssert.eventEmitted(
+        internalTx2,
+        'LogVoucherDelivered',
+        (ev) => {
+          tokenVoucherKey2 = ev._tokenIdVoucher;
+          return ev._tokenIdVoucher.gt(new BN(0));
+        },
+        'order2 not filled successfully'
+      );
       
     });
 
@@ -810,30 +815,156 @@ contract('Voucher tests', async (addresses) => {
     });
   });
 
+  //HS:  All other withdraw functions are tested in 3_withdrawals.js. Do we want to move this one?. Withdrawal of deposit not included here
   describe('Withdrawals', function () {
+    beforeEach('setup contracts for tests', async () => {
+      //Create first voucher set
+      const txOrder = await contractBosonRouter.requestCreateOrderETHETH(
+        [
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITSE1,
+          constants.PROMISE_DEPOSITBU1,
+          constants.ORDER_QUANTITY1,
+        ],
+        {
+          from: users.seller.address,
+          to: contractBosonRouter.address,
+          value: constants.PROMISE_DEPOSITSE1,
+        }
+      );
+  
+      truffleAssert.eventEmitted(
+        txOrder,
+        'LogOrderCreated',
+        (ev) => {
+          tokenSupplyKey1 = ev._tokenIdSupply;
+          return ev._tokenIdSupply.gt(new BN(0));
+        },
+        'order1 not created successfully'
+      );
+
+      const internalVoucherKernelTx = await truffleAssert.createTransactionResult(
+        contractVoucherKernel,
+        txOrder.tx
+      );
+
+      truffleAssert.eventEmitted(
+        internalVoucherKernelTx,
+        'LogPromiseCreated',
+        (ev) => {
+          promiseId1 = ev._promiseId;
+          return ev._promiseId > 0;
+        },
+        'promise event incorrect'
+      );
+
+      //Buyer commits - voucher set 1
+      const txFillOrder = await contractBosonRouter.requestVoucherETHETH(
+        tokenSupplyKey1,
+        users.seller.address,
+        {
+          from: users.buyer.address,
+          to: contractBosonRouter.address,
+          value: constants.PROMISE_PRICE1 + constants.PROMISE_DEPOSITBU1,
+        }
+      );
+
+      const internalTx = await truffleAssert.createTransactionResult(
+        contractVoucherKernel,
+        txFillOrder.tx
+      );
+
+      truffleAssert.eventEmitted(
+        internalTx,
+        'LogVoucherDelivered',
+        (ev) => {
+          tokenVoucherKey1 = ev._tokenIdVoucher;
+          return ev._tokenIdVoucher.gt(new BN(0));
+        },
+        'order1 not created successfully'
+      );
+
+      //Buyer redeems voucher
+      const txRedeem = await contractBosonRouter.redeem(tokenVoucherKey1, {
+        from: users.buyer.address,
+      });
+
+      
+    });
+
     it('withdraw the escrowed payment from one redeemed voucher', async () => {
-      const escrowedBefore = await contractCashier.getEscrowAmount.call(
+      const buyerEscrowedBefore = await contractCashier.getEscrowAmount.call(
         users.buyer.address
       );
 
-      await contractCashier.withdraw(tokenVoucherKey1);
+      const sellerBalanceBefore = await new BN(await web3.eth.getBalance(users.seller.address));
 
-      const escrowedAfter = await contractCashier.getEscrowAmount.call(
+      console.log("sellerBalanceBefore ", sellerBalanceBefore.toString());
+
+      const txWithdraw = await contractCashier.withdraw(tokenVoucherKey1, {
+        from: users.deployer.address
+      });
+
+      truffleAssert.eventEmitted(
+        txWithdraw,
+        'LogAmountDistribution',
+        (ev) => {
+          return ev._tokenIdVoucher.eq(tokenVoucherKey1)
+                 && ev._to === users.seller.address
+                 && ev._payment.eq(new BN(constants.PROMISE_PRICE1))
+                 && ev._type.eq(new BN(0));
+        },
+        'distribution unsuccessful'
+      );
+
+      const internalTx = await truffleAssert.createTransactionResult(
+        contractVoucherKernel,
+        txWithdraw.tx
+      );
+
+      truffleAssert.eventEmitted(
+        internalTx,
+        'LogFundsReleased',
+        (ev) => {
+          return ev._tokenIdVoucher.eq(tokenVoucherKey1)
+                 && ev._type.eq(new BN(0));
+        },
+        'funds not released successfully'
+      );
+
+      truffleAssert.eventEmitted(
+        txWithdraw,
+        'LogWithdrawal',
+        (ev) => {
+          return ev._caller === users.deployer.address
+                 && ev._payee === users.seller.address
+                 && ev._payment.eq(new BN(constants.PROMISE_PRICE1));
+        },
+        'withdrawal unsuccessful'
+      );
+
+
+      //Check Cashier state
+      const buyerEscrowedAfter = await contractCashier.getEscrowAmount.call(
         users.buyer.address
       );
 
-      assert.isBelow(
-        escrowedAfter.toNumber(),
-        escrowedBefore.toNumber(),
-        'escrowed amount not decreased'
-      );
+      buyerEscrowedAfter.gt(buyerEscrowedBefore);
+
+      //Check VoucherKernel state
+      const voucherStatus = await contractVoucherKernel.vouchersStatus(tokenVoucherKey1);
+      assert.isTrue(voucherStatus.isPaymentReleased, "Payment not released");
+
+      //Check seller account balance
+      sellerBalanceAfter = new BN(await web3.eth.getBalance(users.seller.address));    
+      const expectedSellerBalance = sellerBalanceBefore.add(new BN(constants.PROMISE_PRICE1));
+      sellerBalanceAfter.eq(expectedSellerBalance);
+      
     });
   });
-
-  after(async () => {
-    await timemachine.revertToSnapShot(snapshot.id);
-  });
-});
+});//end of contract
 
 contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
   const users = new Users(addresses);
@@ -1179,5 +1310,7 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     after(async () => {
       await timemachine.revertToSnapShot(snapshot.id);
     });
+
   });
+
 });
