@@ -57,7 +57,7 @@ contract UsingHelpers {
      * @param _status current status of a voucher.
      */
     function isStateCommitted(uint8 _status) internal pure returns (bool) {
-        return _status == setChange(0, IDX_COMMIT);
+        return _status == determineStatus(0, IDX_COMMIT);
     }
 
     /**
@@ -69,7 +69,7 @@ contract UsingHelpers {
         pure
         returns (bool)
     {
-        return _status == setChange(setChange(0, IDX_COMMIT), IDX_REDEEM);
+        return _status == determineStatus(determineStatus(0, IDX_COMMIT), IDX_REDEEM);
     }
 
     /**
@@ -77,7 +77,7 @@ contract UsingHelpers {
      * @param _status current status of a voucher.
      */
     function isStateRefunded(uint8 _status) internal pure returns (bool) {
-        return _status == setChange(setChange(0, IDX_COMMIT), IDX_REFUND);
+        return _status == determineStatus(determineStatus(0, IDX_COMMIT), IDX_REFUND);
     }
 
     /**
@@ -85,7 +85,7 @@ contract UsingHelpers {
      * @param _status current status of a voucher.
      */
     function isStateExpired(uint8 _status) internal pure returns (bool) {
-        return _status == setChange(setChange(0, IDX_COMMIT), IDX_EXPIRE);
+        return _status == determineStatus(determineStatus(0, IDX_COMMIT), IDX_EXPIRE);
     }
 
     /**
@@ -102,7 +102,7 @@ contract UsingHelpers {
      * @param _status previous status.
      * @param _changeIdx next status.
      */
-    function setChange(uint8 _status, uint8 _changeIdx)
+    function determineStatus(uint8 _status, uint8 _changeIdx)
         internal
         pure
         returns (uint8)
