@@ -71,7 +71,7 @@ interface ICashier {
         uint256 _newAmount
     ) external;
 
-        /**
+    /**
      * @notice Update the amount in escrowTokens of an address with the new value, based on VoucherSet/Voucher interaction
      * @param _token  The address of a token to query
      * @param _account  The address of an account to query
