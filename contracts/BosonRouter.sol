@@ -183,13 +183,7 @@ contract BosonRouter is
         );
 
         //record funds in escrow ...
-        uint256 amount = ICashier(cashierAddress).getEscrowAmount(msg.sender);
-        ICashier(cashierAddress).updateEscrowAmount(
-            msg.sender,
-            amount.add(msg.value)
-        );
-
-        payable(cashierAddress).sendValue(msg.value);
+        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
 
         emit LogOrderCreated(
             tokenIdSupply,
@@ -254,15 +248,10 @@ contract BosonRouter is
         );
 
         //record funds in escrowTokens ...
-        uint256 amount =
-            ICashier(cashierAddress).getEscrowTokensAmount(
-                _tokenDepositAddress,
-                msg.sender
-            );
-        ICashier(cashierAddress).updateEscrowTokensAmount(
+        ICashier(cashierAddress).addEscrowTokensAmount(
             _tokenDepositAddress,
             msg.sender,
-            amount.add(_tokensSent)
+            _tokensSent
         );
 
         emit LogOrderCreated(
@@ -326,15 +315,10 @@ contract BosonRouter is
         );
 
         //record funds in escrowTokens ...
-        uint256 amount =
-            ICashier(cashierAddress).getEscrowTokensAmount(
-                _tokenDepositAddress,
-                msg.sender
-            );
-        ICashier(cashierAddress).updateEscrowTokensAmount(
+        ICashier(cashierAddress).addEscrowTokensAmount(
             _tokenDepositAddress,
             msg.sender,
-            amount.add(_tokensSent)
+            _tokensSent
         );
 
         emit LogOrderCreated(
@@ -375,13 +359,8 @@ contract BosonRouter is
             address(0)
         );
 
-        uint256 amount = ICashier(cashierAddress).getEscrowAmount(msg.sender);
-        ICashier(cashierAddress).updateEscrowAmount(
-            msg.sender,
-            amount.add(msg.value)
-        );
-
-        payable(cashierAddress).sendValue(msg.value);
+        //record funds in escrow ...
+        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
 
         emit LogOrderCreated(
             tokenIdSupply,
@@ -421,13 +400,7 @@ contract BosonRouter is
         );
 
         //record funds in escrow ...
-        uint256 amount = ICashier(cashierAddress).getEscrowAmount(msg.sender);
-        ICashier(cashierAddress).updateEscrowAmount(
-            msg.sender,
-            amount.add(weiReceived)
-        );
-
-        payable(cashierAddress).sendValue(msg.value);
+        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
 
     function requestVoucherTKNTKNWithPermit(
@@ -493,26 +466,17 @@ contract BosonRouter is
         );
 
         //record funds in escrowTokens for the Price token...
-        uint256 amount =
-            ICashier(cashierAddress).getEscrowTokensAmount(
-                tokenPriceAddress,
-                msg.sender
-            );
-        ICashier(cashierAddress).updateEscrowTokensAmount(
+        ICashier(cashierAddress).addEscrowTokensAmount(
             tokenPriceAddress,
             msg.sender,
-            amount.add(price)
+            price
         );
 
         //record funds in escrowTokens for the Deposit token...
-        amount = ICashier(cashierAddress).getEscrowTokensAmount(
-            tokenDepositAddress,
-            msg.sender
-        );
-        ICashier(cashierAddress).updateEscrowTokensAmount(
+        ICashier(cashierAddress).addEscrowTokensAmount(
             tokenDepositAddress,
             msg.sender,
-            amount.add(depositBu)
+            depositBu
         );
     }
 
@@ -566,15 +530,10 @@ contract BosonRouter is
         );
 
         //record funds in escrowTokens ...
-        uint256 amount =
-            ICashier(cashierAddress).getEscrowTokensAmount(
-                tokenPriceAddress,
-                msg.sender
-            );
         ICashier(cashierAddress).updateEscrowTokensAmount(
             tokenPriceAddress,
             msg.sender,
-            amount.add(_tokensSent)
+            _tokensSent
         );
     }
 
@@ -623,25 +582,18 @@ contract BosonRouter is
             _tokensDeposit
         );
 
-        //record funds in escrow ...
-        uint256 amount = ICashier(cashierAddress).getEscrowAmount(msg.sender);
-        ICashier(cashierAddress).updateEscrowAmount(
+        //record funds in escrowTokens ...
+        ICashier(cashierAddress).addEscrowTokensAmount(
+            tokenDepositAddress,
             msg.sender,
-            amount.add(msg.value)
+            _tokensDeposit
         );
 
-        //record funds in escrowTokens ...
-        amount = ICashier(cashierAddress).getEscrowTokensAmount(
-            tokenDepositAddress,
+        //record funds in escrow ...
+        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(
             msg.sender
         );
-        ICashier(cashierAddress).updateEscrowTokensAmount(
-            tokenDepositAddress,
-            msg.sender,
-            amount.add(_tokensDeposit)
-        );
 
-        payable(cashierAddress).sendValue(msg.value);
     }
 
     function requestVoucherTKNETHWithPermit(
@@ -687,25 +639,15 @@ contract BosonRouter is
             price
         );
 
-        //record funds in escrow ...
-        uint256 amount = ICashier(cashierAddress).getEscrowAmount(msg.sender);
-        ICashier(cashierAddress).updateEscrowAmount(
-            msg.sender,
-            amount.add(msg.value)
-        );
-
         //record funds in escrowTokens ...
-        amount = ICashier(cashierAddress).getEscrowTokensAmount(
-            tokenPriceAddress,
-            msg.sender
-        );
-        ICashier(cashierAddress).updateEscrowTokensAmount(
+        ICashier(cashierAddress).addEscrowTokensAmount(
             tokenPriceAddress,
             msg.sender,
-            amount.add(price)
+            price
         );
 
-        payable(cashierAddress).sendValue(msg.value);
+        //record funds in escrow ...
+        ICashier(cashierAddress).addEscrowAmount{value:msg.value}(msg.sender);
     }
 
     /**

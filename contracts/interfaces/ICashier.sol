@@ -54,12 +54,30 @@ interface ICashier {
     function updateEscrowAmount(address _account, uint256 _newAmount) external;
 
     /**
+     * @notice Update the amount in escrow of an address with the new value, based on VoucherSet/Voucher interaction
+     * @param _account  The address of an account to query
+     */
+    function addEscrowAmount(address _account) external payable;
+
+    /**
      * @notice Update the amount in escrowTokens of an address with the new value, based on VoucherSet/Voucher interaction
      * @param _token  The address of a token to query
      * @param _account  The address of an account to query
      * @param _newAmount  New amount to be set
      */
     function updateEscrowTokensAmount(
+        address _token,
+        address _account,
+        uint256 _newAmount
+    ) external;
+
+        /**
+     * @notice Update the amount in escrowTokens of an address with the new value, based on VoucherSet/Voucher interaction
+     * @param _token  The address of a token to query
+     * @param _account  The address of an account to query
+     * @param _newAmount  New amount to be set
+     */
+    function addEscrowTokensAmount(
         address _token,
         address _account,
         uint256 _newAmount
