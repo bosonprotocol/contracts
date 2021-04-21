@@ -171,24 +171,24 @@ contract('Voucher tests', async (addresses) => {
       //Check VocherKernel State
       const promise = await contractVoucherKernel.promises(promiseId1);
       assert.equal(promise.promiseId, promiseId1, "Promise Id incorrect");
-      promise.nonce.eq(new BN(1));
+      assert.isTrue(promise.nonce.eq(new BN(1)),'Nonce is incorrect');
       assert.strictEqual(promise.seller, users.seller.address, "Seller incorrect");
-      promise.validFrom.eq(new BN(constants.PROMISE_VALID_FROM));
-      promise.validTo.eq(new BN(constants.PROMISE_VALID_TO));
-      promise.price.eq(new BN(constants.PROMISE_PRICE1));
-      promise.depositSe.eq(new BN(constants.PROMISE_DEPOSITSE1));
-      promise.depositBu.eq(new BN(constants.PROMISE_DEPOSITBU1));
-      promise.idx.eq(new BN(1));
+      assert.isTrue(promise.validFrom.eq(new BN(constants.PROMISE_VALID_FROM)));
+      assert.isTrue(promise.validTo.eq(new BN(constants.PROMISE_VALID_TO)));
+      assert.isTrue(promise.price.eq(new BN(constants.PROMISE_PRICE1)));
+      assert.isTrue(promise.depositSe.eq(new BN(constants.PROMISE_DEPOSITSE1)));
+      assert.isTrue(promise.depositBu.eq(new BN(constants.PROMISE_DEPOSITBU1)));
+      assert.isTrue(promise.idx.eq(new BN(0)));
 
       const orderPromiseId = await contractVoucherKernel.ordersPromise(tokenSupplyKey1);
       assert.strictEqual(orderPromiseId, promiseId1, "Order Promise Id incorrect");
 
       const tokenNonce = await contractVoucherKernel.tokenNonces(users.seller.address);
-      tokenNonce.eq(new BN(1));
+      assert.isTrue(tokenNonce.eq(new BN(1)));
 
       //Check ERC1155ERC721 state
       const sellerERC1155ERC721Balance = await contractERC1155ERC721.balanceOf(users.seller.address, tokenSupplyKey1);
-      sellerERC1155ERC721Balance.eq(new BN(1));
+      assert.isTrue(sellerERC1155ERC721Balance.eq(new BN(1)));
  
     });
 
@@ -208,6 +208,20 @@ contract('Voucher tests', async (addresses) => {
           to: contractCashier.address,
           value: constants.PROMISE_DEPOSITSE1,
         }
+      );
+
+      truffleAssert.eventEmitted(
+        txOrder1,
+        'LogOrderCreated',
+        (ev) => {
+          tokenSupplyKey1 = ev._tokenIdSupply;
+          return ev._tokenIdSupply.gt(new BN(0))
+                 && ev._seller === users.seller.address 
+                 && ev._quantity.eq(new BN(constants.ORDER_QUANTITY1)) 
+                 && ev._paymentType.eq(new BN(1))
+                 && ev._correlationId.eq(new BN(0)); 
+        },
+        'order1 event incorrect'
       );
       
       //Create 2nd order
@@ -238,7 +252,7 @@ contract('Voucher tests', async (addresses) => {
                  && ev._paymentType.eq(new BN(1))
                  && ev._correlationId.eq(new BN(1)); 
         },
-        'order1 event incorrect'
+        'order2 event incorrect'
       );
 
       const internalVoucherKernelTx = await truffleAssert.createTransactionResult(
@@ -274,7 +288,7 @@ contract('Voucher tests', async (addresses) => {
         (ev) => {
           return ev._operator === contractVoucherKernel.address 
                  && ev._from === constants.ZERO_ADDRESS
-                 && ev._to == users.seller.address 
+                 && ev._to === users.seller.address 
                  && ev._id.eq(tokenSupplyKey2) 
                  && ev._value.eq(new BN(constants.ORDER_QUANTITY2));
         },
@@ -287,24 +301,27 @@ contract('Voucher tests', async (addresses) => {
       //Check VocherKernel State
       const promise = await contractVoucherKernel.promises(promiseId2);
       assert.strictEqual(promise.promiseId, promiseId2, "Promise Id incorrect");
-      promise.nonce.eq(new BN(2));
+      assert.isTrue(promise.nonce.eq(new BN(2)));
       assert.strictEqual(promise.seller, users.seller.address, "Seller incorrect");
-      promise.validFrom.eq(new BN(constants.PROMISE_VALID_FROM));
-      promise.validTo.eq(new BN(constants.PROMISE_VALID_TO));
-      promise.price.eq(new BN(constants.PROMISE_PRICE2));
-      promise.depositSe.eq(new BN(constants.PROMISE_DEPOSITSE2));
-      promise.depositBu.eq(new BN(constants.PROMISE_DEPOSITBU2));
-      promise.idx.eq(new BN(2));
+      assert.isTrue(promise.validFrom.eq(new BN(constants.PROMISE_VALID_FROM)));
+      assert.isTrue(promise.validTo.eq(new BN(constants.PROMISE_VALID_TO)));
+      assert.isTrue(promise.price.eq(new BN(constants.PROMISE_PRICE2)));
+      assert.isTrue(promise.depositSe.eq(new BN(constants.PROMISE_DEPOSITSE2)));
+      assert.isTrue(promise.depositBu.eq(new BN(constants.PROMISE_DEPOSITBU2)));
+      assert.isTrue(promise.idx.eq(new BN(1)));
 
       const orderPromiseId = await contractVoucherKernel.ordersPromise(tokenSupplyKey2);
       assert.strictEqual(orderPromiseId, promiseId2, "Order Promise Id incorrect");
 
       const tokenNonce = await contractVoucherKernel.tokenNonces(users.seller.address);
-      tokenNonce.eq(new BN(2));
+      assert.isTrue(tokenNonce.eq(new BN(2)));
 
       //Check ERC1155ERC721 state
-      const sellerERC1155ERC721Balance = await contractERC1155ERC721.balanceOf(users.seller.address, tokenSupplyKey2);
-      sellerERC1155ERC721Balance.eq(new BN(2));
+      const sellerERC1155ERC721BalanceVoucherSet1 = await contractERC1155ERC721.balanceOf(users.seller.address, tokenSupplyKey1);
+      assert.isTrue(sellerERC1155ERC721BalanceVoucherSet1.eq(new BN(1)));
+
+      const sellerERC1155ERC721BalanceVoucherSet2 = await contractERC1155ERC721.balanceOf(users.seller.address, tokenSupplyKey2);
+      assert.isTrue(sellerERC1155ERC721BalanceVoucherSet2.eq(new BN(1)));
  
     });
   });
@@ -377,7 +394,7 @@ contract('Voucher tests', async (addresses) => {
             tokenSupplyKey2 = ev._tokenIdSupply;
             return ev._tokenIdSupply.gt(new BN(0)); 
           },
-          'order1 event incorrect'
+          'order2 event incorrect'
         );
   
         const internalVoucherKernelTx2 = await truffleAssert.createTransactionResult(
@@ -444,6 +461,17 @@ contract('Voucher tests', async (addresses) => {
                  && ev._id.eq(tokenSupplyKey1) 
                  && ev._value.eq(new BN(1));
         },
+        'transfer single event incorrect'
+      );
+
+      truffleAssert.eventEmitted(
+        internalTokenTx,
+        'Transfer',
+        (ev) => {
+          return ev._from === constants.ZERO_ADDRESS
+                 && ev._to=== users.buyer.address 
+                 && ev._tokenId.eq(tokenVoucherKey);
+        },
         'transfer event incorrect'
       );
 
@@ -452,18 +480,18 @@ contract('Voucher tests', async (addresses) => {
 
       //Check Voucher Kernel state
       const voucherStatus = await contractVoucherKernel.vouchersStatus(tokenVoucherKey);
-      voucherStatus.status.eq(7);
+      assert.isTrue(voucherStatus.status.eq(new BN(128))); //128 = COMMITTED
       assert.isFalse(voucherStatus.isPaymentReleased, "Payment released not false");
       assert.isFalse(voucherStatus.isDepositsReleased, "Deposit released not false");
 
       //Check ERC1155ERC721 state
       const sellerERC1155ERC721Balance = await contractERC1155ERC721.balanceOf(users.seller.address, tokenSupplyKey1);
-      sellerERC1155ERC721Balance.eq(new BN(0));
+      assert.isTrue(sellerERC1155ERC721Balance.eq(new BN(0)));
 
-      const buerERC1155ERC721Balance = await contractERC1155ERC721.balanceOf(users.buyer.address, tokenSupplyKey1);
-      buerERC1155ERC721Balance.eq(new BN(1));
-
-
+      const buyerERC721Balance = await contractERC1155ERC721.balanceOf(users.buyer.address);
+      const erc721TokenOwner = await contractERC1155ERC721.ownerOf(tokenVoucherKey);
+      assert.isTrue(buyerERC721Balance.eq(new BN(1)));
+      assert.strictEqual(users.buyer.address, erc721TokenOwner);
     });
 
     it('fill second order (aka commit to buy a voucher)', async () => {
@@ -514,6 +542,17 @@ contract('Voucher tests', async (addresses) => {
                  && ev._id.eq(tokenSupplyKey2) 
                  && ev._value.eq(new BN(1));
         },
+        'transfer single event incorrect'
+      );
+
+      truffleAssert.eventEmitted(
+        internalTokenTx,
+        'Transfer',
+        (ev) => {
+          return ev._from === constants.ZERO_ADDRESS
+                 && ev._to=== users.buyer.address 
+                 && ev._tokenId.eq(tokenVoucherKey);
+        },
         'transfer event incorrect'
       );
 
@@ -522,16 +561,18 @@ contract('Voucher tests', async (addresses) => {
 
       //Check Voucher Kernel state
       const voucherStatus = await contractVoucherKernel.vouchersStatus(tokenVoucherKey);
-      voucherStatus.status.eq(7);
+      assert.isTrue(voucherStatus.status.eq(new BN(128))); //128 = COMMITTED
       assert.isFalse(voucherStatus.isPaymentReleased, "Payment released not false");
       assert.isFalse(voucherStatus.isDepositsReleased, "Deposit released not false");
 
       //Check ERC1155ERC721 state
       const sellerERC1155ERC721Balance = await contractERC1155ERC721.balanceOf(users.seller.address, tokenSupplyKey2);
-      sellerERC1155ERC721Balance.eq(new BN(0));
+      assert.isTrue(sellerERC1155ERC721Balance.eq(new BN(0)));
 
-      const buerERC1155ERC721Balance = await contractERC1155ERC721.balanceOf(users.buyer.address, tokenSupplyKey2);
-      buerERC1155ERC721Balance.eq(new BN(1));
+      const buyerERC721Balance = await contractERC1155ERC721.balanceOf(users.buyer.address);
+      const erc721TokenOwner = await contractERC1155ERC721.ownerOf(tokenVoucherKey);
+      assert.isTrue(buyerERC721Balance.eq(new BN(1)));
+      assert.strictEqual(users.buyer.address, erc721TokenOwner);
     });
 
 
@@ -727,22 +768,19 @@ contract('Voucher tests', async (addresses) => {
 
       //Check VoucherKernel state
       const voucherStatus = await contractVoucherKernel.vouchersStatus(tokenVoucherKey1);
-      voucherStatus.status.eq(6);
+      assert.isTrue(voucherStatus.status.eq(new BN(192)));
+
       const transaction = await web3.eth.getTransaction(txRedeem.tx);
       const transactionBlock = await web3.eth.getBlock(transaction.blockNumber);
-      voucherStatus.complainPeriodStart.eq(transactionBlock.timestamp);
-  
-
+      assert.isTrue(voucherStatus.complainPeriodStart.eq(new BN(transactionBlock.timestamp)));
     });
 
     it('mark non-redeemed voucher as expired', async () => {
-      const statusBefore = await contractVoucherKernel.getVoucherStatus.call(
-        tokenVoucherKey2
-      );
+      const statusBefore = await contractVoucherKernel.vouchersStatus(tokenVoucherKey2);
 
       // [1000.0000] = hex"80" = 128 = COMMITTED
       assert.equal(
-        web3.utils.toHex(statusBefore[0]),
+        web3.utils.toHex(statusBefore.status),
         web3.utils.numberToHex(128),
         'initial voucher status not as expected (COMMITTED)'
       );
@@ -762,13 +800,11 @@ contract('Voucher tests', async (addresses) => {
       );
 
       //Check VoucherKernel state
-      const statusAfter = await contractVoucherKernel.getVoucherStatus.call(
-        tokenVoucherKey2
-      );
+      const voucherStatus = await contractVoucherKernel.vouchersStatus(tokenVoucherKey2);
 
       //[1001.0000] = hex"90" = 144 = EXPIRED
       assert.equal(
-        web3.utils.toHex(statusAfter[0]),
+        web3.utils.toHex(voucherStatus.status),
         web3.utils.numberToHex(144),
         'end voucher status not as expected (EXPIRED)'
       );
@@ -801,8 +837,7 @@ contract('Voucher tests', async (addresses) => {
 
       //Check VoucherKernel state
       const voucherStatus = await contractVoucherKernel.vouchersStatus(tokenVoucherKey1);
-      voucherStatus.status.eq(1);
-
+      assert.isTrue(voucherStatus.status.eq(new BN(194)));
     });
 
     it('must fail: unauthorized redemption', async () => {
@@ -960,7 +995,7 @@ contract('Voucher tests', async (addresses) => {
       //Check seller account balance
       sellerBalanceAfter = new BN(await web3.eth.getBalance(users.seller.address));    
       const expectedSellerBalance = sellerBalanceBefore.add(new BN(constants.PROMISE_PRICE1));
-      sellerBalanceAfter.eq(expectedSellerBalance);
+      assert.isTrue(sellerBalanceAfter.eq(expectedSellerBalance));
       
     });
   });
@@ -976,10 +1011,8 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     contractFundLimitsOracle;
   let tokenSupplyKey1, tokenVoucherKey1;
 
-  before('setup promise dates based on the block timestamp', async () => {
+  beforeEach('setup promise dates based on the block timestamp', async () => {
     const sixtySeconds = 60;
-
-    snapshot = await timemachine.takeSnapshot();
 
     const timestamp = await Utils.getCurrTimestamp();
 
@@ -1016,9 +1049,6 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
     await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-
-    await contractVoucherKernel.setComplainPeriod(sixtySeconds);
-    await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
   });
 
   beforeEach('setup contracts for tests', async () => {
@@ -1046,6 +1076,23 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
         return ev._seller === users.seller.address;
       },
       'order1 not created successfully'
+    );
+
+    //temp
+    const internalVoucherKernelTx = await truffleAssert.createTransactionResult(
+      contractVoucherKernel,
+      txOrder.tx
+    );
+
+
+    truffleAssert.eventEmitted(
+      internalVoucherKernelTx,
+      'LogPromiseCreated',
+      (ev) => {
+        promiseId1 = ev._promiseId;
+        return ev._promiseId > 0;
+      },
+      'promise event incorrect'
     );
 
     const txFillOrder = await contractBosonRouter.requestVoucherETHETH(
@@ -1079,20 +1126,25 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
         constants.PROMISE_CHALLENGE_PERIOD * constants.SECONDS_IN_DAY;
 
       const txChangePeriod = await contractVoucherKernel.setComplainPeriod(
-        complainPeriodSeconds
+        complainPeriodSeconds, 
+        {
+          from: users.deployer.address
+        }
       );
 
       truffleAssert.eventEmitted(
         txChangePeriod,
         'LogComplainPeriodChanged',
         (ev) => {
-          return (
-            ev._newComplainPeriod.toString() ===
-            complainPeriodSeconds.toString()
-          );
+          return ev._newComplainPeriod.eq(new BN(complainPeriodSeconds))
+                 && ev._triggeredBy === users.deployer.address;
         },
         'complain period not changed successfully'
       );
+
+      //Check VoucherKernel state
+      const newComplainePeriod = await contractVoucherKernel.complainPeriod();
+      assert.isTrue(newComplainePeriod.eq(new BN(complainPeriodSeconds)));
     });
 
     it('must fail: unauthorized change of complain period', async () => {
@@ -1111,7 +1163,10 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
       const cancelFaultPeriodSeconds =
         constants.PROMISE_CANCELORFAULT_PERIOD * constants.SECONDS_IN_DAY;
       const txChangePeriod = await contractVoucherKernel.setCancelFaultPeriod(
-        cancelFaultPeriodSeconds
+        cancelFaultPeriodSeconds,
+        {
+          from: users.deployer.address
+        }
       );
 
       await truffleAssert.eventEmitted(
@@ -1119,12 +1174,17 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
         'LogCancelFaultPeriodChanged',
         (ev) => {
           return (
-            ev._newCancelFaultPeriod.toString() ===
-            cancelFaultPeriodSeconds.toString()
+            ev._newCancelFaultPeriod.eq(new BN(cancelFaultPeriodSeconds))
+            && ev._triggeredBy === users.deployer.address
           );
         },
         'complain period not changed successfully'
       );
+
+      //Check VoucherKernel state
+      const newCancelOrFaultPeriod = await contractVoucherKernel.cancelFaultPeriod();
+      assert.isTrue(newCancelOrFaultPeriod.eq(new BN(cancelFaultPeriodSeconds)));
+
     });
 
     it('must fail: unauthorized change of cancelOrFault period', async () => {
@@ -1141,17 +1201,33 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
 
   describe('Refunds ...', function () {
     it('refunding one voucher', async () => {
-      await contractBosonRouter.refund(tokenVoucherKey1, {
+      const txRefund = await contractBosonRouter.refund(tokenVoucherKey1, {
         from: users.buyer.address,
       });
 
-      const statusAfter = await contractVoucherKernel.getVoucherStatus.call(
-        tokenVoucherKey1
+      const internalTx = await truffleAssert.createTransactionResult(
+        contractVoucherKernel,
+        txRefund.tx
       );
+
+      await truffleAssert.eventEmitted(
+        internalTx,
+        'LogVoucherRefunded',
+        (ev) => {
+          return ev._tokenIdVoucher.eq(new BN(tokenVoucherKey1));
+        },
+        'refund not successful'
+      );
+
+      //Check VoucherKernel state
+      const voucherStatus = await contractVoucherKernel.vouchersStatus(tokenVoucherKey1);
+      const transaction = await web3.eth.getTransaction(txRefund.tx);
+      const transactionBlock = await web3.eth.getBlock(transaction.blockNumber);
+      assert.isTrue(voucherStatus.complainPeriodStart.eq(new BN(transactionBlock.timestamp)));
 
       // [1010.0000] = hex"A0" = 160 = REFUND
       assert.equal(
-        web3.utils.toHex(statusAfter[0]),
+        web3.utils.toHex(voucherStatus.status),
         web3.utils.numberToHex(160),
         'end voucher status not as expected (REFUNDED)'
       );
@@ -1161,17 +1237,33 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
       await contractBosonRouter.refund(tokenVoucherKey1, {
         from: users.buyer.address,
       });
-      await contractBosonRouter.complain(tokenVoucherKey1, {
+      const complainTx = await contractBosonRouter.complain(tokenVoucherKey1, {
         from: users.buyer.address,
       });
 
-      const statusAfter = await contractVoucherKernel.getVoucherStatus.call(
-        tokenVoucherKey1
+      const internalTx = await truffleAssert.createTransactionResult(
+        contractVoucherKernel,
+        complainTx.tx
       );
+
+      await truffleAssert.eventEmitted(
+        internalTx,
+        'LogVoucherComplain',
+        (ev) => {
+          return ev._tokenIdVoucher.eq(new BN(tokenVoucherKey1));
+        },
+        'complain not successful'
+      );
+
+       //Check VoucherKernel state
+       const voucherStatus = await contractVoucherKernel.vouchersStatus(tokenVoucherKey1);
+       const transaction = await web3.eth.getTransaction(complainTx.tx);
+       const transactionBlock = await web3.eth.getBlock(transaction.blockNumber);
+       assert.isTrue(voucherStatus.cancelFaultPeriodStart.eq(new BN(transactionBlock.timestamp)));
 
       // [1010.1000] = hex"A8" = 168 = REFUND_COMPLAIN
       assert.equal(
-        web3.utils.toHex(statusAfter[0]),
+        web3.utils.toHex(voucherStatus.status),
         web3.utils.numberToHex(168),
         'end voucher status not as expected (REFUNDED_COMPLAINED)'
       );
@@ -1181,20 +1273,43 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
       await contractBosonRouter.refund(tokenVoucherKey1, {
         from: users.buyer.address,
       });
-      await contractBosonRouter.complain(tokenVoucherKey1, {
+      const complainTx = await contractBosonRouter.complain(tokenVoucherKey1, {
         from: users.buyer.address,
       });
-      await contractBosonRouter.cancelOrFault(tokenVoucherKey1, {
+
+      //Check VoucherKernel state
+      const voucherStatusBefore = await contractVoucherKernel.vouchersStatus(tokenVoucherKey1);
+      const transaction = await web3.eth.getTransaction(complainTx.tx);
+      const transactionBlock = await web3.eth.getBlock(transaction.blockNumber);
+      assert.isTrue(voucherStatusBefore.cancelFaultPeriodStart.eq(new BN(transactionBlock.timestamp)));
+
+      const cancelTx = await contractBosonRouter.cancelOrFault(tokenVoucherKey1, {
         from: users.seller.address,
       });
 
-      const statusAfter = await contractVoucherKernel.getVoucherStatus.call(
-        tokenVoucherKey1
+      const internalTx = await truffleAssert.createTransactionResult(
+        contractVoucherKernel,
+        cancelTx.tx
       );
+
+      await truffleAssert.eventEmitted(
+        internalTx,
+        'LogVoucherFaultCancel',
+        (ev) => {
+          return ev._tokenIdVoucher.eq(new BN(tokenVoucherKey1));
+        },
+        'complain not successful'
+      );
+
+      //Check VoucherKernel state 
+      const voucherStatusAfter = await contractVoucherKernel.vouchersStatus(tokenVoucherKey1);
+
+      //Check it didn't go into a branch that changes the complainPeriodStart
+      assert.isTrue(voucherStatusAfter.complainPeriodStart.eq(new BN(transactionBlock.timestamp)));
 
       // [1010.1100] = hex"AC" = 172 = REFUND_COMPLAIN_COF
       assert.equal(
-        web3.utils.toHex(statusAfter[0]),
+        web3.utils.toHex(voucherStatusAfter.status),
         web3.utils.numberToHex(172),
         'end voucher status not as expected ' +
           '(REFUNDED_COMPLAINED_CANCELORFAULT)'
@@ -1221,13 +1336,11 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
         from: users.seller.address,
       });
 
-      const statusAfter = await contractVoucherKernel.getVoucherStatus.call(
-        tokenVoucherKey1
-      );
+      const voucherStatus = await contractVoucherKernel.vouchersStatus(tokenVoucherKey1);
 
       // [1000.0100] = hex"84" = 132 = CANCELORFAULT
       assert.equal(
-        web3.utils.toHex(statusAfter[0]),
+        web3.utils.toHex(voucherStatus.status),
         web3.utils.numberToHex(132),
         'end voucher status not as expected (CANCELORFAULT)'
       );
@@ -1248,31 +1361,40 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
   });
 
   describe('Expirations (one universal test) ...', () => {
-    it('Expired, then complain, then Cancel/Fault, then try to redeem', async () => {
+   it('Expired, then complain, then Cancel/Fault, then try to redeem', async () => {
       // fast-forward for three days
       const secondsInThreeDays = constants.SECONDS_IN_DAY * 3;
       await timemachine.advanceTimeSeconds(secondsInThreeDays);
 
       await contractVoucherKernel.triggerExpiration(tokenVoucherKey1);
 
-      let statusAfter = await contractVoucherKernel.getVoucherStatus.call(
-        tokenVoucherKey1
-      );
+      let statusAfter = await contractVoucherKernel.vouchersStatus(tokenVoucherKey1);
 
       // [1001.0000] = hex"90" = 144 = EXPIRED
       assert.equal(
-        web3.utils.toHex(statusAfter[0]),
+        web3.utils.toHex(statusAfter.status),
         web3.utils.numberToHex(144),
         'end voucher status not as expected (EXPIRED)'
       );
-
-      await contractBosonRouter.complain(tokenVoucherKey1, {
+      const complainTx = await contractBosonRouter.complain(tokenVoucherKey1, {
         from: users.buyer.address,
       });
 
-      statusAfter = await contractVoucherKernel.getVoucherStatus.call(
-        tokenVoucherKey1
+      const internalTx = await truffleAssert.createTransactionResult(
+        contractVoucherKernel,
+        complainTx.tx
       );
+
+      await truffleAssert.eventEmitted(
+        internalTx,
+        'LogVoucherComplain',
+        (ev) => {
+          return ev._tokenIdVoucher.eq(new BN(tokenVoucherKey1));
+        },
+        'complain not successful'
+      );
+
+      statusAfter =  await contractVoucherKernel.vouchersStatus(tokenVoucherKey1);
 
       // [1001.1000] = hex"98" = 152 = EXPIRED_COMPLAIN
       assert.equal(
@@ -1282,13 +1404,25 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
       );
 
       // in the same test, because the EVM time machine is funky ...
-      await contractBosonRouter.cancelOrFault(tokenVoucherKey1, {
+      const cancelTx = await contractBosonRouter.cancelOrFault(tokenVoucherKey1, {
         from: users.seller.address,
       });
 
-      statusAfter = await contractVoucherKernel.getVoucherStatus.call(
-        tokenVoucherKey1
+      const internalTx2 = await truffleAssert.createTransactionResult(
+        contractVoucherKernel,
+        cancelTx.tx
       );
+
+      await truffleAssert.eventEmitted(
+        internalTx2,
+        'LogVoucherFaultCancel',
+        (ev) => {
+          return ev._tokenIdVoucher.eq(new BN(tokenVoucherKey1));
+        },
+        'complain not successful'
+      );
+
+      statusAfter = await contractVoucherKernel.vouchersStatus(tokenVoucherKey1);
 
       // [1001.1000] = hex"9C" = 156 = EXPIRED_COMPLAINED_CANCELORFAULT
       assert.equal(
@@ -1305,12 +1439,8 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
         }),
         truffleAssert.ErrorType.REVERT
       );
+ 
     });
-
-    after(async () => {
-      await timemachine.revertToSnapShot(snapshot.id);
-    });
-
   });
 
 });
