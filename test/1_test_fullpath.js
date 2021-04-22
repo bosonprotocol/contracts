@@ -1067,7 +1067,8 @@ contract('Voucher tests', async (addresses) => {
         'LogFundsReleased',
         (ev) => {
           return (
-            ev._tokenIdVoucher.eq(tokenVoucherKey1) && ev._type.eq(constants.ZERO)
+            ev._tokenIdVoucher.eq(tokenVoucherKey1) &&
+            ev._type.eq(constants.ZERO)
           );
         },
         'funds not released successfully'

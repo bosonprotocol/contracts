@@ -1,4 +1,4 @@
-const BN = require("bn.js");
+const BN = require('bn.js');
 
 // common
 const ONE_MINUTE = 60;
@@ -94,5 +94,5 @@ module.exports = {
   TOKEN_LIMIT,
   ABOVE_TOKEN_LIMIT,
   ZERO,
-  ONE
+  ONE,
 };
