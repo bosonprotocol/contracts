@@ -1,7 +1,11 @@
+const BN = require("bn.js");
+
 // common
 const ONE_MINUTE = 60;
 const SECONDS_IN_DAY = 86400;
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const ZERO = new BN(0);
+const ONE = new BN(1);
 
 // asset
 const ASSET_VERSION = '0x3132';
@@ -89,4 +93,6 @@ module.exports = {
   ABOVE_ETH_LIMIT,
   TOKEN_LIMIT,
   ABOVE_TOKEN_LIMIT,
+  ZERO,
+  ONE
 };

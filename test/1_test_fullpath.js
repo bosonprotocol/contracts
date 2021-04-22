@@ -70,11 +70,6 @@ contract('Voucher tests', async (addresses) => {
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
-
-    console.log('Seller:   ' + users.seller.address);
-    console.log('Buyer:    ' + users.buyer.address);
-    console.log('Attacker: ' + users.attacker.address);
-    console.log();
   });
 
   describe('Direct minting', function () {
@@ -119,11 +114,11 @@ contract('Voucher tests', async (addresses) => {
         (ev) => {
           tokenSupplyKey1 = ev._tokenIdSupply;
           return (
-            ev._tokenIdSupply.gt(new BN(0)) &&
+            ev._tokenIdSupply.gt(constants.ZERO) &&
             ev._seller === users.seller.address &&
             ev._quantity.eq(new BN(constants.ORDER_QUANTITY1)) &&
-            ev._paymentType.eq(new BN(1)) &&
-            ev._correlationId.eq(new BN(0))
+            ev._paymentType.eq(constants.ONE) &&
+            ev._correlationId.eq(constants.ZERO)
           );
         },
         'order1 event incorrect'
@@ -143,11 +138,11 @@ contract('Voucher tests', async (addresses) => {
           promiseId1 = ev._promiseId;
           return (
             ev._promiseId > 0 &&
-            ev._nonce.eq(new BN(1)) &&
+            ev._nonce.eq(constants.ONE) &&
             ev._seller === users.seller.address &&
             ev._validFrom.eq(new BN(constants.PROMISE_VALID_FROM)) &&
             ev._validTo.eq(new BN(constants.PROMISE_VALID_TO)) &&
-            ev._idx.eq(new BN(0))
+            ev._idx.eq(constants.ZERO)
           );
         },
         'promise event incorrect'
@@ -183,7 +178,7 @@ contract('Voucher tests', async (addresses) => {
       //Check VocherKernel State
       const promise = await contractVoucherKernel.promises(promiseId1);
       assert.equal(promise.promiseId, promiseId1, 'Promise Id incorrect');
-      assert.isTrue(promise.nonce.eq(new BN(1)), 'Nonce is incorrect');
+      assert.isTrue(promise.nonce.eq(constants.ONE), 'Nonce is incorrect');
       assert.strictEqual(
         promise.seller,
         users.seller.address,
@@ -194,7 +189,7 @@ contract('Voucher tests', async (addresses) => {
       assert.isTrue(promise.price.eq(new BN(constants.PROMISE_PRICE1)));
       assert.isTrue(promise.depositSe.eq(new BN(constants.PROMISE_DEPOSITSE1)));
       assert.isTrue(promise.depositBu.eq(new BN(constants.PROMISE_DEPOSITBU1)));
-      assert.isTrue(promise.idx.eq(new BN(0)));
+      assert.isTrue(promise.idx.eq(constants.ZERO));
 
       const orderPromiseId = await contractVoucherKernel.ordersPromise(
         tokenSupplyKey1
@@ -208,14 +203,14 @@ contract('Voucher tests', async (addresses) => {
       const tokenNonce = await contractVoucherKernel.tokenNonces(
         users.seller.address
       );
-      assert.isTrue(tokenNonce.eq(new BN(1)));
+      assert.isTrue(tokenNonce.eq(constants.ONE));
 
       //Check ERC1155ERC721 state
       const sellerERC1155ERC721Balance = await contractERC1155ERC721.balanceOf(
         users.seller.address,
         tokenSupplyKey1
       );
-      assert.isTrue(sellerERC1155ERC721Balance.eq(new BN(1)));
+      assert.isTrue(sellerERC1155ERC721Balance.eq(constants.ONE));
     });
 
     it('adding two new orders / promises', async () => {
@@ -242,11 +237,11 @@ contract('Voucher tests', async (addresses) => {
         (ev) => {
           tokenSupplyKey1 = ev._tokenIdSupply;
           return (
-            ev._tokenIdSupply.gt(new BN(0)) &&
+            ev._tokenIdSupply.gt(constants.ZERO) &&
             ev._seller === users.seller.address &&
             ev._quantity.eq(new BN(constants.ORDER_QUANTITY1)) &&
-            ev._paymentType.eq(new BN(1)) &&
-            ev._correlationId.eq(new BN(0))
+            ev._paymentType.eq(constants.ONE) &&
+            ev._correlationId.eq(constants.ZERO)
           );
         },
         'order1 event incorrect'
@@ -275,11 +270,11 @@ contract('Voucher tests', async (addresses) => {
         (ev) => {
           tokenSupplyKey2 = ev._tokenIdSupply;
           return (
-            ev._tokenIdSupply.gt(new BN(0)) &&
+            ev._tokenIdSupply.gt(constants.ZERO) &&
             ev._seller === users.seller.address &&
             ev._quantity.eq(new BN(constants.ORDER_QUANTITY2)) &&
-            ev._paymentType.eq(new BN(1)) &&
-            ev._correlationId.eq(new BN(1))
+            ev._paymentType.eq(constants.ONE) &&
+            ev._correlationId.eq(constants.ONE)
           );
         },
         'order2 event incorrect'
@@ -303,7 +298,7 @@ contract('Voucher tests', async (addresses) => {
             ev._seller === users.seller.address &&
             ev._validFrom.eq(new BN(constants.PROMISE_VALID_FROM)) &&
             ev._validTo.eq(new BN(constants.PROMISE_VALID_TO)) &&
-            ev._idx.eq(new BN(1))
+            ev._idx.eq(constants.ONE)
           );
         },
         'promise event incorrect'
@@ -350,7 +345,7 @@ contract('Voucher tests', async (addresses) => {
       assert.isTrue(promise.price.eq(new BN(constants.PROMISE_PRICE2)));
       assert.isTrue(promise.depositSe.eq(new BN(constants.PROMISE_DEPOSITSE2)));
       assert.isTrue(promise.depositBu.eq(new BN(constants.PROMISE_DEPOSITBU2)));
-      assert.isTrue(promise.idx.eq(new BN(1)));
+      assert.isTrue(promise.idx.eq(constants.ONE));
 
       const orderPromiseId = await contractVoucherKernel.ordersPromise(
         tokenSupplyKey2
@@ -371,18 +366,18 @@ contract('Voucher tests', async (addresses) => {
         users.seller.address,
         tokenSupplyKey1
       );
-      assert.isTrue(sellerERC1155ERC721BalanceVoucherSet1.eq(new BN(1)));
+      assert.isTrue(sellerERC1155ERC721BalanceVoucherSet1.eq(constants.ONE));
 
       const sellerERC1155ERC721BalanceVoucherSet2 = await contractERC1155ERC721.balanceOf(
         users.seller.address,
         tokenSupplyKey2
       );
-      assert.isTrue(sellerERC1155ERC721BalanceVoucherSet2.eq(new BN(1)));
+      assert.isTrue(sellerERC1155ERC721BalanceVoucherSet2.eq(constants.ONE));
     });
   });
 
   describe('Commit to buy a voucher (ERC1155)', () => {
-    beforeEach('setup contracts for tests', async () => {
+    beforeEach('execute prerequisite steps', async () => {
       //Create first voucher set
       const txOrder = await contractBosonRouter.requestCreateOrderETHETH(
         [
@@ -405,7 +400,7 @@ contract('Voucher tests', async (addresses) => {
         'LogOrderCreated',
         (ev) => {
           tokenSupplyKey1 = ev._tokenIdSupply;
-          return ev._tokenIdSupply.gt(new BN(0));
+          return ev._tokenIdSupply.gt(constants.ZERO);
         },
         'order1 not created successfully'
       );
@@ -447,7 +442,7 @@ contract('Voucher tests', async (addresses) => {
         'LogOrderCreated',
         (ev) => {
           tokenSupplyKey2 = ev._tokenIdSupply;
-          return ev._tokenIdSupply.gt(new BN(0));
+          return ev._tokenIdSupply.gt(constants.ZERO);
         },
         'order2 event incorrect'
       );
@@ -493,11 +488,11 @@ contract('Voucher tests', async (addresses) => {
           tokenVoucherKey = ev._tokenIdVoucher;
           return (
             ev._tokenIdSupply.eq(tokenSupplyKey1) &&
-            ev._tokenIdVoucher.gt(new BN(0)) &&
+            ev._tokenIdVoucher.gt(constants.ZERO) &&
             ev._issuer === users.seller.address &&
             ev._holder === users.buyer.address &&
             ev._promiseId === promiseId1 &&
-            ev._correlationId.eq(new BN(0))
+            ev._correlationId.eq(constants.ZERO)
           );
         },
         'order1 not created successfully'
@@ -517,7 +512,7 @@ contract('Voucher tests', async (addresses) => {
             ev._from === users.seller.address &&
             ev._to === constants.ZERO_ADDRESS &&
             ev._id.eq(tokenSupplyKey1) &&
-            ev._value.eq(new BN(1))
+            ev._value.eq(constants.ONE)
           );
         },
         'transfer single event incorrect'
@@ -562,7 +557,7 @@ contract('Voucher tests', async (addresses) => {
         users.seller.address,
         tokenSupplyKey1
       );
-      assert.isTrue(sellerERC1155ERC721Balance.eq(new BN(0)));
+      assert.isTrue(sellerERC1155ERC721Balance.eq(constants.ZERO));
 
       const buyerERC721Balance = await contractERC1155ERC721.balanceOf(
         users.buyer.address
@@ -570,7 +565,7 @@ contract('Voucher tests', async (addresses) => {
       const erc721TokenOwner = await contractERC1155ERC721.ownerOf(
         tokenVoucherKey
       );
-      assert.isTrue(buyerERC721Balance.eq(new BN(1)));
+      assert.isTrue(buyerERC721Balance.eq(constants.ONE));
       assert.strictEqual(users.buyer.address, erc721TokenOwner);
     });
 
@@ -598,11 +593,11 @@ contract('Voucher tests', async (addresses) => {
           tokenVoucherKey = ev._tokenIdVoucher;
           return (
             ev._tokenIdSupply.eq(tokenSupplyKey2) &&
-            ev._tokenIdVoucher.gt(new BN(0)) &&
+            ev._tokenIdVoucher.gt(constants.ZERO) &&
             ev._issuer === users.seller.address &&
             ev._holder === users.buyer.address &&
             ev._promiseId === promiseId2 &&
-            ev._correlationId.eq(new BN(0))
+            ev._correlationId.eq(constants.ZERO)
           );
         },
         'order2 not filled successfully'
@@ -622,7 +617,7 @@ contract('Voucher tests', async (addresses) => {
             ev._from === users.seller.address &&
             ev._to === constants.ZERO_ADDRESS &&
             ev._id.eq(tokenSupplyKey2) &&
-            ev._value.eq(new BN(1))
+            ev._value.eq(constants.ONE)
           );
         },
         'transfer single event incorrect'
@@ -667,7 +662,7 @@ contract('Voucher tests', async (addresses) => {
         users.seller.address,
         tokenSupplyKey2
       );
-      assert.isTrue(sellerERC1155ERC721Balance.eq(new BN(0)));
+      assert.isTrue(sellerERC1155ERC721Balance.eq(constants.ZERO));
 
       const buyerERC721Balance = await contractERC1155ERC721.balanceOf(
         users.buyer.address
@@ -675,7 +670,7 @@ contract('Voucher tests', async (addresses) => {
       const erc721TokenOwner = await contractERC1155ERC721.ownerOf(
         tokenVoucherKey
       );
-      assert.isTrue(buyerERC721Balance.eq(new BN(1)));
+      assert.isTrue(buyerERC721Balance.eq(constants.ONE));
       assert.strictEqual(users.buyer.address, erc721TokenOwner);
     });
 
@@ -717,7 +712,7 @@ contract('Voucher tests', async (addresses) => {
   });
 
   describe('Vouchers (ERC721)', function () {
-    beforeEach('setup contracts for tests', async () => {
+    beforeEach('execute prerequisite steps', async () => {
       //Create first voucher set
       const txOrder = await contractBosonRouter.requestCreateOrderETHETH(
         [
@@ -740,7 +735,7 @@ contract('Voucher tests', async (addresses) => {
         'LogOrderCreated',
         (ev) => {
           tokenSupplyKey1 = ev._tokenIdSupply;
-          return ev._tokenIdSupply.gt(new BN(0));
+          return ev._tokenIdSupply.gt(constants.ZERO);
         },
         'order1 not created successfully'
       );
@@ -781,7 +776,7 @@ contract('Voucher tests', async (addresses) => {
         'LogVoucherDelivered',
         (ev) => {
           tokenVoucherKey1 = ev._tokenIdVoucher;
-          return ev._tokenIdVoucher.gt(new BN(0));
+          return ev._tokenIdVoucher.gt(constants.ZERO);
         },
         'order1 not created successfully'
       );
@@ -808,7 +803,7 @@ contract('Voucher tests', async (addresses) => {
         'LogOrderCreated',
         (ev) => {
           tokenSupplyKey2 = ev._tokenIdSupply;
-          return ev._tokenIdSupply.gt(new BN(0));
+          return ev._tokenIdSupply.gt(constants.ZERO);
         },
         'order1 event incorrect'
       );
@@ -833,7 +828,7 @@ contract('Voucher tests', async (addresses) => {
         'LogVoucherDelivered',
         (ev) => {
           tokenVoucherKey2 = ev._tokenIdVoucher;
-          return ev._tokenIdVoucher.gt(new BN(0));
+          return ev._tokenIdVoucher.gt(constants.ZERO);
         },
         'order2 not filled successfully'
       );
@@ -960,7 +955,7 @@ contract('Voucher tests', async (addresses) => {
 
   //HS:  All other withdraw functions are tested in 3_withdrawals.js. Do we want to move this one?. Withdrawal of deposit not included here
   describe('Withdrawals', function () {
-    beforeEach('setup contracts for tests', async () => {
+    beforeEach('execute prerequisite steps', async () => {
       //Create first voucher set
       const txOrder = await contractBosonRouter.requestCreateOrderETHETH(
         [
@@ -983,7 +978,7 @@ contract('Voucher tests', async (addresses) => {
         'LogOrderCreated',
         (ev) => {
           tokenSupplyKey1 = ev._tokenIdSupply;
-          return ev._tokenIdSupply.gt(new BN(0));
+          return ev._tokenIdSupply.gt(constants.ZERO);
         },
         'order1 not created successfully'
       );
@@ -1024,7 +1019,7 @@ contract('Voucher tests', async (addresses) => {
         'LogVoucherDelivered',
         (ev) => {
           tokenVoucherKey1 = ev._tokenIdVoucher;
-          return ev._tokenIdVoucher.gt(new BN(0));
+          return ev._tokenIdVoucher.gt(constants.ZERO);
         },
         'order1 not created successfully'
       );
@@ -1044,8 +1039,6 @@ contract('Voucher tests', async (addresses) => {
         await web3.eth.getBalance(users.seller.address)
       );
 
-      console.log('sellerBalanceBefore ', sellerBalanceBefore.toString());
-
       const txWithdraw = await contractCashier.withdraw(tokenVoucherKey1, {
         from: users.deployer.address,
       });
@@ -1058,7 +1051,7 @@ contract('Voucher tests', async (addresses) => {
             ev._tokenIdVoucher.eq(tokenVoucherKey1) &&
             ev._to === users.seller.address &&
             ev._payment.eq(new BN(constants.PROMISE_PRICE1)) &&
-            ev._type.eq(new BN(0))
+            ev._type.eq(constants.ZERO)
           );
         },
         'distribution unsuccessful'
@@ -1074,7 +1067,7 @@ contract('Voucher tests', async (addresses) => {
         'LogFundsReleased',
         (ev) => {
           return (
-            ev._tokenIdVoucher.eq(tokenVoucherKey1) && ev._type.eq(new BN(0))
+            ev._tokenIdVoucher.eq(tokenVoucherKey1) && ev._type.eq(constants.ZERO)
           );
         },
         'funds not released successfully'
