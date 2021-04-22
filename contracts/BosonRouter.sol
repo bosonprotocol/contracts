@@ -530,7 +530,7 @@ contract BosonRouter is
         );
 
         //record funds in escrowTokens ...
-        ICashier(cashierAddress).updateEscrowTokensAmount(
+        ICashier(cashierAddress).addEscrowTokensAmount(
             tokenPriceAddress,
             msg.sender,
             _tokensSent
