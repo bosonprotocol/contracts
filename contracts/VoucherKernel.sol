@@ -408,7 +408,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
             _tokenIdSupply | ++typeCounters[_tokenIdSupply];
 
         //set status
-        vouchersStatus[voucherTokenId].status = setChange(
+        vouchersStatus[voucherTokenId].status = determineStatus(
             vouchersStatus[voucherTokenId].status,
             IDX_COMMIT
         );
@@ -482,7 +482,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
             promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
 
         vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;
-        vouchersStatus[_tokenIdVoucher].status = setChange(
+        vouchersStatus[_tokenIdVoucher].status = determineStatus(
             vouchersStatus[_tokenIdVoucher].status,
             IDX_REDEEM
         );
@@ -519,7 +519,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         isInValidityPeriod(_tokenIdVoucher);
 
         vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;
-        vouchersStatus[_tokenIdVoucher].status = setChange(
+        vouchersStatus[_tokenIdVoucher].status = determineStatus(
             vouchersStatus[_tokenIdVoucher].status,
             IDX_REFUND
         );
@@ -581,7 +581,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
 
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block
                 .timestamp;
-            vouchersStatus[_tokenIdVoucher].status = setChange(
+            vouchersStatus[_tokenIdVoucher].status = determineStatus(
                 vouchersStatus[_tokenIdVoucher].status,
                 IDX_COMPLAIN
             );
@@ -610,7 +610,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
 
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block
                 .timestamp;
-            vouchersStatus[_tokenIdVoucher].status = setChange(
+            vouchersStatus[_tokenIdVoucher].status = determineStatus(
                 vouchersStatus[_tokenIdVoucher].status,
                 IDX_COMPLAIN
             );
@@ -628,7 +628,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
                 "COMPLAINPERIOD_EXPIRED"
             ); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired));
 
-            vouchersStatus[_tokenIdVoucher].status = setChange(
+            vouchersStatus[_tokenIdVoucher].status = determineStatus(
                 vouchersStatus[_tokenIdVoucher].status,
                 IDX_COMPLAIN
             );
@@ -710,7 +710,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
             revert("INAPPLICABLE_STATUS"); //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicableToCurrentState)
         }
 
-        vouchersStatus[_tokenIdVoucher].status = setChange(
+        vouchersStatus[_tokenIdVoucher].status = determineStatus(
             tStatus,
             IDX_CANCEL_FAULT
         );
@@ -791,7 +791,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
             tPromise.validTo < block.timestamp &&
             isStateCommitted(vouchersStatus[_tokenIdVoucher].status)
         ) {
-            vouchersStatus[_tokenIdVoucher].status = setChange(
+            vouchersStatus[_tokenIdVoucher].status = determineStatus(
                 vouchersStatus[_tokenIdVoucher].status,
                 IDX_EXPIRE
             );
@@ -853,7 +853,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         }
 
         if (mark) {
-            vouchersStatus[_tokenIdVoucher].status = setChange(
+            vouchersStatus[_tokenIdVoucher].status = determineStatus(
                 tStatus,
                 IDX_FINAL
             );
