@@ -10,8 +10,8 @@ import "./interfaces/IERC1155TokenReceiver.sol";
 import "./interfaces/IERC721.sol";
 import "./interfaces/IERC721TokenReceiver.sol";
 import "./interfaces/IERC1155ERC721.sol";
-import "./interfaces/IBosonRouter.sol";
 import "./interfaces/IVoucherKernel.sol";
+import "./interfaces/ICashier.sol";
 
 //preparing for ERC-1066, ERC-1444, EIP-838
 
@@ -26,7 +26,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
     //min security
     address public owner; //contract owner
     address public voucherKernelAddress; //address of the VoucherKernel contract
-    address public bosonRouterAddress; //address of the BosonRouter contract
+    address public cashierAddress; //address of the Cashier contract
 
     //standard reqs
     //ERC-1155
@@ -49,8 +49,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
     //event URI(string _value, uint256 indexed _id);
 
     event LogVoucherKernelSet(address _newVoucherKernel, address _triggeredBy);
-
-    event LogBosonRouterSet(address _newBosonRouter, address _triggeredBy);
+    event LogCashierSet(address _newCashier, address _triggeredBy);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "UNAUTHORIZED_O"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
@@ -98,7 +97,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
             "UNAUTHORIZED_ST"
         ); //hex"10"FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
 
-        IBosonRouter(bosonRouterAddress)._beforeERC1155Transfer(
+        ICashier(cashierAddress).beforeERC1155Transfer(
             _from,
             _tokenId,
             _value
@@ -108,7 +107,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
         balances[_tokenId][_from] = balances[_tokenId][_from].sub(_value);
         balances[_tokenId][_to] = _value.add(balances[_tokenId][_to]);
 
-        IBosonRouter(bosonRouterAddress)._onERC1155Transfer(
+        ICashier(cashierAddress).onERC1155Transfer(
             _from,
             _to,
             _tokenId,
@@ -227,7 +226,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
 
         require(IVoucherKernel(voucherKernelAddress).isVoucherTransferable(_tokenId), "FUNDS_RELEASED");
 
-        IBosonRouter(bosonRouterAddress)._onERC721Transfer(
+        ICashier(cashierAddress).onERC721Transfer(
             _from,
             _to,
             _tokenId
@@ -309,7 +308,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
             uint256 tokenId = _tokenIds[i];
             uint256 value = _values[i];
 
-            IBosonRouter(bosonRouterAddress)._beforeERC1155Transfer(
+            ICashier(cashierAddress).beforeERC1155Transfer(
                 _from,
                 tokenId,
                 value
@@ -319,7 +318,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
             balances[tokenId][_from] = balances[tokenId][_from].sub(value);
             balances[tokenId][_to] = value.add(balances[tokenId][_to]);
 
-            IBosonRouter(bosonRouterAddress)._onERC1155Transfer(
+            ICashier(cashierAddress).onERC1155Transfer(
                 _from,
                 _to,
                 tokenId,
@@ -830,16 +829,16 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
     }
 
     /**
-     * @notice Set the address of the Boson Router contract
-     * @param _bosonRouterAddress   The Boson Router  contract
+     * @notice Set the address of the cashier contract
+     * @param _cashierAddress   The Boson Router  contract
      */
-    function setBosonRouterAddress(address _bosonRouterAddress)
+    function setCashierAddress(address _cashierAddress)
         external
         onlyOwner
-        notZeroAddress(_bosonRouterAddress)
+        notZeroAddress(_cashierAddress)
     {
-        bosonRouterAddress = _bosonRouterAddress;
-        emit LogBosonRouterSet(_bosonRouterAddress, msg.sender);
+        cashierAddress = _cashierAddress;
+        emit LogCashierSet(_cashierAddress, msg.sender);
     }
 
     /**
