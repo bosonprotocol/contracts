@@ -822,7 +822,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
 
     /**
      * @notice Set the address of the cashier contract
-     * @param _cashierAddress   The Boson Router  contract
+     * @param _cashierAddress   The Cashier contract
      */
     function setCashierAddress(address _cashierAddress)
         external

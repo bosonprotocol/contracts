@@ -792,7 +792,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
     /**
      * @notice Set the address of the BR contract
-     * @param _bosonRouterAddress   The address of the Cashier contract
+     * @param _bosonRouterAddress   The address of the Boson Route contract
      */
     function setBosonRouterAddress(address _bosonRouterAddress)
         external
