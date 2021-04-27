@@ -938,26 +938,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         IBosonRouter(bosonRouterAddress).incrementCorrelationId(_to);
     }
 
-   /**
-     * @notice Pre-validation when a transfer from the the Tokens contract is triggered. Only the whole supply is allowed for transfer, otherwise reverts.
-     * @param _from owner of the _tokenSupplyId
-     * @param _tokenSupplyId _tokenSupplyId which will be validated
-     * @param _value qty which is desired to be transferred
-     */
-    function beforeERC1155Transfer(
-        address _from,
-        uint256 _tokenSupplyId,
-        uint256 _value
-    ) external view override onlyTokensContract {
-        uint256 _tokenSupplyQty =
-            IVoucherKernel(voucherKernel).getRemQtyForSupply(
-                _tokenSupplyId,
-                _from
-            );
-        require(_tokenSupplyQty == _value, "IQ"); //invalid qty
-    }
-
-     /**
+    /**
      * @notice After the transfer happens the _tokenSupplyId should be updated in the promise. Escrow funds for the seller's deposits (If in ETH) should be allocated to the new owner as well.
      * @param _from prev owner of the _tokenSupplyId
      * @param _to nex owner of the _tokenSupplyId

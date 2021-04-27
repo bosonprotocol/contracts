@@ -97,11 +97,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
             "UNAUTHORIZED_ST"
         ); //hex"10"FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
 
-        ICashier(cashierAddress).beforeERC1155Transfer(
-            _from,
-            _tokenId,
-            _value
-        );
+        require(balances[_tokenId][_from] == _value, "IQ"); //invalid qty
 
         // SafeMath throws with insufficient funds or if _id is not valid (balance will be 0)
         balances[_tokenId][_from] = balances[_tokenId][_from].sub(_value);
@@ -308,11 +304,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
             uint256 tokenId = _tokenIds[i];
             uint256 value = _values[i];
 
-            ICashier(cashierAddress).beforeERC1155Transfer(
-                _from,
-                tokenId,
-                value
-            );
+            require(balances[tokenId][_from] == value, "IQ"); //invalid qty
 
             // SafeMath throws with insufficient funds or if _id is not valid (balance will be 0)
             balances[tokenId][_from] = balances[tokenId][_from].sub(value);

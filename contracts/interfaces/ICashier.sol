@@ -77,18 +77,6 @@ interface ICashier {
     ) external;
 
     /**
-     * @notice Pre-validation when a transfer from the the Tokens contract is triggered. Only the whole supply is allowed for transfer, otherwise reverts.
-     * @param _from owner of the _tokenSupplyId
-     * @param _tokenSupplyId _tokenSupplyId which will be validated
-     * @param _value qty which is desired to be transferred
-     */
-    function beforeERC1155Transfer(
-        address _from,
-        uint256 _tokenSupplyId,
-        uint256 _value
-    ) external view;
-
-    /**
      * @notice After the transfer happens the _tokenSupplyId should be updated in the promise. Escrow funds for the deposits (If in ETH) should be allocated to the new owner as well.
      * @param _from prev owner of the _tokenSupplyId
      * @param _to next owner of the _tokenSupplyId
