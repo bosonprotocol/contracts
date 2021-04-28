@@ -55,22 +55,22 @@ contract('ERC1155ERC721', async (addresses) => {
       contractVoucherKernel.address,
       'true'
     );
-    
+
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
 
-    await contractERC1155ERC721.setCashierAddress(
-      contractCashier.address
-    );
-   
+    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
+
     await contractVoucherKernel.setBosonRouterAddress(
       contractBosonRouter.address
     );
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
     await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-    await contractCashier.setTokenContractAddress(contractERC1155ERC721.address);
+    await contractCashier.setTokenContractAddress(
+      contractERC1155ERC721.address
+    );
 
     await contractVoucherKernel.setComplainPeriod(60); //60 seconds
     await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds

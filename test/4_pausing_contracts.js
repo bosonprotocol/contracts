@@ -65,17 +65,17 @@ contract('Cashier && VK', async (addresses) => {
       contractVoucherKernel.address
     );
 
-    await contractERC1155ERC721.setCashierAddress(
-      contractCashier.address
-    );
-   
+    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
+
     await contractVoucherKernel.setBosonRouterAddress(
       contractBosonRouter.address
     );
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
     await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-    await contractCashier.setTokenContractAddress(contractERC1155ERC721.address);
+    await contractCashier.setTokenContractAddress(
+      contractERC1155ERC721.address
+    );
 
     await contractVoucherKernel.setComplainPeriod(60); //60 seconds
     await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds

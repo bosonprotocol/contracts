@@ -58,9 +58,7 @@ contract('FundLimitsOracle', async (addresses) => {
       contractVoucherKernel.address
     );
 
-    await contractERC1155ERC721.setCashierAddress(
-      contractCashier.address
-    );
+    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 
     await contractVoucherKernel.setBosonRouterAddress(
       contractBosonRouter.address
@@ -69,7 +67,9 @@ contract('FundLimitsOracle', async (addresses) => {
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
     await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-    await contractCashier.setTokenContractAddress(contractERC1155ERC721.address);
+    await contractCashier.setTokenContractAddress(
+      contractERC1155ERC721.address
+    );
   }
 
   describe('FundLimitsOracle interaction', () => {

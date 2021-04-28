@@ -18,7 +18,6 @@ const BN = web3.utils.BN;
 contract('Voucher tests', async (addresses) => {
   const users = new Users(addresses);
 
-
   let contractERC1155ERC721,
     contractVoucherKernel,
     contractCashier,
@@ -55,13 +54,9 @@ contract('Voucher tests', async (addresses) => {
       contractVoucherKernel.address
     );
 
-    await contractERC1155ERC721.setCashierAddress(
-      contractCashier.address
-    );
+    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 
-    await contractERC1155ERC721.setCashierAddress(
-      contractCashier.address
-    );
+    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 
     await contractVoucherKernel.setBosonRouterAddress(
       contractBosonRouter.address
@@ -69,11 +64,12 @@ contract('Voucher tests', async (addresses) => {
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
     await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-    await contractCashier.setTokenContractAddress(contractERC1155ERC721.address);
+    await contractCashier.setTokenContractAddress(
+      contractERC1155ERC721.address
+    );
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
-
   }
 
   beforeEach('setup contracts for tests', async () => {
@@ -82,7 +78,6 @@ contract('Voucher tests', async (addresses) => {
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
     await deployContracts();
-
   });
 
   describe('Direct minting', function () {
@@ -1157,13 +1152,9 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
       contractVoucherKernel.address
     );
 
-    await contractERC1155ERC721.setCashierAddress(
-      contractCashier.address
-    );
+    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 
-    await contractERC1155ERC721.setCashierAddress(
-      contractCashier.address
-    );
+    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 
     await contractVoucherKernel.setBosonRouterAddress(
       contractBosonRouter.address
@@ -1171,8 +1162,9 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
     await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-    await contractCashier.setTokenContractAddress(contractERC1155ERC721.address);
-
+    await contractCashier.setTokenContractAddress(
+      contractERC1155ERC721.address
+    );
   }
 
   beforeEach('setup promise dates based on the block timestamp', async () => {
