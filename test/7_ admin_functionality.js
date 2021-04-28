@@ -9,7 +9,6 @@ const ERC1155ERC721 = artifacts.require('ERC1155ERC721');
 const VoucherKernel = artifacts.require('VoucherKernel');
 const Cashier = artifacts.require('Cashier');
 const BosonRouter = artifacts.require('BosonRouter');
-const MockERC20Permit = artifacts.require('MockERC20Permit');
 const FundLimitsOracle = artifacts.require('FundLimitsOracle');
 
 contract('Admin functionality', async (addresses) => {
@@ -19,9 +18,7 @@ contract('Admin functionality', async (addresses) => {
     contractVoucherKernel,
     contractCashier,
     contractBosonRouter,
-    contractBSNTokenPrice,
     contractFundLimitsOracle;
-  let expectedLimit;
 
   async function deployContracts() {
     const timestamp = await Utils.getCurrTimestamp();
@@ -30,7 +27,6 @@ contract('Admin functionality', async (addresses) => {
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
     contractFundLimitsOracle = await FundLimitsOracle.new();
-
     contractERC1155ERC721 = await ERC1155ERC721.new();
     contractVoucherKernel = await VoucherKernel.new(
       contractERC1155ERC721.address
@@ -40,11 +36,6 @@ contract('Admin functionality', async (addresses) => {
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
-    );
-
-    contractBSNTokenPrice = await MockERC20Permit.new(
-      'BosonTokenPrice',
-      'BPRC'
     );
   }
 
