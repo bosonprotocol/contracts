@@ -72,7 +72,7 @@ contract('Voucher tests', async (addresses) => {
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
   }
 
-  beforeEach('setup contracts for tests', async () => {
+  beforeEach('execute prerequisite steps', async () => {
     const timestamp = await Utils.getCurrTimestamp();
     constants.PROMISE_VALID_FROM = timestamp;
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
@@ -1176,7 +1176,7 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     await deployContracts();
   });
 
-  beforeEach('setup contracts for tests', async () => {
+  beforeEach('execute prerequisite steps', async () => {
     const txOrder = await contractBosonRouter.requestCreateOrderETHETH(
       [
         constants.PROMISE_VALID_FROM,
