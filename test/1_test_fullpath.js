@@ -30,22 +30,18 @@ contract('Voucher tests', async (addresses) => {
     promiseId1,
     promiseId2;
 
-  beforeEach('setup contracts for tests', async () => {
+  async function deployContracts() {
     const sixtySeconds = 60;
-
-    const timestamp = await Utils.getCurrTimestamp();
-    constants.PROMISE_VALID_FROM = timestamp;
-    constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
     contractFundLimitsOracle = await FundLimitsOracle.new();
     contractERC1155ERC721 = await ERC1155ERC721.new();
     contractVoucherKernel = await VoucherKernel.new(
       contractERC1155ERC721.address
     );
+
     contractCashier = await Cashier.new(contractVoucherKernel.address);
     contractBosonRouter = await BosonRouter.new(
       contractVoucherKernel.address,
-      contractERC1155ERC721.address,
       contractFundLimitsOracle.address,
       contractCashier.address
     );
@@ -57,9 +53,8 @@ contract('Voucher tests', async (addresses) => {
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
-    await contractERC1155ERC721.setBosonRouterAddress(
-      contractBosonRouter.address
-    );
+
+    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 
     await contractVoucherKernel.setBosonRouterAddress(
       contractBosonRouter.address
@@ -67,9 +62,20 @@ contract('Voucher tests', async (addresses) => {
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
     await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
+    await contractCashier.setTokenContractAddress(
+      contractERC1155ERC721.address
+    );
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
+  }
+
+  beforeEach('execute prerequisite steps', async () => {
+    const timestamp = await Utils.getCurrTimestamp();
+    constants.PROMISE_VALID_FROM = timestamp;
+    constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
+
+    await deployContracts();
   });
 
   describe('Direct minting', function () {
@@ -1122,21 +1128,16 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     contractFundLimitsOracle;
   let tokenSupplyKey1, tokenVoucherKey1;
 
-  beforeEach('setup promise dates based on the block timestamp', async () => {
-    const timestamp = await Utils.getCurrTimestamp();
-
-    constants.PROMISE_VALID_FROM = timestamp;
-    constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
-
+  async function deployContracts() {
     contractFundLimitsOracle = await FundLimitsOracle.new();
     contractERC1155ERC721 = await ERC1155ERC721.new();
     contractVoucherKernel = await VoucherKernel.new(
       contractERC1155ERC721.address
     );
+
     contractCashier = await Cashier.new(contractVoucherKernel.address);
     contractBosonRouter = await BosonRouter.new(
       contractVoucherKernel.address,
-      contractERC1155ERC721.address,
       contractFundLimitsOracle.address,
       contractCashier.address
     );
@@ -1148,9 +1149,8 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
-    await contractERC1155ERC721.setBosonRouterAddress(
-      contractBosonRouter.address
-    );
+
+    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 
     await contractVoucherKernel.setBosonRouterAddress(
       contractBosonRouter.address
@@ -1158,9 +1158,21 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
     await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
+    await contractCashier.setTokenContractAddress(
+      contractERC1155ERC721.address
+    );
+  }
+
+  beforeEach('setup promise dates based on the block timestamp', async () => {
+    const timestamp = await Utils.getCurrTimestamp();
+
+    constants.PROMISE_VALID_FROM = timestamp;
+    constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
+
+    await deployContracts();
   });
 
-  beforeEach('setup contracts for tests', async () => {
+  beforeEach('execute prerequisite steps', async () => {
     const txOrder = await contractBosonRouter.requestCreateOrderETHETH(
       [
         constants.PROMISE_VALID_FROM,
