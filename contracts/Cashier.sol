@@ -895,8 +895,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             );
 
             //Reduce _from escrow token amount and increase _to escrow token amount - deposit
-            escrowTokens[tokenAddress][_from] =  escrowTokens[tokenAddress][_from].sub(depositBu);
-            escrowTokens[tokenAddress][_to] =  escrowTokens[tokenAddress][_to].add(depositBu);
+            escrowTokens[tokenAddress][_from] = escrowTokens[tokenAddress][_from].sub(depositBu);
+            escrowTokens[tokenAddress][_to] = escrowTokens[tokenAddress][_to].add(depositBu);
 
         }
 
@@ -907,8 +907,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         
 
             //Reduce _from escrow token amount and increase _to escrow token amount - price 
-            escrowTokens[tokenAddress][_from] =  escrowTokens[tokenAddress][_from].sub(price);
-            escrowTokens[tokenAddress][_to] =  escrowTokens[tokenAddress][_to].add(price);
+            escrowTokens[tokenAddress][_from] = escrowTokens[tokenAddress][_from].sub(price);
+            escrowTokens[tokenAddress][_to] = escrowTokens[tokenAddress][_to].add(price);
 
             //Reduce _from escrow amount and increase _to escrow amount - deposit
             escrow[_from] = escrow[_from].sub(depositBu);
@@ -922,16 +922,16 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
 
             //Reduce _from escrow token amount and increase _to escrow token amount - price 
-            escrowTokens[tokenAddress][_from] =  escrowTokens[tokenAddress][_from].sub(price);
-            escrowTokens[tokenAddress][_to] =  escrowTokens[tokenAddress][_to].add(price);
+            escrowTokens[tokenAddress][_from] = escrowTokens[tokenAddress][_from].sub(price);
+            escrowTokens[tokenAddress][_to] = escrowTokens[tokenAddress][_to].add(price);
 
             tokenAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(
                 tokenSupplyId
             );
 
             //Reduce _from escrow token amount and increase _to escrow token amount - deposit 
-            escrowTokens[tokenAddress][_from] =  escrowTokens[tokenAddress][_from].sub(depositBu);
-            escrowTokens[tokenAddress][_to] =  escrowTokens[tokenAddress][_to].add(depositBu);
+            escrowTokens[tokenAddress][_from] = escrowTokens[tokenAddress][_from].sub(depositBu);
+            escrowTokens[tokenAddress][_to] = escrowTokens[tokenAddress][_to].add(depositBu);
 
         }
    
@@ -982,8 +982,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             totalAmount = depositSe.mul(_value);
 
             //Reduce _from escrow token amount and increase _to escrow token amount - deposit
-            escrowTokens[tokenDepositAddress][_from] =  escrowTokens[tokenDepositAddress][_from].sub(totalAmount);
-            escrowTokens[tokenDepositAddress][_to] =  escrowTokens[tokenDepositAddress][_to].add(totalAmount);
+            escrowTokens[tokenDepositAddress][_from] = escrowTokens[tokenDepositAddress][_from].sub(totalAmount);
+            escrowTokens[tokenDepositAddress][_to] = escrowTokens[tokenDepositAddress][_to].add(totalAmount);
         }
 
         IVoucherKernel(voucherKernel).setSupplyHolderOnTransfer(

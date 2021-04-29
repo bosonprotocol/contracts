@@ -56,8 +56,6 @@ contract('Voucher tests', async (addresses) => {
 
     await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 
-    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
-
     await contractVoucherKernel.setBosonRouterAddress(
       contractBosonRouter.address
     );
@@ -1151,8 +1149,6 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
-
-    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 
     await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 

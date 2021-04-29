@@ -126,7 +126,7 @@ contract('Admin functionality', async (addresses) => {
     });
   });
 
-  describe('ERC1125721', () => {
+  describe('ERC1155721', () => {
     before(async () => {
       await deployContracts();
     });
