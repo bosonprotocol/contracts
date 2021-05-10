@@ -142,6 +142,7 @@ contract BosonRouter is
         external
         payable
         override
+        nonReentrant
         whenNotPaused
     {
         notAboveETHLimit(metadata[2].mul(metadata[5]));
@@ -319,7 +320,7 @@ contract BosonRouter is
     function requestCreateOrderTKNETH(
         address _tokenPriceAddress,
         uint256[] calldata metadata
-    ) external payable override whenNotPaused {
+    ) external payable override nonReentrant whenNotPaused {
         notZeroAddress(_tokenPriceAddress);
         notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
         notAboveETHLimit(metadata[3].mul(metadata[5]));
@@ -401,7 +402,6 @@ contract BosonRouter is
         bytes32 rDeposit,
         bytes32 sDeposit // tokenDeposits
     ) external override nonReentrant whenNotPaused {
-
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
         require(_tokensSent.sub(depositBu) == price, "IF"); //invalid funds
@@ -475,7 +475,6 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s
     ) external override nonReentrant whenNotPaused {
-
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
         require(_tokensSent.sub(depositBu) == price, "IF"); //invalid funds
@@ -532,7 +531,6 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s
     ) external payable override nonReentrant whenNotPaused {
-
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
         require(price == msg.value, "IP"); //invalid price
@@ -591,7 +589,6 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s
     ) external payable override nonReentrant whenNotPaused {
-
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
         require(price == _tokensPrice, "IP"); //invalid price
