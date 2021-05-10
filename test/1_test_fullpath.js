@@ -15,7 +15,7 @@ const FundLimitsOracle = artifacts.require('FundLimitsOracle');
 
 let snapshot;
 
-contract('Voucher tests', async (addresses) => {
+contract('Voucher tests', (addresses) => {
   const users = new Users(addresses);
 
   let contractERC1155ERC721,
@@ -342,7 +342,7 @@ contract('Voucher tests', async (addresses) => {
   });
 });
 
-contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
+contract('Voucher tests - UNHAPPY PATH', (addresses) => {
   const users = new Users(addresses);
 
   let contractERC1155ERC721,

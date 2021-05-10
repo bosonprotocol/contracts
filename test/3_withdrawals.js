@@ -20,7 +20,7 @@ let utils;
 
 let TOKEN_SUPPLY_ID;
 
-contract('Cashier withdrawals ', async (addresses) => {
+contract('Cashier withdrawals ', (addresses) => {
   const users = new Users(addresses);
 
   let contractERC1155ERC721,
@@ -158,7 +158,7 @@ contract('Cashier withdrawals ', async (addresses) => {
     );
   }
 
-  describe('Withdraw scenarios', async () => {
+  describe('Withdraw scenarios', () => {
     before(async () => {
       await deployContracts();
     });
@@ -176,7 +176,7 @@ contract('Cashier withdrawals ', async (addresses) => {
       }
     });
 
-    describe(`ETHETH`, async () => {
+    describe(`ETHETH`, () => {
       before(async () => {
         utils = UtilsBuilder.create()
           .ETHETH()
@@ -797,7 +797,7 @@ contract('Cashier withdrawals ', async (addresses) => {
       });
     });
 
-    describe(`TKNTKN [WITH PERMIT]`, async () => {
+    describe(`TKNTKN [WITH PERMIT]`, () => {
       let balanceBuyerFromPayment = new BN(0);
       let balanceBuyerFromDeposits = new BN(0);
 
@@ -1764,7 +1764,7 @@ contract('Cashier withdrawals ', async (addresses) => {
       });
     });
 
-    describe(`TKNTKN SAME [WITH PERMIT]`, async () => {
+    describe(`TKNTKN SAME [WITH PERMIT]`, () => {
       let balanceBuyer = new BN(0);
       let balanceSeller = new BN(0);
       let escrowBalance = new BN(0);
@@ -2511,7 +2511,7 @@ contract('Cashier withdrawals ', async (addresses) => {
       });
     });
 
-    describe(`ETHTKN [WITH PERMIT]`, async () => {
+    describe(`ETHTKN [WITH PERMIT]`, () => {
       let balanceBuyerFromDeposits = new BN(0);
       let balanceSellerFromDeposits = new BN(0);
       let escrowBalanceFromDeposits = new BN(0);
@@ -3415,7 +3415,7 @@ contract('Cashier withdrawals ', async (addresses) => {
       });
     });
 
-    describe(`TKNETH [WITH PERMIT]`, async () => {
+    describe(`TKNETH [WITH PERMIT]`, () => {
       let balanceBuyerFromPayment = new BN(0);
       let balanceSellerFromPayment = new BN(0);
       let escrowBalanceFromPayment = new BN(0);
@@ -4534,7 +4534,7 @@ contract('Cashier withdrawals ', async (addresses) => {
     let voucherToBuyBeforeBurn = 5;
     let tokensToMintSeller, tokensToMintBuyer;
 
-    describe('ETHETH', async () => {
+    describe('ETHETH', () => {
       before(async () => {
         await deployContracts();
 
@@ -4661,7 +4661,7 @@ contract('Cashier withdrawals ', async (addresses) => {
     });
 
     describe('[WITH PERMIT]', () => {
-      describe('TKNTKN', async () => {
+      describe('TKNTKN', () => {
         before(async () => {
           await deployContracts();
           utils = UtilsBuilder.create()
@@ -4838,7 +4838,7 @@ contract('Cashier withdrawals ', async (addresses) => {
         });
       });
 
-      describe('ETHTKN', async () => {
+      describe('ETHTKN', () => {
         before(async () => {
           await deployContracts();
           utils = UtilsBuilder.create()
@@ -5009,7 +5009,7 @@ contract('Cashier withdrawals ', async (addresses) => {
         });
       });
 
-      describe('TKNETH', async () => {
+      describe('TKNETH', () => {
         before(async () => {
           await deployContracts();
           utils = UtilsBuilder.create()

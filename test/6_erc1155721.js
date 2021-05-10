@@ -17,7 +17,7 @@ let utils;
 
 let TOKEN_SUPPLY_ID;
 
-contract('ERC1155ERC721', async (addresses) => {
+contract('ERC1155ERC721', (addresses) => {
   const users = new Users(addresses);
 
   let contractERC1155ERC721,
@@ -85,7 +85,7 @@ contract('ERC1155ERC721', async (addresses) => {
   }
 
   describe('Multi-token contract', function () {
-    describe('Common', async () => {
+    describe('Common', () => {
       before(async () => {
         await deployContracts();
 
@@ -437,7 +437,7 @@ contract('ERC1155ERC721', async (addresses) => {
       });
     });
 
-    describe('Negative 1155 Transfers', async () => {
+    describe('Negative 1155 Transfers', () => {
       beforeEach(async () => {
         await deployContracts();
 
@@ -563,7 +563,7 @@ contract('ERC1155ERC721', async (addresses) => {
       });
     });
 
-    describe('Negative 721 Transfers', async () => {
+    describe('Negative 721 Transfers', () => {
       beforeEach(async () => {
         await deployContracts();
 
@@ -685,7 +685,7 @@ contract('ERC1155ERC721', async (addresses) => {
       });
     });
 
-    describe('Metadata', async () => {
+    describe('Metadata', () => {
       let erc721;
       const metadataBase = 'https://localhost:3000/';
       const metadata1155Route = 'voucher-sets/';

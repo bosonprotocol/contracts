@@ -19,9 +19,14 @@ const FundLimitsOracle = artifacts.require('FundLimitsOracle');
 const BN = web3.utils.BN;
 
 let utils;
+let users;
 
-contract('Cashier and VoucherKernel', async (addresses) => {
-  const users = new Users(addresses);
+describe('Cashier and VoucherKernel', () => {
+  before(async () => {
+    const accounts = await hre.ethers.getSigners()
+    const addresses = accounts.map(e => e.address)
+    users = new Users(addresses);
+  })
 
   let contractERC1155ERC721,
     contractVoucherKernel,
@@ -1538,7 +1543,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
     const ORDER_QTY = 5;
     let TOKEN_SUPPLY_ID;
 
-    describe('ETHETH', async () => {
+    describe('ETHETH', () => {
       before(async () => {
         await deployContracts();
         utils = UtilsBuilder.create()
@@ -4590,7 +4595,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
       });
     });
 
-    describe('ETHETH', async () => {
+    describe('ETHETH', () => {
       beforeEach(async () => {
         await deployContracts();
 
