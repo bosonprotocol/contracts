@@ -61,7 +61,6 @@ contract('Cashier and VoucherKernel', async (addresses) => {
     contractCashier = await Cashier.new(contractVoucherKernel.address);
     contractBosonRouter = await BosonRouter.new(
       contractVoucherKernel.address,
-      contractERC1155ERC721.address,
       contractFundLimitsOracle.address,
       contractCashier.address
     );
@@ -79,12 +78,12 @@ contract('Cashier and VoucherKernel', async (addresses) => {
       contractVoucherKernel.address,
       'true'
     );
+
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
-    await contractERC1155ERC721.setBosonRouterAddress(
-      contractBosonRouter.address
-    );
+
+    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 
     await contractVoucherKernel.setBosonRouterAddress(
       contractBosonRouter.address
@@ -92,6 +91,9 @@ contract('Cashier and VoucherKernel', async (addresses) => {
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
     await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
+    await contractCashier.setTokenContractAddress(
+      contractERC1155ERC721.address
+    );
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);

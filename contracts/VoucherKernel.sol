@@ -876,7 +876,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     function setSupplyHolderOnTransfer(
         uint256 _tokenIdSupply,
         address _newSeller
-    ) external override onlyFromRouter {
+    ) external override onlyFromCashier {
         bytes32 promiseKey = ordersPromise[_tokenIdSupply];
         promises[promiseKey].seller = _newSeller;
     }

@@ -11,7 +11,6 @@ import "./interfaces/IERC20WithPermit.sol";
 import "./interfaces/IFundLimitsOracle.sol";
 import "./interfaces/IBosonRouter.sol";
 import "./interfaces/ICashier.sol";
-import "./ERC1155ERC721.sol";
 import "./UsingHelpers.sol";
 
 /**
@@ -33,7 +32,6 @@ contract BosonRouter is
 
     address public cashierAddress;
     address public voucherKernel;
-    address public tokensContractAddress;
     address public fundLimitsOracle;
 
     event LogOrderCreated(
@@ -44,20 +42,11 @@ contract BosonRouter is
         uint256 _correlationId
     );
 
-    event LogTokenContractSet(address _newTokenContract, address _triggeredBy);
-
     /**
      * @notice Acts as a modifier, but it's cheaper. Checking if a non-zero address is provided, otherwise reverts.
      */
     function notZeroAddress(address tokenAddress) private pure {
         require(tokenAddress != address(0), "0A"); //zero address
-    }
-
-    /**
-     * @notice Acts as a modifier, but it's cheaper. The only caller must be tokensContractAddress, otherwise reverts.
-     */
-    function onlyTokensContract() private view {
-        require(msg.sender == tokensContractAddress, "UT"); // Unauthorized token address
     }
 
     /**
@@ -98,17 +87,14 @@ contract BosonRouter is
 
     constructor(
         address _voucherKernel,
-        address _tokensContractAddress,
         address _fundLimitsOracle,
         address _cashierAddress
     ) {
         notZeroAddress(_voucherKernel);
-        notZeroAddress(_tokensContractAddress);
         notZeroAddress(_fundLimitsOracle);
         notZeroAddress(_cashierAddress);
 
         voucherKernel = _voucherKernel;
-        tokensContractAddress = _tokensContractAddress;
         fundLimitsOracle = _fundLimitsOracle;
         cashierAddress = _cashierAddress;
     }
@@ -706,292 +692,18 @@ contract BosonRouter is
         );
     }
 
-    /**
-     * @notice Hook which will be triggered when a _tokenIdVoucher will be transferred. Escrow funds should be allocated to the new owner.
-     * @param _from prev owner of the _tokenIdVoucher
-     * @param _to next owner of the _tokenIdVoucher
-     * @param _tokenIdVoucher _tokenIdVoucher that has been transferred
-     */
-    function _onERC721Transfer(
-        address _from,
-        address _to,
-        uint256 _tokenIdVoucher
-    ) external override {
-        onlyTokensContract();
-        uint256 tokenSupplyId =
-            IVoucherKernel(voucherKernel).getIdSupplyFromVoucher(
-                _tokenIdVoucher
-            );
-        uint8 paymentType =
-            IVoucherKernel(voucherKernel).getVoucherPaymentMethod(
-                tokenSupplyId
-            );
-
-        uint256 amount;
-        address tokenAddress;
-
-        (uint256 price, uint256 depositBu) =
-            IVoucherKernel(voucherKernel).getBuyerOrderCosts(tokenSupplyId);
-
-        if (paymentType == ETHETH) {
-            uint256 totalAmount = price.add(depositBu);
-
-            amount = ICashier(cashierAddress).getEscrowAmount(_from);
-            ICashier(cashierAddress).updateEscrowAmount(
-                _from,
-                amount.sub(totalAmount)
-            );
-
-            amount = ICashier(cashierAddress).getEscrowAmount(_to);
-            ICashier(cashierAddress).updateEscrowAmount(
-                _to,
-                amount.add(totalAmount)
-            );
-        }
-
-        if (paymentType == ETHTKN) {
-            amount = ICashier(cashierAddress).getEscrowAmount(_from);
-            ICashier(cashierAddress).updateEscrowAmount(
-                _from,
-                amount.sub(price)
-            );
-
-            amount = ICashier(cashierAddress).getEscrowAmount(_to);
-            ICashier(cashierAddress).updateEscrowAmount(_to, amount.add(price));
-
-            tokenAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                tokenSupplyId
-            );
-
-            amount = ICashier(cashierAddress).getEscrowTokensAmount(
-                tokenAddress,
-                _from
-            );
-            ICashier(cashierAddress).updateEscrowTokensAmount(
-                tokenAddress,
-                _from,
-                amount.sub(depositBu)
-            );
-
-            amount = ICashier(cashierAddress).getEscrowTokensAmount(
-                tokenAddress,
-                _to
-            );
-            ICashier(cashierAddress).updateEscrowTokensAmount(
-                tokenAddress,
-                _to,
-                amount.add(depositBu)
-            );
-        }
-
-        if (paymentType == TKNETH) {
-            tokenAddress = IVoucherKernel(voucherKernel).getVoucherPriceToken(
-                tokenSupplyId
-            );
-
-            amount = ICashier(cashierAddress).getEscrowTokensAmount(
-                tokenAddress,
-                _from
-            );
-            ICashier(cashierAddress).updateEscrowTokensAmount(
-                tokenAddress,
-                _from,
-                amount.sub(price)
-            );
-
-            amount = ICashier(cashierAddress).getEscrowTokensAmount(
-                tokenAddress,
-                _to
-            );
-            ICashier(cashierAddress).updateEscrowTokensAmount(
-                tokenAddress,
-                _to,
-                amount.add(price)
-            );
-
-            amount = ICashier(cashierAddress).getEscrowAmount(_from);
-            ICashier(cashierAddress).updateEscrowAmount(
-                _from,
-                amount.sub(depositBu)
-            );
-
-            amount = ICashier(cashierAddress).getEscrowAmount(_to);
-            ICashier(cashierAddress).updateEscrowAmount(
-                _to,
-                amount.add(depositBu)
-            );
-        }
-
-        if (paymentType == TKNTKN) {
-            tokenAddress = IVoucherKernel(voucherKernel).getVoucherPriceToken(
-                tokenSupplyId
-            );
-
-            amount = ICashier(cashierAddress).getEscrowTokensAmount(
-                tokenAddress,
-                _from
-            );
-            ICashier(cashierAddress).updateEscrowTokensAmount(
-                tokenAddress,
-                _from,
-                amount.sub(price)
-            );
-
-            amount = ICashier(cashierAddress).getEscrowTokensAmount(
-                tokenAddress,
-                _to
-            );
-            ICashier(cashierAddress).updateEscrowTokensAmount(
-                tokenAddress,
-                _to,
-                amount.add(price)
-            );
-
-            tokenAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                tokenSupplyId
-            );
-
-            amount = ICashier(cashierAddress).getEscrowTokensAmount(
-                tokenAddress,
-                _from
-            );
-            ICashier(cashierAddress).updateEscrowTokensAmount(
-                tokenAddress,
-                _from,
-                amount.sub(depositBu)
-            );
-
-            amount = ICashier(cashierAddress).getEscrowTokensAmount(
-                tokenAddress,
-                _to
-            );
-            ICashier(cashierAddress).updateEscrowTokensAmount(
-                tokenAddress,
-                _to,
-                amount.add(depositBu)
-            );
-        }
-
-        correlationIds[_to]++;
-    }
-
-    /**
-     * @notice Pre-validation when a transfer from the the Tokens contract is triggered. Only the whole supply is allowed for transfer, otherwise reverts.
-     * @param _from owner of the _tokenSupplyId
-     * @param _tokenSupplyId _tokenSupplyId which will be validated
-     * @param _value qty which is desired to be transferred
-     */
-    function _beforeERC1155Transfer(
-        address _from,
-        uint256 _tokenSupplyId,
-        uint256 _value
-    ) external view override {
-        onlyTokensContract();
-        uint256 _tokenSupplyQty =
-            IVoucherKernel(voucherKernel).getRemQtyForSupply(
-                _tokenSupplyId,
-                _from
-            );
-        require(_tokenSupplyQty == _value, "IQ"); //invalid qty
-    }
-
-    /**
-     * @notice After the transfer happens the _tokenSupplyId should be updated in the promise. Escrow funds for the seller's deposits (If in ETH) should be allocated to the new owner as well.
-     * @param _from prev owner of the _tokenSupplyId
-     * @param _to nex owner of the _tokenSupplyId
-     * @param _tokenSupplyId _tokenSupplyId for transfer
-     * @param _value qty which has been transferred
-     */
-    function _onERC1155Transfer(
-        address _from,
-        address _to,
-        uint256 _tokenSupplyId,
-        uint256 _value
-    ) external override {
-        onlyTokensContract();
-        uint8 paymentType =
-            IVoucherKernel(voucherKernel).getVoucherPaymentMethod(
-                _tokenSupplyId
-            );
-
-        uint256 depositSe;
-        uint256 totalAmount;
-        uint256 amount;
-
-        if (paymentType == ETHETH || paymentType == TKNETH) {
-            depositSe = IVoucherKernel(voucherKernel).getSellerDeposit(
-                _tokenSupplyId
-            );
-            totalAmount = depositSe.mul(_value);
-
-            amount = ICashier(cashierAddress).getEscrowAmount(_from);
-            ICashier(cashierAddress).updateEscrowAmount(
-                _from,
-                amount.sub(totalAmount)
-            );
-
-            amount = ICashier(cashierAddress).getEscrowAmount(_to);
-            ICashier(cashierAddress).updateEscrowAmount(
-                _to,
-                amount.add(totalAmount)
-            );
-        }
-
-        if (paymentType == ETHTKN || paymentType == TKNTKN) {
-            address tokenDepositAddress =
-                IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                    _tokenSupplyId
-                );
-
-            depositSe = IVoucherKernel(voucherKernel).getSellerDeposit(
-                _tokenSupplyId
-            );
-            totalAmount = depositSe.mul(_value);
-
-            amount = ICashier(cashierAddress).getEscrowTokensAmount(
-                tokenDepositAddress,
-                _from
-            );
-            ICashier(cashierAddress).updateEscrowTokensAmount(
-                tokenDepositAddress,
-                _from,
-                amount.sub(totalAmount)
-            );
-
-            amount = ICashier(cashierAddress).getEscrowTokensAmount(
-                tokenDepositAddress,
-                _to
-            );
-            ICashier(cashierAddress).updateEscrowTokensAmount(
-                tokenDepositAddress,
-                _to,
-                amount.add(totalAmount)
-            );
-        }
-
-        IVoucherKernel(voucherKernel).setSupplyHolderOnTransfer(
-            _tokenSupplyId,
-            _to
-        );
-
-        correlationIds[_to]++;
-    }
-
     // // // // // // // //
     // UTILS
     // // // // // // // //
 
     /**
-     * @notice Set the address of the ERC1155ERC721 contract
-     * @param _tokensContractAddress   The address of the ERC1155ERC721 contract
+     * @notice Increment a seller or buyer's correlation Id
+     * @param _party   The address of the seller or buyer
      */
-    function setTokenContractAddress(address _tokensContractAddress)
+    function incrementCorrelationId(address _party) 
         external
         override
     {
-        onlyRouterOwner();
-        notZeroAddress(_tokensContractAddress);
-        tokensContractAddress = _tokensContractAddress;
-        emit LogTokenContractSet(_tokensContractAddress, msg.sender);
+         correlationIds[_party]++;
     }
 }
