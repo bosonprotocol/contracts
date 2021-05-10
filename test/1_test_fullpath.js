@@ -1432,10 +1432,10 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
         tokenVoucherKey1
       );
 
-      //Check it didn't go into a branch that changes the complainPeriodStart
+      //Check it didn't go into a code branch that changes the complainPeriodStart
       assert.isTrue(
         voucherStatusAfter.complainPeriodStart.eq(
-          new BN(transactionBlock.timestamp)
+          voucherStatusBefore.complainPeriodStart
         )
       );
 
