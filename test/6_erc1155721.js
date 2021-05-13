@@ -39,7 +39,6 @@ contract('ERC1155ERC721', (addresses) => {
     contractCashier = await Cashier.new(contractVoucherKernel.address);
     contractBosonRouter = await BosonRouter.new(
       contractVoucherKernel.address,
-      contractERC1155ERC721.address,
       contractFundLimitsOracle.address,
       contractCashier.address
     );
@@ -56,12 +55,12 @@ contract('ERC1155ERC721', (addresses) => {
       contractVoucherKernel.address,
       'true'
     );
+
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
-    await contractERC1155ERC721.setBosonRouterAddress(
-      contractBosonRouter.address
-    );
+
+    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 
     await contractVoucherKernel.setBosonRouterAddress(
       contractBosonRouter.address
@@ -69,6 +68,9 @@ contract('ERC1155ERC721', (addresses) => {
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
     await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
+    await contractCashier.setTokenContractAddress(
+      contractERC1155ERC721.address
+    );
 
     await contractVoucherKernel.setComplainPeriod(60); //60 seconds
     await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
@@ -77,10 +79,12 @@ contract('ERC1155ERC721', (addresses) => {
       contractBSNTokenPrice.address,
       constants.TOKEN_LIMIT
     );
+
     await contractFundLimitsOracle.setTokenLimit(
       contractBSNTokenDeposit.address,
       constants.TOKEN_LIMIT
     );
+
     await contractFundLimitsOracle.setETHLimit(constants.ETHER_LIMIT);
   }
 
@@ -144,78 +148,6 @@ contract('ERC1155ERC721', (addresses) => {
             'ev._operator not expected!'
           );
           assert.equal(ev._approved, true, 'ev._value not expected!');
-          return true;
-        });
-      });
-
-      it('[NEGATIVE][setVoucherKernelAddress] Should revert if executed by attacker', async () => {
-        await truffleAssert.reverts(
-          contractERC1155ERC721.setVoucherKernelAddress(
-            contractVoucherKernel.address,
-            {from: users.attacker.address}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
-      });
-
-      it('[NEGATIVE][setVoucherKernelAddress] Should revert if ZERO address is provided', async () => {
-        await truffleAssert.reverts(
-          contractERC1155ERC721.setVoucherKernelAddress(constants.ZERO_ADDRESS),
-          truffleAssert.ErrorType.REVERT
-        );
-      });
-
-      it('[setVoucherKernelAddress] Should emit LogVoucherKernelSet', async () => {
-        const tx = await contractERC1155ERC721.setVoucherKernelAddress(
-          contractVoucherKernel.address
-        );
-        truffleAssert.eventEmitted(tx, 'LogVoucherKernelSet', (ev) => {
-          assert.equal(
-            ev._newVoucherKernel,
-            contractVoucherKernel.address,
-            'VK not as expected!'
-          );
-          assert.equal(
-            ev._triggeredBy,
-            users.deployer.address,
-            '_triggeredBy not as expected!'
-          );
-          return true;
-        });
-      });
-
-      it('[NEGATIVE][setBosonRouterAddress] Should revert if executed by attacker', async () => {
-        await truffleAssert.reverts(
-          contractERC1155ERC721.setBosonRouterAddress(
-            contractBosonRouter.address,
-            {from: users.attacker.address}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
-      });
-
-      it('[NEGATIVE][setBosonRouterAddress] Should revert if ZERO address is provided', async () => {
-        await truffleAssert.reverts(
-          contractERC1155ERC721.setBosonRouterAddress(constants.ZERO_ADDRESS),
-          truffleAssert.ErrorType.REVERT
-        );
-      });
-
-      it('[setBosonRouterAddress] Should emit LogBosonRouterSet', async () => {
-        const tx = await contractERC1155ERC721.setBosonRouterAddress(
-          contractBosonRouter.address
-        );
-        truffleAssert.eventEmitted(tx, 'LogBosonRouterSet', (ev) => {
-          assert.equal(
-            ev._newBosonRouter,
-            contractBosonRouter.address,
-            'BR not as expected!'
-          );
-          assert.equal(
-            ev._triggeredBy,
-            users.deployer.address,
-            '_triggeredBy not as expected!'
-          );
           return true;
         });
       });
@@ -287,89 +219,6 @@ contract('ERC1155ERC721', (addresses) => {
           assert.equal(ev._to, users.buyer.address, '_to not expected!');
           return true;
         });
-      });
-
-      it('Owner should be the deployer', async () => {
-        let expectedOwner = users.deployer.address;
-        let owner = await contractERC1155ERC721.owner();
-
-        assert.equal(owner, expectedOwner, 'Owner is not as expected');
-      });
-
-      it('Owner should be able to set VK address', async () => {
-        const tx = await contractERC1155ERC721.setVoucherKernelAddress(
-          contractVoucherKernel.address
-        );
-
-        truffleAssert.eventEmitted(tx, 'LogVoucherKernelSet', (ev) => {
-          assert.equal(
-            ev._newVoucherKernel,
-            contractVoucherKernel.address,
-            'VK not as expected!'
-          );
-          assert.equal(
-            ev._triggeredBy,
-            users.deployer.address,
-            'LogVoucherKernelSet not triggered by owner!'
-          );
-
-          return true;
-        });
-      });
-
-      it('[NEGATIVE]Attacker should not be able to set VK address', async () => {
-        await truffleAssert.reverts(
-          contractERC1155ERC721.setVoucherKernelAddress(
-            contractVoucherKernel.address,
-            {from: users.attacker.address}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
-      });
-
-      it('[NEGATIVE]Owner should not be able to set ZERO VK address', async () => {
-        await truffleAssert.reverts(
-          contractERC1155ERC721.setVoucherKernelAddress(constants.ZERO_ADDRESS),
-          truffleAssert.ErrorType.REVERT
-        );
-      });
-
-      it('Owner should be able to set BR address', async () => {
-        const tx = await contractERC1155ERC721.setBosonRouterAddress(
-          contractBosonRouter.address
-        );
-
-        truffleAssert.eventEmitted(tx, 'LogBosonRouterSet', (ev) => {
-          assert.equal(
-            ev._newBosonRouter,
-            contractBosonRouter.address,
-            'VK not as expected!'
-          );
-          assert.equal(
-            ev._triggeredBy,
-            users.deployer.address,
-            'LogBosonRouterSet not triggered by owner!'
-          );
-
-          return true;
-        });
-      });
-
-      it('[NEGATIVE] Attacker should not be able to set BR address', async () => {
-        await truffleAssert.reverts(
-          contractERC1155ERC721.setBosonRouterAddress(
-            contractBosonRouter.address,
-            {from: users.attacker.address}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
-      });
-
-      it('[NEGATIVE] Owner should not be able to set ZERO BR address', async () => {
-        await truffleAssert.reverts(
-          contractERC1155ERC721.setBosonRouterAddress(constants.ZERO_ADDRESS),
-          truffleAssert.ErrorType.REVERT
-        );
       });
 
       it('Owner should approve transfer of erc721', async () => {
