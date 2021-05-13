@@ -20,7 +20,7 @@ let utils;
 
 let TOKEN_SUPPLY_ID;
 
-contract('Cashier withdrawals ', async (addresses) => {
+contract.only('Cashier withdrawals ', async (addresses) => {
   const users = new Users(addresses);
 
   let contractERC1155ERC721,
@@ -4612,7 +4612,7 @@ contract('Cashier withdrawals ', async (addresses) => {
         const expectedBalance = new BN(helpers.seller_deposit).mul(
           new BN(voucherToBuyBeforeBurn)
         );
-        const escrowAmount = await contractCashier.getEscrowAmount(
+        const escrowAmount = await contractCashier.escrow(
           users.seller.address
         );
 
@@ -4623,9 +4623,9 @@ contract('Cashier withdrawals ', async (addresses) => {
       });
 
       it('Remaining QTY for Token Supply should be ZERO', async () => {
-        let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+        let remainingQtyInContract = await contractERC1155ERC721.balanceOf(
+          users.seller.address,
           TOKEN_SUPPLY_ID,
-          users.seller.address
         );
 
         assert.isTrue(
@@ -4783,7 +4783,7 @@ contract('Cashier withdrawals ', async (addresses) => {
           const expectedBalance = new BN(helpers.seller_deposit).mul(
             new BN(voucherToBuyBeforeBurn)
           );
-          const escrowAmount = await contractCashier.getEscrowTokensAmount(
+          const escrowAmount = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.seller.address
           );
@@ -4795,9 +4795,9 @@ contract('Cashier withdrawals ', async (addresses) => {
         });
 
         it('Remaining QTY for Token Supply should be ZERO', async () => {
-          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+          let remainingQtyInContract = await contractERC1155ERC721.balanceOf(
+            users.seller.address,
             TOKEN_SUPPLY_ID,
-            users.seller.address
           );
 
           assert.isTrue(
@@ -4954,7 +4954,7 @@ contract('Cashier withdrawals ', async (addresses) => {
           const expectedBalance = new BN(helpers.seller_deposit).mul(
             new BN(voucherToBuyBeforeBurn)
           );
-          const escrowAmount = await contractCashier.getEscrowTokensAmount(
+          const escrowAmount = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.seller.address
           );
@@ -4966,9 +4966,9 @@ contract('Cashier withdrawals ', async (addresses) => {
         });
 
         it('Remaining QTY for Token Supply should be ZERO', async () => {
-          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+          let remainingQtyInContract =  await contractERC1155ERC721.balanceOf(
+            users.seller.address,
             TOKEN_SUPPLY_ID,
-            users.seller.address
           );
 
           assert.isTrue(
@@ -5101,7 +5101,7 @@ contract('Cashier withdrawals ', async (addresses) => {
           const expectedBalance = new BN(helpers.seller_deposit).mul(
             new BN(voucherToBuyBeforeBurn)
           );
-          const escrowAmount = await contractCashier.getEscrowAmount(
+          const escrowAmount = await contractCashier.escrow(
             users.seller.address
           );
 
@@ -5112,9 +5112,9 @@ contract('Cashier withdrawals ', async (addresses) => {
         });
 
         it('Remaining QTY for Token Supply should be ZERO', async () => {
-          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+          let remainingQtyInContract = await contractERC1155ERC721.balanceOf(
+            users.seller.address,
             TOKEN_SUPPLY_ID,
-            users.seller.address
           );
 
           assert.isTrue(

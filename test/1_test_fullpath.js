@@ -1037,7 +1037,7 @@ contract('Voucher tests', async (addresses) => {
     });
 
     it('withdraw the escrowed payment from one redeemed voucher', async () => {
-      const buyerEscrowedBefore = await contractCashier.getEscrowAmount.call(
+      const buyerEscrowedBefore = await contractCashier.escrow.call(
         users.buyer.address
       );
 
@@ -1094,7 +1094,7 @@ contract('Voucher tests', async (addresses) => {
       );
 
       //Check Cashier state
-      const buyerEscrowedAfter = await contractCashier.getEscrowAmount.call(
+      const buyerEscrowedAfter = await contractCashier.escrow.call(
         users.buyer.address
       );
 

@@ -40,13 +40,6 @@ interface ICashier {
     ) external;
 
     /**
-     * @notice Get the amount in escrow of an address
-     * @param _account  The address of an account to query
-     * @return          The balance in escrow
-     */
-    function getEscrowAmount(address _account) external view returns (uint256);
-
-    /**
      * @notice Update the amount in escrow of an address with the new value, based on VoucherSet/Voucher interaction
      * @param _account  The address of an account to query
      */
@@ -91,17 +84,6 @@ interface ICashier {
     ) external;
 
     /**
-     * @notice Get the amount in escrow of an address
-     * @param _token  The address of a token to query
-     * @param _account  The address of an account to query
-     * @return          The balance in escrow
-     */
-    function getEscrowTokensAmount(address _token, address _account)
-        external
-        view
-        returns (uint256);
-
-    /**
      * @notice Set the address of the BR contract
      * @param _bosonRouterAddress   The address of the Cashier contract
      */
@@ -112,4 +94,26 @@ interface ICashier {
      * @param _tokensContractAddress   The address of the ERC1155ERC721 contract
      */
     function setTokenContractAddress(address _tokensContractAddress) external;
+
+
+    // // // // // // // //
+    // Generated getters
+    // // // // // // // //
+    /**
+     * @notice Get the amount in escrow of an address
+     * @param _account  The address of an account to query
+     * @return          The balance in escrow
+     */
+    function escrow(address _account) external view returns (uint256);
+
+    /**
+     * @notice Get the amount in escrow of an address
+     * @param _token  The address of a token to query
+     * @param _account  The address of an account to query
+     * @return          The balance in escrow
+     */
+    function escrowTokens(address _token, address _account)
+        external
+        view
+        returns (uint256);
 }

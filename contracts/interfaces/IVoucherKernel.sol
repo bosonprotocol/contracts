@@ -169,53 +169,6 @@ interface IVoucherKernel {
     function setComplainPeriod(uint256 _complainPeriod) external;
 
     /**
-     * @notice Get the promise ID at specific index
-     * @param _idx  Index in the array of promise keys
-     * @return      Promise ID
-     */
-    function getPromiseKey(uint256 _idx) external view returns (bytes32);
-
-    /**
-     * @notice Get the address of the token where the price for the supply is held
-     * @param _tokenIdSupply   ID of the voucher token
-     * @return                  Address of the token
-     */
-    function getVoucherPriceToken(uint256 _tokenIdSupply)
-        external
-        view
-        returns (address);
-
-    /**
-     * @notice Get the address of the token where the deposits for the supply are held
-     * @param _tokenIdSupply   ID of the voucher token
-     * @return                  Address of the token
-     */
-    function getVoucherDepositToken(uint256 _tokenIdSupply)
-        external
-        view
-        returns (address);
-
-    /**
-     * @notice Get Buyer costs required to make an order for a supply token
-     * @param _tokenIdSupply   ID of the supply token
-     * @return                  returns a tuple (Payment amount, Buyer's deposit)
-     */
-    function getBuyerOrderCosts(uint256 _tokenIdSupply)
-        external
-        view
-        returns (uint256, uint256);
-
-    /**
-     * @notice Get Seller deposit
-     * @param _tokenIdSupply   ID of the supply token
-     * @return                  returns sellers deposit
-     */
-    function getSellerDeposit(uint256 _tokenIdSupply)
-        external
-        view
-        returns (uint256);
-
-    /**
      * @notice Get the promise ID from a voucher token
      * @param _tokenIdVoucher   ID of the voucher token
      * @return                  ID of the promise
@@ -236,75 +189,6 @@ interface IVoucherKernel {
         returns (bytes32);
 
     /**
-     * @notice Get all necessary funds for a supply token
-     * @param _tokenIdSupply   ID of the supply token
-     * @return                  returns a tuple (Payment amount, Seller's deposit, Buyer's deposit)
-     */
-    function getOrderCosts(uint256 _tokenIdSupply)
-        external
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256
-        );
-
-    /**
-     * @notice Get the remaining quantity left in supply of tokens (e.g ERC-721 left in ERC-1155) of an account
-     * @param _tokenSupplyId  Token supply ID
-     * @param _owner    holder of the Token Supply
-     * @return          remaining quantity
-     */
-    function getRemQtyForSupply(uint256 _tokenSupplyId, address _owner)
-        external
-        view
-        returns (uint256);
-
-    /**
-     * @notice Get the payment method for a particular _tokenIdSupply
-     * @param _tokenIdSupply   ID of the voucher supply token
-     * @return                  payment method
-     */
-    function getVoucherPaymentMethod(uint256 _tokenIdSupply)
-        external
-        view
-        returns (uint8);
-
-    /**
-     * @notice Get the current status of a voucher
-     * @param _tokenIdVoucher   ID of the voucher token
-     * @return                  Status of the voucher (via enum)
-     */
-    function getVoucherStatus(uint256 _tokenIdVoucher)
-        external
-        view
-        returns (
-            uint8,
-            bool,
-            bool
-        );
-
-    /**
-     * @notice Get the holder of a supply
-     * @param _tokenIdSupply        ID of a promise which is mapped to the corresponding Promise
-     * @return                  Address of the holder
-     */
-    function getSupplyHolder(uint256 _tokenIdSupply)
-        external
-        view
-        returns (address);
-
-    /**
-     * @notice Get the holder of a voucher
-     * @param _tokenIdVoucher   ID of the voucher token
-     * @return                  Address of the holder
-     */
-    function getVoucherHolder(uint256 _tokenIdVoucher)
-        external
-        view
-        returns (address);
-
-    /**
      * @notice Checks whether a voucher is in valid period for redemption (between start date and end date)
      * @param _tokenIdVoucher ID of the voucher token
      */
@@ -321,4 +205,49 @@ interface IVoucherKernel {
         external
         view
         returns (bool);
+
+    // // // // // // // //
+    // Generated getters
+    // // // // // // // //
+
+    /**
+     * @notice Returns the members of a VoucherStatus struct
+     * @param _tokenIdVoucher ID of the voucher token
+     * @return VoucherStatus member variables
+     */
+    function vouchersStatus(uint256 _tokenIdVoucher) 
+        external
+        view
+        returns (uint8, bool, bool, uint256, uint256);
+    
+    /**
+     * @notice Returns the members of a VoucherPaymentMethod struct
+     * @param _tokenIdVoucher ID of the voucher token
+     * @return VoucherPaymentMethod member variables
+     */
+    function paymentDetails(uint256 _tokenIdVoucher)
+        external
+        view 
+        returns (uint8, address, address);
+    
+    /**
+     * @notice Returns the members of a Promise struct
+     * @param _promiseKey ID of the promise
+     * @return Promise member variables
+     */
+     function promises(bytes32 _promiseKey)
+        external
+        view
+        returns (bytes32, uint256, address, uint256, uint256, uint256, uint256, uint256, uint256);
+
+    /**
+     * @notice Returns the promise key for the token supply Id
+     * @param _tokenIdSupply ID of the supply token
+     * @return Promise  key
+     */
+    function ordersPromise(uint256 _tokenIdSupply)
+        external
+        view
+        returns (bytes32);
+
 }

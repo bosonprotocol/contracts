@@ -186,7 +186,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         const expectedBalance = new BN(constants.seller_deposit).mul(
           new BN(remQty)
         );
-        const escrowAmount = await contractCashier.getEscrowAmount(
+        const escrowAmount = await contractCashier.escrow(
           users.seller.address
         );
 
@@ -211,9 +211,9 @@ contract('Cashier and VoucherKernel', async (addresses) => {
       });
 
       it('Get correct remaining qty for supply', async () => {
-        let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+        let remainingQtyInContract = await contractERC1155ERC721.balanceOf(
+          users.seller.address,
           tokenSupplyKey,
-          users.seller.address
         );
 
         assert.equal(
@@ -224,9 +224,9 @@ contract('Cashier and VoucherKernel', async (addresses) => {
 
         for (let i = 0; i < vouchersToBuy; i++) {
           await utils.commitToBuy(users.buyer, users.seller, tokenSupplyKey);
-          remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+          remainingQtyInContract = await contractERC1155ERC721.balanceOf(
+            users.seller.address,
             tokenSupplyKey,
-            users.seller.address
           );
 
           assert.equal(
@@ -448,7 +448,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           const expectedBalance = new BN(constants.seller_deposit).mul(
             new BN(constants.QTY_10)
           );
-          const escrowTokens = await contractCashier.getEscrowTokensAmount(
+          const escrowTokens = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.seller.address
           );
@@ -460,9 +460,9 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('Get correct remaining qty for supply', async () => {
-          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+          let remainingQtyInContract = await contractERC1155ERC721.balanceOf(
+            users.seller.address,
             tokenSupplyKey,
-            users.seller.address
           );
           assert.equal(
             remainingQtyInContract,
@@ -472,9 +472,9 @@ contract('Cashier and VoucherKernel', async (addresses) => {
 
           for (let i = 0; i < vouchersToBuy; i++) {
             await utils.commitToBuy(users.buyer, users.seller, tokenSupplyKey);
-            remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+            remainingQtyInContract = await contractERC1155ERC721.balanceOf(
+              users.seller.address,
               tokenSupplyKey,
-              users.seller.address
             );
 
             assert.equal(
@@ -812,7 +812,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           const expectedBalance = new BN(constants.seller_deposit).mul(
             new BN(remQty)
           );
-          const escrowAmount = await contractCashier.getEscrowAmount(
+          const escrowAmount = await contractCashier.escrow(
             users.seller.address
           );
 
@@ -837,9 +837,9 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('Get correct remaining qty for supply', async () => {
-          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+          let remainingQtyInContract = await contractERC1155ERC721.balanceOf(
+            users.seller.address,
             tokenSupplyKey,
-            users.seller.address
           );
 
           assert.equal(
@@ -850,9 +850,9 @@ contract('Cashier and VoucherKernel', async (addresses) => {
 
           for (let i = 0; i < vouchersToBuy; i++) {
             await utils.commitToBuy(users.buyer, users.seller, tokenSupplyKey);
-            remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+            remainingQtyInContract = await contractERC1155ERC721.balanceOf(
+              users.seller.address,
               tokenSupplyKey,
-              users.seller.address
             );
 
             assert.equal(
@@ -1094,11 +1094,11 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           );
         });
 
-        it('escrowTokens has correct balance', async () => {
+        it('contractCashier.escrowTokens has correct balance', async () => {
           const expectedBalance = new BN(constants.seller_deposit).mul(
             new BN(constants.QTY_10)
           );
-          const escrowTokens = await contractCashier.getEscrowTokensAmount(
+          const escrowTokens = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.seller.address
           );
@@ -1110,9 +1110,9 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('Get correct remaining qty for supply', async () => {
-          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+          let remainingQtyInContract = await contractERC1155ERC721.balanceOf(
+            users.seller.address,
             tokenSupplyKey,
-            users.seller.address
           );
 
           assert.equal(
@@ -1123,9 +1123,9 @@ contract('Cashier and VoucherKernel', async (addresses) => {
 
           for (let i = 0; i < vouchersToBuy; i++) {
             await utils.commitToBuy(users.buyer, users.seller, tokenSupplyKey);
-            remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+            remainingQtyInContract = await contractERC1155ERC721.balanceOf(
+              users.seller.address,
               tokenSupplyKey,
-              users.seller.address
             );
 
             assert.equal(
@@ -1660,10 +1660,10 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           new BN(constants.buyer_deposit)
         );
 
-        const escrowSeller = await contractCashier.getEscrowAmount(
+        const escrowSeller = await contractCashier.escrow(
           users.seller.address
         );
-        const escrowBuyer = await contractCashier.getEscrowAmount(
+        const escrowBuyer = await contractCashier.escrow(
           users.buyer.address
         );
 
@@ -1878,14 +1878,14 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           const buyerETHSent = new BN(constants.product_price);
           const buyerTKNSent = new BN(constants.buyer_deposit);
 
-          const escrowSellerTkn = await contractCashier.getEscrowTokensAmount(
+          const escrowSellerTkn = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.seller.address
           );
-          const escrowBuyerEth = await contractCashier.getEscrowAmount(
+          const escrowBuyerEth = await contractCashier.escrow(
             users.buyer.address
           );
-          const escrowBuyerTkn = await contractCashier.getEscrowTokensAmount(
+          const escrowBuyerTkn = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.buyer.address
           );
@@ -2175,15 +2175,15 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           const buyerTknPriceSent = new BN(constants.product_price);
           const buyerTknDepositSent = new BN(constants.buyer_deposit);
 
-          const escrowSellerTknDeposit = await contractCashier.getEscrowTokensAmount(
+          const escrowSellerTknDeposit = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.seller.address
           );
-          const escrowBuyerTknPrice = await contractCashier.getEscrowTokensAmount(
+          const escrowBuyerTknPrice = await contractCashier.escrowTokens(
             contractBSNTokenPrice.address,
             users.buyer.address
           );
-          const escrowBuyerTknDeposit = await contractCashier.getEscrowTokensAmount(
+          const escrowBuyerTknDeposit = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.buyer.address
           );
@@ -2502,11 +2502,11 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             new BN(constants.buyer_deposit)
           );
 
-          const escrowSellerTknDeposit = await contractCashier.getEscrowTokensAmount(
+          const escrowSellerTknDeposit = await contractCashier.escrowTokens(
             utils.contractBSNTokenSame.address,
             users.seller.address
           );
-          const escrowBuyerTkn = await contractCashier.getEscrowTokensAmount(
+          const escrowBuyerTkn = await contractCashier.escrowTokens(
             utils.contractBSNTokenSame.address,
             users.buyer.address
           );
@@ -2836,13 +2836,13 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           const buyerTknSent = new BN(constants.product_price);
           const buyerEthSent = new BN(constants.buyer_deposit);
 
-          const escrowSeller = await contractCashier.getEscrowAmount(
+          const escrowSeller = await contractCashier.escrow(
             users.seller.address
           );
-          const escrowBuyerEth = await contractCashier.getEscrowAmount(
+          const escrowBuyerEth = await contractCashier.escrow(
             users.buyer.address
           );
-          const escrowBuyerTkn = await contractCashier.getEscrowTokensAmount(
+          const escrowBuyerTkn = await contractCashier.escrowTokens(
             contractBSNTokenPrice.address,
             users.buyer.address
           );
@@ -2851,7 +2851,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             new BN(sellerDeposits).eq(escrowSeller),
             'Escrow amount is incorrect'
           );
-
+          
           assert.isTrue(
             new BN(buyerEthSent).eq(escrowBuyerEth),
             'Escrow amount is incorrect'
@@ -3739,11 +3739,11 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             new BN(constants.QTY_1)
           );
 
-          actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+          actualOldOwnerBalanceFromEscrow = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.other1.address
           );
-          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+          actualNewOwnerBalanceFromEscrow = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.other2.address
           );
@@ -3766,11 +3766,11 @@ contract('Cashier and VoucherKernel', async (addresses) => {
               from: users.other1.address,
             }
           ),
-            (actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+            (actualOldOwnerBalanceFromEscrow = await contractCashier.escrowTokens(
               contractBSNTokenDeposit.address,
               users.other1.address
             ));
-          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+          actualNewOwnerBalanceFromEscrow = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.other2.address
           );
@@ -4032,11 +4032,11 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             new BN(constants.QTY_1)
           );
 
-          actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+          actualOldOwnerBalanceFromEscrow = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.other1.address
           );
-          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+          actualNewOwnerBalanceFromEscrow = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.other2.address
           );
@@ -4059,11 +4059,11 @@ contract('Cashier and VoucherKernel', async (addresses) => {
               from: users.other1.address,
             }
           ),
-            (actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+            (actualOldOwnerBalanceFromEscrow = await contractCashier.escrowTokens(
               contractBSNTokenDeposit.address,
               users.other1.address
             ));
-          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+          actualNewOwnerBalanceFromEscrow = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.other2.address
           );
@@ -4973,7 +4973,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             users.other1.address
           );
 
-          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.other1.address
           );
@@ -4982,7 +4982,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             users.other2.address
           );
 
-          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.other2.address
           );
@@ -5020,7 +5020,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             users.other1.address
           );
 
-          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.other1.address
           );
@@ -5029,7 +5029,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             users.other2.address
           );
 
-          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.other2.address
           );
@@ -5357,22 +5357,22 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             tokenSupplyKey
           );
 
-          let actualOldOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
+          let actualOldOwnerBalanceFromEscrowTknPrice = await contractCashier.escrowTokens(
             contractBSNTokenPrice.address,
             users.other1.address
           );
 
-          let actualOldOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
+          let actualOldOwnerBalanceFromEscrowTknDeposit = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.other1.address
           );
 
-          let actualNewOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
+          let actualNewOwnerBalanceFromEscrowTknPrice = await contractCashier.escrowTokens(
             contractBSNTokenPrice.address,
             users.other2.address
           );
 
-          let actualNewOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
+          let actualNewOwnerBalanceFromEscrowTknDeposit = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.other2.address
           );
@@ -5409,22 +5409,22 @@ contract('Cashier and VoucherKernel', async (addresses) => {
               from: users.other1.address,
             }
           ),
-            (actualOldOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
+            (actualOldOwnerBalanceFromEscrowTknPrice = await contractCashier.escrowTokens(
               contractBSNTokenPrice.address,
               users.other1.address
             ));
 
-          actualOldOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
+          actualOldOwnerBalanceFromEscrowTknDeposit = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.other1.address
           );
 
-          actualNewOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
+          actualNewOwnerBalanceFromEscrowTknPrice = await contractCashier.escrowTokens(
             contractBSNTokenPrice.address,
             users.other2.address
           );
 
-          actualNewOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
+          actualNewOwnerBalanceFromEscrowTknDeposit = await contractCashier.escrowTokens(
             contractBSNTokenDeposit.address,
             users.other2.address
           );
@@ -5717,7 +5717,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             users.other1.address
           );
 
-          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.escrowTokens(
             contractBSNTokenPrice.address,
             users.other1.address
           );
@@ -5726,7 +5726,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             users.other2.address
           );
 
-          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.escrowTokens(
             contractBSNTokenPrice.address,
             users.other2.address
           );
@@ -5763,7 +5763,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
               users.other1.address
             ));
 
-          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.escrowTokens(
             contractBSNTokenPrice.address,
             users.other1.address
           );
@@ -5772,7 +5772,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             users.other2.address
           );
 
-          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.escrowTokens(
             contractBSNTokenPrice.address,
             users.other2.address
           );

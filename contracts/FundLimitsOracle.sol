@@ -10,8 +10,8 @@ import "./interfaces/IFundLimitsOracle.sol";
  */
 
 contract FundLimitsOracle is Ownable, IFundLimitsOracle {
-    uint256 private ethLimit;
-    mapping(address => uint256) private tokenLimits;
+    uint256 public override ethLimit;
+    mapping(address => uint256) public override tokenLimits;
 
     event LogETHLimitChanged(uint256 _newLimit, address _triggeredBy);
 
@@ -48,29 +48,5 @@ contract FundLimitsOracle is Ownable, IFundLimitsOracle {
     {
         tokenLimits[_tokenAddress] = _newLimit;
         emit LogTokenLimitChanged(_newLimit, owner());
-    }
-
-    // // // // // // // //
-    // GETTERS
-    // // // // // // // //
-
-    /**
-     * @notice Get the maximum allowed ETH limit to set as price of voucher, buyer deposit or seller deposit.
-     */
-    function getETHLimit() external view override returns (uint256) {
-        return ethLimit;
-    }
-
-    /**
-     * @notice Get the maximum allowed token limit for the specified Token.
-     * @param _tokenAddress Address of the token which will be update.
-     */
-    function getTokenLimit(address _tokenAddress)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        return tokenLimits[_tokenAddress];
     }
 }

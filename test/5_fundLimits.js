@@ -12,7 +12,7 @@ const BosonRouter = artifacts.require('BosonRouter');
 const MockERC20Permit = artifacts.require('MockERC20Permit');
 const FundLimitsOracle = artifacts.require('FundLimitsOracle');
 
-contract('FundLimitsOracle', async (addresses) => {
+contract.only('FundLimitsOracle', async (addresses) => {
   const users = new Users(addresses);
 
   let contractERC1155ERC721,
@@ -81,7 +81,7 @@ contract('FundLimitsOracle', async (addresses) => {
       it('Should have set ETH Limit initially to 1 ETH', async () => {
         const ONE_ETH = (10 ** 18).toString();
 
-        const ethLimit = await contractFundLimitsOracle.getETHLimit();
+        const ethLimit = await contractFundLimitsOracle.ethLimit();
 
         assert.equal(
           ethLimit.toString(),
@@ -93,7 +93,7 @@ contract('FundLimitsOracle', async (addresses) => {
       it('Owner should change ETH Limit', async () => {
         await contractFundLimitsOracle.setETHLimit(FIVE_ETHERS);
 
-        expectedLimit = await contractFundLimitsOracle.getETHLimit();
+        expectedLimit = await contractFundLimitsOracle.ethLimit();
 
         assert.equal(
           expectedLimit.toString(),
@@ -134,7 +134,7 @@ contract('FundLimitsOracle', async (addresses) => {
           FIVE_TOKENS
         );
 
-        expectedLimit = await contractFundLimitsOracle.getTokenLimit(
+        expectedLimit = await contractFundLimitsOracle.tokenLimits(
           contractBSNTokenPrice.address
         );
 

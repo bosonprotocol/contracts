@@ -11,7 +11,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IVoucherKernel.sol";
 import "./interfaces/ICashier.sol";
 import "./interfaces/IBosonRouter.sol";
+import "./interfaces/IERC721.sol";
 import "./UsingHelpers.sol";
+
 
 /**
  * @title Contract for managing funds
@@ -29,9 +31,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
     enum PaymentType {PAYMENT, DEPOSIT_SELLER, DEPOSIT_BUYER}
 
-    mapping(address => uint256) public escrow; // both types of deposits AND payments >> can be released token-by-token if checks pass
+    mapping(address => uint256) public override escrow; // both types of deposits AND payments >> can be released token-by-token if checks pass
     // slashedDepositPool can be obtained through getEscrowAmount(poolAddress)
-    mapping(address => mapping(address => uint256)) public escrowTokens; //token address => mgsSender => amount
+    mapping(address => mapping(address => uint256)) public override escrowTokens; //token address => mgsSender => amount
 
     uint256 internal constant CANCELFAULT_SPLIT = 2; //for POC purposes, this is hardcoded; e.g. each party gets depositSe / 2
 
@@ -166,8 +168,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         voucherDetails.tokenIdVoucher = _tokenIdVoucher;
         voucherDetails.tokenIdSupply = IVoucherKernel(voucherKernel)
             .getIdSupplyFromVoucher(voucherDetails.tokenIdVoucher);
-        voucherDetails.paymentMethod = IVoucherKernel(voucherKernel)
-            .getVoucherPaymentMethod(voucherDetails.tokenIdSupply);
+
+        (voucherDetails.paymentMethod, , ) = IVoucherKernel(voucherKernel).paymentDetails(voucherDetails.tokenIdSupply);
 
         require(
             voucherDetails.paymentMethod > 0 &&
@@ -175,33 +177,23 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             "INVALID PAYMENT METHOD"
         );
 
-        (
-            voucherDetails.currStatus.status,
-            voucherDetails.currStatus.isPaymentReleased,
-            voucherDetails.currStatus.isDepositsReleased
-        ) = IVoucherKernel(voucherKernel).getVoucherStatus(
-            voucherDetails.tokenIdVoucher
-        );
+        (voucherDetails.currStatus.status, voucherDetails.currStatus.isPaymentReleased, voucherDetails.currStatus.isDepositsReleased, , ) = IVoucherKernel(voucherKernel).vouchersStatus(_tokenIdVoucher);
+        
+        bytes32 promiseKey = IVoucherKernel(voucherKernel).ordersPromise(voucherDetails.tokenIdSupply);
 
-        (
+        (   ,
+            ,
+            voucherDetails.issuer,
+            ,
+            ,
             voucherDetails.price,
             voucherDetails.depositSe,
             voucherDetails.depositBu
-        ) = IVoucherKernel(voucherKernel).getOrderCosts(
-            voucherDetails.tokenIdSupply
-        );
+            ,
+        ) = IVoucherKernel(voucherKernel).promises(promiseKey);
 
-        voucherDetails.issuer = payable(
-            IVoucherKernel(voucherKernel).getSupplyHolder(
-                voucherDetails.tokenIdSupply
-            )
-        );
-        voucherDetails.holder = payable(
-            IVoucherKernel(voucherKernel).getVoucherHolder(
-                voucherDetails.tokenIdVoucher
-            )
-        );
-
+        voucherDetails.holder = payable(IERC721(tokensContractAddress).ownerOf(voucherDetails.tokenIdVoucher));
+    
         //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
         if (!voucherDetails.currStatus.isPaymentReleased) {
             releasePayments(voucherDetails);
@@ -300,10 +292,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == TKNETH ||
             voucherDetails.paymentMethod == TKNTKN
         ) {
-            address addressTokenPrice =
-                IVoucherKernel(voucherKernel).getVoucherPriceToken(
-                    voucherDetails.tokenIdSupply
-                );
+            (   , address addressTokenPrice, ) = IVoucherKernel(voucherKernel).paymentDetails(voucherDetails.tokenIdSupply);
 
             escrowTokens[addressTokenPrice][
                 voucherDetails.holder
@@ -348,10 +337,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == TKNETH ||
             voucherDetails.paymentMethod == TKNTKN
         ) {
-            address addressTokenPrice =
-                IVoucherKernel(voucherKernel).getVoucherPriceToken(
-                    voucherDetails.tokenIdSupply
-                );
+            (   , address addressTokenPrice, ) = IVoucherKernel(voucherKernel).paymentDetails(voucherDetails.tokenIdSupply);
 
             escrowTokens[addressTokenPrice][
                 voucherDetails.holder
@@ -436,10 +422,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 voucherDetails.paymentMethod == ETHTKN ||
                 voucherDetails.paymentMethod == TKNTKN
             ) {
-                address addressTokenDeposits =
-                    IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                        voucherDetails.tokenIdSupply
-                    );
+                (   , , address addressTokenDeposits) = IVoucherKernel(voucherKernel).paymentDetails(voucherDetails.tokenIdSupply);
 
                 escrowTokens[addressTokenDeposits][
                     voucherDetails.issuer
@@ -491,10 +474,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 escrow[voucherDetails.issuer] = escrow[voucherDetails.issuer]
                     .sub(voucherDetails.depositSe);
             } else {
-                address addressTokenDeposits =
-                    IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                        voucherDetails.tokenIdSupply
-                    );
+                (   , , address addressTokenDeposits) = IVoucherKernel(voucherKernel).paymentDetails(voucherDetails.tokenIdSupply);
 
                 escrowTokens[addressTokenDeposits][
                     voucherDetails.issuer
@@ -536,10 +516,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == ETHTKN ||
             voucherDetails.paymentMethod == TKNTKN
         ) {
-            address addressTokenDeposits =
-                IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                    voucherDetails.tokenIdSupply
-                );
+            (   , , address addressTokenDeposits) = IVoucherKernel(voucherKernel).paymentDetails(voucherDetails.tokenIdSupply);
 
             escrowTokens[addressTokenDeposits][
                 voucherDetails.issuer
@@ -596,10 +573,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == ETHTKN ||
             voucherDetails.paymentMethod == TKNTKN
         ) {
-            address addressTokenDeposits =
-                IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                    voucherDetails.tokenIdSupply
-                );
+            (   , , address addressTokenDeposits) = IVoucherKernel(voucherKernel).paymentDetails(voucherDetails.tokenIdSupply);
 
             escrowTokens[addressTokenDeposits][
                 voucherDetails.issuer
@@ -641,10 +615,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == ETHTKN ||
             voucherDetails.paymentMethod == TKNTKN
         ) {
-            address addressTokenDeposits =
-                IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                    voucherDetails.tokenIdSupply
-                );
+            (   , , address addressTokenDeposits) = IVoucherKernel(voucherKernel).paymentDetails(voucherDetails.tokenIdSupply);
 
             escrowTokens[addressTokenDeposits][
                 voucherDetails.holder
@@ -686,10 +657,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == ETHTKN ||
             voucherDetails.paymentMethod == TKNTKN
         ) {
-            address addressTokenDeposits =
-                IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                    voucherDetails.tokenIdSupply
-                );
+            (   , , address addressTokenDeposits) = IVoucherKernel(voucherKernel).paymentDetails(voucherDetails.tokenIdSupply);
 
             escrowTokens[addressTokenDeposits][
                 voucherDetails.holder
@@ -722,15 +690,13 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         uint256 _burnedQty,
         address payable _msgSender
     ) external override nonReentrant onlyFromRouter {
-        uint256 deposit =
-            IVoucherKernel(voucherKernel).getSellerDeposit(_tokenIdSupply);
+        bytes32 promiseKey = IVoucherKernel(voucherKernel).ordersPromise(_tokenIdSupply);
+
+        ( , , , , , , uint256 deposit, , ) = IVoucherKernel(voucherKernel).promises(promiseKey);
 
         uint256 depositAmount = deposit.mul(_burnedQty);
 
-        uint8 paymentMethod =
-            IVoucherKernel(voucherKernel).getVoucherPaymentMethod(
-                _tokenIdSupply
-            );
+        (uint8 paymentMethod, , ) = IVoucherKernel(voucherKernel).paymentDetails(_tokenIdSupply);
 
         require(
             paymentMethod > 0 && paymentMethod <= 4,
@@ -742,10 +708,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         }
 
         if (paymentMethod == ETHTKN || paymentMethod == TKNTKN) {
-            address addressTokenDeposits =
-                IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                    _tokenIdSupply
-                );
+
+            (   , , address addressTokenDeposits) = IVoucherKernel(voucherKernel).paymentDetails(_tokenIdSupply);
 
             escrowTokens[addressTokenDeposits][_msgSender] = escrowTokens[
                 addressTokenDeposits
@@ -786,10 +750,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         }
 
         if (_paymentMethod == TKNETH || _paymentMethod == TKNTKN) {
-            address addressTokenPrice =
-                IVoucherKernel(voucherKernel).getVoucherPriceToken(
-                    _tokenIdSupply
-                );
+            (   , address addressTokenPrice, ) = IVoucherKernel(voucherKernel).paymentDetails(_tokenIdSupply);
 
             SafeERC20.safeTransfer(
                 IERC20(addressTokenPrice),
@@ -821,10 +782,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         }
 
         if (_paymentMethod == ETHTKN || _paymentMethod == TKNTKN) {
-            address addressTokenDeposits =
-                IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                    _tokenIdSupply
-                );
+           (   , , address addressTokenDeposits) = IVoucherKernel(voucherKernel).paymentDetails(_tokenIdSupply);
 
             SafeERC20.safeTransfer(
                 IERC20(addressTokenDeposits),
@@ -911,13 +869,13 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 _tokenIdVoucher
             );
 
-        uint8 paymentType =
-            IVoucherKernel(voucherKernel).getVoucherPaymentMethod(
+        (uint8 paymentType, , ) = IVoucherKernel(voucherKernel).paymentDetails(
                 tokenSupplyId
             );
 
-        (uint256 price, uint256 depositBu) =
-            IVoucherKernel(voucherKernel).getBuyerOrderCosts(tokenSupplyId);
+        bytes32 promiseKey = IVoucherKernel(voucherKernel).ordersPromise(tokenSupplyId);
+
+        ( , , , , , uint256 price, , uint256 depositBu, ) = IVoucherKernel(voucherKernel).promises(promiseKey);
 
         if (paymentType == ETHETH) {
             uint256 totalAmount = price.add(depositBu);
@@ -934,9 +892,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             escrow[_from] = escrow[_from].sub(price);
             escrow[_to] = escrow[_to].add(price);
 
-            tokenAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                tokenSupplyId
-            );
+            (   , , tokenAddress) = IVoucherKernel(voucherKernel).paymentDetails(tokenSupplyId);
 
             //Reduce _from escrow token amount and increase _to escrow token amount - deposit
             escrowTokens[tokenAddress][_from] = escrowTokens[tokenAddress][_from].sub(depositBu);
@@ -945,10 +901,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         }
 
         if (paymentType == TKNETH) {
-            tokenAddress = IVoucherKernel(voucherKernel).getVoucherPriceToken(
-                tokenSupplyId
-            );
-        
+            (   , tokenAddress, ) = IVoucherKernel(voucherKernel).paymentDetails(tokenSupplyId);
 
             //Reduce _from escrow token amount and increase _to escrow token amount - price 
             escrowTokens[tokenAddress][_from] = escrowTokens[tokenAddress][_from].sub(price);
@@ -960,18 +913,13 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         }
 
         if (paymentType == TKNTKN) {
-            tokenAddress = IVoucherKernel(voucherKernel).getVoucherPriceToken(
-                tokenSupplyId
-            );
-
+            (   , tokenAddress, ) = IVoucherKernel(voucherKernel).paymentDetails(tokenSupplyId);
 
             //Reduce _from escrow token amount and increase _to escrow token amount - price 
             escrowTokens[tokenAddress][_from] = escrowTokens[tokenAddress][_from].sub(price);
             escrowTokens[tokenAddress][_to] = escrowTokens[tokenAddress][_to].add(price);
 
-            tokenAddress = IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                tokenSupplyId
-            );
+            (   , , tokenAddress) = IVoucherKernel(voucherKernel).paymentDetails(tokenSupplyId);
 
             //Reduce _from escrow token amount and increase _to escrow token amount - deposit 
             escrowTokens[tokenAddress][_from] = escrowTokens[tokenAddress][_from].sub(depositBu);
@@ -995,34 +943,46 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         uint256 _tokenSupplyId,
         uint256 _value
     ) external override onlyTokensContract {
-        uint8 paymentType =
-            IVoucherKernel(voucherKernel).getVoucherPaymentMethod(
+        (uint8 paymentType, , ) = IVoucherKernel(voucherKernel).paymentDetails(
                 _tokenSupplyId
             );
 
         uint256 depositSe;
         uint256 totalAmount;
+        bytes32 promiseKey = IVoucherKernel(voucherKernel).ordersPromise(_tokenSupplyId);
 
         if (paymentType == ETHETH || paymentType == TKNETH) {
-            depositSe = IVoucherKernel(voucherKernel).getSellerDeposit(
-                _tokenSupplyId
-            );
+            (   ,
+                ,
+                ,
+                ,
+                ,
+                ,
+                depositSe,
+                ,
+            ) = IVoucherKernel(voucherKernel).promises(promiseKey);
+
             totalAmount = depositSe.mul(_value);
 
             //Reduce _from escrow amount and increase _to escrow amount
             escrow[_from] = escrow[_from].sub(totalAmount);
             escrow[_to] = escrow[_to].add(totalAmount);
         }
+    
 
         if (paymentType == ETHTKN || paymentType == TKNTKN) {
-            address tokenDepositAddress =
-                IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                    _tokenSupplyId
-                );
+            (   , , address tokenDepositAddress) = IVoucherKernel(voucherKernel).paymentDetails(_tokenSupplyId);
+            
+            (   ,
+                ,
+                ,
+                ,
+                ,
+                ,
+                depositSe,
+                ,
+            ) = IVoucherKernel(voucherKernel).promises(promiseKey);
 
-            depositSe = IVoucherKernel(voucherKernel).getSellerDeposit(
-                _tokenSupplyId
-            );
             totalAmount = depositSe.mul(_value);
 
             //Reduce _from escrow token amount and increase _to escrow token amount - deposit
@@ -1043,38 +1003,5 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      */
     receive() external payable {
         require(msg.sender == bosonRouterAddress, "INVALID_PAYEE");
-    }
-
-    // // // // // // // //
-    // GETTERS
-    // // // // // // // //
-
-    /**
-     * @notice Get the amount in escrow of an address
-     * @param _account  The address of an account to query
-     * @return          The balance in escrow
-     */
-    function getEscrowAmount(address _account)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        return escrow[_account];
-    }
-
-    /**
-     * @notice Get the amount in escrow of an address
-     * @param _token  The address of a token to query
-     * @param _account  The address of an account to query
-     * @return          The balance in escrow
-     */
-    function getEscrowTokensAmount(address _token, address _account)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        return escrowTokens[_token][_account];
     }
 }

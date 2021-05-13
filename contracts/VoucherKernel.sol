@@ -55,15 +55,15 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     address public bosonRouterAddress; //address of the Boson Router contract
     address public cashierAddress; //address of the Cashier contract
 
-    mapping(bytes32 => Promise) public promises; //promises to deliver goods or services
+    mapping(bytes32 => Promise) public override promises; //promises to deliver goods or services
     mapping(address => uint256) public tokenNonces; //mapping between seller address and its own nonces. Every time seller creates supply ID it gets incremented. Used to avoid duplicate ID's
-    mapping(uint256 => VoucherPaymentMethod) public paymentDetails; // tokenSupplyId to VoucherPaymentMethod
+    mapping(uint256 => VoucherPaymentMethod) public override paymentDetails; // tokenSupplyId to VoucherPaymentMethod
 
     bytes32[] public promiseKeys;
 
-    mapping(uint256 => bytes32) public ordersPromise; //mapping between an order (supply a.k.a. VoucherSet token) and a promise
+    mapping(uint256 => bytes32) public override ordersPromise; //mapping between an order (supply a.k.a. VoucherSet token) and a promise
 
-    mapping(uint256 => VoucherStatus) public vouchersStatus; //recording the vouchers evolution
+    mapping(uint256 => VoucherStatus) public override vouchersStatus; //recording the vouchers evolution
 
     //standard reqs
     mapping(uint256 => mapping(address => uint256)) private balances; //balance of token ids of an account
@@ -320,7 +320,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         uint8 _paymentMethod,
         uint256 _correlationId
     ) external override onlyFromRouter {
-        uint8 paymentMethod = getVoucherPaymentMethod(_tokenIdSupply);
+        (uint8 paymentMethod, , ) = this.paymentDetails(_tokenIdSupply);
 
         //checks
         require(paymentMethod == _paymentMethod, "Incorrect Payment Method");
@@ -649,8 +649,11 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         whenNotPaused
     {
         uint256 tokenIdSupply = getIdSupplyFromVoucher(_tokenIdVoucher);
+        bytes32 promiseKey = this.ordersPromise(tokenIdSupply);
+        ( , , address seller , , , , , , ) = this.promises(promiseKey);
+
         require(
-            getSupplyHolder(tokenIdSupply) == _msgSender,
+            seller == _msgSender,
             "UNAUTHORIZED_COF"
         ); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
 
@@ -731,9 +734,12 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         whenNotPaused
         returns (uint256)
     {
-        require(getSupplyHolder(_tokenIdSupply) == _issuer, "UNAUTHORIZED_COF");
+        bytes32 promiseKey = this.ordersPromise(_tokenIdSupply);
+        ( , , address seller , , , , , , ) = this.promises(promiseKey);
 
-        uint256 remQty = getRemQtyForSupply(_tokenIdSupply, _issuer);
+        require(seller == _issuer, "UNAUTHORIZED_COF");
+
+        uint256 remQty = IERC1155(tokensContract).balanceOf(_issuer, _tokenIdSupply);
 
         require(remQty > 0, "OFFER_EMPTY");
 
@@ -943,21 +949,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     // // // // // // // //
     // GETTERS
     // // // // // // // //
-
-    /**
-     * @notice Get the promise ID at specific index
-     * @param _idx  Index in the array of promise keys
-     * @return      Promise ID
-     */
-    function getPromiseKey(uint256 _idx)
-        public
-        view
-        override
-        returns (bytes32)
-    {
-        return promiseKeys[_idx];
-    }
-
     /**
      * @notice Get the supply token ID from a voucher token
      * @param _tokenIdVoucher   ID of the voucher token
@@ -987,167 +978,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
 
         uint256 tokenIdSupply = getIdSupplyFromVoucher(_tokenIdVoucher);
         return promises[ordersPromise[tokenIdSupply]].promiseId;
-    }
-
-    /**
-     * @notice Get the remaining quantity left in supply of tokens (e.g ERC-721 left in ERC-1155) of an account
-     * @param _tokenSupplyId  Token supply ID
-     * @param _owner    holder of the Token Supply
-     * @return          remaining quantity
-     */
-    function getRemQtyForSupply(uint256 _tokenSupplyId, address _owner)
-        public
-        view
-        override
-        returns (uint256)
-    {
-        return IERC1155(tokensContract).balanceOf(_owner, _tokenSupplyId);
-    }
-
-    /**
-     * @notice Get all necessary funds for a supply token
-     * @param _tokenIdSupply   ID of the supply token
-     * @return                  returns a tuple (Payment amount, Seller's deposit, Buyer's deposit)
-     */
-    function getOrderCosts(uint256 _tokenIdSupply)
-        public
-        view
-        override
-        returns (
-            uint256,
-            uint256,
-            uint256
-        )
-    {
-        bytes32 promiseKey = ordersPromise[_tokenIdSupply];
-        return (
-            promises[promiseKey].price,
-            promises[promiseKey].depositSe,
-            promises[promiseKey].depositBu
-        );
-    }
-
-    /**
-     * @notice Get Buyer costs required to make an order for a supply token
-     * @param _tokenIdSupply   ID of the supply token
-     * @return                  returns a tuple (Payment amount, Buyer's deposit)
-     */
-    function getBuyerOrderCosts(uint256 _tokenIdSupply)
-        public
-        view
-        override
-        returns (uint256, uint256)
-    {
-        bytes32 promiseKey = ordersPromise[_tokenIdSupply];
-        return (promises[promiseKey].price, promises[promiseKey].depositBu);
-    }
-
-    /**
-     * @notice Get Seller deposit
-     * @param _tokenIdSupply   ID of the supply token
-     * @return                  returns sellers deposit
-     */
-    function getSellerDeposit(uint256 _tokenIdSupply)
-        public
-        view
-        override
-        returns (uint256)
-    {
-        bytes32 promiseKey = ordersPromise[_tokenIdSupply];
-        return promises[promiseKey].depositSe;
-    }
-
-    /**
-     * @notice Get the current status of a voucher
-     * @param _tokenIdVoucher   ID of the voucher token
-     * @return                  Status of the voucher (via enum)
-     */
-    function getVoucherStatus(uint256 _tokenIdVoucher)
-        public
-        view
-        override
-        returns (
-            uint8,
-            bool,
-            bool
-        )
-    {
-        return (
-            vouchersStatus[_tokenIdVoucher].status,
-            vouchersStatus[_tokenIdVoucher].isPaymentReleased,
-            vouchersStatus[_tokenIdVoucher].isDepositsReleased
-        );
-    }
-
-    /**
-     * @notice Get the holder of a voucher
-     * @param _tokenIdVoucher   ID of the voucher token
-     * @return                  Address of the holder
-     */
-    function getVoucherHolder(uint256 _tokenIdVoucher)
-        public
-        view
-        override
-        returns (address)
-    {
-        return IERC721(tokensContract).ownerOf(_tokenIdVoucher);
-    }
-
-    /**
-     * @notice Get the holder of a supply
-     * @param _tokenIdSupply        ID of a promise which is mapped to the corresponding Promise
-     * @return                  Address of the holder
-     */
-    function getSupplyHolder(uint256 _tokenIdSupply)
-        public
-        view
-        override
-        returns (address)
-    {
-        bytes32 promiseKey = ordersPromise[_tokenIdSupply];
-        return promises[promiseKey].seller;
-    }
-
-    /**
-     * @notice Get the address of the token where the price for the supply is held
-     * @param _tokenIdSupply   ID of the voucher supply token
-     * @return                  Address of the token
-     */
-    function getVoucherPriceToken(uint256 _tokenIdSupply)
-        public
-        view
-        override
-        returns (address)
-    {
-        return paymentDetails[_tokenIdSupply].addressTokenPrice;
-    }
-
-    /**
-     * @notice Get the address of the token where the deposits for the supply are held
-     * @param _tokenIdSupply   ID of the voucher supply token
-     * @return                  Address of the token
-     */
-    function getVoucherDepositToken(uint256 _tokenIdSupply)
-        public
-        view
-        override
-        returns (address)
-    {
-        return paymentDetails[_tokenIdSupply].addressTokenDeposits;
-    }
-
-    /**
-     * @notice Get the payment method for a particular _tokenIdSupply
-     * @param _tokenIdSupply   ID of the voucher supply token
-     * @return                  payment method
-     */
-    function getVoucherPaymentMethod(uint256 _tokenIdSupply)
-        public
-        view
-        override
-        returns (uint8)
-    {
-        return paymentDetails[_tokenIdSupply].paymentMethod;
     }
 
     /**
