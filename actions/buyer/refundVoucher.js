@@ -21,7 +21,7 @@ function refundVoucher(_voucherID) {
     return new Promise((resolve, reject) => {
         const bosonRouterAddr = contracts.BosonRouterContrctAddress;
         const bosonRouter = new Contract(BosonRouter,bosonRouterAddr);
-
+        let gasUsed = "0xF458F";
         web3.eth.getTransactionCount(buyer, function(error, txCount) {
             const encoded = bosonRouter.methods.refund(
                 _voucherID
@@ -29,7 +29,7 @@ function refundVoucher(_voucherID) {
             let rawTransaction = {
                 "nonce": web3.utils.toHex(txCount),
                 "gasPrice": "0x04e3b29200",
-                "gasLimit": "0xF458F",
+                "gasLimit": gasUsed,
                 "to": bosonRouterAddr,
                 "value": 0x0,
                 "data": encoded
@@ -47,29 +47,32 @@ function refundVoucher(_voucherID) {
                     console.log(err)
                     reject(new Error(err.message))
                 }
-                resolve(hash)
-            }).on('transactionHash', function(hash){
+                // resolve(hash)
+                // console.log(hash);
                 console.log("Transaction Hash : "+hash);
             }).on('receipt', function(receipt){
                 // console.log(receipt);
                 let logdata1 = receipt.logs[0].data;
+                let gasUsed = receipt.gasUsed;
                 let burntVoucherID = (converter.hexToDec(logdata1.slice(0, 66))).toString();
                 let output = {
-                    "refundedVoucherID":burntVoucherID
+                    "refundedVoucherID":burntVoucherID,
+                    "gasPaid":gasUsed,
+                    "gasUsed":gasUsed
                 }
 
-                console.log(output)
-                return(output)
+                // console.log(output)
+                resolve(output)
 
             }).on('error', console.error);
         })
     })
 }
 
-(async function newOrder () {
-    await refundVoucher("57896044618658097711785492504343954004559654357715190152841577105831485243398");
-})();
+// (async function newOrder () {
+//     await refundVoucher("57896044618658097711785492504343954004559654357715190152841577105831485243398");
+// })();
 
-// module.exports = RefundVoucherETHETH;
+module.exports = refundVoucher;
 
 

@@ -16,12 +16,11 @@ Contract.setProvider(PROVIDER);
 
 const buyer = BUYER_PUBLIC;
 
-// let CommitToVoucherETHETH =
-    function requestVoucherETHETH(_voucherID) {
+function requestVoucherETHETH(_voucherID) {
     return new Promise((resolve, reject) => {
         const bosonRouterAddr = contracts.BosonRouterContrctAddress;
         const bosonRouter = new Contract(BosonRouter,bosonRouterAddr);
-
+        let gasPaid = "0xF458F";
         web3.eth.getTransactionCount(buyer, function(error, txCount) {
             let deposit = helpers.PROMISE_PRICE1+helpers.PROMISE_DEPOSITBU1;
             const txValue = new BN(deposit);
@@ -32,7 +31,7 @@ const buyer = BUYER_PUBLIC;
             let rawTransaction = {
                 "nonce": web3.utils.toHex(txCount),
                 "gasPrice": "0x04e3b29200",
-                "gasLimit": "0xF458F",
+                "gasLimit": gasPaid,
                 "to": bosonRouterAddr,
                 "value": txValue,
                 "data": encoded
@@ -50,13 +49,14 @@ const buyer = BUYER_PUBLIC;
                     console.log(err)
                     reject(new Error(err.message))
                 }
-                resolve(hash)
-            }).on('transactionHash', function(hash){
+                // resolve(hash)
                 console.log("Transaction Hash : "+hash);
             }).on('receipt', function(receipt){
                 // console.log(receipt);
                 let logdata1 = receipt.logs[0].data;
                 let logdata3 = receipt.logs[2].data;
+                let gasUsed = receipt.gasUsed;
+                let txhash = receipt.transactionHash;
                 let voucherSetID = (converter.hexToDec(logdata1.slice(0, 66))).toString();
                 let mintedVoucherID = (converter.hexToDec(logdata3.slice(0, 66))).toString();
                 let issuer = (logdata3.slice(90, 130)).toString();
@@ -65,29 +65,32 @@ const buyer = BUYER_PUBLIC;
                 let correlationID = converter.hexToDec(logdata3.slice(258, 322))
 
                 let output = {
+                    "TransactionHash":txhash,
                     "VoucherSetID":voucherSetID,
                     "MintedVoucherID":mintedVoucherID,
                     "issuer":"0x"+issuer,
                     "holder":"0x"+holder,
                     "promiseID":promiseID,
+                    "gasPaid":converter.hexToDec(gasPaid),
+                    "gasUsed":gasUsed,
                     "correlationID":correlationID,
                     "logReceipt1": receipt.logs[0].id,
                     "logReceipt2": receipt.logs[1].id,
                     "logReceipt3": receipt.logs[2].id
                 }
 
-                console.log(output)
-                return(output)
+                // console.log(output)
+                resolve(output)
 
             }).on('error', console.error);
         })
     })
 }
 
-(async function newOrder () {
-    await requestVoucherETHETH("57896044618658097711785492504343954004559654357715190152841577105831485243392");
-})();
+// (async function newOrder () {
+//     await requestVoucherETHETH("57896044618658097711785492504343954004559654357715190152841577105831485243392");
+// })();
 
-// module.exports = CommitToVoucherETHETH;
+module.exports = requestVoucherETHETH;
 
 

@@ -17,15 +17,15 @@ Contract.setProvider(PROVIDER);
 // const seller = new ethers.Wallet(SELLER_SECRET, PROVIDER);
 const seller = SELLER_PUBLIC;
 
-// let SellerCreateOrderETHETH =
-    function CreateOrderETHETH() {
+function CreateOrderETHETH() {
     return new Promise((resolve, reject) => {
         const bosonRouterAddr = contracts.BosonRouterContrctAddress;
         const bosonRouter = new Contract(BosonRouter,bosonRouterAddr);
-            // gets the current nounce of the sellers account and the proceeds to structure the transaction
-            web3.eth.getTransactionCount(seller, function(error, txCount) {
+        let gasSent = "0xF458F";
+        // gets the current nonce of the sellers account and the proceeds to structure the transaction
+        web3.eth.getTransactionCount(seller, function(error, txCount) {
             const txValue = new BN(helpers.PROMISE_PRICE1);
-                const encoded = bosonRouter.methods.requestCreateOrderETHETH(
+            const encoded = bosonRouter.methods.requestCreateOrderETHETH(
                 [
                     new BN(helpers.PROMISE_VALID_FROM),
                     new BN(helpers.PROMISE_VALID_TO),
@@ -38,7 +38,7 @@ const seller = SELLER_PUBLIC;
             let rawTransaction = {
                 "nonce": web3.utils.toHex(txCount),
                 "gasPrice": "0x04e3b29200",
-                "gasLimit": "0xF458F",
+                "gasLimit": gasSent,
                 "to": bosonRouterAddr,
                 "value": txValue,
                 "data": encoded
@@ -57,42 +57,45 @@ const seller = SELLER_PUBLIC;
                     reject(new Error(err.message))
                 }
 
-                resolve(hash)
-            }).on('transactionHash', function(hash){
-                console.log("Transaction Hash : "+hash);
-                }).on('receipt', function(receipt){
-                    // console.log(receipt)
-                    let logdata1 = receipt.logs[0].data;
-                    let logdata2 = receipt.logs[1].data;
-                    let logdata3 = receipt.logs[2].data;
-                    let validFrom = converter.hexToDec(logdata1.slice(0, 66));
-                    let validTo = converter.hexToDec(logdata1.slice(66, 130));
-                    let nftID = (converter.hexToDec(logdata2.slice(0, 66))).toString();
-                    let nftSupply = converter.hexToDec(logdata2.slice(66, 130));
-                    let nftSeller = (converter.hexToDec(logdata3.slice(0, 66))).toString();
+                console.log("Transaction Hash : ",hash);
+                // resolve(hash)
+            }).on('receipt', function(receipt){
+                // console.log(receipt)
+                let txhash = receipt.transactionHash;
+                let logdata1 = receipt.logs[0].data;
+                let logdata2 = receipt.logs[1].data;
+                let logdata3 = receipt.logs[2].data;
+                let gasUsed = receipt.gasUsed;
+                let validFrom = converter.hexToDec(logdata1.slice(0, 66));
+                let validTo = converter.hexToDec(logdata1.slice(66, 130));
+                let nftID = (converter.hexToDec(logdata2.slice(0, 66))).toString();
+                let nftSupply = converter.hexToDec(logdata2.slice(66, 130));
+                let nftSeller = (converter.hexToDec(logdata3.slice(0, 66))).toString();
 
-                    let output = {
-                        "ValidFrom":validFrom,
-                        "ValidTo":validTo,
-                        "voucherSetID":nftID,
-                        "nftSupply":nftSupply,
-                        "nftSeller":"0x"+nftSeller,
-                        "logReceipt1": receipt.logs[0].id,
-                        "logReceipt2": receipt.logs[1].id,
-                        "logReceipt3": receipt.logs[2].id
-                    }
+                let output = {
+                    "TransactionHash":txhash,
+                    "ValidFrom":validFrom,
+                    "ValidTo":validTo,
+                    "createdVoucherSetID":nftID,
+                    "nftSupply":nftSupply,
+                    "nftSeller":"0x"+nftSeller,
+                    "gasPaid": converter.hexToDec(gasSent),
+                    "gasUsed":gasUsed,
+                    "sellerDeposit":helpers.PROMISE_PRICE1,
+                    "logReceipt1": receipt.logs[0].id,
+                    "logReceipt2": receipt.logs[1].id,
+                    "logReceipt3": receipt.logs[2].id
+                }
 
-                    console.log(output)
-                    return(output)
-                }).on('error', console.error);
+                // console.log(output)
+                resolve(output)
+            }).on('error', console.error);
         })
     })
 }
 
-(async function newOrder () {
-    await CreateOrderETHETH();
-})();
+// (async function newOrder () {
+//     await CreateOrderETHETH();
+// })();
 
-// module.exports = SellerCreateOrderETHETH;
-
-
+module.exports = CreateOrderETHETH;

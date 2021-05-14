@@ -1,13 +1,13 @@
 let Web3 = require('web3');
-const BN = require('bn.js');
+// const BN = require('bn.js');
 let Contract = require('web3-eth-contract');
-const helpers = require('../helpers/constants')
+// const helpers = require('../helpers/constants')
 const Tx = require('ethereumjs-tx').Transaction;
 let converter = require('hex2dec');
 
 
 const BosonRouter = require("../../build/contracts/BosonRouter.json").abi;
-const { BUYER_SECRET, BUYER_PUBLIC, contracts, PROVIDER, SELLER_PUBLIC } = require('../helpers/config');
+const { BUYER_SECRET, BUYER_PUBLIC, contracts, PROVIDER } = require('../helpers/config');
 
 let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
 
@@ -16,12 +16,11 @@ Contract.setProvider(PROVIDER);
 
 const buyer = BUYER_PUBLIC;
 
-// let RedeemVoucherETHETH =
-    function redeemVoucher(_voucherID) {
+function redeemVoucher(_voucherID) {
     return new Promise((resolve, reject) => {
         const bosonRouterAddr = contracts.BosonRouterContrctAddress;
         const bosonRouter = new Contract(BosonRouter,bosonRouterAddr);
-
+        let gasPaid = "0xF458F";
         web3.eth.getTransactionCount(buyer, function(error, txCount) {
             const encoded = bosonRouter.methods.redeem(
                 _voucherID
@@ -29,7 +28,7 @@ const buyer = BUYER_PUBLIC;
             let rawTransaction = {
                 "nonce": web3.utils.toHex(txCount),
                 "gasPrice": "0x04e3b29200",
-                "gasLimit": "0xF458F",
+                "gasLimit": gasPaid,
                 "to": bosonRouterAddr,
                 "value": 0x0,
                 "data": encoded
@@ -47,12 +46,12 @@ const buyer = BUYER_PUBLIC;
                     console.log(err)
                     reject(new Error(err.message))
                 }
-                resolve(hash)
-            }).on('transactionHash', function(hash){
+                // resolve(hash)
                 console.log("Transaction Hash : "+hash);
             }).on('receipt', function(receipt){
                 // console.log(receipt);
                 let logdata1 = receipt.logs[0].data;
+                let gasUsed = receipt.gasUsed;
                 let burntVoucherID = (converter.hexToDec(logdata1.slice(0, 66))).toString();
                 let holder = (logdata1.slice(90, 130)).toString();
                 let promiseID = (logdata1.slice(130, 194)).toString();
@@ -60,21 +59,23 @@ const buyer = BUYER_PUBLIC;
                 let output = {
                     "redeemedVoucherID":burntVoucherID,
                     "holder":"0x"+holder,
-                    "promiseID":promiseID
+                    "promiseID":promiseID,
+                    "gasPaid":gasPaid,
+                    "gasUsed":gasUsed
                 }
 
-                console.log(output)
-                return(output)
+                // console.log(output)
+                resolve(output)
 
             }).on('error', console.error);
         })
     })
 }
 
-(async function newOrder () {
-    await redeemVoucher("57896044618658097711785492504343954004559654357715190152841577105831485243399");
-})();
+// (async function newOrder () {
+//     await redeemVoucher("57896044618658097711785492504343954004559654357715190152841577105831485243399");
+// })();
 
-// module.exports = RedeemVoucherETHETH;
+module.exports = redeemVoucher;
 
 

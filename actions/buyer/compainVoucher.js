@@ -16,12 +16,11 @@ Contract.setProvider(PROVIDER);
 
 const buyer = BUYER_PUBLIC;
 
-// let ComplainVoucherETHETH =
 function complainVoucher(_voucherID) {
     return new Promise((resolve, reject) => {
         const bosonRouterAddr = contracts.BosonRouterContrctAddress;
         const bosonRouter = new Contract(BosonRouter,bosonRouterAddr);
-
+        let gasPaid = "0xF458F";
         web3.eth.getTransactionCount(buyer, function(error, txCount) {
             const encoded = bosonRouter.methods.complain(
                 _voucherID
@@ -29,7 +28,7 @@ function complainVoucher(_voucherID) {
             let rawTransaction = {
                 "nonce": web3.utils.toHex(txCount),
                 "gasPrice": "0x04e3b29200",
-                "gasLimit": "0xF458F",
+                "gasLimit": gasPaid,
                 "to": bosonRouterAddr,
                 "value": 0x0,
                 "data": encoded
@@ -47,29 +46,30 @@ function complainVoucher(_voucherID) {
                     console.log(err)
                     reject(new Error(err.message))
                 }
-                resolve(hash)
-            }).on('transactionHash', function(hash){
                 console.log("Transaction Hash : "+hash);
             }).on('receipt', function(receipt){
                 // console.log(receipt);
                 let logdata1 = receipt.logs[0].data;
+                let gasUsed = receipt.gasUsed;
                 let complainedVoucherID = (converter.hexToDec(logdata1.slice(0, 66))).toString();
                 let output = {
-                    "complainedVoucherID":complainedVoucherID
+                    "complainedVoucherID":complainedVoucherID,
+                    "gasPaid":converter.hexToDec(gasPaid),
+                    "gasUsed":gasUsed
                 }
 
-                console.log(output)
-                return(output)
+                // console.log(output)
+                resolve(output)
 
             }).on('error', console.error);
         })
     })
 }
 
-(async function newOrder () {
-    await complainVoucher("57896044618658097711785492504343954004559654357715190152841577105831485243399");
-})();
+// (async function newOrder () {
+//     await complainVoucher("57896044618658097711785492504343954004559654357715190152841577105831485243399");
+// })();
 
-// module.exports = ComplainVoucherETHETH;
+module.exports = complainVoucher;
 
 
