@@ -715,7 +715,27 @@ contract('Voucher tests', async (addresses) => {
         truffleAssert.ErrorType.REVERT
       );
     });
-  });
+
+    it.only('must fail: adding new order with incorrect payment method', async () => {
+      console.log("contractBosonRouter.address ", contractBosonRouter.address);
+   
+      await truffleAssert.reverts(
+        contractVoucherKernel.createPaymentMethod(
+          tokenSupplyKey1,
+          new BN(5),
+          constants.ZERO_ADDRESS,
+          constants.ZERO_ADDRESS,
+          {
+            from: contractBosonRouter.address
+          }
+        ),
+        "INVALID PAYMENT METHOD"
+      );
+  
+    });
+  });//end describe
+
+  
 
   describe('Vouchers (ERC721)', function () {
     beforeEach('execute prerequisite steps', async () => {

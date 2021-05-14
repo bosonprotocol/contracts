@@ -268,6 +268,12 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         address _tokenPrice,
         address _tokenDeposits
     ) external override onlyFromRouter {
+        require(
+            _paymentMethod > 0 &&
+                _paymentMethod <= 4,
+            "INVALID PAYMENT METHOD"
+        );
+        
         paymentDetails[_tokenIdSupply] = VoucherPaymentMethod({
             paymentMethod: _paymentMethod,
             addressTokenPrice: _tokenPrice,
