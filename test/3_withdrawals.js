@@ -20,7 +20,7 @@ let utils;
 
 let TOKEN_SUPPLY_ID;
 
-contract.only('Cashier withdrawals ', async (addresses) => {
+contract('Cashier withdrawals ', async (addresses) => {
   const users = new Users(addresses);
 
   let contractERC1155ERC721,
@@ -4612,9 +4612,7 @@ contract.only('Cashier withdrawals ', async (addresses) => {
         const expectedBalance = new BN(helpers.seller_deposit).mul(
           new BN(voucherToBuyBeforeBurn)
         );
-        const escrowAmount = await contractCashier.escrow(
-          users.seller.address
-        );
+        const escrowAmount = await contractCashier.escrow(users.seller.address);
 
         assert.isTrue(
           escrowAmount.eq(expectedBalance),
@@ -4625,7 +4623,7 @@ contract.only('Cashier withdrawals ', async (addresses) => {
       it('Remaining QTY for Token Supply should be ZERO', async () => {
         let remainingQtyInContract = await contractERC1155ERC721.balanceOf(
           users.seller.address,
-          TOKEN_SUPPLY_ID,
+          TOKEN_SUPPLY_ID
         );
 
         assert.isTrue(
@@ -4797,7 +4795,7 @@ contract.only('Cashier withdrawals ', async (addresses) => {
         it('Remaining QTY for Token Supply should be ZERO', async () => {
           let remainingQtyInContract = await contractERC1155ERC721.balanceOf(
             users.seller.address,
-            TOKEN_SUPPLY_ID,
+            TOKEN_SUPPLY_ID
           );
 
           assert.isTrue(
@@ -4966,9 +4964,9 @@ contract.only('Cashier withdrawals ', async (addresses) => {
         });
 
         it('Remaining QTY for Token Supply should be ZERO', async () => {
-          let remainingQtyInContract =  await contractERC1155ERC721.balanceOf(
+          let remainingQtyInContract = await contractERC1155ERC721.balanceOf(
             users.seller.address,
-            TOKEN_SUPPLY_ID,
+            TOKEN_SUPPLY_ID
           );
 
           assert.isTrue(
@@ -5114,7 +5112,7 @@ contract.only('Cashier withdrawals ', async (addresses) => {
         it('Remaining QTY for Token Supply should be ZERO', async () => {
           let remainingQtyInContract = await contractERC1155ERC721.balanceOf(
             users.seller.address,
-            TOKEN_SUPPLY_ID,
+            TOKEN_SUPPLY_ID
           );
 
           assert.isTrue(

@@ -215,11 +215,17 @@ interface IVoucherKernel {
      * @param _tokenIdVoucher ID of the voucher token
      * @return VoucherStatus member variables
      */
-    function vouchersStatus(uint256 _tokenIdVoucher) 
+    function vouchersStatus(uint256 _tokenIdVoucher)
         external
         view
-        returns (uint8, bool, bool, uint256, uint256);
-    
+        returns (
+            uint8,
+            bool,
+            bool,
+            uint256,
+            uint256
+        );
+
     /**
      * @notice Returns the members of a VoucherPaymentMethod struct
      * @param _tokenIdVoucher ID of the voucher token
@@ -227,18 +233,32 @@ interface IVoucherKernel {
      */
     function paymentDetails(uint256 _tokenIdVoucher)
         external
-        view 
-        returns (uint8, address, address);
-    
+        view
+        returns (
+            uint8,
+            address,
+            address
+        );
+
     /**
      * @notice Returns the members of a Promise struct
      * @param _promiseKey ID of the promise
      * @return Promise member variables
      */
-     function promises(bytes32 _promiseKey)
+    function promises(bytes32 _promiseKey)
         external
         view
-        returns (bytes32, uint256, address, uint256, uint256, uint256, uint256, uint256, uint256);
+        returns (
+            bytes32,
+            uint256,
+            address,
+            uint256,
+            uint256,
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        );
 
     /**
      * @notice Returns the promise key for the token supply Id
@@ -249,5 +269,4 @@ interface IVoucherKernel {
         external
         view
         returns (bytes32);
-
 }

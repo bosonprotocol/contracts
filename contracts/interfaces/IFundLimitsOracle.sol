@@ -10,8 +10,6 @@ interface IFundLimitsOracle {
      */
     function setTokenLimit(address _tokenAddress, uint256 _newLimit) external;
 
-  
-
     /**
      * @notice Set new limit for ETH. It's used while seller tries to create a voucher. The limit is determined by a voucher set. Voucher price * quantity, seller deposit * quantity, buyer deposit * qty must be below the limit.
      * @param _newLimit New limit which will be set.
@@ -30,14 +28,11 @@ interface IFundLimitsOracle {
     /**
      * @notice Get the maximum allowed ETH limit to set as price of voucher, buyer deposit or seller deposit.
      */
-     function ethLimit() external view returns (uint256);
+    function ethLimit() external view returns (uint256);
 
     /**
      * @notice Get the maximum allowed token limit for the specified Token.
      * @param _tokenAddress Address of the token whose limit will be retrieved.
      */
-    function tokenLimits(address _tokenAddress)
-        external
-        view
-        returns (uint256);
+    function tokenLimits(address _tokenAddress) external view returns (uint256);
 }

@@ -186,9 +186,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         const expectedBalance = new BN(constants.seller_deposit).mul(
           new BN(remQty)
         );
-        const escrowAmount = await contractCashier.escrow(
-          users.seller.address
-        );
+        const escrowAmount = await contractCashier.escrow(users.seller.address);
 
         assert.isTrue(
           escrowAmount.eq(expectedBalance),
@@ -213,7 +211,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
       it('Get correct remaining qty for supply', async () => {
         let remainingQtyInContract = await contractERC1155ERC721.balanceOf(
           users.seller.address,
-          tokenSupplyKey,
+          tokenSupplyKey
         );
 
         assert.equal(
@@ -226,7 +224,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           await utils.commitToBuy(users.buyer, users.seller, tokenSupplyKey);
           remainingQtyInContract = await contractERC1155ERC721.balanceOf(
             users.seller.address,
-            tokenSupplyKey,
+            tokenSupplyKey
           );
 
           assert.equal(
@@ -462,7 +460,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         it('Get correct remaining qty for supply', async () => {
           let remainingQtyInContract = await contractERC1155ERC721.balanceOf(
             users.seller.address,
-            tokenSupplyKey,
+            tokenSupplyKey
           );
           assert.equal(
             remainingQtyInContract,
@@ -474,7 +472,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             await utils.commitToBuy(users.buyer, users.seller, tokenSupplyKey);
             remainingQtyInContract = await contractERC1155ERC721.balanceOf(
               users.seller.address,
-              tokenSupplyKey,
+              tokenSupplyKey
             );
 
             assert.equal(
@@ -839,7 +837,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         it('Get correct remaining qty for supply', async () => {
           let remainingQtyInContract = await contractERC1155ERC721.balanceOf(
             users.seller.address,
-            tokenSupplyKey,
+            tokenSupplyKey
           );
 
           assert.equal(
@@ -852,7 +850,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             await utils.commitToBuy(users.buyer, users.seller, tokenSupplyKey);
             remainingQtyInContract = await contractERC1155ERC721.balanceOf(
               users.seller.address,
-              tokenSupplyKey,
+              tokenSupplyKey
             );
 
             assert.equal(
@@ -1112,7 +1110,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         it('Get correct remaining qty for supply', async () => {
           let remainingQtyInContract = await contractERC1155ERC721.balanceOf(
             users.seller.address,
-            tokenSupplyKey,
+            tokenSupplyKey
           );
 
           assert.equal(
@@ -1125,7 +1123,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             await utils.commitToBuy(users.buyer, users.seller, tokenSupplyKey);
             remainingQtyInContract = await contractERC1155ERC721.balanceOf(
               users.seller.address,
-              tokenSupplyKey,
+              tokenSupplyKey
             );
 
             assert.equal(
@@ -1660,12 +1658,8 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           new BN(constants.buyer_deposit)
         );
 
-        const escrowSeller = await contractCashier.escrow(
-          users.seller.address
-        );
-        const escrowBuyer = await contractCashier.escrow(
-          users.buyer.address
-        );
+        const escrowSeller = await contractCashier.escrow(users.seller.address);
+        const escrowBuyer = await contractCashier.escrow(users.buyer.address);
 
         assert.isTrue(
           new BN(sellerDeposits).eq(escrowSeller),
@@ -2851,7 +2845,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             new BN(sellerDeposits).eq(escrowSeller),
             'Escrow amount is incorrect'
           );
-          
+
           assert.isTrue(
             new BN(buyerEthSent).eq(escrowBuyerEth),
             'Escrow amount is incorrect'

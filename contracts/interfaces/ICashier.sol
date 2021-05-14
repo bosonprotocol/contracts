@@ -95,7 +95,6 @@ interface ICashier {
      */
     function setTokenContractAddress(address _tokensContractAddress) external;
 
-
     // // // // // // // //
     // Generated getters
     // // // // // // // //

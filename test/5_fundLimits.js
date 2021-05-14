@@ -12,7 +12,7 @@ const BosonRouter = artifacts.require('BosonRouter');
 const MockERC20Permit = artifacts.require('MockERC20Permit');
 const FundLimitsOracle = artifacts.require('FundLimitsOracle');
 
-contract.only('FundLimitsOracle', async (addresses) => {
+contract('FundLimitsOracle', async (addresses) => {
   const users = new Users(addresses);
 
   let contractERC1155ERC721,
