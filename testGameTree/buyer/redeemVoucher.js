@@ -2,15 +2,11 @@ let Web3 = require('web3');
 let Contract = require('web3-eth-contract');
 const Tx = require('ethereumjs-tx').Transaction;
 let converter = require('hex2dec');
-
 const BosonRouter = require("../../build/contracts/BosonRouter.json").abi;
 const { BUYER_SECRET, BUYER_PUBLIC, contracts, PROVIDER } = require('../helpers/config');
-
 let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
-
 // set provider for all later instances to use
 Contract.setProvider(PROVIDER);
-
 const buyer = BUYER_PUBLIC;
 
 function redeemVoucher(_voucherID) {
@@ -30,13 +26,10 @@ function redeemVoucher(_voucherID) {
                 "value": 0x0,
                 "data": encoded
             };
-
             let privKey = Buffer.from(BUYER_SECRET, 'hex');
             let tx = new Tx(rawTransaction,  {'chain':'rinkeby'});
-
             tx.sign(privKey);
             let serializedTx = tx.serialize();
-
             web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), (err, hash) => {
                 if(err) {
                     console.log(err)
@@ -49,7 +42,6 @@ function redeemVoucher(_voucherID) {
                 let burntVoucherID = (converter.hexToDec(logdata1.slice(0, 66))).toString();
                 let holder = (logdata1.slice(90, 130)).toString();
                 let promiseID = (logdata1.slice(130, 194)).toString();
-
                 let output = {
                     "redeemedVoucherID":burntVoucherID,
                     "holder":"0x"+holder,
@@ -57,7 +49,6 @@ function redeemVoucher(_voucherID) {
                     "gasPaid":gasPaid,
                     "gasUsed":gasUsed
                 }
-
                 resolve(output)
             }).on('error', console.error);
         })

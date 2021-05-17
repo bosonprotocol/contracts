@@ -4,15 +4,11 @@ let Contract = require('web3-eth-contract');
 const helpers = require('../helpers/constants')
 const Tx = require('ethereumjs-tx').Transaction;
 let converter = require('hex2dec');
-
 const BosonRouter = require("../../build/contracts/BosonRouter.json").abi;
 const { BUYER_SECRET, BUYER_PUBLIC, contracts, PROVIDER, SELLER_PUBLIC } = require('../helpers/config');
-
 let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
-
 // set provider for all later instances to use
 Contract.setProvider(PROVIDER);
-
 const buyer = BUYER_PUBLIC;
 
 function requestVoucherETHETH(_voucherID) {
@@ -35,13 +31,10 @@ function requestVoucherETHETH(_voucherID) {
                 "value": txValue,
                 "data": encoded
             };
-
             let privKey = Buffer.from(BUYER_SECRET, 'hex');
             let tx = new Tx(rawTransaction,  {'chain':'rinkeby'});
-
             tx.sign(privKey);
             let serializedTx = tx.serialize();
-
             web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), (err, hash) => {
                 if(err) {
                     console.log(err)
@@ -60,7 +53,6 @@ function requestVoucherETHETH(_voucherID) {
                 let holder = (logdata3.slice(154, 194)).toString();
                 let promiseID = (logdata3.slice(194, 258)).toString();
                 let correlationID = converter.hexToDec(logdata3.slice(258, 322))
-
                 let output = {
                     "TransactionHash":txhash,
                     "VoucherSetID":voucherSetID,

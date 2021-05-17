@@ -2,15 +2,11 @@ let Web3 = require('web3');
 let Contract = require('web3-eth-contract');
 const Tx = require('ethereumjs-tx').Transaction;
 let converter = require('hex2dec');
-
 const BosonRouter = require("../../build/contracts/BosonRouter.json").abi;
 const { SELLER_SECRET, SELLER_PUBLIC, contracts, PROVIDER } = require('../helpers/config');
-
 let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
-
 // set provider for all later instances to use
 Contract.setProvider(PROVIDER);
-
 const seller = SELLER_PUBLIC;
 
 function requestCancelorFault(_voucherSetID) {
@@ -31,20 +27,16 @@ function requestCancelorFault(_voucherSetID) {
                 "value": 0x0,
                 "data": encoded
             };
-
             let privKey = Buffer.from(SELLER_SECRET, 'hex');
             let tx = new Tx(rawTransaction,  {'chain':'rinkeby'});
-
             tx.sign(privKey);
             let serializedTx = tx.serialize();
-
             // executes the transaction
             web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), (err, hash) => {
                 if(err) {
                     console.log(err)
                     reject(new Error(err.message))
                 }
-
                 console.log("Transaction Hash : ",hash);
             }).on('receipt', function(receipt){
                 let logdata1 = receipt.logs[0].data;
@@ -55,7 +47,6 @@ function requestCancelorFault(_voucherSetID) {
                 let VoucherSetQuantity = converter.hexToDec(logdata1.slice(66, 130));
                 let SellerAddress = converter.hexToDec(logdata3.slice(66, 130)).toString();
                 let redfundSellerDeposit = converter.hexToDec(logdata3.slice(130, 194));
-
                 let output = {
                     "TransactionHash":txHash,
                     "CanceledVoucherSetID":VoucherSetID,
@@ -68,7 +59,6 @@ function requestCancelorFault(_voucherSetID) {
                     "logReceipt2": receipt.logs[1].id,
                     "logReceipt3": receipt.logs[2].id
                 }
-
                 resolve(output)
             }).on('error', console.error);
         })

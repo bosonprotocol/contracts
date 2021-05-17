@@ -7,7 +7,6 @@ const faultVoucher = require("./seller/faultVoucher");
 const delay = require("./helpers/delay");
 const {describe,it} = require("mocha");
 let format = require("./helpers/formatter");
-
 let helpers = require("./helpers/constants");
 const {BUYER_PUBLIC, SELLER_PUBLIC} = require('./helpers/config');
 let assert = require('chai').assert;
@@ -103,4 +102,3 @@ describe("TEST SCENARIO 09 :: SELLER CREATES, BUYER COMMITS, REFUNDS & COMPLAINS
     })
 
 });
-

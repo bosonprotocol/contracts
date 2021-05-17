@@ -5,9 +5,7 @@ const checkBalance = require("./helpers/checkBalance");
 const complainVoucher = require("./buyer/compainVoucher");
 const delay = require("./helpers/delay");
 const {describe,it} = require("mocha");
-
 const format = require("./helpers/formatter");
-
 let helpers = require("./helpers/constants");
 const {BUYER_PUBLIC, SELLER_PUBLIC} = require('./helpers/config');
 let assert = require('chai').assert;
