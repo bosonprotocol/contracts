@@ -1,7 +1,5 @@
 let Web3 = require('web3');
-const BN = require('bn.js');
 let Contract = require('web3-eth-contract');
-const helpers = require('../helpers/constants')
 const Tx = require('ethereumjs-tx').Transaction;
 let converter = require('hex2dec');
 
@@ -80,5 +78,3 @@ function faultVoucher(_voucherSetID) {
 // })();
 
 module.exports = faultVoucher;
-
-

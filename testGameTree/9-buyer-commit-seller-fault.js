@@ -7,9 +7,6 @@ const checkBalance = require("./helpers/checkBalance");
 const {describe,it} = require("mocha");
 
 
-const chai = require('chai').use(require('chai-as-promised'));
-
-const expect = chai.expect;
 
 const TIMEOUT = 500 * 1000;
 
@@ -17,7 +14,7 @@ describe("TEST SCENARIO 01 :: SELLER CREATE", async function() {
 
     let commitedVoucherDetails;
     let voucherSetDetails;
-    // let cancelledVoucher;
+    let cancelledVoucher;
 
     it("SELLER CREATE VOUCHER", async function (){
         this.timeout(TIMEOUT);
@@ -37,7 +34,8 @@ describe("TEST SCENARIO 01 :: SELLER CREATE", async function() {
     it("FAULT", async function() {
         await delay();
         console.log(await checkBalance());
-        commitedVoucherDetails = await faultVoucher(voucherSetDetails["createdVoucherSetID"]);
+        cancelledVoucher = await faultVoucher(voucherSetDetails["createdVoucherSetID"]);
+        console.log(cancelledVoucher);
     });
 
 

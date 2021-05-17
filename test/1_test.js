@@ -2,14 +2,14 @@
 
 describe("GAME TREE SCENARIOS", function() {
     this.timeout(2000 * 1000)
-    require("../actions/1-seller-create");
-    require("../actions/2-seller-create-cancel");
-    require("../actions/3-buyer-commit");
-    require("../actions/4-buyer-commit-redeem");
-    require("../actions/5-buyer-commit-refund")
-    require("../actions/6-buyer-commit-redeem-complain");
-    require("../actions/7-buyer-commit-refund-complain");
-    require("../actions/8-buyer-commit-redeem-complain-seller-fault");
-    require("../actions/9-buyer-commit-refund-complain-seller-fault");
-    // require("../actions/9-buyer-commit-seller-fault");
+    require("../testGameTree/1-seller-create");
+    require("../testGameTree/2-seller-create-cancel");
+    require("../testGameTree/3-buyer-commit");
+    require("../testGameTree/4-buyer-commit-redeem");
+    require("../testGameTree/5-buyer-commit-refund")
+    require("../testGameTree/6-buyer-commit-redeem-complain");
+    require("../testGameTree/7-buyer-commit-refund-complain");
+    require("../testGameTree/8-buyer-commit-redeem-complain-seller-fault");
+    require("../testGameTree/9-buyer-commit-refund-complain-seller-fault");
+    // require("../testGameTree/9-buyer-commit-seller-fault");
 });

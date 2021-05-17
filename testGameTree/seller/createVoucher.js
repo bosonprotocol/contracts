@@ -60,7 +60,9 @@ function CreateOrderETHETH() {
                 console.log("Transaction Hash : ",hash);
                 // resolve(hash)
             }).on('receipt', function(receipt){
-                // console.log(receipt)
+                // console.log(receipt);
+                // console.log(receipt.topics[1]);
+                // console.log(receipt.topics[2]);
                 let txhash = receipt.transactionHash;
                 let logdata1 = receipt.logs[0].data;
                 let logdata2 = receipt.logs[1].data;

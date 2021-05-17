@@ -16,6 +16,9 @@ async function checkBalances() {
         let sbal = sellerBalance/denomenator;
         let bbal = buyerBalance/denomenator;
 
+        console.assert(sbal >= 0);
+        console.assert(bbal >= 0);
+
         let table = new Table({
                 head: ['ACCOUNT TYPE','ADDRESS','ETH VALUE']
         });
