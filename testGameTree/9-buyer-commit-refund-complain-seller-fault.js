@@ -8,51 +8,94 @@ const delay = require("./helpers/delay");
 const {describe,it} = require("mocha");
 let format = require("./helpers/formatter");
 
+let helpers = require("./helpers/constants");
+const {BUYER_PUBLIC, SELLER_PUBLIC} = require('./helpers/config');
+let assert = require('chai').assert;
 
 describe("TEST SCENARIO 09 :: SELLER CREATES, BUYER COMMITS, REFUNDS & COMPLAINS, SELLER FAULTS", async function() {
 
     let committedVoucher;
-    let voucherSetDetails;
+    let voucherSetDetails
+    let refundedVoucher;
+    let complainedVoucher;
+    let faultedVoucher;
+    let aql = assert.equal;
 
     before("Check Balances",async function () {
         let balances = await checkBalance();
         console.log(balances);
     })
 
-    it("TEST SCENARIO 09 :: SELLER CREATES :: 1. Seller creates a voucher set", async function (){
+    it("TEST SCENARIO 09 :: SELLER CREATE :: 1.0 Seller creates a voucher set", async function (){
         await delay();
         voucherSetDetails  =  await sellerCreate();
         await format(voucherSetDetails);
     })
 
-    it("TEST SCENARIO 09 :: BUYER COMMITS :: 1. Buyer commits to purchases a voucher", async function() {
+    it("TEST SCENARIO 09 :: SELLER CREATE :: 1.1 VALIDATE VALID FROM", async function () {
+        aql(voucherSetDetails['ValidFrom'],helpers.PROMISE_VALID_FROM);
+    })
+
+    it("TEST SCENARIO 09 :: SELLER CREATE :: 1.2 VALIDATE VALID TO", async function () {
+        aql(voucherSetDetails['ValidTo'],helpers.PROMISE_VALID_TO);
+    })
+
+    it("TEST SCENARIO 09 :: SELLER CREATE :: 1.3 VALIDATE ORDER QUANTITY", async function () {
+        aql(voucherSetDetails['nftSupply'],helpers.ORDER_QUANTITY1);
+    })
+
+    it("TEST SCENARIO 09 :: SELLER CREATE :: 1.4 VALIDATE SELLER DEPOSIT", async function () {
+        aql(voucherSetDetails['sellerDeposit'],helpers.seller_deposit);
+    })
+
+    it("TEST SCENARIO 09 :: BUYER COMMITS :: 2.0 Buyer commits to purchases a voucher", async function() {
         await delay();
         console.log(await checkBalance());
         committedVoucher = await commitVocucher(voucherSetDetails["createdVoucherSetID"]);
         await format(committedVoucher);
     });
 
-    it("TEST SCENARIO 09 :: BUYER REFUNDS :: 1. Buyer refunds a purchased voucher", async function() {
+    it("TEST SCENARIO 09 :: BUYER COMMITS :: 2.1 VALIDATE ISSUER", async function () {
+        aql(committedVoucher['issuer'],SELLER_PUBLIC.toLowerCase());
+    })
+
+    it("TEST SCENARIO 09 :: BUYER COMMITS :: 2.2 VALIDATE HOLDER", async function () {
+        aql(committedVoucher['holder'],BUYER_PUBLIC.toLowerCase());
+    })
+
+    it("TEST SCENARIO 09 :: BUYER REFUNDS :: 3.0 Buyer refunds a purchased voucher", async function() {
         await delay();
         console.log(await checkBalance());
-        let  refund = await refundVoucher(committedVoucher["MintedVoucherID"]);
-        await format(refund);
+        refundedVoucher = await refundVoucher(committedVoucher["MintedVoucherID"]);
+        await format(refundedVoucher);
     });
 
-    it("TEST SCENARIO 09 :: BUYER COMPLAINS :: 1. Buyer complains a refunded voucher", async function() {
+    it("TEST SCENARIO 09 :: BUYER REFUNDS :: 3.1 VALIDATE REFUNDED VOUCHER", async function () {
+        aql(committedVoucher['MintedVoucherID'],refundedVoucher['refundedVoucherID']);
+    })
+
+    it("TEST SCENARIO 09 :: BUYER COMPLAINS :: 4.0 Buyer complains a refunded voucher", async function() {
         await delay();
         console.log(await checkBalance());
-        let complainedVoucher = await complainVoucher(committedVoucher["MintedVoucherID"]);
+        complainedVoucher = await complainVoucher(committedVoucher["MintedVoucherID"]);
         await format(complainedVoucher);
 
     });
 
-    it("TEST SCENARIO 09 :: SELLER FAULTS :: 1. Seller faults a complained voucher", async function() {
+    it("TEST SCENARIO 09 :: BUYER COMPLAINS :: 4.1 VALIDATE REDEEMED VOUCHER", async function () {
+        aql(committedVoucher['MintedVoucherID'],complainedVoucher['complainedVoucherID']);
+    })
+
+    it("TEST SCENARIO 09 :: SELLER FAULTS :: 5.0 Seller faults a complained voucher", async function() {
         await delay();
         console.log(await checkBalance());
-        let fault = await faultVoucher(committedVoucher["MintedVoucherID"]);
-        await format(fault);
+        faultedVoucher = await faultVoucher(committedVoucher["MintedVoucherID"]);
+        await format(faultedVoucher);
     });
+
+    it("TEST SCENARIO 09 :: SELLER FAULTS :: 5.1 VALIDATE REDEEMED VOUCHER", async function () {
+        aql(faultedVoucher['FaultedVoucherID'],complainedVoucher['complainedVoucherID']);
+    })
 
     after("Check Balances", async function () {
         let balances = await checkBalance();

@@ -5,7 +5,6 @@ const helpers = require('../helpers/constants')
 const Tx = require('ethereumjs-tx').Transaction;
 let converter = require('hex2dec');
 
-
 const BosonRouter = require("../../build/contracts/BosonRouter.json").abi;
 const { SELLER_SECRET, SELLER_PUBLIC, contracts, PROVIDER } = require('../helpers/config');
 
@@ -14,7 +13,6 @@ let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
 // set provider for all later instances to use
 Contract.setProvider(PROVIDER);
 
-// const seller = new ethers.Wallet(SELLER_SECRET, PROVIDER);
 const seller = SELLER_PUBLIC;
 
 function CreateOrderETHETH() {
@@ -58,11 +56,7 @@ function CreateOrderETHETH() {
                 }
 
                 console.log("Transaction Hash : ",hash);
-                // resolve(hash)
             }).on('receipt', function(receipt){
-                // console.log(receipt);
-                // console.log(receipt.topics[1]);
-                // console.log(receipt.topics[2]);
                 let txhash = receipt.transactionHash;
                 let logdata1 = receipt.logs[0].data;
                 let logdata2 = receipt.logs[1].data;
@@ -89,15 +83,10 @@ function CreateOrderETHETH() {
                     "logReceipt3": receipt.logs[2].id
                 }
 
-                // console.log(output)
                 resolve(output)
             }).on('error', console.error);
         })
     })
 }
-
-// (async function newOrder () {
-//     await CreateOrderETHETH();
-// })();
 
 module.exports = CreateOrderETHETH;

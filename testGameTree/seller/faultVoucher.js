@@ -3,7 +3,6 @@ let Contract = require('web3-eth-contract');
 const Tx = require('ethereumjs-tx').Transaction;
 let converter = require('hex2dec');
 
-
 const BosonRouter = require("../../build/contracts/BosonRouter.json").abi;
 const { SELLER_SECRET, SELLER_PUBLIC, contracts, PROVIDER } = require('../helpers/config');
 
@@ -12,10 +11,8 @@ let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
 // set provider for all later instances to use
 Contract.setProvider(PROVIDER);
 
-// const seller = new ethers.Wallet(SELLER_SECRET, PROVIDER);
 const seller = SELLER_PUBLIC;
 
-// let sellerfalutVoucher =
 function faultVoucher(_voucherSetID) {
     return new Promise((resolve, reject) => {
         const bosonRouterAddr = contracts.BosonRouterContrctAddress;
@@ -44,14 +41,11 @@ function faultVoucher(_voucherSetID) {
             // executes the transaction
             web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), (err, hash) => {
                 if(err) {
-                    // console.log(err)
                     reject(new Error(err.message))
                 }
 
-                // resolve(hash)
                 console.log("Transaction Hash : "+hash);
             }).on('receipt', function(receipt){
-                // console.log(receipt)
                 let logdata1 = receipt.logs[0].data;
                 let gasUsed = receipt.gasUsed;
                 let txHash = receipt.transactionHash;
@@ -66,15 +60,10 @@ function faultVoucher(_voucherSetID) {
                     "status":txStatus
                 }
 
-                // console.log(output)
                 resolve(output)
             }).on('error', console.error);
         })
     })
 }
-
-// (async function newOrder () {
-//     await faultVoucher("57896044618658097711785492504343954004219371990794251689378202498399717031936");
-// })();
 
 module.exports = faultVoucher;

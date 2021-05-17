@@ -12,9 +12,9 @@ Contract.setProvider(PROVIDER);
 async function checkBalances() {
         let sellerBalance = await web3.eth.getBalance(SELLER_PUBLIC);
         let buyerBalance = await web3.eth.getBalance(BUYER_PUBLIC);
-        let denomenator = 10**18;
-        let sbal = sellerBalance/denomenator;
-        let bbal = buyerBalance/denomenator;
+        let denominator = 10**18;
+        let sbal = sellerBalance/denominator;
+        let bbal = buyerBalance/denominator;
 
         console.assert(sbal >= 0);
         console.assert(bbal >= 0);

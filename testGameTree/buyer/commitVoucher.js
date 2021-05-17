@@ -5,7 +5,6 @@ const helpers = require('../helpers/constants')
 const Tx = require('ethereumjs-tx').Transaction;
 let converter = require('hex2dec');
 
-
 const BosonRouter = require("../../build/contracts/BosonRouter.json").abi;
 const { BUYER_SECRET, BUYER_PUBLIC, contracts, PROVIDER, SELLER_PUBLIC } = require('../helpers/config');
 
@@ -43,13 +42,11 @@ function requestVoucherETHETH(_voucherID) {
             tx.sign(privKey);
             let serializedTx = tx.serialize();
 
-
             web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), (err, hash) => {
                 if(err) {
                     console.log(err)
                     reject(new Error(err.message))
                 }
-                // resolve(hash)
                 console.log("Transaction Hash : "+hash);
             }).on('receipt', function(receipt){
                 // console.log(receipt);
@@ -78,19 +75,10 @@ function requestVoucherETHETH(_voucherID) {
                     "logReceipt2": receipt.logs[1].id,
                     "logReceipt3": receipt.logs[2].id
                 }
-
-                // console.log(output)
                 resolve(output)
-
             }).on('error', console.error);
         })
     })
 }
 
-// (async function newOrder () {
-//     await requestVoucherETHETH("57896044618658097711785492504343954004559654357715190152841577105831485243392");
-// })();
-
 module.exports = requestVoucherETHETH;
-
-

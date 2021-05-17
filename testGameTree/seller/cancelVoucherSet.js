@@ -1,10 +1,7 @@
 let Web3 = require('web3');
-const BN = require('bn.js');
 let Contract = require('web3-eth-contract');
-const helpers = require('../helpers/constants')
 const Tx = require('ethereumjs-tx').Transaction;
 let converter = require('hex2dec');
-
 
 const BosonRouter = require("../../build/contracts/BosonRouter.json").abi;
 const { SELLER_SECRET, SELLER_PUBLIC, contracts, PROVIDER } = require('../helpers/config');
@@ -14,10 +11,9 @@ let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
 // set provider for all later instances to use
 Contract.setProvider(PROVIDER);
 
-// const seller = new ethers.Wallet(SELLER_SECRET, PROVIDER);
 const seller = SELLER_PUBLIC;
 
-    function requestCancelorFault(_voucherSetID) {
+function requestCancelorFault(_voucherSetID) {
     return new Promise((resolve, reject) => {
         const bosonRouterAddr = contracts.BosonRouterContrctAddress;
         const bosonRouter = new Contract(BosonRouter,bosonRouterAddr);
@@ -51,7 +47,6 @@ const seller = SELLER_PUBLIC;
 
                 console.log("Transaction Hash : ",hash);
             }).on('receipt', function(receipt){
-                // console.log(receipt)
                 let logdata1 = receipt.logs[0].data;
                 let logdata3 = receipt.logs[2].data;
                 let gasUsed = receipt.gasUsed;
@@ -74,17 +69,10 @@ const seller = SELLER_PUBLIC;
                     "logReceipt3": receipt.logs[2].id
                 }
 
-                // console.log(output)
                 resolve(output)
             }).on('error', console.error);
         })
     })
 }
 
-// (async function newOrder () {
-//     await requestCancelorFault("57896044618658097711785492504343954004219371990794251689378202498399717031936");
-// })();
-
 module.exports = requestCancelorFault;
-
-

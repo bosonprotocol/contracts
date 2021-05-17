@@ -1,13 +1,10 @@
 let Web3 = require('web3');
-const BN = require('bn.js');
 let Contract = require('web3-eth-contract');
-const helpers = require('../helpers/constants')
 const Tx = require('ethereumjs-tx').Transaction;
 let converter = require('hex2dec');
 
-
 const BosonRouter = require("../../build/contracts/BosonRouter.json").abi;
-const { BUYER_SECRET, BUYER_PUBLIC, contracts, PROVIDER, SELLER_PUBLIC } = require('../helpers/config');
+const { BUYER_SECRET, BUYER_PUBLIC, contracts, PROVIDER } = require('../helpers/config');
 
 let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
 
@@ -40,7 +37,6 @@ function complainVoucher(_voucherID) {
             tx.sign(privKey);
             let serializedTx = tx.serialize();
 
-
             web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), (err, hash) => {
                 if(err) {
                     console.log(err)
@@ -48,7 +44,6 @@ function complainVoucher(_voucherID) {
                 }
                 console.log("Transaction Hash : "+hash);
             }).on('receipt', function(receipt){
-                // console.log(receipt);
                 let logdata1 = receipt.logs[0].data;
                 let gasUsed = receipt.gasUsed;
                 let complainedVoucherID = (converter.hexToDec(logdata1.slice(0, 66))).toString();
@@ -58,18 +53,10 @@ function complainVoucher(_voucherID) {
                     "gasUsed":gasUsed
                 }
 
-                // console.log(output)
                 resolve(output)
-
             }).on('error', console.error);
         })
     })
 }
 
-// (async function newOrder () {
-//     await complainVoucher("57896044618658097711785492504343954004559654357715190152841577105831485243399");
-// })();
-
 module.exports = complainVoucher;
-
-
