@@ -6,45 +6,89 @@ const constants = require('../testHelpers/constants');
 const timemachine = require('../testHelpers/timemachine');
 const Utils = require('../testHelpers/utils');
 const Users = require('../testHelpers/users');
-const {assert} = require('chai');
 
-const ERC1155ERC721 = artifacts.require('ERC1155ERC721');
-const VoucherKernel = artifacts.require('VoucherKernel');
-const Cashier = artifacts.require('Cashier');
-const BosonRouter = artifacts.require('BosonRouter');
-const FundLimitsOracle = artifacts.require('FundLimitsOracle');
-const BN = web3.utils.BN;
+const chai = require('chai')
+const {assert, expect} = chai;
+const {expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
+const revertReasons = require('../testHelpers/revertReasons')
 
-contract('Voucher tests', (addresses) => {
-  const users = new Users(addresses);
+let ERC1155ERC721 //= artifacts.require('ERC1155ERC721');
+let VoucherKernel //= artifacts.require('VoucherKernel');
+let Cashier //= artifacts.require('Cashier');
+let BosonRouter //= artifacts.require('BosonRouter');
+let FundLimitsOracle //= artifacts.require('FundLimitsOracle');
 
+const BN = require('bn.js') //require('bignumber.js')
+chai.use(require('chai-bn')(BN))
+
+let users;
+
+//TODO
+// WE dont need to convert everythin to expect. We should stick with assert, meaning all expects in the first couple of test need to be converted to assert
+// remove truffle and stick with ethers only
+// dolu napisah edna funkciq wait for event // moje da se mahne timeout-a. Da testvam s neq da si vzimam parametrte ot eventa. Daje da napravq da proverqvam dali imam imto na eventa v logovete i ako ne da rejectna promise-a che takav event ne e emitnat
+// kato ne se emitne eventa da revertva da napraavq tam neshto po timeout-a
+
+describe.only('Voucher tests', () => {
+  
   let contractERC1155ERC721,
-    contractVoucherKernel,
-    contractCashier,
-    contractBosonRouter,
-    contractFundLimitsOracle;
+  contractVoucherKernel,
+  contractCashier,
+  contractBosonRouter,
+  contractFundLimitsOracle;
   let tokenSupplyKey1,
-    tokenSupplyKey2,
-    tokenVoucherKey1,
-    tokenVoucherKey2,
-    promiseId1,
-    promiseId2;
+  tokenSupplyKey2,
+  tokenVoucherKey1,
+  tokenVoucherKey2,
+  promiseId1,
+  promiseId2;
+  
+  before(async () => {
+    const signers = await hre.ethers.getSigners();
+    users = new Users(signers);
+
+    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721')
+    VoucherKernel = await ethers.getContractFactory('VoucherKernel')
+    Cashier = await ethers.getContractFactory('Cashier')
+    BosonRouter = await ethers.getContractFactory('BosonRouter')
+    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721')
+    FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle')
+  });
+
 
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle = await FundLimitsOracle.new();
-    contractERC1155ERC721 = await ERC1155ERC721.new();
-    contractVoucherKernel = await VoucherKernel.new(
+    // contractFundLimitsOracle = await FundLimitsOracle.new();
+    // contractERC1155ERC721 = await ERC1155ERC721.new();
+    // contractVoucherKernel = await VoucherKernel.new(
+    //   contractERC1155ERC721.address
+    // );
+
+    // contractCashier = await Cashier.new(contractVoucherKernel.address);
+    // contractBosonRouter = await BosonRouter.new(
+    //   contractVoucherKernel.address,
+    //   contractFundLimitsOracle.address,
+    //   contractCashier.address
+    // );
+
+    contractFundLimitsOracle = await FundLimitsOracle.deploy();
+    contractERC1155ERC721 = await ERC1155ERC721.deploy();
+    contractVoucherKernel = await VoucherKernel.deploy(
       contractERC1155ERC721.address
     );
-
-    contractCashier = await Cashier.new(contractVoucherKernel.address);
-    contractBosonRouter = await BosonRouter.new(
+    contractCashier = await Cashier.deploy(contractVoucherKernel.address);
+    contractBosonRouter = await BosonRouter.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
     );
+
+    await contractFundLimitsOracle.deployed()
+    await contractERC1155ERC721.deployed()
+    await contractVoucherKernel.deployed()
+    await contractCashier.deployed()
+    await contractBosonRouter.deployed()
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
@@ -80,23 +124,33 @@ contract('Voucher tests', (addresses) => {
 
   describe('Direct minting', function () {
     it('must fail: unauthorized minting ERC-1155', async () => {
-      await truffleAssert.reverts(
-        contractERC1155ERC721.mint(users.attacker.address, 666, 1, []),
-        truffleAssert.ErrorType.REVERT
-      );
+      const mintSignature = 'mint(' + 'address,' + 'uint256,' + 'uint256,' + 'bytes)'
+
+      expectRevert(
+        contractERC1155ERC721.functions[mintSignature](users.attacker.address, 666, 1, []),
+        revertReasons.UNAUTHORIZED_VK
+      )
     });
 
     it('must fail: unauthorized minting ERC-721', async () => {
-      await truffleAssert.reverts(
-        contractERC1155ERC721.mint(users.attacker.address, 666),
-        truffleAssert.ErrorType.REVERT
-      );
+      const mintSignature = 'mint(' + 'address,' + 'uint256)'
+
+      expectRevert(
+        contractERC1155ERC721.functions[mintSignature](users.attacker.address, 666),
+        revertReasons.UNAUTHORIZED_VK
+      )
     });
   });
 
   describe('Create Voucher Sets (ERC1155)', () => {
-    it('adding one new order / promise', async () => {
-      const txOrder = await contractBosonRouter.requestCreateOrderETHETH(
+    it.only('adding one new order / promise', async () => {
+      const sellerInstance = contractBosonRouter.connect(users.seller.signer)
+      // console.log('users.seller.address: ', users.seller.address);
+      // console.log('users.seller.signer: ', users.seller.signer);
+
+
+
+      const txOrder = await sellerInstance.requestCreateOrderETHETH(
         [
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
@@ -106,91 +160,96 @@ contract('Voucher tests', (addresses) => {
           constants.ORDER_QUANTITY1,
         ],
         {
-          from: users.seller.address,
-          to: contractCashier.address,
           value: constants.PROMISE_DEPOSITSE1,
         }
       );
 
-      let tokenSupplyKey1;
+      async function waitForEvent(contract, eventName, ...params) {
+        return new Promise(function(resolve, reject) {
+          let done = false;
+          contract.on(eventName, function() {
+              if (done) { return; }
+              done = true;
 
-      truffleAssert.eventEmitted(
-        txOrder,
-        'LogOrderCreated',
-        (ev) => {
-          tokenSupplyKey1 = ev._tokenIdSupply;
-          return (
-            ev._tokenIdSupply.gt(constants.ZERO) &&
-            ev._seller === users.seller.address &&
-            ev._quantity.eq(new BN(constants.ORDER_QUANTITY1)) &&
-            ev._paymentType.eq(constants.ONE) &&
-            ev._correlationId.eq(constants.ZERO)
-          );
-        },
-        'order1 event incorrect'
-      );
+              let args = Array.prototype.slice.call(arguments);
+              let event = args[args.length - 1];
+              event.removeListener();
+              
+              console.log('===== event ====');
+              console.log(event.args._tokenIdSupply);
+              resolve(event.args);
+          });
 
-      const internalVoucherKernelTx = await truffleAssert.createTransactionResult(
-        contractVoucherKernel,
-        txOrder.tx
-      );
+          const timer = setTimeout(() => {
+              if (done) { return; }
+              done = true;
 
-      let promiseId1;
+              contract.removeAllListeners();
+              reject(new Error("timeout"));
+          }, 50000);
+          if (timer.unref) { timer.unref(); }
+      });
+      }
 
-      truffleAssert.eventEmitted(
-        internalVoucherKernelTx,
-        'LogPromiseCreated',
-        (ev) => {
-          promiseId1 = ev._promiseId;
-          return (
-            ev._promiseId > 0 &&
-            ev._nonce.eq(constants.ONE) &&
-            ev._seller === users.seller.address &&
-            ev._validFrom.eq(new BN(constants.PROMISE_VALID_FROM)) &&
-            ev._validTo.eq(new BN(constants.PROMISE_VALID_TO)) &&
-            ev._idx.eq(constants.ZERO)
-          );
-        },
-        'promise event incorrect'
-      );
 
-      const internalTokenTx = await truffleAssert.createTransactionResult(
-        contractERC1155ERC721,
-        txOrder.tx
-      );
+      let test = await waitForEvent(sellerInstance, "LogOrderCreated")
+      console.log('test: ', test);
+      
+      const orderCreatedArgs = expectEvent(
+        test,
+        "LogOrderCreated",
+      ).args
 
-      truffleAssert.eventEmitted(
-        internalTokenTx,
-        'TransferSingle',
-        (ev) => {
-          return (
-            ev._operator === contractVoucherKernel.address &&
-            ev._from === constants.ZERO_ADDRESS &&
-            ev._to == users.seller.address &&
-            ev._id.eq(tokenSupplyKey1) &&
-            ev._value.eq(new BN(constants.ORDER_QUANTITY1))
-          );
-        },
-        'transfer event incorrect'
-      );
+      console.log('orderCreatedArgs._quantity: ', orderCreatedArgs._quantity);
+      console.log('constants.ORDER_QUANTITY1: ', constants.ORDER_QUANTITY1);
+
+      return
+
+      // expect(orderCreatedArgs._tokenIdSupply).to.be.bignumber.gt(constants.ZERO)
+      // expect(orderCreatedArgs._seller).to.be.eq(users.seller.address)
+      // expect(new BN(orderCreatedArgs._quantity)).to.be.bignumber.eq(constants.ONE)
+      // expect(new BN(orderCreatedArgs._paymentType)).to.be.bignumber.eq(constants.ONE)
+      // expect(new BN(orderCreatedArgs._correlationId)).to.be.bignumber.eq(constants.ZERO)
+
+      // const tokenSupplyKey1 = new BN(orderCreatedArgs._tokenIdSupply)
+
+      // const promiseCreatedArgs = (await expectEvent.inTransaction(txOrder.tx, contractVoucherKernel, "LogPromiseCreated")).args
+
+      // expect(promiseCreatedArgs._promiseId).to.not.eq(constants.ZERO_BYTES)
+      // expect(promiseCreatedArgs._nonce).to.be.bignumber.eq(constants.ONE)
+      // expect(promiseCreatedArgs._seller).to.be.eq(users.seller.address)
+      // expect(promiseCreatedArgs._validFrom).to.eql(constants.PROMISE_VALID_FROM)
+
+      // return
+      // expect(promiseCreatedArgs._validTo).to.equal(constants.PROMISE_VALID_TO)
+      // expect(promiseCreatedArgs._idx).to.be.bignumber.eq(constants.ZERO)
+
+      // const transferSingleArgs = (await expectEvent.inTransaction(txOrder.tx, contractERC1155ERC721, "TransferSingle")).args
+
+      // expect(transferSingleArgs._operator).to.be.eq(contractVoucherKernel.address)
+      // expect(transferSingleArgs._from).to.be.eq(constants.ZERO_ADDRESS)
+      // expect(transferSingleArgs._to).to.be.eq(users.seller.address)
+      // expect(new BN(transferSingleArgs._id)).to.be.bignumber.eq(tokenSupplyKey1)
+      // expect(transferSingleArgs._value).to.be.bignumber.eq(constants.ORDER_QUANTITY1)
+
+      const promiseId1 = promiseCreatedArgs._promiseId;
 
       //Check BosonRouter state
-      assert.equal(
-        await contractBosonRouter.correlationIds(users.seller.address),
-        1,
-        'Correlation Id incorrect'
-      );
+      expect(
+        new BN(await contractBosonRouter.correlationIds(users.seller.address))
+      ).to.be.bignumber.eq(constants.ONE)
 
       //Check VocherKernel State
       const promise = await contractVoucherKernel.promises(promiseId1);
-      assert.equal(promise.promiseId, promiseId1, 'Promise Id incorrect');
-      assert.isTrue(promise.nonce.eq(constants.ONE), 'Nonce is incorrect');
-      assert.strictEqual(
-        promise.seller,
-        users.seller.address,
-        'Seller incorrect'
-      );
-      assert.isTrue(promise.validFrom.eq(new BN(constants.PROMISE_VALID_FROM)));
+      expect(promise.promiseId).to.be.equal(promiseId1)
+      expect(new BN(promise.nonce)).to.be.bignumber.eq(constants.ONE)
+      return
+      // assert.strictEqual(
+      //   promise.seller,
+      //   users.seller.address,
+      //   'Seller incorrect'
+      // );
+      // assert.isTrue(promise.validFrom.eq(new BN(constants.PROMISE_VALID_FROM)));
       assert.isTrue(promise.validTo.eq(new BN(constants.PROMISE_VALID_TO)));
       assert.isTrue(promise.price.eq(new BN(constants.PROMISE_PRICE1)));
       assert.isTrue(promise.depositSe.eq(new BN(constants.PROMISE_DEPOSITSE1)));
@@ -1118,7 +1177,7 @@ contract('Voucher tests', (addresses) => {
   });
 }); //end of contract
 
-contract('Voucher tests - UNHAPPY PATH', (addresses) => {
+describe('Voucher tests - UNHAPPY PATH', (addresses) => {
   const users = new Users(addresses);
 
   let contractERC1155ERC721,

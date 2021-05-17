@@ -5,14 +5,19 @@ const constants = require('../testHelpers/constants');
 const Users = require('../testHelpers/users');
 const Utils = require('../testHelpers/utils');
 
-const ERC1155ERC721 = artifacts.require('ERC1155ERC721');
-const VoucherKernel = artifacts.require('VoucherKernel');
-const Cashier = artifacts.require('Cashier');
-const BosonRouter = artifacts.require('BosonRouter');
-const FundLimitsOracle = artifacts.require('FundLimitsOracle');
+let ERC1155ERC721 // = artifacts.require('ERC1155ERC721');
+let VoucherKernel // = artifacts.require('VoucherKernel');
+let Cashier // = artifacts.require('Cashier');
+let BosonRouter // = artifacts.require('BosonRouter');
+let FundLimitsOracle // = artifacts.require('FundLimitsOracle');
 
-contract('Admin functionality', async (addresses) => {
-  const users = new Users(addresses);
+let users
+
+describe('Admin functionality', async (addresses) => {
+  before(async () => {
+    const signers = await hre.ethers.getSigners();
+    users = new Users(signers);
+  });
 
   let contractERC1155ERC721,
     contractVoucherKernel,

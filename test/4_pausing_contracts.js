@@ -7,22 +7,29 @@ const Users = require('../testHelpers/users');
 const UtilsBuilder = require('../testHelpers/utilsBuilder');
 const Utils = require('../testHelpers/utils');
 
-const ERC1155ERC721 = artifacts.require('ERC1155ERC721');
-const VoucherKernel = artifacts.require('VoucherKernel');
-const Cashier = artifacts.require('Cashier');
-const BosonRouter = artifacts.require('BosonRouter');
-const MockERC20Permit = artifacts.require('MockERC20Permit');
-const FundLimitsOracle = artifacts.require('FundLimitsOracle');
+let ERC1155ERC721// = artifacts.require('ERC1155ERC721');
+let VoucherKernel// = artifacts.require('VoucherKernel');
+let Cashier// = artifacts.require('Cashier');
+let BosonRouter// = artifacts.require('BosonRouter');
+let MockERC20Permit// = artifacts.require('MockERC20Permit');
+let FundLimitsOracle// = artifacts.require('FundLimitsOracle');
 
-const BN = web3.utils.BN;
+// const BN = web3.utils.BN;
+const BN = require('bn.js')
+
 
 let utils;
 
 let TOKEN_SUPPLY_ID;
 let VOUCHER_ID;
 
-contract('Cashier && VK', (addresses) => {
-  const users = new Users(addresses);
+let users
+
+describe('Cashier && VK', (addresses) => {
+  before(async () => {
+    const signers = await hre.ethers.getSigners();
+    users = new Users(signers);
+  });
 
   let contractERC1155ERC721,
     contractVoucherKernel,

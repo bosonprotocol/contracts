@@ -1,10 +1,10 @@
 require('dotenv').config();
 require("solidity-coverage");
 require('hardhat-contract-sizer');
-require("@nomiclabs/hardhat-truffle5");
+// require("@nomiclabs/hardhat-truffle5");
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-ethers");
-require("@nomiclabs/hardhat-web3")
+// require("@nomiclabs/hardhat-web3")
 require("@nomiclabs/hardhat-waffle");
 
 const { task } = require("hardhat/config");

@@ -1,4 +1,4 @@
-const BN = require('bn.js');
+const BN = require('bn.js')
 
 // common
 const ONE_MINUTE = 60;
@@ -6,6 +6,7 @@ const SECONDS_IN_DAY = 86400;
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 const ZERO = new BN(0);
 const ONE = new BN(1);
+const ZERO_BYTES = '0x0000000000000000000000000000000000000000000000000000000000000000'
 
 // asset
 const ASSET_VERSION = '0x3132';
@@ -80,6 +81,7 @@ module.exports = {
   ONE_MINUTE,
   SECONDS_IN_DAY,
   ZERO_ADDRESS,
+  ZERO_BYTES,
   buyer_deposit,
   buyer_incorrect_deposit,
   seller_deposit,

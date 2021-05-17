@@ -18,7 +18,6 @@ module.exports = async function () {
   const cashier = await Cashier.deploy(voucherKernel.address);
   const br = await BosonRouter.deploy(
     voucherKernel.address,
-    erc1155erc721.address,
     flo.address,
     cashier.address
   );
@@ -51,16 +50,6 @@ module.exports = async function () {
     event.event,
     'at:',
     event.args._newVoucherKernel
-  );
-
-  tx = await erc1155erc721.setBosonRouterAddress(br.address);
-  txReceipt = await tx.wait();
-  event = txReceipt.events[0];
-  console.log(
-    '\n$ ERC1155ERC721',
-    event.event,
-    'at:',
-    event.args._newBosonRouter
   );
 
   tx = await voucherKernel.setBosonRouterAddress(br.address);

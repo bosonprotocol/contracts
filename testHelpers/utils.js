@@ -1,11 +1,11 @@
+const ethers = require('hardhat').ethers
 const constants = require('./constants');
-const BN = web3.utils.BN;
+const BN = require('bn.js')
 const truffleAssert = require('truffle-assertions');
 
 const {ecsign} = require('ethereumjs-util');
 
 const {toWei, getApprovalDigest} = require('../testHelpers/permitUtils');
-
 class Utils {
   constructor() {
     this.createOrder = '';
@@ -586,10 +586,10 @@ class Utils {
   }
 
   static async getCurrTimestamp() {
-    let blockNumber = await web3.eth.getBlockNumber();
-    let block = await web3.eth.getBlock(blockNumber);
-
-    return block.timestamp;
+    let blockNumber = await ethers.provider.getBlockNumber()
+    let block = await ethers.provider.getBlock(blockNumber)
+    
+    return block.timestamp
   }
 }
 
