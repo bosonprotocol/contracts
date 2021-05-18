@@ -13,6 +13,7 @@ const VoucherKernel = artifacts.require('VoucherKernel');
 const Cashier = artifacts.require('Cashier');
 const BosonRouter = artifacts.require('BosonRouter');
 const FundLimitsOracle = artifacts.require('FundLimitsOracle');
+const MockBosonRouter = artifacts.require('MockBosonRouter');
 const BN = web3.utils.BN;
 
 contract('Voucher tests', async (addresses) => {
@@ -22,7 +23,8 @@ contract('Voucher tests', async (addresses) => {
     contractVoucherKernel,
     contractCashier,
     contractBosonRouter,
-    contractFundLimitsOracle;
+    contractFundLimitsOracle,
+    contractMockBosonRouter;
   let tokenSupplyKey1,
     tokenSupplyKey2,
     tokenVoucherKey1,
@@ -41,6 +43,12 @@ contract('Voucher tests', async (addresses) => {
 
     contractCashier = await Cashier.new(contractVoucherKernel.address);
     contractBosonRouter = await BosonRouter.new(
+      contractVoucherKernel.address,
+      contractFundLimitsOracle.address,
+      contractCashier.address
+    );
+
+    contractMockBosonRouter = await MockBosonRouter.new(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
@@ -716,26 +724,32 @@ contract('Voucher tests', async (addresses) => {
       );
     });
 
-    it.only('must fail: adding new order with incorrect payment method', async () => {
-      console.log("contractBosonRouter.address ", contractBosonRouter.address);
-   
+    it('must fail: adding new order with incorrect payment method', async () => {
+      //Set mock so that passing wrong payment type can be tested
+      await contractVoucherKernel.setBosonRouterAddress(
+        contractMockBosonRouter.address
+      );
+
       await truffleAssert.reverts(
-        contractVoucherKernel.createPaymentMethod(
-          tokenSupplyKey1,
-          new BN(5),
-          constants.ZERO_ADDRESS,
-          constants.ZERO_ADDRESS,
+        contractMockBosonRouter.requestCreateOrderETHETH(
+          [
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITSE1,
+            constants.PROMISE_DEPOSITBU1,
+            constants.ORDER_QUANTITY1,
+          ],
           {
-            from: contractBosonRouter.address
+            from: users.seller.address,
+            to: contractMockBosonRouter.address,
+            value: constants.PROMISE_DEPOSITSE1,
           }
         ),
-        "INVALID PAYMENT METHOD"
+        'INVALID PAYMENT METHOD'
       );
-  
     });
-  });//end describe
-
-  
+  }); //end describe
 
   describe('Vouchers (ERC721)', function () {
     beforeEach('execute prerequisite steps', async () => {
