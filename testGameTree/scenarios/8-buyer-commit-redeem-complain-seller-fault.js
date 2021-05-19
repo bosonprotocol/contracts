@@ -1,14 +1,14 @@
-const sellerCreate = require("./seller/createVoucher");
-const commitVocucher = require("./buyer/commitVoucher");
-const redeemVoucher = require("./buyer/redeemVoucher");
-const checkBalance = require("./helpers/checkBalance");
-const complainVoucher = require("./buyer/compainVoucher");
-const faultVoucher = require("./seller/faultVoucher");
-const delay = require("./helpers/delay");
+const sellerCreate = require("../seller/createVoucher");
+const commitVocucher = require("../buyer/commitVoucher");
+const redeemVoucher = require("../buyer/redeemVoucher");
+const checkBalance = require("../helpers/checkBalance");
+const complainVoucher = require("../buyer/compainVoucher");
+const faultVoucher = require("../seller/faultVoucher");
+const delay = require("../helpers/delay");
 const {describe,it} = require("mocha");
-let format = require("./helpers/formatter");
-let helpers = require("./helpers/constants");
-const {BUYER_PUBLIC, SELLER_PUBLIC} = require('./helpers/config');
+let format = require("../helpers/formatter");
+let helpers = require("../helpers/constants");
+const {BUYER_PUBLIC, SELLER_PUBLIC} = require('../helpers/config');
 let assert = require('chai').assert;
 
 const TIMEOUT = 500 * 1000;

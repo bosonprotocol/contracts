@@ -1,9 +1,9 @@
-const sellerCreate = require("./seller/createVoucher");
-const sellerCancel = require("./seller/cancelVoucherSet");
+const sellerCreate = require("../seller/createVoucher");
+const sellerCancel = require("../seller/cancelVoucherSet");
 const {describe,it} = require("mocha");
-let format = require("./helpers/formatter");
-const checkBalance = require("./helpers/checkBalance");
-let helpers = require("./helpers/constants");
+let format = require("../helpers/formatter");
+const checkBalance = require("../helpers/checkBalance");
+let helpers = require("../helpers/constants");
 let assert = require('chai').assert;
 
 describe("TEST SCENARIO 02 :: SELLER CREATES & CANCELS", async function() {

@@ -1,13 +1,13 @@
-const sellerCreate = require("./seller/createVoucher");
-const commitVocucher = require("./buyer/commitVoucher");
-const refundVoucher = require("./buyer/refundVoucher");
-const checkBalance = require("./helpers/checkBalance");
-const complainVoucher = require("./buyer/compainVoucher");
-const delay = require("./helpers/delay");
+const sellerCreate = require("../seller/createVoucher");
+const commitVocucher = require("../buyer/commitVoucher");
+const refundVoucher = require("../buyer/refundVoucher");
+const checkBalance = require("../helpers/checkBalance");
+const complainVoucher = require("../buyer/compainVoucher");
+const delay = require("../helpers/delay");
 const {describe,it} = require("mocha");
-const format = require("./helpers/formatter");
-let helpers = require("./helpers/constants");
-const {BUYER_PUBLIC, SELLER_PUBLIC} = require('./helpers/config');
+const format = require("../helpers/formatter");
+let helpers = require("../helpers/constants");
+const {BUYER_PUBLIC, SELLER_PUBLIC} = require('../helpers/config');
 let assert = require('chai').assert;
 
 describe("TEST SCENARIO 07 :: SELLER CREATES, BUYER COMMITS, REFUNDS & COMPLAINS", async function() {

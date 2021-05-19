@@ -2,7 +2,6 @@
 let Table = require('cli-table');
 
 async function formatter(_input) {
-    // console.log(_input);
     let table = new Table({
         head: ['PARAMETER', 'VALUE']
     });

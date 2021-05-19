@@ -37,12 +37,10 @@ function requestVoucherETHETH(_voucherID) {
             let serializedTx = tx.serialize();
             web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), (err, hash) => {
                 if(err) {
-                    console.log(err)
                     reject(new Error(err.message))
                 }
                 console.log("Transaction Hash : "+hash);
             }).on('receipt', function(receipt){
-                // console.log(receipt);
                 let logdata1 = receipt.logs[0].data;
                 let logdata3 = receipt.logs[2].data;
                 let gasUsed = receipt.gasUsed;
@@ -60,9 +58,9 @@ function requestVoucherETHETH(_voucherID) {
                     "issuer":"0x"+issuer,
                     "holder":"0x"+holder,
                     "promiseID":promiseID,
+                    "correlationID":correlationID,
                     "gasPaid":converter.hexToDec(gasPaid),
                     "gasUsed":gasUsed,
-                    "correlationID":correlationID,
                     "logReceipt1": receipt.logs[0].id,
                     "logReceipt2": receipt.logs[1].id,
                     "logReceipt3": receipt.logs[2].id

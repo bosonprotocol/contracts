@@ -1,8 +1,8 @@
-const sellerCreate = require("./seller/createVoucher");
-const checkBalance = require("./helpers/checkBalance");
+const sellerCreate = require("../seller/createVoucher");
+const checkBalance = require("../helpers/checkBalance");
 const {describe,it} = require("mocha");
-let format = require("./helpers/formatter")
-let helpers = require("./helpers/constants");
+let format = require("../helpers/formatter")
+let helpers = require("../helpers/constants");
 let assert = require('chai').assert;
 
 describe("TEST SCENARIO 01 :: SELLER CREATES A VOUCHER SET", async function() {

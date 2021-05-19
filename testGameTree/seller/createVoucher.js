@@ -44,7 +44,6 @@ function CreateOrderETHETH() {
             // executes the transaction
             web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), (err, hash) => {
                 if(err) {
-                    console.log(err)
                     reject(new Error(err.message))
                 }
                 console.log("Transaction Hash : ",hash);

@@ -1,12 +1,12 @@
-const sellerCreate = require("./seller/createVoucher");
-const commitVocucher = require("./buyer/commitVoucher");
-const redeemVoucher = require("./buyer/redeemVoucher");
-const checkBalance = require("./helpers/checkBalance");
-const delay = require("./helpers/delay");
+const sellerCreate = require("../seller/createVoucher");
+const commitVocucher = require("../buyer/commitVoucher");
+const redeemVoucher = require("../buyer/redeemVoucher");
+const checkBalance = require("../helpers/checkBalance");
+const delay = require("../helpers/delay");
 const {describe,it} = require("mocha");
-let format = require("./helpers/formatter")
-let helpers = require("./helpers/constants");
-const {BUYER_PUBLIC, SELLER_PUBLIC} = require('./helpers/config');
+let format = require("../helpers/formatter")
+let helpers = require("../helpers/constants");
+const {BUYER_PUBLIC, SELLER_PUBLIC} = require('../helpers/config');
 let assert = require('chai').assert;
 
 describe("TEST SCENARIO 04 :: SELLER CREATES, BUYER COMMITS & BUYER REDEEMS", async function() {

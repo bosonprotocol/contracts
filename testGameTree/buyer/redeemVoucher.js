@@ -32,7 +32,6 @@ function redeemVoucher(_voucherID) {
             let serializedTx = tx.serialize();
             web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), (err, hash) => {
                 if(err) {
-                    console.log(err)
                     reject(new Error(err.message))
                 }
                 console.log("Transaction Hash : "+hash);
