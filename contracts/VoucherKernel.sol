@@ -268,6 +268,12 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         address _tokenPrice,
         address _tokenDeposits
     ) external override onlyFromRouter {
+        require(
+            _paymentMethod > 0 &&
+                _paymentMethod <= 4,
+            "INVALID PAYMENT METHOD"
+        );
+        
         paymentDetails[_tokenIdSupply] = VoucherPaymentMethod({
             paymentMethod: _paymentMethod,
             addressTokenPrice: _tokenPrice,
@@ -705,7 +711,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
                     tPromise.validTo + complainPeriod + cancelFaultPeriod,
                 "COFPERIOD_EXPIRED"
             ); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
-            vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp; //complain period starts
+            vouchersStatus[_tokenIdVoucher].complainPeriodStart = block
+                .timestamp; //complain period starts
         } else {
             revert("INAPPLICABLE_STATUS"); //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicableToCurrentState)
         }
@@ -1172,10 +1179,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @notice Checks whether a voucher is in valid state to be transferred. If either payments or deposits are released, voucher could not be transferred
      * @param _tokenIdVoucher ID of the voucher token
      */
-    function isVoucherTransferable(uint256 _tokenIdVoucher) public override view returns (bool) {
-        return !(
-            vouchersStatus[_tokenIdVoucher].isPaymentReleased || 
-            vouchersStatus[_tokenIdVoucher].isDepositsReleased
-        );
+    function isVoucherTransferable(uint256 _tokenIdVoucher)
+        public
+        view
+        override
+        returns (bool)
+    {
+        return
+            !(vouchersStatus[_tokenIdVoucher].isPaymentReleased ||
+                vouchersStatus[_tokenIdVoucher].isDepositsReleased);
     }
 }

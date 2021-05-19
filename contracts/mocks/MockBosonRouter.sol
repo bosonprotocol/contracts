@@ -6,17 +6,18 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "./interfaces/IVoucherKernel.sol";
-import "./interfaces/IERC20WithPermit.sol";
-import "./interfaces/IFundLimitsOracle.sol";
-import "./interfaces/IBosonRouter.sol";
-import "./interfaces/ICashier.sol";
-import "./UsingHelpers.sol";
+import "../interfaces/IVoucherKernel.sol";
+import "../interfaces/IERC20WithPermit.sol";
+import "../interfaces/IFundLimitsOracle.sol";
+import "../interfaces/IBosonRouter.sol";
+import "../interfaces/ICashier.sol";
+import "../UsingHelpers.sol";
 
 /**
- * @title Contract for interacting with Boson Protocol from the user's perspective.
+ * @title Mock Contract for testing purposes.
+ * @notice This mock passes in invalid values for the purpose of testing calls to VoucherKernel.createPaymentMethod and possibly other functions
  */
-contract BosonRouter is
+contract MockBosonRouter is
     IBosonRouter,
     UsingHelpers,
     Pausable,
@@ -164,7 +165,7 @@ contract BosonRouter is
 
         IVoucherKernel(voucherKernel).createPaymentMethod(
             tokenIdSupply,
-            ETHETH,
+            5,
             address(0),
             address(0)
         );
@@ -574,10 +575,7 @@ contract BosonRouter is
         );
 
         //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(
-            msg.sender
-        );
-
+        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
 
     function requestVoucherTKNETHWithPermit(
@@ -630,7 +628,7 @@ contract BosonRouter is
         );
 
         //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value:msg.value}(msg.sender);
+        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
 
     /**
@@ -700,10 +698,7 @@ contract BosonRouter is
      * @notice Increment a seller or buyer's correlation Id
      * @param _party   The address of the seller or buyer
      */
-    function incrementCorrelationId(address _party) 
-        external
-        override
-    {
-         correlationIds[_party]++;
+    function incrementCorrelationId(address _party) external override {
+        correlationIds[_party]++;
     }
 }

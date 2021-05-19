@@ -134,7 +134,6 @@ module.exports = {
   },
 
   mocha: {
-    reporter: 'eth-gas-reporter',
     timeout: 120000
   },
 
@@ -147,7 +146,7 @@ module.exports = {
       settings: {
         optimizer: {
           enabled: true,
-          runs: 200
+          runs: 10
         }
       }
     }
