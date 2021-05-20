@@ -9,7 +9,7 @@ let assert = require('chai').assert;
 
 const TIMEOUT = 500 * 1000;
 
-describe("TEST SCENARIO 03 :: SELLER CREATES & BUYER COMMITS", async function() {
+describe("TEST SCENARIO 003 :: SELLER CREATES & BUYER COMMITS", async function() {
 
     let commitVoucherDetails;
     let voucherSetDetails;

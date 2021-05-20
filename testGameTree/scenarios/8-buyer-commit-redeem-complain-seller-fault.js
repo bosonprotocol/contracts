@@ -13,7 +13,7 @@ let assert = require('chai').assert;
 
 const TIMEOUT = 500 * 1000;
 
-describe("TEST SCENARIO 08 :: SELLER CREATES, BUYER COMMITS, REDEEMS & COMPLAINS, SELLER FAULTS", async function() {
+describe("TEST SCENARIO 008 :: SELLER CREATES, BUYER COMMITS, REDEEMS & COMPLAINS, SELLER FAULTS", async function() {
 
     let committedVoucher;
     let voucherSetDetails;
@@ -92,7 +92,7 @@ describe("TEST SCENARIO 08 :: SELLER CREATES, BUYER COMMITS, REDEEMS & COMPLAINS
         await delay();
         console.log(await checkBalance());
         faultedVoucher = await faultVoucher(committedVoucher["MintedVoucherID"]);
-        await format(faultVoucher);
+        await format(faultedVoucher);
     });
 
     it("TEST SCENARIO 08 :: SELLER FAULTS :: 5.1 VALIDATE REDEEMED VOUCHER", async function () {

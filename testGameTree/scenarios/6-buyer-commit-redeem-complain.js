@@ -10,7 +10,7 @@ let helpers = require("../helpers/constants");
 const {BUYER_PUBLIC, SELLER_PUBLIC} = require('../helpers/config');
 let assert = require('chai').assert;
 
-describe("TEST SCENARIO 06 :: SELLER CREATES, BUYER COMMITS, REDEEMS & COMPLAINS", async function() {
+describe("TEST SCENARIO 006 :: SELLER CREATES, BUYER COMMITS, REDEEMS & COMPLAINS", async function() {
 
     let committedVoucher;
     let voucherSetDetails;

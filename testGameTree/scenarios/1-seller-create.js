@@ -5,7 +5,7 @@ let format = require("../helpers/formatter")
 let helpers = require("../helpers/constants");
 let assert = require('chai').assert;
 
-describe("TEST SCENARIO 01 :: SELLER CREATES A VOUCHER SET", async function() {
+describe("TEST SCENARIO 001 :: SELLER CREATES A VOUCHER SET", async function() {
 
     let value;
     let aql = assert.equal;

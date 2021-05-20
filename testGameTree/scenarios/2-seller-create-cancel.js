@@ -6,7 +6,7 @@ const checkBalance = require("../helpers/checkBalance");
 let helpers = require("../helpers/constants");
 let assert = require('chai').assert;
 
-describe("TEST SCENARIO 02 :: SELLER CREATES & CANCELS", async function() {
+describe("TEST SCENARIO 002 :: SELLER CREATES & CANCELS", async function() {
 
     let voucherSetDetails;
     let cancelledVoucher;

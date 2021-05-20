@@ -5,6 +5,29 @@
 ### How To Run
 
 - Install the dependencies: `npm install`.
+- Update `package.json` with `"test":"mocha ./testGameTree/1_test.js"` as shown below
+
+``` 
+  "scripts": {
+  "test": "mocha ./testGameTree/1_test.js",
+  ...
+```  
+- Create `config.js` under the `testGameTree/helpers` directory and update it with the appropriate details as shown below
+  
+```angular2html
+    module.exports = {
+    contracts: {
+        BosonRouterContrctAddress: '**Your Boson Router Address goes here**', // rinkeby boson router testnet address
+        VoucherKernelContractAddress:'**Your Voucher Kernel Address goes here**'
+    },
+    BUYER_PUBLIC: '**Your Buyer Account Address goes here**',
+    BUYER_SECRET: '**Your Buyer Account Private Key Address goes here**',
+    SELLER_PUBLIC: '**Your Seller Account Address goes here**',
+    SELLER_SECRET: '**Your Seller Account Private Key goes here**',
+    // PROVIDER: 'http://localhost:8545', // for local ganache
+    PROVIDER: "https://'**Select the network**'.infura.io/v3/'**Your Infura Key goes here**'" 
+    }
+```
 - Compile the contracts: `truffle compile`. 
 - To run tests:
     - Run the tests with saving the logs: `npm run test >> log.txt`.
