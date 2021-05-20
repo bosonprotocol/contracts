@@ -27,7 +27,7 @@ contract MockBosonRouter is
     using Address for address payable;
     using SafeMath for uint256;
 
-    mapping(address => uint256) public correlationIds; // whenever a seller or a buyer interacts with the smart contract, a personal txID is emitted from an event.
+    mapping(address => uint256) private correlationIds; // whenever a seller or a buyer interacts with the smart contract, a personal txID is emitted from an event.
 
     using SafeMath for uint256;
 
@@ -165,7 +165,7 @@ contract MockBosonRouter is
 
         IVoucherKernel(voucherKernel).createPaymentMethod(
             tokenIdSupply,
-            5,
+            ETHETH,
             address(0),
             address(0)
         );
@@ -575,7 +575,10 @@ contract MockBosonRouter is
         );
 
         //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
+        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(
+            msg.sender
+        );
+
     }
 
     function requestVoucherTKNETHWithPermit(
@@ -628,7 +631,7 @@ contract MockBosonRouter is
         );
 
         //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
+        ICashier(cashierAddress).addEscrowAmount{value:msg.value}(msg.sender);
     }
 
     /**
@@ -690,15 +693,28 @@ contract MockBosonRouter is
         );
     }
 
-    // // // // // // // //
-    // UTILS
-    // // // // // // // //
-
     /**
      * @notice Increment a seller or buyer's correlation Id
      * @param _party   The address of the seller or buyer
      */
-    function incrementCorrelationId(address _party) external override {
-        correlationIds[_party]++;
+    function incrementCorrelationId(address _party) 
+        external
+        override
+    {
+         correlationIds[_party]++;
+    }
+
+    /**
+     * @notice Return a seller or buyer's correlation Id
+     * @param _party   The address of the seller or buyer
+     * @return the specified party's correlcation Id
+     */
+    function getCorrelationId(address _party) 
+        external
+        override
+        view
+        returns (uint256)
+    {
+        return correlationIds[_party];
     }
 }

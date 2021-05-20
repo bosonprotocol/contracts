@@ -138,4 +138,14 @@ interface IBosonRouter {
      * @param _party   The address of the seller or buyer
      */
     function incrementCorrelationId(address _party) external;
+
+    /**
+     * @notice Return a seller or buyer's correlation Id
+     * @param _party   The address of the seller or buyer
+     * @return the specified party's correlcation Id
+     */
+    function getCorrelationId(address _party) 
+        external
+        view
+        returns (uint256);
 }

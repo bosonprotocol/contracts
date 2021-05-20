@@ -22,16 +22,16 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     using Address for address payable;
     using SafeMath for uint256;
 
-    address public voucherKernel;
-    address public bosonRouterAddress;
-    address public tokensContractAddress;
-    bool public disasterState;
+    address private voucherKernel;
+    address private bosonRouterAddress;
+    address private tokensContractAddress;
+    bool private disasterState;
 
     enum PaymentType {PAYMENT, DEPOSIT_SELLER, DEPOSIT_BUYER}
 
-    mapping(address => uint256) public escrow; // both types of deposits AND payments >> can be released token-by-token if checks pass
+    mapping(address => uint256) private escrow; // both types of deposits AND payments >> can be released token-by-token if checks pass
     // slashedDepositPool can be obtained through getEscrowAmount(poolAddress)
-    mapping(address => mapping(address => uint256)) public escrowTokens; //token address => mgsSender => amount
+    mapping(address => mapping(address => uint256)) private escrowTokens; //token address => mgsSender => amount
 
     uint256 internal constant CANCELFAULT_SPLIT = 2; //for POC purposes, this is hardcoded; e.g. each party gets depositSe / 2
 
