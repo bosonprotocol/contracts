@@ -1075,6 +1075,21 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     }
 
     /**
+     * @notice Get promise data not retrieved by other accessor functions
+     * @param _promiseKey   ID of the promise
+     * @return cancel or fault period
+     */
+    function getPromiseData(bytes32 _promiseKey)
+        external
+        view
+        override
+        returns (bytes32, uint256, uint256, uint256, uint256 )
+    {
+        Promise memory tPromise = promises[_promiseKey];
+        return (tPromise.promiseId, tPromise.nonce, tPromise.validFrom, tPromise.validTo, tPromise.idx); 
+    }
+
+    /**
      * @notice Get the current status of a voucher
      * @param _tokenIdVoucher   ID of the voucher token
      * @return                  Status of the voucher (via enum)
@@ -1086,13 +1101,17 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         returns (
             uint8,
             bool,
-            bool
+            bool,
+            uint256,
+            uint256
         )
     {
         return (
             vouchersStatus[_tokenIdVoucher].status,
             vouchersStatus[_tokenIdVoucher].isPaymentReleased,
-            vouchersStatus[_tokenIdVoucher].isDepositsReleased
+            vouchersStatus[_tokenIdVoucher].isDepositsReleased,
+            vouchersStatus[_tokenIdVoucher].complainPeriodStart,
+            vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart
         );
     }
 
@@ -1265,19 +1284,5 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         return cancelFaultPeriod;
     }
     
-    /**
-     * @notice Get promise data not retrieved by other accessor functions
-     * @param _tokenIdSupply   ID of the supply token
-     * @return cancel or fault period
-     */
-    function getPromiseData(uint256 _tokenIdSupply)
-        external
-        view
-        override
-        returns (bytes32, uint256, uint256, uint256, uint256 )
-    {
-        bytes32 promiseKey = ordersPromise[_tokenIdSupply];
-        Promise memory tPromise = promises[promiseKey];
-        return (tPromise.promiseId, tPromise.nonce, tPromise.validFrom, tPromise.validTo, tPromise.idx); 
-    }
+    
 }

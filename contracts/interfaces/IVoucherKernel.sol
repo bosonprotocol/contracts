@@ -281,7 +281,9 @@ interface IVoucherKernel {
         returns (
             uint8,
             bool,
-            bool
+            bool,
+            uint256,
+            uint256
         );
 
     /**
@@ -326,71 +328,52 @@ interface IVoucherKernel {
      * @notice Get address of the Boson Router contract to which this contract points
      * @return Address of the Boson Router contract
      */
-    function getBosonRouterAddress()
-        external
-        view
-        returns (address);
+    function getBosonRouterAddress() external view returns (address);
 
     /**
      * @notice Get address of the Cashier contract to which this contract points
      * @return Address of the Cashier contract
      */
-    function getCashierAddress()
-        external
-        view
-        returns (address);
+    function getCashierAddress() external view returns (address);
 
     /**
      * @notice Get the token nonce for a seller
      * @param _seller Address of the seller
      * @return The seller's
      */
-    function getTokenNonce(address _seller)
-        external
-        view
-        returns (uint256);
+    function getTokenNonce(address _seller) external view returns (uint256);
 
     /**
      * @notice Get the current type Id
      * @return type Id
      */
-    function getTypeId()
-        external
-        view
-        returns (uint256);
+    function getTypeId() external view returns (uint256);
 
     /**
      * @notice Get the complain period
      * @return complain period
      */
-    function getComplainPeriod()
-        external
-        view
-        returns (uint256);
+    function getComplainPeriod() external view returns (uint256);
 
     /**
      * @notice Get the cancel or fault period
      * @return cancel or fault period
      */
-    function getCancelFaultPeriod()
-        external
-        view
-        returns (uint256);
+    function getCancelFaultPeriod() external view returns (uint256);
 
     /**
      * @notice Get promise data not retrieved by other accessor functions
-     * @param _tokenIdSupply   ID of the supply token
+     * @param _promiseKey   ID of the promise
      * @return cancel or fault period
      */
-    function getPromiseData(uint256 _tokenIdSupply)
+    function getPromiseData(bytes32 _promiseKey)
         external
         view
-        returns (bytes32, uint256, uint256, uint256, uint256 );
-    
-    
-    
-
-    
-
-   
+        returns (
+            bytes32,
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        );
 }

@@ -861,4 +861,18 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
         }
         return string(bstr);
     }
+
+    /**
+     * @notice Get the contract owner
+     * @return Address of the owner
+     */
+    function getOwner() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return owner;
+    }
+    
 }

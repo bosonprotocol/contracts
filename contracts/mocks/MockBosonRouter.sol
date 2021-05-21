@@ -165,7 +165,7 @@ contract MockBosonRouter is
 
         IVoucherKernel(voucherKernel).createPaymentMethod(
             tokenIdSupply,
-            ETHETH,
+            5,
             address(0),
             address(0)
         );
@@ -575,10 +575,7 @@ contract MockBosonRouter is
         );
 
         //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(
-            msg.sender
-        );
-
+        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
 
     function requestVoucherTKNETHWithPermit(
@@ -631,7 +628,7 @@ contract MockBosonRouter is
         );
 
         //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value:msg.value}(msg.sender);
+        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
 
     /**
@@ -697,11 +694,8 @@ contract MockBosonRouter is
      * @notice Increment a seller or buyer's correlation Id
      * @param _party   The address of the seller or buyer
      */
-    function incrementCorrelationId(address _party) 
-        external
-        override
-    {
-         correlationIds[_party]++;
+    function incrementCorrelationId(address _party) external override {
+        correlationIds[_party]++;
     }
 
     /**
@@ -709,10 +703,10 @@ contract MockBosonRouter is
      * @param _party   The address of the seller or buyer
      * @return the specified party's correlcation Id
      */
-    function getCorrelationId(address _party) 
+    function getCorrelationId(address _party)
         external
-        override
         view
+        override
         returns (uint256)
     {
         return correlationIds[_party];
