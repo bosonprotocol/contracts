@@ -288,7 +288,7 @@ interface IVoucherKernel {
 
     /**
      * @notice Get the holder of a supply
-     * @param _tokenIdSupply        ID of a promise which is mapped to the corresponding Promise
+     * @param _tokenIdSupply    _tokenIdSupply ID of the order (aka VoucherSet) which is mapped to the corresponding Promise.
      * @return                  Address of the holder
      */
     function getSupplyHolder(uint256 _tokenIdSupply)
@@ -364,7 +364,7 @@ interface IVoucherKernel {
     /**
      * @notice Get promise data not retrieved by other accessor functions
      * @param _promiseKey   ID of the promise
-     * @return cancel or fault period
+     * @return promise data not returned by other accessor methods
      */
     function getPromiseData(bytes32 _promiseKey)
         external

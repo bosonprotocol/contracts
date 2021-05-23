@@ -179,9 +179,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.currStatus.status,
             voucherDetails.currStatus.isPaymentReleased,
             voucherDetails.currStatus.isDepositsReleased,
-            
             ,
-
         ) = IVoucherKernel(voucherKernel).getVoucherStatus(
             voucherDetails.tokenIdVoucher
         );
