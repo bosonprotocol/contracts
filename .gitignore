@@ -28,4 +28,4 @@ coverage*
 
 # Personal Preferences
 .vscode
-gas-reporter.txt
+*.txt
