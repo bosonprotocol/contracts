@@ -134,7 +134,11 @@ module.exports = {
   },
 
   mocha: {
-    timeout: 120000
+    timeout: 120000,
+    reporter: 'eth-gas-reporter',
+    reporterOptions : { 
+      outputFile: 'gas-reporter.txt'
+    }
   },
 
   compilers: {
