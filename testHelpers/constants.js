@@ -78,6 +78,19 @@ let VOUCHER_STATUS_FIELDS = {};
   }
 }
 
+let PROMISE_ORDER_FIELDS = {};
+{
+  let index = 0;
+  let keys = [
+    'price',
+    'depositSe',
+    'depositBu'
+  ];
+  for (let key of keys) {
+    PROMISE_ORDER_FIELDS[key] = index++;
+  }
+}
+
 module.exports = {
   ASSET_VERSION,
   ASSET_TITLE,
@@ -123,4 +136,5 @@ module.exports = {
   TWO,
   PROMISE_DATA_FIELDS,
   VOUCHER_STATUS_FIELDS,
+  PROMISE_ORDER_FIELDS
 };

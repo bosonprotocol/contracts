@@ -229,12 +229,12 @@ contract('Voucher tests', async (addresses) => {
       const promiseOrderData = await contractVoucherKernel.getOrderCosts(
         tokenSupplyKey1
       );
-      assert.isTrue(promiseOrderData[0].eq(new BN(constants.PROMISE_PRICE1)));
+      assert.isTrue(promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(new BN(constants.PROMISE_PRICE1)));
       assert.isTrue(
-        promiseOrderData[1].eq(new BN(constants.PROMISE_DEPOSITSE1))
+        promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositSe].eq(new BN(constants.PROMISE_DEPOSITSE1))
       );
       assert.isTrue(
-        promiseOrderData[2].eq(new BN(constants.PROMISE_DEPOSITBU1))
+        promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositBu].eq(new BN(constants.PROMISE_DEPOSITBU1))
       );
 
       const tokenNonce = await contractVoucherKernel.getTokenNonce(
@@ -331,7 +331,7 @@ contract('Voucher tests', async (addresses) => {
           promiseId2 = ev._promiseId;
           return (
             ev._promiseId > 0 &&
-            ev._nonce.eq(new BN(2)) &&
+            ev._nonce.eq(constants.TWO) &&
             ev._seller === users.seller.address &&
             ev._validFrom.eq(new BN(constants.PROMISE_VALID_FROM)) &&
             ev._validTo.eq(new BN(constants.PROMISE_VALID_TO)) &&
@@ -409,18 +409,18 @@ contract('Voucher tests', async (addresses) => {
       const promiseOrderData = await contractVoucherKernel.getOrderCosts(
         tokenSupplyKey1
       );
-      assert.isTrue(promiseOrderData[0].eq(new BN(constants.PROMISE_PRICE1)));
+      assert.isTrue(promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(new BN(constants.PROMISE_PRICE1)));
       assert.isTrue(
-        promiseOrderData[1].eq(new BN(constants.PROMISE_DEPOSITSE1))
+        promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositSe].eq(new BN(constants.PROMISE_DEPOSITSE1))
       );
       assert.isTrue(
-        promiseOrderData[2].eq(new BN(constants.PROMISE_DEPOSITBU1))
+        promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositBu].eq(new BN(constants.PROMISE_DEPOSITBU1))
       );
 
       const tokenNonce = await contractVoucherKernel.getTokenNonce(
         users.seller.address
       );
-      assert.isTrue(tokenNonce.eq(new BN(2)));
+      assert.isTrue(tokenNonce.eq(constants.TWO));
 
       //Check ERC1155ERC721 state
       const sellerERC1155ERC721BalanceVoucherSet1 = await contractERC1155ERC721.balanceOf(
@@ -972,7 +972,7 @@ contract('Voucher tests', async (addresses) => {
 
       // [1000.0000] = hex"80" = 128 = COMMITTED
       assert.equal(
-        web3.utils.toHex(statusBefore[0]),
+        web3.utils.toHex(statusBefore[constants.VOUCHER_STATUS_FIELDS.status]),
         web3.utils.numberToHex(128),
         'initial voucher status not as expected (COMMITTED)'
       );
@@ -1498,7 +1498,7 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
       const transaction = await web3.eth.getTransaction(complainTx.tx);
       const transactionBlock = await web3.eth.getBlock(transaction.blockNumber);
       assert.isTrue(
-        voucherStatusBefore[4].eq(new BN(transactionBlock.timestamp))
+        voucherStatusBefore[constants.VOUCHER_STATUS_FIELDS.cancelFaultPeriodStart].eq(new BN(transactionBlock.timestamp))
       );
 
       const cancelTx = await contractBosonRouter.cancelOrFault(
@@ -1528,11 +1528,11 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
       );
 
       //Check it didn't go into a code branch that changes the complainPeriodStart
-      assert.isTrue(voucherStatusAfter[3].eq(voucherStatusBefore[3]));
+      assert.isTrue(voucherStatusAfter[constants.VOUCHER_STATUS_FIELDS.complainPeriodStart].eq(voucherStatusBefore[constants.VOUCHER_STATUS_FIELDS.complainPeriodStart]));
 
       // [1010.1100] = hex"AC" = 172 = REFUND_COMPLAIN_COF
       assert.equal(
-        web3.utils.toHex(voucherStatusAfter[0]),
+        web3.utils.toHex(voucherStatusAfter[constants.VOUCHER_STATUS_FIELDS.status]),
         web3.utils.numberToHex(172),
         'end voucher status not as expected ' +
           '(REFUNDED_COMPLAINED_CANCELORFAULT)'
@@ -1599,7 +1599,7 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
 
       // [1001.0000] = hex"90" = 144 = EXPIRED
       assert.equal(
-        web3.utils.toHex(statusAfter[0]),
+        web3.utils.toHex(statusAfter[constants.VOUCHER_STATUS_FIELDS.status]),
         web3.utils.numberToHex(144),
         'end voucher status not as expected (EXPIRED)'
       );
@@ -1627,7 +1627,7 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
 
       // [1001.1000] = hex"98" = 152 = EXPIRED_COMPLAIN
       assert.equal(
-        web3.utils.toHex(statusAfter[0]),
+        web3.utils.toHex(statusAfter[constants.VOUCHER_STATUS_FIELDS.status]),
         web3.utils.numberToHex(152),
         'end voucher status not as expected (EXPIRED_COMPLAINED)'
       );
@@ -1660,7 +1660,7 @@ contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
 
       // [1001.1000] = hex"9C" = 156 = EXPIRED_COMPLAINED_CANCELORFAULT
       assert.equal(
-        web3.utils.toHex(statusAfter[0]),
+        web3.utils.toHex(statusAfter[constants.VOUCHER_STATUS_FIELDS.status]),
         web3.utils.numberToHex(156),
         'end voucher status not as expected ' +
           '(EXPIRED_COMPLAINED_CANCELORFAULT)'
