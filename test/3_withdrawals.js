@@ -1,5 +1,7 @@
 const {assert} = require('chai');
 
+const ethers = require('hardhat').ethers;
+
 const helpers = require('../testHelpers/constants');
 const timemachine = require('../testHelpers/timemachine');
 const truffleAssert = require('truffle-assertions');
@@ -7,14 +9,14 @@ const Users = require('../testHelpers/users');
 const UtilsBuilder = require('../testHelpers/utilsBuilder');
 const Utils = require('../testHelpers/utils');
 
-let ERC1155ERC721// = artifacts.require('ERC1155ERC721');
-let VoucherKernel// = artifacts.require('VoucherKernel');
-let Cashier// = artifacts.require('Cashier');
-let BosonRouter// = artifacts.require('BosonRouter');
-let MockERC20Permit// = artifacts.require('MockERC20Permit');
-let FundLimitsOracle// = artifacts.require('FundLimitsOracle');
+let ERC1155ERC721; // = artifacts.require('ERC1155ERC721');
+let VoucherKernel; // = artifacts.require('VoucherKernel');
+let Cashier; // = artifacts.require('Cashier');
+let BosonRouter; // = artifacts.require('BosonRouter');
+let MockERC20Permit; // = artifacts.require('MockERC20Permit');
+let FundLimitsOracle; // = artifacts.require('FundLimitsOracle');
 
-const BN = require('bn.js')
+const BN = require('bn.js');
 
 let utils;
 
@@ -22,9 +24,9 @@ let TOKEN_SUPPLY_ID;
 
 let users;
 
-describe('Cashier withdrawals ', (addresses) => {
+describe('Cashier withdrawals ', () => {
   before(async () => {
-    const signers = await hre.ethers.getSigners();
+    const signers = await ethers.getSigners();
     users = new Users(signers);
   });
 

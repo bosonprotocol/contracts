@@ -1,6 +1,4 @@
 const fs = require('fs');
-const hre = require('hardhat');
-
 
 const userIndices = {
   deployer: 0,
@@ -25,20 +23,24 @@ const loadPrivateKeys = (accountKeysFile) => {
 
 class Users {
   constructor(signers) {
-    this.addresses = signers ? signers.map((e) => e.address.toLowerCase()) : null
+    this.addresses = signers ? signers.map((e) => e.address) : null;
     this.privateKeys = loadPrivateKeys(
       process.env.ACCOUNT_KEYS_FILE || 'config/accounts.json'
     );
-    this.signers = signers ? Object.fromEntries(
-      this.addresses.map(address => 
-        [address, signers.find(signer => signer.address.toLowerCase() == address)]
-    )) : null
+    this.signers = signers
+      ? Object.fromEntries(
+          this.addresses.map((address) => [
+            address,
+            signers.find((signer) => signer.address == address),
+          ])
+        )
+      : null;
   }
 
   getAccountAtIndex(index) {
     const address = this.addresses[index];
-    const privateKey = this.privateKeys[address.toLowerCase()];
-    const signer = this.signers[address.toLowerCase()]
+    const privateKey = this.privateKeys[address];
+    const signer = this.signers[address];
 
     return {address, privateKey, signer};
   }

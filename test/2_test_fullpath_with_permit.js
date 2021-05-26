@@ -9,16 +9,16 @@ const Users = require('../testHelpers/users');
 const UtilsBuilder = require('../testHelpers/utilsBuilder');
 const {toWei, getApprovalDigest} = require('../testHelpers/permitUtils');
 
-let ERC1155ERC721// = artifacts.require('ERC1155ERC721');
-let VoucherKernel// = artifacts.require('VoucherKernel');
-let Cashier// = artifacts.require('Cashier');
-let BosonRouter// = artifacts.require('BosonRouter');
-let MockERC20Permit// = artifacts.require('MockERC20Permit');
-let FundLimitsOracle// = artifacts.require('FundLimitsOracle');
+let ERC1155ERC721; // = artifacts.require('ERC1155ERC721');
+let VoucherKernel; // = artifacts.require('VoucherKernel');
+let Cashier; // = artifacts.require('Cashier');
+let BosonRouter; // = artifacts.require('BosonRouter');
+let MockERC20Permit; // = artifacts.require('MockERC20Permit');
+let FundLimitsOracle; // = artifacts.require('FundLimitsOracle');
 
 const hre = require('hardhat');
 
-const BN = require('bn.js')
+const BN = require('bn.js');
 
 let utils;
 let users;

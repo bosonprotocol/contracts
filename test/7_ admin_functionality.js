@@ -1,3 +1,4 @@
+const ethers = require('hardhat').ethers;
 const {assert} = require('chai');
 const truffleAssert = require('truffle-assertions');
 
@@ -5,17 +6,17 @@ const constants = require('../testHelpers/constants');
 const Users = require('../testHelpers/users');
 const Utils = require('../testHelpers/utils');
 
-let ERC1155ERC721 // = artifacts.require('ERC1155ERC721');
-let VoucherKernel // = artifacts.require('VoucherKernel');
-let Cashier // = artifacts.require('Cashier');
-let BosonRouter // = artifacts.require('BosonRouter');
-let FundLimitsOracle // = artifacts.require('FundLimitsOracle');
+let ERC1155ERC721; // = artifacts.require('ERC1155ERC721');
+let VoucherKernel; // = artifacts.require('VoucherKernel');
+let Cashier; // = artifacts.require('Cashier');
+let BosonRouter; // = artifacts.require('BosonRouter');
+let FundLimitsOracle; // = artifacts.require('FundLimitsOracle');
 
-let users
+let users;
 
-describe('Admin functionality', async (addresses) => {
+describe('Admin functionality', async () => {
   before(async () => {
-    const signers = await hre.ethers.getSigners();
+    const signers = await ethers.getSigners();
     users = new Users(signers);
   });
 

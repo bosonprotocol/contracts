@@ -1,6 +1,6 @@
-const ethers = require('hardhat').ethers
+const ethers = require('hardhat').ethers;
 const constants = require('./constants');
-const BN = require('bn.js')
+const BN = require('bn.js');
 const truffleAssert = require('truffle-assertions');
 
 const {ecsign} = require('ethereumjs-util');
@@ -586,10 +586,10 @@ class Utils {
   }
 
   static async getCurrTimestamp() {
-    let blockNumber = await ethers.provider.getBlockNumber()
-    let block = await ethers.provider.getBlock(blockNumber)
-    
-    return block.timestamp
+    let blockNumber = await ethers.provider.getBlockNumber();
+    let block = await ethers.provider.getBlock(blockNumber);
+
+    return block.timestamp;
   }
 }
 

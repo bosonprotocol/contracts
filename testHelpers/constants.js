@@ -1,12 +1,15 @@
-const BN = require('bn.js')
+const ethers = require('hardhat').ethers;
+const BN = ethers.BigNumber.from;
 
 // common
 const ONE_MINUTE = 60;
 const SECONDS_IN_DAY = 86400;
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-const ZERO = new BN(0);
-const ONE = new BN(1);
-const ZERO_BYTES = '0x0000000000000000000000000000000000000000000000000000000000000000'
+const ZERO = BN(0);
+const ONE = BN(1);
+const TWO = BN(2);
+const ZERO_BYTES =
+  '0x0000000000000000000000000000000000000000000000000000000000000000';
 
 // asset
 const ASSET_VERSION = '0x3132';
@@ -35,7 +38,7 @@ const PROMISE_CANCELORFAULT_PERIOD = 8;
 
 // order
 const ORDER_QUANTITY1 = 1;
-const ORDER_QUANTITY2 = 1;
+const ORDER_QUANTITY2 = 2;
 
 const buyer_deposit = '40000000000000000'; // 0.04
 const buyer_incorrect_deposit = '4000000000000000'; // 0.004
@@ -97,4 +100,5 @@ module.exports = {
   ABOVE_TOKEN_LIMIT,
   ZERO,
   ONE,
+  TWO,
 };
