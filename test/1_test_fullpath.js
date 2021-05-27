@@ -26,7 +26,7 @@ const BN = ethers.BigNumber.from;
 
 let users;
 
-describe.only('Voucher tests', () => {
+describe('Voucher tests', () => {
   let contractERC1155ERC721,
     contractVoucherKernel,
     contractCashier,
@@ -1074,7 +1074,7 @@ describe.only('Voucher tests', () => {
   });
 }); //end of contract
 
-describe.only('Voucher tests - UNHAPPY PATH', () => {
+describe('Voucher tests - UNHAPPY PATH', () => {
   let contractERC1155ERC721,
     contractVoucherKernel,
     contractCashier,

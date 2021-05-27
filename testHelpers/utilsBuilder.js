@@ -1,4 +1,5 @@
 // @ts-nocheck
+const ethers = require('hardhat').ethers;
 const Utils = require('./utils');
 
 class UtilsBuilder {
@@ -26,7 +27,20 @@ class UtilsBuilder {
     return this;
   }
 
-  build(
+  async setFactories() {
+    this.utils.factories = {
+      VoucherKernel: await ethers.getContractFactory('VoucherKernel'),
+      Cashier: await ethers.getContractFactory('Cashier'),
+      BosonRouter: await ethers.getContractFactory('BosonRouter'),
+      ERC1155ERC721: await ethers.getContractFactory('ERC1155ERC721'),
+      FundLimitsOracle: await ethers.getContractFactory('FundLimitsOracle'),
+      MockERC20Permit: await ethers.getContractFactory('MockERC20Permit'),
+    };
+
+    return this;
+  }
+
+  async buildAsync(
     erc1155721,
     voucherKernel,
     cashier,
@@ -42,6 +56,8 @@ class UtilsBuilder {
       bsnTokenPrice,
       bsnTokenDeposit
     );
+
+    await this.setFactories();
 
     return this.utils;
   }

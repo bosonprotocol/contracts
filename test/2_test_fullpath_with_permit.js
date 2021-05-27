@@ -1,4 +1,5 @@
-const {assert} = require('chai');
+const ethers = require('hardhat').ethers;
+const {assert, expect} = require('chai');
 const {ecsign} = require('ethereumjs-util');
 const truffleAssert = require('truffle-assertions');
 
@@ -9,24 +10,37 @@ const Users = require('../testHelpers/users');
 const UtilsBuilder = require('../testHelpers/utilsBuilder');
 const {toWei, getApprovalDigest} = require('../testHelpers/permitUtils');
 
-let ERC1155ERC721; // = artifacts.require('ERC1155ERC721');
-let VoucherKernel; // = artifacts.require('VoucherKernel');
-let Cashier; // = artifacts.require('Cashier');
-let BosonRouter; // = artifacts.require('BosonRouter');
-let MockERC20Permit; // = artifacts.require('MockERC20Permit');
-let FundLimitsOracle; // = artifacts.require('FundLimitsOracle');
+let ERC1155ERC721;
+let VoucherKernel;
+let Cashier;
+let BosonRouter;
+let FundLimitsOracle;
+let MockERC20Permit;
 
 const hre = require('hardhat');
+const revertReasons = require('../testHelpers/revertReasons');
+const eventUtils = require('../testHelpers/events');
+const {eventNames} = require('../testHelpers/events');
+const fnSignatures = require('../testHelpers/functionSignatures');
 
-const BN = require('bn.js');
+const BN = ethers.BigNumber.from;
 
 let utils;
 let users;
 
-describe('Cashier and VoucherKernel', () => {
+describe.only('Cashier and VoucherKernel', () => {
   before(async () => {
     const signers = await hre.ethers.getSigners();
     users = new Users(signers);
+
+    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherKernel = await ethers.getContractFactory('VoucherKernel');
+    Cashier = await ethers.getContractFactory('Cashier');
+    BosonRouter = await ethers.getContractFactory('BosonRouter');
+    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
+    FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
+    FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
+    MockERC20Permit = await ethers.getContractFactory('MockERC20Permit');
   });
 
   let contractERC1155ERC721,
@@ -38,7 +52,7 @@ describe('Cashier and VoucherKernel', () => {
     contractFundLimitsOracle;
   let tokenSupplyKey, tokenVoucherKey, tokenVoucherKey1;
 
-  const ZERO = new BN(0);
+  const ZERO = BN(0);
   const ONE_VOUCHER = 1;
 
   const deadline = toWei(1);
@@ -46,45 +60,55 @@ describe('Cashier and VoucherKernel', () => {
   let timestamp;
 
   let distributedAmounts = {
-    buyerAmount: new BN(0),
-    sellerAmount: new BN(0),
-    escrowAmount: new BN(0),
+    buyerAmount: BN(0),
+    sellerAmount: BN(0),
+    escrowAmount: BN(0),
   };
 
-  async function deployContracts() {
-    const sixtySeconds = 60;
-
+  async function setPeriods() {
     const timestamp = await Utils.getCurrTimestamp();
 
     constants.PROMISE_VALID_FROM = timestamp;
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
+  }
 
-    contractFundLimitsOracle = await FundLimitsOracle.new();
-    contractERC1155ERC721 = await ERC1155ERC721.new();
-    contractVoucherKernel = await VoucherKernel.new(
+  async function deployContracts() {
+    const sixtySeconds = 60;
+
+    contractFundLimitsOracle = await FundLimitsOracle.deploy();
+    contractERC1155ERC721 = await ERC1155ERC721.deploy();
+    contractVoucherKernel = await VoucherKernel.deploy(
       contractERC1155ERC721.address
     );
-    contractCashier = await Cashier.new(contractVoucherKernel.address);
-    contractBosonRouter = await BosonRouter.new(
+    contractCashier = await Cashier.deploy(contractVoucherKernel.address);
+    contractBosonRouter = await BosonRouter.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
     );
 
-    contractBSNTokenPrice = await MockERC20Permit.new(
+    contractBSNTokenPrice = await MockERC20Permit.deploy(
       'BosonTokenPrice',
       'BPRC'
     );
-    contractBSNTokenDeposit = await MockERC20Permit.new(
+
+    contractBSNTokenDeposit = await MockERC20Permit.deploy(
       'BosonTokenDeposit',
       'BDEP'
     );
+
+    await contractFundLimitsOracle.deployed();
+    await contractERC1155ERC721.deployed();
+    await contractVoucherKernel.deployed();
+    await contractCashier.deployed();
+    await contractBosonRouter.deployed();
+    await contractBSNTokenPrice.deployed();
+    await contractBSNTokenDeposit.deployed();
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
       'true'
     );
-
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
@@ -134,9 +158,9 @@ describe('Cashier and VoucherKernel', () => {
       before(async () => {
         await deployContracts();
 
-        utils = UtilsBuilder.create()
+        utils = await UtilsBuilder.create()
           .ETHETH()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
@@ -144,6 +168,8 @@ describe('Cashier and VoucherKernel', () => {
           );
 
         timestamp = await Utils.getCurrTimestamp();
+        constants.PROMISE_VALID_FROM = timestamp;
+        constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
         const correlationId = await contractBosonRouter.correlationIds(
           users.seller.address
@@ -164,16 +190,15 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('[NEGATIVE] Should revert if validTo is set below 5 minutes from now', async () => {
-        await truffleAssert.reverts(
+        await expect(
           utils.createOrder(
             users.seller,
             timestamp,
             timestamp + constants.ONE_MINUTE,
             constants.seller_deposit,
             constants.QTY_10
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+          )
+        ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
       });
 
       it('Seller correlationId should be incremented after order is created', async () => {
@@ -189,9 +214,7 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('ESCROW has correct initial balance', async () => {
-        const expectedBalance = new BN(constants.seller_deposit).mul(
-          new BN(remQty)
-        );
+        const expectedBalance = BN(constants.seller_deposit).mul(BN(remQty));
         const escrowAmount = await contractCashier.getEscrowAmount(
           users.seller.address
         );
@@ -203,15 +226,13 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Cashier Contract has correct amount of ETH', async () => {
-        const expectedBalance = new BN(constants.seller_deposit).mul(
-          new BN(remQty)
-        );
-        const cashierBalance = await web3.eth.getBalance(
+        const expectedBalance = BN(constants.seller_deposit).mul(BN(remQty));
+        const cashierBalance = await ethers.provider.getBalance(
           contractCashier.address
         );
 
         assert.isTrue(
-          new BN(cashierBalance).eq(expectedBalance),
+          BN(cashierBalance).eq(expectedBalance),
           'Escrow amount is incorrect'
         );
       });
@@ -275,13 +296,13 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('[NEGATIVE] Should fail if additional token address is provided', async () => {
-        const txValue = new BN(constants.seller_deposit).mul(
-          new BN(ONE_VOUCHER)
-        );
+        const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
         timestamp = await Utils.getCurrTimestamp();
 
-        await truffleAssert.fails(
-          contractBosonRouter.requestCreateOrderETHETH(
+        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+
+        await expect(
+          sellerInstance.requestCreateOrderETHETH(
             contractBSNTokenDeposit.address,
             [
               timestamp,
@@ -291,18 +312,18 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_DEPOSITBU1,
               constants.ORDER_QUANTITY1,
             ],
-            {from: users.seller.address, value: txValue}
+            {value: txValue}
           )
-        );
+        ).to.be.reverted;
       });
 
       it('[NEGATIVE] Should not create a supply if price is above the limit', async () => {
-        const txValue = new BN(constants.seller_deposit).mul(
-          new BN(ONE_VOUCHER)
-        );
+        const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
 
-        await truffleAssert.reverts(
-          contractBosonRouter.requestCreateOrderETHETH(
+        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+
+        await expect(
+          sellerInstance.requestCreateOrderETHETH(
             [
               constants.PROMISE_VALID_FROM,
               constants.PROMISE_VALID_TO,
@@ -311,19 +332,18 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_DEPOSITBU1,
               constants.ORDER_QUANTITY1,
             ],
-            {from: users.seller.address, value: txValue}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            {value: txValue}
+          )
+        ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
       });
 
       it('[NEGATIVE] Should not create a supply if depositBu is above the limit', async () => {
-        const txValue = new BN(constants.seller_deposit).mul(
-          new BN(ONE_VOUCHER)
-        );
+        const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
 
-        await truffleAssert.reverts(
-          contractBosonRouter.requestCreateOrderETHETH(
+        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+
+        await expect(
+          sellerInstance.requestCreateOrderETHETH(
             [
               constants.PROMISE_VALID_FROM,
               constants.PROMISE_VALID_TO,
@@ -332,19 +352,18 @@ describe('Cashier and VoucherKernel', () => {
               constants.ABOVE_ETH_LIMIT,
               constants.ORDER_QUANTITY1,
             ],
-            {from: users.seller.address, value: txValue}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            {value: txValue}
+          )
+        ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
       });
 
       it('[NEGATIVE] Should not create a supply if depositSe is above the limit', async () => {
-        const txValue = new BN(constants.seller_deposit).mul(
-          new BN(ONE_VOUCHER)
-        );
+        const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
 
-        await truffleAssert.reverts(
-          contractBosonRouter.requestCreateOrderETHETH(
+        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+
+        await expect(
+          sellerInstance.requestCreateOrderETHETH(
             [
               constants.PROMISE_VALID_FROM,
               constants.PROMISE_VALID_TO,
@@ -353,10 +372,9 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_DEPOSITBU1,
               constants.ORDER_QUANTITY1,
             ],
-            {from: users.seller.address, value: txValue}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            {value: txValue}
+          )
+        ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
       });
     });
 
@@ -365,10 +383,10 @@ describe('Cashier and VoucherKernel', () => {
         before(async () => {
           await deployContracts();
 
-          utils = UtilsBuilder.create()
+          utils = await UtilsBuilder.create()
             .ERC20withPermit()
             .ETHTKN()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -377,8 +395,8 @@ describe('Cashier and VoucherKernel', () => {
               contractBSNTokenDeposit
             );
 
-          const tokensToMint = new BN(constants.seller_deposit).mul(
-            new BN(constants.QTY_20)
+          const tokensToMint = BN(constants.seller_deposit).mul(
+            BN(constants.QTY_20)
           );
 
           await utils.mintTokens(
@@ -402,6 +420,9 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           timestamp = await Utils.getCurrTimestamp();
+          constants.PROMISE_VALID_FROM = timestamp;
+          constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
+
           tokenSupplyKey = await utils.createOrder(
             users.seller,
             timestamp,
@@ -412,16 +433,15 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('[NEGATIVE] Should revert if validTo is set below 5 minutes from now', async () => {
-          await truffleAssert.reverts(
+          await expect(
             utils.createOrder(
               users.seller,
               timestamp,
               timestamp + constants.ONE_MINUTE,
               constants.seller_deposit,
               constants.QTY_10
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+            )
+          ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
         });
 
         it('Seller correlationId should be incremented after order is created', async () => {
@@ -437,8 +457,8 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Cashier has correct balance in Deposit Contract', async () => {
-          const expectedBalance = new BN(constants.seller_deposit).mul(
-            new BN(constants.QTY_10)
+          const expectedBalance = BN(constants.seller_deposit).mul(
+            BN(constants.QTY_10)
           );
           const escrowAmount = await contractBSNTokenDeposit.balanceOf(
             contractCashier.address
@@ -451,8 +471,8 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('escrowTokens has correct balance', async () => {
-          const expectedBalance = new BN(constants.seller_deposit).mul(
-            new BN(constants.QTY_10)
+          const expectedBalance = BN(constants.seller_deposit).mul(
+            BN(constants.QTY_10)
           );
           const escrowTokens = await contractCashier.getEscrowTokensAmount(
             contractBSNTokenDeposit.address,
@@ -522,9 +542,7 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('[NEGATIVE] Should fail if token deposit contract address is not provided', async () => {
-          const txValue = new BN(constants.seller_deposit).mul(
-            new BN(ONE_VOUCHER)
-          );
+          const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
           const nonce = await contractBSNTokenDeposit.nonces(
             users.seller.address
           );
@@ -543,8 +561,12 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.seller.privateKey.slice(2), 'hex')
           );
 
-          await truffleAssert.fails(
-            contractBosonRouter.requestCreateOrderETHTKNWithPermit(
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
+          await expect(
+            sellerInstance.requestCreateOrderETHTKNWithPermit(
               '',
               txValue,
               deadline,
@@ -558,16 +580,13 @@ describe('Cashier and VoucherKernel', () => {
                 constants.seller_deposit,
                 constants.PROMISE_DEPOSITBU1,
                 constants.ORDER_QUANTITY1,
-              ],
-              {from: users.seller.address}
+              ]
             )
-          );
+          ).to.be.reverted;
         });
 
         it('[NEGATIVE] Should revert if token deposit contract address is zero address', async () => {
-          const txValue = new BN(constants.seller_deposit).mul(
-            new BN(ONE_VOUCHER)
-          );
+          const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
           const nonce = await contractBSNTokenDeposit.nonces(
             users.seller.address
           );
@@ -586,8 +605,12 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.seller.privateKey.slice(2), 'hex')
           );
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCreateOrderETHTKNWithPermit(
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
+          await expect(
+            sellerInstance.requestCreateOrderETHTKNWithPermit(
               constants.ZERO_ADDRESS,
               txValue,
               deadline,
@@ -601,17 +624,13 @@ describe('Cashier and VoucherKernel', () => {
                 constants.seller_deposit,
                 constants.PROMISE_DEPOSITBU1,
                 constants.ORDER_QUANTITY1,
-              ],
-              {from: users.seller.address}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              ]
+            )
+          ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
         });
 
         it('[NEGATIVE] Should not create a supply if price is above the limit', async () => {
-          const txValue = new BN(constants.seller_deposit).mul(
-            new BN(ONE_VOUCHER)
-          );
+          const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
           const nonce = await contractBSNTokenDeposit.nonces(
             users.seller.address
           );
@@ -631,8 +650,12 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.seller.privateKey.slice(2), 'hex')
           );
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCreateOrderETHTKNWithPermit(
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
+          await expect(
+            sellerInstance.requestCreateOrderETHTKNWithPermit(
               contractBSNTokenDeposit.address,
               txValue,
               deadline,
@@ -646,17 +669,13 @@ describe('Cashier and VoucherKernel', () => {
                 constants.seller_deposit,
                 constants.PROMISE_DEPOSITBU1,
                 constants.ORDER_QUANTITY1,
-              ],
-              {from: users.seller.address}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              ]
+            )
+          ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
         });
 
         it('[NEGATIVE] Should not create a supply if depositBu is above the limit', async () => {
-          const txValue = new BN(constants.seller_deposit).mul(
-            new BN(ONE_VOUCHER)
-          );
+          const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
           const nonce = await contractBSNTokenDeposit.nonces(
             users.seller.address
           );
@@ -676,8 +695,12 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.seller.privateKey.slice(2), 'hex')
           );
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCreateOrderETHTKNWithPermit(
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
+          await expect(
+            sellerInstance.requestCreateOrderETHTKNWithPermit(
               contractBSNTokenDeposit.address,
               txValue,
               deadline,
@@ -691,17 +714,13 @@ describe('Cashier and VoucherKernel', () => {
                 constants.seller_deposit,
                 constants.ABOVE_TOKEN_LIMIT,
                 constants.ORDER_QUANTITY1,
-              ],
-              {from: users.seller.address}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              ]
+            )
+          ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
         });
 
         it('[NEGATIVE] Should not create a supply if depositSe is above the limit', async () => {
-          const txValue = new BN(constants.seller_deposit).mul(
-            new BN(ONE_VOUCHER)
-          );
+          const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
           const nonce = await contractBSNTokenDeposit.nonces(
             users.seller.address
           );
@@ -721,8 +740,12 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.seller.privateKey.slice(2), 'hex')
           );
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCreateOrderETHTKNWithPermit(
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
+          await expect(
+            sellerInstance.requestCreateOrderETHTKNWithPermit(
               contractBSNTokenDeposit.address,
               txValue,
               deadline,
@@ -736,11 +759,9 @@ describe('Cashier and VoucherKernel', () => {
                 constants.ABOVE_TOKEN_LIMIT,
                 constants.PROMISE_DEPOSITBU1,
                 constants.ORDER_QUANTITY1,
-              ],
-              {from: users.seller.address}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              ]
+            )
+          ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
         });
       });
 
@@ -748,10 +769,10 @@ describe('Cashier and VoucherKernel', () => {
         before(async () => {
           await deployContracts();
 
-          utils = UtilsBuilder.create()
+          utils = await UtilsBuilder.create()
             .ERC20withPermit()
             .TKNETH()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -770,9 +791,11 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           timestamp = await Utils.getCurrTimestamp();
+          constants.PROMISE_VALID_FROM = timestamp;
+          constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
-          const tokensToMint = new BN(constants.product_price).mul(
-            new BN(constants.QTY_10)
+          const tokensToMint = BN(constants.product_price).mul(
+            BN(constants.QTY_10)
           );
           await utils.mintTokens(
             'contractBSNTokenPrice',
@@ -790,16 +813,15 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('[NEGATIVE] Should revert if validTo is set below 5 minutes from now', async () => {
-          await truffleAssert.reverts(
+          await expect(
             utils.createOrder(
               users.seller,
               timestamp,
               timestamp + constants.ONE_MINUTE,
               constants.seller_deposit,
               constants.QTY_10
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+            )
+          ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
         });
 
         it('Seller correlationId should be incremented after order is created', async () => {
@@ -815,9 +837,7 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('ESCROW has correct balance', async () => {
-          const expectedBalance = new BN(constants.seller_deposit).mul(
-            new BN(remQty)
-          );
+          const expectedBalance = BN(constants.seller_deposit).mul(BN(remQty));
           const escrowAmount = await contractCashier.getEscrowAmount(
             users.seller.address
           );
@@ -829,15 +849,13 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Cashier Contract has correct amount of ETH', async () => {
-          const expectedBalance = new BN(constants.seller_deposit).mul(
-            new BN(remQty)
-          );
-          const cashierBalance = await web3.eth.getBalance(
+          const expectedBalance = BN(constants.seller_deposit).mul(BN(remQty));
+          const cashierBalance = await ethers.provider.getBalance(
             contractCashier.address
           );
 
           assert.isTrue(
-            new BN(cashierBalance).eq(expectedBalance),
+            BN(cashierBalance).eq(expectedBalance),
             'Escrow amount is incorrect'
           );
         });
@@ -900,12 +918,14 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('[NEGATIVE] Should fail if price token contract address is not provided', async () => {
-          const txValue = new BN(constants.seller_deposit).mul(
-            new BN(ONE_VOUCHER)
+          const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
+
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
           );
 
           await truffleAssert.fails(
-            contractBosonRouter.requestCreateOrderTKNETH(
+            sellerInstance.requestCreateOrderTKNETH(
               '',
               [
                 constants.PROMISE_VALID_FROM,
@@ -915,36 +935,37 @@ describe('Cashier and VoucherKernel', () => {
                 constants.PROMISE_DEPOSITBU1,
                 constants.ORDER_QUANTITY1,
               ],
-              {from: users.seller.address, value: txValue.toString()}
+              {value: txValue.toString()}
             )
           );
         });
 
         it('[NEGATIVE] Should fail if token price contract is zero address', async () => {
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCreateOrderTKNETH(
-              constants.ZERO_ADDRESS,
-              [
-                constants.PROMISE_VALID_FROM,
-                constants.PROMISE_VALID_TO,
-                constants.PROMISE_PRICE1,
-                constants.seller_deposit,
-                constants.PROMISE_DEPOSITBU1,
-                constants.ORDER_QUANTITY1,
-              ],
-              {from: users.seller.address}
-            ),
-            truffleAssert.ErrorType.REVERT
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
           );
+
+          await expect(
+            sellerInstance.requestCreateOrderTKNETH(constants.ZERO_ADDRESS, [
+              constants.PROMISE_VALID_FROM,
+              constants.PROMISE_VALID_TO,
+              constants.PROMISE_PRICE1,
+              constants.seller_deposit,
+              constants.PROMISE_DEPOSITBU1,
+              constants.ORDER_QUANTITY1,
+            ])
+          ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
         });
 
         it('[NEGATIVE] Should not create a supply if price is above the limit', async () => {
-          const txValue = new BN(constants.seller_deposit).mul(
-            new BN(ONE_VOUCHER)
+          const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
+
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
           );
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCreateOrderTKNETH(
+          await expect(
+            sellerInstance.requestCreateOrderTKNETH(
               contractBSNTokenPrice.address,
               [
                 constants.PROMISE_VALID_FROM,
@@ -954,19 +975,20 @@ describe('Cashier and VoucherKernel', () => {
                 constants.PROMISE_DEPOSITBU1,
                 constants.ORDER_QUANTITY1,
               ],
-              {from: users.seller.address, value: txValue.toString()}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              {value: txValue.toString()}
+            )
+          ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
         });
 
         it('[NEGATIVE] Should not create a supply if depositBu is above the limit', async () => {
-          const txValue = new BN(constants.seller_deposit).mul(
-            new BN(ONE_VOUCHER)
+          const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
+
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
           );
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCreateOrderTKNETH(
+          await expect(
+            sellerInstance.requestCreateOrderTKNETH(
               contractBSNTokenPrice.address,
               [
                 constants.PROMISE_VALID_FROM,
@@ -976,19 +998,20 @@ describe('Cashier and VoucherKernel', () => {
                 constants.ABOVE_ETH_LIMIT,
                 constants.ORDER_QUANTITY1,
               ],
-              {from: users.seller.address, value: txValue.toString()}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              {value: txValue.toString()}
+            )
+          ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
         });
 
         it('[NEGATIVE] Should not create a supply if depositSe is above the limit', async () => {
-          const txValue = new BN(constants.seller_deposit).mul(
-            new BN(ONE_VOUCHER)
+          const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
+
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
           );
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCreateOrderTKNETH(
+          await expect(
+            sellerInstance.requestCreateOrderTKNETH(
               contractBSNTokenPrice.address,
               [
                 constants.PROMISE_VALID_FROM,
@@ -998,10 +1021,9 @@ describe('Cashier and VoucherKernel', () => {
                 constants.PROMISE_DEPOSITBU1,
                 constants.ORDER_QUANTITY1,
               ],
-              {from: users.seller.address, value: txValue.toString()}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              {value: txValue.toString()}
+            )
+          ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
         });
       });
 
@@ -1009,10 +1031,10 @@ describe('Cashier and VoucherKernel', () => {
         before(async () => {
           await deployContracts();
 
-          utils = UtilsBuilder.create()
+          utils = await UtilsBuilder.create()
             .ERC20withPermit()
             .TKNTKN()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -1031,9 +1053,11 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           timestamp = await Utils.getCurrTimestamp();
+          constants.PROMISE_VALID_FROM = timestamp;
+          constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
-          const tokensToMint = new BN(constants.product_price).mul(
-            new BN(constants.QTY_20)
+          const tokensToMint = BN(constants.product_price).mul(
+            BN(constants.QTY_20)
           );
 
           await utils.mintTokens(
@@ -1062,16 +1086,15 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('[NEGATIVE] Should revert if validTo is set below 5 minutes from now', async () => {
-          await truffleAssert.reverts(
+          await expect(
             utils.createOrder(
               users.seller,
               timestamp,
               timestamp + constants.ONE_MINUTE,
               constants.seller_deposit,
               constants.QTY_10
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+            )
+          ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
         });
 
         it('Seller correlationId should be incremented after order is created', async () => {
@@ -1087,9 +1110,7 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Cashier has correct balance in Deposit Contract', async () => {
-          const expectedBalance = new BN(constants.seller_deposit).mul(
-            new BN(remQty)
-          );
+          const expectedBalance = BN(constants.seller_deposit).mul(BN(remQty));
           const escrowAmount = await contractBSNTokenDeposit.balanceOf(
             contractCashier.address
           );
@@ -1101,8 +1122,8 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('escrowTokens has correct balance', async () => {
-          const expectedBalance = new BN(constants.seller_deposit).mul(
-            new BN(constants.QTY_10)
+          const expectedBalance = BN(constants.seller_deposit).mul(
+            BN(constants.QTY_10)
           );
           const escrowTokens = await contractCashier.getEscrowTokensAmount(
             contractBSNTokenDeposit.address,
@@ -1173,9 +1194,7 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('[NEGATIVE] Should fail if token price contract address is not provided', async () => {
-          const txValue = new BN(constants.seller_deposit).mul(
-            new BN(ONE_VOUCHER)
-          );
+          const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
           const nonce = await contractBSNTokenDeposit.nonces(
             users.seller.address
           );
@@ -1194,8 +1213,12 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.seller.privateKey.slice(2), 'hex')
           );
 
-          await truffleAssert.fails(
-            contractBosonRouter.requestCreateOrderTKNTKNWithPermit(
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
+          await expect(
+            sellerInstance.requestCreateOrderTKNTKNWithPermit(
               '',
               contractBSNTokenDeposit.address,
               txValue,
@@ -1210,16 +1233,13 @@ describe('Cashier and VoucherKernel', () => {
                 constants.seller_deposit,
                 constants.PROMISE_DEPOSITBU1,
                 constants.ORDER_QUANTITY1,
-              ],
-              {from: users.seller.address}
+              ]
             )
-          );
+          ).to.be.reverted;
         });
 
         it('[NEGATIVE] Should fail if token deposit contract address is not provided', async () => {
-          const txValue = new BN(constants.seller_deposit).mul(
-            new BN(ONE_VOUCHER)
-          );
+          const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
           const nonce = await contractBSNTokenDeposit.nonces(
             users.seller.address
           );
@@ -1238,8 +1258,12 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.seller.privateKey.slice(2), 'hex')
           );
 
-          await truffleAssert.fails(
-            contractBosonRouter.requestCreateOrderTKNTKNWithPermit(
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
+          await expect(
+            sellerInstance.requestCreateOrderTKNTKNWithPermit(
               contractBSNTokenPrice.address,
               '',
               txValue,
@@ -1254,16 +1278,13 @@ describe('Cashier and VoucherKernel', () => {
                 constants.seller_deposit,
                 constants.PROMISE_DEPOSITBU1,
                 constants.ORDER_QUANTITY1,
-              ],
-              {from: users.seller.address}
+              ]
             )
-          );
+          ).to.be.reverted;
         });
 
         it('[NEGATIVE] Should revert if token price contract address is zero address', async () => {
-          const txValue = new BN(constants.seller_deposit).mul(
-            new BN(ONE_VOUCHER)
-          );
+          const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
           const nonce = await contractBSNTokenDeposit.nonces(
             users.seller.address
           );
@@ -1282,8 +1303,12 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.seller.privateKey.slice(2), 'hex')
           );
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCreateOrderTKNTKNWithPermit(
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
+          await expect(
+            sellerInstance.requestCreateOrderTKNTKNWithPermit(
               constants.ZERO_ADDRESS,
               contractBSNTokenDeposit.address,
               txValue,
@@ -1298,17 +1323,13 @@ describe('Cashier and VoucherKernel', () => {
                 constants.seller_deposit,
                 constants.PROMISE_DEPOSITBU1,
                 constants.ORDER_QUANTITY1,
-              ],
-              {from: users.seller.address}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              ]
+            )
+          ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
         });
 
         it('[NEGATIVE] Should revert if token deposit contract address is zero address', async () => {
-          const txValue = new BN(constants.seller_deposit).mul(
-            new BN(ONE_VOUCHER)
-          );
+          const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
           const nonce = await contractBSNTokenDeposit.nonces(
             users.seller.address
           );
@@ -1328,8 +1349,12 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.seller.privateKey.slice(2), 'hex')
           );
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCreateOrderTKNTKNWithPermit(
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
+          await expect(
+            sellerInstance.requestCreateOrderTKNTKNWithPermit(
               contractBSNTokenPrice.address,
               constants.ZERO_ADDRESS,
               txValue,
@@ -1344,17 +1369,13 @@ describe('Cashier and VoucherKernel', () => {
                 constants.seller_deposit,
                 constants.PROMISE_DEPOSITBU1,
                 constants.ORDER_QUANTITY1,
-              ],
-              {from: users.seller.address}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              ]
+            )
+          ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
         });
 
         it('[NEGATIVE] Should not create a supply if price is above the limit', async () => {
-          const txValue = new BN(constants.seller_deposit).mul(
-            new BN(constants.QTY_1)
-          );
+          const txValue = BN(constants.seller_deposit).mul(BN(constants.QTY_1));
           const nonce = await contractBSNTokenDeposit.nonces(
             users.seller.address
           );
@@ -1373,8 +1394,12 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.seller.privateKey.slice(2), 'hex')
           );
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCreateOrderTKNTKNWithPermit(
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
+          await expect(
+            sellerInstance.requestCreateOrderTKNTKNWithPermit(
               contractBSNTokenPrice.address,
               contractBSNTokenDeposit.address,
               txValue,
@@ -1389,17 +1414,13 @@ describe('Cashier and VoucherKernel', () => {
                 constants.seller_deposit,
                 constants.PROMISE_DEPOSITBU1,
                 constants.ORDER_QUANTITY1,
-              ],
-              {from: users.seller.address}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              ]
+            )
+          ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
         });
 
         it('[NEGATIVE] Should not create a supply if depositBu is above the limit', async () => {
-          const txValue = new BN(constants.seller_deposit).mul(
-            new BN(constants.QTY_1)
-          );
+          const txValue = BN(constants.seller_deposit).mul(BN(constants.QTY_1));
           const nonce = await contractBSNTokenDeposit.nonces(
             users.seller.address
           );
@@ -1418,8 +1439,12 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.seller.privateKey.slice(2), 'hex')
           );
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCreateOrderTKNTKNWithPermit(
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
+          await expect(
+            sellerInstance.requestCreateOrderTKNTKNWithPermit(
               contractBSNTokenPrice.address,
               contractBSNTokenDeposit.address,
               txValue,
@@ -1434,17 +1459,13 @@ describe('Cashier and VoucherKernel', () => {
                 constants.seller_deposit,
                 constants.ABOVE_TOKEN_LIMIT,
                 constants.ORDER_QUANTITY1,
-              ],
-              {from: users.seller.address}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              ]
+            )
+          ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
         });
 
         it('[NEGATIVE] Should not create a supply if depositSe is above the limit', async () => {
-          const txValue = new BN(constants.seller_deposit).mul(
-            new BN(constants.QTY_1)
-          );
+          const txValue = BN(constants.seller_deposit).mul(BN(constants.QTY_1));
           const nonce = await contractBSNTokenDeposit.nonces(
             users.seller.address
           );
@@ -1463,8 +1484,12 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.seller.privateKey.slice(2), 'hex')
           );
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCreateOrderTKNTKNWithPermit(
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
+          await expect(
+            sellerInstance.requestCreateOrderTKNTKNWithPermit(
               contractBSNTokenPrice.address,
               contractBSNTokenDeposit.address,
               txValue,
@@ -1479,11 +1504,9 @@ describe('Cashier and VoucherKernel', () => {
                 constants.ABOVE_TOKEN_LIMIT,
                 constants.PROMISE_DEPOSITBU1,
                 constants.ORDER_QUANTITY1,
-              ],
-              {from: users.seller.address}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              ]
+            )
+          ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
         });
       });
     });
@@ -1493,9 +1516,9 @@ describe('Cashier and VoucherKernel', () => {
     before(async () => {
       await deployContracts();
 
-      utils = UtilsBuilder.create()
+      utils = await UtilsBuilder.create()
         .ETHETH()
-        .build(
+        .buildAsync(
           contractERC1155ERC721,
           contractVoucherKernel,
           contractCashier,
@@ -1527,15 +1550,15 @@ describe('Cashier and VoucherKernel', () => {
         users.seller.address
       );
 
-      await contractBosonRouter.requestCancelOrFaultVoucherSet(tokenSupplyKey, {
-        from: users.seller.address,
-      });
+      const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+
+      await sellerInstance.requestCancelOrFaultVoucherSet(tokenSupplyKey);
       let nextCorrId = await contractBosonRouter.correlationIds(
         users.seller.address
       );
 
       assert.equal(
-        new BN(prevCorrId).add(new BN(1)).toString(),
+        BN(prevCorrId).add(BN(1)).toString(),
         nextCorrId.toString(),
         'correlationId not incremented!'
       );
@@ -1549,14 +1572,18 @@ describe('Cashier and VoucherKernel', () => {
     describe('ETHETH', () => {
       before(async () => {
         await deployContracts();
-        utils = UtilsBuilder.create()
+        utils = await UtilsBuilder.create()
           .ETHETH()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
           );
+
+        timestamp = await Utils.getCurrTimestamp();
+        constants.PROMISE_VALID_FROM = timestamp;
+        constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
         TOKEN_SUPPLY_ID = await utils.createOrder(
           users.seller,
@@ -1580,39 +1607,36 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Should create order', async () => {
-        const txValue = new BN(constants.buyer_deposit).add(
-          new BN(constants.product_price)
+        const txValue = BN(constants.buyer_deposit).add(
+          BN(constants.product_price)
         );
-        let txFillOrder = await contractBosonRouter.requestVoucherETHETH(
+        const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+        let txFillOrder = await buyerInstance.requestVoucherETHETH(
           TOKEN_SUPPLY_ID,
           users.seller.address,
           {
-            from: users.buyer.address,
             value: txValue,
           }
         );
 
-        let internalTx = await truffleAssert.createTransactionResult(
-          contractVoucherKernel,
-          txFillOrder.tx
-        );
+        const txReceipt = await txFillOrder.wait();
 
-        truffleAssert.eventEmitted(
-          internalTx,
-          'LogVoucherDelivered',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          VoucherKernel,
+          eventNames.LOG_VOUCHER_DELIVERED,
           (ev) => {
+            assert.equal(ev._issuer, users.seller.address);
             tokenVoucherKey = ev._tokenIdVoucher;
-            return ev._issuer === users.seller.address;
-          },
-          'order1 not created successfully'
+          }
         );
       });
 
       it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
-        let utilsTknEth = UtilsBuilder.create()
+        let utilsTknEth = await UtilsBuilder.create()
           .ERC20withPermit()
           .TKNETH()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
@@ -1621,10 +1645,9 @@ describe('Cashier and VoucherKernel', () => {
             contractBSNTokenDeposit
           );
 
-        await truffleAssert.reverts(
-          utilsTknEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
-          truffleAssert.ErrorType.REVERT
-        );
+        await expect(
+          utilsTknEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+        ).to.be.reverted;
       });
 
       it('Buyer correlationId should be incremented after requesting a voucher', async () => {
@@ -1640,30 +1663,30 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Cashier Contract has correct amount of funds', async () => {
-        const sellerDeposits = new BN(constants.seller_deposit).mul(
-          new BN(constants.QTY_10)
+        const sellerDeposits = BN(constants.seller_deposit).mul(
+          BN(constants.QTY_10)
         );
-        const buyerETHSent = new BN(constants.product_price).add(
-          new BN(constants.buyer_deposit)
+        const buyerETHSent = BN(constants.product_price).add(
+          BN(constants.buyer_deposit)
         );
         const expectedBalance = sellerDeposits.add(buyerETHSent);
 
-        const cashierBalance = await web3.eth.getBalance(
+        const cashierBalance = await ethers.provider.getBalance(
           contractCashier.address
         );
 
         assert.isTrue(
-          new BN(cashierBalance).eq(expectedBalance),
+          BN(cashierBalance).eq(expectedBalance),
           'Escrow amount is incorrect'
         );
       });
 
       it('Escrow should be updated', async () => {
-        const sellerDeposits = new BN(constants.seller_deposit).mul(
-          new BN(constants.QTY_10)
+        const sellerDeposits = BN(constants.seller_deposit).mul(
+          BN(constants.QTY_10)
         );
-        const buyerETHSent = new BN(constants.product_price).add(
-          new BN(constants.buyer_deposit)
+        const buyerETHSent = BN(constants.product_price).add(
+          BN(constants.buyer_deposit)
         );
 
         const escrowSeller = await contractCashier.getEscrowAmount(
@@ -1674,50 +1697,50 @@ describe('Cashier and VoucherKernel', () => {
         );
 
         assert.isTrue(
-          new BN(sellerDeposits).eq(escrowSeller),
+          BN(sellerDeposits).eq(escrowSeller),
           'Escrow amount is incorrect'
         );
 
         assert.isTrue(
-          new BN(buyerETHSent).eq(escrowBuyer),
+          BN(buyerETHSent).eq(escrowBuyer),
           'Escrow amount is incorrect'
         );
       });
 
       it('[NEGATIVE] Should not create order with incorrect price', async () => {
-        const txValue = new BN(constants.buyer_deposit).add(
-          new BN(constants.incorrect_product_price)
+        const txValue = BN(constants.buyer_deposit).add(
+          BN(constants.incorrect_product_price)
         );
 
-        await truffleAssert.reverts(
-          contractBosonRouter.requestVoucherETHETH(
+        const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+
+        await expect(
+          buyerInstance.requestVoucherETHETH(
             TOKEN_SUPPLY_ID,
             users.seller.address,
             {
-              from: users.buyer.address,
               value: txValue,
             }
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+          )
+        ).to.be.revertedWith(revertReasons.INVALID_FUNDS);
       });
 
       it('[NEGATIVE] Should not create order with incorrect deposit', async () => {
-        const txValue = new BN(constants.buyer_incorrect_deposit).add(
-          new BN(constants.product_price)
+        const txValue = BN(constants.buyer_incorrect_deposit).add(
+          BN(constants.product_price)
         );
 
-        await truffleAssert.reverts(
-          contractBosonRouter.requestVoucherETHETH(
+        const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+
+        await expect(
+          buyerInstance.requestVoucherETHETH(
             TOKEN_SUPPLY_ID,
             users.seller.address,
             {
-              from: users.buyer.address,
               value: txValue,
             }
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+          )
+        ).to.be.revertedWith(revertReasons.INVALID_FUNDS);
       });
     });
 
@@ -1726,10 +1749,10 @@ describe('Cashier and VoucherKernel', () => {
         before(async () => {
           await deployContracts();
 
-          utils = UtilsBuilder.create()
+          utils = await UtilsBuilder.create()
             .ERC20withPermit()
             .ETHTKN()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -1738,11 +1761,11 @@ describe('Cashier and VoucherKernel', () => {
               contractBSNTokenDeposit
             );
 
-          const tokensToMintSeller = new BN(constants.seller_deposit).mul(
-            new BN(ORDER_QTY)
+          const tokensToMintSeller = BN(constants.seller_deposit).mul(
+            BN(ORDER_QTY)
           );
-          const tokensToMintBuyer = new BN(constants.buyer_deposit).mul(
-            new BN(ORDER_QTY)
+          const tokensToMintBuyer = BN(constants.buyer_deposit).mul(
+            BN(ORDER_QTY)
           );
 
           await contractBSNTokenDeposit.mint(
@@ -1753,6 +1776,10 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer.address,
             tokensToMintBuyer
           );
+
+          timestamp = await Utils.getCurrTimestamp();
+          constants.PROMISE_VALID_FROM = timestamp;
+          constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
           TOKEN_SUPPLY_ID = await utils.createOrder(
             users.seller,
@@ -1793,7 +1820,9 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          const txFillOrder = await contractBosonRouter.requestVoucherETHTKNWithPermit(
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+
+          const txFillOrder = await buyerInstance.requestVoucherETHTKNWithPermit(
             TOKEN_SUPPLY_ID,
             users.seller.address,
             constants.buyer_deposit,
@@ -1801,30 +1830,27 @@ describe('Cashier and VoucherKernel', () => {
             v,
             r,
             s,
-            {from: users.buyer.address, value: constants.product_price}
+            {value: constants.product_price}
           );
 
-          let internalTx = await truffleAssert.createTransactionResult(
-            contractVoucherKernel,
-            txFillOrder.tx
-          );
+          const txReceipt = await txFillOrder.wait();
 
-          truffleAssert.eventEmitted(
-            internalTx,
-            'LogVoucherDelivered',
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            VoucherKernel,
+            eventNames.LOG_VOUCHER_DELIVERED,
             (ev) => {
+              assert.equal(ev._issuer, users.seller.address);
               tokenVoucherKey = ev._tokenIdVoucher;
-              return ev._issuer === users.seller.address;
-            },
-            'order1 not created successfully'
+            }
           );
         });
 
         it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
-          let utilsEthEth = UtilsBuilder.create()
+          let utilsEthEth = await UtilsBuilder.create()
             .ERC20withPermit()
             .ETHETH()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -1833,10 +1859,9 @@ describe('Cashier and VoucherKernel', () => {
               contractBSNTokenDeposit
             );
 
-          await truffleAssert.reverts(
-            utilsEthEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utilsEthEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.INCORRECT_PAYMENT_METHOD);
         });
 
         it('Buyer correlationId should be incremented after requesting a voucher', async () => {
@@ -1852,23 +1877,23 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Cashier Contract has correct amount of funds', async () => {
-          const expectedETHBalance = new BN(constants.product_price);
-          const cashierETHBalance = await web3.eth.getBalance(
+          const expectedETHBalance = BN(constants.product_price);
+          const cashierETHBalance = await ethers.provider.getBalance(
             contractCashier.address
           );
 
           const cashierDepositTokenBalance = await contractBSNTokenDeposit.balanceOf(
             contractCashier.address
           );
-          const sellerTokenDeposits = new BN(constants.seller_deposit).mul(
-            new BN(ORDER_QTY)
+          const sellerTokenDeposits = BN(constants.seller_deposit).mul(
+            BN(ORDER_QTY)
           );
-          const expectedTokenBalance = new BN(constants.buyer_deposit).add(
+          const expectedTokenBalance = BN(constants.buyer_deposit).add(
             sellerTokenDeposits
           );
 
           assert.isTrue(
-            new BN(cashierETHBalance).eq(expectedETHBalance),
+            BN(cashierETHBalance).eq(expectedETHBalance),
             'Escrow amount is incorrect'
           );
           assert.isTrue(
@@ -1878,11 +1903,11 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Escrows should be updated', async () => {
-          const sellerDeposits = new BN(constants.seller_deposit).mul(
-            new BN(ORDER_QTY)
+          const sellerDeposits = BN(constants.seller_deposit).mul(
+            BN(ORDER_QTY)
           );
-          const buyerETHSent = new BN(constants.product_price);
-          const buyerTKNSent = new BN(constants.buyer_deposit);
+          const buyerETHSent = BN(constants.product_price);
+          const buyerTKNSent = BN(constants.buyer_deposit);
 
           const escrowSellerTkn = await contractCashier.getEscrowTokensAmount(
             contractBSNTokenDeposit.address,
@@ -1897,17 +1922,17 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           assert.isTrue(
-            new BN(sellerDeposits).eq(escrowSellerTkn),
+            BN(sellerDeposits).eq(escrowSellerTkn),
             'Escrow amount is incorrect'
           );
 
           assert.isTrue(
-            new BN(buyerETHSent).eq(escrowBuyerEth),
+            BN(buyerETHSent).eq(escrowBuyerEth),
             'Escrow amount is incorrect'
           );
 
           assert.isTrue(
-            new BN(buyerTKNSent).eq(escrowBuyerTkn),
+            BN(buyerTKNSent).eq(escrowBuyerTkn),
             'Escrow amount is incorrect'
           );
         });
@@ -1930,8 +1955,10 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestVoucherETHTKNWithPermit(
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+
+          await expect(
+            buyerInstance.requestVoucherETHTKNWithPermit(
               TOKEN_SUPPLY_ID,
               users.seller.address,
               constants.buyer_deposit,
@@ -1940,12 +1967,10 @@ describe('Cashier and VoucherKernel', () => {
               r,
               s,
               {
-                from: users.buyer.address,
                 value: constants.incorrect_product_price,
               }
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+            )
+          ).to.be.revertedWith(revertReasons.INCORRECT_PRICE);
         });
 
         it('[NEGATIVE] Should not create order with incorrect deposit', async () => {
@@ -1966,8 +1991,10 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestVoucherETHTKNWithPermit(
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+
+          await expect(
+            buyerInstance.requestVoucherETHTKNWithPermit(
               TOKEN_SUPPLY_ID,
               users.seller.address,
               constants.buyer_incorrect_deposit,
@@ -1975,10 +2002,9 @@ describe('Cashier and VoucherKernel', () => {
               v,
               r,
               s,
-              {from: users.buyer.address, value: constants.product_price}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              {value: constants.product_price}
+            )
+          ).to.be.revertedWith(revertReasons.INCORRECT_DEPOSIT);
         });
       });
 
@@ -1986,10 +2012,10 @@ describe('Cashier and VoucherKernel', () => {
         before(async () => {
           await deployContracts();
 
-          utils = UtilsBuilder.create()
+          utils = await UtilsBuilder.create()
             .ERC20withPermit()
             .TKNTKN()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -1998,11 +2024,11 @@ describe('Cashier and VoucherKernel', () => {
               contractBSNTokenDeposit
             );
 
-          const tokensToMintSeller = new BN(constants.seller_deposit).mul(
-            new BN(ORDER_QTY)
+          const tokensToMintSeller = BN(constants.seller_deposit).mul(
+            BN(ORDER_QTY)
           );
-          const tokensToMintBuyer = new BN(constants.product_price).mul(
-            new BN(ORDER_QTY)
+          const tokensToMintBuyer = BN(constants.product_price).mul(
+            BN(ORDER_QTY)
           );
 
           await contractBSNTokenDeposit.mint(
@@ -2017,6 +2043,10 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer.address,
             tokensToMintBuyer
           );
+
+          timestamp = await Utils.getCurrTimestamp();
+          constants.PROMISE_VALID_FROM = timestamp;
+          constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
           TOKEN_SUPPLY_ID = await utils.createOrder(
             users.seller,
@@ -2043,8 +2073,8 @@ describe('Cashier and VoucherKernel', () => {
           const nonce1 = await contractBSNTokenDeposit.nonces(
             users.buyer.address
           );
-          const tokensToSend = new BN(constants.product_price).add(
-            new BN(constants.buyer_deposit)
+          const tokensToSend = BN(constants.product_price).add(
+            BN(constants.buyer_deposit)
           );
 
           const digestDeposit = await getApprovalDigest(
@@ -2087,7 +2117,9 @@ describe('Cashier and VoucherKernel', () => {
           let rPrice = VRS_PRICE.r;
           let sPrice = VRS_PRICE.s;
 
-          let txFillOrder = await contractBosonRouter.requestVoucherTKNTKNWithPermit(
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+
+          let txFillOrder = await buyerInstance.requestVoucherTKNTKNWithPermit(
             TOKEN_SUPPLY_ID,
             users.seller.address,
             tokensToSend,
@@ -2097,31 +2129,27 @@ describe('Cashier and VoucherKernel', () => {
             sPrice,
             vDeposit,
             rDeposit,
-            sDeposit,
-            {from: users.buyer.address}
+            sDeposit
           );
 
-          let internalTx = await truffleAssert.createTransactionResult(
-            contractVoucherKernel,
-            txFillOrder.tx
-          );
+          const txReceipt = await txFillOrder.wait();
 
-          truffleAssert.eventEmitted(
-            internalTx,
-            'LogVoucherDelivered',
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            VoucherKernel,
+            eventNames.LOG_VOUCHER_DELIVERED,
             (ev) => {
+              assert.equal(ev._issuer, users.seller.address);
               tokenVoucherKey = ev._tokenIdVoucher;
-              return ev._issuer === users.seller.address;
-            },
-            'order1 not created successfully'
+            }
           );
         });
 
         it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
-          let utilsEthTkn = UtilsBuilder.create()
+          let utilsEthTkn = await UtilsBuilder.create()
             .ERC20withPermit()
             .ETHTKN()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -2130,10 +2158,9 @@ describe('Cashier and VoucherKernel', () => {
               contractBSNTokenDeposit
             );
 
-          await truffleAssert.reverts(
-            utilsEthTkn.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utilsEthTkn.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.INCORRECT_PAYMENT_METHOD);
         });
 
         it('Buyer correlationId should be incremented after requesting a voucher', async () => {
@@ -2155,31 +2182,27 @@ describe('Cashier and VoucherKernel', () => {
           const cashierDepositTokenBalance = await contractBSNTokenDeposit.balanceOf(
             contractCashier.address
           );
-          const sellerDeposit = new BN(constants.seller_deposit).mul(
-            new BN(ORDER_QTY)
-          );
-          const expectedDepositBalance = new BN(constants.buyer_deposit).add(
+          const sellerDeposit = BN(constants.seller_deposit).mul(BN(ORDER_QTY));
+          const expectedDepositBalance = BN(constants.buyer_deposit).add(
             sellerDeposit
           );
 
           assert.isTrue(
-            new BN(cashierPriceTokenBalance).eq(
-              new BN(constants.product_price)
-            ),
+            BN(cashierPriceTokenBalance).eq(BN(constants.product_price)),
             'Escrow amount is incorrect'
           );
           assert.isTrue(
-            new BN(cashierDepositTokenBalance).eq(expectedDepositBalance),
+            BN(cashierDepositTokenBalance).eq(expectedDepositBalance),
             'Escrow amount is incorrect'
           );
         });
 
         it('Escrows should be updated', async () => {
-          const sellerDeposits = new BN(constants.seller_deposit).mul(
-            new BN(ORDER_QTY)
+          const sellerDeposits = BN(constants.seller_deposit).mul(
+            BN(ORDER_QTY)
           );
-          const buyerTknPriceSent = new BN(constants.product_price);
-          const buyerTknDepositSent = new BN(constants.buyer_deposit);
+          const buyerTknPriceSent = BN(constants.product_price);
+          const buyerTknDepositSent = BN(constants.buyer_deposit);
 
           const escrowSellerTknDeposit = await contractCashier.getEscrowTokensAmount(
             contractBSNTokenDeposit.address,
@@ -2195,17 +2218,17 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           assert.isTrue(
-            new BN(sellerDeposits).eq(escrowSellerTknDeposit),
+            BN(sellerDeposits).eq(escrowSellerTknDeposit),
             'Escrow amount is incorrect'
           );
 
           assert.isTrue(
-            new BN(buyerTknPriceSent).eq(escrowBuyerTknPrice),
+            BN(buyerTknPriceSent).eq(escrowBuyerTknPrice),
             'Escrow amount is incorrect'
           );
 
           assert.isTrue(
-            new BN(buyerTknDepositSent).eq(escrowBuyerTknDeposit),
+            BN(buyerTknDepositSent).eq(escrowBuyerTknDeposit),
             'Escrow amount is incorrect'
           );
         });
@@ -2214,8 +2237,8 @@ describe('Cashier and VoucherKernel', () => {
           const nonce1 = await contractBSNTokenDeposit.nonces(
             users.buyer.address
           );
-          const tokensToSend = new BN(constants.incorrect_product_price).add(
-            new BN(constants.buyer_deposit)
+          const tokensToSend = BN(constants.incorrect_product_price).add(
+            BN(constants.buyer_deposit)
           );
 
           const digestDeposit = await getApprovalDigest(
@@ -2258,8 +2281,10 @@ describe('Cashier and VoucherKernel', () => {
           let rPrice = VRS_PRICE.r;
           let sPrice = VRS_PRICE.s;
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestVoucherTKNTKNWithPermit(
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+
+          await expect(
+            buyerInstance.requestVoucherTKNTKNWithPermit(
               TOKEN_SUPPLY_ID,
               users.seller.address,
               tokensToSend,
@@ -2269,19 +2294,17 @@ describe('Cashier and VoucherKernel', () => {
               sPrice,
               vDeposit,
               rDeposit,
-              sDeposit,
-              {from: users.buyer.address}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              sDeposit
+            )
+          ).to.be.revertedWith(revertReasons.INVALID_FUNDS);
         });
 
         it('[NEGATIVE] Should not create order with incorrect deposit', async () => {
           const nonce1 = await contractBSNTokenDeposit.nonces(
             users.buyer.address
           );
-          const tokensToSend = new BN(constants.product_price).add(
-            new BN(constants.buyer_incorrect_deposit)
+          const tokensToSend = BN(constants.product_price).add(
+            BN(constants.buyer_incorrect_deposit)
           );
 
           const digestDeposit = await getApprovalDigest(
@@ -2324,8 +2347,10 @@ describe('Cashier and VoucherKernel', () => {
           let rPrice = VRS_PRICE.r;
           let sPrice = VRS_PRICE.s;
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestVoucherTKNTKNWithPermit(
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+
+          await expect(
+            buyerInstance.requestVoucherTKNTKNWithPermit(
               TOKEN_SUPPLY_ID,
               users.seller.address,
               tokensToSend,
@@ -2335,29 +2360,27 @@ describe('Cashier and VoucherKernel', () => {
               sPrice,
               vDeposit,
               rDeposit,
-              sDeposit,
-              {from: users.buyer.address}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              sDeposit
+            )
+          ).to.be.revertedWith(revertReasons.INVALID_FUNDS);
         });
       });
 
       describe('TKNTKN Same', () => {
-        const tokensToMintSeller = new BN(constants.seller_deposit).mul(
-          new BN(ORDER_QTY)
+        const tokensToMintSeller = BN(constants.seller_deposit).mul(
+          BN(ORDER_QTY)
         );
-        const tokensToMintBuyer = new BN(constants.product_price).mul(
-          new BN(ORDER_QTY)
+        const tokensToMintBuyer = BN(constants.product_price).mul(
+          BN(ORDER_QTY)
         );
 
         before(async () => {
           await deployContracts();
 
-          utils = UtilsBuilder.create()
+          utils = await UtilsBuilder.create()
             .ERC20withPermit()
             .TKNTKNSame()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -2374,6 +2397,10 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer.address,
             tokensToMintBuyer
           );
+
+          timestamp = await Utils.getCurrTimestamp();
+          constants.PROMISE_VALID_FROM = timestamp;
+          constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
           TOKEN_SUPPLY_ID = await utils.createOrder(
             users.seller,
@@ -2400,8 +2427,8 @@ describe('Cashier and VoucherKernel', () => {
           const nonce = await utils.contractBSNTokenSame.nonces(
             users.buyer.address
           );
-          const tokensToSend = new BN(constants.product_price).add(
-            new BN(constants.buyer_deposit)
+          const tokensToSend = BN(constants.product_price).add(
+            BN(constants.buyer_deposit)
           );
 
           const digestTokens = await getApprovalDigest(
@@ -2422,40 +2449,38 @@ describe('Cashier and VoucherKernel', () => {
           let r = VRS_TOKENS.r;
           let s = VRS_TOKENS.s;
 
-          let txFillOrder = await contractBosonRouter.requestVoucherTKNTKNSameWithPermit(
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+
+          let txFillOrder = await buyerInstance.requestVoucherTKNTKNSameWithPermit(
             TOKEN_SUPPLY_ID,
             users.seller.address,
             tokensToSend,
             deadline,
             v,
             r,
-            s,
-            {from: users.buyer.address}
+            s
           );
 
-          let internalTx = await truffleAssert.createTransactionResult(
-            contractVoucherKernel,
-            txFillOrder.tx
-          );
+          const txReceipt = await txFillOrder.wait();
 
-          truffleAssert.eventEmitted(
-            internalTx,
-            'LogVoucherDelivered',
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            VoucherKernel,
+            eventNames.LOG_VOUCHER_DELIVERED,
             (ev) => {
+              assert.equal(ev._issuer, users.seller.address);
               tokenVoucherKey1 = ev._tokenIdVoucher;
-              return ev._issuer === users.seller.address;
-            },
-            'order1 not created successfully'
+            }
           );
 
-          assert.isDefined(tokenVoucherKey1);
+          assert.isDefined(tokenVoucherKey1.toString());
         });
 
         it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
-          let utilsEthEth = UtilsBuilder.create()
+          let utilsEthEth = await UtilsBuilder.create()
             .ERC20withPermit()
             .ETHETH()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -2464,10 +2489,9 @@ describe('Cashier and VoucherKernel', () => {
               contractBSNTokenDeposit
             );
 
-          await truffleAssert.reverts(
-            utilsEthEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utilsEthEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.INCORRECT_PAYMENT_METHOD);
         });
 
         it('Buyer correlationId should be incremented after requesting a voucher', async () => {
@@ -2486,26 +2510,26 @@ describe('Cashier and VoucherKernel', () => {
           const cashierTokenBalanceSame = await utils.contractBSNTokenSame.balanceOf(
             contractCashier.address
           );
-          const sellerDeposits = new BN(constants.seller_deposit).mul(
-            new BN(ORDER_QTY)
+          const sellerDeposits = BN(constants.seller_deposit).mul(
+            BN(ORDER_QTY)
           );
-          const buyerTokensSent = new BN(constants.product_price).add(
-            new BN(constants.buyer_deposit)
+          const buyerTokensSent = BN(constants.product_price).add(
+            BN(constants.buyer_deposit)
           );
           const expectedDepositBalance = buyerTokensSent.add(sellerDeposits);
 
           assert.isTrue(
-            new BN(cashierTokenBalanceSame).eq(expectedDepositBalance),
+            BN(cashierTokenBalanceSame).eq(expectedDepositBalance),
             'Cashier amount is incorrect'
           );
         });
 
         it('Escrows should be updated', async () => {
-          const sellerDeposits = new BN(constants.seller_deposit).mul(
-            new BN(ORDER_QTY)
+          const sellerDeposits = BN(constants.seller_deposit).mul(
+            BN(ORDER_QTY)
           );
-          const buyerTknSent = new BN(constants.product_price).add(
-            new BN(constants.buyer_deposit)
+          const buyerTknSent = BN(constants.product_price).add(
+            BN(constants.buyer_deposit)
           );
 
           const escrowSellerTknDeposit = await contractCashier.getEscrowTokensAmount(
@@ -2518,12 +2542,12 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           assert.isTrue(
-            new BN(sellerDeposits).eq(escrowSellerTknDeposit),
+            BN(sellerDeposits).eq(escrowSellerTknDeposit),
             'Escrow amount is incorrect'
           );
 
           assert.isTrue(
-            new BN(buyerTknSent).eq(escrowBuyerTkn),
+            BN(buyerTknSent).eq(escrowBuyerTkn),
             'Escrow amount is incorrect'
           );
         });
@@ -2532,9 +2556,9 @@ describe('Cashier and VoucherKernel', () => {
           const nonce = await contractBSNTokenDeposit.nonces(
             users.buyer.address
           );
-          const incorrectTokensToSign = new BN(
+          const incorrectTokensToSign = BN(
             constants.incorrect_product_price
-          ).add(new BN(constants.buyer_deposit));
+          ).add(BN(constants.buyer_deposit));
           const digestTokens = await getApprovalDigest(
             utils.contractBSNTokenSame,
             users.buyer.address,
@@ -2553,27 +2577,27 @@ describe('Cashier and VoucherKernel', () => {
           let r = VRS_TOKENS.r;
           let s = VRS_TOKENS.s;
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestVoucherTKNTKNSameWithPermit(
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+
+          await expect(
+            buyerInstance.requestVoucherTKNTKNSameWithPermit(
               TOKEN_SUPPLY_ID,
               users.seller.address,
               incorrectTokensToSign,
               deadline,
               v,
               r,
-              s,
-              {from: users.buyer.address}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              s
+            )
+          ).to.be.revertedWith(revertReasons.INVALID_FUNDS);
         });
 
         it('[NEGATIVE] Should not create order with incorrect deposit', async () => {
           const nonce = await contractBSNTokenDeposit.nonces(
             users.buyer.address
           );
-          const incorrectTokensToSign = new BN(constants.product_price).add(
-            new BN(constants.buyer_incorrect_deposit)
+          const incorrectTokensToSign = BN(constants.product_price).add(
+            BN(constants.buyer_incorrect_deposit)
           );
           const digestTokens = await getApprovalDigest(
             utils.contractBSNTokenSame,
@@ -2593,27 +2617,27 @@ describe('Cashier and VoucherKernel', () => {
           let r = VRS_TOKENS.r;
           let s = VRS_TOKENS.s;
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestVoucherTKNTKNSameWithPermit(
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+
+          await expect(
+            buyerInstance.requestVoucherTKNTKNSameWithPermit(
               TOKEN_SUPPLY_ID,
               users.seller.address,
               incorrectTokensToSign,
               deadline,
               v,
               r,
-              s,
-              {from: users.buyer.address}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              s
+            )
+          ).to.be.revertedWith(revertReasons.INVALID_FUNDS);
         });
 
         it('[NEGATIVE] Should revert if Price Token and Deposit Token are diff contracts', async () => {
           //get instance with different Price token and Deposit Token addresses
-          let utilsTKNTKN = UtilsBuilder.create()
+          let utilsTKNTKN = await UtilsBuilder.create()
             .ERC20withPermit()
             .TKNTKN()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -2646,8 +2670,8 @@ describe('Cashier and VoucherKernel', () => {
           const nonce = await utils.contractBSNTokenSame.nonces(
             users.buyer.address
           );
-          const tokensToSend = new BN(constants.product_price).add(
-            new BN(constants.buyer_deposit)
+          const tokensToSend = BN(constants.product_price).add(
+            BN(constants.buyer_deposit)
           );
 
           const digestTokens = await getApprovalDigest(
@@ -2668,19 +2692,19 @@ describe('Cashier and VoucherKernel', () => {
           let r = VRS_TOKENS.r;
           let s = VRS_TOKENS.s;
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestVoucherTKNTKNSameWithPermit(
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+
+          await expect(
+            buyerInstance.requestVoucherTKNTKNSameWithPermit(
               TOKEN_SUPPLY_ID,
               users.seller.address,
               tokensToSend,
               deadline,
               v,
               r,
-              s,
-              {from: users.buyer.address}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              s
+            )
+          ).to.be.revertedWith(revertReasons.INVALID_CALLER);
         });
       });
 
@@ -2688,10 +2712,10 @@ describe('Cashier and VoucherKernel', () => {
         before(async () => {
           await deployContracts();
 
-          utils = UtilsBuilder.create()
+          utils = await UtilsBuilder.create()
             .ERC20withPermit()
             .TKNETH()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -2700,14 +2724,18 @@ describe('Cashier and VoucherKernel', () => {
               contractBSNTokenDeposit
             );
 
-          const tokensToMintBuyer = new BN(constants.product_price).mul(
-            new BN(ORDER_QTY)
+          const tokensToMintBuyer = BN(constants.product_price).mul(
+            BN(ORDER_QTY)
           );
 
           await contractBSNTokenPrice.mint(
             users.buyer.address,
             tokensToMintBuyer
           );
+
+          timestamp = await Utils.getCurrTimestamp();
+          constants.PROMISE_VALID_FROM = timestamp;
+          constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
           TOKEN_SUPPLY_ID = await utils.createOrder(
             users.seller,
@@ -2747,7 +2775,9 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          let txFillOrder = await contractBosonRouter.requestVoucherTKNETHWithPermit(
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+
+          let txFillOrder = await buyerInstance.requestVoucherTKNETHWithPermit(
             TOKEN_SUPPLY_ID,
             users.seller.address,
             constants.product_price,
@@ -2755,32 +2785,29 @@ describe('Cashier and VoucherKernel', () => {
             v,
             r,
             s,
-            {from: users.buyer.address, value: constants.buyer_deposit}
+            {value: constants.buyer_deposit}
           );
 
-          let internalTx = await truffleAssert.createTransactionResult(
-            contractVoucherKernel,
-            txFillOrder.tx
-          );
+          const txReceipt = await txFillOrder.wait();
 
-          truffleAssert.eventEmitted(
-            internalTx,
-            'LogVoucherDelivered',
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            VoucherKernel,
+            eventNames.LOG_VOUCHER_DELIVERED,
             (ev) => {
+              assert.equal(ev._issuer, users.seller.address);
               tokenVoucherKey = ev._tokenIdVoucher;
-              return ev._issuer === users.seller.address;
-            },
-            'order1 not created successfully'
+            }
           );
 
-          assert.isDefined(tokenVoucherKey);
+          assert.isDefined(tokenVoucherKey.toString());
         });
 
         it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
-          let utilsEthEth = UtilsBuilder.create()
+          let utilsEthEth = await UtilsBuilder.create()
             .ERC20withPermit()
             .ETHETH()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -2789,10 +2816,9 @@ describe('Cashier and VoucherKernel', () => {
               contractBSNTokenDeposit
             );
 
-          await truffleAssert.reverts(
-            utilsEthEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utilsEthEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.INCORRECT_PAYMENT_METHOD);
         });
 
         it('Buyer correlationId should be incremented after requesting a voucher', async () => {
@@ -2808,13 +2834,13 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Cashier Contract has correct amount of funds', async () => {
-          const cashierDepositETH = await web3.eth.getBalance(
+          const cashierDepositETH = await ethers.provider.getBalance(
             contractCashier.address
           );
-          const sellerDeposits = new BN(constants.seller_deposit).mul(
-            new BN(ORDER_QTY)
+          const sellerDeposits = BN(constants.seller_deposit).mul(
+            BN(ORDER_QTY)
           );
-          const expectedDepositBalance = new BN(constants.buyer_deposit).add(
+          const expectedDepositBalance = BN(constants.buyer_deposit).add(
             sellerDeposits
           );
 
@@ -2823,24 +2849,22 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           assert.isTrue(
-            new BN(cashierDepositETH).eq(expectedDepositBalance),
+            BN(cashierDepositETH).eq(expectedDepositBalance),
             'Cashier amount is incorrect'
           );
           assert.isTrue(
-            new BN(cashierPriceTokenBalance).eq(
-              new BN(constants.product_price)
-            ),
+            BN(cashierPriceTokenBalance).eq(BN(constants.product_price)),
             'Cashier amount is incorrect'
           );
         });
 
         it('Escrow should be updated', async () => {
-          const sellerDeposits = new BN(constants.seller_deposit).mul(
-            new BN(ORDER_QTY)
+          const sellerDeposits = BN(constants.seller_deposit).mul(
+            BN(ORDER_QTY)
           );
 
-          const buyerTknSent = new BN(constants.product_price);
-          const buyerEthSent = new BN(constants.buyer_deposit);
+          const buyerTknSent = BN(constants.product_price);
+          const buyerEthSent = BN(constants.buyer_deposit);
 
           const escrowSeller = await contractCashier.getEscrowAmount(
             users.seller.address
@@ -2854,17 +2878,17 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           assert.isTrue(
-            new BN(sellerDeposits).eq(escrowSeller),
+            BN(sellerDeposits).eq(escrowSeller),
             'Escrow amount is incorrect'
           );
 
           assert.isTrue(
-            new BN(buyerEthSent).eq(escrowBuyerEth),
+            BN(buyerEthSent).eq(escrowBuyerEth),
             'Escrow amount is incorrect'
           );
 
           assert.isTrue(
-            new BN(buyerTknSent).eq(escrowBuyerTkn),
+            BN(buyerTknSent).eq(escrowBuyerTkn),
             'Escrow amount is incorrect'
           );
         });
@@ -2886,8 +2910,10 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestVoucherTKNETHWithPermit(
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+
+          await expect(
+            buyerInstance.requestVoucherTKNETHWithPermit(
               TOKEN_SUPPLY_ID,
               users.seller.address,
               constants.product_price,
@@ -2896,12 +2922,10 @@ describe('Cashier and VoucherKernel', () => {
               r,
               s,
               {
-                from: users.buyer.address,
                 value: constants.buyer_incorrect_deposit,
               }
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+            )
+          ).to.be.revertedWith(revertReasons.INCORRECT_DEPOSIT);
         });
 
         it('[NEGATIVE] Should not create order with incorrect price', async () => {
@@ -2921,8 +2945,10 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestVoucherTKNETHWithPermit(
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+
+          await expect(
+            buyerInstance.requestVoucherTKNETHWithPermit(
               TOKEN_SUPPLY_ID,
               users.seller.address,
               constants.incorrect_product_price,
@@ -2930,10 +2956,9 @@ describe('Cashier and VoucherKernel', () => {
               v,
               r,
               s,
-              {from: users.buyer.address, value: constants.buyer_deposit}
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              {value: constants.buyer_deposit}
+            )
+          ).to.be.revertedWith(revertReasons.INCORRECT_PRICE);
         });
       });
     });
@@ -2942,20 +2967,17 @@ describe('Cashier and VoucherKernel', () => {
       const TEN_MINUTES = 10 * constants.ONE_MINUTE;
       const cancelPeriod = constants.ONE_MINUTE;
       const complainPeriod = constants.ONE_MINUTE;
-      let snapshot;
 
       beforeEach(async () => {
         await deployContracts();
-        utils = UtilsBuilder.create()
+        utils = await UtilsBuilder.create()
           .ETHETH()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
           );
-
-        snapshot = await timemachine.takeSnapshot();
 
         const timestamp = await Utils.getCurrTimestamp();
 
@@ -2971,19 +2993,14 @@ describe('Cashier and VoucherKernel', () => {
         );
       });
 
-      afterEach(async () => {
-        await timemachine.revertToSnapShot(snapshot.id);
-      });
-
       it('[!COMMIT] Buyer should not be able to commit after expiry date has passed', async () => {
         await timemachine.advanceTimeSeconds(
           constants.PROMISE_VALID_TO + constants.ONE_MINUTE
         );
 
-        await truffleAssert.reverts(
-          utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
-          truffleAssert.ErrorType.reverts
-        );
+        await expect(
+          utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+        ).to.be.revertedWith(revertReasons.OFFER_EXPIRED);
       });
 
       it('[COMMIT->!CANCEL] Seller should not be able to cancel after complain and expiry periods have passed', async () => {
@@ -2996,10 +3013,9 @@ describe('Cashier and VoucherKernel', () => {
           constants.PROMISE_VALID_TO + cancelPeriod + complainPeriod
         );
 
-        await truffleAssert.reverts(
-          utils.cancel(voucherID, users.seller.address),
-          truffleAssert.ErrorType.reverts
-        );
+        await expect(
+          utils.cancel(voucherID, users.seller.signer)
+        ).to.be.revertedWith(revertReasons.COF_PERIOD_EXPIRED);
       });
 
       it('[COMMIT->CANCEL->!COMPLAIN] Buyer should not be able to complain after complain period has passed', async () => {
@@ -3009,16 +3025,15 @@ describe('Cashier and VoucherKernel', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(
           complainPeriod + constants.ONE_MINUTE
         );
 
-        await truffleAssert.reverts(
-          utils.complain(voucherID, users.buyer.address),
-          truffleAssert.ErrorType.reverts
-        );
+        await expect(
+          utils.complain(voucherID, users.buyer.signer)
+        ).to.be.revertedWith(revertReasons.COMPLAIN_PERIOD_EXPIRED);
       });
 
       it('[COMMIT->!REFUND] Buyer should not be able to refund after expiry date has passed', async () => {
@@ -3032,10 +3047,9 @@ describe('Cashier and VoucherKernel', () => {
           constants.PROMISE_VALID_TO + constants.ONE_MINUTE
         );
 
-        await truffleAssert.reverts(
-          utils.refund(voucherID, users.buyer.address),
-          truffleAssert.ErrorType.reverts
-        );
+        await expect(
+          utils.refund(voucherID, users.buyer.signer)
+        ).to.be.revertedWith(revertReasons.VALIDITY_PERIOD_PASSED);
       });
 
       it('[COMMIT->!REDEEM] Buyer should not be able to redeem after expiry date has passed', async () => {
@@ -3049,10 +3063,9 @@ describe('Cashier and VoucherKernel', () => {
           constants.PROMISE_VALID_TO + constants.ONE_MINUTE
         );
 
-        await truffleAssert.reverts(
-          utils.redeem(voucherID, users.buyer.address),
-          truffleAssert.ErrorType.reverts
-        );
+        await expect(
+          utils.redeem(voucherID, users.buyer.signer)
+        ).to.be.revertedWith(revertReasons.VALIDITY_PERIOD_PASSED);
       });
 
       it('[COMMIT->REDEEM->!COMPLAIN] Buyer should not be able to complain after complain and cancel periods have passed', async () => {
@@ -3061,16 +3074,15 @@ describe('Cashier and VoucherKernel', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(
           complainPeriod + cancelPeriod + constants.ONE_MINUTE
         );
 
-        await truffleAssert.reverts(
-          utils.complain(voucherID, users.buyer.address),
-          truffleAssert.ErrorType.reverts
-        );
+        await expect(
+          utils.complain(voucherID, users.buyer.signer)
+        ).to.be.revertedWith(revertReasons.COMPLAIN_PERIOD_EXPIRED);
       });
 
       it('[COMMIT->REDEEM->!CANCEL] Seller should not be able to cancel after complain and cancel periods have passed', async () => {
@@ -3079,16 +3091,15 @@ describe('Cashier and VoucherKernel', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(
           complainPeriod + cancelPeriod + constants.ONE_MINUTE
         );
 
-        await truffleAssert.reverts(
-          utils.cancel(voucherID, users.seller.address),
-          truffleAssert.ErrorType.reverts
-        );
+        await expect(
+          utils.cancel(voucherID, users.seller.signer)
+        ).to.be.revertedWith(revertReasons.COF_PERIOD_EXPIRED);
       });
 
       it('[COMMIT->REDEEM->CANCEL->!COMPLAIN] Buyer should not be able to complain after complain period has passed', async () => {
@@ -3097,16 +3108,15 @@ describe('Cashier and VoucherKernel', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address),
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer),
           await timemachine.advanceTimeSeconds(
             complainPeriod + constants.ONE_MINUTE
           );
 
-        await truffleAssert.reverts(
-          utils.complain(voucherID, users.buyer.address),
-          truffleAssert.ErrorType.reverts
-        );
+        await expect(
+          utils.complain(voucherID, users.buyer.signer)
+        ).to.be.revertedWith(revertReasons.COMPLAIN_PERIOD_EXPIRED);
       });
 
       it('[COMMIT->REDEEM->COMPLAIN->!CANCEL] Seller should not be able to cancel after cancel period has passed', async () => {
@@ -3116,16 +3126,15 @@ describe('Cashier and VoucherKernel', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address),
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer),
           await timemachine.advanceTimeSeconds(
             cancelPeriod + constants.ONE_MINUTE
           );
 
-        await truffleAssert.reverts(
-          utils.cancel(voucherID, users.seller.address),
-          truffleAssert.ErrorType.reverts
-        );
+        await expect(
+          utils.cancel(voucherID, users.seller.signer)
+        ).to.be.revertedWith(revertReasons.COF_PERIOD_EXPIRED);
       });
 
       it('[COMMIT->REFUND->!CANCEL] Seller should not be able to cancel after cancel & complain periods expire', async () => {
@@ -3135,16 +3144,15 @@ describe('Cashier and VoucherKernel', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.refund(voucherID, users.buyer.address);
+        await utils.refund(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(
           complainPeriod + cancelPeriod + constants.ONE_MINUTE
         );
 
-        await truffleAssert.reverts(
-          utils.cancel(voucherID, users.seller.address),
-          truffleAssert.ErrorType.reverts
-        );
+        await expect(
+          utils.cancel(voucherID, users.seller.signer)
+        ).to.be.revertedWith(revertReasons.COF_PERIOD_EXPIRED);
       });
 
       it('[COMMIT->REFUND->!COMPLAIN] Buyer should not be able to complain after complain and expiry periods have passed', async () => {
@@ -3154,16 +3162,15 @@ describe('Cashier and VoucherKernel', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.refund(voucherID, users.buyer.address);
+        await utils.refund(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(
           complainPeriod + cancelPeriod + constants.ONE_MINUTE
         );
 
-        await truffleAssert.reverts(
-          utils.complain(voucherID, users.buyer.address),
-          truffleAssert.ErrorType.reverts
-        );
+        await expect(
+          utils.complain(voucherID, users.buyer.signer)
+        ).to.be.revertedWith(revertReasons.COMPLAIN_PERIOD_EXPIRED);
       });
 
       it('[COMMIT->REFUND->COMPLAIN->!CANCEL] Seller should not be able to cancel after cancel period has passed', async () => {
@@ -3173,17 +3180,16 @@ describe('Cashier and VoucherKernel', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.refund(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(
           cancelPeriod + constants.ONE_MINUTE
         );
 
-        await truffleAssert.reverts(
-          utils.cancel(voucherID, users.seller.address),
-          truffleAssert.ErrorType.reverts
-        );
+        await expect(
+          utils.cancel(voucherID, users.seller.signer)
+        ).to.be.revertedWith(revertReasons.COF_PERIOD_EXPIRED);
       });
 
       it('[COMMIT->REFUND->CANCEL->!COMPLAIN] Buyer should not be able to complain after complain period has passed', async () => {
@@ -3193,40 +3199,39 @@ describe('Cashier and VoucherKernel', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.refund(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(
           complainPeriod + constants.ONE_MINUTE
         );
 
-        await truffleAssert.reverts(
-          utils.complain(voucherID, users.buyer.address),
-          truffleAssert.ErrorType.reverts
-        );
+        await expect(
+          utils.complain(voucherID, users.buyer.signer)
+        ).to.be.revertedWith(revertReasons.COMPLAIN_PERIOD_EXPIRED);
       });
     });
   });
 
   describe('TOKEN SUPPLY TRANSFER', () => {
-    let actualOldOwnerBalanceFromEscrow = new BN(0);
-    let actualNewOwnerBalanceFromEscrow = new BN(0);
-    let expectedBalanceInEscrow = new BN(0);
+    let actualOldOwnerBalanceFromEscrow = BN(0);
+    let actualNewOwnerBalanceFromEscrow = BN(0);
+    let expectedBalanceInEscrow = BN(0);
 
     afterEach(() => {
       distributedAmounts = {
-        buyerAmount: new BN(0),
-        sellerAmount: new BN(0),
-        escrowAmount: new BN(0),
+        buyerAmount: BN(0),
+        sellerAmount: BN(0),
+        escrowAmount: BN(0),
       };
     });
 
     describe('Common transfer', () => {
       beforeEach(async () => {
         await deployContracts();
-        utils = UtilsBuilder.create()
+        utils = await UtilsBuilder.create()
           .ETHETH()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
@@ -3250,87 +3255,90 @@ describe('Cashier and VoucherKernel', () => {
           users.other2.address,
           tokenSupplyKey,
           constants.QTY_10,
-          {from: users.other1.address}
+          users.other1.signer
         );
 
-        truffleAssert.eventEmitted(
-          transferTx,
-          'TransferSingle',
-          (ev) => {
-            assert.equal(ev._from, users.other1.address);
-            assert.equal(ev._to, users.other2.address);
-            assert.equal(ev._id.toString(), tokenSupplyKey);
-            assert.equal(ev._value.toString(), constants.QTY_10);
+        const txReceipt = await transferTx.wait();
 
-            return true;
-          },
-          'TransferSingle not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721,
+          eventNames.TRANSFER_SINGLE,
+          (ev) => {
+            assert.isTrue(ev._operator === users.other1.address);
+            assert.isTrue(ev._from === users.other1.address);
+            assert.isTrue(ev._to === users.other2.address);
+            assert.isTrue(ev._id.eq(tokenSupplyKey));
+            assert.isTrue(ev._value.eq(constants.QTY_10));
+          }
         );
       });
 
       it('Should transfer voucher supply to self and balance should be the same', async () => {
-        let balanceBeforeTransfer = await contractERC1155ERC721.balanceOf(
-          users.other1.address,
-          tokenSupplyKey
-        );
+        let balanceBeforeTransfer = (
+          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            users.other1.address,
+            tokenSupplyKey
+          )
+        )[0];
 
         let transferTx = await utils.safeTransfer1155(
           users.other1.address,
           users.other1.address,
           tokenSupplyKey,
           constants.QTY_10,
-          {from: users.other1.address}
+          users.other1.signer
         );
 
-        let balanceAfterTransfer = await contractERC1155ERC721.balanceOf(
-          users.other1.address,
-          tokenSupplyKey
-        );
+        let balanceAfterTransfer = (
+          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            users.other1.address,
+            tokenSupplyKey
+          )
+        )[0];
 
         assert.isTrue(
           balanceBeforeTransfer.eq(balanceAfterTransfer),
           'Balance mismatch!'
         );
 
-        truffleAssert.eventEmitted(
-          transferTx,
-          'TransferSingle',
+        const txReceipt = await transferTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721,
+          eventNames.TRANSFER_SINGLE,
           (ev) => {
             assert.equal(ev._from, users.other1.address);
             assert.equal(ev._to, users.other1.address);
             assert.equal(ev._id.toString(), tokenSupplyKey);
             assert.equal(ev._value.toString(), constants.QTY_10);
-
-            return true;
-          },
-          'TransferSingle not emitted'
+          }
         );
       });
 
       it('[NEGATIVE] Should revert if owner tries to transfer voucher supply partially', async () => {
-        await truffleAssert.reverts(
+        await expect(
           utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
-            {from: users.other1.address}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            users.other1.signer
+          )
+        ).to.be.revertedWith(revertReasons.INVALID_QUANTITY);
       });
 
       it('[NEGATIVE] Should revert if Attacker tries to transfer voucher supply', async () => {
-        await truffleAssert.reverts(
+        await expect(
           utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_10,
-            {from: users.attacker.address}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            users.attacker.signer
+          )
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_1155);
       });
 
       it('Should transfer batch voucher supply', async () => {
@@ -3339,109 +3347,112 @@ describe('Cashier and VoucherKernel', () => {
           users.other2.address,
           [tokenSupplyKey],
           [constants.QTY_10],
-          {from: users.other1.address}
+          users.other1.signer
         );
 
-        truffleAssert.eventEmitted(
-          transferTx,
-          'TransferBatch',
+        const txReceipt = await transferTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721,
+          eventNames.TRANSFER_BATCH,
           (ev) => {
             assert.equal(ev._from, users.other1.address);
             assert.equal(ev._to, users.other2.address);
             assert.equal(
               JSON.stringify(ev._ids),
-              JSON.stringify([new BN(tokenSupplyKey)])
+              JSON.stringify([BN(tokenSupplyKey)])
             );
             assert.equal(
               JSON.stringify(ev._values),
-              JSON.stringify([new BN(constants.QTY_10)])
+              JSON.stringify([BN(constants.QTY_10)])
             );
-
-            return true;
-          },
-          'TransferSingle not emitted'
+          }
         );
       });
 
       it('Should transfer batch voucher supply to self and balance should be the same', async () => {
-        let balanceBeforeTransfer = await contractERC1155ERC721.balanceOf(
-          users.other1.address,
-          tokenSupplyKey
-        );
+        let balanceBeforeTransfer = (
+          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            users.other1.address,
+            tokenSupplyKey
+          )
+        )[0];
 
         let transferTx = await utils.safeBatchTransfer1155(
           users.other1.address,
           users.other1.address,
           [tokenSupplyKey],
           [constants.QTY_10],
-          {from: users.other1.address}
+          users.other1.signer
         );
 
-        let balanceAfterTransfer = await contractERC1155ERC721.balanceOf(
-          users.other1.address,
-          tokenSupplyKey
-        );
+        let balanceAfterTransfer = (
+          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            users.other1.address,
+            tokenSupplyKey
+          )
+        )[0];
 
         assert.isTrue(
           balanceBeforeTransfer.eq(balanceAfterTransfer),
           'Balance mismatch!'
         );
 
-        truffleAssert.eventEmitted(
-          transferTx,
-          'TransferBatch',
+        const txReceipt = await transferTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721,
+          eventNames.TRANSFER_BATCH,
           (ev) => {
             assert.equal(ev._from, users.other1.address);
             assert.equal(ev._to, users.other1.address);
             assert.equal(
               JSON.stringify(ev._ids),
-              JSON.stringify([new BN(tokenSupplyKey)])
+              JSON.stringify([BN(tokenSupplyKey)])
             );
             assert.equal(
               JSON.stringify(ev._values),
-              JSON.stringify([new BN(constants.QTY_10)])
+              JSON.stringify([BN(constants.QTY_10)])
             );
-
-            return true;
-          },
-          'TransferSingle not emitted'
+          }
         );
       });
 
       it('[NEGATIVE] Should revert if owner tries to transfer voucher supply batch partially', async () => {
-        await truffleAssert.reverts(
+        await expect(
           utils.safeBatchTransfer1155(
             users.other1.address,
             users.other2.address,
             [tokenSupplyKey],
             [constants.QTY_1],
-            {from: users.other1.address}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            users.other1.signer
+          )
+        ).to.be.revertedWith(revertReasons.INVALID_QUANTITY);
       });
 
       it('[NEGATIVE] Should revert if Attacker tries to transfer batch voucher supply', async () => {
-        await truffleAssert.reverts(
+        await expect(
           utils.safeBatchTransfer1155(
             users.other1.address,
             users.other2.address,
             [tokenSupplyKey],
             [constants.QTY_10],
-            {from: users.attacker.address}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            users.attacker.signer
+          )
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_BATCH_1155);
       });
     });
 
     describe('ETHETH', () => {
       beforeEach(async () => {
         await deployContracts();
+        await setPeriods();
 
-        utils = UtilsBuilder.create()
+        utils = await UtilsBuilder.create()
           .ETHETH()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
@@ -3472,7 +3483,7 @@ describe('Cashier and VoucherKernel', () => {
           users.other2.address,
           tokenSupplyKey,
           constants.QTY_1,
-          {from: users.other1.address}
+          users.other1.signer
         );
 
         correlationId = await contractBosonRouter.correlationIds(
@@ -3487,8 +3498,8 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Should update escrow amounts after transfer', async () => {
-        expectedBalanceInEscrow = new BN(constants.seller_deposit).mul(
-          new BN(constants.QTY_1)
+        expectedBalanceInEscrow = BN(constants.seller_deposit).mul(
+          BN(constants.QTY_1)
         );
 
         actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
@@ -3512,9 +3523,7 @@ describe('Cashier and VoucherKernel', () => {
           users.other2.address,
           tokenSupplyKey,
           constants.QTY_1,
-          {
-            from: users.other1.address,
-          }
+          users.other1.signer
         ),
           (actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
             users.other1.address
@@ -3534,20 +3543,18 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
-        const expectedBuyerAmount = new BN(constants.buyer_deposit); // 0.04
-        const expectedSellerAmount = new BN(constants.seller_deposit).add(
-          new BN(constants.product_price)
+        const expectedBuyerAmount = BN(constants.buyer_deposit); // 0.04
+        const expectedSellerAmount = BN(constants.seller_deposit).add(
+          BN(constants.product_price)
         ); // 0.35
-        const expectedEscrowAmount = new BN(0); // 0
+        const expectedEscrowAmount = BN(0); // 0
 
         await utils.safeTransfer1155(
           users.other1.address,
           users.other2.address,
           tokenSupplyKey,
           constants.QTY_1,
-          {
-            from: users.other1.address,
-          }
+          users.other1.signer
         );
 
         const voucherID = await utils.commitToBuy(
@@ -3556,19 +3563,19 @@ describe('Cashier and VoucherKernel', () => {
           tokenSupplyKey
         );
 
-        await utils.redeem(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
-        let withdrawTx = await utils.withdraw(
-          voucherID,
-          users.deployer.address
-        );
+        let withdrawTx = await utils.withdraw(voucherID, users.deployer.signer);
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
+        const txReceipt = await withdrawTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -3577,9 +3584,7 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer.address,
               users.other2.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -3602,9 +3607,7 @@ describe('Cashier and VoucherKernel', () => {
           users.other2.address,
           tokenSupplyKey,
           constants.QTY_1,
-          {
-            from: users.other1.address,
-          }
+          users.other1.signer
         );
 
         const voucherID = await utils.commitToBuy(
@@ -3613,9 +3616,19 @@ describe('Cashier and VoucherKernel', () => {
           tokenSupplyKey
         );
 
-        await utils.redeem(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
 
-        await utils.cancel(voucherID, users.other2.address);
+        const cofTx = await utils.cancel(voucherID, users.other2.signer);
+        const txReceipt = await cofTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          contractVoucherKernel,
+          eventNames.LOG_VOUCHER_FAULT_CANCEL,
+          (ev) => {
+            assert.isTrue(ev._tokenIdVoucher.eq(voucherID));
+          }
+        );
       });
 
       it('[NEGATIVE] Old owner should not be able to COF', async () => {
@@ -3624,9 +3637,7 @@ describe('Cashier and VoucherKernel', () => {
           users.other2.address,
           tokenSupplyKey,
           constants.QTY_1,
-          {
-            from: users.other1.address,
-          }
+          users.other1.signer
         );
 
         const voucherID = await utils.commitToBuy(
@@ -3635,33 +3646,33 @@ describe('Cashier and VoucherKernel', () => {
           tokenSupplyKey
         );
 
-        await utils.redeem(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
 
-        await truffleAssert.reverts(
-          utils.cancel(voucherID, users.other1.address),
-          truffleAssert.ErrorType.REVERT
-        );
+        await expect(
+          utils.cancel(voucherID, users.other1.signer)
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
       });
     });
 
     describe('[WITH PERMIT]', () => {
       describe('ETHTKN', () => {
-        let balanceBuyerFromDeposits = new BN(0);
+        let balanceBuyerFromDeposits = BN(0);
 
-        let balanceSellerFromDeposits = new BN(0);
+        let balanceSellerFromDeposits = BN(0);
 
-        let escrowBalanceFromDeposits = new BN(0);
+        let escrowBalanceFromDeposits = BN(0);
 
-        let cashierPaymentLeft = new BN(0);
-        let cashierDepositLeft = new BN(0);
+        let cashierPaymentLeft = BN(0);
+        let cashierDepositLeft = BN(0);
 
         beforeEach(async () => {
           await deployContracts();
+          await setPeriods();
 
-          utils = UtilsBuilder.create()
+          utils = await UtilsBuilder.create()
             .ERC20withPermit()
             .ETHTKN()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -3672,8 +3683,8 @@ describe('Cashier and VoucherKernel', () => {
 
           const timestamp = await Utils.getCurrTimestamp();
 
-          const tokensToMint = new BN(constants.seller_deposit).mul(
-            new BN(constants.QTY_1)
+          const tokensToMint = BN(constants.seller_deposit).mul(
+            BN(constants.QTY_1)
           );
 
           await utils.mintTokens(
@@ -3726,7 +3737,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
-            {from: users.other1.address}
+            users.other1.signer
           );
 
           correlationId = await contractBosonRouter.correlationIds(
@@ -3741,8 +3752,8 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should update escrow amounts after transfer', async () => {
-          expectedBalanceInEscrow = new BN(constants.seller_deposit).mul(
-            new BN(constants.QTY_1)
+          expectedBalanceInEscrow = BN(constants.seller_deposit).mul(
+            BN(constants.QTY_1)
           );
 
           actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
@@ -3768,9 +3779,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
-            {
-              from: users.other1.address,
-            }
+            users.other1.signer
           ),
             (actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
               contractBSNTokenDeposit.address,
@@ -3792,17 +3801,17 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
-          const expectedBuyerDeposit = new BN(constants.buyer_deposit); // 0.04
-          const expectedSellerPrice = new BN(constants.product_price); //// 0.3
-          const expectedSellerDeposit = new BN(constants.seller_deposit); // 0.05
-          const expectedEscrowAmountDeposit = new BN(0);
+          const expectedBuyerDeposit = BN(constants.buyer_deposit); // 0.04
+          const expectedSellerPrice = BN(constants.product_price); //// 0.3
+          const expectedSellerDeposit = BN(constants.seller_deposit); // 0.05
+          const expectedEscrowAmountDeposit = BN(0);
 
           await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
-            {from: users.other1.address}
+            users.other1.signer
           );
 
           const voucherID = await utils.commitToBuy(
@@ -3811,29 +3820,27 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey
           );
 
-          await utils.redeem(voucherID, users.buyer.address);
+          await utils.redeem(voucherID, users.buyer.signer);
 
           await timemachine.advanceTimeSeconds(60);
-          await utils.finalize(voucherID, users.deployer.address);
+          await utils.finalize(voucherID, users.deployer.signer);
 
           let withdrawTx = await utils.withdraw(
             voucherID,
-            users.deployer.address
+            users.deployer.signer
           );
 
           await getBalancesDepositToken();
 
-          // Payment should have been sent to seller
-          truffleAssert.eventEmitted(
-            withdrawTx,
-            'LogWithdrawal',
+          let txReceipt = await withdrawTx.wait();
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            Cashier,
+            eventNames.LOG_WITHDRAWAL,
             (ev) => {
               assert.equal(ev._payee, users.other2.address, 'Incorrect Payee');
               assert.isTrue(ev._payment.eq(expectedSellerPrice));
-
-              return true;
-            },
-            'Event LogWithdrawal was not emitted'
+            }
           );
 
           //Deposits
@@ -3852,21 +3859,12 @@ describe('Cashier and VoucherKernel', () => {
 
           //Cashier Should be Empty
           assert.isTrue(
-            cashierPaymentLeft.eq(new BN(0)),
+            cashierPaymentLeft.eq(BN(0)),
             'Cashier Contract is not empty'
           );
           assert.isTrue(
-            cashierDepositLeft.eq(new BN(0)),
+            cashierDepositLeft.eq(BN(0)),
             'Cashier Contract is not empty'
-          );
-
-          truffleAssert.eventEmitted(
-            withdrawTx,
-            'LogAmountDistribution',
-            () => {
-              return true;
-            },
-            'Event LogAmountDistribution was not emitted'
           );
         });
 
@@ -3876,7 +3874,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
-            {from: users.other1.address}
+            users.other1.signer
           );
 
           const voucherID = await utils.commitToBuy(
@@ -3885,9 +3883,9 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey
           );
 
-          await utils.redeem(voucherID, users.buyer.address);
+          await utils.redeem(voucherID, users.buyer.signer);
 
-          await utils.cancel(voucherID, users.other2.address);
+          await utils.cancel(voucherID, users.other2.signer);
         });
 
         it('[NEGATIVE] Old owner should not be able to COF', async () => {
@@ -3896,7 +3894,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
-            {from: users.other1.address}
+            users.other1.signer
           );
 
           const voucherID = await utils.commitToBuy(
@@ -3905,35 +3903,35 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey
           );
 
-          await utils.redeem(voucherID, users.buyer.address);
+          await utils.redeem(voucherID, users.buyer.signer);
 
-          await truffleAssert.reverts(
-            utils.cancel(voucherID, users.other1.address),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utils.cancel(voucherID, users.other1.signer)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
         });
       });
 
       describe('TKNTKN', () => {
-        let balanceBuyerFromPayment = new BN(0);
-        let balanceBuyerFromDeposits = new BN(0);
+        let balanceBuyerFromPayment = BN(0);
+        let balanceBuyerFromDeposits = BN(0);
 
-        let balanceSellerFromPayment = new BN(0);
-        let balanceSellerFromDeposits = new BN(0);
+        let balanceSellerFromPayment = BN(0);
+        let balanceSellerFromDeposits = BN(0);
 
-        let escrowBalanceFromPayment = new BN(0);
-        let escrowBalanceFromDeposits = new BN(0);
+        let escrowBalanceFromPayment = BN(0);
+        let escrowBalanceFromDeposits = BN(0);
 
-        let cashierPaymentLeft = new BN(0);
-        let cashierDepositLeft = new BN(0);
+        let cashierPaymentLeft = BN(0);
+        let cashierDepositLeft = BN(0);
 
         beforeEach(async () => {
           await deployContracts();
+          await setPeriods();
 
-          utils = UtilsBuilder.create()
+          utils = await UtilsBuilder.create()
             .ERC20withPermit()
             .TKNTKN()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -3942,12 +3940,8 @@ describe('Cashier and VoucherKernel', () => {
               contractBSNTokenDeposit
             );
 
-          const timestamp = await Utils.getCurrTimestamp();
-
           const supplyQty = 1;
-          const tokensToMint = new BN(constants.seller_deposit).mul(
-            new BN(supplyQty)
-          );
+          const tokensToMint = BN(constants.seller_deposit).mul(BN(supplyQty));
 
           await utils.mintTokens(
             'contractBSNTokenDeposit',
@@ -3967,8 +3961,8 @@ describe('Cashier and VoucherKernel', () => {
 
           tokenSupplyKey = await utils.createOrder(
             users.other1,
-            timestamp,
-            timestamp + constants.SECONDS_IN_DAY,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
             constants.seller_deposit,
             supplyQty
           );
@@ -4019,7 +4013,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
-            {from: users.other1.address}
+            users.other1.signer
           );
 
           correlationId = await contractBosonRouter.correlationIds(
@@ -4034,8 +4028,8 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should update escrow amounts after transfer', async () => {
-          expectedBalanceInEscrow = new BN(constants.seller_deposit).mul(
-            new BN(constants.QTY_1)
+          expectedBalanceInEscrow = BN(constants.seller_deposit).mul(
+            BN(constants.QTY_1)
           );
 
           actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
@@ -4061,9 +4055,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
-            {
-              from: users.other1.address,
-            }
+            users.other1.signer
           ),
             (actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
               contractBSNTokenDeposit.address,
@@ -4085,19 +4077,19 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
-          const expectedBuyerPrice = new BN(0);
-          const expectedBuyerDeposit = new BN(constants.buyer_deposit); // 0.04
-          const expectedSellerPrice = new BN(constants.product_price); //// 0.3
-          const expectedSellerDeposit = new BN(constants.seller_deposit); // 0.05
-          const expectedEscrowAmountDeposit = new BN(0);
-          const expectedEscrowAmountPrice = new BN(0);
+          const expectedBuyerPrice = BN(0);
+          const expectedBuyerDeposit = BN(constants.buyer_deposit); // 0.04
+          const expectedSellerPrice = BN(constants.product_price); //// 0.3
+          const expectedSellerDeposit = BN(constants.seller_deposit); // 0.05
+          const expectedEscrowAmountDeposit = BN(0);
+          const expectedEscrowAmountPrice = BN(0);
 
           await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
-            {from: users.other1.address}
+            users.other1.signer
           );
 
           const voucherID = await utils.commitToBuy(
@@ -4106,15 +4098,12 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey
           );
 
-          await utils.redeem(voucherID, users.buyer.address);
+          await utils.redeem(voucherID, users.buyer.signer);
 
           await timemachine.advanceTimeSeconds(60);
-          await utils.finalize(voucherID, users.deployer.address);
+          await utils.finalize(voucherID, users.deployer.signer);
 
-          const withdrawTx = await utils.withdraw(
-            voucherID,
-            users.deployer.address
-          );
+          await utils.withdraw(voucherID, users.deployer.signer);
 
           await getBalancesFromPiceTokenAndDepositToken();
 
@@ -4155,15 +4144,6 @@ describe('Cashier and VoucherKernel', () => {
             cashierDepositLeft.eq(ZERO),
             'Cashier Contract is not empty'
           );
-
-          truffleAssert.eventEmitted(
-            withdrawTx,
-            'LogAmountDistribution',
-            () => {
-              return true;
-            },
-            'Event LogAmountDistribution was not emitted'
-          );
         });
 
         it('New owner should be able to COF', async () => {
@@ -4172,7 +4152,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
-            {from: users.other1.address}
+            users.other1.signer
           );
 
           const voucherID = await utils.commitToBuy(
@@ -4181,9 +4161,19 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey
           );
 
-          await utils.redeem(voucherID, users.buyer.address);
+          await utils.redeem(voucherID, users.buyer.signer);
 
-          await utils.cancel(voucherID, users.other2.address);
+          const cofTx = await utils.cancel(voucherID, users.other2.signer);
+          const txReceipt = await cofTx.wait();
+
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            contractVoucherKernel,
+            eventNames.LOG_VOUCHER_FAULT_CANCEL,
+            (ev) => {
+              assert.isTrue(ev._tokenIdVoucher.eq(voucherID));
+            }
+          );
         });
 
         it('[NEGATIVE] Old owner should not be able to COF', async () => {
@@ -4192,7 +4182,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
-            {from: users.other1.address}
+            users.other1.signer
           );
 
           const voucherID = await utils.commitToBuy(
@@ -4201,30 +4191,30 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey
           );
 
-          await utils.redeem(voucherID, users.buyer.address);
+          await utils.redeem(voucherID, users.buyer.signer);
 
-          await truffleAssert.reverts(
-            utils.cancel(voucherID, users.other1.address),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utils.cancel(voucherID, users.other1.signer)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
         });
       });
 
       describe('TKNETH', () => {
-        let balanceBuyerFromPayment = new BN(0);
-        let balanceSellerFromPayment = new BN(0);
-        let escrowBalanceFromPayment = new BN(0);
+        let balanceBuyerFromPayment = BN(0);
+        let balanceSellerFromPayment = BN(0);
+        let escrowBalanceFromPayment = BN(0);
 
-        let cashierPaymentLeft = new BN(0);
-        let cashierDepositLeft = new BN(0);
+        let cashierPaymentLeft = BN(0);
+        let cashierDepositLeft = BN(0);
 
         beforeEach(async () => {
           await deployContracts();
+          await setPeriods();
 
-          utils = UtilsBuilder.create()
+          utils = await UtilsBuilder.create()
             .ERC20withPermit()
             .TKNETH()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -4232,8 +4222,6 @@ describe('Cashier and VoucherKernel', () => {
               contractBSNTokenPrice,
               ''
             );
-
-          const timestamp = await Utils.getCurrTimestamp();
 
           await utils.mintTokens(
             'contractBSNTokenPrice',
@@ -4243,8 +4231,8 @@ describe('Cashier and VoucherKernel', () => {
 
           tokenSupplyKey = await utils.createOrder(
             users.other1,
-            timestamp,
-            timestamp + constants.SECONDS_IN_DAY,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
             constants.seller_deposit,
             constants.QTY_1
           );
@@ -4280,7 +4268,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
-            {from: users.other1.address}
+            users.other1.signer
           );
 
           correlationId = await contractBosonRouter.correlationIds(
@@ -4295,8 +4283,8 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should update escrow amounts after transfer', async () => {
-          expectedBalanceInEscrow = new BN(constants.seller_deposit).mul(
-            new BN(constants.QTY_1)
+          expectedBalanceInEscrow = BN(constants.seller_deposit).mul(
+            BN(constants.QTY_1)
           );
 
           actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
@@ -4320,7 +4308,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
-            {from: users.other1.address}
+            users.other1.signer
           );
 
           actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
@@ -4341,19 +4329,19 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
-          const expectedBuyerPrice = new BN(0);
-          const expectedSellerPrice = new BN(constants.product_price); // 0.3
-          const expectedEscrowPrice = new BN(0);
-          const expectedBuyerDeposit = new BN(constants.buyer_deposit); // 0.04
-          const expectedSellerDeposit = new BN(constants.seller_deposit); // 0.05
-          const expectedEscrowAmountDeposit = new BN(0);
+          const expectedBuyerPrice = BN(0);
+          const expectedSellerPrice = BN(constants.product_price); // 0.3
+          const expectedEscrowPrice = BN(0);
+          const expectedBuyerDeposit = BN(constants.buyer_deposit); // 0.04
+          const expectedSellerDeposit = BN(constants.seller_deposit); // 0.05
+          const expectedEscrowAmountDeposit = BN(0);
 
           await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
-            {from: users.other1.address}
+            users.other1.signer
           );
 
           const voucherID = await utils.commitToBuy(
@@ -4361,14 +4349,14 @@ describe('Cashier and VoucherKernel', () => {
             users.other2,
             tokenSupplyKey
           );
-          await utils.redeem(voucherID, users.buyer.address);
+          await utils.redeem(voucherID, users.buyer.signer);
 
           await timemachine.advanceTimeSeconds(60);
-          await utils.finalize(voucherID, users.deployer.address);
+          await utils.finalize(voucherID, users.deployer.signer);
 
           let withdrawTx = await utils.withdraw(
             voucherID,
-            users.deployer.address
+            users.deployer.signer
           );
 
           await getBalancesPriceToken();
@@ -4388,10 +4376,12 @@ describe('Cashier and VoucherKernel', () => {
             'Escrow did not get expected tokens from PaymentTokenContract'
           );
 
-          //Deposits in ETH
-          truffleAssert.eventEmitted(
-            withdrawTx,
-            'LogWithdrawal',
+          let txReceipt = await withdrawTx.wait();
+
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            Cashier,
+            eventNames.LOG_WITHDRAWAL,
             (ev) => {
               utils.calcTotalAmountToRecipients(
                 ev,
@@ -4400,11 +4390,10 @@ describe('Cashier and VoucherKernel', () => {
                 users.buyer.address,
                 users.other2.address
               );
-              return true;
-            },
-            'Amounts not distributed successfully'
+            }
           );
 
+          //Deposits in ETH
           assert.isTrue(
             distributedAmounts.buyerAmount.eq(expectedBuyerDeposit),
             'Buyer Amount is not as expected'
@@ -4420,21 +4409,12 @@ describe('Cashier and VoucherKernel', () => {
 
           //Cashier Should be Empty
           assert.isTrue(
-            cashierPaymentLeft.eq(new BN(0)),
+            cashierPaymentLeft.eq(BN(0)),
             'Cashier Contract is not empty'
           );
           assert.isTrue(
-            cashierDepositLeft.eq(new BN(0)),
+            cashierDepositLeft.eq(BN(0)),
             'Cashier Contract is not empty'
-          );
-
-          truffleAssert.eventEmitted(
-            withdrawTx,
-            'LogAmountDistribution',
-            () => {
-              return true;
-            },
-            'Event LogAmountDistribution was not emitted'
           );
         });
 
@@ -4444,7 +4424,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
-            {from: users.other1.address}
+            users.other1.signer
           );
 
           const voucherID = await utils.commitToBuy(
@@ -4453,9 +4433,19 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey
           );
 
-          await utils.redeem(voucherID, users.buyer.address);
+          await utils.redeem(voucherID, users.buyer.signer);
 
-          await utils.cancel(voucherID, users.other2.address);
+          const cofTx = await utils.cancel(voucherID, users.other2.signer);
+          const txReceipt = await cofTx.wait();
+
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            contractVoucherKernel,
+            eventNames.LOG_VOUCHER_FAULT_CANCEL,
+            (ev) => {
+              assert.isTrue(ev._tokenIdVoucher.eq(voucherID));
+            }
+          );
         });
 
         it('[NEGATIVE] Old owner should not be able to COF', async () => {
@@ -4464,7 +4454,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other2.address,
             tokenSupplyKey,
             constants.QTY_1,
-            {from: users.other1.address}
+            users.other1.signer
           );
 
           const voucherID = await utils.commitToBuy(
@@ -4473,43 +4463,43 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey
           );
 
-          await utils.redeem(voucherID, users.buyer.address);
+          await utils.redeem(voucherID, users.buyer.signer);
 
-          await truffleAssert.reverts(
-            utils.cancel(voucherID, users.other1.address),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utils.cancel(voucherID, users.other1.signer)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
         });
       });
     });
   });
 
   describe('VOUCHER TRANSFER', () => {
-    let actualOldOwnerBalanceFromEscrowEth = new BN(0);
-    let actualOldOwnerBalanceFromEscrowTkn = new BN(0);
-    let actualNewOwnerBalanceFromEscrowEth = new BN(0);
-    let actualNewOwnerBalanceFromEscrowTkn = new BN(0);
+    let actualOldOwnerBalanceFromEscrowEth = BN(0);
+    let actualOldOwnerBalanceFromEscrowTkn = BN(0);
+    let actualNewOwnerBalanceFromEscrowEth = BN(0);
+    let actualNewOwnerBalanceFromEscrowTkn = BN(0);
 
     afterEach(() => {
       distributedAmounts = {
-        buyerAmount: new BN(0),
-        sellerAmount: new BN(0),
-        escrowAmount: new BN(0),
+        buyerAmount: BN(0),
+        sellerAmount: BN(0),
+        escrowAmount: BN(0),
       };
 
-      actualOldOwnerBalanceFromEscrowEth = new BN(0);
-      actualOldOwnerBalanceFromEscrowTkn = new BN(0);
-      actualNewOwnerBalanceFromEscrowEth = new BN(0);
-      actualNewOwnerBalanceFromEscrowTkn = new BN(0);
+      actualOldOwnerBalanceFromEscrowEth = BN(0);
+      actualOldOwnerBalanceFromEscrowTkn = BN(0);
+      actualNewOwnerBalanceFromEscrowEth = BN(0);
+      actualNewOwnerBalanceFromEscrowTkn = BN(0);
     });
 
     describe('Common transfer', () => {
       before(async () => {
         await deployContracts();
+        await setPeriods();
 
-        utils = UtilsBuilder.create()
+        utils = await UtilsBuilder.create()
           .ETHETH()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
@@ -4536,28 +4526,26 @@ describe('Cashier and VoucherKernel', () => {
           users.other1.address,
           users.other2.address,
           voucherID,
-          {
-            from: users.other1.address,
-          }
+          users.other1.signer
         );
 
-        truffleAssert.eventEmitted(
-          transferTx,
-          'Transfer',
+        let txReceipt = await transferTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          contractERC1155ERC721,
+          eventNames.TRANSFER,
           (ev) => {
             assert.equal(ev._from, users.other1.address);
             assert.equal(ev._to, users.other2.address);
             assert.equal(ev._tokenId.toString(), voucherID);
-
-            return true;
-          },
-          'Transfer not emitted'
+          }
         );
       });
 
       it('Should transfer voucher to self and balance should be the same', async () => {
-        const methodSignature = 'balanceOf(' + 'address)';
-        const balanceOf = contractERC1155ERC721.methods[methodSignature];
+        const balanceOf =
+          contractERC1155ERC721.functions[fnSignatures.balanceOf721];
 
         const voucherID = await utils.commitToBuy(
           users.other1,
@@ -4565,35 +4553,33 @@ describe('Cashier and VoucherKernel', () => {
           tokenSupplyKey
         );
 
-        let balanceBeforeTransfer = await balanceOf(users.other1.address);
+        let balanceBeforeTransfer = (await balanceOf(users.other1.address))[0];
 
         let transferTx = await utils.safeTransfer721(
           users.other1.address,
           users.other1.address,
           voucherID,
-          {
-            from: users.other1.address,
-          }
+          users.other1.signer
         );
 
-        let balanceAfterTransfer = await balanceOf(users.other1.address);
+        let balanceAfterTransfer = (await balanceOf(users.other1.address))[0];
 
         assert.isTrue(
           balanceBeforeTransfer.eq(balanceAfterTransfer),
           'Balance mismatch!'
         );
 
-        truffleAssert.eventEmitted(
-          transferTx,
-          'Transfer',
+        let txReceipt = await transferTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          contractERC1155ERC721,
+          eventNames.TRANSFER,
           (ev) => {
             assert.equal(ev._from, users.other1.address);
             assert.equal(ev._to, users.other1.address);
             assert.equal(ev._tokenId.toString(), voucherID);
-
-            return true;
-          },
-          'Transfer not emitted'
+          }
         );
       });
     });
@@ -4601,10 +4587,11 @@ describe('Cashier and VoucherKernel', () => {
     describe('ETHETH', () => {
       beforeEach(async () => {
         await deployContracts();
+        await setPeriods();
 
-        utils = UtilsBuilder.create()
+        utils = await UtilsBuilder.create()
           .ETHETH()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
@@ -4640,7 +4627,7 @@ describe('Cashier and VoucherKernel', () => {
           users.other1.address,
           users.other2.address,
           voucherID,
-          {from: users.other1.address}
+          users.other1.signer
         );
 
         correlationId = await contractBosonRouter.correlationIds(
@@ -4654,8 +4641,8 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Should update escrow amounts after transfer', async () => {
-        const expectedBalanceInEscrow = new BN(constants.product_price).add(
-          new BN(constants.buyer_deposit)
+        const expectedBalanceInEscrow = BN(constants.product_price).add(
+          BN(constants.buyer_deposit)
         );
         const voucherID = await utils.commitToBuy(
           users.other1,
@@ -4683,9 +4670,7 @@ describe('Cashier and VoucherKernel', () => {
           users.other1.address,
           users.other2.address,
           voucherID,
-          {
-            from: users.other1.address,
-          }
+          users.other1.signer
         );
 
         actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
@@ -4706,15 +4691,11 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
-        const expectedBuyerAmount = new BN(constants.buyer_deposit)
-          .add(new BN(constants.product_price))
-          .add(new BN(constants.seller_deposit).div(new BN(2))); // 0.3 + 0.04 + 0.025
-        const expectedSellerAmount = new BN(constants.seller_deposit).div(
-          new BN(4)
-        ); // 0.0125
-        const expectedEscrowAmount = new BN(constants.seller_deposit).div(
-          new BN(4)
-        ); // 0.0125
+        const expectedBuyerAmount = BN(constants.buyer_deposit)
+          .add(BN(constants.product_price))
+          .add(BN(constants.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
+        const expectedSellerAmount = BN(constants.seller_deposit).div(BN(4)); // 0.0125
+        const expectedEscrowAmount = BN(constants.seller_deposit).div(BN(4)); // 0.0125
 
         const voucherID = await utils.commitToBuy(
           users.other1,
@@ -4726,24 +4707,25 @@ describe('Cashier and VoucherKernel', () => {
           users.other1.address,
           users.other2.address,
           voucherID,
-          {
-            from: users.other1.address,
-          }
+          users.other1.signer
         );
 
-        await utils.refund(voucherID, users.other2.address);
-        await utils.complain(voucherID, users.other2.address);
-        await utils.cancel(voucherID, users.seller.address);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.refund(voucherID, users.other2.signer);
+        await utils.complain(voucherID, users.other2.signer);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
+        const txReceipt = await withdrawTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -4752,9 +4734,7 @@ describe('Cashier and VoucherKernel', () => {
               users.other2.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -4778,24 +4758,21 @@ describe('Cashier and VoucherKernel', () => {
           tokenSupplyKey
         );
 
-        await utils.refund(voucherID, users.other1.address);
-        await utils.complain(voucherID, users.other1.address);
-        await utils.cancel(voucherID, users.seller.address);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.refund(voucherID, users.other1.signer);
+        await utils.complain(voucherID, users.other1.signer);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
 
-        await utils.withdraw(voucherID, users.deployer.address);
+        await utils.withdraw(voucherID, users.deployer.signer);
 
-        await truffleAssert.reverts(
+        await expect(
           utils.safeTransfer721(
             users.other1.address,
             users.other2.address,
             voucherID,
-            {
-              from: users.other1.address,
-            }
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            users.other1.signer
+          )
+        ).to.be.revertedWith(revertReasons.FUNDS_RELEASED);
       });
 
       it('[NEGATIVE] Old owner should not be able to interact with the voucher', async () => {
@@ -4809,20 +4786,16 @@ describe('Cashier and VoucherKernel', () => {
           users.other1.address,
           users.other2.address,
           voucherID,
-          {
-            from: users.other1.address,
-          }
+          users.other1.signer
         );
 
-        await truffleAssert.reverts(
-          utils.redeem(voucherID, users.other1.address),
-          truffleAssert.ErrorType.REVERT
-        );
+        await expect(
+          utils.redeem(voucherID, users.other1.signer)
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
 
-        await truffleAssert.reverts(
-          utils.refund(voucherID, users.other1.address),
-          truffleAssert.ErrorType.REVERT
-        );
+        await expect(
+          utils.refund(voucherID, users.other1.signer)
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
       });
 
       it('[NEGATIVE] Transfer should revert if Attacker tries to execute voucher transfer', async () => {
@@ -4832,28 +4805,25 @@ describe('Cashier and VoucherKernel', () => {
           tokenSupplyKey
         );
 
-        await truffleAssert.reverts(
+        await expect(
           utils.safeTransfer721(
             users.other1.address,
             users.other2.address,
             voucherID,
-            {
-              from: users.attacker.address,
-            }
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            users.attacker.signer
+          )
+        ).to.be.revertedWith(revertReasons.NOT_OWNER_NOR_APPROVED);
       });
     });
 
     describe('[WITH PERMIT]', () => {
       describe('ETHTKN', () => {
-        let balanceBuyerFromDeposits = new BN(0);
-        let balanceSellerFromDeposits = new BN(0);
-        let escrowBalanceFromDeposits = new BN(0);
+        let balanceBuyerFromDeposits = BN(0);
+        let balanceSellerFromDeposits = BN(0);
+        let escrowBalanceFromDeposits = BN(0);
 
-        let cashierPaymentLeft = new BN(0);
-        let cashierDepositLeft = new BN(0);
+        let cashierPaymentLeft = BN(0);
+        let cashierDepositLeft = BN(0);
 
         async function getBalancesDepositToken() {
           balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
@@ -4872,11 +4842,12 @@ describe('Cashier and VoucherKernel', () => {
 
         beforeEach(async () => {
           await deployContracts();
+          await setPeriods();
 
-          utils = UtilsBuilder.create()
+          utils = await UtilsBuilder.create()
             .ERC20withPermit()
             .ETHTKN()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -4885,12 +4856,8 @@ describe('Cashier and VoucherKernel', () => {
               contractBSNTokenDeposit
             );
 
-          const timestamp = await Utils.getCurrTimestamp();
-
           const supplyQty = 1;
-          const tokensToMint = new BN(constants.seller_deposit).mul(
-            new BN(supplyQty)
-          );
+          const tokensToMint = BN(constants.seller_deposit).mul(BN(supplyQty));
 
           await utils.mintTokens(
             'contractBSNTokenDeposit',
@@ -4905,8 +4872,8 @@ describe('Cashier and VoucherKernel', () => {
 
           tokenSupplyKey = await utils.createOrder(
             users.seller,
-            timestamp,
-            timestamp + constants.SECONDS_IN_DAY,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
             constants.seller_deposit,
             supplyQty
           );
@@ -4914,17 +4881,17 @@ describe('Cashier and VoucherKernel', () => {
 
         afterEach(async () => {
           distributedAmounts = {
-            buyerAmount: new BN(0),
-            sellerAmount: new BN(0),
-            escrowAmount: new BN(0),
+            buyerAmount: BN(0),
+            sellerAmount: BN(0),
+            escrowAmount: BN(0),
           };
 
-          balanceBuyerFromDeposits = new BN(0);
-          balanceSellerFromDeposits = new BN(0);
-          escrowBalanceFromDeposits = new BN(0);
+          balanceBuyerFromDeposits = BN(0);
+          balanceSellerFromDeposits = BN(0);
+          escrowBalanceFromDeposits = BN(0);
 
-          cashierPaymentLeft = new BN(0);
-          cashierDepositLeft = new BN(0);
+          cashierPaymentLeft = BN(0);
+          cashierDepositLeft = BN(0);
 
           const isPaused = await contractCashier.paused();
           if (isPaused) {
@@ -4952,7 +4919,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            users.other1.signer
           );
 
           correlationId = await contractBosonRouter.correlationIds(
@@ -4966,8 +4933,8 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should update escrow amounts after transfer', async () => {
-          const expectedBalanceInEscrowEth = new BN(constants.product_price);
-          const expectedBalanceInEscrowTkn = new BN(constants.buyer_deposit);
+          const expectedBalanceInEscrowEth = BN(constants.product_price);
+          const expectedBalanceInEscrowTkn = BN(constants.buyer_deposit);
 
           const voucherID = await utils.commitToBuy(
             users.other1,
@@ -5017,9 +4984,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {
-              from: users.other1.address,
-            }
+            users.other1.signer
           );
 
           actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
@@ -5062,16 +5027,14 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
-          const expectedBuyerPrice = new BN(constants.product_price); // 0.3
-          const expectedBuyerDeposit = new BN(constants.buyer_deposit).add(
-            new BN(constants.seller_deposit).div(new BN(2))
+          const expectedBuyerPrice = BN(constants.product_price); // 0.3
+          const expectedBuyerDeposit = BN(constants.buyer_deposit).add(
+            BN(constants.seller_deposit).div(BN(2))
           ); // 0.065
-          const expectedSellerDeposit = new BN(constants.seller_deposit).div(
-            new BN(4)
+          const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(4)); // 0.0125
+          const expectedEscrowAmountDeposit = BN(constants.seller_deposit).div(
+            BN(4)
           ); // 0.0125
-          const expectedEscrowAmountDeposit = new BN(
-            constants.seller_deposit
-          ).div(new BN(4)); // 0.0125
 
           const voucherID = await utils.commitToBuy(
             users.other1,
@@ -5083,34 +5046,31 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {
-              from: users.other1.address,
-            }
+            users.other1.signer
           );
 
-          await utils.refund(voucherID, users.other2.address);
-          await utils.complain(voucherID, users.other2.address);
-          await utils.cancel(voucherID, users.seller.address);
-          await utils.finalize(voucherID, users.deployer.address);
+          await utils.refund(voucherID, users.other2.signer);
+          await utils.complain(voucherID, users.other2.signer);
+          await utils.cancel(voucherID, users.seller.signer);
+          await utils.finalize(voucherID, users.deployer.signer);
 
           const withdrawTx = await utils.withdraw(
             voucherID,
-            users.deployer.address
+            users.deployer.signer
           );
 
           await getBalancesDepositToken();
 
           // Payment should have been returned to buyer
-          truffleAssert.eventEmitted(
-            withdrawTx,
-            'LogWithdrawal',
+          const txReceipt = await withdrawTx.wait();
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            Cashier,
+            eventNames.LOG_WITHDRAWAL,
             (ev) => {
               assert.equal(ev._payee, users.other2.address, 'Incorrect Payee');
               assert.isTrue(ev._payment.eq(expectedBuyerPrice));
-
-              return true;
-            },
-            'Event LogAmountDistribution was not emitted'
+            }
           );
 
           //Deposits
@@ -5129,28 +5089,12 @@ describe('Cashier and VoucherKernel', () => {
 
           //Cashier Should be Empty
           assert.isTrue(
-            cashierPaymentLeft.eq(new BN(0)),
+            cashierPaymentLeft.eq(BN(0)),
             'Cashier Contract is not empty'
           );
           assert.isTrue(
-            cashierDepositLeft.eq(new BN(0)),
+            cashierDepositLeft.eq(BN(0)),
             'Cashier Contract is not empty'
-          );
-
-          truffleAssert.eventEmitted(
-            withdrawTx,
-            'LogAmountDistribution',
-            (ev) => {
-              utils.calcTotalAmountToRecipients(
-                ev,
-                distributedAmounts,
-                '_to',
-                users.other2.address,
-                users.seller.address
-              );
-              return true;
-            },
-            'Amounts not distributed successfully'
           );
         });
 
@@ -5161,24 +5105,21 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey
           );
 
-          await utils.refund(voucherID, users.other1.address);
-          await utils.complain(voucherID, users.other1.address);
-          await utils.cancel(voucherID, users.seller.address);
-          await utils.finalize(voucherID, users.deployer.address);
+          await utils.refund(voucherID, users.other1.signer);
+          await utils.complain(voucherID, users.other1.signer);
+          await utils.cancel(voucherID, users.seller.signer);
+          await utils.finalize(voucherID, users.deployer.signer);
 
-          await utils.withdraw(voucherID, users.deployer.address);
+          await utils.withdraw(voucherID, users.deployer.signer);
 
-          await truffleAssert.reverts(
+          await expect(
             utils.safeTransfer721(
               users.other1.address,
               users.other2.address,
               voucherID,
-              {
-                from: users.other1.address,
-              }
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              users.other1.signer
+            )
+          ).to.be.revertedWith(revertReasons.FUNDS_RELEASED);
         });
 
         it('[NEGATIVE] Old owner should not be able to interact with the voucher', async () => {
@@ -5192,20 +5133,16 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {
-              from: users.other1.address,
-            }
+            users.other1.signer
           );
 
-          await truffleAssert.reverts(
-            utils.redeem(voucherID, users.other1.address),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utils.redeem(voucherID, users.other1.signer)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
 
-          await truffleAssert.reverts(
-            utils.refund(voucherID, users.other1.address),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utils.refund(voucherID, users.other1.signer)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
         });
 
         it('[NEGATIVE] Transfer should revert if Attacker tries to execute voucher transfer', async () => {
@@ -5215,32 +5152,29 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey
           );
 
-          await truffleAssert.reverts(
+          await expect(
             utils.safeTransfer721(
               users.other1.address,
               users.other2.address,
               voucherID,
-              {
-                from: users.attacker.address,
-              }
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              users.attacker.signer
+            )
+          ).to.be.revertedWith(revertReasons.NOT_OWNER_NOR_APPROVED);
         });
       });
 
       describe('TKNTKN', () => {
-        let balanceBuyerFromPayment = new BN(0);
-        let balanceBuyerFromDeposits = new BN(0);
+        let balanceBuyerFromPayment = BN(0);
+        let balanceBuyerFromDeposits = BN(0);
 
-        let balanceSellerFromPayment = new BN(0);
-        let balanceSellerFromDeposits = new BN(0);
+        let balanceSellerFromPayment = BN(0);
+        let balanceSellerFromDeposits = BN(0);
 
-        let escrowBalanceFromPayment = new BN(0);
-        let escrowBalanceFromDeposits = new BN(0);
+        let escrowBalanceFromPayment = BN(0);
+        let escrowBalanceFromDeposits = BN(0);
 
-        let cashierPaymentLeft = new BN(0);
-        let cashierDepositLeft = new BN(0);
+        let cashierPaymentLeft = BN(0);
+        let cashierDepositLeft = BN(0);
 
         async function getBalancesFromPiceTokenAndDepositToken() {
           balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
@@ -5274,11 +5208,12 @@ describe('Cashier and VoucherKernel', () => {
 
         beforeEach(async () => {
           await deployContracts();
+          await setPeriods();
 
-          utils = UtilsBuilder.create()
+          utils = await UtilsBuilder.create()
             .ERC20withPermit()
             .TKNTKN()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -5287,12 +5222,8 @@ describe('Cashier and VoucherKernel', () => {
               contractBSNTokenDeposit
             );
 
-          const timestamp = await Utils.getCurrTimestamp();
-
           const supplyQty = 1;
-          const tokensToMint = new BN(constants.seller_deposit).mul(
-            new BN(supplyQty)
-          );
+          const tokensToMint = BN(constants.seller_deposit).mul(BN(supplyQty));
 
           await utils.mintTokens(
             'contractBSNTokenDeposit',
@@ -5312,8 +5243,8 @@ describe('Cashier and VoucherKernel', () => {
 
           tokenSupplyKey = await utils.createOrder(
             users.seller,
-            timestamp,
-            timestamp + constants.SECONDS_IN_DAY,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
             constants.seller_deposit,
             supplyQty
           );
@@ -5339,7 +5270,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            users.other1.signer
           );
 
           correlationId = await contractBosonRouter.correlationIds(
@@ -5353,10 +5284,8 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should update escrow amounts after transfer', async () => {
-          let expectedBalanceInEscrowTknPrice = new BN(constants.product_price);
-          let expectedBalanceInEscrowTknDeposit = new BN(
-            constants.buyer_deposit
-          );
+          let expectedBalanceInEscrowTknPrice = BN(constants.product_price);
+          let expectedBalanceInEscrowTknDeposit = BN(constants.buyer_deposit);
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
@@ -5411,9 +5340,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {
-              from: users.other1.address,
-            }
+            users.other1.signer
           ),
             (actualOldOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
               contractBSNTokenPrice.address,
@@ -5461,18 +5388,16 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
-          const expectedBuyerPrice = new BN(constants.product_price); // 0.3
-          const expectedBuyerDeposit = new BN(constants.buyer_deposit).add(
-            new BN(constants.seller_deposit).div(new BN(2))
+          const expectedBuyerPrice = BN(constants.product_price); // 0.3
+          const expectedBuyerDeposit = BN(constants.buyer_deposit).add(
+            BN(constants.seller_deposit).div(BN(2))
           ); // 0.065
-          const expectedSellerPrice = new BN(0);
-          const expectedSellerDeposit = new BN(constants.seller_deposit).div(
-            new BN(4)
+          const expectedSellerPrice = BN(0);
+          const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(4)); // 0.0125
+          const expectedEscrowAmountDeposit = BN(constants.seller_deposit).div(
+            BN(4)
           ); // 0.0125
-          const expectedEscrowAmountDeposit = new BN(
-            constants.seller_deposit
-          ).div(new BN(4)); // 0.0125
-          const expectedEscrowAmountPrice = new BN(0);
+          const expectedEscrowAmountPrice = BN(0);
 
           const voucherID = await utils.commitToBuy(
             users.other1,
@@ -5484,18 +5409,15 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            users.other1.signer
           );
 
-          await utils.refund(voucherID, users.other2.address);
-          await utils.complain(voucherID, users.other2.address);
-          await utils.cancel(voucherID, users.seller.address);
-          await utils.finalize(voucherID, users.deployer.address);
+          await utils.refund(voucherID, users.other2.signer);
+          await utils.complain(voucherID, users.other2.signer);
+          await utils.cancel(voucherID, users.seller.signer);
+          await utils.finalize(voucherID, users.deployer.signer);
 
-          const withdrawTx = await utils.withdraw(
-            voucherID,
-            users.deployer.address
-          );
+          await utils.withdraw(voucherID, users.deployer.signer);
 
           await getBalancesFromPiceTokenAndDepositToken();
 
@@ -5529,21 +5451,12 @@ describe('Cashier and VoucherKernel', () => {
 
           //Cashier Should be Empty
           assert.isTrue(
-            cashierPaymentLeft.eq(new BN(0)),
+            cashierPaymentLeft.eq(BN(0)),
             'Cashier Contract is not empty'
           );
           assert.isTrue(
-            cashierDepositLeft.eq(new BN(0)),
+            cashierDepositLeft.eq(BN(0)),
             'Cashier Contract is not empty'
-          );
-
-          truffleAssert.eventEmitted(
-            withdrawTx,
-            'LogAmountDistribution',
-            () => {
-              return true;
-            },
-            'Event LogAmountDistribution was not emitted'
           );
         });
 
@@ -5554,24 +5467,21 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey
           );
 
-          await utils.refund(voucherID, users.other1.address);
-          await utils.complain(voucherID, users.other1.address);
-          await utils.cancel(voucherID, users.seller.address);
-          await utils.finalize(voucherID, users.deployer.address);
+          await utils.refund(voucherID, users.other1.signer);
+          await utils.complain(voucherID, users.other1.signer);
+          await utils.cancel(voucherID, users.seller.signer);
+          await utils.finalize(voucherID, users.deployer.signer);
 
-          await utils.withdraw(voucherID, users.deployer.address);
+          await utils.withdraw(voucherID, users.deployer.signer);
 
-          await truffleAssert.reverts(
+          await expect(
             utils.safeTransfer721(
               users.other1.address,
               users.other2.address,
               voucherID,
-              {
-                from: users.other1.address,
-              }
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              users.other1.signer
+            )
+          ).to.be.revertedWith(revertReasons.FUNDS_RELEASED);
         });
 
         it('[NEGATIVE] Old owner should not be able to interact with the voucher', async () => {
@@ -5585,20 +5495,16 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {
-              from: users.other1.address,
-            }
+            users.other1.signer
           );
 
-          await truffleAssert.reverts(
-            utils.redeem(voucherID, users.other1.address),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utils.redeem(voucherID, users.other1.signer)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
 
-          await truffleAssert.reverts(
-            utils.refund(voucherID, users.other1.address),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utils.refund(voucherID, users.other1.signer)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
         });
 
         it('[NEGATIVE] Transfer should revert if Attacker tries to execute voucher transfer', async () => {
@@ -5608,35 +5514,33 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey
           );
 
-          await truffleAssert.reverts(
+          await expect(
             utils.safeTransfer721(
               users.other1.address,
               users.other2.address,
               voucherID,
-              {
-                from: users.attacker.address,
-              }
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              users.attacker.signer
+            )
+          ).to.be.revertedWith(revertReasons.NOT_OWNER_NOR_APPROVED);
         });
       });
 
       describe('TKNETH', () => {
-        let balanceBuyerFromPayment = new BN(0);
-        let balanceSellerFromPayment = new BN(0);
-        let escrowBalanceFromPayment = new BN(0);
+        let balanceBuyerFromPayment = BN(0);
+        let balanceSellerFromPayment = BN(0);
+        let escrowBalanceFromPayment = BN(0);
 
-        let cashierPaymentLeft = new BN(0);
-        let cashierDepositLeft = new BN(0);
+        let cashierPaymentLeft = BN(0);
+        let cashierDepositLeft = BN(0);
 
         beforeEach(async () => {
           await deployContracts();
+          await setPeriods();
 
-          utils = UtilsBuilder.create()
+          utils = await UtilsBuilder.create()
             .ERC20withPermit()
             .TKNETH()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -5644,8 +5548,6 @@ describe('Cashier and VoucherKernel', () => {
               contractBSNTokenPrice,
               ''
             );
-
-          const timestamp = await Utils.getCurrTimestamp();
 
           await utils.mintTokens(
             'contractBSNTokenPrice',
@@ -5655,8 +5557,8 @@ describe('Cashier and VoucherKernel', () => {
 
           tokenSupplyKey = await utils.createOrder(
             users.seller,
-            timestamp,
-            timestamp + constants.SECONDS_IN_DAY,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
             constants.seller_deposit,
             constants.QTY_1
           );
@@ -5697,7 +5599,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {from: users.other1.address}
+            users.other1.signer
           );
 
           correlationId = await contractBosonRouter.correlationIds(
@@ -5711,8 +5613,8 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should update escrow amounts after transfer', async () => {
-          const expectedBalanceInEscrowEth = new BN(constants.buyer_deposit);
-          const expectedBalanceInEscrowTkn = new BN(constants.product_price);
+          const expectedBalanceInEscrowEth = BN(constants.buyer_deposit);
+          const expectedBalanceInEscrowTkn = BN(constants.product_price);
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
@@ -5761,9 +5663,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {
-              from: users.other1.address,
-            }
+            users.other1.signer
           ),
             (actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
               users.other1.address
@@ -5805,18 +5705,16 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
-          const expectedBuyerPrice = new BN(constants.product_price); // 0.3
-          const expectedSellerPrice = new BN(0);
-          const expectedEscrowPrice = new BN(0);
-          const expectedBuyerDeposit = new BN(constants.buyer_deposit).add(
-            new BN(constants.seller_deposit).div(new BN(2))
+          const expectedBuyerPrice = BN(constants.product_price); // 0.3
+          const expectedSellerPrice = BN(0);
+          const expectedEscrowPrice = BN(0);
+          const expectedBuyerDeposit = BN(constants.buyer_deposit).add(
+            BN(constants.seller_deposit).div(BN(2))
           ); // 0.065
-          const expectedSellerDeposit = new BN(constants.seller_deposit).div(
-            new BN(4)
+          const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(4)); // 0.0125
+          const expectedEscrowAmountDeposit = BN(constants.seller_deposit).div(
+            BN(4)
           ); // 0.0125
-          const expectedEscrowAmountDeposit = new BN(
-            constants.seller_deposit
-          ).div(new BN(4)); // 0.0125
 
           const voucherID = await utils.commitToBuy(
             users.other1,
@@ -5828,18 +5726,16 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {
-              from: users.other1.address,
-            }
+            users.other1.signer
           ),
-            await utils.refund(voucherID, users.other2.address);
-          await utils.complain(voucherID, users.other2.address);
-          await utils.cancel(voucherID, users.seller.address);
-          await utils.finalize(voucherID, users.deployer.address);
+            await utils.refund(voucherID, users.other2.signer);
+          await utils.complain(voucherID, users.other2.signer);
+          await utils.cancel(voucherID, users.seller.signer);
+          await utils.finalize(voucherID, users.deployer.signer);
 
           const withdrawTx = await utils.withdraw(
             voucherID,
-            users.deployer.address
+            users.deployer.signer
           );
 
           await getBalancesPriceToken();
@@ -5859,10 +5755,12 @@ describe('Cashier and VoucherKernel', () => {
             'Escrow did not get expected tokens from PaymentTokenContract'
           );
 
+          const txReceipt = await withdrawTx.wait();
           //Deposits in ETH
-          truffleAssert.eventEmitted(
-            withdrawTx,
-            'LogWithdrawal',
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            Cashier,
+            eventNames.LOG_WITHDRAWAL,
             (ev) => {
               utils.calcTotalAmountToRecipients(
                 ev,
@@ -5871,9 +5769,7 @@ describe('Cashier and VoucherKernel', () => {
                 users.other2.address,
                 users.seller.address
               );
-              return true;
-            },
-            'Amounts not distributed successfully'
+            }
           );
 
           assert.isTrue(
@@ -5891,21 +5787,12 @@ describe('Cashier and VoucherKernel', () => {
 
           //Cashier Should be Empty
           assert.isTrue(
-            cashierPaymentLeft.eq(new BN(0)),
+            cashierPaymentLeft.eq(BN(0)),
             'Cashier Contract is not empty'
           );
           assert.isTrue(
-            cashierDepositLeft.eq(new BN(0)),
+            cashierDepositLeft.eq(BN(0)),
             'Cashier Contract is not empty'
-          );
-
-          truffleAssert.eventEmitted(
-            withdrawTx,
-            'LogAmountDistribution',
-            () => {
-              return true;
-            },
-            'Event LogAmountDistribution was not emitted'
           );
         });
 
@@ -5916,24 +5803,21 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey
           );
 
-          await utils.refund(voucherID, users.other1.address);
-          await utils.complain(voucherID, users.other1.address);
-          await utils.cancel(voucherID, users.seller.address);
-          await utils.finalize(voucherID, users.deployer.address);
+          await utils.refund(voucherID, users.other1.signer);
+          await utils.complain(voucherID, users.other1.signer);
+          await utils.cancel(voucherID, users.seller.signer);
+          await utils.finalize(voucherID, users.deployer.signer);
 
-          await utils.withdraw(voucherID, users.deployer.address);
+          await utils.withdraw(voucherID, users.deployer.signer);
 
-          await truffleAssert.reverts(
+          await expect(
             utils.safeTransfer721(
               users.other1.address,
               users.other2.address,
               voucherID,
-              {
-                from: users.other1.address,
-              }
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              users.other1.signer
+            )
+          ).to.be.revertedWith(revertReasons.FUNDS_RELEASED);
         });
 
         it('[NEGATIVE] Old owner should not be able to interact with the voucher', async () => {
@@ -5947,19 +5831,15 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.address,
             users.other2.address,
             voucherID,
-            {
-              from: users.other1.address,
-            }
+            users.other1.signer
           ),
-            await truffleAssert.reverts(
-              utils.redeem(voucherID, users.other1.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.redeem(voucherID, users.other1.signer)
+            ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
 
-          await truffleAssert.reverts(
-            utils.refund(voucherID, users.other1.address),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utils.refund(voucherID, users.other1.signer)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
         });
 
         it('[NEGATIVE] Transfer should revert if Attacker tries to execute voucher transfer', async () => {
@@ -5969,17 +5849,14 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey
           );
 
-          await truffleAssert.reverts(
+          await expect(
             utils.safeTransfer721(
               users.other1.address,
               users.other2.address,
               voucherID,
-              {
-                from: users.attacker.address,
-              }
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+              users.attacker.signer
+            )
+          ).to.be.revertedWith(revertReasons.NOT_OWNER_NOR_APPROVED);
         });
       });
     });
