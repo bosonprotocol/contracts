@@ -6,16 +6,26 @@ const Tx = require('ethereumjs-tx').Transaction;
 let converter = require('hex2dec');
 const BosonRouter = require("../../build/contracts/BosonRouter.json").abi;
 const { SELLER_SECRET, SELLER_PUBLIC, contracts, PROVIDER } = require('../helpers/config');
+
 let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
 // set provider for all later instances to use
 Contract.setProvider(PROVIDER);
-const seller = SELLER_PUBLIC;
 
-function CreateOrderETHETH() {
+
+const seller = SELLER_PUBLIC;
+let start_date, end_date;
+
+
+function CreateOrderETHETH(timestamp) {
     return new Promise((resolve, reject) => {
         const bosonRouterAddr = contracts.BosonRouterContrctAddress;
         const bosonRouter = new Contract(BosonRouter,bosonRouterAddr);
         let gasSent = "0xF458F";
+        
+        helpers.PROMISE_VALID_FROM = timestamp;
+        helpers.PROMISE_VALID_TO = timestamp + 2 * helpers.SECONDS_IN_DAY;
+    
+
         // gets the current nonce of the sellers account and the proceeds to structure the transaction
         web3.eth.getTransactionCount(seller, function(error, txCount) {
             const txValue = new BN(helpers.PROMISE_PRICE1);

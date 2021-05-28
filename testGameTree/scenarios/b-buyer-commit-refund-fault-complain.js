@@ -5,6 +5,7 @@ const checkBalance = require("../helpers/checkBalance");
 const complainVoucher = require("../buyer/compainVoucher");
 const faultVoucher = require("../seller/faultVoucher");
 const delay = require("../helpers/delay");
+const Utils = require('../helpers/utils');
 const {describe,it} = require("mocha");
 let format = require("../helpers/formatter");
 let helpers = require("../helpers/constants");
@@ -31,7 +32,8 @@ describe("TEST SCENARIO 11 :: SELLER CREATES, BUYER COMMITS, REFUND, SELLER FAUL
         this.timeout(TIMEOUT);
         await delay();
         console.log(await checkBalance());
-        voucherSetDetails  =  await sellerCreate();
+        const timestamp = await Utils.getCurrTimestamp();
+        voucherSetDetails  =  await sellerCreate(timestamp);
         await format(voucherSetDetails);
     })
 

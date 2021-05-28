@@ -1,5 +1,6 @@
 const sellerCreate = require("../seller/createVoucher");
 const checkBalance = require("../helpers/checkBalance");
+const Utils = require('../helpers/utils');
 const {describe,it} = require("mocha");
 let format = require("../helpers/formatter")
 let helpers = require("../helpers/constants");
@@ -16,7 +17,8 @@ describe("TEST SCENARIO 001 :: SELLER CREATES A VOUCHER SET", async function() {
     })
 
     it("TEST SCENARIO 01 :: SELLER CREATE :: 1.0 CREATION OF VOUCHER", async function() {
-        value = await sellerCreate();
+        const timestamp = await Utils.getCurrTimestamp();
+        value = await sellerCreate(timestamp);
         await format(value);
     });
 

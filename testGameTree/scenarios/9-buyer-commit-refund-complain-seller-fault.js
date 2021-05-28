@@ -5,6 +5,7 @@ const checkBalance = require("../helpers/checkBalance");
 const complainVoucher = require("../buyer/compainVoucher");
 const faultVoucher = require("../seller/faultVoucher");
 const delay = require("../helpers/delay");
+const Utils = require('../helpers/utils');
 const {describe,it} = require("mocha");
 let format = require("../helpers/formatter");
 let helpers = require("../helpers/constants");
@@ -27,7 +28,8 @@ describe("TEST SCENARIO 009 :: SELLER CREATES, BUYER COMMITS, REFUNDS & COMPLAIN
 
     it("TEST SCENARIO 09 :: SELLER CREATE :: 1.0 Seller creates a voucher set", async function (){
         await delay();
-        voucherSetDetails  =  await sellerCreate();
+        const timestamp = await Utils.getCurrTimestamp();
+        voucherSetDetails  =  await sellerCreate(timestamp);
         await format(voucherSetDetails);
     })
 

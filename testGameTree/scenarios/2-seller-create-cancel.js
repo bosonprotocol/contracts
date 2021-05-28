@@ -1,5 +1,6 @@
 const sellerCreate = require("../seller/createVoucher");
 const sellerCancel = require("../seller/cancelVoucherSet");
+const Utils = require('../helpers/utils');
 const {describe,it} = require("mocha");
 let format = require("../helpers/formatter");
 const checkBalance = require("../helpers/checkBalance");
@@ -19,7 +20,8 @@ describe("TEST SCENARIO 002 :: SELLER CREATES & CANCELS", async function() {
     })
 
     it("TEST SCENARIO 02 :: SELLER CREATE :: 1.0 Seller creates a voucher-set", async function() {
-        voucherSetDetails  =  await sellerCreate();
+        const timestamp = await Utils.getCurrTimestamp();
+        voucherSetDetails  =  await sellerCreate(timestamp);
         await format(voucherSetDetails);
     });
 

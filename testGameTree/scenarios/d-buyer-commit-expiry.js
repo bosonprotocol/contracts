@@ -2,6 +2,7 @@ const sellerCreate = require("../seller/createExpiringVoucher");
 const commitVoucher = require("../buyer/commitVoucher");
 const triggerExpire = require("../seller/triggerExpiration");
 const checkExpiry = require("../seller/checkExpiryStatus");
+const Utils = require('../helpers/utils');
 const {describe,it,before} = require("mocha");
 let format = require("../helpers/formatter")
 const checkBalance = require("../helpers/checkBalance");
@@ -22,10 +23,13 @@ describe("TEST SCENARIO 013 :: SELLER CREATES & BUYER COMMITS", async function()
     let aql = assert.equal;
 
     // creates current timestamp in epoch
+    /*
     Date.prototype.toUnixTime = function() { return this.getTime()/1000|0 };
     Date.time = function() { return new Date().toUnixTime(); }
     let currentTimeStamp = Date.time();
     let expiryTimeStamp = currentTimeStamp+360;
+*/
+    let timestamp;
 
     before("Check Balances",async function () {
         let balances = await checkBalance();
@@ -34,18 +38,20 @@ describe("TEST SCENARIO 013 :: SELLER CREATES & BUYER COMMITS", async function()
 
     it("TEST SCENARIO 13 :: SELLER CREATE :: 1.0 Seller creates a voucher set", async function (){
         this.timeout(TIMEOUT);
-        voucherSetDetails  =  await sellerCreate(currentTimeStamp,expiryTimeStamp);
+        timestamp = await Utils.getCurrTimestamp();
+        voucherSetDetails  =  await sellerCreate(timestamp);
         await format(voucherSetDetails);
     })
 
     it("TEST SCENARIO 13 :: SELLER CREATE :: 1.1 VALIDATE VALID FROM", async function () {
-        aql(voucherSetDetails['ValidFrom'],currentTimeStamp);
+        aql(voucherSetDetails['ValidFrom'],timestamp);
     })
 
+/*
     it("TEST SCENARIO 13 :: SELLER CREATE :: 1.2 VALIDATE VALID TO", async function () {
         aql(voucherSetDetails['ValidTo'],expiryTimeStamp);
     })
-
+*/
     it("TEST SCENARIO 13 :: SELLER CREATE :: 1.1 VALIDATE ORDER QUANTITY", async function () {
         aql(voucherSetDetails['nftSupply'],helpers.ORDER_QUANTITY1);
     })
@@ -81,13 +87,13 @@ describe("TEST SCENARIO 013 :: SELLER CREATES & BUYER COMMITS", async function()
         await format(checkExpireDetails);
         aql(checkExpireDetails["Status"],144);
     });
-
+/*
     it("TEST SCENARIO 13 :: CHECK EXPIRE :: 3.1 VALIDATE EXPIRY", async function () {
         await delay();
         let timeStamp = Date.time();
         assert.isBelow(expiryTimeStamp,timeStamp);
     })
-
+*/
     after("Check Balances", async function () {
         let balances = await checkBalance();
         console.log(balances);

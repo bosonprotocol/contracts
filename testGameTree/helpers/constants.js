@@ -1,6 +1,10 @@
+//common
+const SECONDS_IN_DAY = 86400;
+const SECONDS_IN_A_MINUTE = 60;
+
 // promise
-const PROMISE_VALID_FROM = '1620627335'; // evaluated based on the current block timestamp
-const PROMISE_VALID_TO = '1621551599'; // evaluated based on the PROMISE_VALID_FROM + 2 * SECONDS_IN_DAY
+const PROMISE_VALID_FROM = ''; // evaluated based on the current block timestamp
+const PROMISE_VALID_TO = ''; // evaluated based on the PROMISE_VALID_FROM + 2 * SECONDS_IN_DAY
 const PROMISE_PRICE1 = 1000000000000000;
 const PROMISE_DEPOSITSE1 = 100000000000000;
 const PROMISE_DEPOSITBU1 = 100000000000000;
@@ -23,6 +27,8 @@ const QTY_1 = 1;
 
 
 module.exports = {
+    SECONDS_IN_DAY,
+    SECONDS_IN_A_MINUTE,
     PROMISE_VALID_FROM,
     PROMISE_VALID_TO,
     PROMISE_PRICE1,

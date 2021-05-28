@@ -11,18 +11,22 @@ let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
 Contract.setProvider(PROVIDER);
 const seller = SELLER_PUBLIC;
 
-function CreateOrderETHETH(_fromDate,_toDate) {
+function CreateOrderETHETH(timestamp) {
     return new Promise((resolve, reject) => {
         const bosonRouterAddr = contracts.BosonRouterContrctAddress;
         const bosonRouter = new Contract(BosonRouter,bosonRouterAddr);
         let gasSent = "0xF458F";
+
+        helpers.PROMISE_VALID_FROM = timestamp;
+        helpers.PROMISE_VALID_TO = timestamp + 6 * helpers.SECONDS_IN_A_MINUTE;
+
         // gets the current nonce of the sellers account and the proceeds to structure the transaction
         web3.eth.getTransactionCount(seller, function(error, txCount) {
             const txValue = new BN(helpers.PROMISE_PRICE1);
             const encoded = bosonRouter.methods.requestCreateOrderETHETH(
                 [
-                    new BN(_fromDate),
-                    new BN(_toDate),
+                    new BN(helpers.PROMISE_VALID_FROM),
+                    new BN(helpers.PROMISE_VALID_TO),
                     new BN(helpers.PROMISE_PRICE1),
                     new BN(helpers.PROMISE_DEPOSITSE1),
                     new BN(helpers.PROMISE_DEPOSITBU1),
