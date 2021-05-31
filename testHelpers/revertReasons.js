@@ -21,4 +21,9 @@ module.exports = {
   UNAUTHORIZED_COF: 'UNAUTHORIZED_COF',
   FUNDS_RELEASED: 'FUNDS_RELEASED',
   NOT_OWNER_NOR_APPROVED: 'NOT_OWNER_NOR_APPROVED',
+  OFFER_EMPTY: 'OFFER_EMPTY',
+  ESCROW_EMPTY: 'ESCROW_EMPTY',
+  PAUSED: 'Pausable: paused',
+  NOT_PAUSED: 'Pausable: not paused',
+  MANUAL_WITHDRAW_NOT_ALLOWED: 'Owner did not allow manual withdraw',
 };

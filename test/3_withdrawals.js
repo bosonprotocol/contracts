@@ -1,22 +1,25 @@
-const {assert} = require('chai');
+const {assert, expect} = require('chai');
 
 const ethers = require('hardhat').ethers;
 
 const helpers = require('../testHelpers/constants');
 const timemachine = require('../testHelpers/timemachine');
-const truffleAssert = require('truffle-assertions');
 const Users = require('../testHelpers/users');
 const UtilsBuilder = require('../testHelpers/utilsBuilder');
 const Utils = require('../testHelpers/utils');
 
-let ERC1155ERC721; // = artifacts.require('ERC1155ERC721');
-let VoucherKernel; // = artifacts.require('VoucherKernel');
-let Cashier; // = artifacts.require('Cashier');
-let BosonRouter; // = artifacts.require('BosonRouter');
-let MockERC20Permit; // = artifacts.require('MockERC20Permit');
-let FundLimitsOracle; // = artifacts.require('FundLimitsOracle');
+const revertReasons = require('../testHelpers/revertReasons');
+const eventUtils = require('../testHelpers/events');
+const {eventNames} = require('../testHelpers/events');
 
-const BN = require('bn.js');
+let ERC1155ERC721;
+let VoucherKernel;
+let Cashier;
+let BosonRouter;
+let MockERC20Permit;
+let FundLimitsOracle;
+
+const BN = ethers.BigNumber.from;
 
 let utils;
 
@@ -28,6 +31,15 @@ describe('Cashier withdrawals ', () => {
   before(async () => {
     const signers = await ethers.getSigners();
     users = new Users(signers);
+
+    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherKernel = await ethers.getContractFactory('VoucherKernel');
+    Cashier = await ethers.getContractFactory('Cashier');
+    BosonRouter = await ethers.getContractFactory('BosonRouter');
+    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
+    FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
+    FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
+    MockERC20Permit = await ethers.getContractFactory('MockERC20Permit');
   });
 
   let contractERC1155ERC721,
@@ -45,25 +57,37 @@ describe('Cashier withdrawals ', () => {
   };
 
   async function deployContracts() {
-    contractFundLimitsOracle = await FundLimitsOracle.new();
-    contractERC1155ERC721 = await ERC1155ERC721.new();
-    contractVoucherKernel = await VoucherKernel.new(
+    const sixtySeconds = 60;
+
+    contractFundLimitsOracle = await FundLimitsOracle.deploy();
+    contractERC1155ERC721 = await ERC1155ERC721.deploy();
+    contractVoucherKernel = await VoucherKernel.deploy(
       contractERC1155ERC721.address
     );
-    contractCashier = await Cashier.new(contractVoucherKernel.address);
-    contractBosonRouter = await BosonRouter.new(
+    contractCashier = await Cashier.deploy(contractVoucherKernel.address);
+    contractBosonRouter = await BosonRouter.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
     );
-    contractBSNTokenPrice = await MockERC20Permit.new(
+
+    contractBSNTokenPrice = await MockERC20Permit.deploy(
       'BosonTokenPrice',
       'BPRC'
     );
-    contractBSNTokenDeposit = await MockERC20Permit.new(
+
+    contractBSNTokenDeposit = await MockERC20Permit.deploy(
       'BosonTokenDeposit',
       'BDEP'
     );
+
+    await contractFundLimitsOracle.deployed();
+    await contractERC1155ERC721.deployed();
+    await contractVoucherKernel.deployed();
+    await contractCashier.deployed();
+    await contractBosonRouter.deployed();
+    await contractBSNTokenPrice.deployed();
+    await contractBSNTokenDeposit.deployed();
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
@@ -73,18 +97,20 @@ describe('Cashier withdrawals ', () => {
       contractVoucherKernel.address
     );
 
+    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
+
     await contractVoucherKernel.setBosonRouterAddress(
       contractBosonRouter.address
     );
-
-    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
-
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
     await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
     await contractCashier.setTokenContractAddress(
       contractERC1155ERC721.address
     );
+
+    await contractVoucherKernel.setComplainPeriod(sixtySeconds);
+    await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
 
     await contractFundLimitsOracle.setTokenLimit(
       contractBSNTokenPrice.address,
@@ -95,9 +121,13 @@ describe('Cashier withdrawals ', () => {
       helpers.TOKEN_LIMIT
     );
     await contractFundLimitsOracle.setETHLimit(helpers.ETHER_LIMIT);
+  }
 
-    await contractVoucherKernel.setComplainPeriod(60); //60 seconds
-    await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
+  async function setPeriods() {
+    const timestamp = await Utils.getCurrTimestamp();
+
+    helpers.PROMISE_VALID_FROM = timestamp;
+    helpers.PROMISE_VALID_TO = timestamp + 2 * helpers.SECONDS_IN_DAY;
   }
 
   // this function is used after each interaction with tokens to clear balances
@@ -123,53 +153,55 @@ describe('Cashier withdrawals ', () => {
       users.deployer.address
     );
 
-    await contractBSNTokenPrice.transfer(
-      users.other1.address,
-      balanceBuyerFromPayment,
-      {
-        from: users.buyer.address,
-      }
+    const buyerPriceInstance = contractBSNTokenPrice.connect(
+      users.buyer.signer
     );
-    await contractBSNTokenDeposit.transfer(
-      users.other1.address,
-      balanceBuyerFromDesosits,
-      {
-        from: users.buyer.address,
-      }
+    const buyerDepositInstance = contractBSNTokenDeposit.connect(
+      users.buyer.signer
     );
-    await contractBSNTokenPrice.transfer(
-      users.other1.address,
-      balanceSellerFromPayment,
-      {
-        from: users.seller.address,
-      }
+    const sellerPriceInstance = contractBSNTokenPrice.connect(
+      users.seller.signer
     );
-    await contractBSNTokenDeposit.transfer(
-      users.other1.address,
-      balanceSellerFromDesosits,
-      {
-        from: users.seller.address,
-      }
+    const sellerDepositInstance = contractBSNTokenDeposit.connect(
+      users.seller.signer
     );
-    await contractBSNTokenPrice.transfer(
-      users.other1.address,
-      escrowBalanceFromPayment,
-      {
-        from: users.deployer.address,
-      }
+    const deployerPriceInstance = contractBSNTokenPrice.connect(
+      users.deployer.signer
     );
-    await contractBSNTokenDeposit.transfer(
+    const deployerDepositInstance = contractBSNTokenDeposit.connect(
+      users.deployer.signer
+    );
+
+    await buyerPriceInstance.transfer(
       users.other1.address,
-      escrowBalanceFromDeposits,
-      {
-        from: users.deployer.address,
-      }
+      balanceBuyerFromPayment
+    );
+    await buyerDepositInstance.transfer(
+      users.other1.address,
+      balanceBuyerFromDesosits
+    );
+    await sellerPriceInstance.transfer(
+      users.other1.address,
+      balanceSellerFromPayment
+    );
+    await sellerDepositInstance.transfer(
+      users.other1.address,
+      balanceSellerFromDesosits
+    );
+    await deployerPriceInstance.transfer(
+      users.other1.address,
+      escrowBalanceFromPayment
+    );
+    await deployerDepositInstance.transfer(
+      users.other1.address,
+      escrowBalanceFromDeposits
     );
   }
 
   describe('Withdraw scenarios', () => {
     before(async () => {
       await deployContracts();
+      await setPeriods();
     });
 
     afterEach(async () => {
@@ -187,21 +219,19 @@ describe('Cashier withdrawals ', () => {
 
     describe(`ETHETH`, () => {
       before(async () => {
-        utils = UtilsBuilder.create()
+        utils = await UtilsBuilder.create()
           .ETHETH()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
           );
 
-        const timestamp = await Utils.getCurrTimestamp();
-
         TOKEN_SUPPLY_ID = await utils.createOrder(
           users.seller,
-          timestamp,
-          timestamp + helpers.SECONDS_IN_DAY,
+          helpers.PROMISE_VALID_FROM,
+          helpers.PROMISE_VALID_TO,
           helpers.seller_deposit,
           helpers.QTY_15
         );
@@ -224,18 +254,21 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.refund(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
+        const txReceipt = await withdrawTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -244,9 +277,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -280,17 +311,20 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.cancel(voucherID, users.seller.address);
-        await utils.complain(voucherID, users.buyer.address);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
+        const txReceipt = await withdrawTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -299,9 +333,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -330,20 +362,23 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.refund(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
         await timemachine.advanceTimeSeconds(60);
 
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
+        const txReceipt = await withdrawTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -352,9 +387,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -385,21 +418,24 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.refund(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
 
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
+        const txReceipt = await withdrawTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -408,9 +444,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -437,19 +471,22 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.refund(voucherID, users.buyer.address);
+        await utils.refund(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
+        const txReceipt = await withdrawTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -458,9 +495,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -491,19 +526,22 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
+        const txReceipt = await withdrawTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -512,9 +550,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -543,19 +579,22 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
+        const txReceipt = await withdrawTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -564,9 +603,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -593,20 +630,23 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
+        const txReceipt = await withdrawTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -615,9 +655,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -650,21 +688,24 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
+        const txReceipt = await withdrawTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -673,9 +714,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -708,21 +747,24 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
-        await utils.complain(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.complain(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
+        const txReceipt = await withdrawTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -731,11 +773,8 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
-
         assert.isTrue(
           distributedAmounts.buyerAmount.eq(expectedBuyerAmount),
           'Buyer Amount is not as expected'
@@ -764,20 +803,23 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
+        const txReceipt = await withdrawTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -786,9 +828,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -807,17 +847,17 @@ describe('Cashier withdrawals ', () => {
     });
 
     describe(`TKNTKN [WITH PERMIT]`, () => {
-      let balanceBuyerFromPayment = new BN(0);
-      let balanceBuyerFromDeposits = new BN(0);
+      let balanceBuyerFromPayment = BN(0);
+      let balanceBuyerFromDeposits = BN(0);
 
-      let balanceSellerFromPayment = new BN(0);
-      let balanceSellerFromDeposits = new BN(0);
+      let balanceSellerFromPayment = BN(0);
+      let balanceSellerFromDeposits = BN(0);
 
-      let escrowBalanceFromPayment = new BN(0);
-      let escrowBalanceFromDeposits = new BN(0);
+      let escrowBalanceFromPayment = BN(0);
+      let escrowBalanceFromDeposits = BN(0);
 
-      let cashierPaymentLeft = new BN(0);
-      let cashierDepositLeft = new BN(0);
+      let cashierPaymentLeft = BN(0);
+      let cashierDepositLeft = BN(0);
 
       async function getBalancesFromPriceTokenAndDepositToken() {
         balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
@@ -850,10 +890,10 @@ describe('Cashier withdrawals ', () => {
       }
 
       beforeEach(async () => {
-        utils = UtilsBuilder.create()
+        utils = await UtilsBuilder.create()
           .ERC20withPermit()
           .TKNTKN()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
@@ -861,8 +901,6 @@ describe('Cashier withdrawals ', () => {
             contractBSNTokenPrice,
             contractBSNTokenDeposit
           );
-
-        const timestamp = await Utils.getCurrTimestamp();
 
         const supplyQty = 1;
         const tokensToMint = new BN(helpers.seller_deposit).mul(
@@ -887,8 +925,8 @@ describe('Cashier withdrawals ', () => {
 
         TOKEN_SUPPLY_ID = await utils.createOrder(
           users.seller,
-          timestamp,
-          timestamp + helpers.SECONDS_IN_DAY,
+          helpers.PROMISE_VALID_FROM,
+          helpers.PROMISE_VALID_TO,
           helpers.seller_deposit,
           supplyQty
         );
@@ -896,22 +934,22 @@ describe('Cashier withdrawals ', () => {
 
       afterEach(async () => {
         distributedAmounts = {
-          buyerAmount: new BN(0),
-          sellerAmount: new BN(0),
-          escrowAmount: new BN(0),
+          buyerAmount: BN(0),
+          sellerAmount: BN(0),
+          escrowAmount: BN(0),
         };
 
-        balanceBuyerFromPayment = new BN(0);
-        balanceBuyerFromDeposits = new BN(0);
+        balanceBuyerFromPayment = BN(0);
+        balanceBuyerFromDeposits = BN(0);
 
-        balanceSellerFromPayment = new BN(0);
-        balanceSellerFromDeposits = new BN(0);
+        balanceSellerFromPayment = BN(0);
+        balanceSellerFromDeposits = BN(0);
 
-        escrowBalanceFromPayment = new BN(0);
-        escrowBalanceFromDeposits = new BN(0);
+        escrowBalanceFromPayment = BN(0);
+        escrowBalanceFromDeposits = BN(0);
 
-        cashierPaymentLeft = new BN(0);
-        cashierDepositLeft = new BN(0);
+        cashierPaymentLeft = BN(0);
+        cashierDepositLeft = BN(0);
 
         await giveAwayToRandom();
       });
@@ -923,28 +961,28 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.refund(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const txReceipt = await withdrawTx.wait();
+
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerPrice = new BN(0);
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedSellerPrice = BN(0);
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
-        ); // 0.0125
-        const expectedEscrowAmountPrice = new BN(0);
+        const expectedEscrowAmountPrice = BN(0);
 
         await getBalancesFromPriceTokenAndDepositToken();
 
@@ -986,13 +1024,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -1003,14 +1041,16 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.cancel(voucherID, users.seller.address);
-        await utils.complain(voucherID, users.buyer.address);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
@@ -1065,13 +1105,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -1082,16 +1122,18 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.refund(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedBuyerDeposit = new BN(0);
@@ -1142,13 +1184,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -1159,17 +1201,19 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.refund(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
 
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
@@ -1222,13 +1266,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -1238,15 +1282,17 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.refund(voucherID, users.buyer.address);
+        await utils.refund(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedBuyerDeposit = new BN(0);
@@ -1295,13 +1341,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -1312,15 +1358,17 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
@@ -1373,13 +1421,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -1389,15 +1437,17 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(0);
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit); // 0.04
@@ -1446,13 +1496,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -1463,16 +1513,18 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(0);
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit); // 0.04
@@ -1521,13 +1573,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -1537,17 +1589,19 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(0);
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
@@ -1602,13 +1656,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -1618,17 +1672,19 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
-        await utils.complain(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.complain(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(0);
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
@@ -1683,13 +1739,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -1700,16 +1756,18 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(0);
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
@@ -1762,13 +1820,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
     });
@@ -1795,10 +1853,10 @@ describe('Cashier withdrawals ', () => {
       }
 
       beforeEach(async () => {
-        utils = UtilsBuilder.create()
+        utils = await UtilsBuilder.create()
           .ERC20withPermit()
           .TKNTKNSame()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
@@ -1806,8 +1864,6 @@ describe('Cashier withdrawals ', () => {
             contractBSNTokenPrice,
             contractBSNTokenDeposit
           );
-
-        const timestamp = await Utils.getCurrTimestamp();
 
         const supplyQty = 1;
         const tokensToMintSeller = new BN(helpers.seller_deposit).mul(
@@ -1830,8 +1886,8 @@ describe('Cashier withdrawals ', () => {
 
         TOKEN_SUPPLY_ID = await utils.createOrder(
           users.seller,
-          timestamp,
-          timestamp + helpers.SECONDS_IN_DAY,
+          helpers.PROMISE_VALID_FROM,
+          helpers.PROMISE_VALID_TO,
           helpers.seller_deposit,
           supplyQty
         );
@@ -1858,15 +1914,17 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.refund(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
@@ -1904,13 +1962,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -1921,14 +1979,16 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.cancel(voucherID, users.seller.address);
-        await utils.complain(voucherID, users.buyer.address);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
@@ -1966,13 +2026,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -1983,16 +2043,18 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.refund(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedBuyerDeposit = new BN(0);
@@ -2026,13 +2088,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -2043,17 +2105,19 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.refund(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
 
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
@@ -2089,13 +2153,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -2105,15 +2169,17 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.refund(voucherID, users.buyer.address);
+        await utils.refund(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedBuyerDeposit = new BN(0);
@@ -2145,13 +2211,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -2162,15 +2228,17 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
@@ -2206,13 +2274,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -2222,15 +2290,17 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(0);
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit); // 0.04
@@ -2261,13 +2331,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -2278,16 +2348,18 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(0);
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit); // 0.04
@@ -2319,13 +2391,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -2335,17 +2407,19 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(0);
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
@@ -2383,13 +2457,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -2399,17 +2473,19 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
-        await utils.complain(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.complain(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(0);
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
@@ -2447,13 +2523,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -2464,16 +2540,18 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(0);
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
@@ -2509,13 +2587,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
     });
@@ -2544,10 +2622,10 @@ describe('Cashier withdrawals ', () => {
       }
 
       beforeEach(async () => {
-        utils = UtilsBuilder.create()
+        utils = await UtilsBuilder.create()
           .ERC20withPermit()
           .ETHTKN()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
@@ -2555,8 +2633,6 @@ describe('Cashier withdrawals ', () => {
             contractBSNTokenPrice,
             contractBSNTokenDeposit
           );
-
-        const timestamp = await Utils.getCurrTimestamp();
 
         const supplyQty = 1;
         const tokensToMint = new BN(helpers.seller_deposit).mul(
@@ -2576,8 +2652,8 @@ describe('Cashier withdrawals ', () => {
 
         TOKEN_SUPPLY_ID = await utils.createOrder(
           users.seller,
-          timestamp,
-          timestamp + helpers.SECONDS_IN_DAY,
+          helpers.PROMISE_VALID_FROM,
+          helpers.PROMISE_VALID_TO,
           helpers.seller_deposit,
           supplyQty
         );
@@ -2607,15 +2683,17 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.refund(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
@@ -2631,16 +2709,14 @@ describe('Cashier withdrawals ', () => {
         await getBalancesDepositToken();
 
         // Payment should have been returned to buyer
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
-
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+          }
         );
 
         //Deposits
@@ -2667,13 +2743,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -2684,13 +2760,13 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.cancel(voucherID, users.seller.address);
-        await utils.complain(voucherID, users.buyer.address);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
@@ -2706,17 +2782,17 @@ describe('Cashier withdrawals ', () => {
 
         await getBalancesDepositToken();
 
+        const txReceipt = await withdrawTx.wait();
+
         // Payment should have been returned to buyer
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
-
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+          }
         );
 
         //Deposits
@@ -2743,13 +2819,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -2760,16 +2836,18 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.refund(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedBuyerDeposit = new BN(0);
@@ -2781,16 +2859,14 @@ describe('Cashier withdrawals ', () => {
         await getBalancesDepositToken();
 
         // Payment should have been returned to buyer
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
-
-            return true;
-          },
-          'Event LogWithdrawal was not emitted'
+          }
         );
 
         //Deposits
@@ -2817,13 +2893,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -2834,17 +2910,19 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.refund(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
 
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
@@ -2858,16 +2936,14 @@ describe('Cashier withdrawals ', () => {
         await getBalancesDepositToken();
 
         // Payment should have been returned to buyer
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
-
-            return true;
-          },
-          'Event LogWithdrawal was not emitted'
+          }
         );
 
         //Deposits
@@ -2894,13 +2970,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -2910,15 +2986,17 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.refund(voucherID, users.buyer.address);
+        await utils.refund(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedBuyerDeposit = new BN(0);
@@ -2928,16 +3006,14 @@ describe('Cashier withdrawals ', () => {
         await getBalancesDepositToken();
 
         // Payment should have been returned to buyer
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
-
-            return true;
-          },
-          'Event LogWithdrawal was not emitted'
+          }
         );
 
         //Deposits
@@ -2964,13 +3040,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -2981,15 +3057,17 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
@@ -3003,16 +3081,14 @@ describe('Cashier withdrawals ', () => {
         await getBalancesDepositToken();
 
         // Payment should have been returned to buyer
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
-
-            return true;
-          },
-          'Event LogWithdrawal was not emitted'
+          }
         );
 
         //Deposits
@@ -3039,13 +3115,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -3055,15 +3131,17 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit); // 0.04
         const expectedSellerPrice = new BN(helpers.product_price); //// 0.3
@@ -3073,16 +3151,14 @@ describe('Cashier withdrawals ', () => {
         await getBalancesDepositToken();
 
         // Payment should have been sent to seller
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
-
-            return true;
-          },
-          'Event LogWithdrawal was not emitted'
+          }
         );
 
         //Deposits
@@ -3109,13 +3185,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -3126,16 +3202,18 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit); // 0.04
         const expectedSellerPrice = new BN(helpers.product_price); // 0.3
@@ -3145,16 +3223,14 @@ describe('Cashier withdrawals ', () => {
         await getBalancesDepositToken();
 
         // Payment should have been sent to seller
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
-
-            return true;
-          },
-          'Event LogWithdrawal was not emitted'
+          }
         );
 
         //Deposits
@@ -3181,13 +3257,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -3197,17 +3273,19 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
           new BN(helpers.seller_deposit).div(new BN(2))
@@ -3223,16 +3301,14 @@ describe('Cashier withdrawals ', () => {
         await getBalancesDepositToken();
 
         // Payment should have been sent to seller
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
-
-            return true;
-          },
-          'Event LogWithdrawal was not emitted'
+          }
         );
 
         //Deposits
@@ -3259,13 +3335,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -3275,17 +3351,19 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
           new BN(helpers.seller_deposit).div(new BN(2))
@@ -3301,16 +3379,14 @@ describe('Cashier withdrawals ', () => {
         await getBalancesDepositToken();
 
         // Payment should have been sent to seller
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
-
-            return true;
-          },
-          'Event LogWithdrawal was not emitted'
+          }
         );
 
         //Deposits
@@ -3337,13 +3413,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -3354,16 +3430,18 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
           new BN(helpers.seller_deposit).div(new BN(2))
@@ -3377,16 +3455,14 @@ describe('Cashier withdrawals ', () => {
         await getBalancesDepositToken();
 
         // Payment should have been sent to seller
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
-
-            return true;
-          },
-          'Event LogWithdrawal was not emitted'
+          }
         );
 
         //Deposits
@@ -3413,13 +3489,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
     });
@@ -3448,10 +3524,10 @@ describe('Cashier withdrawals ', () => {
       }
 
       beforeEach(async () => {
-        utils = UtilsBuilder.create()
+        utils = await UtilsBuilder.create()
           .ERC20withPermit()
           .TKNETH()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
@@ -3459,8 +3535,6 @@ describe('Cashier withdrawals ', () => {
             contractBSNTokenPrice,
             ''
           );
-
-        const timestamp = await Utils.getCurrTimestamp();
 
         await utils.mintTokens(
           'contractBSNTokenPrice',
@@ -3470,8 +3544,8 @@ describe('Cashier withdrawals ', () => {
 
         TOKEN_SUPPLY_ID = await utils.createOrder(
           users.seller,
-          timestamp,
-          timestamp + helpers.SECONDS_IN_DAY,
+          helpers.PROMISE_VALID_FROM,
+          helpers.PROMISE_VALID_TO,
           helpers.seller_deposit,
           helpers.QTY_1
         );
@@ -3484,15 +3558,17 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.refund(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedSellerPrice = new BN(0);
@@ -3525,9 +3601,10 @@ describe('Cashier withdrawals ', () => {
         );
 
         //Deposits in ETH
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -3536,9 +3613,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -3564,13 +3639,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -3581,14 +3656,16 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.cancel(voucherID, users.seller.address);
-        await utils.complain(voucherID, users.buyer.address);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedSellerPrice = new BN(0);
@@ -3621,9 +3698,10 @@ describe('Cashier withdrawals ', () => {
         );
 
         //Deposits in ETH
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -3632,9 +3710,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -3660,13 +3736,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -3677,16 +3753,18 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.refund(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedSellerPrice = new BN(0);
@@ -3715,9 +3793,10 @@ describe('Cashier withdrawals ', () => {
         );
 
         //Deposits in ETH
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -3726,9 +3805,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -3754,13 +3831,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -3771,17 +3848,19 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.refund(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
 
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedSellerPrice = new BN(0);
@@ -3812,9 +3891,10 @@ describe('Cashier withdrawals ', () => {
         );
 
         //Deposits in ETH
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -3823,9 +3903,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -3851,13 +3929,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -3867,15 +3945,17 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.refund(voucherID, users.buyer.address);
+        await utils.refund(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedSellerPrice = new BN(0);
@@ -3902,9 +3982,10 @@ describe('Cashier withdrawals ', () => {
         );
 
         //Deposits in ETH
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -3913,9 +3994,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -3941,13 +4020,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -3958,15 +4037,17 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
         const expectedSellerPrice = new BN(0);
@@ -3997,9 +4078,10 @@ describe('Cashier withdrawals ', () => {
         );
 
         //Deposits in ETH
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -4008,9 +4090,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -4036,13 +4116,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -4052,15 +4132,17 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(0);
         const expectedSellerPrice = new BN(helpers.product_price); // 0.3
@@ -4087,9 +4169,10 @@ describe('Cashier withdrawals ', () => {
         );
 
         //Deposits in ETH
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -4098,9 +4181,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -4126,13 +4207,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -4143,16 +4224,18 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(0);
         const expectedSellerPrice = new BN(helpers.product_price); // 0.3
@@ -4179,9 +4262,10 @@ describe('Cashier withdrawals ', () => {
         );
 
         //Deposits in ETH
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -4190,9 +4274,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -4218,13 +4300,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -4234,17 +4316,19 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.complain(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(0);
         const expectedSellerPrice = new BN(helpers.product_price); // 0.3
@@ -4277,9 +4361,10 @@ describe('Cashier withdrawals ', () => {
         );
 
         //Deposits in ETH
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -4288,9 +4373,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -4316,13 +4399,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -4332,17 +4415,19 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
-        await utils.complain(voucherID, users.buyer.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.complain(voucherID, users.buyer.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(0);
         const expectedSellerPrice = new BN(helpers.product_price); // 0.3
@@ -4375,9 +4460,10 @@ describe('Cashier withdrawals ', () => {
         );
 
         //Deposits in ETH
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -4386,9 +4472,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -4414,13 +4498,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -4431,16 +4515,18 @@ describe('Cashier withdrawals ', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await utils.redeem(voucherID, users.buyer.address);
-        await utils.cancel(voucherID, users.seller.address);
+        await utils.redeem(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
 
         await timemachine.advanceTimeSeconds(60);
-        await utils.finalize(voucherID, users.deployer.address);
+        await utils.finalize(voucherID, users.deployer.signer);
 
         const withdrawTx = await utils.withdraw(
           voucherID,
-          users.deployer.address
+          users.deployer.signer
         );
+
+        const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerPrice = new BN(0);
         const expectedSellerPrice = new BN(helpers.product_price); // 0.3
@@ -4470,9 +4556,10 @@ describe('Cashier withdrawals ', () => {
         );
 
         //Deposits in ETH
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogWithdrawal',
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
               ev,
@@ -4481,9 +4568,7 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
-            return true;
-          },
-          'Amounts not distributed successfully'
+          }
         );
 
         assert.isTrue(
@@ -4509,13 +4594,13 @@ describe('Cashier withdrawals ', () => {
           'Cashier Contract is not empty'
         );
 
-        truffleAssert.eventEmitted(
-          withdrawTx,
-          'LogAmountDistribution',
-          () => {
-            return true;
-          },
-          'Event LogAmountDistribution was not emitted'
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            assert.isDefined(ev);
+          }
         );
       });
 
@@ -4546,22 +4631,21 @@ describe('Cashier withdrawals ', () => {
     describe('ETHETH', () => {
       before(async () => {
         await deployContracts();
+        await setPeriods();
 
-        utils = UtilsBuilder.create()
+        utils = await UtilsBuilder.create()
           .ETHETH()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
           );
 
-        const timestamp = await Utils.getCurrTimestamp();
-
         TOKEN_SUPPLY_ID = await utils.createOrder(
           users.seller,
-          timestamp,
-          timestamp + helpers.SECONDS_IN_DAY,
+          helpers.PROMISE_VALID_FROM,
+          helpers.PROMISE_VALID_TO,
           helpers.seller_deposit,
           helpers.QTY_10
         );
@@ -4578,40 +4662,35 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('[NEGATIVE] should revert if not called from the seller', async () => {
-        await truffleAssert.reverts(
-          contractBosonRouter.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID, {
-            from: users.attacker.address,
-          }),
-          truffleAssert.ErrorType.REVERT
+        const attackerInstance = contractBosonRouter.connect(
+          users.attacker.signer
         );
+
+        await expect(
+          attackerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
       });
 
       it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
-        let withdrawTx = await contractBosonRouter.requestCancelOrFaultVoucherSet(
-          TOKEN_SUPPLY_ID,
-          {
-            from: users.seller.address,
-          }
+        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+        let withdrawTx = await sellerInstance.requestCancelOrFaultVoucherSet(
+          TOKEN_SUPPLY_ID
         );
 
-        let internalTx = await truffleAssert.createTransactionResult(
-          contractCashier,
-          withdrawTx.tx
-        );
+        const txReceipt = await withdrawTx.wait();
 
         const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
           new BN(remQty)
         );
-        truffleAssert.eventEmitted(
-          internalTx,
-          'LogWithdrawal',
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerDeposit));
-
-            return true;
-          },
-          'Event LogWithdrawal was not emitted'
+          }
         );
       });
 
@@ -4642,30 +4721,26 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
-        await truffleAssert.reverts(
-          utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
-          truffleAssert.ErrorType.REVERT
-        );
+        await expect(
+          utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+        ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
       });
 
       it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
-        await truffleAssert.reverts(
-          contractBosonRouter.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID, {
-            from: users.seller.address,
-          }),
-          truffleAssert.ErrorType.REVERT
-        );
+        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+
+        await expect(
+          sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+        ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
       });
 
       it('[NEGATIVE] Should revert if called when contract is paused', async () => {
+        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
         await contractBosonRouter.pause();
 
-        await truffleAssert.reverts(
-          contractBosonRouter.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID, {
-            from: users.seller.address,
-          }),
-          truffleAssert.ErrorType.REVERT
-        );
+        await expect(
+          sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+        ).to.be.revertedWith(revertReasons.PAUSED);
       });
     });
 
@@ -4673,10 +4748,11 @@ describe('Cashier withdrawals ', () => {
       describe('TKNTKN', () => {
         before(async () => {
           await deployContracts();
-          utils = UtilsBuilder.create()
+          await setPeriods();
+          utils = await UtilsBuilder.create()
             .ERC20withPermit()
             .TKNTKN()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -4684,8 +4760,6 @@ describe('Cashier withdrawals ', () => {
               contractBSNTokenPrice,
               contractBSNTokenDeposit
             );
-
-          const timestamp = await Utils.getCurrTimestamp();
 
           tokensToMintSeller = new BN(helpers.seller_deposit).mul(
             new BN(helpers.QTY_10)
@@ -4713,8 +4787,8 @@ describe('Cashier withdrawals ', () => {
 
           TOKEN_SUPPLY_ID = await utils.createOrder(
             users.seller,
-            timestamp,
-            timestamp + helpers.SECONDS_IN_DAY,
+            helpers.PROMISE_VALID_FROM,
+            helpers.PROMISE_VALID_TO,
             helpers.seller_deposit,
             helpers.QTY_10
           );
@@ -4731,44 +4805,38 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('[NEGATIVE] should revert if not called from the seller', async () => {
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCancelOrFaultVoucherSet(
-              TOKEN_SUPPLY_ID,
-              {
-                from: users.attacker.address,
-              }
-            ),
-            truffleAssert.ErrorType.REVERT
+          const attackerInstance = contractBosonRouter.connect(
+            users.attacker.signer
           );
+
+          await expect(
+            attackerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
         });
 
         it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
-          let withdrawTx = await contractBosonRouter.requestCancelOrFaultVoucherSet(
-            TOKEN_SUPPLY_ID,
-            {
-              from: users.seller.address,
-            }
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
           );
+
+          let withdrawTx = await sellerInstance.requestCancelOrFaultVoucherSet(
+            TOKEN_SUPPLY_ID
+          );
+
+          const txReceipt = await withdrawTx.wait();
 
           const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
             new BN(remQty)
           );
 
-          const internalTx = await truffleAssert.createTransactionResult(
+          eventUtils.assertEventEmitted(
+            txReceipt,
             contractBSNTokenDeposit,
-            withdrawTx.tx
-          );
-
-          truffleAssert.eventEmitted(
-            internalTx,
-            'Transfer',
+            eventNames.TRANSFER,
             (ev) => {
               assert.equal(ev.to, users.seller.address, 'Incorrect Payee');
               assert.isTrue(ev.value.eq(expectedSellerDeposit));
-
-              return true;
-            },
-            'Event Transfer was not emitted'
+            }
           );
         });
 
@@ -4814,46 +4882,42 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
-          await truffleAssert.reverts(
-            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
         });
 
         it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCancelOrFaultVoucherSet(
-              TOKEN_SUPPLY_ID,
-              {
-                from: users.seller.address,
-              }
-            ),
-            truffleAssert.ErrorType.REVERT
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
           );
+
+          await expect(
+            sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
         });
 
         it('[NEGATIVE] Should revert if called when contract is paused', async () => {
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
           await contractBosonRouter.pause();
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCancelOrFaultVoucherSet(
-              TOKEN_SUPPLY_ID,
-              {
-                from: users.seller.address,
-              }
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.PAUSED);
         });
       });
 
       describe('ETHTKN', () => {
         before(async () => {
           await deployContracts();
-          utils = UtilsBuilder.create()
+          await setPeriods();
+
+          utils = await UtilsBuilder.create()
             .ERC20withPermit()
             .ETHTKN()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -4861,8 +4925,6 @@ describe('Cashier withdrawals ', () => {
               contractBSNTokenPrice,
               contractBSNTokenDeposit
             );
-
-          const timestamp = await Utils.getCurrTimestamp();
 
           tokensToMintSeller = new BN(helpers.seller_deposit).mul(
             new BN(helpers.QTY_10)
@@ -4884,8 +4946,8 @@ describe('Cashier withdrawals ', () => {
 
           TOKEN_SUPPLY_ID = await utils.createOrder(
             users.seller,
-            timestamp,
-            timestamp + helpers.SECONDS_IN_DAY,
+            helpers.PROMISE_VALID_FROM,
+            helpers.PROMISE_VALID_TO,
             helpers.seller_deposit,
             helpers.QTY_10
           );
@@ -4902,44 +4964,38 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('[NEGATIVE] should revert if not called from the seller', async () => {
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCancelOrFaultVoucherSet(
-              TOKEN_SUPPLY_ID,
-              {
-                from: users.attacker.address,
-              }
-            ),
-            truffleAssert.ErrorType.REVERT
+          const attackerInstance = contractBosonRouter.connect(
+            users.attacker.signer
           );
+
+          await expect(
+            attackerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
         });
 
         it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
-          let withdrawTx = await contractBosonRouter.requestCancelOrFaultVoucherSet(
-            TOKEN_SUPPLY_ID,
-            {
-              from: users.seller.address,
-            }
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
+          let withdrawTx = await sellerInstance.requestCancelOrFaultVoucherSet(
+            TOKEN_SUPPLY_ID
           );
 
           const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
             new BN(remQty)
           );
 
-          const internalTx = await truffleAssert.createTransactionResult(
-            contractBSNTokenDeposit,
-            withdrawTx.tx
-          );
+          const txReceipt = await withdrawTx.wait();
 
-          truffleAssert.eventEmitted(
-            internalTx,
-            'Transfer',
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            contractBSNTokenDeposit,
+            eventNames.TRANSFER,
             (ev) => {
               assert.equal(ev.to, users.seller.address, 'Incorrect Payee');
               assert.isTrue(ev.value.eq(expectedSellerDeposit));
-
-              return true;
-            },
-            'Event Transfer was not emitted'
+            }
           );
         });
 
@@ -4985,46 +5041,43 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
-          await truffleAssert.reverts(
-            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
         });
 
         it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCancelOrFaultVoucherSet(
-              TOKEN_SUPPLY_ID,
-              {
-                from: users.seller.address,
-              }
-            ),
-            truffleAssert.ErrorType.REVERT
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
           );
+
+          await expect(
+            sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
         });
 
         it('[NEGATIVE] Should revert if called when contract is paused', async () => {
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
           await contractBosonRouter.pause();
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCancelOrFaultVoucherSet(
-              TOKEN_SUPPLY_ID,
-              {
-                from: users.seller.address,
-              }
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.PAUSED);
         });
       });
 
       describe('TKNETH', () => {
         before(async () => {
           await deployContracts();
-          utils = UtilsBuilder.create()
+          await setPeriods();
+
+          utils = await UtilsBuilder.create()
             .ERC20withPermit()
             .TKNETH()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -5033,8 +5086,6 @@ describe('Cashier withdrawals ', () => {
               ''
             );
 
-          const timestamp = await Utils.getCurrTimestamp();
-
           tokensToMintBuyer = new BN(helpers.product_price).mul(
             new BN(helpers.QTY_10)
           );
@@ -5047,8 +5098,8 @@ describe('Cashier withdrawals ', () => {
 
           TOKEN_SUPPLY_ID = await utils.createOrder(
             users.seller,
-            timestamp,
-            timestamp + helpers.SECONDS_IN_DAY,
+            helpers.PROMISE_VALID_FROM,
+            helpers.PROMISE_VALID_TO,
             helpers.seller_deposit,
             helpers.QTY_10
           );
@@ -5065,42 +5116,38 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('[NEGATIVE] should revert if not called from the seller', async () => {
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCancelOrFaultVoucherSet(
-              TOKEN_SUPPLY_ID,
-              {
-                from: users.attacker.address,
-              }
-            ),
-            truffleAssert.ErrorType.REVERT
+          const attackerInstance = contractBosonRouter.connect(
+            users.attacker.signer
           );
+
+          await expect(
+            attackerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
         });
 
         it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
-          let withdrawTx = await contractBosonRouter.requestCancelOrFaultVoucherSet(
-            TOKEN_SUPPLY_ID,
-            {
-              from: users.seller.address,
-            }
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
           );
 
-          const internalTx = await truffleAssert.createTransactionResult(
-            contractCashier,
-            withdrawTx.tx
+          let withdrawTx = await sellerInstance.requestCancelOrFaultVoucherSet(
+            TOKEN_SUPPLY_ID
           );
+
+          const txReceipt = await withdrawTx.wait();
+
           const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
             new BN(remQty)
           );
-          truffleAssert.eventEmitted(
-            internalTx,
-            'LogWithdrawal',
+
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            Cashier,
+            eventNames.LOG_WITHDRAWAL,
             (ev) => {
               assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
               assert.isTrue(ev._payment.eq(expectedSellerDeposit));
-
-              return true;
-            },
-            'Event LogWithdrawal was not emitted'
+            }
           );
         });
 
@@ -5131,36 +5178,31 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
-          await truffleAssert.reverts(
-            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
         });
 
         it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCancelOrFaultVoucherSet(
-              TOKEN_SUPPLY_ID,
-              {
-                from: users.seller.address,
-              }
-            ),
-            truffleAssert.ErrorType.REVERT
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
           );
+
+          await expect(
+            sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
         });
 
         it('[NEGATIVE] Should revert if called when contract is paused', async () => {
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
           await contractBosonRouter.pause();
 
-          await truffleAssert.reverts(
-            contractBosonRouter.requestCancelOrFaultVoucherSet(
-              TOKEN_SUPPLY_ID,
-              {
-                from: users.seller.address,
-              }
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.PAUSED);
         });
       });
     });
@@ -5172,39 +5214,39 @@ describe('Cashier withdrawals ', () => {
     describe('Common', () => {
       before(async () => {
         await deployContracts();
-        utils = UtilsBuilder.create()
+        await setPeriods();
+
+        utils = await UtilsBuilder.create()
           .ETHETH()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
           );
 
-        const timestamp = await Utils.getCurrTimestamp();
-
         TOKEN_SUPPLY_ID = await utils.createOrder(
           users.seller,
-          timestamp,
-          timestamp + helpers.SECONDS_IN_DAY,
+          helpers.PROMISE_VALID_FROM,
+          helpers.PROMISE_VALID_TO,
           helpers.seller_deposit,
           helpers.QTY_10
         );
       });
 
       it('[NEGATIVE] Disaster state should not be set when contract is not paused', async () => {
-        await truffleAssert.reverts(
-          contractCashier.setDisasterState(),
-          truffleAssert.ErrorType.REVERT
+        await expect(contractCashier.setDisasterState()).to.be.revertedWith(
+          revertReasons.NOT_PAUSED
         );
       });
 
       it('[NEGATIVE] Disaster state should not be set from attacker', async () => {
+        const attackerInstance = contractCashier.connect(users.attacker.signer);
+
         await contractBosonRouter.pause();
 
-        await truffleAssert.reverts(
-          contractCashier.setDisasterState({from: users.attacker.address}),
-          truffleAssert.ErrorType.REVERT
+        await expect(attackerInstance.setDisasterState()).to.be.revertedWith(
+          revertReasons.UNAUTHORIZED_OWNER
         );
       });
     });
@@ -5212,21 +5254,21 @@ describe('Cashier withdrawals ', () => {
     describe('Withdraw ETH', () => {
       before(async () => {
         await deployContracts();
-        utils = UtilsBuilder.create()
+        await setPeriods();
+
+        utils = await UtilsBuilder.create()
           .ETHETH()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
           );
 
-        const timestamp = await Utils.getCurrTimestamp();
-
         TOKEN_SUPPLY_ID = await utils.createOrder(
           users.seller,
-          timestamp,
-          timestamp + helpers.SECONDS_IN_DAY,
+          helpers.PROMISE_VALID_FROM,
+          helpers.PROMISE_VALID_TO,
           helpers.seller_deposit,
           helpers.QTY_10
         );
@@ -5239,72 +5281,88 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('[NEGATIVE] withdrawEthOnDisaster should not be executable before admin allows to', async () => {
-        await truffleAssert.reverts(
-          contractCashier.withdrawEthOnDisaster({from: users.buyer.address}),
-          truffleAssert.ErrorType.REVERT
+        const buyerInstance = contractCashier.connect(users.buyer.signer);
+
+        await expect(buyerInstance.withdrawEthOnDisaster()).to.be.revertedWith(
+          revertReasons.MANUAL_WITHDRAW_NOT_ALLOWED
         );
       });
 
       it('Admin should be able to set the Cashier at disaster state', async () => {
         const tx = await contractCashier.setDisasterState();
+        const txReceipt = await tx.wait();
 
-        truffleAssert.eventEmitted(tx, 'LogDisasterStateSet', (ev) => {
-          return ev._triggeredBy == users.deployer.address;
-        });
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          contractCashier,
+          eventNames.LOG_DISASTER_STATE_SET,
+          (ev) => {
+            assert.equal(ev._triggeredBy, users.deployer.address);
+          }
+        );
       });
 
       it('Buyer should be able to withdraw all the funds locked in escrow', async () => {
+        const buyerInstance = contractCashier.connect(users.buyer.signer);
+
         const expectedBuyerBalance = new BN(helpers.product_price)
           .add(new BN(helpers.buyer_deposit))
           .mul(new BN(vouchersToBuy));
-        const tx = await contractCashier.withdrawEthOnDisaster({
-          from: users.buyer.address,
-        });
 
-        truffleAssert.eventEmitted(tx, 'LogWithdrawEthOnDisaster', (ev) => {
-          assert.equal(
-            expectedBuyerBalance.toString(),
-            ev._amount.toString(),
-            "Buyer withdrawn funds don't match"
-          );
-          assert.equal(
-            users.buyer.address,
-            ev._triggeredBy,
-            'LogWithdrawEthOnDisaster not triggered properly'
-          );
+        const tx = await buyerInstance.withdrawEthOnDisaster();
 
-          return true;
-        });
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          contractCashier,
+          eventNames.LOG_WITHDRAW_ETH_ON_DISASTER,
+          (ev) => {
+            assert.equal(
+              expectedBuyerBalance.toString(),
+              ev._amount.toString(),
+              "Buyer withdrawn funds don't match"
+            );
+            assert.equal(
+              users.buyer.address,
+              ev._triggeredBy,
+              'LogWithdrawEthOnDisaster not triggered properly'
+            );
+          }
+        );
       });
 
       it('Seller should be able to withdraw all the funds locked in escrow', async () => {
+        const sellerInstance = contractCashier.connect(users.seller.signer);
         const expectedSellerBalance = new BN(helpers.seller_deposit).mul(
           new BN(helpers.QTY_10)
         );
-        const tx = await contractCashier.withdrawEthOnDisaster({
-          from: users.seller.address,
-        });
+        const tx = await sellerInstance.withdrawEthOnDisaster();
 
-        truffleAssert.eventEmitted(tx, 'LogWithdrawEthOnDisaster', (ev) => {
-          assert.equal(
-            expectedSellerBalance.toString(),
-            ev._amount.toString(),
-            "Buyer withdrawn funds don't match"
-          );
-          assert.equal(
-            users.seller.address,
-            ev._triggeredBy,
-            'LogWithdrawEthOnDisaster not triggered properly'
-          );
-
-          return true;
-        });
+        const txReceipt = await tx.wait();
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          contractCashier,
+          eventNames.LOG_WITHDRAW_ETH_ON_DISASTER,
+          (ev) => {
+            assert.equal(
+              expectedSellerBalance.toString(),
+              ev._amount.toString(),
+              "Buyer withdrawn funds don't match"
+            );
+            assert.equal(
+              users.seller.address,
+              ev._triggeredBy,
+              'LogWithdrawEthOnDisaster not triggered properly'
+            );
+          }
+        );
       });
 
       it('[NEGATIVE] withdrawEthOnDisaster should revert if funds already withdrawn for an account', async () => {
-        await truffleAssert.reverts(
-          contractCashier.withdrawEthOnDisaster({from: users.buyer.address}),
-          truffleAssert.ErrorType.REVERT
+        const buyerInstance = contractCashier.connect(users.buyer.signer);
+        await expect(buyerInstance.withdrawEthOnDisaster()).to.be.revertedWith(
+          revertReasons.ESCROW_EMPTY
         );
       });
     });
@@ -5312,10 +5370,12 @@ describe('Cashier withdrawals ', () => {
     describe('Withdraw TKN', () => {
       before(async () => {
         await deployContracts();
-        utils = UtilsBuilder.create()
+        await setPeriods();
+
+        utils = await UtilsBuilder.create()
           .ERC20withPermit()
           .TKNTKN()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
@@ -5323,8 +5383,6 @@ describe('Cashier withdrawals ', () => {
             contractBSNTokenPrice,
             contractBSNTokenDeposit
           );
-
-        const timestamp = await Utils.getCurrTimestamp();
 
         const tokensToMintSeller = new BN(helpers.seller_deposit).mul(
           new BN(helpers.QTY_10)
@@ -5351,8 +5409,8 @@ describe('Cashier withdrawals ', () => {
 
         TOKEN_SUPPLY_ID = await utils.createOrder(
           users.seller,
-          timestamp,
-          timestamp + helpers.SECONDS_IN_DAY,
+          helpers.PROMISE_VALID_FROM,
+          helpers.PROMISE_VALID_TO,
           helpers.seller_deposit,
           helpers.QTY_10
         );
@@ -5365,21 +5423,25 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('[NEGATIVE] withdrawTokensOnDisaster should not be executable before admin allows to', async () => {
-        await truffleAssert.reverts(
-          contractCashier.withdrawTokensOnDisaster(
-            contractBSNTokenPrice.address,
-            {from: users.buyer.address}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+        const buyerInstance = contractCashier.connect(users.buyer.signer);
+
+        await expect(
+          buyerInstance.withdrawTokensOnDisaster(contractBSNTokenPrice.address)
+        ).to.be.revertedWith(revertReasons.MANUAL_WITHDRAW_NOT_ALLOWED);
       });
 
       it('Admin should be able to set the Cashier at disaster state', async () => {
         const tx = await contractCashier.setDisasterState();
+        const txReceipt = await tx.wait();
 
-        truffleAssert.eventEmitted(tx, 'LogDisasterStateSet', (ev) => {
-          return ev._triggeredBy == users.deployer.address;
-        });
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          contractCashier,
+          eventNames.LOG_DISASTER_STATE_SET,
+          (ev) => {
+            assert.equal(ev._triggeredBy, users.deployer.address);
+          }
+        );
       });
 
       it('Buyer should be able to withdraw all the funds locked in escrow', async () => {
@@ -5390,18 +5452,18 @@ describe('Cashier withdrawals ', () => {
           new BN(vouchersToBuy)
         );
 
-        const txTknPrice = await contractCashier.withdrawTokensOnDisaster(
-          contractBSNTokenPrice.address,
-          {from: users.buyer.address}
-        );
-        const txTknDeposit = await contractCashier.withdrawTokensOnDisaster(
-          contractBSNTokenDeposit.address,
-          {from: users.buyer.address}
+        const buyerInstance = contractCashier.connect(users.buyer.signer);
+
+        const txTknPrice = await buyerInstance.withdrawTokensOnDisaster(
+          contractBSNTokenPrice.address
         );
 
-        truffleAssert.eventEmitted(
-          txTknPrice,
-          'LogWithdrawTokensOnDisaster',
+        const receiptTknPrice = await txTknPrice.wait();
+
+        eventUtils.assertEventEmitted(
+          receiptTknPrice,
+          contractCashier,
+          eventNames.LOG_WITHDRAW_TOKENS_ON_DISASTER,
           (ev) => {
             assert.equal(
               expectedTknPrice.toString(),
@@ -5413,14 +5475,19 @@ describe('Cashier withdrawals ', () => {
               ev._triggeredBy,
               'LogWithdrawTokensOnDisaster not triggered properly'
             );
-
-            return true;
           }
         );
 
-        truffleAssert.eventEmitted(
-          txTknDeposit,
-          'LogWithdrawTokensOnDisaster',
+        const txTknDeposit = await buyerInstance.withdrawTokensOnDisaster(
+          contractBSNTokenDeposit.address
+        );
+
+        const receiptTknDeposit = await txTknDeposit.wait();
+
+        eventUtils.assertEventEmitted(
+          receiptTknDeposit,
+          contractCashier,
+          eventNames.LOG_WITHDRAW_TOKENS_ON_DISASTER,
           (ev) => {
             assert.equal(
               expectedTknDeposit.toString(),
@@ -5432,45 +5499,45 @@ describe('Cashier withdrawals ', () => {
               ev._triggeredBy,
               'LogWithdrawTokensOnDisaster not triggered properly'
             );
-
-            return true;
           }
         );
       });
 
       it('Seller should be able to withdraw all the funds locked in escrow', async () => {
+        const sellerInstance = contractCashier.connect(users.seller.signer);
         const expectedSellerBalance = new BN(helpers.seller_deposit).mul(
           new BN(helpers.QTY_10)
         );
-        const tx = await contractCashier.withdrawTokensOnDisaster(
-          contractBSNTokenDeposit.address,
-          {from: users.seller.address}
+        const tx = await sellerInstance.withdrawTokensOnDisaster(
+          contractBSNTokenDeposit.address
         );
 
-        truffleAssert.eventEmitted(tx, 'LogWithdrawTokensOnDisaster', (ev) => {
-          assert.equal(
-            expectedSellerBalance.toString(),
-            ev._amount.toString(),
-            "Buyer withdrawn funds don't match"
-          );
-          assert.equal(
-            users.seller.address,
-            ev._triggeredBy,
-            'LogWithdrawTokensOnDisaster not triggered properly'
-          );
+        const txReceipt = await tx.wait();
 
-          return true;
-        });
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          contractCashier,
+          eventNames.LOG_WITHDRAW_TOKENS_ON_DISASTER,
+          (ev) => {
+            assert.equal(
+              expectedSellerBalance.toString(),
+              ev._amount.toString(),
+              "Buyer withdrawn funds don't match"
+            );
+            assert.equal(
+              users.seller.address,
+              ev._triggeredBy,
+              'LogWithdrawTokensOnDisaster not triggered properly'
+            );
+          }
+        );
       });
 
       it('Escrow amount should revert if funds already withdrawn for an account', async () => {
-        await truffleAssert.reverts(
-          contractCashier.withdrawTokensOnDisaster(
-            contractBSNTokenPrice.address,
-            {from: users.buyer.address}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+        const buyerInstance = contractCashier.connect(users.buyer.signer);
+        await expect(
+          buyerInstance.withdrawTokensOnDisaster(contractBSNTokenPrice.address)
+        ).to.be.revertedWith(revertReasons.ESCROW_EMPTY);
       });
     });
   });

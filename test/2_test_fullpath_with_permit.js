@@ -28,7 +28,7 @@ const BN = ethers.BigNumber.from;
 let utils;
 let users;
 
-describe.only('Cashier and VoucherKernel', () => {
+describe('Cashier and VoucherKernel', () => {
   before(async () => {
     const signers = await hre.ethers.getSigners();
     users = new Users(signers);

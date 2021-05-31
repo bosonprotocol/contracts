@@ -18,6 +18,9 @@ const eventNames = {
   TRANSFER_SINGLE: 'TransferSingle',
   TRANSFER: 'Transfer',
   TRANSFER_BATCH: 'TransferBatch',
+  LOG_DISASTER_STATE_SET: 'LogDisasterStateSet',
+  LOG_WITHDRAW_TOKENS_ON_DISASTER: 'LogWithdrawTokensOnDisaster',
+  LOG_WITHDRAW_ETH_ON_DISASTER: 'LogWithdrawEthOnDisaster',
 };
 
 function findEventByName(txReceipt, eventName, ...eventFields) {
@@ -72,10 +75,16 @@ function assertEventEmitted(receipt, factory, eventName, callback) {
 
         if (event.name == eventName) {
           found = true;
-          callback(interface.parseLog(receipt.logs[log]).args);
+          const eventArgs = interface.parseLog(receipt.logs[log]).args;
+          try {
+            callback(eventArgs);
+          } catch (e) {
+            throw new Error(e);
+          }
         }
-      } catch (error) {
-        continue;
+      } catch (e) {
+        if (e.message.includes('no matching event')) continue;
+        throw new Error(e);
       }
     }
   }
