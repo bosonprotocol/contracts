@@ -816,7 +816,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
         notZeroAddress(_voucherKernelAddress)
     {
         voucherKernelAddress = _voucherKernelAddress;
-    
+
         emit LogVoucherKernelSet(_voucherKernelAddress, msg.sender);
     }
 

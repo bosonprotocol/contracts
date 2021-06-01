@@ -1,7 +1,6 @@
 const ethers = require('hardhat').ethers;
 const {assert, expect} = require('chai');
 const {ecsign} = require('ethereumjs-util');
-const truffleAssert = require('truffle-assertions');
 
 const constants = require('../testHelpers/constants');
 const timemachine = require('../testHelpers/timemachine');
@@ -922,9 +921,9 @@ describe('Cashier and VoucherKernel', () => {
             users.seller.signer
           );
 
-          await truffleAssert.fails(
+          await expect(
             sellerInstance.requestCreateOrderTKNETH(
-              '',
+            '',
               [
                 constants.PROMISE_VALID_FROM,
                 constants.PROMISE_VALID_TO,
@@ -935,7 +934,7 @@ describe('Cashier and VoucherKernel', () => {
               ],
               {value: txValue.toString()}
             )
-          );
+          ).to.be.reverted;
         });
 
         it('[NEGATIVE] Should fail if token price contract is zero address', async () => {
