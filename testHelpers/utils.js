@@ -65,10 +65,13 @@ class Utils {
     );
 
     const txReceipt = await txOrder.wait();
-    const eventArgs = events.getEventArgs(
+    let eventArgs;
+
+    events.assertEventEmitted(
       txReceipt,
       this.factories.BosonRouter,
-      events.eventNames.LOG_ORDER_CREATED
+      events.eventNames.LOG_ORDER_CREATED,
+      e => eventArgs = e
     );
 
     return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
@@ -123,10 +126,13 @@ class Utils {
     );
 
     const txReceipt = await txOrder.wait();
-    const eventArgs = events.getEventArgs(
+    let eventArgs;
+
+    events.assertEventEmitted(
       txReceipt,
       this.factories.BosonRouter,
-      events.eventNames.LOG_ORDER_CREATED
+      events.eventNames.LOG_ORDER_CREATED,
+      e => eventArgs = e
     );
 
     return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
@@ -180,10 +186,13 @@ class Utils {
     );
 
     const txReceipt = await txOrder.wait();
-    const eventArgs = events.getEventArgs(
+    let eventArgs;
+
+    events.assertEventEmitted(
       txReceipt,
       this.factories.BosonRouter,
-      events.eventNames.LOG_ORDER_CREATED
+      events.eventNames.LOG_ORDER_CREATED,
+      e => eventArgs = e
     );
 
     return eventArgs._tokenIdSupply.toString();
@@ -236,10 +245,13 @@ class Utils {
     );
 
     const txReceipt = await txOrder.wait();
-    const eventArgs = events.getEventArgs(
+    let eventArgs;
+
+    events.assertEventEmitted(
       txReceipt,
       this.factories.BosonRouter,
-      events.eventNames.LOG_ORDER_CREATED
+      events.eventNames.LOG_ORDER_CREATED,
+      e => eventArgs = e
     );
 
     return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
@@ -272,10 +284,13 @@ class Utils {
     );
 
     const txReceipt = await txOrder.wait();
-    const eventArgs = events.getEventArgs(
+    let eventArgs;
+
+    events.assertEventEmitted(
       txReceipt,
       this.factories.BosonRouter,
-      events.eventNames.LOG_ORDER_CREATED
+      events.eventNames.LOG_ORDER_CREATED,
+      e => eventArgs = e
     );
 
     return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
@@ -340,10 +355,13 @@ class Utils {
     );
 
     const txReceipt = await commitTx.wait();
-    const eventArgs = events.getEventArgs(
+    let eventArgs;
+
+    events.assertEventEmitted(
       txReceipt,
       this.factories.VoucherKernel,
-      events.eventNames.LOG_VOUCHER_DELIVERED
+      events.eventNames.LOG_VOUCHER_DELIVERED,
+      e => eventArgs = e
     );
 
     return eventArgs._tokenIdVoucher;
@@ -385,10 +403,13 @@ class Utils {
     );
 
     const txReceipt = await commitTx.wait();
-    const eventArgs = events.getEventArgs(
+    let eventArgs;
+
+    events.assertEventEmitted(
       txReceipt,
       this.factories.VoucherKernel,
-      events.eventNames.LOG_VOUCHER_DELIVERED
+      events.eventNames.LOG_VOUCHER_DELIVERED,
+      e => eventArgs = e
     );
 
     return eventArgs._tokenIdVoucher;
@@ -424,10 +445,13 @@ class Utils {
     );
 
     const txReceipt = await txOrder.wait();
-    const eventArgs = events.getEventArgs(
+    let eventArgs;
+
+    events.assertEventEmitted(
       txReceipt,
       this.factories.VoucherKernel,
-      events.eventNames.LOG_VOUCHER_DELIVERED
+      events.eventNames.LOG_VOUCHER_DELIVERED,
+      e => eventArgs = e
     );
 
     return eventArgs._tokenIdVoucher;
@@ -448,10 +472,13 @@ class Utils {
     );
 
     const txReceipt = await commitTx.wait();
-    const eventArgs = events.getEventArgs(
+    let eventArgs;
+
+    events.assertEventEmitted(
       txReceipt,
       this.factories.VoucherKernel,
-      events.eventNames.LOG_VOUCHER_DELIVERED
+      events.eventNames.LOG_VOUCHER_DELIVERED,
+      e => eventArgs = e
     );
 
     return returnTx ? txReceipt : eventArgs._tokenIdVoucher;
@@ -487,10 +514,13 @@ class Utils {
     );
 
     const txReceipt = await txOrder.wait();
-    const eventArgs = events.getEventArgs(
+    let eventArgs;
+
+    events.assertEventEmitted(
       txReceipt,
       this.factories.VoucherKernel,
-      events.eventNames.LOG_VOUCHER_DELIVERED
+      events.eventNames.LOG_VOUCHER_DELIVERED,
+      e => eventArgs = e
     );
 
     return eventArgs._tokenIdVoucher;
