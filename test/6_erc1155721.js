@@ -1,19 +1,23 @@
 const ethers = require('hardhat').ethers;
 
-const {assert} = require('chai');
-const truffleAssert = require('truffle-assertions');
+const {assert, expect} = require('chai');
 
 const constants = require('../testHelpers/constants');
 const Users = require('../testHelpers/users');
 const UtilsBuilder = require('../testHelpers/utilsBuilder');
 const Utils = require('../testHelpers/utils');
 
-let ERC1155ERC721; //= artifacts.require('ERC1155ERC721');
-let VoucherKernel; //= artifacts.require('VoucherKernel');
-let Cashier; //= artifacts.require('Cashier');
-let BosonRouter; //= artifacts.require('BosonRouter');
-let MockERC20Permit; //= artifacts.require('MockERC20Permit');
-let FundLimitsOracle; //= artifacts.require('FundLimitsOracle');
+let ERC1155ERC721;
+let VoucherKernel;
+let Cashier;
+let BosonRouter;
+let MockERC20Permit;
+let FundLimitsOracle;
+
+const revertReasons = require('../testHelpers/revertReasons');
+const eventUtils = require('../testHelpers/events');
+const {eventNames} = require('../testHelpers/events');
+const fnSignatures = require('../testHelpers/functionSignatures');
 
 let utils;
 
@@ -24,6 +28,13 @@ describe('ERC1155ERC721', () => {
   before(async () => {
     const signers = await ethers.getSigners();
     users = new Users(signers);
+
+    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherKernel = await ethers.getContractFactory('VoucherKernel');
+    Cashier = await ethers.getContractFactory('Cashier');
+    BosonRouter = await ethers.getContractFactory('BosonRouter');
+    FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
+    MockERC20Permit = await ethers.getContractFactory('MockERC20Permit');
   });
 
   let contractERC1155ERC721,
@@ -37,31 +48,42 @@ describe('ERC1155ERC721', () => {
   let timestamp;
 
   async function deployContracts() {
-    contractFundLimitsOracle = await FundLimitsOracle.new();
-    contractERC1155ERC721 = await ERC1155ERC721.new();
-    contractVoucherKernel = await VoucherKernel.new(
+    const sixtySeconds = 60;
+
+    contractFundLimitsOracle = await FundLimitsOracle.deploy();
+    contractERC1155ERC721 = await ERC1155ERC721.deploy();
+    contractVoucherKernel = await VoucherKernel.deploy(
       contractERC1155ERC721.address
     );
-    contractCashier = await Cashier.new(contractVoucherKernel.address);
-    contractBosonRouter = await BosonRouter.new(
+    contractCashier = await Cashier.deploy(contractVoucherKernel.address);
+    contractBosonRouter = await BosonRouter.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
     );
-    contractBSNTokenPrice = await MockERC20Permit.new(
+
+    contractBSNTokenPrice = await MockERC20Permit.deploy(
       'BosonTokenPrice',
       'BPRC'
     );
-    contractBSNTokenDeposit = await MockERC20Permit.new(
+
+    contractBSNTokenDeposit = await MockERC20Permit.deploy(
       'BosonTokenDeposit',
       'BDEP'
     );
+
+    await contractFundLimitsOracle.deployed();
+    await contractERC1155ERC721.deployed();
+    await contractVoucherKernel.deployed();
+    await contractCashier.deployed();
+    await contractBosonRouter.deployed();
+    await contractBSNTokenPrice.deployed();
+    await contractBSNTokenDeposit.deployed();
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
       'true'
     );
-
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
@@ -78,19 +100,17 @@ describe('ERC1155ERC721', () => {
       contractERC1155ERC721.address
     );
 
-    await contractVoucherKernel.setComplainPeriod(60); //60 seconds
-    await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
+    await contractVoucherKernel.setComplainPeriod(sixtySeconds);
+    await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
 
     await contractFundLimitsOracle.setTokenLimit(
       contractBSNTokenPrice.address,
       constants.TOKEN_LIMIT
     );
-
     await contractFundLimitsOracle.setTokenLimit(
       contractBSNTokenDeposit.address,
       constants.TOKEN_LIMIT
     );
-
     await contractFundLimitsOracle.setETHLimit(constants.ETHER_LIMIT);
   }
 
@@ -99,9 +119,9 @@ describe('ERC1155ERC721', () => {
       before(async () => {
         await deployContracts();
 
-        utils = UtilsBuilder.create()
+        utils = await UtilsBuilder.create()
           .ETHETH()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
@@ -127,13 +147,12 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[NEGATIVE][setApprovalForAll] Should revert if tries to set self as an operator', async () => {
-        await truffleAssert.reverts(
+        await expect(
           contractERC1155ERC721.setApprovalForAll(
             users.deployer.address,
             'true'
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+          )
+        ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
       });
 
       it('[setApprovalForAll] Should emit ApprovalForAll', async () => {
@@ -142,20 +161,26 @@ describe('ERC1155ERC721', () => {
           'true'
         );
 
-        truffleAssert.eventEmitted(tx, 'ApprovalForAll', (ev) => {
-          assert.equal(
-            ev._owner,
-            users.deployer.address,
-            'ev._owner not expected!'
-          );
-          assert.equal(
-            ev._operator,
-            contractVoucherKernel.address,
-            'ev._operator not expected!'
-          );
-          assert.equal(ev._approved, true, 'ev._value not expected!');
-          return true;
-        });
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          contractERC1155ERC721,
+          eventNames.APPROVAL_FOR_ALL,
+          (ev) => {
+            assert.equal(
+              ev._owner,
+              users.deployer.address,
+              'ev._owner not expected!'
+            );
+            assert.equal(
+              ev._operator,
+              contractVoucherKernel.address,
+              'ev._operator not expected!'
+            );
+            assert.equal(ev._approved, true, 'ev._value not expected!');
+          }
+        );
       });
 
       it('Should emit TransferSingle event', async () => {
@@ -168,27 +193,30 @@ describe('ERC1155ERC721', () => {
           true
         );
 
-        let internalTx = await truffleAssert.createTransactionResult(
+        eventUtils.assertEventEmitted(
+          txFillOrder,
           contractERC1155ERC721,
-          txFillOrder.tx
+          eventNames.TRANSFER_SINGLE,
+          (ev) => {
+            assert.equal(
+              ev._operator,
+              contractVoucherKernel.address,
+              '_operator not expected!'
+            );
+            assert.equal(
+              ev._from,
+              constants.ZERO_ADDRESS,
+              '_from not expected!'
+            );
+            assert.equal(ev._to, users.seller.address, '_to not expected!');
+            assert.equal(
+              ev._value.toString(),
+              constants.QTY_10,
+              '_value not expected!'
+            );
+            TOKEN_SUPPLY_ID = ev._id.toString();
+          }
         );
-
-        truffleAssert.eventEmitted(internalTx, 'TransferSingle', (ev) => {
-          assert.equal(
-            ev._operator,
-            contractVoucherKernel.address,
-            '_operator not expected!'
-          );
-          assert.equal(ev._from, constants.ZERO_ADDRESS, '_from not expected!');
-          assert.equal(ev._to, users.seller.address, '_to not expected!');
-          assert.equal(
-            ev._value.toString(),
-            constants.QTY_10,
-            '_value not expected!'
-          );
-          TOKEN_SUPPLY_ID = ev._id.toString();
-          return true;
-        });
       });
 
       it('Should emit TransferSingle (burn 1155) && Transfer(mint 721)', async () => {
@@ -199,32 +227,41 @@ describe('ERC1155ERC721', () => {
           true
         );
 
-        let internalTx = await truffleAssert.createTransactionResult(
+        eventUtils.assertEventEmitted(
+          commitTx,
           contractERC1155ERC721,
-          commitTx.tx
+          eventNames.TRANSFER_SINGLE,
+          (ev) => {
+            assert.equal(
+              ev._operator,
+              contractVoucherKernel.address,
+              '_operator not expected!'
+            );
+            assert.equal(ev._from, users.seller.address, '_from not expected!');
+            assert.equal(ev._to, constants.ZERO_ADDRESS, '_to not expected!');
+            assert.equal(
+              ev._value.toString(),
+              constants.QTY_1,
+              '_value not expected!'
+            );
+            return true;
+          }
         );
 
-        truffleAssert.eventEmitted(internalTx, 'TransferSingle', (ev) => {
-          assert.equal(
-            ev._operator,
-            contractVoucherKernel.address,
-            '_operator not expected!'
-          );
-          assert.equal(ev._from, users.seller.address, '_from not expected!');
-          assert.equal(ev._to, constants.ZERO_ADDRESS, '_to not expected!');
-          assert.equal(
-            ev._value.toString(),
-            constants.QTY_1,
-            '_value not expected!'
-          );
-          return true;
-        });
-
-        truffleAssert.eventEmitted(internalTx, 'Transfer', (ev) => {
-          assert.equal(ev._from, constants.ZERO_ADDRESS, '_from not expected!');
-          assert.equal(ev._to, users.buyer.address, '_to not expected!');
-          return true;
-        });
+        eventUtils.assertEventEmitted(
+          commitTx,
+          contractERC1155ERC721,
+          eventNames.TRANSFER,
+          (ev) => {
+            assert.equal(
+              ev._from,
+              constants.ZERO_ADDRESS,
+              '_from not expected!'
+            );
+            assert.equal(ev._to, users.buyer.address, '_to not expected!');
+            return true;
+          }
+        );
       });
 
       it('Owner should approve transfer of erc721', async () => {
@@ -234,31 +271,37 @@ describe('ERC1155ERC721', () => {
           TOKEN_SUPPLY_ID
         );
 
-        const tx = await contractERC1155ERC721.approve(
-          users.other1.address,
-          token721,
-          {from: users.buyer.address}
+        const owner721Instance = contractERC1155ERC721.connect(
+          users.buyer.signer
         );
+        const tx = await owner721Instance.approve(
+          users.other1.address,
+          token721
+        );
+        const txReceipt = await tx.wait();
 
-        truffleAssert.eventEmitted(tx, 'Approval', (ev) => {
-          assert.equal(
-            ev._owner,
-            users.buyer.address,
-            'Owner not as expected!'
-          );
-          assert.equal(
-            ev._approved,
-            users.other1.address,
-            'Approved not as expected!'
-          );
-          assert.equal(
-            ev._tokenId.toString(),
-            token721.toString(),
-            'tokenId not as expected!'
-          );
-
-          return true;
-        });
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          contractERC1155ERC721,
+          eventNames.APPROVAL,
+          (ev) => {
+            assert.equal(
+              ev._owner,
+              users.buyer.address,
+              'Owner not as expected!'
+            );
+            assert.equal(
+              ev._approved,
+              users.other1.address,
+              'Approved not as expected!'
+            );
+            assert.equal(
+              ev._tokenId.toString(),
+              token721.toString(),
+              'tokenId not as expected!'
+            );
+          }
+        );
       });
 
       it('[NEGATIVE] Attacker should not approve transfer of erc721 that does not possess', async () => {
@@ -268,12 +311,13 @@ describe('ERC1155ERC721', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await truffleAssert.reverts(
-          contractERC1155ERC721.approve(users.other1.address, token721, {
-            from: users.attacker.address,
-          }),
-          truffleAssert.ErrorType.REVERT
+        const attackerInstance = contractERC1155ERC721.connect(
+          users.attacker.signer
         );
+
+        await expect(
+          attackerInstance.approve(users.other1.address, token721)
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_APPROVAL);
       });
 
       it('[NEGATIVE] Should revert if buyer tries to approve to self', async () => {
@@ -283,12 +327,13 @@ describe('ERC1155ERC721', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await truffleAssert.reverts(
-          contractERC1155ERC721.approve(users.buyer.address, token721, {
-            from: users.buyer.address,
-          }),
-          truffleAssert.ErrorType.REVERT
+        const attackerInstance = contractERC1155ERC721.connect(
+          users.attacker.signer
         );
+
+        await expect(
+          attackerInstance.approve(users.buyer.address, token721)
+        ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
       });
     });
 
@@ -296,9 +341,9 @@ describe('ERC1155ERC721', () => {
       beforeEach(async () => {
         await deployContracts();
 
-        utils = UtilsBuilder.create()
+        utils = await UtilsBuilder.create()
           .ETHETH()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
@@ -317,104 +362,96 @@ describe('ERC1155ERC721', () => {
       });
 
       it('Attacker should not be able to transfer', async () => {
-        await truffleAssert.reverts(
+        await expect(
           utils.safeTransfer1155(
             users.seller.address,
             users.other1.address,
             TOKEN_SUPPLY_ID,
             constants.QTY_10,
-            {from: users.attacker.address}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            users.attacker.signer
+          )
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_1155);
       });
 
       it('Seller should not transfer to ZERO address', async () => {
-        await truffleAssert.reverts(
+        await expect(
           utils.safeTransfer1155(
             users.seller.address,
             constants.ZERO_ADDRESS,
             TOKEN_SUPPLY_ID,
             constants.QTY_10,
-            {from: users.seller.address}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            users.seller.signer
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
       });
 
       it('Seller should not transfer to contract address', async () => {
-        await truffleAssert.reverts(
+        await expect(
           utils.safeTransfer1155(
             users.seller.address,
             contractCashier.address,
             TOKEN_SUPPLY_ID,
             constants.QTY_10,
-            {from: users.seller.address}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            users.seller.signer
+          )
+        ).to.be.revertedWith(revertReasons.FN_SELECTOR_NOT_RECOGNIZED);
       });
 
       it('Should not be able to transfer batch to ZERO address', async () => {
-        await truffleAssert.reverts(
+        await expect(
           utils.safeBatchTransfer1155(
             users.seller.address,
             constants.ZERO_ADDRESS,
             [TOKEN_SUPPLY_ID],
             [constants.QTY_10],
-            {from: users.seller.address}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            users.seller.signer
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
       });
 
       it('Should revert if array lengths mismatch', async () => {
-        await truffleAssert.reverts(
+        await expect(
           utils.safeBatchTransfer1155(
             users.seller.address,
             users.other1.address,
             [TOKEN_SUPPLY_ID],
             [constants.QTY_10, 2],
-            {from: users.seller.address}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            users.seller.signer
+          )
+        ).to.be.revertedWith(revertReasons.MISMATCHED_ARRAY_LENGTHS);
       });
 
       it('Seller should not transfer batch to contract address', async () => {
-        await truffleAssert.reverts(
+        await expect(
           utils.safeBatchTransfer1155(
             users.seller.address,
             contractCashier.address,
             [TOKEN_SUPPLY_ID],
             [constants.QTY_10],
-            {from: users.seller.address}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            users.seller.signer
+          )
+        ).to.be.revertedWith(revertReasons.FN_SELECTOR_NOT_RECOGNIZED);
       });
 
       it('Should revert if attacker tries to transfer batch', async () => {
-        await truffleAssert.reverts(
+        await expect(
           utils.safeBatchTransfer1155(
             users.seller.address,
             users.other1.address,
             [TOKEN_SUPPLY_ID],
             [constants.QTY_10],
-            {from: users.attacker.address}
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            users.attacker.signer
+          )
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_BATCH_1155);
       });
 
       it('Should revert if balanceOfBatch has been provided with mismatched lengths', async () => {
-        await truffleAssert.reverts(
+        await expect(
           contractERC1155ERC721.balanceOfBatch(
             [users.seller.address],
             [TOKEN_SUPPLY_ID, 2]
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+          )
+        ).to.be.revertedWith(revertReasons.MISMATCHED_ARRAY_LENGTHS);
       });
     });
 
@@ -422,9 +459,9 @@ describe('ERC1155ERC721', () => {
       beforeEach(async () => {
         await deployContracts();
 
-        utils = UtilsBuilder.create()
+        utils = await UtilsBuilder.create()
           .ETHETH()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
@@ -443,19 +480,20 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[ownerOf] should revert if incorrectId id provided', async () => {
-        await truffleAssert.reverts(
-          contractERC1155ERC721.ownerOf(1, {from: users.seller.address}),
-          truffleAssert.ErrorType.REVERT
+        const sellerInstance = contractERC1155ERC721.connect(
+          users.seller.signer
+        );
+        await expect(sellerInstance.ownerOf(1)).to.be.revertedWith(
+          revertReasons.UNDEFINED_OWNER
         );
       });
 
       it('[balanceOf] should revert if ZERO address is provided', async () => {
-        const methodSignature = 'balanceOf(' + 'address)';
-        const balanceOf = contractERC1155ERC721.methods[methodSignature];
+        const balanceOf =
+          contractERC1155ERC721.functions[fnSignatures.balanceOf721];
 
-        await truffleAssert.reverts(
-          balanceOf(constants.ZERO_ADDRESS),
-          truffleAssert.ErrorType.REVERT
+        await expect(balanceOf(constants.ZERO_ADDRESS)).to.be.revertedWith(
+          revertReasons.UNSPECIFIED_ADDRESS
         );
       });
 
@@ -466,17 +504,14 @@ describe('ERC1155ERC721', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await truffleAssert.reverts(
+        await expect(
           utils.safeTransfer721(
             users.buyer.address,
             contractCashier.address,
             erc721,
-            {
-              from: users.buyer.address,
-            }
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            users.buyer.signer
+          )
+        ).to.be.revertedWith(revertReasons.FN_SELECTOR_NOT_RECOGNIZED);
       });
 
       it('Attacker should not be able to transfer erc721', async () => {
@@ -486,17 +521,14 @@ describe('ERC1155ERC721', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await truffleAssert.reverts(
+        await expect(
           utils.safeTransfer721(
             users.buyer.address,
             users.other1.address,
             erc721,
-            {
-              from: users.attacker.address,
-            }
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            users.attacker.signer
+          )
+        ).to.be.revertedWith(revertReasons.NOT_OWNER_NOR_APPROVED);
       });
 
       it('Should not be able to transfer erc721 to ZERO address', async () => {
@@ -506,17 +538,14 @@ describe('ERC1155ERC721', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await truffleAssert.reverts(
+        await expect(
           utils.safeTransfer721(
             users.buyer.address,
             constants.ZERO_ADDRESS,
             erc721,
-            {
-              from: users.buyer.address,
-            }
-          ),
-          truffleAssert.ErrorType.REVERT
-        );
+            users.buyer.signer
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
       });
 
       it('Should not be able to transfer erc721 if address from is not authorized', async () => {
@@ -526,16 +555,15 @@ describe('ERC1155ERC721', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await truffleAssert.reverts(
+        await expect(
           utils.safeTransfer721(
             users.other1.address,
             users.other2.address,
             erc721,
-            {
-              from: users.buyer.address,
-            }
-          ),
-          truffleAssert.ErrorType.REVERT
+            users.buyer.signer
+          )
+        ).to.be.revertedWith(
+          revertReasons.TRANSFER_721_ADDRESS_FROM_NOT_AUTHORIZED
         );
       });
     });
@@ -549,9 +577,9 @@ describe('ERC1155ERC721', () => {
       before(async () => {
         await deployContracts();
 
-        utils = UtilsBuilder.create()
+        utils = await UtilsBuilder.create()
           .ETHETH()
-          .build(
+          .buildAsync(
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
@@ -591,37 +619,38 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[NEGATIVE][tokenURI] Should revert if incorrect id is provided', async () => {
-        await truffleAssert.reverts(
-          contractERC1155ERC721.tokenURI(constants.ZERO_ADDRESS),
-          truffleAssert.ErrorType.REVERT
-        );
+        await expect(
+          contractERC1155ERC721.tokenURI(constants.ZERO_ADDRESS)
+        ).to.be.revertedWith(revertReasons.INVALID_ID);
       });
 
       it('[NEGATIVE] Should revert if attacker tries to set metadataBase', async () => {
-        await truffleAssert.reverts(
-          contractERC1155ERC721._setMetadataBase(metadataBase, {
-            from: users.attacker.address,
-          }),
-          truffleAssert.ErrorType.REVERT
+        const attackerInstance = contractERC1155ERC721.connect(
+          users.attacker.signer
         );
+
+        await expect(
+          attackerInstance._setMetadataBase(metadataBase)
+        ).to.be.revertedWith(revertReasons.NOT_OWNER);
       });
 
       it('[NEGATIVE] Should revert if attacker tries to set metadata1155Route', async () => {
-        await truffleAssert.reverts(
-          contractERC1155ERC721._set1155Route(metadata1155Route, {
-            from: users.attacker.address,
-          }),
-          truffleAssert.ErrorType.REVERT
+        const attackerInstance = contractERC1155ERC721.connect(
+          users.attacker.signer
         );
+        await expect(
+          attackerInstance._set1155Route(metadata1155Route)
+        ).to.be.revertedWith(revertReasons.NOT_OWNER);
       });
 
       it('[NEGATIVE] Should revert if attacker tries to set metadata721Route', async () => {
-        await truffleAssert.reverts(
-          contractERC1155ERC721._set721Route(metadata721Route, {
-            from: users.attacker.address,
-          }),
-          truffleAssert.ErrorType.REVERT
+        const attackerInstance = contractERC1155ERC721.connect(
+          users.attacker.signer
         );
+
+        await expect(
+          attackerInstance._set721Route(metadata721Route)
+        ).to.be.revertedWith(revertReasons.NOT_OWNER);
       });
     });
   });

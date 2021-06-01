@@ -21,6 +21,14 @@ const eventNames = {
   LOG_DISASTER_STATE_SET: 'LogDisasterStateSet',
   LOG_WITHDRAW_TOKENS_ON_DISASTER: 'LogWithdrawTokensOnDisaster',
   LOG_WITHDRAW_ETH_ON_DISASTER: 'LogWithdrawEthOnDisaster',
+  LOG_ETH_LIMIT_CHANGED: 'LogETHLimitChanged',
+  LOG_TOKEN_LIMIT_CHANGED: 'LogTokenLimitChanged',
+  APPROVAL_FOR_ALL: 'ApprovalForAll',
+  APPROVAL: 'Approval',
+  LOG_BR_SET: 'LogBosonRouterSet',
+  LOG_ERC1155_ERC721_SET: 'LogTokenContractSet',
+  LOG_VK_SET: 'LogVoucherKernelSet',
+  LOG_CASHIER_SET: 'LogCashierSet',
 };
 
 function findEventByName(txReceipt, eventName, ...eventFields) {

@@ -842,7 +842,7 @@ describe('Voucher tests', () => {
         txRedeem.blockNumber
       );
       assert.isTrue(
-        voucherStatus.complainPeriodStart.eq(new BN(transactionBlock.timestamp))
+        voucherStatus.complainPeriodStart.eq(BN(transactionBlock.timestamp))
       );
     });
 
@@ -1277,7 +1277,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
         VoucherKernel,
         eventNames.LOG_VOUCHER_REFUNDED,
         (ev) => {
-          assert.isTrue(ev._tokenIdVoucher.eq(new BN(tokenVoucherKey1)));
+          assert.isTrue(ev._tokenIdVoucher.eq(BN(tokenVoucherKey1)));
         }
       );
 
@@ -1289,7 +1289,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
         txRefund.blockNumber
       );
       assert.isTrue(
-        voucherStatus.complainPeriodStart.eq(new BN(transactionBlock.timestamp))
+        voucherStatus.complainPeriodStart.eq(BN(transactionBlock.timestamp))
       );
 
       // [1010.0000] = hex"A0" = 160 = REFUND
@@ -1312,7 +1312,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
         VoucherKernel,
         eventNames.LOG_VOUCHER_COMPLAIN,
         (ev) => {
-          assert.isTrue(ev._tokenIdVoucher.eq(new BN(tokenVoucherKey1)));
+          assert.isTrue(ev._tokenIdVoucher.eq(BN(tokenVoucherKey1)));
         }
       );
 
@@ -1325,7 +1325,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       );
       assert.isTrue(
         voucherStatus.cancelFaultPeriodStart.eq(
-          new BN(transactionBlock.timestamp)
+          BN(transactionBlock.timestamp)
         )
       );
 
@@ -1356,7 +1356,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       );
       assert.isTrue(
         voucherStatusBefore.cancelFaultPeriodStart.eq(
-          new BN(transactionBlock.timestamp)
+          BN(transactionBlock.timestamp)
         )
       );
 
@@ -1369,7 +1369,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
         VoucherKernel,
         eventNames.LOG_VOUCHER_FAULT_CANCEL,
         (ev) => {
-          assert.isTrue(ev._tokenIdVoucher.eq(new BN(tokenVoucherKey1)));
+          assert.isTrue(ev._tokenIdVoucher.eq(BN(tokenVoucherKey1)));
         }
       );
 
@@ -1460,7 +1460,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
         VoucherKernel,
         eventNames.LOG_VOUCHER_COMPLAIN,
         (ev) => {
-          assert.isTrue(ev._tokenIdVoucher.eq(new BN(tokenVoucherKey1)));
+          assert.isTrue(ev._tokenIdVoucher.eq(BN(tokenVoucherKey1)));
         }
       );
 
@@ -1485,7 +1485,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
         VoucherKernel,
         eventNames.LOG_VOUCHER_FAULT_CANCEL,
         (ev) => {
-          assert.isTrue(ev._tokenIdVoucher.eq(new BN(tokenVoucherKey1)));
+          assert.isTrue(ev._tokenIdVoucher.eq(BN(tokenVoucherKey1)));
         }
       );
 

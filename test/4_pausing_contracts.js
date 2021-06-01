@@ -1,7 +1,6 @@
 const ethers = require('hardhat').ethers;
 
-const {assert} = require('chai');
-const truffleAssert = require('truffle-assertions');
+const {assert, expect} = require('chai');
 
 const constants = require('../testHelpers/constants');
 const timemachine = require('../testHelpers/timemachine');
@@ -9,15 +8,18 @@ const Users = require('../testHelpers/users');
 const UtilsBuilder = require('../testHelpers/utilsBuilder');
 const Utils = require('../testHelpers/utils');
 
-let ERC1155ERC721; // = artifacts.require('ERC1155ERC721');
-let VoucherKernel; // = artifacts.require('VoucherKernel');
-let Cashier; // = artifacts.require('Cashier');
-let BosonRouter; // = artifacts.require('BosonRouter');
-let MockERC20Permit; // = artifacts.require('MockERC20Permit');
-let FundLimitsOracle; // = artifacts.require('FundLimitsOracle');
+let ERC1155ERC721;
+let VoucherKernel;
+let Cashier;
+let BosonRouter;
+let MockERC20Permit;
+let FundLimitsOracle;
 
-// const BN = web3.utils.BN;
-const BN = require('bn.js');
+const revertReasons = require('../testHelpers/revertReasons');
+const eventUtils = require('../testHelpers/events');
+const {eventNames} = require('../testHelpers/events');
+
+const BN = ethers.BigNumber.from;
 
 let utils;
 
@@ -30,6 +32,13 @@ describe('Cashier && VK', () => {
   before(async () => {
     const signers = await ethers.getSigners();
     users = new Users(signers);
+
+    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherKernel = await ethers.getContractFactory('VoucherKernel');
+    Cashier = await ethers.getContractFactory('Cashier');
+    BosonRouter = await ethers.getContractFactory('BosonRouter');
+    FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
+    MockERC20Permit = await ethers.getContractFactory('MockERC20Permit');
   });
 
   let contractERC1155ERC721,
@@ -44,31 +53,42 @@ describe('Cashier && VK', () => {
   let timestamp;
 
   async function deployContracts() {
-    contractFundLimitsOracle = await FundLimitsOracle.new();
-    contractERC1155ERC721 = await ERC1155ERC721.new();
-    contractVoucherKernel = await VoucherKernel.new(
+    const sixtySeconds = 60;
+
+    contractFundLimitsOracle = await FundLimitsOracle.deploy();
+    contractERC1155ERC721 = await ERC1155ERC721.deploy();
+    contractVoucherKernel = await VoucherKernel.deploy(
       contractERC1155ERC721.address
     );
-    contractCashier = await Cashier.new(contractVoucherKernel.address);
-    contractBosonRouter = await BosonRouter.new(
+    contractCashier = await Cashier.deploy(contractVoucherKernel.address);
+    contractBosonRouter = await BosonRouter.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
     );
-    contractBSNTokenPrice = await MockERC20Permit.new(
+
+    contractBSNTokenPrice = await MockERC20Permit.deploy(
       'BosonTokenPrice',
       'BPRC'
     );
-    contractBSNTokenDeposit = await MockERC20Permit.new(
+
+    contractBSNTokenDeposit = await MockERC20Permit.deploy(
       'BosonTokenDeposit',
       'BDEP'
     );
+
+    await contractFundLimitsOracle.deployed();
+    await contractERC1155ERC721.deployed();
+    await contractVoucherKernel.deployed();
+    await contractCashier.deployed();
+    await contractBosonRouter.deployed();
+    await contractBSNTokenPrice.deployed();
+    await contractBSNTokenDeposit.deployed();
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
       'true'
     );
-
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
@@ -85,8 +105,8 @@ describe('Cashier && VK', () => {
       contractERC1155ERC721.address
     );
 
-    await contractVoucherKernel.setComplainPeriod(60); //60 seconds
-    await contractVoucherKernel.setCancelFaultPeriod(60); //60 seconds
+    await contractVoucherKernel.setComplainPeriod(sixtySeconds);
+    await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
 
     await contractFundLimitsOracle.setTokenLimit(
       contractBSNTokenPrice.address,
@@ -98,9 +118,9 @@ describe('Cashier && VK', () => {
     );
     await contractFundLimitsOracle.setETHLimit(constants.ETHER_LIMIT);
 
-    utils = UtilsBuilder.create()
+    utils = await UtilsBuilder.create()
       .ETHETH()
-      .build(
+      .buildAsync(
         contractERC1155ERC721,
         contractVoucherKernel,
         contractCashier,
@@ -137,18 +157,23 @@ describe('Cashier && VK', () => {
         });
 
         it('[NEGATIVE] Attacker should not be able to pause the contract', async () => {
-          await truffleAssert.reverts(
-            contractBosonRouter.pause({from: users.attacker.address}),
-            truffleAssert.ErrorType.REVERT
+          const attackerInstance = contractBosonRouter.connect(
+            users.attacker.signer
+          );
+          await expect(attackerInstance.pause()).to.be.revertedWith(
+            revertReasons.ONLY_ROUTER_OWNER
           );
         });
 
         it('[NEGATIVE] Attacker should not be able to unpause the contract', async () => {
           await contractBosonRouter.pause();
 
-          await truffleAssert.reverts(
-            contractBosonRouter.unpause({from: users.attacker.address}),
-            truffleAssert.ErrorType.REVERT
+          const attackerInstance = contractBosonRouter.connect(
+            users.attacker.signer
+          );
+
+          await expect(attackerInstance.unpause()).to.be.revertedWith(
+            revertReasons.ONLY_ROUTER_OWNER
           );
         });
       });
@@ -156,9 +181,9 @@ describe('Cashier && VK', () => {
       describe('ETHETH', () => {
         before(async () => {
           await deployContracts();
-          utils = UtilsBuilder.create()
+          utils = await UtilsBuilder.create()
             .ETHETH()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -169,16 +194,15 @@ describe('Cashier && VK', () => {
         it('[NEGATIVE] Should not create voucher supply when contract is paused', async () => {
           await contractBosonRouter.pause();
 
-          await truffleAssert.reverts(
+          await expect(
             utils.createOrder(
               users.seller,
               timestamp,
               timestamp + constants.SECONDS_IN_DAY,
               constants.seller_deposit,
               constants.QTY_1
-            ),
-            truffleAssert.ErrorType.REVERT
-          );
+            )
+          ).to.be.revertedWith(revertReasons.PAUSED);
         });
 
         it('Should create voucher supply when contract is unpaused', async () => {
@@ -204,10 +228,9 @@ describe('Cashier && VK', () => {
 
           await contractBosonRouter.pause();
 
-          await truffleAssert.reverts(
-            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.PAUSED);
         });
       });
 
@@ -216,10 +239,10 @@ describe('Cashier && VK', () => {
           before(async () => {
             await deployContracts();
 
-            utils = UtilsBuilder.create()
+            utils = await UtilsBuilder.create()
               .ERC20withPermit()
               .ETHTKN()
-              .build(
+              .buildAsync(
                 contractERC1155ERC721,
                 contractVoucherKernel,
                 contractCashier,
@@ -228,8 +251,8 @@ describe('Cashier && VK', () => {
                 contractBSNTokenDeposit
               );
 
-            tokensToMint = new BN(constants.product_price).mul(
-              new BN(constants.QTY_10)
+            tokensToMint = BN(constants.product_price).mul(
+              BN(constants.QTY_10)
             );
 
             await utils.mintTokens(
@@ -247,16 +270,15 @@ describe('Cashier && VK', () => {
           it('[NEGATIVE] Should not create voucher supply when contract is paused', async () => {
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
+            await expect(
               utils.createOrder(
                 users.seller,
                 timestamp,
                 timestamp + constants.SECONDS_IN_DAY,
                 constants.seller_deposit,
                 constants.QTY_1
-              ),
-              truffleAssert.ErrorType.REVERT
-            );
+              )
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
 
           it('Should create voucher supply when contract is unpaused', async () => {
@@ -282,20 +304,19 @@ describe('Cashier && VK', () => {
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
         });
 
         describe('TKNETH', () => {
           before(async () => {
             await deployContracts();
-            utils = UtilsBuilder.create()
+            utils = await UtilsBuilder.create()
               .ERC20withPermit()
               .TKNETH()
-              .build(
+              .buildAsync(
                 contractERC1155ERC721,
                 contractVoucherKernel,
                 contractCashier,
@@ -306,8 +327,8 @@ describe('Cashier && VK', () => {
 
             const timestamp = await Utils.getCurrTimestamp();
 
-            tokensToMint = new BN(constants.product_price).mul(
-              new BN(constants.QTY_10)
+            tokensToMint = BN(constants.product_price).mul(
+              BN(constants.QTY_10)
             );
 
             await utils.mintTokens(
@@ -328,16 +349,15 @@ describe('Cashier && VK', () => {
           it('[NEGATIVE] Should not create voucher supply when contract is paused', async () => {
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
+            await expect(
               utils.createOrder(
                 users.seller,
                 timestamp,
                 timestamp + constants.SECONDS_IN_DAY,
                 constants.seller_deposit,
                 constants.QTY_1
-              ),
-              truffleAssert.ErrorType.REVERT
-            );
+              )
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
 
           it('Should create voucher supply when contract is unpaused', async () => {
@@ -363,20 +383,19 @@ describe('Cashier && VK', () => {
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
         });
 
         describe('TKNTKN', () => {
           before(async () => {
             await deployContracts();
-            utils = UtilsBuilder.create()
+            utils = await UtilsBuilder.create()
               .ERC20withPermit()
               .TKNTKN()
-              .build(
+              .buildAsync(
                 contractERC1155ERC721,
                 contractVoucherKernel,
                 contractCashier,
@@ -385,11 +404,11 @@ describe('Cashier && VK', () => {
                 contractBSNTokenDeposit
               );
 
-            tokensToMint = new BN(constants.seller_deposit).mul(
-              new BN(constants.QTY_10)
+            tokensToMint = BN(constants.seller_deposit).mul(
+              BN(constants.QTY_10)
             );
-            tokensToMint = new BN(constants.product_price).mul(
-              new BN(constants.QTY_10)
+            tokensToMint = BN(constants.product_price).mul(
+              BN(constants.QTY_10)
             );
 
             await utils.mintTokens(
@@ -412,16 +431,15 @@ describe('Cashier && VK', () => {
           it('[NEGATIVE] Should not create voucher supply when contract is paused', async () => {
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
+            await expect(
               utils.createOrder(
                 users.seller,
                 timestamp,
                 timestamp + constants.SECONDS_IN_DAY,
                 constants.seller_deposit,
                 constants.QTY_1
-              ),
-              truffleAssert.ErrorType.REVERT
-            );
+              )
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
 
           it('Should create voucher supply when contract is unpaused', async () => {
@@ -447,10 +465,9 @@ describe('Cashier && VK', () => {
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
         });
       });
@@ -483,16 +500,14 @@ describe('Cashier && VK', () => {
         });
 
         it('[NEGATIVE] Pause should not be called directly', async () => {
-          await truffleAssert.reverts(
-            contractVoucherKernel.pause(),
-            truffleAssert.ErrorType.REVERT
+          await expect(contractVoucherKernel.pause()).to.be.revertedWith(
+            revertReasons.ONLY_FROM_ROUTER
           );
         });
 
         it('[NEGATIVE] Unpause should not be called directly', async () => {
-          await truffleAssert.reverts(
-            contractVoucherKernel.unpause(),
-            truffleAssert.ErrorType.REVERT
+          await expect(contractVoucherKernel.unpause()).to.be.revertedWith(
+            revertReasons.ONLY_FROM_ROUTER
           );
         });
       });
@@ -501,9 +516,9 @@ describe('Cashier && VK', () => {
         before(async () => {
           await deployContracts();
 
-          utils = UtilsBuilder.create()
+          utils = await UtilsBuilder.create()
             .ETHETH()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -530,10 +545,9 @@ describe('Cashier && VK', () => {
 
           await contractBosonRouter.pause();
 
-          await truffleAssert.reverts(
-            utils.refund(VOUCHER_ID, users.buyer.address),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utils.refund(VOUCHER_ID, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.PAUSED);
         });
 
         it('[NEGATIVE] Should not process complain when paused', async () => {
@@ -543,14 +557,13 @@ describe('Cashier && VK', () => {
             TOKEN_SUPPLY_ID
           );
 
-          await utils.refund(VOUCHER_ID, users.buyer.address);
+          await utils.refund(VOUCHER_ID, users.buyer.signer);
 
           await contractBosonRouter.pause();
 
-          await truffleAssert.reverts(
-            utils.complain(VOUCHER_ID, users.buyer.address),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utils.complain(VOUCHER_ID, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.PAUSED);
         });
 
         it('[NEGATIVE] Should not process redeem when paused', async () => {
@@ -562,10 +575,9 @@ describe('Cashier && VK', () => {
 
           await contractBosonRouter.pause();
 
-          await truffleAssert.reverts(
-            utils.redeem(VOUCHER_ID, users.buyer.address),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utils.redeem(VOUCHER_ID, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.PAUSED);
         });
 
         it('[NEGATIVE] Should not process cancel when paused', async () => {
@@ -574,14 +586,13 @@ describe('Cashier && VK', () => {
             users.seller,
             TOKEN_SUPPLY_ID
           );
-          await utils.redeem(VOUCHER_ID, users.buyer.address);
+          await utils.redeem(VOUCHER_ID, users.buyer.signer);
 
           await contractBosonRouter.pause();
 
-          await truffleAssert.reverts(
-            utils.cancel(VOUCHER_ID, users.seller.address),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utils.cancel(VOUCHER_ID, users.seller.signer)
+          ).to.be.revertedWith(revertReasons.PAUSED);
         });
       });
 
@@ -589,11 +600,10 @@ describe('Cashier && VK', () => {
         describe('ETHTKN', () => {
           before(async () => {
             await deployContracts();
-            await deployContracts();
-            utils = UtilsBuilder.create()
+            utils = await UtilsBuilder.create()
               .ERC20withPermit()
               .ETHTKN()
-              .build(
+              .buildAsync(
                 contractERC1155ERC721,
                 contractVoucherKernel,
                 contractCashier,
@@ -604,8 +614,8 @@ describe('Cashier && VK', () => {
 
             const timestamp = await Utils.getCurrTimestamp();
 
-            tokensToMint = new BN(constants.product_price).mul(
-              new BN(constants.QTY_10)
+            tokensToMint = BN(constants.product_price).mul(
+              BN(constants.QTY_10)
             );
 
             await utils.mintTokens(
@@ -637,10 +647,9 @@ describe('Cashier && VK', () => {
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.refund(VOUCHER_ID, users.buyer.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.refund(VOUCHER_ID, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
 
           it('[NEGATIVE] Should not process complain when paused', async () => {
@@ -650,14 +659,13 @@ describe('Cashier && VK', () => {
               TOKEN_SUPPLY_ID
             );
 
-            await utils.refund(VOUCHER_ID, users.buyer.address);
+            await utils.refund(VOUCHER_ID, users.buyer.signer);
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.complain(VOUCHER_ID, users.buyer.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.complain(VOUCHER_ID, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
 
           it('[NEGATIVE] Should not process redeem when paused', async () => {
@@ -669,10 +677,9 @@ describe('Cashier && VK', () => {
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.redeem(VOUCHER_ID, users.buyer.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.redeem(VOUCHER_ID, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
 
           it('[NEGATIVE] Should not process cancel when paused', async () => {
@@ -681,24 +688,23 @@ describe('Cashier && VK', () => {
               users.seller,
               TOKEN_SUPPLY_ID
             );
-            await utils.redeem(VOUCHER_ID, users.buyer.address);
+            await utils.redeem(VOUCHER_ID, users.buyer.signer);
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.cancel(VOUCHER_ID, users.seller.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.cancel(VOUCHER_ID, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
         });
 
         describe('TKNETH', () => {
           before(async () => {
             await deployContracts();
-            utils = UtilsBuilder.create()
+            utils = await UtilsBuilder.create()
               .ERC20withPermit()
               .TKNETH()
-              .build(
+              .buildAsync(
                 contractERC1155ERC721,
                 contractVoucherKernel,
                 contractCashier,
@@ -709,8 +715,8 @@ describe('Cashier && VK', () => {
 
             const timestamp = await Utils.getCurrTimestamp();
 
-            tokensToMint = new BN(constants.product_price).mul(
-              new BN(constants.QTY_10)
+            tokensToMint = BN(constants.product_price).mul(
+              BN(constants.QTY_10)
             );
 
             await utils.mintTokens(
@@ -737,10 +743,9 @@ describe('Cashier && VK', () => {
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.refund(VOUCHER_ID, users.buyer.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.refund(VOUCHER_ID, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
 
           it('[NEGATIVE] Should not process complain when paused', async () => {
@@ -750,14 +755,13 @@ describe('Cashier && VK', () => {
               TOKEN_SUPPLY_ID
             );
 
-            await utils.refund(VOUCHER_ID, users.buyer.address);
+            await utils.refund(VOUCHER_ID, users.buyer.signer);
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.complain(VOUCHER_ID, users.buyer.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.complain(VOUCHER_ID, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
 
           it('[NEGATIVE] Should not process redeem when paused', async () => {
@@ -769,10 +773,9 @@ describe('Cashier && VK', () => {
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.redeem(VOUCHER_ID, users.buyer.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.redeem(VOUCHER_ID, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
 
           it('[NEGATIVE] Should not process cancel when paused', async () => {
@@ -781,24 +784,23 @@ describe('Cashier && VK', () => {
               users.seller,
               TOKEN_SUPPLY_ID
             );
-            await utils.redeem(VOUCHER_ID, users.buyer.address);
+            await utils.redeem(VOUCHER_ID, users.buyer.signer);
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.cancel(VOUCHER_ID, users.seller.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.cancel(VOUCHER_ID, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
         });
 
         describe('TKNTKN', () => {
           before(async () => {
             await deployContracts();
-            utils = UtilsBuilder.create()
+            utils = await UtilsBuilder.create()
               .ERC20withPermit()
               .TKNTKN()
-              .build(
+              .buildAsync(
                 contractERC1155ERC721,
                 contractVoucherKernel,
                 contractCashier,
@@ -809,8 +811,8 @@ describe('Cashier && VK', () => {
 
             const timestamp = await Utils.getCurrTimestamp();
 
-            tokensToMint = new BN(constants.product_price).mul(
-              new BN(constants.QTY_10)
+            tokensToMint = BN(constants.product_price).mul(
+              BN(constants.QTY_10)
             );
 
             await utils.mintTokens(
@@ -847,10 +849,9 @@ describe('Cashier && VK', () => {
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.refund(VOUCHER_ID, users.buyer.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.refund(VOUCHER_ID, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
 
           it('[NEGATIVE] Should not process complain when paused', async () => {
@@ -860,14 +861,13 @@ describe('Cashier && VK', () => {
               TOKEN_SUPPLY_ID
             );
 
-            await utils.refund(VOUCHER_ID, users.buyer.address);
+            await utils.refund(VOUCHER_ID, users.buyer.signer);
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.complain(VOUCHER_ID, users.buyer.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.complain(VOUCHER_ID, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
 
           it('[NEGATIVE] Should not process redeem when paused', async () => {
@@ -879,10 +879,9 @@ describe('Cashier && VK', () => {
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.redeem(VOUCHER_ID, users.buyer.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.redeem(VOUCHER_ID, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
 
           it('[NEGATIVE] Should not process cancel when paused', async () => {
@@ -891,24 +890,23 @@ describe('Cashier && VK', () => {
               users.seller,
               TOKEN_SUPPLY_ID
             );
-            await utils.redeem(VOUCHER_ID, users.buyer.address);
+            await utils.redeem(VOUCHER_ID, users.buyer.signer);
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.cancel(VOUCHER_ID, users.seller.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.cancel(VOUCHER_ID, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
         });
 
         describe('TKNTKN Same', () => {
           before(async () => {
             await deployContracts();
-            utils = UtilsBuilder.create()
+            utils = await UtilsBuilder.create()
               .ERC20withPermit()
               .TKNTKNSame()
-              .build(
+              .buildAsync(
                 contractERC1155ERC721,
                 contractVoucherKernel,
                 contractCashier,
@@ -919,8 +917,8 @@ describe('Cashier && VK', () => {
 
             const timestamp = await Utils.getCurrTimestamp();
 
-            tokensToMint = new BN(constants.product_price).mul(
-              new BN(constants.QTY_10)
+            tokensToMint = BN(constants.product_price).mul(
+              BN(constants.QTY_10)
             );
 
             await utils.mintTokens(
@@ -952,10 +950,9 @@ describe('Cashier && VK', () => {
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.refund(VOUCHER_ID, users.buyer.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.refund(VOUCHER_ID, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
 
           it('[NEGATIVE] Should not process complain when paused', async () => {
@@ -965,14 +962,13 @@ describe('Cashier && VK', () => {
               TOKEN_SUPPLY_ID
             );
 
-            await utils.refund(VOUCHER_ID, users.buyer.address);
+            await utils.refund(VOUCHER_ID, users.buyer.signer);
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.complain(VOUCHER_ID, users.buyer.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.complain(VOUCHER_ID, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
 
           it('[NEGATIVE] Should not process redeem when paused', async () => {
@@ -984,10 +980,9 @@ describe('Cashier && VK', () => {
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.redeem(VOUCHER_ID, users.buyer.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.redeem(VOUCHER_ID, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
 
           it('[NEGATIVE] Should not process cancel when paused', async () => {
@@ -996,14 +991,13 @@ describe('Cashier && VK', () => {
               users.seller,
               TOKEN_SUPPLY_ID
             );
-            await utils.redeem(VOUCHER_ID, users.buyer.address);
+            await utils.redeem(VOUCHER_ID, users.buyer.signer);
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.cancel(VOUCHER_ID, users.seller.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.cancel(VOUCHER_ID, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
         });
       });
@@ -1036,32 +1030,35 @@ describe('Cashier && VK', () => {
         });
 
         it('[NEGATIVE] Pause should not be called directly', async () => {
-          await truffleAssert.reverts(
-            contractCashier.pause(),
-            truffleAssert.ErrorType.REVERT
+          await expect(contractCashier.pause()).to.be.revertedWith(
+            revertReasons.ONLY_FROM_ROUTER
           );
         });
 
         it('[NEGATIVE] Unpause should not be called directly', async () => {
-          await truffleAssert.reverts(
-            contractCashier.unpause(),
-            truffleAssert.ErrorType.REVERT
+          await expect(contractCashier.unpause()).to.be.revertedWith(
+            revertReasons.ONLY_FROM_ROUTER
           );
         });
 
         it('Owner should set the Cashier to disaster state', async () => {
           await contractBosonRouter.pause();
           const tx = await contractCashier.setDisasterState();
+          const txReceipt = await tx.wait();
 
-          truffleAssert.eventEmitted(tx, 'LogDisasterStateSet', (ev) => {
-            return ev._triggeredBy == users.deployer.address;
-          });
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            Cashier,
+            eventNames.LOG_DISASTER_STATE_SET,
+            (ev) => {
+              assert.equal(ev._triggeredBy, users.deployer.address);
+            }
+          );
         });
 
         it('Should not be unpaused after disaster', async () => {
-          await truffleAssert.reverts(
-            contractBosonRouter.unpause(),
-            truffleAssert.ErrorType.REVERT
+          await expect(contractBosonRouter.unpause()).to.be.revertedWith(
+            revertReasons.UNPAUSED_FORBIDDEN
           );
         });
       });
@@ -1069,9 +1066,9 @@ describe('Cashier && VK', () => {
       describe('ETHETH', () => {
         before(async () => {
           await deployContracts();
-          utils = UtilsBuilder.create()
+          utils = await UtilsBuilder.create()
             .ETHETH()
-            .build(
+            .buildAsync(
               contractERC1155ERC721,
               contractVoucherKernel,
               contractCashier,
@@ -1093,17 +1090,16 @@ describe('Cashier && VK', () => {
             users.seller,
             TOKEN_SUPPLY_ID
           );
-          await utils.refund(voucherID, users.buyer.address);
+          await utils.refund(voucherID, users.buyer.signer);
 
           await timemachine.advanceTimeSeconds(60);
-          await utils.finalize(voucherID, users.deployer.address);
+          await utils.finalize(voucherID, users.deployer.signer);
 
           await contractBosonRouter.pause();
 
-          await truffleAssert.reverts(
-            utils.withdraw(voucherID, users.deployer.address),
-            truffleAssert.ErrorType.REVERT
-          );
+          await expect(
+            utils.withdraw(voucherID, users.deployer.signer)
+          ).to.be.revertedWith(revertReasons.PAUSED);
         });
       });
 
@@ -1112,10 +1108,10 @@ describe('Cashier && VK', () => {
           before(async () => {
             await deployContracts();
 
-            utils = UtilsBuilder.create()
+            utils = await UtilsBuilder.create()
               .ERC20withPermit()
               .ETHTKN()
-              .build(
+              .buildAsync(
                 contractERC1155ERC721,
                 contractVoucherKernel,
                 contractCashier,
@@ -1124,8 +1120,8 @@ describe('Cashier && VK', () => {
                 contractBSNTokenDeposit
               );
 
-            tokensToMint = new BN(constants.product_price).mul(
-              new BN(constants.QTY_10)
+            tokensToMint = BN(constants.product_price).mul(
+              BN(constants.QTY_10)
             );
 
             await utils.mintTokens(
@@ -1154,27 +1150,26 @@ describe('Cashier && VK', () => {
               users.seller,
               TOKEN_SUPPLY_ID
             );
-            await utils.refund(voucherID, users.buyer.address);
+            await utils.refund(voucherID, users.buyer.signer);
 
             await timemachine.advanceTimeSeconds(60);
-            await utils.finalize(voucherID, users.deployer.address);
+            await utils.finalize(voucherID, users.deployer.signer);
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.withdraw(voucherID, users.deployer.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.withdraw(voucherID, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
         });
 
         describe('TKNETH', () => {
           before(async () => {
             await deployContracts();
-            utils = UtilsBuilder.create()
+            utils = await UtilsBuilder.create()
               .ERC20withPermit()
               .TKNETH()
-              .build(
+              .buildAsync(
                 contractERC1155ERC721,
                 contractVoucherKernel,
                 contractCashier,
@@ -1183,8 +1178,8 @@ describe('Cashier && VK', () => {
                 ''
               );
 
-            tokensToMint = new BN(constants.product_price).mul(
-              new BN(constants.QTY_10)
+            tokensToMint = BN(constants.product_price).mul(
+              BN(constants.QTY_10)
             );
 
             await utils.mintTokens(
@@ -1208,27 +1203,26 @@ describe('Cashier && VK', () => {
               users.seller,
               TOKEN_SUPPLY_ID
             );
-            await utils.refund(voucherID, users.buyer.address);
+            await utils.refund(voucherID, users.buyer.signer);
 
             await timemachine.advanceTimeSeconds(60);
-            await utils.finalize(voucherID, users.deployer.address);
+            await utils.finalize(voucherID, users.deployer.signer);
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.withdraw(voucherID, users.deployer.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.withdraw(voucherID, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
         });
 
         describe('TKNTKN', () => {
           before(async () => {
             await deployContracts();
-            utils = UtilsBuilder.create()
+            utils = await UtilsBuilder.create()
               .ERC20withPermit()
               .TKNTKN()
-              .build(
+              .buildAsync(
                 contractERC1155ERC721,
                 contractVoucherKernel,
                 contractCashier,
@@ -1237,11 +1231,11 @@ describe('Cashier && VK', () => {
                 contractBSNTokenDeposit
               );
 
-            tokensToMint = new BN(constants.seller_deposit).mul(
-              new BN(constants.QTY_10)
+            tokensToMint = BN(constants.seller_deposit).mul(
+              BN(constants.QTY_10)
             );
-            tokensToMint = new BN(constants.product_price).mul(
-              new BN(constants.QTY_10)
+            tokensToMint = BN(constants.product_price).mul(
+              BN(constants.QTY_10)
             );
 
             await utils.mintTokens(
@@ -1275,17 +1269,16 @@ describe('Cashier && VK', () => {
               users.seller,
               TOKEN_SUPPLY_ID
             );
-            await utils.refund(voucherID, users.buyer.address);
+            await utils.refund(voucherID, users.buyer.signer);
 
             await timemachine.advanceTimeSeconds(60);
-            await utils.finalize(voucherID, users.deployer.address);
+            await utils.finalize(voucherID, users.deployer.signer);
 
             await contractBosonRouter.pause();
 
-            await truffleAssert.reverts(
-              utils.withdraw(voucherID, users.deployer.address),
-              truffleAssert.ErrorType.REVERT
-            );
+            await expect(
+              utils.withdraw(voucherID, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.PAUSED);
           });
         });
       });

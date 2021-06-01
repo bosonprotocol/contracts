@@ -36,8 +36,6 @@ describe('Cashier withdrawals ', () => {
     VoucherKernel = await ethers.getContractFactory('VoucherKernel');
     Cashier = await ethers.getContractFactory('Cashier');
     BosonRouter = await ethers.getContractFactory('BosonRouter');
-    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
-    FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
     FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
     MockERC20Permit = await ethers.getContractFactory('MockERC20Permit');
   });
@@ -51,9 +49,9 @@ describe('Cashier withdrawals ', () => {
     contractFundLimitsOracle;
 
   let distributedAmounts = {
-    buyerAmount: new BN(0),
-    sellerAmount: new BN(0),
-    escrowAmount: new BN(0),
+    buyerAmount: BN(0),
+    sellerAmount: BN(0),
+    escrowAmount: BN(0),
   };
 
   async function deployContracts() {
@@ -206,9 +204,9 @@ describe('Cashier withdrawals ', () => {
 
     afterEach(async () => {
       distributedAmounts = {
-        buyerAmount: new BN(0),
-        sellerAmount: new BN(0),
-        escrowAmount: new BN(0),
+        buyerAmount: BN(0),
+        sellerAmount: BN(0),
+        escrowAmount: BN(0),
       };
 
       const isPaused = await contractBosonRouter.paused();
@@ -238,14 +236,14 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
-        const expectedBuyerAmount = new BN(helpers.buyer_deposit)
-          .add(new BN(helpers.product_price))
-          .add(new BN(helpers.seller_deposit).div(new BN(2))); // 0.3 + 0.04 + 0.025
-        const expectedSellerAmount = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedBuyerAmount = BN(helpers.buyer_deposit)
+          .add(BN(helpers.product_price))
+          .add(BN(helpers.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
+        const expectedSellerAmount = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmount = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmount = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
 
         const voucherID = await utils.commitToBuy(
@@ -295,14 +293,14 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('COMMIT->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
-        const expectedBuyerAmount = new BN(helpers.buyer_deposit)
-          .add(new BN(helpers.product_price))
-          .add(new BN(helpers.seller_deposit).div(new BN(2))); // 0.3 + 0.04 + 0.025
-        const expectedSellerAmount = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedBuyerAmount = BN(helpers.buyer_deposit)
+          .add(BN(helpers.product_price))
+          .add(BN(helpers.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
+        const expectedSellerAmount = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmount = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmount = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
 
         const voucherID = await utils.commitToBuy(
@@ -351,10 +349,10 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW', async () => {
-        const expectedBuyerAmount = new BN(helpers.product_price); // 0.3
-        const expectedSellerAmount = new BN(0); // 0
-        const expectedEscrowAmount = new BN(helpers.seller_deposit).add(
-          new BN(helpers.buyer_deposit)
+        const expectedBuyerAmount = BN(helpers.product_price); // 0.3
+        const expectedSellerAmount = BN(0); // 0
+        const expectedEscrowAmount = BN(helpers.seller_deposit).add(
+          BN(helpers.buyer_deposit)
         ); // 0.09
 
         const voucherID = await utils.commitToBuy(
@@ -405,13 +403,13 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW', async () => {
-        const expectedBuyerAmount = new BN(helpers.buyer_deposit)
-          .add(new BN(helpers.product_price))
-          .add(new BN(helpers.seller_deposit).div(new BN(2))); // 0.3 + 0.04 + 0.025
-        const expectedSellerAmount = new BN(helpers.seller_deposit).div(
-          new BN(2)
+        const expectedBuyerAmount = BN(helpers.buyer_deposit)
+          .add(BN(helpers.product_price))
+          .add(BN(helpers.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
+        const expectedSellerAmount = BN(helpers.seller_deposit).div(
+          BN(2)
         ); // 0.025
-        const expectedEscrowAmount = new BN(0); //0
+        const expectedEscrowAmount = BN(0); //0
 
         const voucherID = await utils.commitToBuy(
           users.buyer,
@@ -462,9 +460,9 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('COMMIT->REFUND->FINALIZE->WITHDRAW', async () => {
-        const expectedBuyerAmount = new BN(helpers.product_price); // 0.3
-        const expectedSellerAmount = new BN(helpers.seller_deposit); // 0.05
-        const expectedEscrowAmount = new BN(helpers.buyer_deposit); // 0.04
+        const expectedBuyerAmount = BN(helpers.product_price); // 0.3
+        const expectedSellerAmount = BN(helpers.seller_deposit); // 0.05
+        const expectedEscrowAmount = BN(helpers.buyer_deposit); // 0.04
 
         const voucherID = await utils.commitToBuy(
           users.buyer,
@@ -513,13 +511,13 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('COMMIT->CANCEL->FINALIZE->WITHDRAW', async () => {
-        const expectedBuyerAmount = new BN(helpers.buyer_deposit)
-          .add(new BN(helpers.product_price))
-          .add(new BN(helpers.seller_deposit).div(new BN(2))); // 0.3 + 0.04 + 0.025
-        const expectedSellerAmount = new BN(helpers.seller_deposit).div(
-          new BN(2)
+        const expectedBuyerAmount = BN(helpers.buyer_deposit)
+          .add(BN(helpers.product_price))
+          .add(BN(helpers.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
+        const expectedSellerAmount = BN(helpers.seller_deposit).div(
+          BN(2)
         ); // 0.025
-        const expectedEscrowAmount = new BN(0); // 0
+        const expectedEscrowAmount = BN(0); // 0
 
         const voucherID = await utils.commitToBuy(
           users.buyer,
@@ -568,11 +566,11 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('COMMIT->REDEEM->FINALIZE->WITHDRAW', async () => {
-        const expectedBuyerAmount = new BN(helpers.buyer_deposit); // 0.04
-        const expectedSellerAmount = new BN(helpers.seller_deposit).add(
-          new BN(helpers.product_price)
+        const expectedBuyerAmount = BN(helpers.buyer_deposit); // 0.04
+        const expectedSellerAmount = BN(helpers.seller_deposit).add(
+          BN(helpers.product_price)
         ); // 0.35
-        const expectedEscrowAmount = new BN(0); // 0
+        const expectedEscrowAmount = BN(0); // 0
 
         const voucherID = await utils.commitToBuy(
           users.buyer,
@@ -621,9 +619,9 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW', async () => {
-        const expectedBuyerAmount = new BN(helpers.buyer_deposit); // 0.04
-        const expectedSellerAmount = new BN(helpers.product_price); // 0.3
-        const expectedEscrowAmount = new BN(helpers.seller_deposit); // 0.05
+        const expectedBuyerAmount = BN(helpers.buyer_deposit); // 0.04
+        const expectedSellerAmount = BN(helpers.product_price); // 0.3
+        const expectedEscrowAmount = BN(helpers.seller_deposit); // 0.05
 
         const voucherID = await utils.commitToBuy(
           users.buyer,
@@ -673,14 +671,14 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
-        const expectedBuyerAmount = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerAmount = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerAmount = new BN(helpers.product_price).add(
-          new BN(helpers.seller_deposit).div(new BN(4))
+        const expectedSellerAmount = BN(helpers.product_price).add(
+          BN(helpers.seller_deposit).div(BN(4))
         ); // 0.3125
-        const expectedEscrowAmount = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmount = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
 
         const voucherID = await utils.commitToBuy(
@@ -732,14 +730,14 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
-        const expectedBuyerAmount = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerAmount = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerAmount = new BN(helpers.product_price).add(
-          new BN(helpers.seller_deposit).div(new BN(4))
+        const expectedSellerAmount = BN(helpers.product_price).add(
+          BN(helpers.seller_deposit).div(BN(4))
         ); // 0.3125
-        const expectedEscrowAmount = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmount = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
 
         const voucherID = await utils.commitToBuy(
@@ -790,13 +788,13 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW', async () => {
-        const expectedBuyerAmount = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerAmount = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerAmount = new BN(helpers.product_price).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedSellerAmount = BN(helpers.product_price).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.325
-        const expectedEscrowAmount = new BN(0); // 0
+        const expectedEscrowAmount = BN(0); // 0
 
         const voucherID = await utils.commitToBuy(
           users.buyer,
@@ -903,8 +901,8 @@ describe('Cashier withdrawals ', () => {
           );
 
         const supplyQty = 1;
-        const tokensToMint = new BN(helpers.seller_deposit).mul(
-          new BN(supplyQty)
+        const tokensToMint = BN(helpers.seller_deposit).mul(
+          BN(supplyQty)
         );
 
         await utils.mintTokens(
@@ -1016,11 +1014,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -1052,18 +1050,18 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerPrice = new BN(0);
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedSellerPrice = BN(0);
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountPrice = new BN(0);
+        const expectedEscrowAmountPrice = BN(0);
 
         await getBalancesFromPriceTokenAndDepositToken();
 
@@ -1097,11 +1095,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -1135,14 +1133,14 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(0);
-        const expectedSellerPrice = new BN(0);
-        const expectedSellerDeposit = new BN(0);
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).add(
-          new BN(helpers.buyer_deposit)
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(0);
+        const expectedSellerPrice = BN(0);
+        const expectedSellerDeposit = BN(0);
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).add(
+          BN(helpers.buyer_deposit)
         ); // 0.09
-        const expectedEscrowAmountPrice = new BN(0);
+        const expectedEscrowAmountPrice = BN(0);
 
         await getBalancesFromPriceTokenAndDepositToken();
 
@@ -1176,11 +1174,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -1215,16 +1213,16 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerPrice = new BN(0);
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(2)
+        const expectedSellerPrice = BN(0);
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(2)
         ); // 0.025
-        const expectedEscrowAmountDeposit = new BN(0);
-        const expectedEscrowAmountPrice = new BN(0);
+        const expectedEscrowAmountDeposit = BN(0);
+        const expectedEscrowAmountPrice = BN(0);
 
         await getBalancesFromPriceTokenAndDepositToken();
 
@@ -1258,11 +1256,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -1294,12 +1292,12 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(0);
-        const expectedSellerPrice = new BN(0);
-        const expectedSellerDeposit = new BN(helpers.seller_deposit); // 0.05
-        const expectedEscrowAmountDeposit = new BN(helpers.buyer_deposit); // 0.04
-        const expectedEscrowAmountPrice = new BN(0);
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(0);
+        const expectedSellerPrice = BN(0);
+        const expectedSellerDeposit = BN(helpers.seller_deposit); // 0.05
+        const expectedEscrowAmountDeposit = BN(helpers.buyer_deposit); // 0.04
+        const expectedEscrowAmountPrice = BN(0);
 
         await getBalancesFromPriceTokenAndDepositToken();
 
@@ -1333,11 +1331,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -1370,16 +1368,16 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerPrice = new BN(0);
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(2)
+        const expectedSellerPrice = BN(0);
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(2)
         ); // 0.025
-        const expectedEscrowAmountPrice = new BN(0);
-        const expectedEscrowAmountDeposit = new BN(0);
+        const expectedEscrowAmountPrice = BN(0);
+        const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesFromPriceTokenAndDepositToken();
 
@@ -1413,11 +1411,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -1449,12 +1447,12 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit); // 0.04
-        const expectedSellerPrice = new BN(helpers.product_price); //// 0.3
-        const expectedSellerDeposit = new BN(helpers.seller_deposit); // 0.05
-        const expectedEscrowAmountDeposit = new BN(0);
-        const expectedEscrowAmountPrice = new BN(0);
+        const expectedBuyerPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit); // 0.04
+        const expectedSellerPrice = BN(helpers.product_price); //// 0.3
+        const expectedSellerDeposit = BN(helpers.seller_deposit); // 0.05
+        const expectedEscrowAmountDeposit = BN(0);
+        const expectedEscrowAmountPrice = BN(0);
 
         await getBalancesFromPriceTokenAndDepositToken();
 
@@ -1488,11 +1486,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -1526,12 +1524,12 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit); // 0.04
-        const expectedSellerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = new BN(0);
-        const expectedEscrowAmountPrice = new BN(0);
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit); // 0.05
+        const expectedBuyerPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit); // 0.04
+        const expectedSellerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerDeposit = BN(0);
+        const expectedEscrowAmountPrice = BN(0);
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit); // 0.05
 
         await getBalancesFromPriceTokenAndDepositToken();
 
@@ -1565,11 +1563,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -1603,17 +1601,17 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedSellerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountPrice = new BN(0);
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmountPrice = BN(0);
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
 
         await getBalancesFromPriceTokenAndDepositToken();
@@ -1648,11 +1646,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -1686,17 +1684,17 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedSellerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountPrice = new BN(0);
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmountPrice = BN(0);
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
 
         await getBalancesFromPriceTokenAndDepositToken();
@@ -1731,11 +1729,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -1769,16 +1767,16 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(2)
+        const expectedSellerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(2)
         ); // 0.025
-        const expectedEscrowAmountPrice = new BN(0);
-        const expectedEscrowAmountDeposit = new BN(0);
+        const expectedEscrowAmountPrice = BN(0);
+        const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesFromPriceTokenAndDepositToken();
 
@@ -1812,11 +1810,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -1832,10 +1830,10 @@ describe('Cashier withdrawals ', () => {
     });
 
     describe(`TKNTKN SAME [WITH PERMIT]`, () => {
-      let balanceBuyer = new BN(0);
-      let balanceSeller = new BN(0);
-      let escrowBalance = new BN(0);
-      let cashierBalance = new BN(0);
+      let balanceBuyer = BN(0);
+      let balanceSeller = BN(0);
+      let escrowBalance = BN(0);
+      let cashierBalance = BN(0);
 
       async function getBalancesFromSameTokenContract() {
         balanceBuyer = await utils.contractBSNTokenSame.balanceOf(
@@ -1866,11 +1864,11 @@ describe('Cashier withdrawals ', () => {
           );
 
         const supplyQty = 1;
-        const tokensToMintSeller = new BN(helpers.seller_deposit).mul(
-          new BN(supplyQty)
+        const tokensToMintSeller = BN(helpers.seller_deposit).mul(
+          BN(supplyQty)
         );
-        const tokensToMintBuyer = new BN(helpers.product_price).add(
-          new BN(helpers.buyer_deposit)
+        const tokensToMintBuyer = BN(helpers.product_price).add(
+          BN(helpers.buyer_deposit)
         );
 
         await utils.mintTokens(
@@ -1895,15 +1893,15 @@ describe('Cashier withdrawals ', () => {
 
       afterEach(async () => {
         distributedAmounts = {
-          buyerAmount: new BN(0),
-          sellerAmount: new BN(0),
-          escrowAmount: new BN(0),
+          buyerAmount: BN(0),
+          sellerAmount: BN(0),
+          escrowAmount: BN(0),
         };
 
-        balanceBuyer = new BN(0);
-        balanceSeller = new BN(0);
-        escrowBalance = new BN(0);
-        cashierBalance = new BN(0);
+        balanceBuyer = BN(0);
+        balanceSeller = BN(0);
+        escrowBalance = BN(0);
+        cashierBalance = BN(0);
 
         await giveAwayToRandom();
       });
@@ -1926,18 +1924,18 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerPrice = new BN(0);
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedSellerPrice = BN(0);
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountPrice = new BN(0);
+        const expectedEscrowAmountPrice = BN(0);
 
         await getBalancesFromSameTokenContract();
 
@@ -1958,7 +1956,7 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierBalance.eq(new BN(0)),
+          cashierBalance.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -1990,18 +1988,18 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerPrice = new BN(0);
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedSellerPrice = BN(0);
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountPrice = new BN(0);
+        const expectedEscrowAmountPrice = BN(0);
 
         await getBalancesFromSameTokenContract();
 
@@ -2022,7 +2020,7 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierBalance.eq(new BN(0)),
+          cashierBalance.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -2056,14 +2054,14 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(0);
-        const expectedSellerPrice = new BN(0);
-        const expectedSellerDeposit = new BN(0);
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).add(
-          new BN(helpers.buyer_deposit)
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(0);
+        const expectedSellerPrice = BN(0);
+        const expectedSellerDeposit = BN(0);
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).add(
+          BN(helpers.buyer_deposit)
         ); // 0.09
-        const expectedEscrowAmountPrice = new BN(0);
+        const expectedEscrowAmountPrice = BN(0);
 
         await getBalancesFromSameTokenContract();
 
@@ -2084,7 +2082,7 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierBalance.eq(new BN(0)),
+          cashierBalance.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -2119,16 +2117,16 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerPrice = new BN(0);
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(2)
+        const expectedSellerPrice = BN(0);
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(2)
         ); // 0.025
-        const expectedEscrowAmountDeposit = new BN(0);
-        const expectedEscrowAmountPrice = new BN(0);
+        const expectedEscrowAmountDeposit = BN(0);
+        const expectedEscrowAmountPrice = BN(0);
 
         await getBalancesFromSameTokenContract();
 
@@ -2149,7 +2147,7 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierBalance.eq(new BN(0)),
+          cashierBalance.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -2181,12 +2179,12 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(0);
-        const expectedSellerPrice = new BN(0);
-        const expectedSellerDeposit = new BN(helpers.seller_deposit); // 0.05
-        const expectedEscrowAmountDeposit = new BN(helpers.buyer_deposit); // 0.04
-        const expectedEscrowAmountPrice = new BN(0);
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(0);
+        const expectedSellerPrice = BN(0);
+        const expectedSellerDeposit = BN(helpers.seller_deposit); // 0.05
+        const expectedEscrowAmountDeposit = BN(helpers.buyer_deposit); // 0.04
+        const expectedEscrowAmountPrice = BN(0);
 
         await getBalancesFromSameTokenContract();
 
@@ -2207,7 +2205,7 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierBalance.eq(new BN(0)),
+          cashierBalance.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -2240,16 +2238,16 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerPrice = new BN(0);
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(2)
+        const expectedSellerPrice = BN(0);
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(2)
         ); // 0.025
-        const expectedEscrowAmountPrice = new BN(0);
-        const expectedEscrowAmountDeposit = new BN(0);
+        const expectedEscrowAmountPrice = BN(0);
+        const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesFromSameTokenContract();
 
@@ -2270,7 +2268,7 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierBalance.eq(new BN(0)),
+          cashierBalance.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -2302,12 +2300,12 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit); // 0.04
-        const expectedSellerPrice = new BN(helpers.product_price); //// 0.3
-        const expectedSellerDeposit = new BN(helpers.seller_deposit); // 0.05
-        const expectedEscrowAmountDeposit = new BN(0);
-        const expectedEscrowAmountPrice = new BN(0);
+        const expectedBuyerPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit); // 0.04
+        const expectedSellerPrice = BN(helpers.product_price); //// 0.3
+        const expectedSellerDeposit = BN(helpers.seller_deposit); // 0.05
+        const expectedEscrowAmountDeposit = BN(0);
+        const expectedEscrowAmountPrice = BN(0);
         await getBalancesFromSameTokenContract();
 
         assert.isTrue(
@@ -2327,7 +2325,7 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierBalance.eq(new BN(0)),
+          cashierBalance.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -2361,12 +2359,12 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit); // 0.04
-        const expectedSellerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = new BN(0);
-        const expectedEscrowAmountPrice = new BN(0);
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit); // 0.05
+        const expectedBuyerPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit); // 0.04
+        const expectedSellerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerDeposit = BN(0);
+        const expectedEscrowAmountPrice = BN(0);
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit); // 0.05
 
         await getBalancesFromSameTokenContract();
 
@@ -2387,7 +2385,7 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierBalance.eq(new BN(0)),
+          cashierBalance.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -2421,17 +2419,17 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedSellerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountPrice = new BN(0);
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmountPrice = BN(0);
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
 
         await getBalancesFromSameTokenContract();
@@ -2453,7 +2451,7 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierBalance.eq(new BN(0)),
+          cashierBalance.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -2487,17 +2485,17 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedSellerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountPrice = new BN(0);
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmountPrice = BN(0);
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
 
         await getBalancesFromSameTokenContract();
@@ -2519,7 +2517,7 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierBalance.eq(new BN(0)),
+          cashierBalance.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -2553,16 +2551,16 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(2)
+        const expectedSellerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(2)
         ); // 0.025
-        const expectedEscrowAmountPrice = new BN(0);
-        const expectedEscrowAmountDeposit = new BN(0);
+        const expectedEscrowAmountPrice = BN(0);
+        const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesFromSameTokenContract();
 
@@ -2583,7 +2581,7 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierBalance.eq(new BN(0)),
+          cashierBalance.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -2599,12 +2597,12 @@ describe('Cashier withdrawals ', () => {
     });
 
     describe(`ETHTKN [WITH PERMIT]`, () => {
-      let balanceBuyerFromDeposits = new BN(0);
-      let balanceSellerFromDeposits = new BN(0);
-      let escrowBalanceFromDeposits = new BN(0);
+      let balanceBuyerFromDeposits = BN(0);
+      let balanceSellerFromDeposits = BN(0);
+      let escrowBalanceFromDeposits = BN(0);
 
-      let cashierPaymentLeft = new BN(0);
-      let cashierDepositLeft = new BN(0);
+      let cashierPaymentLeft = BN(0);
+      let cashierDepositLeft = BN(0);
 
       async function getBalancesDepositToken() {
         balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
@@ -2635,8 +2633,8 @@ describe('Cashier withdrawals ', () => {
           );
 
         const supplyQty = 1;
-        const tokensToMint = new BN(helpers.seller_deposit).mul(
-          new BN(supplyQty)
+        const tokensToMint = BN(helpers.seller_deposit).mul(
+          BN(supplyQty)
         );
 
         await utils.mintTokens(
@@ -2661,17 +2659,17 @@ describe('Cashier withdrawals ', () => {
 
       afterEach(async () => {
         distributedAmounts = {
-          buyerAmount: new BN(0),
-          sellerAmount: new BN(0),
-          escrowAmount: new BN(0),
+          buyerAmount: BN(0),
+          sellerAmount: BN(0),
+          escrowAmount: BN(0),
         };
 
-        balanceBuyerFromDeposits = new BN(0);
-        balanceSellerFromDeposits = new BN(0);
-        escrowBalanceFromDeposits = new BN(0);
+        balanceBuyerFromDeposits = BN(0);
+        balanceSellerFromDeposits = BN(0);
+        escrowBalanceFromDeposits = BN(0);
 
-        cashierPaymentLeft = new BN(0);
-        cashierDepositLeft = new BN(0);
+        cashierPaymentLeft = BN(0);
+        cashierDepositLeft = BN(0);
 
         await giveAwayToRandom();
       });
@@ -2695,15 +2693,15 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
 
         await getBalancesDepositToken();
@@ -2735,11 +2733,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -2769,15 +2767,15 @@ describe('Cashier withdrawals ', () => {
           users.deployer.signer
         );
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
 
         await getBalancesDepositToken();
@@ -2811,11 +2809,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -2849,11 +2847,11 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(0);
-        const expectedSellerDeposit = new BN(0);
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).add(
-          new BN(helpers.buyer_deposit)
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(0);
+        const expectedSellerDeposit = BN(0);
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).add(
+          BN(helpers.buyer_deposit)
         ); // 0.09
 
         await getBalancesDepositToken();
@@ -2885,11 +2883,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -2924,14 +2922,14 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(2)
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(2)
         ); // 0.025
-        const expectedEscrowAmountDeposit = new BN(0);
+        const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesDepositToken();
 
@@ -2962,11 +2960,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -2998,10 +2996,10 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(0);
-        const expectedSellerDeposit = new BN(helpers.seller_deposit); // 0.05
-        const expectedEscrowAmountDeposit = new BN(helpers.buyer_deposit); // 0.04
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(0);
+        const expectedSellerDeposit = BN(helpers.seller_deposit); // 0.05
+        const expectedEscrowAmountDeposit = BN(helpers.buyer_deposit); // 0.04
 
         await getBalancesDepositToken();
 
@@ -3032,11 +3030,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -3069,14 +3067,14 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(2)
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(2)
         ); // 0.025
-        const expectedEscrowAmountDeposit = new BN(0);
+        const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesDepositToken();
 
@@ -3107,11 +3105,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -3143,10 +3141,10 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit); // 0.04
-        const expectedSellerPrice = new BN(helpers.product_price); //// 0.3
-        const expectedSellerDeposit = new BN(helpers.seller_deposit); // 0.05
-        const expectedEscrowAmountDeposit = new BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit); // 0.04
+        const expectedSellerPrice = BN(helpers.product_price); //// 0.3
+        const expectedSellerDeposit = BN(helpers.seller_deposit); // 0.05
+        const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesDepositToken();
 
@@ -3177,11 +3175,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -3215,10 +3213,10 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit); // 0.04
-        const expectedSellerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = new BN(0);
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit); // 0.05
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit); // 0.04
+        const expectedSellerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerDeposit = BN(0);
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit); // 0.05
 
         await getBalancesDepositToken();
 
@@ -3249,11 +3247,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -3287,15 +3285,15 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedSellerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
 
         await getBalancesDepositToken();
@@ -3327,11 +3325,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -3365,15 +3363,15 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedSellerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
 
         await getBalancesDepositToken();
@@ -3405,11 +3403,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -3443,14 +3441,14 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(2)
+        const expectedSellerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(2)
         ); // 0.025
-        const expectedEscrowAmountDeposit = new BN(0);
+        const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesDepositToken();
 
@@ -3481,11 +3479,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -3501,12 +3499,12 @@ describe('Cashier withdrawals ', () => {
     });
 
     describe(`TKNETH [WITH PERMIT]`, () => {
-      let balanceBuyerFromPayment = new BN(0);
-      let balanceSellerFromPayment = new BN(0);
-      let escrowBalanceFromPayment = new BN(0);
+      let balanceBuyerFromPayment = BN(0);
+      let balanceSellerFromPayment = BN(0);
+      let escrowBalanceFromPayment = BN(0);
 
-      let cashierPaymentLeft = new BN(0);
-      let cashierDepositLeft = new BN(0);
+      let cashierPaymentLeft = BN(0);
+      let cashierDepositLeft = BN(0);
 
       async function getBalancesPriceToken() {
         balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
@@ -3570,17 +3568,17 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerPrice = new BN(0);
-        const expectedEscrowPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerPrice = BN(0);
+        const expectedEscrowPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
 
         await getBalancesPriceToken();
@@ -3631,11 +3629,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -3667,17 +3665,17 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerPrice = new BN(0);
-        const expectedEscrowPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerPrice = BN(0);
+        const expectedEscrowPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
 
         await getBalancesPriceToken();
@@ -3728,11 +3726,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -3766,13 +3764,13 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerPrice = new BN(0);
-        const expectedEscrowPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(0);
-        const expectedSellerDeposit = new BN(0);
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).add(
-          new BN(helpers.buyer_deposit)
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerPrice = BN(0);
+        const expectedEscrowPrice = BN(0);
+        const expectedBuyerDeposit = BN(0);
+        const expectedSellerDeposit = BN(0);
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).add(
+          BN(helpers.buyer_deposit)
         ); // 0.09
 
         await getBalancesPriceToken();
@@ -3823,11 +3821,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -3862,16 +3860,16 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerPrice = new BN(0);
-        const expectedEscrowPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerPrice = BN(0);
+        const expectedEscrowPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(2)
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(2)
         ); // 0.025
-        const expectedEscrowAmountDeposit = new BN(0);
+        const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesPriceToken();
 
@@ -3921,11 +3919,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -3957,12 +3955,12 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerPrice = new BN(0);
-        const expectedEscrowPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(0);
-        const expectedSellerDeposit = new BN(helpers.seller_deposit); // 0.05
-        const expectedEscrowAmountDeposit = new BN(helpers.buyer_deposit); // 0.04
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerPrice = BN(0);
+        const expectedEscrowPrice = BN(0);
+        const expectedBuyerDeposit = BN(0);
+        const expectedSellerDeposit = BN(helpers.seller_deposit); // 0.05
+        const expectedEscrowAmountDeposit = BN(helpers.buyer_deposit); // 0.04
 
         await getBalancesPriceToken();
 
@@ -4012,11 +4010,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -4049,16 +4047,16 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(helpers.product_price); // 0.3
-        const expectedSellerPrice = new BN(0);
-        const expectedEscrowPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(helpers.product_price); // 0.3
+        const expectedSellerPrice = BN(0);
+        const expectedEscrowPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(2)
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(2)
         ); // 0.025
-        const expectedEscrowAmountDeposit = new BN(0);
+        const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesPriceToken();
 
@@ -4108,11 +4106,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -4144,12 +4142,12 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(0);
-        const expectedSellerPrice = new BN(helpers.product_price); // 0.3
-        const expectedEscrowPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit); // 0.04
-        const expectedSellerDeposit = new BN(helpers.seller_deposit); // 0.05
-        const expectedEscrowAmountDeposit = new BN(0);
+        const expectedBuyerPrice = BN(0);
+        const expectedSellerPrice = BN(helpers.product_price); // 0.3
+        const expectedEscrowPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit); // 0.04
+        const expectedSellerDeposit = BN(helpers.seller_deposit); // 0.05
+        const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesPriceToken();
 
@@ -4199,11 +4197,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -4237,12 +4235,12 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(0);
-        const expectedSellerPrice = new BN(helpers.product_price); // 0.3
-        const expectedEscrowPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit); // 0.04
-        const expectedSellerDeposit = new BN(0);
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit); // 0.05
+        const expectedBuyerPrice = BN(0);
+        const expectedSellerPrice = BN(helpers.product_price); // 0.3
+        const expectedEscrowPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit); // 0.04
+        const expectedSellerDeposit = BN(0);
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit); // 0.05
 
         await getBalancesPriceToken();
 
@@ -4292,11 +4290,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -4330,17 +4328,17 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(0);
-        const expectedSellerPrice = new BN(helpers.product_price); // 0.3
-        const expectedEscrowPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(0);
+        const expectedSellerPrice = BN(helpers.product_price); // 0.3
+        const expectedEscrowPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
 
         await getBalancesPriceToken();
@@ -4391,11 +4389,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -4429,17 +4427,17 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(0);
-        const expectedSellerPrice = new BN(helpers.product_price); // 0.3
-        const expectedEscrowPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(0);
+        const expectedSellerPrice = BN(helpers.product_price); // 0.3
+        const expectedEscrowPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
-        const expectedEscrowAmountDeposit = new BN(helpers.seller_deposit).div(
-          new BN(4)
+        const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
+          BN(4)
         ); // 0.0125
 
         await getBalancesPriceToken();
@@ -4490,11 +4488,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -4528,16 +4526,16 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedBuyerPrice = new BN(0);
-        const expectedSellerPrice = new BN(helpers.product_price); // 0.3
-        const expectedEscrowPrice = new BN(0);
-        const expectedBuyerDeposit = new BN(helpers.buyer_deposit).add(
-          new BN(helpers.seller_deposit).div(new BN(2))
+        const expectedBuyerPrice = BN(0);
+        const expectedSellerPrice = BN(helpers.product_price); // 0.3
+        const expectedEscrowPrice = BN(0);
+        const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
+          BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).div(
-          new BN(2)
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
+          BN(2)
         ); // 0.025
-        const expectedEscrowAmountDeposit = new BN(0);
+        const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesPriceToken();
         // Payments in TKN
@@ -4586,11 +4584,11 @@ describe('Cashier withdrawals ', () => {
 
         //Cashier Should be Empty
         assert.isTrue(
-          cashierPaymentLeft.eq(new BN(0)),
+          cashierPaymentLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
         assert.isTrue(
-          cashierDepositLeft.eq(new BN(0)),
+          cashierDepositLeft.eq(BN(0)),
           'Cashier Contract is not empty'
         );
 
@@ -4606,17 +4604,17 @@ describe('Cashier withdrawals ', () => {
 
       afterEach(async () => {
         distributedAmounts = {
-          buyerAmount: new BN(0),
-          sellerAmount: new BN(0),
-          escrowAmount: new BN(0),
+          buyerAmount: BN(0),
+          sellerAmount: BN(0),
+          escrowAmount: BN(0),
         };
 
-        balanceBuyerFromPayment = new BN(0);
-        balanceSellerFromPayment = new BN(0);
-        escrowBalanceFromPayment = new BN(0);
+        balanceBuyerFromPayment = BN(0);
+        balanceSellerFromPayment = BN(0);
+        escrowBalanceFromPayment = BN(0);
 
-        cashierPaymentLeft = new BN(0);
-        cashierDepositLeft = new BN(0);
+        cashierPaymentLeft = BN(0);
+        cashierDepositLeft = BN(0);
 
         await giveAwayToRandom();
       });
@@ -4679,8 +4677,8 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
-        const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
-          new BN(remQty)
+        const expectedSellerDeposit = BN(helpers.seller_deposit).mul(
+          BN(remQty)
         );
 
         eventUtils.assertEventEmitted(
@@ -4695,8 +4693,8 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('Escrow should have correct balance after burning the rest of the supply', async () => {
-        const expectedBalance = new BN(helpers.seller_deposit).mul(
-          new BN(voucherToBuyBeforeBurn)
+        const expectedBalance = BN(helpers.seller_deposit).mul(
+          BN(voucherToBuyBeforeBurn)
         );
         const escrowAmount = await contractCashier.getEscrowAmount(
           users.seller.address
@@ -4715,7 +4713,7 @@ describe('Cashier withdrawals ', () => {
         );
 
         assert.isTrue(
-          remainingQtyInContract.eq(new BN(0)),
+          remainingQtyInContract.eq(BN(0)),
           'Escrow amount is incorrect'
         );
       });
@@ -4761,11 +4759,11 @@ describe('Cashier withdrawals ', () => {
               contractBSNTokenDeposit
             );
 
-          tokensToMintSeller = new BN(helpers.seller_deposit).mul(
-            new BN(helpers.QTY_10)
+          tokensToMintSeller = BN(helpers.seller_deposit).mul(
+            BN(helpers.QTY_10)
           );
-          tokensToMintBuyer = new BN(helpers.product_price).mul(
-            new BN(helpers.QTY_10)
+          tokensToMintBuyer = BN(helpers.product_price).mul(
+            BN(helpers.QTY_10)
           );
 
           await utils.mintTokens(
@@ -4825,8 +4823,8 @@ describe('Cashier withdrawals ', () => {
 
           const txReceipt = await withdrawTx.wait();
 
-          const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
-            new BN(remQty)
+          const expectedSellerDeposit = BN(helpers.seller_deposit).mul(
+            BN(remQty)
           );
 
           eventUtils.assertEventEmitted(
@@ -4841,8 +4839,8 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Tokens should be returned to seller after burning the rest of the supply', async () => {
-          const expectedBalance = new BN(helpers.seller_deposit).mul(
-            new BN(voucherToBuyBeforeBurn)
+          const expectedBalance = BN(helpers.seller_deposit).mul(
+            BN(voucherToBuyBeforeBurn)
           );
           const escrowAmount = await contractBSNTokenDeposit.balanceOf(
             users.seller.address
@@ -4855,8 +4853,8 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Escrow should have correct balance after burning the rest of the supply', async () => {
-          const expectedBalance = new BN(helpers.seller_deposit).mul(
-            new BN(voucherToBuyBeforeBurn)
+          const expectedBalance = BN(helpers.seller_deposit).mul(
+            BN(voucherToBuyBeforeBurn)
           );
           const escrowAmount = await contractCashier.getEscrowTokensAmount(
             contractBSNTokenDeposit.address,
@@ -4876,7 +4874,7 @@ describe('Cashier withdrawals ', () => {
           );
 
           assert.isTrue(
-            remainingQtyInContract.eq(new BN(0)),
+            remainingQtyInContract.eq(BN(0)),
             'Escrow amount is incorrect'
           );
         });
@@ -4926,11 +4924,11 @@ describe('Cashier withdrawals ', () => {
               contractBSNTokenDeposit
             );
 
-          tokensToMintSeller = new BN(helpers.seller_deposit).mul(
-            new BN(helpers.QTY_10)
+          tokensToMintSeller = BN(helpers.seller_deposit).mul(
+            BN(helpers.QTY_10)
           );
-          tokensToMintBuyer = new BN(helpers.product_price).mul(
-            new BN(helpers.QTY_10)
+          tokensToMintBuyer = BN(helpers.product_price).mul(
+            BN(helpers.QTY_10)
           );
 
           await utils.mintTokens(
@@ -4982,8 +4980,8 @@ describe('Cashier withdrawals ', () => {
             TOKEN_SUPPLY_ID
           );
 
-          const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
-            new BN(remQty)
+          const expectedSellerDeposit = BN(helpers.seller_deposit).mul(
+            BN(remQty)
           );
 
           const txReceipt = await withdrawTx.wait();
@@ -5000,8 +4998,8 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Tokens should be returned to seller after burning the rest of the supply', async () => {
-          const expectedBalance = new BN(helpers.seller_deposit).mul(
-            new BN(voucherToBuyBeforeBurn)
+          const expectedBalance = BN(helpers.seller_deposit).mul(
+            BN(voucherToBuyBeforeBurn)
           );
           const escrowAmount = await contractBSNTokenDeposit.balanceOf(
             users.seller.address
@@ -5014,8 +5012,8 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Escrow should have correct balance after burning the rest of the supply', async () => {
-          const expectedBalance = new BN(helpers.seller_deposit).mul(
-            new BN(voucherToBuyBeforeBurn)
+          const expectedBalance = BN(helpers.seller_deposit).mul(
+            BN(voucherToBuyBeforeBurn)
           );
           const escrowAmount = await contractCashier.getEscrowTokensAmount(
             contractBSNTokenDeposit.address,
@@ -5035,7 +5033,7 @@ describe('Cashier withdrawals ', () => {
           );
 
           assert.isTrue(
-            remainingQtyInContract.eq(new BN(0)),
+            remainingQtyInContract.eq(BN(0)),
             'Escrow amount is incorrect'
           );
         });
@@ -5086,8 +5084,8 @@ describe('Cashier withdrawals ', () => {
               ''
             );
 
-          tokensToMintBuyer = new BN(helpers.product_price).mul(
-            new BN(helpers.QTY_10)
+          tokensToMintBuyer = BN(helpers.product_price).mul(
+            BN(helpers.QTY_10)
           );
 
           await utils.mintTokens(
@@ -5136,8 +5134,8 @@ describe('Cashier withdrawals ', () => {
 
           const txReceipt = await withdrawTx.wait();
 
-          const expectedSellerDeposit = new BN(helpers.seller_deposit).mul(
-            new BN(remQty)
+          const expectedSellerDeposit = BN(helpers.seller_deposit).mul(
+            BN(remQty)
           );
 
           eventUtils.assertEventEmitted(
@@ -5152,8 +5150,8 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Escrow should have correct balance after burning the rest of the supply', async () => {
-          const expectedBalance = new BN(helpers.seller_deposit).mul(
-            new BN(voucherToBuyBeforeBurn)
+          const expectedBalance = BN(helpers.seller_deposit).mul(
+            BN(voucherToBuyBeforeBurn)
           );
           const escrowAmount = await contractCashier.getEscrowAmount(
             users.seller.address
@@ -5172,7 +5170,7 @@ describe('Cashier withdrawals ', () => {
           );
 
           assert.isTrue(
-            remainingQtyInContract.eq(new BN(0)),
+            remainingQtyInContract.eq(BN(0)),
             'Escrow amount is incorrect'
           );
         });
@@ -5305,9 +5303,9 @@ describe('Cashier withdrawals ', () => {
       it('Buyer should be able to withdraw all the funds locked in escrow', async () => {
         const buyerInstance = contractCashier.connect(users.buyer.signer);
 
-        const expectedBuyerBalance = new BN(helpers.product_price)
-          .add(new BN(helpers.buyer_deposit))
-          .mul(new BN(vouchersToBuy));
+        const expectedBuyerBalance = BN(helpers.product_price)
+          .add(BN(helpers.buyer_deposit))
+          .mul(BN(vouchersToBuy));
 
         const tx = await buyerInstance.withdrawEthOnDisaster();
 
@@ -5334,8 +5332,8 @@ describe('Cashier withdrawals ', () => {
 
       it('Seller should be able to withdraw all the funds locked in escrow', async () => {
         const sellerInstance = contractCashier.connect(users.seller.signer);
-        const expectedSellerBalance = new BN(helpers.seller_deposit).mul(
-          new BN(helpers.QTY_10)
+        const expectedSellerBalance = BN(helpers.seller_deposit).mul(
+          BN(helpers.QTY_10)
         );
         const tx = await sellerInstance.withdrawEthOnDisaster();
 
@@ -5384,11 +5382,11 @@ describe('Cashier withdrawals ', () => {
             contractBSNTokenDeposit
           );
 
-        const tokensToMintSeller = new BN(helpers.seller_deposit).mul(
-          new BN(helpers.QTY_10)
+        const tokensToMintSeller = BN(helpers.seller_deposit).mul(
+          BN(helpers.QTY_10)
         );
-        const tokensToMintBuyer = new BN(helpers.product_price).mul(
-          new BN(helpers.QTY_10)
+        const tokensToMintBuyer = BN(helpers.product_price).mul(
+          BN(helpers.QTY_10)
         );
 
         await utils.mintTokens(
@@ -5445,11 +5443,11 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('Buyer should be able to withdraw all the funds locked in escrow', async () => {
-        const expectedTknPrice = new BN(helpers.product_price).mul(
-          new BN(vouchersToBuy)
+        const expectedTknPrice = BN(helpers.product_price).mul(
+          BN(vouchersToBuy)
         );
-        const expectedTknDeposit = new BN(helpers.buyer_deposit).mul(
-          new BN(vouchersToBuy)
+        const expectedTknDeposit = BN(helpers.buyer_deposit).mul(
+          BN(vouchersToBuy)
         );
 
         const buyerInstance = contractCashier.connect(users.buyer.signer);
@@ -5505,8 +5503,8 @@ describe('Cashier withdrawals ', () => {
 
       it('Seller should be able to withdraw all the funds locked in escrow', async () => {
         const sellerInstance = contractCashier.connect(users.seller.signer);
-        const expectedSellerBalance = new BN(helpers.seller_deposit).mul(
-          new BN(helpers.QTY_10)
+        const expectedSellerBalance = BN(helpers.seller_deposit).mul(
+          BN(helpers.QTY_10)
         );
         const tx = await sellerInstance.withdrawTokensOnDisaster(
           contractBSNTokenDeposit.address

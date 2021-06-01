@@ -39,7 +39,14 @@ class Utils {
     this.contractBSNTokenSame = bsnTokenPrice;
   }
 
-  async requestCreateOrderETHETH(seller, from, to, sellerDeposit, qty) {
+  async requestCreateOrderETHETH(
+    seller,
+    from,
+    to,
+    sellerDeposit,
+    qty,
+    returnTx = false
+  ) {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
     const sellerInstance = this.contractBSNRouter.connect(seller.signer);
@@ -64,7 +71,7 @@ class Utils {
       events.eventNames.LOG_ORDER_CREATED
     );
 
-    return eventArgs._tokenIdSupply.toString();
+    return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
   }
 
   async requestCreateOrderETHTKNSameWithPermit(
@@ -329,8 +336,7 @@ class Utils {
       sPrice,
       vDeposit,
       rDeposit,
-      sDeposit,
-      {from: buyer.address}
+      sDeposit
     );
 
     const txReceipt = await commitTx.wait();
@@ -375,8 +381,7 @@ class Utils {
       this.deadline,
       v,
       r,
-      s,
-      {from: buyer.address}
+      s
     );
 
     const txReceipt = await commitTx.wait();

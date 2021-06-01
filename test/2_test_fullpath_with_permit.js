@@ -37,8 +37,6 @@ describe('Cashier and VoucherKernel', () => {
     VoucherKernel = await ethers.getContractFactory('VoucherKernel');
     Cashier = await ethers.getContractFactory('Cashier');
     BosonRouter = await ethers.getContractFactory('BosonRouter');
-    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
-    FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
     FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
     MockERC20Permit = await ethers.getContractFactory('MockERC20Permit');
   });
