@@ -5,7 +5,7 @@ const {describe,it,before} = require("mocha");
 let format = require("../helpers/formatter")
 const checkBalance = require("../helpers/checkBalance");
 let helpers = require("../helpers/constants");
-const {BUYER_PUBLIC, SELLER_PUBLIC} = require('../helpers/config');
+const {BUYER_PUBLIC, SELLER_PUBLIC, contracts} = require('../helpers/config');
 let assert = require('chai').assert;
 
 const TIMEOUT = 500 * 1000;
@@ -40,8 +40,19 @@ describe("TEST SCENARIO 003 :: SELLER CREATES & BUYER COMMITS", async function()
         aql(voucherSetDetails['nftSupply'],helpers.ORDER_QUANTITY1);
     })
 
-    it("TEST SCENARIO 03 :: SELLER CREATE :: 1.4 VALIDATE SELLER DEPOSIT", async function () {
-        aql(voucherSetDetails['sellerDeposit'],helpers.seller_deposit);
+    it("TEST SCENARIO 03 :: SELLER CREATE :: 1.4 VALIDATE SELLER", async function () {
+        aql(voucherSetDetails['nftSeller'],SELLER_PUBLIC);
+    })
+
+    it("TEST SCENARIO 03 :: SELLER CREATE :: 1.5 VALIDATE PAYMENT TYPE", async function () {
+        aql(voucherSetDetails['paymentType'],1);
+    })
+
+    it("TEST SCENARIO 03 :: SELLER CREATE :: 1.6 VALIDATE ERC1155ERC721 DATA", async function () {
+        aql(voucherSetDetails['operator'],contracts.VoucherKernelContractAddress);
+        aql(voucherSetDetails['transferFrom'],helpers.ZERO_ADDRESS);
+        aql(voucherSetDetails['transferTo'],SELLER_PUBLIC);
+        aql(voucherSetDetails['transferValue'],helpers.ORDER_QUANTITY1);
     })
 
     it("TEST SCENARIO 03 :: BUYER COMMITS :: 2.0 Buyer commits to purchase a voucher", async function() {
@@ -50,11 +61,11 @@ describe("TEST SCENARIO 003 :: SELLER CREATES & BUYER COMMITS", async function()
     });
 
     it("TEST SCENARIO 03 :: SELLER CREATE :: 2.1 VALIDATE ISSUER", async function () {
-        aql(commitVoucherDetails['issuer'],SELLER_PUBLIC.toLowerCase());
+        aql(commitVoucherDetails['issuer'],SELLER_PUBLIC);
     })
 
     it("TEST SCENARIO 03 :: SELLER CREATE :: 2.2 VALIDATE HOLDER", async function () {
-        aql(commitVoucherDetails['holder'],BUYER_PUBLIC.toLowerCase());
+        aql(commitVoucherDetails['holder'],BUYER_PUBLIC);
     })
 
     after("Check Balances", async function () {

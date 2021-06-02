@@ -1,6 +1,7 @@
 const sellerCreate = require("../seller/createVoucher");
 const sellerCancel = require("../seller/cancelVoucherSet");
 const Utils = require('../helpers/utils');
+const { SELLER_PUBLIC, contracts } = require('../helpers/config');
 const {describe,it} = require("mocha");
 let format = require("../helpers/formatter");
 const checkBalance = require("../helpers/checkBalance");
@@ -37,8 +38,19 @@ describe("TEST SCENARIO 002 :: SELLER CREATES & CANCELS", async function() {
         aql(voucherSetDetails['nftSupply'],helpers.ORDER_QUANTITY1);
     })
 
-    it("TEST SCENARIO 02 :: SELLER CREATE :: 1.4 VALIDATE SELLER DEPOSIT", async function () {
-        aql(voucherSetDetails['sellerDeposit'],helpers.seller_deposit);
+    it("TEST SCENARIO 02 :: SELLER CREATE :: 1.4 VALIDATE SELLER", async function () {
+        aql(voucherSetDetails['nftSeller'],SELLER_PUBLIC);
+    })
+
+    it("TEST SCENARIO 02 :: SELLER CREATE :: 1.5 VALIDATE PAYMENT TYPE", async function () {
+        aql(voucherSetDetails['paymentType'],1);
+    })
+
+    it("TEST SCENARIO 02 :: SELLER CREATE :: 1.6 VALIDATE ERC1155ERC721 DATA", async function () {
+        aql(voucherSetDetails['operator'],contracts.VoucherKernelContractAddress);
+        aql(voucherSetDetails['transferFrom'],helpers.ZERO_ADDRESS);
+        aql(voucherSetDetails['transferTo'],SELLER_PUBLIC);
+        aql(voucherSetDetails['transferValue'],helpers.ORDER_QUANTITY1);
     })
 
     it("TEST SCENARIO 02:: SELLER CANCEL :: 2.0 Seller cancels a voucher-set", async function() {
@@ -46,12 +58,14 @@ describe("TEST SCENARIO 002 :: SELLER CREATES & CANCELS", async function() {
         await format(cancelledVoucher);
     });
 
+
     it("TEST SCENARIO 02 :: SELLER CANCEL :: 2.1 VALIDATE ORDER QUANTITY", async function () {
-        aql(voucherSetDetails['nftSupply'],cancelledVoucher['VoucherSetQuantity']);
+        aql(cancelledVoucher['transferValue'],voucherSetDetails['nftSupply']);
     })
 
     it("TEST SCENARIO 02 :: SELLER CANCEL :: 2.2 VALIDATE REFUNDED SELLER DEPOSIT", async function () {
-        aql(voucherSetDetails['sellerDeposit'],cancelledVoucher['redfundedSellerDeposit']);
+        aql(cancelledVoucher['redfundedSellerDeposit'], helpers.seller_deposit);
+        aql(cancelledVoucher['redfundSellerDepositRecipient'],SELLER_PUBLIC);
     })
 
     after("Check Balances", async function () {

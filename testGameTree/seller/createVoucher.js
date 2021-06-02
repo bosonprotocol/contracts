@@ -60,35 +60,32 @@ function CreateOrderETHETH(timestamp) {
             let serializedTx = tx.serialize();
             // executes the transaction
             web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), (err, hash) => {
+                console.log("inside sendSignedTransaction");
+
                 if(err) {
                     reject(new Error(err.message))
                 }
                 console.log("Transaction Hash : ",hash);
             }).on('receipt', function(receipt){
 
+                console.log("on receipt");
+
                 //Events array and args  not present in receipt, so retrieving explicitly
                 bosonRouter.getPastEvents('LogOrderCreated', {
                     fromBlock: 'latest',
                     toBlock: 'latest'
-                }) 
-                .then(function(logOrderCreatedEvents) {
+                }).then(function(logOrderCreatedEvents) {
                     voucherKernel.getPastEvents('LogPromiseCreated', {
                         fromBlock: 'latest',
                         toBlock: 'latest'
-                    })
-                    .then(function(logPromiseCreatedEvents) {
+                    }).then(function(logPromiseCreatedEvents) {
 
                         erc1155erc721.getPastEvents('TransferSingle', {
                             fromBlock: 'latest',
                             toBlock: 'latest'
-                        })
-                        .then(function(logTransferSingEvents) {
-
+                        }).then(function(logTransferSingEvents) {
 
                                 let txhash = receipt.transactionHash;
-                                let logdata1 = receipt.logs[0].data;
-                                let logdata2 = receipt.logs[1].data;
-                                let logdata3 = receipt.logs[2].data;
                                 let gasUsed = receipt.gasUsed;
                                 let validFrom = logPromiseCreatedEvents[0].returnValues._validFrom;
                                 let validTo = logPromiseCreatedEvents[0].returnValues._validTo;
@@ -101,7 +98,6 @@ function CreateOrderETHETH(timestamp) {
                                 let transferTo = logTransferSingEvents[0].returnValues._to;
                                 let transferValue = logTransferSingEvents[0].returnValues._value;
                           
-
                                 let output = {
                                     "TransactionHash":txhash,
                                     "ValidFrom":validFrom,
@@ -118,15 +114,11 @@ function CreateOrderETHETH(timestamp) {
                                     "gasUsed":gasUsed
                                 }
                                 resolve(output)
-                        })
-                        .catch( reject ) ;
+                        }).catch( reject );
 
-                    })
-                    .catch( reject ) ;
+                    }).catch( reject );
                         
-                })
-                .catch( reject ) ;
-
+                }).catch( reject );
             
             }).on('error', console.error);
         })

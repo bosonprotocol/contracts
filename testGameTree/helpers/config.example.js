@@ -1,7 +1,9 @@
 module.exports = {
     contracts: {
-        BosonRouterContrctAddress: '', // rinkeby boson router testnet address
-        VoucherKernelContractAddress:''
+        BosonRouterContrctAddress: '', // rinkeby BosonRouter  address
+        VoucherKernelContractAddress:'', //rinkeby VoucherKernel address
+        ERC1155ERC721ContractAddress: '', //rinkeby ERC1155ERC721 address
+        CashierContractAddress:  '', //rinkeby Cashier address
     },
     DEPLOYER_PUBLIC: '',
     DEPLOYER_SECRET: '',

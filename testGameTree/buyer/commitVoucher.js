@@ -5,6 +5,7 @@ const helpers = require('../helpers/constants')
 const Tx = require('ethereumjs-tx').Transaction;
 let converter = require('hex2dec');
 const BosonRouter = require("../../build/contracts/BosonRouter.json").abi;
+const VoucherKernel = require("../../build/contracts/VoucherKernel.json").abi;
 const { BUYER_SECRET, BUYER_PUBLIC, contracts, PROVIDER, SELLER_PUBLIC } = require('../helpers/config');
 let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
 // set provider for all later instances to use
@@ -15,6 +16,10 @@ function requestVoucherETHETH(_voucherID) {
     return new Promise((resolve, reject) => {
         const bosonRouterAddr = contracts.BosonRouterContrctAddress;
         const bosonRouter = new Contract(BosonRouter,bosonRouterAddr);
+
+        const voucherKernelAddr = contracts.VoucherKernelContractAddress;
+        const voucherKernel = new Contract(VoucherKernel,voucherKernelAddr);
+
         let gasPaid = "0xF458F";
         web3.eth.getTransactionCount(buyer, function(error, txCount) {
             let deposit = helpers.PROMISE_PRICE1+helpers.PROMISE_DEPOSITBU1;
@@ -41,31 +46,39 @@ function requestVoucherETHETH(_voucherID) {
                 }
                 console.log("Transaction Hash : "+hash);
             }).on('receipt', function(receipt){
-                let logdata1 = receipt.logs[0].data;
-                let logdata3 = receipt.logs[2].data;
-                let gasUsed = receipt.gasUsed;
-                let txhash = receipt.transactionHash;
-                let voucherSetID = (converter.hexToDec(logdata1.slice(0, 66))).toString();
-                let mintedVoucherID = (converter.hexToDec(logdata3.slice(0, 66))).toString();
-                let issuer = (logdata3.slice(90, 130)).toString();
-                let holder = (logdata3.slice(154, 194)).toString();
-                let promiseID = (logdata3.slice(194, 258)).toString();
-                let correlationID = converter.hexToDec(logdata3.slice(258, 322))
-                let output = {
-                    "TransactionHash":txhash,
-                    "VoucherSetID":voucherSetID,
-                    "MintedVoucherID":mintedVoucherID,
-                    "issuer":"0x"+issuer,
-                    "holder":"0x"+holder,
-                    "promiseID":promiseID,
-                    "correlationID":correlationID,
-                    "gasPaid":converter.hexToDec(gasPaid),
-                    "gasUsed":gasUsed,
-                    "logReceipt1": receipt.logs[0].id,
-                    "logReceipt2": receipt.logs[1].id,
-                    "logReceipt3": receipt.logs[2].id
-                }
-                resolve(output)
+
+                //Events array and args  not present in receipt, so retrieving explicitly
+                voucherKernel.getPastEvents('LogVoucherDelivered', {
+                    fromBlock: 'latest',
+                    toBlock: 'latest'
+                }).then(function(logVoucherDeliveredEvents) {
+
+                    let logdata1 = receipt.logs[0].data;
+                    let logdata3 = receipt.logs[2].data;
+                    let gasUsed = receipt.gasUsed;
+                    let txhash = receipt.transactionHash;
+                    let voucherSetID = logVoucherDeliveredEvents[0].returnValues._tokenIdSupply;
+                    let mintedVoucherID = logVoucherDeliveredEvents[0].returnValues._tokenIdVoucher;
+                    let issuer = logVoucherDeliveredEvents[0].returnValues._issuer;
+                    let holder = logVoucherDeliveredEvents[0].returnValues._holder;
+                    let promiseID = logVoucherDeliveredEvents[0].returnValues._promiseId;
+                    let output = {
+                        "TransactionHash":txhash,
+                        "VoucherSetID":voucherSetID,
+                        "MintedVoucherID":mintedVoucherID,
+                        "issuer":issuer,
+                        "holder":holder,
+                        "promiseID":promiseID,
+                        "gasPaid":converter.hexToDec(gasPaid),
+                        "gasUsed":gasUsed,
+                        "logReceipt1": receipt.logs[0].id,
+                        "logReceipt2": receipt.logs[1].id,
+                        "logReceipt3": receipt.logs[2].id
+                    }
+                    resolve(output)
+
+                }).catch( reject );
+
             }).on('error', console.error);
         })
     })

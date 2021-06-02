@@ -3,6 +3,7 @@ let Contract = require('web3-eth-contract');
 const Tx = require('ethereumjs-tx').Transaction;
 let converter = require('hex2dec');
 const BosonRouter = require("../../build/contracts/BosonRouter.json").abi;
+const VoucherKernel = require("../../build/contracts/VoucherKernel.json").abi;
 const { BUYER_SECRET, BUYER_PUBLIC, contracts, PROVIDER } = require('../helpers/config');
 let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
 // set provider for all later instances to use
@@ -13,6 +14,10 @@ function redeemVoucher(_voucherID) {
     return new Promise((resolve, reject) => {
         const bosonRouterAddr = contracts.BosonRouterContrctAddress;
         const bosonRouter = new Contract(BosonRouter,bosonRouterAddr);
+
+        const voucherKernelAddr = contracts.VoucherKernelContractAddress;
+        const voucherKernel = new Contract(VoucherKernel,voucherKernelAddr);
+
         let gasPaid = "0xF458F";
         web3.eth.getTransactionCount(buyer, function(error, txCount) {
             const encoded = bosonRouter.methods.redeem(
@@ -36,19 +41,24 @@ function redeemVoucher(_voucherID) {
                 }
                 console.log("Transaction Hash : "+hash);
             }).on('receipt', function(receipt){
-                let logdata1 = receipt.logs[0].data;
-                let gasUsed = receipt.gasUsed;
-                let burntVoucherID = (converter.hexToDec(logdata1.slice(0, 66))).toString();
-                let holder = (logdata1.slice(90, 130)).toString();
-                let promiseID = (logdata1.slice(130, 194)).toString();
-                let output = {
-                    "redeemedVoucherID":burntVoucherID,
-                    "holder":"0x"+holder,
-                    "promiseID":promiseID,
-                    "gasPaid":gasPaid,
-                    "gasUsed":gasUsed
-                }
-                resolve(output)
+                //Events array and args  not present in receipt, so retrieving explicitly
+                voucherKernel.getPastEvents('LogVoucherRedeemed', {
+                    fromBlock: 'latest',
+                    toBlock: 'latest'
+                }).then(function(logVoucherRedeemedEvents) {
+                    let gasUsed = receipt.gasUsed;
+                    let burntVoucherID = logVoucherRedeemedEvents[0].returnValues._tokenIdVoucher;
+                    let holder = logVoucherRedeemedEvents[0].returnValues._holder;
+                    let promiseID = logVoucherRedeemedEvents[0].returnValues._promiseId;
+                    let output = {
+                        "redeemedVoucherID":burntVoucherID,
+                        "holder":"0x"+holder,
+                        "promiseID":promiseID,
+                        "gasPaid":gasPaid,
+                        "gasUsed":gasUsed
+                    }
+                    resolve(output)
+                }).catch( reject );
             }).on('error', console.error);
         })
     })

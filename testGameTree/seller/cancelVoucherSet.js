@@ -3,6 +3,9 @@ let Contract = require('web3-eth-contract');
 const Tx = require('ethereumjs-tx').Transaction;
 let converter = require('hex2dec');
 const BosonRouter = require("../../build/contracts/BosonRouter.json").abi;
+const VoucherKernel = require("../../build/contracts/VoucherKernel.json").abi;
+const ERC1155ERC721 = require("../../build/contracts/ERC1155ERC721.json").abi;
+const Cashier = require("../../build/contracts/Cashier.json").abi;
 const { SELLER_SECRET, SELLER_PUBLIC, contracts, PROVIDER } = require('../helpers/config');
 let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
 // set provider for all later instances to use
@@ -13,6 +16,16 @@ function requestCancelorFault(_voucherSetID) {
     return new Promise((resolve, reject) => {
         const bosonRouterAddr = contracts.BosonRouterContrctAddress;
         const bosonRouter = new Contract(BosonRouter,bosonRouterAddr);
+
+        const voucherKernelAddr = contracts.VoucherKernelContractAddress;
+        const voucherKernel = new Contract(VoucherKernel,voucherKernelAddr);
+
+        const erc1155erc721Addr = contracts.ERC1155ERC721ContractAddress;
+        const erc1155erc721 = new Contract(ERC1155ERC721,erc1155erc721Addr);
+
+        const cashierAddr = contracts.CashierContractAddress;
+        const cashier = new Contract(Cashier,cashierAddr);
+
         let gasSent = "0xF458F";
         // gets the current nounce of the sellers account and the proceeds to structure the transaction
         web3.eth.getTransactionCount(seller, function(error, txCount) {
@@ -38,27 +51,56 @@ function requestCancelorFault(_voucherSetID) {
                 }
                 console.log("Transaction Hash : ",hash);
             }).on('receipt', function(receipt){
-                let logdata1 = receipt.logs[0].data;
-                let logdata3 = receipt.logs[2].data;
-                let gasUsed = receipt.gasUsed;
-                let txHash = receipt.transactionHash;
-                let VoucherSetID = converter.hexToDec(logdata1.slice(0, 66)).toString();
-                let VoucherSetQuantity = converter.hexToDec(logdata1.slice(66, 130));
-                let SellerAddress = converter.hexToDec(logdata3.slice(66, 130)).toString();
-                let redfundSellerDeposit = converter.hexToDec(logdata3.slice(130, 194));
-                let output = {
-                    "TransactionHash":txHash,
-                    "CanceledVoucherSetID":VoucherSetID,
-                    "VoucherSetQuantity":VoucherSetQuantity,
-                    "SellerAddress":"0x"+SellerAddress,
-                    "gasPaid":converter.hexToDec(gasSent),
-                    "gasUsed":gasUsed,
-                    "redfundedSellerDeposit":redfundSellerDeposit,
-                    "logReceipt1": receipt.logs[0].id,
-                    "logReceipt2": receipt.logs[1].id,
-                    "logReceipt3": receipt.logs[2].id
-                }
-                resolve(output)
+                //Events array and args  not present in receipt, so retrieving explicitly
+                voucherKernel.getPastEvents('LogVoucherSetFaultCancel', {
+                    fromBlock: 'latest',
+                    toBlock: 'latest'
+                }).then(function(logVoucherSetFaultCancelEvents) {
+
+                    erc1155erc721.getPastEvents('TransferSingle', {
+                        fromBlock: 'latest',
+                        toBlock: 'latest'
+                    }).then(function(logTransferSingEvents) {
+
+                        cashier.getPastEvents('LogWithdrawal', {
+                            fromBlock: 'latest',
+                            toBlock: 'latest'
+                        }).then(function(logWithdrawalEvents) {
+
+                         
+                            let gasUsed = receipt.gasUsed;
+                            let txHash = receipt.transactionHash;
+                            let VoucherSetID = logVoucherSetFaultCancelEvents[0].returnValues._tokenIdSupply;
+                            let SellerAddress = logVoucherSetFaultCancelEvents[0].returnValues._issuer;
+                            let operator = logTransferSingEvents[0].returnValues._operator;
+                            let transferFrom = logTransferSingEvents[0].returnValues._from;
+                            let transferTo = logTransferSingEvents[0].returnValues._to;
+                            let transferValue = logTransferSingEvents[0].returnValues._value;
+                            let redfundSellerDeposit = logWithdrawalEvents[0].returnValues._payment;
+                            let redfundSellerDepositRecipient = logWithdrawalEvents[0].returnValues._payee;
+                            let output = {
+                                "TransactionHash":txHash,
+                                "CanceledVoucherSetID":VoucherSetID,
+                                "SellerAddress":SellerAddress,
+                                "gasPaid":converter.hexToDec(gasSent),
+                                "gasUsed":gasUsed,
+                                "operator":operator,
+                                "transferFrom":transferFrom,
+                                "transferTo":transferTo,
+                                "transferValue": transferValue,
+                                "redfundedSellerDeposit":redfundSellerDeposit,
+                                "redfundSellerDepositRecipient":redfundSellerDepositRecipient
+                            
+                            }
+
+                            resolve(output)
+
+                        }).catch( reject );
+
+                    }).catch( reject );
+
+                }).catch( reject );
+          
             }).on('error', console.error);
         })
     })
