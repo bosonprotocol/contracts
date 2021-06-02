@@ -5,14 +5,8 @@
 ### How To Run
 
 - Install the dependencies: `npm install`.
-- Update `package.json` with `"test":"mocha ./testGameTree/1_test.js"` as shown below
 
-``` 
-  "scripts": {
-  "test": "mocha ./testGameTree/1_test.js",
-  ...
-```  
-- Create `config.js` under the `testGameTree/helpers` directory and update it with the appropriate details as shown below
+- Copy `testGameTree/helpers/config.example.js` to  `testGameTree/helpers/config.js` and update it with the appropriate details as shown below
   
 ```angular2html
     module.exports = {
@@ -30,9 +24,9 @@
 ```
 - Compile the contracts: `truffle compile`. 
 - To run tests:
-    - Run the tests with saving the logs: `npm run test >> log.txt`.
+    - Run the tests with saving the logs: `npm run test:gametree >> log.txt`.
         - These logs can be found in `log.txt`.
-    - Run the tests without saving the logs `npm run test`.
+    - Run the tests without saving the logs `npm run test:gametree`.
 
 ### Scenarios
 
