@@ -1,6 +1,7 @@
 const sellerCreate = require("../seller/createVoucher");
 const checkBalance = require("../helpers/checkBalance");
 const Utils = require('../helpers/utils');
+const { SELLER_PUBLIC, contracts } = require('../helpers/config');
 const {describe,it} = require("mocha");
 let format = require("../helpers/formatter")
 let helpers = require("../helpers/constants");
@@ -34,8 +35,19 @@ describe("TEST SCENARIO 001 :: SELLER CREATES A VOUCHER SET", async function() {
         aql(value['nftSupply'],helpers.ORDER_QUANTITY1);
     })
 
-    it("TEST SCENARIO 01 :: SELLER CREATE :: 1.4 VALIDATE SELLER DEPOSIT", async function () {
-        aql(value['sellerDeposit'],helpers.seller_deposit);
+    it("TEST SCENARIO 01 :: SELLER CREATE :: 1.4 VALIDATE SELLER", async function () {
+        aql(value['nftSeller'],SELLER_PUBLIC);
+    })
+
+    it("TEST SCENARIO 01 :: SELLER CREATE :: 1.5 VALIDATE PAYMENT TYPE", async function () {
+        aql(value['paymentType'],1);
+    })
+
+    it("TEST SCENARIO 01 :: SELLER CREATE :: 1.6 VALIDATE ERC1155ERC721 DATA", async function () {
+        aql(value['operator'],contracts.VoucherKernelContractAddress);
+        aql(value['transferFrom'],helpers.ZERO_ADDRESS);
+        aql(value['transferTo'],SELLER_PUBLIC);
+        aql(value['transferValue'],helpers.ORDER_QUANTITY1);
     })
 
     after("Check Balances", async function () {
