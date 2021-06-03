@@ -78,7 +78,7 @@ describe("TEST SCENARIO 005 :: SELLER CREATES, BUYER COMMITS & BUYER REFUNDS", a
         await format(refundedVoucher);
     });
 
-    it("TEST SCENARIO 05 :: SELLER CREATE :: 3.1 VALIDATE REDEEMED VOUCHER", async function () {
+    it("TEST SCENARIO 05 :: SELLER CREATE :: 3.1 VALIDATE REFUNDED VOUCHER", async function () {
         aql(refundedVoucher['refundedVoucherID'], committedVoucher['MintedVoucherID']);
     })
 
