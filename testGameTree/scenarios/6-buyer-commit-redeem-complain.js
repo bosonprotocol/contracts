@@ -2,13 +2,13 @@ const sellerCreate = require("../seller/createVoucher");
 const commitVocucher = require("../buyer/commitVoucher");
 const redeemVoucher = require("../buyer/redeemVoucher");
 const checkBalance = require("../helpers/checkBalance");
-const complainVoucher = require("../buyer/compainVoucher");
+const complainVoucher = require("../buyer/complainVoucher");
 const delay = require("../helpers/delay");
 const Utils = require('../helpers/utils');
 const {describe,it} = require("mocha");
 let format = require("../helpers/formatter");
 let helpers = require("../helpers/constants");
-const {BUYER_PUBLIC, SELLER_PUBLIC} = require('../helpers/config');
+const {BUYER_PUBLIC, SELLER_PUBLIC, contracts} = require('../helpers/config');
 let assert = require('chai').assert;
 
 describe("TEST SCENARIO 006 :: SELLER CREATES, BUYER COMMITS, REDEEMS & COMPLAINS", async function() {
@@ -43,8 +43,19 @@ describe("TEST SCENARIO 006 :: SELLER CREATES, BUYER COMMITS, REDEEMS & COMPLAIN
         aql(voucherSetDetails['nftSupply'],helpers.ORDER_QUANTITY1);
     })
 
-    it("TEST SCENARIO 06 :: SELLER CREATE :: 1.4 VALIDATE SELLER DEPOSIT", async function () {
-        aql(voucherSetDetails['sellerDeposit'],helpers.seller_deposit);
+    it("TEST SCENARIO 06 :: SELLER CREATE :: 1.4 VALIDATE SELLER", async function () {
+        aql(voucherSetDetails['nftSeller'],SELLER_PUBLIC);
+    })
+
+    it("TEST SCENARIO 06 :: SELLER CREATE :: 1.5 VALIDATE PAYMENT TYPE", async function () {
+        aql(voucherSetDetails['paymentType'],1);
+    })
+
+    it("TEST SCENARIO 06 :: SELLER CREATE :: 1.6 VALIDATE ERC1155ERC721 DATA", async function () {
+        aql(voucherSetDetails['operator'],contracts.VoucherKernelContractAddress);
+        aql(voucherSetDetails['transferFrom'],helpers.ZERO_ADDRESS);
+        aql(voucherSetDetails['transferTo'],SELLER_PUBLIC);
+        aql(voucherSetDetails['transferValue'],helpers.ORDER_QUANTITY1);
     })
 
     it("TEST SCENARIO 06 :: BUYER COMMITS :: 2.0 Buyer commits to purchases a voucher", async function() {
@@ -55,22 +66,24 @@ describe("TEST SCENARIO 006 :: SELLER CREATES, BUYER COMMITS, REDEEMS & COMPLAIN
     });
 
     it("TEST SCENARIO 06 :: BUYER COMMITS :: 2.1 VALIDATE ISSUER", async function () {
-        aql(committedVoucher['issuer'],SELLER_PUBLIC.toLowerCase());
+        aql(committedVoucher['issuer'],SELLER_PUBLIC);
     })
 
     it("TEST SCENARIO 06 :: BUYER COMMITS :: 2.2 VALIDATE HOLDER", async function () {
-        aql(committedVoucher['holder'],BUYER_PUBLIC.toLowerCase());
+        aql(committedVoucher['holder'],BUYER_PUBLIC);
     })
 
     it("TEST SCENARIO 06 :: BUYER REDEEMS :: 3.0 Buyer redeems a purchased voucher", async function() {
         await delay();
         console.log(await checkBalance());
-        redeemed  = await redeemVoucher(committedVoucher["MintedVoucherID"]);
-        await format(redeemed);
+        redeemedVoucher  = await redeemVoucher(committedVoucher["MintedVoucherID"]);
+        await format(redeemedVoucher);
     });
 
-    it("TEST SCENARIO 06 :: BUYER REDEEMS :: 3.1 VALIDATE REDEEMED VOUCHER", async function () {
-        aql(committedVoucher['MintedVoucherID'],redeemed['redeemedVoucherID']);
+    it("TEST SCENARIO 06 :: SELLER CREATE :: 3.1 VALIDATE REDEEMED VOUCHER", async function () {
+        aql(redeemedVoucher['redeemedVoucherID'],committedVoucher['MintedVoucherID']);
+        aql(redeemedVoucher['holder', BUYER_PUBLIC]);
+        aql(redeemedVoucher['promiseID'],committedVoucher['promiseID']);
     })
 
     it("TEST SCENARIO 06 :: BUYER COMPLAINS :: 4.0 Buyer complains about redeemed voucher", async function() {
@@ -80,8 +93,8 @@ describe("TEST SCENARIO 006 :: SELLER CREATES, BUYER COMMITS, REDEEMS & COMPLAIN
         await format(complainedVoucher);
     });
 
-    it("TEST SCENARIO 06 :: BUYER COMPLAINS :: 4.1 VALIDATE REDEEMED VOUCHER", async function () {
-        aql(committedVoucher['MintedVoucherID'],complainedVoucher['complainedVoucherID']);
+    it("TEST SCENARIO 06 :: BUYER COMPLAINS :: 4.1 VALIDATE COMPLAINED VOUCHER", async function () {
+        aql(complainedVoucher['complainedVoucherID'], committedVoucher['MintedVoucherID'],);
     })
 
     after("Check Balances", async function () {

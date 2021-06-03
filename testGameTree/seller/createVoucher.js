@@ -67,9 +67,6 @@ function CreateOrderETHETH(timestamp) {
                 }
                 console.log("Transaction Hash : ",hash);
             }).on('receipt', function(receipt){
-
-                console.log("on receipt");
-
                 //Events array and args  not present in receipt, so retrieving explicitly
                 bosonRouter.getPastEvents('LogOrderCreated', {
                     fromBlock: 'latest',

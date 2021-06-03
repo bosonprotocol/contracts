@@ -3,6 +3,7 @@ let Contract = require('web3-eth-contract');
 const Tx = require('ethereumjs-tx').Transaction;
 let converter = require('hex2dec');
 const BosonRouter = require("../../build/contracts/BosonRouter.json").abi;
+const VoucherKernel = require("../../build/contracts/VoucherKernel.json").abi;
 const { SELLER_SECRET, SELLER_PUBLIC, contracts, PROVIDER } = require('../helpers/config');
 let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
 // set provider for all later instances to use
@@ -13,6 +14,10 @@ function faultVoucher(_voucherSetID) {
     return new Promise((resolve, reject) => {
         const bosonRouterAddr = contracts.BosonRouterContrctAddress;
         const bosonRouter = new Contract(BosonRouter,bosonRouterAddr);
+
+        const voucherKernelAddr = contracts.VoucherKernelContractAddress;
+        const voucherKernel = new Contract(VoucherKernel,voucherKernelAddr);
+
         let gasPaid = "0xF458F";
         // gets the current nounce of the sellers account and the proceeds to structure the transaction
         web3.eth.getTransactionCount(seller, function(error, txCount) {
@@ -38,19 +43,26 @@ function faultVoucher(_voucherSetID) {
                 }
                 console.log("Transaction Hash : "+hash);
             }).on('receipt', function(receipt){
-                let logdata1 = receipt.logs[0].data;
-                let gasUsed = receipt.gasUsed;
-                let txHash = receipt.transactionHash;
-                let txStatus = receipt.status;
-                let FaultedVoucherID = converter.hexToDec(logdata1.slice(0, 66)).toString();
-                let output = {
-                    "TransactionHash":txHash,
-                    "FaultedVoucherID":FaultedVoucherID,
-                    "gasPaid":converter.hexToDec(gasPaid),
-                    "gasUsed":gasUsed,
-                    "status":txStatus
-                }
-                resolve(output)
+                //Events array and args  not present in receipt, so retrieving explicitly
+                voucherKernel.getPastEvents('LogVoucherFaultCancel', {
+                    fromBlock: 'latest',
+                    toBlock: 'latest'
+                }).then(function(logVoucherFaultCancelEvents) {
+
+                    let logdata1 = receipt.logs[0].data;
+                    let gasUsed = receipt.gasUsed;
+                    let txHash = receipt.transactionHash;
+                    let txStatus = receipt.status;
+                    let FaultedVoucherID = logVoucherFaultCancelEvents[0].returnValues._tokenIdVoucher;
+                    let output = {
+                        "TransactionHash":txHash,
+                        "FaultedVoucherID":FaultedVoucherID,
+                        "gasPaid":converter.hexToDec(gasPaid),
+                        "gasUsed":gasUsed,
+                        "status":txStatus
+                    }
+                    resolve(output)
+                }).catch( reject );
             }).on('error', console.error);
         })
     })
