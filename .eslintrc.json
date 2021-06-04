@@ -1,19 +1,23 @@
 {
   "extends": [
     "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
     "prettier"
   ],
   "env": {
     "node": true,
     "es6": true,
     "commonjs": true,
-    "mocha": true,
-    "truffle/globals": true
+    "mocha": true
   },
+  "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "ecmaVersion": 2018
+    "sourceType": "module",
+    "ecmaVersion": 2020
   },
   "plugins": [
-    "truffle"
+    // "truffle"
+    "@typescript-eslint"
   ]
 }
