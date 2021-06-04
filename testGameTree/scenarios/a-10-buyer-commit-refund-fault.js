@@ -8,7 +8,7 @@ const Utils = require('../helpers/utils');
 const {describe,it} = require("mocha");
 let format = require("../helpers/formatter");
 let helpers = require("../helpers/constants");
-const {BUYER_PUBLIC, SELLER_PUBLIC} = require('../helpers/config');
+const {BUYER_PUBLIC, SELLER_PUBLIC, contracts} = require('../helpers/config');
 let assert = require('chai').assert;
 
 describe("TEST SCENARIO 010 :: SELLER CREATES, BUYER COMMITS & BUYER REFUNDS, SELLER FAULTS", async function() {
@@ -16,6 +16,7 @@ describe("TEST SCENARIO 010 :: SELLER CREATES, BUYER COMMITS & BUYER REFUNDS, SE
     let voucherSetDetails;
     let committedVoucher;
     let refundedVoucher;
+    let cancelVoucher;
     let aql = assert.equal;
 
     before("TEST SCENARIO 10 :: SELLER CREATES, BUYER COMMITS & BUYER REFUNDS",async function () {
@@ -42,8 +43,19 @@ describe("TEST SCENARIO 010 :: SELLER CREATES, BUYER COMMITS & BUYER REFUNDS, SE
         aql(voucherSetDetails['nftSupply'],helpers.ORDER_QUANTITY1);
     })
 
-    it("TEST SCENARIO 10 :: SELLER CREATE :: 1.4 VALIDATE SELLER DEPOSIT", async function () {
-        aql(voucherSetDetails['sellerDeposit'],helpers.seller_deposit);
+    it("TEST SCENARIO 10 :: SELLER CREATE :: 1.4 VALIDATE SELLER", async function () {
+        aql(voucherSetDetails['nftSeller'],SELLER_PUBLIC);
+    })
+
+    it("TEST SCENARIO 10 :: SELLER CREATE :: 1.5 VALIDATE PAYMENT TYPE", async function () {
+        aql(voucherSetDetails['paymentType'],1);
+    })
+
+    it("TEST SCENARIO 10 :: SELLER CREATE :: 1.6 VALIDATE ERC1155ERC721 DATA", async function () {
+        aql(voucherSetDetails['operator'],contracts.VoucherKernelContractAddress);
+        aql(voucherSetDetails['transferFrom'],helpers.ZERO_ADDRESS);
+        aql(voucherSetDetails['transferTo'],SELLER_PUBLIC);
+        aql(voucherSetDetails['transferValue'],helpers.ORDER_QUANTITY1);
     })
 
     it("TEST SCENARIO 10 :: BUYER COMMITS :: 2.0 Buyer commits to purchases a voucher", async function() {
@@ -54,11 +66,11 @@ describe("TEST SCENARIO 010 :: SELLER CREATES, BUYER COMMITS & BUYER REFUNDS, SE
     });
 
     it("TEST SCENARIO 10 :: SELLER CREATE :: 2.1 VALIDATE ISSUER", async function () {
-        aql(committedVoucher['issuer'],SELLER_PUBLIC.toLowerCase());
+        aql(committedVoucher['issuer'],SELLER_PUBLIC);
     })
 
     it("TEST SCENARIO 10 :: SELLER CREATE :: 2.2 VALIDATE HOLDER", async function () {
-        aql(committedVoucher['holder'],BUYER_PUBLIC.toLowerCase());
+        aql(committedVoucher['holder'],BUYER_PUBLIC);
     })
 
     it("TEST SCENARIO 10 :: BUYER COMMITS :: 3.0 Buyer refunds a purchased voucher", async function() {
@@ -68,15 +80,19 @@ describe("TEST SCENARIO 010 :: SELLER CREATES, BUYER COMMITS & BUYER REFUNDS, SE
         await format(refundedVoucher);
     });
 
-    it("TEST SCENARIO 10 :: SELLER CREATE :: 3.1 VALIDATE REDEEMED VOUCHER", async function () {
-        aql(committedVoucher['MintedVoucherID'],refundedVoucher['refundedVoucherID']);
+    it("TEST SCENARIO 10 :: SELLER CREATE :: 3.1 VALIDATE REFUNDED VOUCHER", async function () {
+        aql(refundedVoucher['refundedVoucherID'], committedVoucher['MintedVoucherID']);
     })
 
-    it("TEST SCENARIO 10 :: SELLER FAULTS :: 4.1 VALIDATE REDEEMED VOUCHER", async function () {
+    it("TEST SCENARIO 10 :: SELLER FAULTS :: 4.0 Seller accepts fault on a refunded voucher", async function () {
         await delay();
         console.log(await checkBalance());
-        let cancelVoucher = await sellerFault(committedVoucher["MintedVoucherID"]);
+        cancelVoucher = await sellerFault(committedVoucher["MintedVoucherID"]);
         await format(cancelVoucher);
+    })
+
+    it("TEST SCENARIO 10 :: SELLER FAULTS :: 4.1 VALIDATE FAULTED VOUCHER", async function () {
+        aql(cancelVoucher['FaultedVoucherID'],refundedVoucher['refundedVoucherID']);
     })
 
     after("Check Balances", async function () {

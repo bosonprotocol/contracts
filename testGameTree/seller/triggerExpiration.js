@@ -38,15 +38,23 @@ function TriggerExpiry(_voucherId) {
                 }
                 console.log("Transaction Hash : ",hash);
             }).on('receipt', function(receipt){
-                let txhash = receipt.transactionHash;
-                let gasUsed = receipt.gasUsed;
-                let output = {
-                    "TransactionHash":txhash,
-                    "ExpiredVoucher":_voucherId,
-                    "gasPaid": converter.hexToDec(gasSent),
-                    "gasUsed":gasUsed
-                }
-                resolve(output)
+                //Events array and args  not present in receipt, so retrieving explicitly
+                voucherKernel.getPastEvents('LogExpirationTriggered', {
+                    fromBlock: 'latest',
+                    toBlock: 'latest'
+                }).then(function(logExpirationTriggeredEvents) {
+
+                    let txhash = receipt.transactionHash;
+                    let gasUsed = receipt.gasUsed;
+                    let output = {
+                        "TransactionHash":txhash,
+                        "ExpiredVoucherID":logExpirationTriggeredEvents[0].returnValues._tokenIdVoucher,
+                        "TriggeredBy":logExpirationTriggeredEvents[0].returnValues._triggeredBy,
+                        "gasPaid": converter.hexToDec(gasSent),
+                        "gasUsed":gasUsed
+                    }
+                    resolve(output)
+                }).catch( reject );
             }).on('error', console.error);
         })
     })

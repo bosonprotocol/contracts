@@ -94,7 +94,7 @@ describe("TEST SCENARIO 006 :: SELLER CREATES, BUYER COMMITS, REDEEMS & COMPLAIN
     });
 
     it("TEST SCENARIO 06 :: BUYER COMPLAINS :: 4.1 VALIDATE COMPLAINED VOUCHER", async function () {
-        aql(complainedVoucher['complainedVoucherID'], committedVoucher['MintedVoucherID'],);
+        aql(complainedVoucher['complainedVoucherID'], committedVoucher['MintedVoucherID']);
     })
 
     after("Check Balances", async function () {

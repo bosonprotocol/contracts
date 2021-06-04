@@ -46,13 +46,11 @@ function requestVoucherETHETH(_voucherID) {
                 }
                 console.log("Transaction Hash : "+hash);
             }).on('receipt', function(receipt){
-
                 //Events array and args  not present in receipt, so retrieving explicitly
                 voucherKernel.getPastEvents('LogVoucherDelivered', {
                     fromBlock: 'latest',
                     toBlock: 'latest'
                 }).then(function(logVoucherDeliveredEvents) {
-
                     let logdata1 = receipt.logs[0].data;
                     let logdata3 = receipt.logs[2].data;
                     let gasUsed = receipt.gasUsed;
@@ -70,10 +68,7 @@ function requestVoucherETHETH(_voucherID) {
                         "holder":holder,
                         "promiseID":promiseID,
                         "gasPaid":converter.hexToDec(gasPaid),
-                        "gasUsed":gasUsed,
-                        "logReceipt1": receipt.logs[0].id,
-                        "logReceipt2": receipt.logs[1].id,
-                        "logReceipt3": receipt.logs[2].id
+                        "gasUsed":gasUsed
                     }
                     resolve(output)
 

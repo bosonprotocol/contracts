@@ -60,8 +60,6 @@ function CreateOrderETHETH(timestamp) {
             let serializedTx = tx.serialize();
             // executes the transaction
             web3.eth.sendSignedTransaction('0x' + serializedTx.toString('hex'), (err, hash) => {
-                console.log("inside sendSignedTransaction");
-
                 if(err) {
                     reject(new Error(err.message))
                 }
@@ -81,7 +79,6 @@ function CreateOrderETHETH(timestamp) {
                             fromBlock: 'latest',
                             toBlock: 'latest'
                         }).then(function(logTransferSingEvents) {
-
                                 let txhash = receipt.transactionHash;
                                 let gasUsed = receipt.gasUsed;
                                 let validFrom = logPromiseCreatedEvents[0].returnValues._validFrom;

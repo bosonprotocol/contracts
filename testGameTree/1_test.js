@@ -11,8 +11,8 @@ describe("GAME TREE SCENARIOS", function() {
     require("./scenarios/7-buyer-commit-refund-complain");
     require("./scenarios/8-buyer-commit-redeem-complain-seller-fault");
     require("./scenarios/9-buyer-commit-refund-complain-seller-fault");
-    require("./scenarios/a-buyer-commit-refund-fault");
-    require("./scenarios/b-buyer-commit-refund-fault-complain");
-    require("./scenarios/c-buyer-commit-fault-complain");
-    require("./scenarios/d-buyer-commit-expiry");
+    require("./scenarios/a-10-buyer-commit-refund-fault");
+    require("./scenarios/b-11-buyer-commit-refund-fault-complain");
+    require("./scenarios/c-12-buyer-commit-fault-complain");
+    require("./scenarios/d-13-buyer-commit-expiry");
 });
