@@ -113,6 +113,10 @@ instrumenting contracts before running.
 To run the interaction tests, follow the instructions in the
 [interaction tests README.md](testUserInteractions/README.md).
 
+### Gametree Tests
+To run the gametree tests, follow the instructions in the
+[gametree tests README.md](testGameTree/README.md).
+
 ## Code Linting
 
 Both the contracts themselves and the tests are linted and formatted as part of

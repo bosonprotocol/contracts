@@ -5,7 +5,7 @@
 const wait = require('wait');
 
 async function delay() {
-    await wait(10000);
+  await wait(10000);
 }
 
 module.exports = delay;

@@ -1,27 +1,16 @@
 # GAME TREE SCENARIOS
 #### These tests cover the overall game tree scenarios
+The tests run against Rinkeby and perform assertions on event parameters. Because the provider sometimes misses events, test scenarios occassionally randomly fail with the message
+about not being able to reference `returnValues` on `undefined`. If this happens, re-run the test.
 
+The tests can also be run locally by deploying to a local ganache instance and then configuring  local contract addresses and buyer/seller addresses and private keys in config.js.
+Comment out the Rinkeby provider and uncomment the local provider.  The tests to not use the "time machine" utility to advance time or blocks, so scenario 13 does not always run properly
+against a local ganache instance.
 
 ### How To Run
 
 - Install the dependencies: `npm install`.
-
-- Copy `testGameTree/helpers/config.example.js` to  `testGameTree/helpers/config.js` and update it with the appropriate details as shown below
-  
-```angular2html
-    module.exports = {
-    contracts: {
-        BosonRouterContrctAddress: '**Your Boson Router Address goes here**', // rinkeby boson router testnet address
-        VoucherKernelContractAddress:'**Your Voucher Kernel Address goes here**'
-    },
-    BUYER_PUBLIC: '**Your Buyer Account Address goes here**',
-    BUYER_SECRET: '**Your Buyer Account Private Key Address goes here**',
-    SELLER_PUBLIC: '**Your Seller Account Address goes here**',
-    SELLER_SECRET: '**Your Seller Account Private Key goes here**',
-    // PROVIDER: 'http://localhost:8545', // for local ganache
-    PROVIDER: "https://'**Select the network**'.infura.io/v3/'**Your Infura Key goes here**'" 
-    }
-```
+- Copy `testGameTree/helpers/config.example.js` to  `testGameTree/helpers/config.js` and update it with current Rinkeby contract addresses.
 - Compile the contracts: `truffle compile`. 
 - To run tests:
     - Run the tests with saving the logs: `npm run test:gametree >> log.txt`.
@@ -30,22 +19,25 @@
 
 ### Scenarios
 
-| SCENARIO    | ⚙ ACTION   | DESCRIPTION                               |
-| ----------- | ---------- | ------------------------------------------ |
-| SCENARIO 01 | 💁‍LISTING  |SELLER LISTS A VOUCHER FOR SALE             |
-| SCENARIO 02 | 🙅‍CANCEL   |SELLER CANCELS A VOUCHER SET                |
-| SCENARIO 03 | 💰COMMIT   |BUYER PURCHASES A VOUCHER                   |
-| SCENARIO 04 | 🎫REDEEM   |BUYER REDEEMS A COMMITTED VOUCHER           |
-| SCENARIO 05 | 💸REFUND   |BUYER CLAIMS REFUND FOR A COMMITTED VOUCHER |
-| SCENARIO 06 | 🙋‍COMPLAIN |BUYER COMPLAINS ABOUT REDEEMED VOUCHER      |
-| SCENARIO 07 | 🙋‍COMPLAIN |BUYER COMPLAINS ABOUT REFUND VOUCHER        |
-| SCENARIO 08 | 🤦‍FAULT    |SELLER ACCEPTS REDEEM FAULT ON COMPLAIN     |
-| SCENARIO 09 | 🤦‍FAULT    |SELLER ACCEPTS REFUND FAULT ON COMPLAIN     |
+| SCENARIO    | ⚙ ACTION   | DESCRIPTION                                             |
+| ----------- | ---------- | ------------------------------------------------------  |
+| SCENARIO 01 | 💁‍LISTING  |SELLER LISTS A VOUCHER FOR SALE                          |
+| SCENARIO 02 | 🙅‍CANCEL   |SELLER CANCELS A VOUCHER SET                             |
+| SCENARIO 03 | 💰COMMIT   |BUYER PURCHASES A VOUCHER                                |
+| SCENARIO 04 | 🎫REDEEM   |BUYER REDEEMS A COMMITTED VOUCHER                        |
+| SCENARIO 05 | 💸REFUND   |BUYER CLAIMS REFUND FOR A COMMITTED VOUCHER              |
+| SCENARIO 06 | 🙋‍COMPLAIN |BUYER COMPLAINS ABOUT REDEEMED VOUCHER                   |
+| SCENARIO 07 | 🙋‍COMPLAIN |BUYER COMPLAINS ABOUT REFUND VOUCHER                     |
+| SCENARIO 08 | 🤦‍FAULT    |SELLER ACCEPTS REDEEM FAULT ON COMPLAIN                  |
+| SCENARIO 09 | 🤦‍FAULT    |SELLER ACCEPTS REFUND FAULT ON COMPLAIN                  |
+| SCENARIO 10 | 🤦‍FAULT    |SELLER ACCEPTS REFUND FAULT                              |
+| SCENARIO 11 | 🙋‍COMPLAIN |BUYER COMPLAINS ABOUT REFUNDED AND FAULTED VOUCHER       |
+| SCENARIO 12 | 🙋‍COMPLAIN |BUYER COMPLAINS ABOUT FAULTED BUT NOT REDEEMED VOUCHER   |
+| SCENARIO 13 | ⏰EXPIRE   |BUYER LETS VOUCHER EXPIRE                                |
 
 
 
-
-##### Sample output of tests
+### Sample partial test output
 ```angular2html
 
 > y@1.0.0 test D:\GitHub\contracts

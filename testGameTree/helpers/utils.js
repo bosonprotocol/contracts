@@ -1,15 +1,9 @@
 let Web3 = require('web3');
-const BN = Web3.utils.BN;
-
-const {ecsign} = require('ethereumjs-util');
-const { PROVIDER } = require('../helpers/config');
-
+const {PROVIDER} = require('../helpers/config');
 let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
 
-
 class Utils {
-  constructor() {
-  }
+  constructor() {}
 
   static async getCurrTimestamp() {
     let blockNumber = await web3.eth.getBlockNumber();
