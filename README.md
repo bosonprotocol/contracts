@@ -108,10 +108,6 @@ To check the test coverage:
 `solidity-coverage` runs its own instance of Ganache internally, as well as
 instrumenting contracts before running.
 
-### Interaction Tests
-
-To run the interaction tests, follow the instructions in the
-[interaction tests README.md](testUserInteractions/README.md).
 
 ### Gametree Tests
 To run the gametree tests, follow the instructions in the
