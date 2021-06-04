@@ -24,9 +24,9 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
     using Address for address;
 
     //min security
-    address public owner; //contract owner
-    address public voucherKernelAddress; //address of the VoucherKernel contract
-    address public cashierAddress; //address of the Cashier contract
+    address private owner; //contract owner
+    address private voucherKernelAddress; //address of the VoucherKernel contract
+    address private cashierAddress; //address of the Cashier contract
 
     //standard reqs
     //ERC-1155
@@ -861,4 +861,18 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
         }
         return string(bstr);
     }
+
+    /**
+     * @notice Get the contract owner
+     * @return Address of the owner
+     */
+    function getOwner() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return owner;
+    }
+    
 }
