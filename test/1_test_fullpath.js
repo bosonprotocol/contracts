@@ -250,6 +250,11 @@ contract('Voucher tests', (addresses) => {
       );
       assert.isTrue(tokenNonce.eq(constants.ONE));
 
+      assert.equal(
+        promiseId1,
+        await contractVoucherKernel.getPromiseIdFromSupplyId(tokenSupplyKey1)
+      );
+
       //Check ERC1155ERC721 state
       const sellerERC1155ERC721Balance = await contractERC1155ERC721.balanceOf(
         users.seller.address,
