@@ -376,4 +376,14 @@ interface IVoucherKernel {
             uint256,
             uint256
         );
+
+    /**
+     * @notice Get the promise ID from a voucher set
+     * @param _tokenIdSupply   ID of the voucher token
+     * @return                  ID of the promise
+     */
+    function getPromiseIdFromSupplyId(uint256 _tokenIdSupply)
+        external
+        view
+        returns (bytes32);
 }
