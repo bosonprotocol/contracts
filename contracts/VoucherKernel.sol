@@ -1284,5 +1284,17 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         return cancelFaultPeriod;
     }
     
-    
+     /**
+     * @notice Get the promise ID from a voucher set
+     * @param _tokenIdSupply   ID of the voucher token
+     * @return                  ID of the promise
+     */
+    function getPromiseIdFromSupplyId(uint256 _tokenIdSupply)
+        external
+        view
+        override
+        returns (bytes32) 
+    {
+        return ordersPromise[_tokenIdSupply];
+    }
 }
