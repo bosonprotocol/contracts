@@ -18,7 +18,6 @@ module.exports = async function () {
   const cashier = await Cashier.deploy(voucherKernel.address);
   const br = await BosonRouter.deploy(
     voucherKernel.address,
-    erc1155erc721.address,
     flo.address,
     cashier.address
   );
@@ -53,15 +52,6 @@ module.exports = async function () {
     event.args._newVoucherKernel
   );
 
-  tx = await erc1155erc721.setBosonRouterAddress(br.address);
-  txReceipt = await tx.wait();
-  event = txReceipt.events[0];
-  console.log(
-    '\n$ ERC1155ERC721',
-    event.event,
-    'at:',
-    event.args._newBosonRouter
-  );
 
   tx = await voucherKernel.setBosonRouterAddress(br.address);
   txReceipt = await tx.wait();
@@ -82,6 +72,16 @@ module.exports = async function () {
   txReceipt = await tx.wait();
   event = txReceipt.events[0];
   console.log('\n$ Cashier', event.event, 'at:', event.args._newBosonRouter);
+
+  //! for testnet, otherwise below setters for complainPeriod, cancelFaultPeriod && tokenLimit should be removed!
+  const SIXTY_SECONDS = 60 
+  const TOKEN_LIMIT = (1 * 10 ** 18).toString()
+  const BOSON_TOKEN_ON_RINKEBY = '0x5c70A0c47440128eAAA66801B0ec04E9d8C3a570'
+
+  await voucherKernel.setComplainPeriod(2 * SIXTY_SECONDS)
+  await voucherKernel.setCancelFaultPeriod(2 * SIXTY_SECONDS)
+  await flo.setTokenLimit(BOSON_TOKEN_ON_RINKEBY, TOKEN_LIMIT)
+  //! End for testnet 
 
   console.log('\nFundLimitsOracle Contract Address: ', flo.address);
   console.log('ERC1155ERC721 Contract Address: ', erc1155erc721.address);

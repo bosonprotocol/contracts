@@ -49,4 +49,10 @@ interface IERC1155ERC721 {
         address indexed _operator,
         bool _approved
     );
+
+    /**
+     * @notice Get the contract owner
+     * @return Address of the owner
+     */
+    function getOwner() external view returns (address);
 }
