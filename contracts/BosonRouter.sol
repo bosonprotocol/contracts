@@ -26,7 +26,7 @@ contract BosonRouter is
     using Address for address payable;
     using SafeMath for uint256;
 
-    mapping(address => uint256) public correlationIds; // whenever a seller or a buyer interacts with the smart contract, a personal txID is emitted from an event.
+    mapping(address => uint256) private correlationIds; // whenever a seller or a buyer interacts with the smart contract, a personal txID is emitted from an event.
 
     using SafeMath for uint256;
 
@@ -692,10 +692,6 @@ contract BosonRouter is
         );
     }
 
-    // // // // // // // //
-    // UTILS
-    // // // // // // // //
-
     /**
      * @notice Increment a seller or buyer's correlation Id
      * @param _party   The address of the seller or buyer
@@ -705,5 +701,19 @@ contract BosonRouter is
         override
     {
          correlationIds[_party]++;
+    }
+
+    /**
+     * @notice Return a seller or buyer's correlation Id
+     * @param _party   The address of the seller or buyer
+     * @return the specified party's correlation Id
+     */
+    function getCorrelationId(address _party) 
+        external
+        override
+        view
+        returns (uint256)
+    {
+        return correlationIds[_party];
     }
 }
