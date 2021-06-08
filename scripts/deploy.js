@@ -36,7 +36,7 @@ module.exports = async function () {
   txReceipt = await tx.wait();
   event = txReceipt.events[0];
   console.log(
-    '\n$ ERC1155ERC721',
+    '\n$ ERC1155ERC721: ',
     event.event,
     'approved VoucherKernel:',
     event.args._approved
@@ -46,12 +46,21 @@ module.exports = async function () {
   txReceipt = await tx.wait();
   event = txReceipt.events[0];
   console.log(
-    '\n$ ERC1155ERC721',
+    '$ ERC1155ERC721: ',
     event.event,
     'at:',
     event.args._newVoucherKernel
   );
 
+  tx = await erc1155erc721.setCashierAddress(cashier.address);
+  txReceipt = await tx.wait();
+  event = txReceipt.events[0];
+  console.log(
+    '$ ERC1155ERC721: ',
+    event.event,
+    'at:',
+    event.args._newCashier
+  );
 
   tx = await voucherKernel.setBosonRouterAddress(br.address);
   txReceipt = await tx.wait();
@@ -66,12 +75,17 @@ module.exports = async function () {
   tx = await voucherKernel.setCashierAddress(cashier.address);
   txReceipt = await tx.wait();
   event = txReceipt.events[0];
-  console.log('\n$ VoucherKernel', event.event, 'at:', event.args._newCashier);
+  console.log('$ VoucherKernel', event.event, 'at:', event.args._newCashier);
 
   tx = await cashier.setBosonRouterAddress(br.address);
   txReceipt = await tx.wait();
   event = txReceipt.events[0];
   console.log('\n$ Cashier', event.event, 'at:', event.args._newBosonRouter);
+
+  tx = await cashier.setTokenContractAddress(erc1155erc721.address);
+  txReceipt = await tx.wait();
+  event = txReceipt.events[0];
+  console.log('$ Cashier', event.event, 'at:', event.args._newTokenContract);
 
   //! for testnet, otherwise below setters for complainPeriod, cancelFaultPeriod && tokenLimit should be removed!
   const SIXTY_SECONDS = 60 
