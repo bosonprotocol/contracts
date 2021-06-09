@@ -67,7 +67,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
 
     //ID reqs
     mapping(uint256 => uint256) private typeCounters; //counter for ID of a particular type of NFT
-    uint256 public constant MASK_TYPE = uint256(uint128(~0)) << 128; //the type mask in the upper 128 bits
+    uint256 private constant MASK_TYPE = uint256(uint128(~0)) << 128; //the type mask in the upper 128 bits
     //1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 
     uint256 private constant MASK_NF_INDEX = uint128(~0); //the non-fungible index mask in the lower 128
