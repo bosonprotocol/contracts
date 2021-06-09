@@ -86,6 +86,42 @@ contract('Voucher tests', async (addresses) => {
     await deployContracts();
   });
 
+  describe("Contract Addresses Getters", function () {
+    it("Should have set contract addresses properly for Boson Router", async () => {
+      const flo = await contractBosonRouter.getFundLimitOracleAddress()
+      const cashier = await contractBosonRouter.getCashierAddress()
+      const voucherKernel = await contractBosonRouter.getVoucherKernelAddress()
+
+      assert.equal(flo, contractFundLimitsOracle.address);
+      assert.equal(cashier, contractCashier.address);
+      assert.equal(voucherKernel, contractVoucherKernel.address);
+    })
+
+    it("Should have set contract addresses properly for ERC1155ERC721", async () => {
+      const voucherKernel = await contractERC1155ERC721.getVoucherKernelAddress()
+      const cashier = await contractERC1155ERC721.getCashierAddress()
+
+      assert.equal(voucherKernel, contractVoucherKernel.address);
+      assert.equal(cashier, contractCashier.address);
+    })
+
+    it("Should have set contract addresses properly for VoucherKernel", async () => {
+      const tokensContract = await contractVoucherKernel.getTokensContractAddress()
+
+      assert.equal(tokensContract, contractERC1155ERC721.address);
+    })
+
+    it("Should have set contract addresses properly for Cashier", async () => {
+      const voucherKernel = await contractCashier.getVoucherKernelAddress()
+      const bosonRouter = await contractCashier.getBosonRouterAddress()
+      const tokensContract = await contractCashier.getTokensContractAddress()
+
+      assert.equal(voucherKernel, contractVoucherKernel.address);
+      assert.equal(bosonRouter, contractBosonRouter.address);
+      assert.equal(tokensContract, contractERC1155ERC721.address);
+    })
+  })
+
   describe('Direct minting', function () {
     it('must fail: unauthorized minting ERC-1155', async () => {
       await truffleAssert.reverts(
