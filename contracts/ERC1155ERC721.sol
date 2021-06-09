@@ -874,5 +874,31 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
     {
         return owner;
     }
+
+    /**
+     * @notice Get the address of Voucher Kernel contract
+     * @return Address of Voucher Kernel contract
+     */
+    function getVoucherKernelAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return voucherKernelAddress;
+    }
+
+    /**
+     * @notice Get the address of Cashier contract
+     * @return Address of Cashier address
+     */
+    function getCashierAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return cashierAddress;
+    }
     
 }

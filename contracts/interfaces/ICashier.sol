@@ -91,6 +91,30 @@ interface ICashier {
     ) external;
 
     /**
+     * @notice Get the address of Voucher Kernel contract
+     * @return Address of Voucher Kernel contract
+     */
+    function getVoucherKernelAddress() external view returns (address);
+
+    /**
+     * @notice Get the address of Boson Router contract
+     * @return Address of Boson Router contract
+     */
+    function getBosonRouterAddress() external view returns (address);
+
+    /**
+     * @notice Get the address of ERC1155ERC721 contract
+     * @return Address of ERC1155ERC721 contract
+     */
+    function getTokensContractAddress() external view returns (address);
+
+    /**
+     * @notice Ensure whether or not contract has been set to disaster state
+     * @return disasterState
+     */
+    function isDisasterStateSet() external view returns (bool);
+
+    /**
      * @notice Get the amount in escrow of an address
      * @param _token  The address of a token to query
      * @param _account  The address of an account to query
