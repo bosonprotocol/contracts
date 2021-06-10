@@ -5239,13 +5239,15 @@ contract('Cashier withdrawals ', async (addresses) => {
       });
 
       it('Disaster State should be falsy value initially', async () => {
-        const disasterState = await contractCashier.isDisasterStateSet()
+        const disasterState = await contractCashier.isDisasterStateSet();
 
-        assert.isFalse(disasterState)
+        assert.isFalse(disasterState);
       });
 
       it('Admin should be able to set the Cashier at disaster state', async () => {
-        const cashier = await Cashier.at(await contractBosonRouter.getCashierAddress())
+        const cashier = await Cashier.at(
+          await contractBosonRouter.getCashierAddress()
+        );
         const tx = await cashier.setDisasterState();
 
         truffleAssert.eventEmitted(tx, 'LogDisasterStateSet', (ev) => {
@@ -5254,9 +5256,9 @@ contract('Cashier withdrawals ', async (addresses) => {
       });
 
       it('Disaster State should be set successfully', async () => {
-        const disasterState = await contractCashier.isDisasterStateSet()
+        const disasterState = await contractCashier.isDisasterStateSet();
 
-        assert.isTrue(disasterState)
+        assert.isTrue(disasterState);
       });
 
       it('Buyer should be able to withdraw all the funds locked in escrow', async () => {
