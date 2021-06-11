@@ -1,8 +1,9 @@
 let Web3 = require('web3');
 let Contract = require('web3-eth-contract');
 const Tx = require('ethereumjs-tx').Transaction;
+const Utils = require('../helpers/utils');
 let converter = require('hex2dec');
-const VoucherKernelAbi = require('../../build/contracts/VoucherKernel.json')
+const VoucherKernel = require('../../build/contracts/VoucherKernel.json')
   .abi;
 const {
   SELLER_SECRET,
@@ -17,8 +18,8 @@ const seller = SELLER_PUBLIC;
 
 function TriggerExpiry(_voucherId) {
   return new Promise((resolve, reject) => {
-    const voucherKernelAddr = contracts.VoucherKernelContractAddress;
-    const voucherKernel = new Contract(VoucherKernelAbi, voucherKernelAddr);
+    const voucherKernel = new Contract(VoucherKernel, Utils.contractVoucherKernel.address);
+
     let gasSent = '0xF458F';
     // gets the current nonce of the sellers account and the proceeds to structure the transaction
     web3.eth.getTransactionCount(seller, function (error, txCount) {
@@ -29,7 +30,7 @@ function TriggerExpiry(_voucherId) {
         nonce: web3.utils.toHex(txCount),
         gasPrice: '0x04e3b29200',
         gasLimit: gasSent,
-        to: voucherKernelAddr,
+        to: Utils.contractVoucherKernel.address,
         value: 0x0,
         data: encoded,
       };

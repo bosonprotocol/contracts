@@ -3,6 +3,7 @@ const checkBalance = require('../helpers/checkBalance');
 const Utils = require('../helpers/utils');
 const {SELLER_PUBLIC, contracts} = require('../helpers/config');
 const {describe, it} = require('mocha');
+const truffleContract = require("truffle-contract");
 let format = require('../helpers/formatter');
 let helpers = require('../helpers/constants');
 let assert = require('chai').assert;
@@ -12,6 +13,7 @@ describe('TEST SCENARIO 001 :: SELLER CREATES A VOUCHER SET', async function () 
   let aql = assert.equal;
 
   before('Check Balances', async function () {
+    await Utils.deployContracts();
     let balances = await checkBalance();
     console.log(balances);
   });
@@ -43,7 +45,7 @@ describe('TEST SCENARIO 001 :: SELLER CREATES A VOUCHER SET', async function () 
   });
 
   it('TEST SCENARIO 01 :: SELLER CREATE :: 1.6 VALIDATE ERC1155ERC721 DATA', async function () {
-    aql(value['operator'], contracts.VoucherKernelContractAddress);
+    aql(value['operator'], Utils.contractVoucherKernel.address);
     aql(value['transferFrom'], helpers.ZERO_ADDRESS);
     aql(value['transferTo'], SELLER_PUBLIC);
     aql(value['transferValue'], helpers.ORDER_QUANTITY1);

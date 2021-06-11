@@ -3,6 +3,7 @@ const BN = require('bn.js');
 let Contract = require('web3-eth-contract');
 const helpers = require('../helpers/constants');
 const Tx = require('ethereumjs-tx').Transaction;
+const Utils = require('../helpers/utils');
 let converter = require('hex2dec');
 const BosonRouter = require('../../build/contracts/BosonRouter.json').abi;
 const VoucherKernel = require('../../build/contracts/VoucherKernel.json').abi;
@@ -20,19 +21,15 @@ const seller = SELLER_PUBLIC;
 
 function CreateOrderETHETH(timestamp) {
   return new Promise((resolve, reject) => {
-    const bosonRouterAddr = contracts.BosonRouterContrctAddress;
-    const bosonRouter = new Contract(BosonRouter, bosonRouterAddr);
-
-    const voucherKernelAddr = contracts.VoucherKernelContractAddress;
-    const voucherKernel = new Contract(VoucherKernel, voucherKernelAddr);
-
-    const erc1155erc721Addr = contracts.ERC1155ERC721ContractAddress;
-    const erc1155erc721 = new Contract(ERC1155ERC721, erc1155erc721Addr);
+    const bosonRouter = new Contract(BosonRouter, Utils.contractBSNRouter.address);
+    const voucherKernel = new Contract(VoucherKernel, Utils.contractVoucherKernel.address);
+    const erc1155erc721 = new Contract(ERC1155ERC721, Utils.contractERC1155ERC721.address);
 
     let gasSent = '0xF458F';
 
     helpers.PROMISE_VALID_FROM = timestamp;
-    helpers.PROMISE_VALID_TO = timestamp + 6 * helpers.SECONDS_IN_A_MINUTE;
+    helpers.PROMISE_VALID_TO = timestamp + 2 * helpers.SECONDS_IN_DAY;
+    //helpers.PROMISE_VALID_TO = timestamp + 6 * helpers.SECONDS_IN_A_MINUTE;
 
     // gets the current nonce of the sellers account and the proceeds to structure the transaction
     web3.eth.getTransactionCount(seller, function (error, txCount) {
@@ -51,7 +48,7 @@ function CreateOrderETHETH(timestamp) {
         nonce: web3.utils.toHex(txCount),
         gasPrice: '0x04e3b29200',
         gasLimit: gasSent,
-        to: bosonRouterAddr,
+        to: Utils.contractBSNRouter.address,
         value: txValue,
         data: encoded,
       };

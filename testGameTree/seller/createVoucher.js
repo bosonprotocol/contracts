@@ -3,6 +3,7 @@ const BN = require('bn.js');
 let Contract = require('web3-eth-contract');
 const helpers = require('../helpers/constants');
 const Tx = require('ethereumjs-tx').Transaction;
+const Utils = require('../helpers/utils');
 let converter = require('hex2dec');
 const BosonRouter = require('../../build/contracts/BosonRouter.json').abi;
 const VoucherKernel = require('../../build/contracts/VoucherKernel.json').abi;
@@ -19,17 +20,15 @@ let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
 Contract.setProvider(PROVIDER);
 
 const seller = SELLER_PUBLIC;
+const networkId = web3.eth.net.getId();
+
+console.log("networkId in createVoucher.js", networkId);
 
 function CreateOrderETHETH(timestamp) {
   return new Promise((resolve, reject) => {
-    const bosonRouterAddr = contracts.BosonRouterContrctAddress;
-    const bosonRouter = new Contract(BosonRouter, bosonRouterAddr);
-
-    const voucherKernelAddr = contracts.VoucherKernelContractAddress;
-    const voucherKernel = new Contract(VoucherKernel, voucherKernelAddr);
-
-    const erc1155erc721Addr = contracts.ERC1155ERC721ContractAddress;
-    const erc1155erc721 = new Contract(ERC1155ERC721, erc1155erc721Addr);
+    const bosonRouter = new Contract(BosonRouter, Utils.contractBSNRouter.address);
+    const voucherKernel = new Contract(VoucherKernel, Utils.contractVoucherKernel.address);
+    const erc1155erc721 = new Contract(ERC1155ERC721, Utils.contractERC1155ERC721.address);
 
     let gasSent = '0xF458F';
 
@@ -53,12 +52,12 @@ function CreateOrderETHETH(timestamp) {
         nonce: web3.utils.toHex(txCount),
         gasPrice: '0x04e3b29200',
         gasLimit: gasSent,
-        to: bosonRouterAddr,
+        to: Utils.contractBSNRouter.address,
         value: txValue,
         data: encoded,
       };
       let privKey = Buffer.from(SELLER_SECRET, 'hex');
-      let tx = new Tx(rawTransaction, {chain: 'rinkeby'});
+      let tx = new Tx(rawTransaction, {chain: 'rinkeby' });
       tx.sign(privKey);
       let serializedTx = tx.serialize();
       // executes the transaction

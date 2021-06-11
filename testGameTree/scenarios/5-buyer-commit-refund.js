@@ -2,7 +2,6 @@ const sellerCreate = require('../seller/createVoucher');
 const commitVocucher = require('../buyer/commitVoucher');
 const refundVoucher = require('../buyer/refundVoucher');
 const checkBalance = require('../helpers/checkBalance');
-const delay = require('../helpers/delay');
 const Utils = require('../helpers/utils');
 const {describe, it} = require('mocha');
 let format = require('../helpers/formatter');
@@ -19,13 +18,13 @@ describe('TEST SCENARIO 005 :: SELLER CREATES, BUYER COMMITS & BUYER REFUNDS', a
   before(
     'TEST SCENARIO 05 :: SELLER CREATES, BUYER COMMITS & BUYER REFUNDS',
     async function () {
+      await Utils.deployContracts();
       let balances = await checkBalance();
       console.log(balances);
     }
   );
 
   it('TEST SCENARIO 05 :: SELLER CREATE :: 1.0 Seller creates a voucher set', async function () {
-    await delay();
     const timestamp = await Utils.getCurrTimestamp();
     voucherSetDetails = await sellerCreate(timestamp);
     await format(voucherSetDetails);
@@ -52,14 +51,13 @@ describe('TEST SCENARIO 005 :: SELLER CREATES, BUYER COMMITS & BUYER REFUNDS', a
   });
 
   it('TEST SCENARIO 05 :: SELLER CREATE :: 1.6 VALIDATE ERC1155ERC721 DATA', async function () {
-    aql(voucherSetDetails['operator'], contracts.VoucherKernelContractAddress);
+    aql(voucherSetDetails['operator'], Utils.contractVoucherKernel.address);
     aql(voucherSetDetails['transferFrom'], helpers.ZERO_ADDRESS);
     aql(voucherSetDetails['transferTo'], SELLER_PUBLIC);
     aql(voucherSetDetails['transferValue'], helpers.ORDER_QUANTITY1);
   });
 
   it('TEST SCENARIO 05 :: BUYER COMMITS :: 2.0 Buyer commits to purchases a voucher', async function () {
-    await delay();
     console.log(await checkBalance());
     committedVoucher = await commitVocucher(
       voucherSetDetails['createdVoucherSetID']
@@ -76,7 +74,6 @@ describe('TEST SCENARIO 005 :: SELLER CREATES, BUYER COMMITS & BUYER REFUNDS', a
   });
 
   it('TEST SCENARIO 05 :: BUYER COMMITS :: 3.0 Buyer refunds a purchased voucher', async function () {
-    await delay();
     console.log(await checkBalance());
     refundedVoucher = await refundVoucher(committedVoucher['MintedVoucherID']);
     await format(refundedVoucher);

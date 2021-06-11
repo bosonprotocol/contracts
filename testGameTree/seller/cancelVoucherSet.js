@@ -1,6 +1,7 @@
 let Web3 = require('web3');
 let Contract = require('web3-eth-contract');
 const Tx = require('ethereumjs-tx').Transaction;
+const Utils = require('../helpers/utils');
 let converter = require('hex2dec');
 const BosonRouter = require('../../build/contracts/BosonRouter.json').abi;
 const VoucherKernel = require('../../build/contracts/VoucherKernel.json').abi;
@@ -19,17 +20,10 @@ const seller = SELLER_PUBLIC;
 
 function requestCancelorFault(_voucherSetID) {
   return new Promise((resolve, reject) => {
-    const bosonRouterAddr = contracts.BosonRouterContrctAddress;
-    const bosonRouter = new Contract(BosonRouter, bosonRouterAddr);
-
-    const voucherKernelAddr = contracts.VoucherKernelContractAddress;
-    const voucherKernel = new Contract(VoucherKernel, voucherKernelAddr);
-
-    const erc1155erc721Addr = contracts.ERC1155ERC721ContractAddress;
-    const erc1155erc721 = new Contract(ERC1155ERC721, erc1155erc721Addr);
-
-    const cashierAddr = contracts.CashierContractAddress;
-    const cashier = new Contract(Cashier, cashierAddr);
+    const bosonRouter = new Contract(BosonRouter, Utils.contractBSNRouter.address);
+    const voucherKernel = new Contract(VoucherKernel, Utils.contractVoucherKernel.address);
+    const erc1155erc721 = new Contract(ERC1155ERC721, Utils.contractERC1155ERC721.address);
+    const cashier = new Contract(Cashier, Utils.contractCashier.address);
 
     let gasSent = '0xF458F';
     // gets the current nounce of the sellers account and the proceeds to structure the transaction
@@ -41,7 +35,7 @@ function requestCancelorFault(_voucherSetID) {
         nonce: web3.utils.toHex(txCount),
         gasPrice: '0x04e3b29200',
         gasLimit: gasSent,
-        to: bosonRouterAddr,
+        to: Utils.contractBSNRouter.address,
         value: 0x0,
         data: encoded,
       };

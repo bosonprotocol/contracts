@@ -14,6 +14,7 @@ describe('TEST SCENARIO 002 :: SELLER CREATES & CANCELS', async function () {
   let aql = assert.equal;
 
   before('Check Balances', async function () {
+    await Utils.deployContracts();
     let balances = await checkBalance();
     console.log(balances);
   });
@@ -45,7 +46,7 @@ describe('TEST SCENARIO 002 :: SELLER CREATES & CANCELS', async function () {
   });
 
   it('TEST SCENARIO 02 :: SELLER CREATE :: 1.6 VALIDATE ERC1155ERC721 DATA', async function () {
-    aql(voucherSetDetails['operator'], contracts.VoucherKernelContractAddress);
+    aql(voucherSetDetails['operator'], Utils.contractVoucherKernel.address);
     aql(voucherSetDetails['transferFrom'], helpers.ZERO_ADDRESS);
     aql(voucherSetDetails['transferTo'], SELLER_PUBLIC);
     aql(voucherSetDetails['transferValue'], helpers.ORDER_QUANTITY1);
@@ -71,4 +72,5 @@ describe('TEST SCENARIO 002 :: SELLER CREATES & CANCELS', async function () {
     let balances = await checkBalance();
     console.log(balances);
   });
+
 });

@@ -1,6 +1,7 @@
 let Web3 = require('web3');
 let Contract = require('web3-eth-contract');
 const Tx = require('ethereumjs-tx').Transaction;
+const Utils = require('../helpers/utils');
 const BosonRouter = require('../../build/contracts/BosonRouter.json').abi;
 const VoucherKernel = require('../../build/contracts/VoucherKernel.json').abi;
 const {
@@ -16,11 +17,8 @@ const buyer = BUYER_PUBLIC;
 
 function redeemVoucher(_voucherID) {
   return new Promise((resolve, reject) => {
-    const bosonRouterAddr = contracts.BosonRouterContrctAddress;
-    const bosonRouter = new Contract(BosonRouter, bosonRouterAddr);
-
-    const voucherKernelAddr = contracts.VoucherKernelContractAddress;
-    const voucherKernel = new Contract(VoucherKernel, voucherKernelAddr);
+    const bosonRouter = new Contract(BosonRouter, Utils.contractBSNRouter.address);
+    const voucherKernel = new Contract(VoucherKernel, Utils.contractVoucherKernel.address);
 
     let gasPaid = '0xF458F';
     web3.eth.getTransactionCount(buyer, function (error, txCount) {
@@ -29,7 +27,7 @@ function redeemVoucher(_voucherID) {
         nonce: web3.utils.toHex(txCount),
         gasPrice: '0x04e3b29200',
         gasLimit: gasPaid,
-        to: bosonRouterAddr,
+        to: Utils.contractBSNRouter.address,
         value: 0x0,
         data: encoded,
       };

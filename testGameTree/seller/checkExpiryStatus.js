@@ -1,5 +1,6 @@
 let Contract = require('web3-eth-contract');
-const VoucherKernelAbi = require('../../build/contracts/VoucherKernel.json')
+const Utils = require('../helpers/utils');
+const VoucherKernel = require('../../build/contracts/VoucherKernel.json')
   .abi;
 const {contracts, PROVIDER} = require('../helpers/config');
 // set provider for all later instances to use
@@ -7,8 +8,8 @@ Contract.setProvider(PROVIDER);
 
 function checkVoucherStatus(_voucherID) {
   return new Promise((resolve) => {
-    const voucherKernelAddr = contracts.VoucherKernelContractAddress;
-    const voucherKernel = new Contract(VoucherKernelAbi, voucherKernelAddr);
+    const voucherKernel = new Contract(VoucherKernel, Utils.contractVoucherKernel.address);
+
     voucherKernel.methods
       .getVoucherStatus(_voucherID)
       .call()

@@ -9,8 +9,7 @@ const checkBalance = require('../helpers/checkBalance');
 let helpers = require('../helpers/constants');
 const {BUYER_PUBLIC, SELLER_PUBLIC, contracts} = require('../helpers/config');
 let assert = require('chai').assert;
-const delay = require('../helpers/delay');
-const wait = require('wait');
+const timemachine = require('../helpers/timemachine');
 
 const TIMEOUT = 500 * 1000;
 
@@ -23,6 +22,7 @@ describe('TEST SCENARIO 013 :: SELLER CREATES & BUYER COMMITS', async function (
   let timestamp;
 
   before('Check Balances', async function () {
+    await Utils.deployContracts();
     let balances = await checkBalance();
     console.log(balances);
   });
@@ -55,19 +55,16 @@ describe('TEST SCENARIO 013 :: SELLER CREATES & BUYER COMMITS', async function (
   });
 
   it('TEST SCENARIO 13 :: SELLER CREATE :: 1.6 VALIDATE ERC1155ERC721 DATA', async function () {
-    aql(voucherSetDetails['operator'], contracts.VoucherKernelContractAddress);
+    aql(voucherSetDetails['operator'], Utils.contractVoucherKernel.address);
     aql(voucherSetDetails['transferFrom'], helpers.ZERO_ADDRESS);
     aql(voucherSetDetails['transferTo'], SELLER_PUBLIC);
     aql(voucherSetDetails['transferValue'], helpers.ORDER_QUANTITY1);
   });
 
   it('TEST SCENARIO 13 :: BUYER COMMITS :: 2.0 Buyer commits to purchase a voucher', async function () {
-    await delay();
-    await wait(120000);
     commitVoucherDetails = await commitVoucher(
       voucherSetDetails['createdVoucherSetID']
     );
-    await wait(120000);
     await format(commitVoucherDetails);
   });
 
@@ -80,7 +77,10 @@ describe('TEST SCENARIO 013 :: SELLER CREATES & BUYER COMMITS', async function (
   });
 
   it('TEST SCENARIO 13 :: EXPIRE :: 3.0 Expire voucher', async function () {
-    await wait(240000);
+    // fast-forward for three days
+    const secondsInThreeDays = helpers.SECONDS_IN_DAY * 3;
+    await timemachine.advanceTimeSeconds(secondsInThreeDays);
+
     triggerExpireDetails = await triggerExpire(
       commitVoucherDetails['MintedVoucherID']
     );
@@ -88,7 +88,6 @@ describe('TEST SCENARIO 013 :: SELLER CREATES & BUYER COMMITS', async function (
   });
 
   it('TEST SCENARIO 13 :: CHECK EXPIRE :: 3.1 VALIDATE EXPIRY', async function () {
-    await delay();
     aql(
       triggerExpireDetails['ExpiredVoucherID'],
       commitVoucherDetails['MintedVoucherID']

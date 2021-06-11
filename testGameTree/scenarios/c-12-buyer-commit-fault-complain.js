@@ -2,7 +2,6 @@ const sellerCreate = require('../seller/createVoucher');
 const commitVoucher = require('../buyer/commitVoucher');
 const complainVoucher = require('../buyer/complainVoucher');
 const faultVoucher = require('../seller/faultVoucher');
-const delay = require('../helpers/delay');
 const Utils = require('../helpers/utils');
 const {describe, it, before} = require('mocha');
 let format = require('../helpers/formatter');
@@ -21,6 +20,7 @@ describe('TEST SCENARIO 012 :: SELLER CREATES & BUYER COMMITS, SELLER FAULTS, BU
   let aql = assert.equal;
 
   before('Check Balances', async function () {
+    await Utils.deployContracts();
     let balances = await checkBalance();
     console.log(balances);
   });
@@ -53,7 +53,7 @@ describe('TEST SCENARIO 012 :: SELLER CREATES & BUYER COMMITS, SELLER FAULTS, BU
   });
 
   it('TEST SCENARIO 12 :: SELLER CREATE :: 1.6 VALIDATE ERC1155ERC721 DATA', async function () {
-    aql(voucherSetDetails['operator'], contracts.VoucherKernelContractAddress);
+    aql(voucherSetDetails['operator'], Utils.contractVoucherKernel.address);
     aql(voucherSetDetails['transferFrom'], helpers.ZERO_ADDRESS);
     aql(voucherSetDetails['transferTo'], SELLER_PUBLIC);
     aql(voucherSetDetails['transferValue'], helpers.ORDER_QUANTITY1);
@@ -75,7 +75,6 @@ describe('TEST SCENARIO 012 :: SELLER CREATES & BUYER COMMITS, SELLER FAULTS, BU
   });
 
   it('TEST SCENARIO 12 :: SELLER FAULTS :: 4.0 Seller accepts fault on a complained voucher', async function () {
-    await delay();
     console.log(await checkBalance());
     faultedVoucher = await faultVoucher(committedVoucher['MintedVoucherID']);
     await format(faultedVoucher);
@@ -89,7 +88,6 @@ describe('TEST SCENARIO 012 :: SELLER CREATES & BUYER COMMITS, SELLER FAULTS, BU
   });
 
   it('TEST SCENARIO 12 :: BUYER COMPLAINS :: 5.0 Buyer complains a faulted voucher', async function () {
-    await delay();
     console.log(await checkBalance());
     complainedVoucher = await complainVoucher(
       committedVoucher['MintedVoucherID']
