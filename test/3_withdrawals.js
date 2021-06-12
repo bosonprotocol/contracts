@@ -5253,11 +5253,8 @@ contract('Cashier withdrawals ', async (addresses) => {
         truffleAssert.eventEmitted(tx, 'LogDisasterStateSet', (ev) => {
           return ev._triggeredBy == users.deployer.address;
         });
-      });
 
-      it('Disaster State should be set successfully', async () => {
         const disasterState = await contractCashier.isDisasterStateSet();
-
         assert.isTrue(disasterState);
       });
 
