@@ -145,4 +145,22 @@ interface IBosonRouter {
      * @return the specified party's correlation Id
      */
     function getCorrelationId(address _party) external view returns (uint256);
+
+    /**
+     * @notice Get the address of Cashier contract
+     * @return Address of Cashier address
+     */
+    function getCashierAddress() external view returns (address);
+
+    /**
+     * @notice Get the address of Voucher Kernel contract
+     * @return Address of Voucher Kernel contract
+     */
+    function getVoucherKernelAddress() external view returns (address);
+
+    /**
+     * @notice Get the address of Fund Limits Oracle contract
+     * @return Address of Fund Limits Oracle contract
+     */
+    function getFundLimitOracleAddress() external view returns (address);
 }
