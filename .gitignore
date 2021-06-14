@@ -11,6 +11,7 @@ node_modules
 /vendor
 /artifacts
 /cache
+/typechain
 
 # Secrets
 .secret

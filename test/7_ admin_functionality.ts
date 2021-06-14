@@ -7,14 +7,6 @@ import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
 
-// import {
-//   ERC1155ERC721__factory, VoucherKernel__factory, Cashier__factory, BosonRouter__factory, FundLimitsOracle__factory, MockERC20Permit__factory
-// } from '../typechain'
-
-// import {
-//   ERC1155ERC721, VoucherKernel, Cashier, BosonRouter, MockERC20Permit, FundLimitsOracle
-// } from '../typechain'
-
 let ERC1155ERC721_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
