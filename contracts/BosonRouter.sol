@@ -30,9 +30,9 @@ contract BosonRouter is
 
     using SafeMath for uint256;
 
-    address public cashierAddress;
-    address public voucherKernel;
-    address public fundLimitsOracle;
+    address private cashierAddress;
+    address private voucherKernel;
+    address private fundLimitsOracle;
 
     event LogOrderCreated(
         uint256 indexed _tokenIdSupply,
@@ -715,5 +715,44 @@ contract BosonRouter is
         returns (uint256)
     {
         return correlationIds[_party];
+    }
+
+    /**
+     * @notice Get the address of Cashier contract
+     * @return Address of Cashier address
+     */
+    function getCashierAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return cashierAddress;
+    }
+
+     /**
+     * @notice Get the address of Voucher Kernel contract
+     * @return Address of Voucher Kernel contract
+     */
+    function getVoucherKernelAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return voucherKernel;
+    }
+
+    /**
+     * @notice Get the address of Fund Limits Oracle contract
+     * @return Address of Fund Limits Oracle contract
+     */
+    function getFundLimitOracleAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return fundLimitsOracle;
     }
 }

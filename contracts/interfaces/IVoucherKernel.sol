@@ -386,4 +386,10 @@ interface IVoucherKernel {
         external
         view
         returns (bytes32);
+
+    /**
+     * @notice Get the address of ERC1155ERC721 contract
+     * @return Address of ERC1155ERC721 contract
+     */
+    function getTokensContractAddress() external view returns (address);
 }

@@ -1051,6 +1051,53 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     // // // // // // // //
 
     /**
+     * @notice Get the address of Voucher Kernel contract
+     * @return Address of Voucher Kernel contract
+     */
+    function getVoucherKernelAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return voucherKernel;
+    }
+
+    /**
+     * @notice Get the address of Boson Router contract
+     * @return Address of Boson Router contract
+     */
+    function getBosonRouterAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return bosonRouterAddress;
+    }
+
+    /**
+     * @notice Get the address of ERC1155ERC721 contract
+     * @return Address of ERC1155ERC721 contract
+     */
+    function getTokensContractAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return tokensContractAddress;
+    }
+
+    /**
+     * @notice Ensure whether or not contract has been set to disaster state 
+     * @return disasterState
+     */
+    function isDisasterStateSet() external view override returns(bool) {
+        return disasterState;
+    }
+
+    /**
      * @notice Get the amount in escrow of an address
      * @param _account  The address of an account to query
      * @return          The balance in escrow

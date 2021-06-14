@@ -711,4 +711,38 @@ contract MockBosonRouter is
     {
         return correlationIds[_party];
     }
+
+    /**
+     * @notice Get the address of Cashier contract
+     * @return Address of Cashier address
+     */
+    function getCashierAddress() external view override returns (address) {
+        return cashierAddress;
+    }
+
+    /**
+     * @notice Get the address of Voucher Kernel contract
+     * @return Address of Voucher Kernel contract
+     */
+    function getVoucherKernelAddress()
+        external
+        view
+        override
+        returns (address)
+    {
+        return voucherKernel;
+    }
+
+    /**
+     * @notice Get the address of Fund Limits Oracle contract
+     * @return Address of Fund Limits Oracle contract
+     */
+    function getFundLimitOracleAddress()
+        external
+        view
+        override
+        returns (address)
+    {
+        return fundLimitsOracle;
+    }
 }
