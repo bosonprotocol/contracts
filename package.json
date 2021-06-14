@@ -18,7 +18,7 @@
     "tests:lint-fix": "eslint --fix test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js scripts/**/*.js config/**/*.js",
     "tests:format": "prettier --list-different test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js scripts/**/*.js config/**/*.js",
     "tests:format-fix": "prettier --write test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js scripts/**/*.js config/**/*.js",
-    "tests:unit": "hardhat test --network test",
+    "tests:unit": "hardhat test",
     "tests:coverage": "npx hardhat coverage",
     "contracts:size": "hardhat size-contracts"
   },

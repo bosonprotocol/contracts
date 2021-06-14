@@ -10,6 +10,8 @@ require("@nomiclabs/hardhat-waffle");
 const { task } = require("hardhat/config");
 const { getAccountsWithBalance } = require('./config/getAccounts')
 
+const testMnemonic = 'inhale wood champion certain immense wash pepper enact enrich infant purse maid'
+
 const INFURA_KEY = process.env.INFURA_API_KEY;
 const DEPLOYER_PRIVATE_KEY = process.env.PK;
 
@@ -42,11 +44,8 @@ module.exports = {
 	defaultNetwork: "hardhat",
 	networks: {
 		hardhat: {
-			accounts: getAccountsWithBalance('privateKey'),
-			chainId: 1
-		},
-		test: {
-			url: `http://${process.env.HOST}:${process.env.PORT}`,
+			accounts: {mnemonic: testMnemonic, count: 10},
+			chainId: 1,
 		},
 		rinkeby: {
 			url: `https://rinkeby.infura.io/v3/${INFURA_KEY}`,
