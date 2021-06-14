@@ -4,7 +4,7 @@
 import fs from 'fs';
 import hre, {ethers} from 'hardhat';
 
-export default async function () {
+export default async function (): Promise<void> {
   const ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
   const VoucherKernel = await ethers.getContractFactory('VoucherKernel');
   const Cashier = await ethers.getContractFactory('Cashier');
@@ -87,7 +87,9 @@ export default async function () {
         voucherKernel: voucherKernel.address,
         cashier: cashier.address,
         br: br.address,
-      }, this, 2
+      },
+      this,
+      2
     ),
     'utf-8'
   );

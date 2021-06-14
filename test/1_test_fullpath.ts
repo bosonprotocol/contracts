@@ -1,18 +1,18 @@
-import { ethers } from "hardhat";
-import { Signer, ContractFactory, Contract } from "ethers";
+import {ethers} from 'hardhat';
+import {Signer, ContractFactory, Contract} from 'ethers';
 
 // later consider using
 // https://github.com/OpenZeppelin/openzeppelin-test-helpers
 
-import constants from '../testHelpers/constants'
-import { advanceTimeSeconds } from '../testHelpers/timemachine'
-import Users from '../testHelpers/users'
-import Utils from'../testHelpers/utils'
+import constants from '../testHelpers/constants';
+import {advanceTimeSeconds} from '../testHelpers/timemachine';
+import Users from '../testHelpers/users';
+import Utils from '../testHelpers/utils';
 
-import {assert, expect} from 'chai'
+import {assert, expect} from 'chai';
 
-import revertReasons from '../testHelpers/revertReasons'
-import * as  eventUtils from '../testHelpers/events';
+import revertReasons from '../testHelpers/revertReasons';
+import * as eventUtils from '../testHelpers/events';
 const eventNames = eventUtils.eventNames;
 import fnSignatures from '../testHelpers/functionSignatures';
 
@@ -507,7 +507,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        contractERC1155ERC721,
+        ERC1155ERC721,
         eventNames.TRANSFER_SINGLE,
         (ev) => {
           assert.isTrue(ev._operator === contractVoucherKernel.address);
@@ -520,7 +520,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        contractERC1155ERC721,
+        ERC1155ERC721,
         eventNames.TRANSFER,
         (ev) => {
           assert.isTrue(ev._from === constants.ZERO_ADDRESS);
@@ -604,7 +604,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        contractERC1155ERC721,
+        ERC1155ERC721,
         eventNames.TRANSFER_SINGLE,
         (ev) => {
           assert.isTrue(ev._operator === contractVoucherKernel.address);
@@ -617,7 +617,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        contractERC1155ERC721,
+        ERC1155ERC721,
         eventNames.TRANSFER,
         (ev) => {
           assert.isTrue(ev._from === constants.ZERO_ADDRESS);
@@ -1324,9 +1324,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
         complainTx.blockNumber
       );
       assert.isTrue(
-        voucherStatus.cancelFaultPeriodStart.eq(
-          BN(transactionBlock.timestamp)
-        )
+        voucherStatus.cancelFaultPeriodStart.eq(BN(transactionBlock.timestamp))
       );
 
       // [1010.1000] = hex"A8" = 168 = REFUND_COMPLAIN

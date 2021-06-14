@@ -1,12 +1,12 @@
-import { ethers } from "hardhat";
-import { Signer, ContractFactory, Contract } from "ethers";
+import {ethers} from 'hardhat';
+import {Signer, ContractFactory, Contract} from 'ethers';
 
-import {assert, expect} from 'chai'
+import {assert, expect} from 'chai';
 
-import constants from '../testHelpers/constants'
+import constants from '../testHelpers/constants';
 
-import Users from '../testHelpers/users'
-import Utils from'../testHelpers/utils'
+import Users from '../testHelpers/users';
+import Utils from '../testHelpers/utils';
 
 let ERC1155ERC721: ContractFactory;
 let VoucherKernel: ContractFactory;
@@ -15,14 +15,13 @@ let BosonRouter: ContractFactory;
 let MockERC20Permit: ContractFactory;
 let FundLimitsOracle: ContractFactory;
 
-import revertReasons from '../testHelpers/revertReasons'
-import * as  eventUtils from '../testHelpers/events';
+import revertReasons from '../testHelpers/revertReasons';
+import * as eventUtils from '../testHelpers/events';
 const eventNames = eventUtils.eventNames;
 
 let users;
 
 describe('FundLimitsOracle', () => {
-  
   before(async () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
@@ -141,7 +140,7 @@ describe('FundLimitsOracle', () => {
 
         eventUtils.assertEventEmitted(
           receipt,
-          contractFundLimitsOracle,
+          FundLimitsOracle,
           eventNames.LOG_ETH_LIMIT_CHANGED,
           (ev) => {
             assert.equal(ev._triggeredBy, users.deployer.address);
@@ -187,7 +186,7 @@ describe('FundLimitsOracle', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          contractFundLimitsOracle,
+          FundLimitsOracle,
           eventNames.LOG_TOKEN_LIMIT_CHANGED,
           (ev) => {
             assert.equal(ev._triggeredBy, users.deployer.address);

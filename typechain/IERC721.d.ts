@@ -23,7 +23,6 @@ interface IERC721Interface extends ethers.utils.Interface {
   functions: {
     "approve(address,uint256)": FunctionFragment;
     "balanceOf(address)": FunctionFragment;
-    "c_0x9f679b2e(bytes32)": FunctionFragment;
     "getApproved(uint256)": FunctionFragment;
     "isApprovedForAll(address,address)": FunctionFragment;
     "ownerOf(uint256)": FunctionFragment;
@@ -38,10 +37,6 @@ interface IERC721Interface extends ethers.utils.Interface {
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "balanceOf", values: [string]): string;
-  encodeFunctionData(
-    functionFragment: "c_0x9f679b2e",
-    values: [BytesLike]
-  ): string;
   encodeFunctionData(
     functionFragment: "getApproved",
     values: [BigNumberish]
@@ -73,10 +68,6 @@ interface IERC721Interface extends ethers.utils.Interface {
 
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "c_0x9f679b2e",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "getApproved",
     data: BytesLike
@@ -164,11 +155,6 @@ export class IERC721 extends BaseContract {
 
     balanceOf(_owner: string, overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    c_0x9f679b2e(
-      c__0x9f679b2e: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<[void]>;
-
     getApproved(
       _tokenId: BigNumberish,
       overrides?: CallOverrides
@@ -227,11 +213,6 @@ export class IERC721 extends BaseContract {
 
   balanceOf(_owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-  c_0x9f679b2e(
-    c__0x9f679b2e: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
-
   getApproved(
     _tokenId: BigNumberish,
     overrides?: CallOverrides
@@ -286,11 +267,6 @@ export class IERC721 extends BaseContract {
     ): Promise<void>;
 
     balanceOf(_owner: string, overrides?: CallOverrides): Promise<BigNumber>;
-
-    c_0x9f679b2e(
-      c__0x9f679b2e: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
 
     getApproved(
       _tokenId: BigNumberish,
@@ -368,11 +344,6 @@ export class IERC721 extends BaseContract {
 
     balanceOf(_owner: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    c_0x9f679b2e(
-      c__0x9f679b2e: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     getApproved(
       _tokenId: BigNumberish,
       overrides?: CallOverrides
@@ -432,11 +403,6 @@ export class IERC721 extends BaseContract {
 
     balanceOf(
       _owner: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    c_0x9f679b2e(
-      c__0x9f679b2e: BytesLike,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

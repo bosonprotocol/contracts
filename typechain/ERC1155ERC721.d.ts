@@ -29,8 +29,6 @@ interface ERC1155ERC721Interface extends ethers.utils.Interface {
     "balanceOfBatch(address[],uint256[])": FunctionFragment;
     "burn(address,uint256,uint256)": FunctionFragment;
     "burnBatch(address,uint256[],uint256[])": FunctionFragment;
-    "c_0x9f679b2e(bytes32)": FunctionFragment;
-    "c_0xcce2b708(bytes32)": FunctionFragment;
     "cashierAddress()": FunctionFragment;
     "getApproved(uint256)": FunctionFragment;
     "isApprovedForAll(address,address)": FunctionFragment;
@@ -83,14 +81,6 @@ interface ERC1155ERC721Interface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "burnBatch",
     values: [string, BigNumberish[], BigNumberish[]]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "c_0x9f679b2e",
-    values: [BytesLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "c_0xcce2b708",
-    values: [BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "cashierAddress",
@@ -177,14 +167,6 @@ interface ERC1155ERC721Interface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "burn", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "burnBatch", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "c_0x9f679b2e",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "c_0xcce2b708",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "cashierAddress",
     data: BytesLike
@@ -355,16 +337,6 @@ export class ERC1155ERC721 extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    c_0x9f679b2e(
-      c__0x9f679b2e: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<[void]>;
-
-    c_0xcce2b708(
-      c__0xcce2b708: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<[void]>;
-
     cashierAddress(overrides?: CallOverrides): Promise<[string]>;
 
     getApproved(
@@ -534,16 +506,6 @@ export class ERC1155ERC721 extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  c_0x9f679b2e(
-    c__0x9f679b2e: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
-
-  c_0xcce2b708(
-    c__0xcce2b708: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
-
   cashierAddress(overrides?: CallOverrides): Promise<string>;
 
   getApproved(
@@ -698,16 +660,6 @@ export class ERC1155ERC721 extends BaseContract {
       _account: string,
       _tokenIds: BigNumberish[],
       _values: BigNumberish[],
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    c_0x9f679b2e(
-      c__0x9f679b2e: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    c_0xcce2b708(
-      c__0xcce2b708: BytesLike,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -965,16 +917,6 @@ export class ERC1155ERC721 extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    c_0x9f679b2e(
-      c__0x9f679b2e: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    c_0xcce2b708(
-      c__0xcce2b708: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     cashierAddress(overrides?: CallOverrides): Promise<BigNumber>;
 
     getApproved(
@@ -1143,16 +1085,6 @@ export class ERC1155ERC721 extends BaseContract {
       _tokenIds: BigNumberish[],
       _values: BigNumberish[],
       overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    c_0x9f679b2e(
-      c__0x9f679b2e: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    c_0xcce2b708(
-      c__0xcce2b708: BytesLike,
-      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     cashierAddress(overrides?: CallOverrides): Promise<PopulatedTransaction>;

@@ -1,4 +1,4 @@
-import { ethers } from 'hardhat'
+import {ethers} from 'hardhat';
 
 export const eventNames = {
   LOG_ORDER_CREATED: 'LogOrderCreated',
@@ -31,14 +31,25 @@ export const eventNames = {
   LOG_CASHIER_SET: 'LogCashierSet',
 };
 
-export function getEventArgsFromFactory(factory, eventName) {
+import {ContractFactory, ContractReceipt} from 'ethers';
+import {DistributionEvent} from './types';
+
+type callBack = (eventArgs: DistributionEvent | any) => void;
+
+export function getEventArgsFromFactory(
+  factory: ContractFactory,
+  eventName: string
+): Array<string> {
   const [eventFragment] = factory.interface.fragments.filter(
     (e) => e.name == eventName
   );
   return eventFragment.inputs.map((e) => e.name);
 }
 
-export function getEventArgTypesFromFactory(factory, eventName) {
+export function getEventArgTypesFromFactory(
+  factory: ContractFactory,
+  eventName: string
+): Array<string> {
   const [eventFragment] = factory.interface.fragments.filter(
     (e) => e.name == eventName
   );
@@ -47,7 +58,12 @@ export function getEventArgTypesFromFactory(factory, eventName) {
     .map((e) => e.type);
 }
 
-export function assertEventEmitted(receipt, factory, eventName, callback) {
+export function assertEventEmitted(
+  receipt: ContractReceipt,
+  factory: ContractFactory,
+  eventName: string,
+  callback: callBack
+): void {
   let found = false;
 
   const eventFragment = factory.interface.fragments.filter(
@@ -84,10 +100,3 @@ export function assertEventEmitted(receipt, factory, eventName, callback) {
     throw new Error(`Event with name ${eventName} was not emitted!`);
   }
 }
-
-// module.exports = {
-//   getEventArgsFromFactory,
-//   getEventArgTypesFromFactory,
-//   assertEventEmitted,
-//   eventNames,
-// };

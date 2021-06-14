@@ -1,4 +1,5 @@
-import fs from 'fs'
+import fs from 'fs';
+import {Account} from '../testHelpers/types';
 
 const userIndices = {
   deployer: 0,
@@ -10,7 +11,7 @@ const userIndices = {
 };
 
 const loadPrivateKeys = (accountKeysFile) => {
-  const accountKeysRaw = fs.readFileSync(accountKeysFile, 'utf8')
+  const accountKeysRaw = fs.readFileSync(accountKeysFile, 'utf8');
   const accountKeysJs = JSON.parse(accountKeysRaw);
 
   return Object.fromEntries(
@@ -22,11 +23,11 @@ const loadPrivateKeys = (accountKeysFile) => {
 };
 
 class Users {
-  addresses
-  privateKeys
-  signers
+  addresses;
+  privateKeys;
+  signers;
 
-  constructor(signers) {
+  constructor(signers: Array<any>) {
     this.addresses = signers ? signers.map((e) => e.address) : null;
     this.privateKeys = loadPrivateKeys(
       process.env.ACCOUNT_KEYS_FILE || 'config/accounts.json'
@@ -41,7 +42,7 @@ class Users {
       : null;
   }
 
-  getAccountAtIndex(index) {
+  getAccountAtIndex(index: number): Account {
     const address = this.addresses[index];
     const privateKey = this.privateKeys[address];
     const signer = this.signers[address];
@@ -49,27 +50,27 @@ class Users {
     return {address, privateKey, signer};
   }
 
-  get deployer() {
+  get deployer(): Account {
     return this.getAccountAtIndex(userIndices.deployer);
   }
 
-  get seller() {
+  get seller(): Account {
     return this.getAccountAtIndex(userIndices.seller);
   }
 
-  get buyer() {
+  get buyer(): Account {
     return this.getAccountAtIndex(userIndices.buyer);
   }
 
-  get attacker() {
+  get attacker(): Account {
     return this.getAccountAtIndex(userIndices.attacker);
   }
 
-  get other1() {
+  get other1(): Account {
     return this.getAccountAtIndex(userIndices.other1);
   }
 
-  get other2() {
+  get other2(): Account {
     return this.getAccountAtIndex(userIndices.other2);
   }
 }

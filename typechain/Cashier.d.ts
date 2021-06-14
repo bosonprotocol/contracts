@@ -25,8 +25,6 @@ interface CashierInterface extends ethers.utils.Interface {
     "addEscrowAmount(address)": FunctionFragment;
     "addEscrowTokensAmount(address,address,uint256)": FunctionFragment;
     "bosonRouterAddress()": FunctionFragment;
-    "c_0x5777ee5b(bytes32)": FunctionFragment;
-    "c_0x68e157f6(bytes32)": FunctionFragment;
     "canUnpause()": FunctionFragment;
     "disasterState()": FunctionFragment;
     "escrow(address)": FunctionFragment;
@@ -63,14 +61,6 @@ interface CashierInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "bosonRouterAddress",
     values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "c_0x5777ee5b",
-    values: [BytesLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "c_0x68e157f6",
-    values: [BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "canUnpause",
@@ -160,14 +150,6 @@ interface CashierInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "bosonRouterAddress",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "c_0x5777ee5b",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "c_0x68e157f6",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "canUnpause", data: BytesLike): Result;
@@ -327,16 +309,6 @@ export class Cashier extends BaseContract {
 
     bosonRouterAddress(overrides?: CallOverrides): Promise<[string]>;
 
-    c_0x5777ee5b(
-      c__0x5777ee5b: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<[void]>;
-
-    c_0x68e157f6(
-      c__0x68e157f6: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<[void]>;
-
     canUnpause(overrides?: CallOverrides): Promise<[boolean]>;
 
     disasterState(overrides?: CallOverrides): Promise<[boolean]>;
@@ -450,16 +422,6 @@ export class Cashier extends BaseContract {
 
   bosonRouterAddress(overrides?: CallOverrides): Promise<string>;
 
-  c_0x5777ee5b(
-    c__0x5777ee5b: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
-
-  c_0x68e157f6(
-    c__0x68e157f6: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
-
   canUnpause(overrides?: CallOverrides): Promise<boolean>;
 
   disasterState(overrides?: CallOverrides): Promise<boolean>;
@@ -569,16 +531,6 @@ export class Cashier extends BaseContract {
     ): Promise<void>;
 
     bosonRouterAddress(overrides?: CallOverrides): Promise<string>;
-
-    c_0x5777ee5b(
-      c__0x5777ee5b: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    c_0x68e157f6(
-      c__0x68e157f6: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
 
     canUnpause(overrides?: CallOverrides): Promise<boolean>;
 
@@ -763,16 +715,6 @@ export class Cashier extends BaseContract {
 
     bosonRouterAddress(overrides?: CallOverrides): Promise<BigNumber>;
 
-    c_0x5777ee5b(
-      c__0x5777ee5b: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    c_0x68e157f6(
-      c__0x68e157f6: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     canUnpause(overrides?: CallOverrides): Promise<BigNumber>;
 
     disasterState(overrides?: CallOverrides): Promise<BigNumber>;
@@ -886,16 +828,6 @@ export class Cashier extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     bosonRouterAddress(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    c_0x5777ee5b(
-      c__0x5777ee5b: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    c_0x68e157f6(
-      c__0x68e157f6: BytesLike,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

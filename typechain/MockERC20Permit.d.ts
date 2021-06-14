@@ -29,8 +29,6 @@ interface MockERC20PermitInterface extends ethers.utils.Interface {
     "allowance(address,address)": FunctionFragment;
     "approve(address,uint256)": FunctionFragment;
     "balanceOf(address)": FunctionFragment;
-    "c_0xf165b35a(bytes32)": FunctionFragment;
-    "c_0xfa27ed9c(bytes32)": FunctionFragment;
     "decimals()": FunctionFragment;
     "getRoleAdmin(bytes32)": FunctionFragment;
     "getRoleMember(bytes32,uint256)": FunctionFragment;
@@ -81,14 +79,6 @@ interface MockERC20PermitInterface extends ethers.utils.Interface {
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "balanceOf", values: [string]): string;
-  encodeFunctionData(
-    functionFragment: "c_0xf165b35a",
-    values: [BytesLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "c_0xfa27ed9c",
-    values: [BytesLike]
-  ): string;
   encodeFunctionData(functionFragment: "decimals", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "getRoleAdmin",
@@ -176,14 +166,6 @@ interface MockERC20PermitInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "allowance", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "c_0xf165b35a",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "c_0xfa27ed9c",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "decimals", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getRoleAdmin",
@@ -309,16 +291,6 @@ export class MockERC20Permit extends BaseContract {
 
     balanceOf(arg0: string, overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    c_0xf165b35a(
-      c__0xf165b35a: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<[void]>;
-
-    c_0xfa27ed9c(
-      c__0xfa27ed9c: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<[void]>;
-
     decimals(overrides?: CallOverrides): Promise<[number]>;
 
     getRoleAdmin(role: BytesLike, overrides?: CallOverrides): Promise<[string]>;
@@ -431,16 +403,6 @@ export class MockERC20Permit extends BaseContract {
 
   balanceOf(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-  c_0xf165b35a(
-    c__0xf165b35a: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
-
-  c_0xfa27ed9c(
-    c__0xfa27ed9c: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
-
   decimals(overrides?: CallOverrides): Promise<number>;
 
   getRoleAdmin(role: BytesLike, overrides?: CallOverrides): Promise<string>;
@@ -552,16 +514,6 @@ export class MockERC20Permit extends BaseContract {
     ): Promise<boolean>;
 
     balanceOf(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
-
-    c_0xf165b35a(
-      c__0xf165b35a: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    c_0xfa27ed9c(
-      c__0xfa27ed9c: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
 
     decimals(overrides?: CallOverrides): Promise<number>;
 
@@ -723,16 +675,6 @@ export class MockERC20Permit extends BaseContract {
 
     balanceOf(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    c_0xf165b35a(
-      c__0xf165b35a: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    c_0xfa27ed9c(
-      c__0xfa27ed9c: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     decimals(overrides?: CallOverrides): Promise<BigNumber>;
 
     getRoleAdmin(
@@ -851,16 +793,6 @@ export class MockERC20Permit extends BaseContract {
 
     balanceOf(
       arg0: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    c_0xf165b35a(
-      c__0xf165b35a: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    c_0xfa27ed9c(
-      c__0xfa27ed9c: BytesLike,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

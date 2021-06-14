@@ -1,14 +1,13 @@
-import { ethers } from "hardhat";
-import { Signer, ContractFactory, Contract } from "ethers";
+import {ethers} from 'hardhat';
+import {Signer, ContractFactory, Contract} from 'ethers';
 
-import {assert, expect} from 'chai'
+import {assert, expect} from 'chai';
 
-import constants from '../testHelpers/constants'
+import constants from '../testHelpers/constants';
 
-import Users from '../testHelpers/users'
-import Utils from'../testHelpers/utils'
-import UtilsBuilder from '../testHelpers/utilsBuilder'
-
+import Users from '../testHelpers/users';
+import Utils from '../testHelpers/utils';
+import UtilsBuilder from '../testHelpers/utilsBuilder';
 
 let ERC1155ERC721: ContractFactory;
 let VoucherKernel: ContractFactory;
@@ -17,8 +16,8 @@ let BosonRouter: ContractFactory;
 let MockERC20Permit: ContractFactory;
 let FundLimitsOracle: ContractFactory;
 
-import revertReasons from '../testHelpers/revertReasons'
-import * as  eventUtils from '../testHelpers/events';
+import revertReasons from '../testHelpers/revertReasons';
+import * as eventUtils from '../testHelpers/events';
 const eventNames = eventUtils.eventNames;
 import fnSignatures from '../testHelpers/functionSignatures';
 
@@ -168,7 +167,7 @@ describe('ERC1155ERC721', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          contractERC1155ERC721,
+          ERC1155ERC721,
           eventNames.APPROVAL_FOR_ALL,
           (ev) => {
             assert.equal(
@@ -198,7 +197,7 @@ describe('ERC1155ERC721', () => {
 
         eventUtils.assertEventEmitted(
           txFillOrder,
-          contractERC1155ERC721,
+          ERC1155ERC721,
           eventNames.TRANSFER_SINGLE,
           (ev) => {
             assert.equal(
@@ -232,7 +231,7 @@ describe('ERC1155ERC721', () => {
 
         eventUtils.assertEventEmitted(
           commitTx,
-          contractERC1155ERC721,
+          ERC1155ERC721,
           eventNames.TRANSFER_SINGLE,
           (ev) => {
             assert.equal(
@@ -253,7 +252,7 @@ describe('ERC1155ERC721', () => {
 
         eventUtils.assertEventEmitted(
           commitTx,
-          contractERC1155ERC721,
+          ERC1155ERC721,
           eventNames.TRANSFER,
           (ev) => {
             assert.equal(
@@ -285,7 +284,7 @@ describe('ERC1155ERC721', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          contractERC1155ERC721,
+          ERC1155ERC721,
           eventNames.APPROVAL,
           (ev) => {
             assert.equal(

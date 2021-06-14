@@ -23,7 +23,6 @@ export type { IVoucherKernel } from "./IVoucherKernel";
 export type { Migrations } from "./Migrations";
 export type { ERC20WithPermit } from "./ERC20WithPermit";
 export type { MockERC20Permit } from "./MockERC20Permit";
-export type { UsingHelpers } from "./UsingHelpers";
 export type { VoucherKernel } from "./VoucherKernel";
 
 export { AccessControl__factory } from "./factories/AccessControl__factory";
@@ -48,5 +47,4 @@ export { IVoucherKernel__factory } from "./factories/IVoucherKernel__factory";
 export { Migrations__factory } from "./factories/Migrations__factory";
 export { ERC20WithPermit__factory } from "./factories/ERC20WithPermit__factory";
 export { MockERC20Permit__factory } from "./factories/MockERC20Permit__factory";
-export { UsingHelpers__factory } from "./factories/UsingHelpers__factory";
 export { VoucherKernel__factory } from "./factories/VoucherKernel__factory";

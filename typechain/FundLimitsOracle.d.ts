@@ -21,7 +21,6 @@ import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 
 interface FundLimitsOracleInterface extends ethers.utils.Interface {
   functions: {
-    "c_0x0ddee10a(bytes32)": FunctionFragment;
     "getETHLimit()": FunctionFragment;
     "getTokenLimit(address)": FunctionFragment;
     "owner()": FunctionFragment;
@@ -31,10 +30,6 @@ interface FundLimitsOracleInterface extends ethers.utils.Interface {
     "transferOwnership(address)": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "c_0x0ddee10a",
-    values: [BytesLike]
-  ): string;
   encodeFunctionData(
     functionFragment: "getETHLimit",
     values?: undefined
@@ -61,10 +56,6 @@ interface FundLimitsOracleInterface extends ethers.utils.Interface {
     values: [string]
   ): string;
 
-  decodeFunctionResult(
-    functionFragment: "c_0x0ddee10a",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "getETHLimit",
     data: BytesLike
@@ -146,11 +137,6 @@ export class FundLimitsOracle extends BaseContract {
   interface: FundLimitsOracleInterface;
 
   functions: {
-    c_0x0ddee10a(
-      c__0x0ddee10a: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<[void]>;
-
     getETHLimit(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     getTokenLimit(
@@ -180,11 +166,6 @@ export class FundLimitsOracle extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
-
-  c_0x0ddee10a(
-    c__0x0ddee10a: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
 
   getETHLimit(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -216,11 +197,6 @@ export class FundLimitsOracle extends BaseContract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    c_0x0ddee10a(
-      c__0x0ddee10a: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
     getETHLimit(overrides?: CallOverrides): Promise<BigNumber>;
 
     getTokenLimit(
@@ -276,11 +252,6 @@ export class FundLimitsOracle extends BaseContract {
   };
 
   estimateGas: {
-    c_0x0ddee10a(
-      c__0x0ddee10a: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     getETHLimit(overrides?: CallOverrides): Promise<BigNumber>;
 
     getTokenLimit(
@@ -312,11 +283,6 @@ export class FundLimitsOracle extends BaseContract {
   };
 
   populateTransaction: {
-    c_0x0ddee10a(
-      c__0x0ddee10a: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     getETHLimit(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     getTokenLimit(

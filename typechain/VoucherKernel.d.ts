@@ -26,8 +26,6 @@ interface VoucherKernelInterface extends ethers.utils.Interface {
     "TYPE_NF_BIT()": FunctionFragment;
     "bosonRouterAddress()": FunctionFragment;
     "burnSupplyOnPause(address,uint256,uint256)": FunctionFragment;
-    "c_0x5777ee5b(bytes32)": FunctionFragment;
-    "c_0x682651e6(bytes32)": FunctionFragment;
     "cancelFaultPeriod()": FunctionFragment;
     "cancelOrFault(uint256,address)": FunctionFragment;
     "cancelOrFaultVoucherSet(uint256,address)": FunctionFragment;
@@ -96,14 +94,6 @@ interface VoucherKernelInterface extends ethers.utils.Interface {
   encodeFunctionData(
     functionFragment: "burnSupplyOnPause",
     values: [string, BigNumberish, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "c_0x5777ee5b",
-    values: [BytesLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "c_0x682651e6",
-    values: [BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "cancelFaultPeriod",
@@ -308,14 +298,6 @@ interface VoucherKernelInterface extends ethers.utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "burnSupplyOnPause",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "c_0x5777ee5b",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "c_0x682651e6",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -588,16 +570,6 @@ export class VoucherKernel extends BaseContract {
       _qty: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
-
-    c_0x5777ee5b(
-      c__0x5777ee5b: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<[void]>;
-
-    c_0x682651e6(
-      c__0x682651e6: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<[void]>;
 
     cancelFaultPeriod(overrides?: CallOverrides): Promise<[BigNumber]>;
 
@@ -894,16 +866,6 @@ export class VoucherKernel extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  c_0x5777ee5b(
-    c__0x5777ee5b: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
-
-  c_0x682651e6(
-    c__0x682651e6: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
-
   cancelFaultPeriod(overrides?: CallOverrides): Promise<BigNumber>;
 
   cancelOrFault(
@@ -1187,16 +1149,6 @@ export class VoucherKernel extends BaseContract {
       _issuer: string,
       _tokenIdSupply: BigNumberish,
       _qty: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    c_0x5777ee5b(
-      c__0x5777ee5b: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    c_0x682651e6(
-      c__0x682651e6: BytesLike,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -1624,16 +1576,6 @@ export class VoucherKernel extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    c_0x5777ee5b(
-      c__0x5777ee5b: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    c_0x682651e6(
-      c__0x682651e6: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     cancelFaultPeriod(overrides?: CallOverrides): Promise<BigNumber>;
 
     cancelOrFault(
@@ -1891,16 +1833,6 @@ export class VoucherKernel extends BaseContract {
       _tokenIdSupply: BigNumberish,
       _qty: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    c_0x5777ee5b(
-      c__0x5777ee5b: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    c_0x682651e6(
-      c__0x682651e6: BytesLike,
-      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     cancelFaultPeriod(overrides?: CallOverrides): Promise<PopulatedTransaction>;

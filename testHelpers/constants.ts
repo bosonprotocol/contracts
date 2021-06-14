@@ -1,4 +1,5 @@
-const ethers = require('hardhat').ethers;
+import {ethers} from 'hardhat';
+
 const BN = ethers.BigNumber.from;
 
 // common
@@ -25,7 +26,7 @@ const CATEGORY1 = 'entertainment.games.swag';
 const CATEGORY2 = 'entertainment.games.shield';
 
 // promise
-let PROMISE_VALID_FROM: number ; // evaluated based on the current block timestamp
+let PROMISE_VALID_FROM: number; // evaluated based on the current block timestamp
 let PROMISE_VALID_TO: number; // evaluated based on the PROMISE_VALID_FROM + 2 * SECONDS_IN_DAY
 const PROMISE_PRICE1 = 10;
 const PROMISE_PRICE2 = 21;

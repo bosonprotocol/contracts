@@ -21,8 +21,6 @@ const lazyImport = async (module) => {
 task("deploy", "Deploy contracts on a provided network")
 	.setAction( async () => {
 		const deploymentScript = await lazyImport('./scripts/deploy')
-		console.log(deploymentScript);
-		
 		await deploymentScript.default();
 	})
 

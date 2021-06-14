@@ -101,10 +101,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.MockERC20Permit__factory>;
     getContractFactory(
-      name: "UsingHelpers",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.UsingHelpers__factory>;
-    getContractFactory(
       name: "VoucherKernel",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.VoucherKernel__factory>;

@@ -1,13 +1,13 @@
-import { ethers } from "hardhat";
-import { Signer, ContractFactory, Contract } from "ethers";
+import {ethers} from 'hardhat';
+import {Signer, ContractFactory, Contract} from 'ethers';
 
-const {assert, expect} = require('chai');
+import {assert, expect} from 'chai';
 
-import constants from '../testHelpers/constants'
-import { advanceTimeSeconds } from '../testHelpers/timemachine'
-import Users from '../testHelpers/users'
-import Utils from'../testHelpers/utils'
-import UtilsBuilder from '../testHelpers/utilsBuilder'
+import constants from '../testHelpers/constants';
+import {advanceTimeSeconds} from '../testHelpers/timemachine';
+import Users from '../testHelpers/users';
+import Utils from '../testHelpers/utils';
+import UtilsBuilder from '../testHelpers/utilsBuilder';
 
 let ERC1155ERC721: ContractFactory;
 let VoucherKernel: ContractFactory;
@@ -16,8 +16,8 @@ let BosonRouter: ContractFactory;
 let MockERC20Permit: ContractFactory;
 let FundLimitsOracle: ContractFactory;
 
-import revertReasons from '../testHelpers/revertReasons'
-import * as  eventUtils from '../testHelpers/events';
+import revertReasons from '../testHelpers/revertReasons';
+import * as eventUtils from '../testHelpers/events';
 const eventNames = eventUtils.eventNames;
 
 const BN = ethers.BigNumber.from;

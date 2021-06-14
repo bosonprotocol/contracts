@@ -1,10 +1,10 @@
 import hre from 'hardhat';
-import fs  from 'fs';
+import fs from 'fs';
 const contracts = JSON.parse(
   fs.readFileSync('./scripts/contracts.json', 'utf-8')
 );
 
-export default async function () {
+export default async function (): Promise<void> {
   if (contracts.network != hre.network.name) {
     throw new Error(
       'Contracts are not deployer on the same network, that you are trying to verify!'

@@ -1,22 +1,19 @@
-import { ethers } from "hardhat";
-import { Signer, ContractFactory, Contract } from "ethers";
+import {ethers} from 'hardhat';
+import {Signer, ContractFactory, Contract} from 'ethers';
 
-import {assert, expect} from 'chai'
-import constants from '../testHelpers/constants'
+import {assert, expect} from 'chai';
+import constants from '../testHelpers/constants';
 
-import Users from '../testHelpers/users'
-import Utils from'../testHelpers/utils'
+import Users from '../testHelpers/users';
+import Utils from '../testHelpers/utils';
 
-import {
-  ERC1155ERC721__factory, VoucherKernel__factory, Cashier__factory, BosonRouter__factory, FundLimitsOracle__factory, MockERC20Permit__factory
-} from '../typechain'
+// import {
+//   ERC1155ERC721__factory, VoucherKernel__factory, Cashier__factory, BosonRouter__factory, FundLimitsOracle__factory, MockERC20Permit__factory
+// } from '../typechain'
 
-
-import {
-  ERC1155ERC721, VoucherKernel, Cashier, BosonRouter, MockERC20Permit, FundLimitsOracle
-} from '../typechain'
-
-
+// import {
+//   ERC1155ERC721, VoucherKernel, Cashier, BosonRouter, MockERC20Permit, FundLimitsOracle
+// } from '../typechain'
 
 let ERC1155ERC721_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
@@ -24,9 +21,9 @@ let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
 let FundLimitsOracle_Factory: ContractFactory;
 
-import revertReasons from '../testHelpers/revertReasons'
-import * as eventUtils from '../testHelpers/events'
-import {eventNames} from '../testHelpers/events'
+import revertReasons from '../testHelpers/revertReasons';
+import * as eventUtils from '../testHelpers/events';
+import {eventNames} from '../testHelpers/events';
 
 let users;
 
@@ -39,29 +36,32 @@ describe('Admin functionality', async () => {
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
-    FundLimitsOracle_Factory = await ethers.getContractFactory('FundLimitsOracle');
+    FundLimitsOracle_Factory = await ethers.getContractFactory(
+      'FundLimitsOracle'
+    );
   });
 
   let contractERC1155ERC721: Contract,
     contractVoucherKernel: Contract,
     contractCashier: Contract,
     contractBosonRouter: Contract,
-    contractFundLimitsOracle: Contract
+    contractFundLimitsOracle: Contract;
 
   async function deployContracts() {
     const timestamp = await Utils.getCurrTimestamp();
 
     constants.PROMISE_VALID_FROM = timestamp;
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
-    
+
     contractFundLimitsOracle = await FundLimitsOracle_Factory.deploy();
 
-    
     contractERC1155ERC721 = await ERC1155ERC721_Factory.deploy();
     contractVoucherKernel = await VoucherKernel_Factory.deploy(
       contractERC1155ERC721.address
     );
-    contractCashier = await Cashier_Factory.deploy(contractVoucherKernel.address);
+    contractCashier = await Cashier_Factory.deploy(
+      contractVoucherKernel.address
+    );
     contractBosonRouter = await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
@@ -96,7 +96,7 @@ describe('Admin functionality', async () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        contractCashier,
+        Cashier_Factory,
         eventNames.LOG_BR_SET,
         (ev) => {
           assert.equal(
@@ -135,7 +135,7 @@ describe('Admin functionality', async () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        contractCashier,
+        Cashier_Factory,
         eventNames.LOG_ERC1155_ERC721_SET,
         (ev) => {
           assert.equal(
@@ -187,7 +187,7 @@ describe('Admin functionality', async () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        contractERC1155ERC721,
+        ERC1155ERC721_Factory,
         eventNames.LOG_VK_SET,
         (ev) => {
           assert.equal(
@@ -227,7 +227,7 @@ describe('Admin functionality', async () => {
       const txReceipt = await tx.wait();
       eventUtils.assertEventEmitted(
         txReceipt,
-        contractERC1155ERC721,
+        ERC1155ERC721_Factory,
         eventNames.LOG_CASHIER_SET,
         (ev) => {
           assert.equal(
@@ -282,7 +282,7 @@ describe('Admin functionality', async () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        contractVoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_CASHIER_SET,
         (ev) => {
           assert.equal(
@@ -323,7 +323,7 @@ describe('Admin functionality', async () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        contractVoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_BR_SET,
         (ev) => {
           assert.equal(

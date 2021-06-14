@@ -1,15 +1,15 @@
-import { ethers } from "hardhat";
-import { Signer, ContractFactory, Contract } from "ethers";
+import {ethers} from 'hardhat';
+import {Signer, ContractFactory, Contract} from 'ethers';
 
-import {assert, expect} from 'chai'
+import {assert, expect} from 'chai';
 import {ecsign} from 'ethereumjs-util';
 
-import constants from '../testHelpers/constants'
-import { advanceTimeSeconds } from '../testHelpers/timemachine'
+import constants from '../testHelpers/constants';
+import {advanceTimeSeconds} from '../testHelpers/timemachine';
 
-import Users from '../testHelpers/users'
-import Utils from'../testHelpers/utils'
-import UtilsBuilder from '../testHelpers/utilsBuilder'
+import Users from '../testHelpers/users';
+import Utils from '../testHelpers/utils';
+import UtilsBuilder from '../testHelpers/utilsBuilder';
 
 import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
 
@@ -20,8 +20,8 @@ let BosonRouter: ContractFactory;
 let FundLimitsOracle: ContractFactory;
 let MockERC20Permit: ContractFactory;
 
-import revertReasons from '../testHelpers/revertReasons'
-import * as  eventUtils from '../testHelpers/events';
+import revertReasons from '../testHelpers/revertReasons';
+import * as eventUtils from '../testHelpers/events';
 const eventNames = eventUtils.eventNames;
 import fnSignatures from '../testHelpers/functionSignatures';
 
@@ -926,7 +926,7 @@ describe('Cashier and VoucherKernel', () => {
 
           await expect(
             sellerInstance.requestCreateOrderTKNETH(
-            '',
+              '',
               [
                 constants.PROMISE_VALID_FROM,
                 constants.PROMISE_VALID_TO,
@@ -3027,9 +3027,7 @@ describe('Cashier and VoucherKernel', () => {
 
         await utils.cancel(voucherID, users.seller.signer);
 
-        await advanceTimeSeconds(
-          complainPeriod + constants.ONE_MINUTE
-        );
+        await advanceTimeSeconds(complainPeriod + constants.ONE_MINUTE);
 
         await expect(
           utils.complain(voucherID, users.buyer.signer)
@@ -3110,9 +3108,7 @@ describe('Cashier and VoucherKernel', () => {
         );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer),
-          await advanceTimeSeconds(
-            complainPeriod + constants.ONE_MINUTE
-          );
+          await advanceTimeSeconds(complainPeriod + constants.ONE_MINUTE);
 
         await expect(
           utils.complain(voucherID, users.buyer.signer)
@@ -3128,9 +3124,7 @@ describe('Cashier and VoucherKernel', () => {
 
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer),
-          await advanceTimeSeconds(
-            cancelPeriod + constants.ONE_MINUTE
-          );
+          await advanceTimeSeconds(cancelPeriod + constants.ONE_MINUTE);
 
         await expect(
           utils.cancel(voucherID, users.seller.signer)
@@ -3183,9 +3177,7 @@ describe('Cashier and VoucherKernel', () => {
         await utils.refund(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
 
-        await advanceTimeSeconds(
-          cancelPeriod + constants.ONE_MINUTE
-        );
+        await advanceTimeSeconds(cancelPeriod + constants.ONE_MINUTE);
 
         await expect(
           utils.cancel(voucherID, users.seller.signer)
@@ -3202,9 +3194,7 @@ describe('Cashier and VoucherKernel', () => {
         await utils.refund(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
 
-        await advanceTimeSeconds(
-          complainPeriod + constants.ONE_MINUTE
-        );
+        await advanceTimeSeconds(complainPeriod + constants.ONE_MINUTE);
 
         await expect(
           utils.complain(voucherID, users.buyer.signer)
@@ -3568,7 +3558,10 @@ describe('Cashier and VoucherKernel', () => {
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        const withdrawTx = await utils.withdraw(voucherID, users.deployer.signer);
+        const withdrawTx = await utils.withdraw(
+          voucherID,
+          users.deployer.signer
+        );
 
         const txReceipt = await withdrawTx.wait();
 
@@ -3623,7 +3616,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          contractVoucherKernel,
+          VoucherKernel,
           eventNames.LOG_VOUCHER_FAULT_CANCEL,
           (ev) => {
             assert.isTrue(ev._tokenIdVoucher.eq(voucherID));
@@ -4168,7 +4161,7 @@ describe('Cashier and VoucherKernel', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            contractVoucherKernel,
+            VoucherKernel,
             eventNames.LOG_VOUCHER_FAULT_CANCEL,
             (ev) => {
               assert.isTrue(ev._tokenIdVoucher.eq(voucherID));
@@ -4440,7 +4433,7 @@ describe('Cashier and VoucherKernel', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            contractVoucherKernel,
+            VoucherKernel,
             eventNames.LOG_VOUCHER_FAULT_CANCEL,
             (ev) => {
               assert.isTrue(ev._tokenIdVoucher.eq(voucherID));
@@ -4533,7 +4526,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          contractERC1155ERC721,
+          ERC1155ERC721,
           eventNames.TRANSFER,
           (ev) => {
             assert.equal(ev._from, users.other1.address);
@@ -4553,7 +4546,9 @@ describe('Cashier and VoucherKernel', () => {
           tokenSupplyKey
         );
 
-        const balanceBeforeTransfer = (await balanceOf(users.other1.address))[0];
+        const balanceBeforeTransfer = (
+          await balanceOf(users.other1.address)
+        )[0];
 
         const transferTx = await utils.safeTransfer721(
           users.other1.address,
@@ -4573,7 +4568,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          contractERC1155ERC721,
+          ERC1155ERC721,
           eventNames.TRANSFER,
           (ev) => {
             assert.equal(ev._from, users.other1.address);

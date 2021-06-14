@@ -1,14 +1,8 @@
 // import ethers from 'ethers'
-import {ethers} from 'hardhat'
+import {ethers} from 'hardhat';
+import {BigNumber, Contract} from 'ethers';
 
-const {
-  keccak256,
-  defaultAbiCoder,
-  toUtf8Bytes,
-  solidityPack,
-  AbiCoder,
-  Interface,
-} = ethers.utils;
+const {keccak256, defaultAbiCoder, toUtf8Bytes, solidityPack} = ethers.utils;
 
 export const PERMIT_TYPEHASH = keccak256(
   toUtf8Bytes(
@@ -21,19 +15,19 @@ export const PERMIT_TYPEHASH = keccak256(
   )
 );
 
-export const toWei = (value) => {
+export const toWei = (value: number | string): BigNumber => {
   const test = value + '0'.repeat(18);
-  return ethers.BigNumber.from(test)
+  return ethers.BigNumber.from(test);
 };
 
 export async function getApprovalDigest(
-  token,
-  owner,
-  spender,
-  value,
-  nonce,
-  deadline
-) {
+  token: Contract | any,
+  owner: string,
+  spender: string,
+  value: string | number | BigNumber,
+  nonce: string | number,
+  deadline: string | number | BigNumber
+): Promise<any> {
   const name = await token.name();
   const DOMAIN_SEPARATOR = getDomainSeparator(name, token.address);
 
@@ -62,7 +56,7 @@ export async function getApprovalDigest(
   );
 }
 
-export function getDomainSeparator(name, tokenAddress) {
+export function getDomainSeparator(name: string, tokenAddress: string): string {
   return keccak256(
     defaultAbiCoder.encode(
       ['bytes32', 'bytes32', 'bytes32', 'uint256', 'address'],
@@ -83,36 +77,4 @@ export function getDomainSeparator(name, tokenAddress) {
       ]
     )
   );
-}
-
-export async function getEncodedTopic(receipt, abi, eventName) {
-  const iface = new Interface(abi);
-  for (const log in receipt.logs) {
-    const topics = receipt.logs[log].topics;
-    for (const index in topics) {
-      const encodedTopic = topics[index];
-
-      try {
-        // CHECK IF TOPIC CORRESPONDS TO THE EVENT GIVEN TO FN
-        const event = await iface.getEvent(encodedTopic);
-
-        if (event.name === eventName) return encodedTopic;
-      } catch (error) {
-        // breaks silently as we do not need to do anything if the there is not
-        // such an event
-      }
-    }
-  }
-
-  return '';
-}
-
-export async function decodeData(receipt, encodedTopic, paramsArr) {
-  const decoder = new AbiCoder();
-
-  const encodedData = receipt.logs.filter((e) =>
-    e.topics.includes(encodedTopic)
-  )[0].data;
-
-  return decoder.decode(paramsArr, encodedData);
 }

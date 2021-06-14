@@ -26,7 +26,6 @@ interface ERC20WithPermitInterface extends ethers.utils.Interface {
     "allowance(address,address)": FunctionFragment;
     "approve(address,uint256)": FunctionFragment;
     "balanceOf(address)": FunctionFragment;
-    "c_0xf165b35a(bytes32)": FunctionFragment;
     "decimals()": FunctionFragment;
     "name()": FunctionFragment;
     "nonces(address)": FunctionFragment;
@@ -55,10 +54,6 @@ interface ERC20WithPermitInterface extends ethers.utils.Interface {
     values: [string, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "balanceOf", values: [string]): string;
-  encodeFunctionData(
-    functionFragment: "c_0xf165b35a",
-    values: [BytesLike]
-  ): string;
   encodeFunctionData(functionFragment: "decimals", values?: undefined): string;
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
   encodeFunctionData(functionFragment: "nonces", values: [string]): string;
@@ -100,10 +95,6 @@ interface ERC20WithPermitInterface extends ethers.utils.Interface {
   decodeFunctionResult(functionFragment: "allowance", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "c_0xf165b35a",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "decimals", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "nonces", data: BytesLike): Result;
@@ -195,11 +186,6 @@ export class ERC20WithPermit extends BaseContract {
 
     balanceOf(arg0: string, overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    c_0xf165b35a(
-      c__0xf165b35a: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<[void]>;
-
     decimals(overrides?: CallOverrides): Promise<[number]>;
 
     name(overrides?: CallOverrides): Promise<[string]>;
@@ -255,11 +241,6 @@ export class ERC20WithPermit extends BaseContract {
 
   balanceOf(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-  c_0xf165b35a(
-    c__0xf165b35a: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
-
   decimals(overrides?: CallOverrides): Promise<number>;
 
   name(overrides?: CallOverrides): Promise<string>;
@@ -314,11 +295,6 @@ export class ERC20WithPermit extends BaseContract {
     ): Promise<boolean>;
 
     balanceOf(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
-
-    c_0xf165b35a(
-      c__0xf165b35a: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
 
     decimals(overrides?: CallOverrides): Promise<number>;
 
@@ -400,11 +376,6 @@ export class ERC20WithPermit extends BaseContract {
 
     balanceOf(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
 
-    c_0xf165b35a(
-      c__0xf165b35a: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     decimals(overrides?: CallOverrides): Promise<BigNumber>;
 
     name(overrides?: CallOverrides): Promise<BigNumber>;
@@ -461,11 +432,6 @@ export class ERC20WithPermit extends BaseContract {
 
     balanceOf(
       arg0: string,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    c_0xf165b35a(
-      c__0xf165b35a: BytesLike,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 

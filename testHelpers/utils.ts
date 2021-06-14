@@ -1,37 +1,42 @@
-import { ethers } from 'hardhat'
-import  {ecsign} from 'ethereumjs-util'
+import {ethers} from 'hardhat';
+import {ecsign} from 'ethereumjs-util';
+import {BigNumber, Contract, ContractTransaction, Signer} from 'ethers';
+import {Account, DistributionAmounts, DistributionEvent} from './types';
 
-import constants from './constants'
-import * as events from './events'
+import constants from './constants';
+import * as events from './events';
 import fnSignatures from './functionSignatures';
-import {toWei, getApprovalDigest} from '../testHelpers/permitUtils'
+import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
 
 const BN = ethers.BigNumber.from;
 
 import {
-  ERC1155ERC721__factory, VoucherKernel__factory, Cashier__factory, BosonRouter__factory, FundLimitsOracle__factory, MockERC20Permit__factory
-} from '../typechain'
+  ERC1155ERC721__factory,
+  VoucherKernel__factory,
+  Cashier__factory,
+  BosonRouter__factory,
+  FundLimitsOracle__factory,
+  MockERC20Permit__factory,
+} from '../typechain';
 
 import {
-  ERC1155ERC721, VoucherKernel, Cashier, BosonRouter, MockERC20Permit
-} from '../typechain'
-
+  ERC1155ERC721,
+  VoucherKernel,
+  Cashier,
+  BosonRouter,
+  MockERC20Permit,
+} from '../typechain';
 
 class Utils {
-  createOrder: (seller,
-    from,
-    to,
-    sellerDeposit,
-    qty,
-    returnTx?) => any;
+  createOrder: (seller, from, to, sellerDeposit, qty, returnTx?) => any;
   commitToBuy: (buyer, seller, tokenSupplyId, returnTx?) => any;
-  factories?: { 
-    ERC1155ERC721: ERC1155ERC721__factory; 
-    VoucherKernel: VoucherKernel__factory; 
-    Cashier: Cashier__factory; 
-    BosonRouter: BosonRouter__factory; 
-    FundLimitsOracle: FundLimitsOracle__factory; 
-    MockERC20Permit: MockERC20Permit__factory; 
+  factories?: {
+    ERC1155ERC721: ERC1155ERC721__factory | any;
+    VoucherKernel: VoucherKernel__factory | any;
+    Cashier: Cashier__factory | any;
+    BosonRouter: BosonRouter__factory | any;
+    FundLimitsOracle: FundLimitsOracle__factory | any;
+    MockERC20Permit: MockERC20Permit__factory | any;
   };
   deadline: any;
   contractERC1155ERC721?: ERC1155ERC721 | any;
@@ -47,13 +52,13 @@ class Utils {
   }
 
   setContracts(
-    erc1155721,
-    voucherKernel,
-    cashier,
-    bsnRouter,
-    bsnTokenPrice,
-    bsnTokenDeposit
-  ) {
+    erc1155721: ERC1155ERC721 | Contract,
+    voucherKernel: VoucherKernel | Contract,
+    cashier: Cashier | Contract,
+    bsnRouter: BosonRouter | Contract,
+    bsnTokenPrice?: MockERC20Permit | Contract,
+    bsnTokenDeposit?: MockERC20Permit | Contract
+  ): void {
     this.contractERC1155ERC721 = erc1155721;
     this.contractVoucherKernel = voucherKernel;
     this.contractCashier = cashier;
@@ -64,13 +69,13 @@ class Utils {
   }
 
   async requestCreateOrderETHETH(
-    seller,
-    from,
-    to,
-    sellerDeposit,
-    qty,
+    seller: Account,
+    from: number,
+    to: number,
+    sellerDeposit: number | string,
+    qty: number | string,
     returnTx = false
-  ) {
+  ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
     const sellerInstance = this.contractBSNRouter.connect(seller.signer);
@@ -95,20 +100,20 @@ class Utils {
       txReceipt,
       this.factories.BosonRouter,
       events.eventNames.LOG_ORDER_CREATED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
   }
 
   async requestCreateOrderETHTKNSameWithPermit(
-    seller,
-    from,
-    to,
-    sellerDeposit,
-    qty,
+    seller: Account,
+    from: number,
+    to: number,
+    sellerDeposit: number | string,
+    qty: number | string,
     returnTx = false
-  ) {
+  ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
     const nonce = await this.contractBSNTokenSame.nonces(seller.address);
@@ -156,19 +161,19 @@ class Utils {
       txReceipt,
       this.factories.BosonRouter,
       events.eventNames.LOG_ORDER_CREATED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
   }
 
   async requestCreateOrderTKNTKNWithPermit(
-    seller,
-    from,
-    to,
-    sellerDeposit,
-    qty
-  ) {
+    seller: Account,
+    from: number,
+    to: number,
+    sellerDeposit: number | string,
+    qty: number | string
+  ): Promise<string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
     const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
@@ -216,20 +221,20 @@ class Utils {
       txReceipt,
       this.factories.BosonRouter,
       events.eventNames.LOG_ORDER_CREATED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return eventArgs._tokenIdSupply.toString();
   }
 
   async requestCreateOrderETHTKNWithPermit(
-    seller,
-    from,
-    to,
-    sellerDeposit,
-    qty,
+    seller: Account,
+    from: number,
+    to: number,
+    sellerDeposit: number | string,
+    qty: number | string,
     returnTx = false
-  ) {
+  ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
     const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
 
@@ -275,20 +280,20 @@ class Utils {
       txReceipt,
       this.factories.BosonRouter,
       events.eventNames.LOG_ORDER_CREATED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
   }
 
   async requestCreateOrderTKNETH(
-    seller,
-    from,
-    to,
-    sellerDeposit,
-    qty,
+    seller: Account,
+    from: number,
+    to: number,
+    sellerDeposit: number | string,
+    qty: number | string,
     returnTx = false
-  ) {
+  ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
     const sellerInstance = this.contractBSNRouter.connect(seller.signer);
@@ -314,13 +319,17 @@ class Utils {
       txReceipt,
       this.factories.BosonRouter,
       events.eventNames.LOG_ORDER_CREATED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
   }
 
-  async commitToBuyTKNTKNWithPermit(buyer, seller, tokenSupplyId) {
+  async commitToBuyTKNTKNWithPermit(
+    buyer: Account,
+    seller: Account,
+    tokenSupplyId: string
+  ): Promise<string> {
     const txValue = BN(constants.buyer_deposit).add(
       BN(constants.product_price)
     );
@@ -385,13 +394,17 @@ class Utils {
       txReceipt,
       this.factories.VoucherKernel,
       events.eventNames.LOG_VOUCHER_DELIVERED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return eventArgs._tokenIdVoucher;
   }
 
-  async commitToBuyTKNTKNSameWithPermit(buyer, seller, tokenSupplyId) {
+  async commitToBuyTKNTKNSameWithPermit(
+    buyer: Account,
+    seller: Account,
+    tokenSupplyId: string
+  ): Promise<string> {
     const txValue = BN(constants.buyer_deposit).add(
       BN(constants.product_price)
     );
@@ -433,13 +446,17 @@ class Utils {
       txReceipt,
       this.factories.VoucherKernel,
       events.eventNames.LOG_VOUCHER_DELIVERED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return eventArgs._tokenIdVoucher;
   }
 
-  async commitToBuyETHTKNWithPermit(buyer, seller, tokenSupplyId) {
+  async commitToBuyETHTKNWithPermit(
+    buyer: Account,
+    seller: Account,
+    tokenSupplyId: string
+  ): Promise<string> {
     const nonce1 = await this.contractBSNTokenDeposit.nonces(buyer.address);
 
     const digestDeposit = await getApprovalDigest(
@@ -475,13 +492,18 @@ class Utils {
       txReceipt,
       this.factories.VoucherKernel,
       events.eventNames.LOG_VOUCHER_DELIVERED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return eventArgs._tokenIdVoucher;
   }
 
-  async commitToBuyETHETH(buyer, seller, tokenSupplyId, returnTx = false) {
+  async commitToBuyETHETH(
+    buyer: Account,
+    seller: Account,
+    tokenSupplyId: string,
+    returnTx = false
+  ): Promise<ContractTransaction | string> {
     const txValue = BN(constants.buyer_deposit).add(
       BN(constants.product_price)
     );
@@ -502,13 +524,17 @@ class Utils {
       txReceipt,
       this.factories.VoucherKernel,
       events.eventNames.LOG_VOUCHER_DELIVERED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return returnTx ? txReceipt : eventArgs._tokenIdVoucher;
   }
 
-  async commitToBuyTKNETHWithPermit(buyer, seller, tokenSupplyId) {
+  async commitToBuyTKNETHWithPermit(
+    buyer: Account,
+    seller: Account,
+    tokenSupplyId: string
+  ): Promise<string> {
     const nonce1 = await this.contractBSNTokenPrice.nonces(buyer.address);
 
     const digestDeposit = await getApprovalDigest(
@@ -544,38 +570,50 @@ class Utils {
       txReceipt,
       this.factories.VoucherKernel,
       events.eventNames.LOG_VOUCHER_DELIVERED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return eventArgs._tokenIdVoucher;
   }
 
-  async refund(voucherID, buyer) {
+  async refund(voucherID: string, buyer: Signer): Promise<ContractTransaction> {
     const buyerInstance = this.contractBSNRouter.connect(buyer);
     return await buyerInstance.refund(voucherID);
   }
 
-  async redeem(voucherID, buyer) {
+  async redeem(voucherID: string, buyer: Signer): Promise<ContractTransaction> {
     const buyerInstance = this.contractBSNRouter.connect(buyer);
     return await buyerInstance.redeem(voucherID);
   }
 
-  async complain(voucherID, buyer) {
+  async complain(
+    voucherID: string,
+    buyer: Signer
+  ): Promise<ContractTransaction> {
     const buyerInstance = this.contractBSNRouter.connect(buyer);
     return await buyerInstance.complain(voucherID);
   }
 
-  async cancel(voucherID, seller) {
+  async cancel(
+    voucherID: string,
+    seller: Signer
+  ): Promise<ContractTransaction> {
     const sellerInstance = this.contractBSNRouter.connect(seller);
     return await sellerInstance.cancelOrFault(voucherID);
   }
 
-  async finalize(voucherID, deployer) {
+  async finalize(
+    voucherID: string,
+    deployer: Signer
+  ): Promise<ContractTransaction> {
     const deployerInstance = this.contractVoucherKernel.connect(deployer);
     return await deployerInstance.triggerFinalizeVoucher(voucherID);
   }
 
-  async withdraw(voucherID, deployer) {
+  async withdraw(
+    voucherID: string,
+    deployer: Signer
+  ): Promise<ContractTransaction> {
     const deployerInstance = this.contractCashier.connect(deployer);
     const tx = await deployerInstance.withdraw(voucherID);
 
@@ -586,16 +624,19 @@ class Utils {
     return tx;
   }
 
-  async pause(deployer) {
+  async pause(deployer: Signer): Promise<void> {
     const deployerInstance = this.contractVoucherKernel.connect(deployer);
     await deployerInstance.pause();
   }
 
-  async safeTransfer721(oldVoucherOwner, newVoucherOwner, voucherID, signer) {
+  async safeTransfer721(
+    oldVoucherOwner: string,
+    newVoucherOwner: string,
+    voucherID: string,
+    signer: Signer
+  ): Promise<ContractTransaction> {
     const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
     const fromInstance = this.contractERC1155ERC721.connect(signer);
-    // const fromInstance = this.ERC1155ERC721.connect(signer);
-
 
     const method = fromInstance.functions[fnSignatures.safeTransfer721];
 
@@ -608,12 +649,12 @@ class Utils {
   }
 
   async safeTransfer1155(
-    oldSupplyOwner,
-    newSupplyOwner,
-    supplyID,
-    qty,
-    signer
-  ) {
+    oldSupplyOwner: string,
+    newSupplyOwner: string,
+    supplyID: string,
+    qty: string | number,
+    signer: Signer
+  ): Promise<ContractTransaction> {
     const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
     const fromInstance = this.contractERC1155ERC721.connect(signer);
 
@@ -629,12 +670,12 @@ class Utils {
   }
 
   async safeBatchTransfer1155(
-    oldSupplyOwner,
-    newSupplyOwner,
-    supplyIDs,
-    values,
-    signer
-  ) {
+    oldSupplyOwner: string,
+    newSupplyOwner: string,
+    supplyIDs: Array<string | number>,
+    values: Array<string | number>,
+    signer: Signer
+  ): Promise<ContractTransaction> {
     const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
     const fromInstance = this.contractERC1155ERC721.connect(signer);
 
@@ -650,12 +691,12 @@ class Utils {
   }
 
   calcTotalAmountToRecipients(
-    event,
-    distributionAmounts,
-    recipient,
-    buyer,
-    seller
-  ) {
+    event: DistributionEvent,
+    distributionAmounts: DistributionAmounts,
+    recipient: string,
+    buyer: string,
+    seller: string
+  ): void {
     if (event[recipient] === buyer) {
       distributionAmounts.buyerAmount = BN(
         distributionAmounts.buyerAmount.toString()
@@ -671,7 +712,11 @@ class Utils {
     }
   }
 
-  async mintTokens(tokenContract, to, value) {
+  async mintTokens(
+    tokenContract: Contract | any,
+    to: string,
+    value: string | BigNumber
+  ): Promise<void> {
     await this[tokenContract].mint(to, value);
   }
 

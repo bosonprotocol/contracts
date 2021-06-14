@@ -21,17 +21,12 @@ import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 
 interface MigrationsInterface extends ethers.utils.Interface {
   functions: {
-    "c_0xb470fcff(bytes32)": FunctionFragment;
     "lastCompletedMigration()": FunctionFragment;
     "owner()": FunctionFragment;
     "setCompleted(uint256)": FunctionFragment;
     "upgrade(address)": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "c_0xb470fcff",
-    values: [BytesLike]
-  ): string;
   encodeFunctionData(
     functionFragment: "lastCompletedMigration",
     values?: undefined
@@ -43,10 +38,6 @@ interface MigrationsInterface extends ethers.utils.Interface {
   ): string;
   encodeFunctionData(functionFragment: "upgrade", values: [string]): string;
 
-  decodeFunctionResult(
-    functionFragment: "c_0xb470fcff",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "lastCompletedMigration",
     data: BytesLike
@@ -105,11 +96,6 @@ export class Migrations extends BaseContract {
   interface: MigrationsInterface;
 
   functions: {
-    c_0xb470fcff(
-      c__0xb470fcff: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<[void]>;
-
     lastCompletedMigration(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     owner(overrides?: CallOverrides): Promise<[string]>;
@@ -124,11 +110,6 @@ export class Migrations extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
-
-  c_0xb470fcff(
-    c__0xb470fcff: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
 
   lastCompletedMigration(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -145,11 +126,6 @@ export class Migrations extends BaseContract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    c_0xb470fcff(
-      c__0xb470fcff: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
     lastCompletedMigration(overrides?: CallOverrides): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<string>;
@@ -165,11 +141,6 @@ export class Migrations extends BaseContract {
   filters: {};
 
   estimateGas: {
-    c_0xb470fcff(
-      c__0xb470fcff: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     lastCompletedMigration(overrides?: CallOverrides): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<BigNumber>;
@@ -186,11 +157,6 @@ export class Migrations extends BaseContract {
   };
 
   populateTransaction: {
-    c_0xb470fcff(
-      c__0xb470fcff: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     lastCompletedMigration(
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;

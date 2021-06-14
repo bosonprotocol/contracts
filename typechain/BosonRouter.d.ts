@@ -22,8 +22,6 @@ import { TypedEventFilter, TypedEvent, TypedListener } from "./commons";
 
 interface BosonRouterInterface extends ethers.utils.Interface {
   functions: {
-    "c_0x57151bb6(bytes32)": FunctionFragment;
-    "c_0x5777ee5b(bytes32)": FunctionFragment;
     "cancelOrFault(uint256)": FunctionFragment;
     "cashierAddress()": FunctionFragment;
     "complain(uint256)": FunctionFragment;
@@ -51,14 +49,6 @@ interface BosonRouterInterface extends ethers.utils.Interface {
     "voucherKernel()": FunctionFragment;
   };
 
-  encodeFunctionData(
-    functionFragment: "c_0x57151bb6",
-    values: [BytesLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "c_0x5777ee5b",
-    values: [BytesLike]
-  ): string;
   encodeFunctionData(
     functionFragment: "cancelOrFault",
     values: [BigNumberish]
@@ -201,14 +191,6 @@ interface BosonRouterInterface extends ethers.utils.Interface {
   ): string;
 
   decodeFunctionResult(
-    functionFragment: "c_0x57151bb6",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "c_0x5777ee5b",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "cancelOrFault",
     data: BytesLike
   ): Result;
@@ -345,16 +327,6 @@ export class BosonRouter extends BaseContract {
   interface: BosonRouterInterface;
 
   functions: {
-    c_0x57151bb6(
-      c__0x57151bb6: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<[void]>;
-
-    c_0x5777ee5b(
-      c__0x5777ee5b: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<[void]>;
-
     cancelOrFault(
       _tokenIdVoucher: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -505,16 +477,6 @@ export class BosonRouter extends BaseContract {
     voucherKernel(overrides?: CallOverrides): Promise<[string]>;
   };
 
-  c_0x57151bb6(
-    c__0x57151bb6: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
-
-  c_0x5777ee5b(
-    c__0x5777ee5b: BytesLike,
-    overrides?: CallOverrides
-  ): Promise<void>;
-
   cancelOrFault(
     _tokenIdVoucher: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -662,16 +624,6 @@ export class BosonRouter extends BaseContract {
   voucherKernel(overrides?: CallOverrides): Promise<string>;
 
   callStatic: {
-    c_0x57151bb6(
-      c__0x57151bb6: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    c_0x5777ee5b(
-      c__0x5777ee5b: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
     cancelOrFault(
       _tokenIdVoucher: BigNumberish,
       overrides?: CallOverrides
@@ -845,16 +797,6 @@ export class BosonRouter extends BaseContract {
   };
 
   estimateGas: {
-    c_0x57151bb6(
-      c__0x57151bb6: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    c_0x5777ee5b(
-      c__0x5777ee5b: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     cancelOrFault(
       _tokenIdVoucher: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -1003,16 +945,6 @@ export class BosonRouter extends BaseContract {
   };
 
   populateTransaction: {
-    c_0x57151bb6(
-      c__0x57151bb6: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    c_0x5777ee5b(
-      c__0x5777ee5b: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     cancelOrFault(
       _tokenIdVoucher: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
