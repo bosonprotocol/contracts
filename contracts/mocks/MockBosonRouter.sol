@@ -27,7 +27,11 @@ contract MockBosonRouter is
     using Address for address payable;
     using SafeMath for uint256;
 
+<<<<<<< HEAD
     mapping(address => uint256) private correlationIds; // whenever a seller or a buyer interacts with the smart contract, a personal txID is emitted from an event.
+=======
+    mapping(address => uint256) public correlationIds; // whenever a seller or a buyer interacts with the smart contract, a personal txID is emitted from an event.
+>>>>>>> 258ba2d (Add mock and change test case)
 
     using SafeMath for uint256;
 
@@ -690,6 +694,13 @@ contract MockBosonRouter is
         );
     }
 
+<<<<<<< HEAD
+=======
+    // // // // // // // //
+    // UTILS
+    // // // // // // // //
+
+>>>>>>> 258ba2d (Add mock and change test case)
     /**
      * @notice Increment a seller or buyer's correlation Id
      * @param _party   The address of the seller or buyer
@@ -697,6 +708,7 @@ contract MockBosonRouter is
     function incrementCorrelationId(address _party) external override {
         correlationIds[_party]++;
     }
+<<<<<<< HEAD
 
     /**
      * @notice Return a seller or buyer's correlation Id
@@ -711,4 +723,6 @@ contract MockBosonRouter is
     {
         return correlationIds[_party];
     }
+=======
+>>>>>>> 258ba2d (Add mock and change test case)
 }
