@@ -7,29 +7,22 @@ const Utils = require('../helpers/utils');
 let converter = require('hex2dec');
 const BosonRouter = require('../../build/contracts/BosonRouter.json').abi;
 const VoucherKernel = require('../../build/contracts/VoucherKernel.json').abi;
-const {
-  BUYER_SECRET,
-  BUYER_PUBLIC,
-  contracts,
-  PROVIDER,
-  SELLER_PUBLIC,
-} = require('../helpers/config');
-let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
-// set provider for all later instances to use
-Contract.setProvider(PROVIDER);
-const buyer = BUYER_PUBLIC;
+let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 
-function requestVoucherETHETH(_voucherID) {
+// set provider for all later instances to use
+Contract.setProvider(helpers.PROVIDER);
+
+function requestVoucherETHETH(_voucherID, users) {
   return new Promise((resolve, reject) => {
     const bosonRouter = new Contract(BosonRouter, Utils.contractBSNRouter.address);
     const voucherKernel = new Contract(VoucherKernel, Utils.contractVoucherKernel.address);
 
     let gasPaid = '0xF458F';
-    web3.eth.getTransactionCount(buyer, function (error, txCount) {
+    web3.eth.getTransactionCount(users.buyer.address, function (error, txCount) {
       let deposit = helpers.PROMISE_PRICE1 + helpers.PROMISE_DEPOSITBU1;
       const txValue = new BN(deposit);
       const encoded = bosonRouter.methods
-        .requestVoucherETHETH(_voucherID, SELLER_PUBLIC)
+        .requestVoucherETHETH(_voucherID, users.seller.address)
         .encodeABI();
       let rawTransaction = {
         nonce: web3.utils.toHex(txCount),
@@ -39,7 +32,7 @@ function requestVoucherETHETH(_voucherID) {
         value: txValue,
         data: encoded,
       };
-      let privKey = Buffer.from(BUYER_SECRET, 'hex');
+      let privKey = Buffer.from(users.privateKeys[users.buyer.address.toLowerCase()], 'hex');
       let tx = new Tx(rawTransaction, {chain: 'rinkeby'});
       tx.sign(privKey);
       let serializedTx = tx.serialize();

@@ -3,12 +3,14 @@ const commitVoucher = require('../buyer/commitVoucher');
 const complainVoucher = require('../buyer/complainVoucher');
 const faultVoucher = require('../seller/faultVoucher');
 const Utils = require('../helpers/utils');
+const Users = require('../helpers/users');
 const {describe, it, before} = require('mocha');
 let format = require('../helpers/formatter');
 const checkBalance = require('../helpers/checkBalance');
 let helpers = require('../helpers/constants');
-const {BUYER_PUBLIC, SELLER_PUBLIC, contracts} = require('../helpers/config');
 let assert = require('chai').assert;
+let Web3 = require('web3');
+let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 
 const TIMEOUT = 500 * 1000;
 
@@ -17,18 +19,19 @@ describe('TEST SCENARIO 012 :: SELLER CREATES & BUYER COMMITS, SELLER FAULTS, BU
   let voucherSetDetails;
   let faultedVoucher;
   let complainedVoucher;
+  let users;
   let aql = assert.equal;
 
-  before('Check Balances', async function () {
+  before('Before test cases', async function () {
     await Utils.deployContracts();
-    let balances = await checkBalance();
+    users = new Users( await web3.eth.getAccounts() );
+    let balances = await checkBalance(users);
     console.log(balances);
   });
 
   it('TEST SCENARIO 12 :: SELLER CREATE :: 1.0 Seller creates a voucher set', async function () {
-    this.timeout(TIMEOUT);
     const timestamp = await Utils.getCurrTimestamp();
-    voucherSetDetails = await sellerCreate(timestamp);
+    voucherSetDetails = await sellerCreate(timestamp, users);
     await format(voucherSetDetails);
   });
 
@@ -45,7 +48,7 @@ describe('TEST SCENARIO 012 :: SELLER CREATES & BUYER COMMITS, SELLER FAULTS, BU
   });
 
   it('TEST SCENARIO 12 :: SELLER CREATE :: 1.4 VALIDATE SELLER', async function () {
-    aql(voucherSetDetails['nftSeller'], SELLER_PUBLIC);
+    aql(voucherSetDetails['nftSeller'], users.seller.address);
   });
 
   it('TEST SCENARIO 12 :: SELLER CREATE :: 1.5 VALIDATE PAYMENT TYPE', async function () {
@@ -55,28 +58,29 @@ describe('TEST SCENARIO 012 :: SELLER CREATES & BUYER COMMITS, SELLER FAULTS, BU
   it('TEST SCENARIO 12 :: SELLER CREATE :: 1.6 VALIDATE ERC1155ERC721 DATA', async function () {
     aql(voucherSetDetails['operator'], Utils.contractVoucherKernel.address);
     aql(voucherSetDetails['transferFrom'], helpers.ZERO_ADDRESS);
-    aql(voucherSetDetails['transferTo'], SELLER_PUBLIC);
+    aql(voucherSetDetails['transferTo'], users.seller.address);
     aql(voucherSetDetails['transferValue'], helpers.ORDER_QUANTITY1);
   });
 
   it('TEST SCENARIO 12 :: BUYER COMMITS :: 2.0 Buyer commits to purchase a voucher', async function () {
     committedVoucher = await commitVoucher(
-      voucherSetDetails['createdVoucherSetID']
+      voucherSetDetails['createdVoucherSetID'],
+      users
     );
     await format(committedVoucher);
   });
 
   it('TEST SCENARIO 12 :: SELLER CREATE :: 2.1 VALIDATE ISSUER', async function () {
-    aql(committedVoucher['issuer'], SELLER_PUBLIC);
+    aql(committedVoucher['issuer'], users.seller.address);
   });
 
   it('TEST SCENARIO 12 :: SELLER CREATE :: 2.2 VALIDATE HOLDER', async function () {
-    aql(committedVoucher['holder'], BUYER_PUBLIC);
+    aql(committedVoucher['holder'], users.buyer.address);
   });
 
   it('TEST SCENARIO 12 :: SELLER FAULTS :: 4.0 Seller accepts fault on a complained voucher', async function () {
-    console.log(await checkBalance());
-    faultedVoucher = await faultVoucher(committedVoucher['MintedVoucherID']);
+    console.log(await checkBalance(users));
+    faultedVoucher = await faultVoucher(committedVoucher['MintedVoucherID'], users);
     await format(faultedVoucher);
   });
 
@@ -88,9 +92,10 @@ describe('TEST SCENARIO 012 :: SELLER CREATES & BUYER COMMITS, SELLER FAULTS, BU
   });
 
   it('TEST SCENARIO 12 :: BUYER COMPLAINS :: 5.0 Buyer complains a faulted voucher', async function () {
-    console.log(await checkBalance());
+    console.log(await checkBalance(users));
     complainedVoucher = await complainVoucher(
-      committedVoucher['MintedVoucherID']
+      committedVoucher['MintedVoucherID'],
+      users
     );
     await format(complainedVoucher);
   });
@@ -103,7 +108,7 @@ describe('TEST SCENARIO 012 :: SELLER CREATES & BUYER COMMITS, SELLER FAULTS, BU
   });
 
   after('Check Balances', async function () {
-    let balances = await checkBalance();
+    let balances = await checkBalance(users);
     console.log(balances);
   });
 });

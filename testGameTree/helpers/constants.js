@@ -2,6 +2,7 @@
 const SECONDS_IN_DAY = 86400;
 const SECONDS_IN_A_MINUTE = 60;
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const PROVIDER = 'http://localhost:8545'; // for local ganache
 
 // promise
 const PROMISE_VALID_FROM = ''; // evaluated based on the current block timestamp
@@ -30,6 +31,7 @@ module.exports = {
   SECONDS_IN_DAY,
   SECONDS_IN_A_MINUTE,
   ZERO_ADDRESS,
+  PROVIDER,
   PROMISE_VALID_FROM,
   PROMISE_VALID_TO,
   PROMISE_PRICE1,

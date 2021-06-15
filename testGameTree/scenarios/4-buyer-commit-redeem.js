@@ -3,27 +3,31 @@ const commitVocucher = require('../buyer/commitVoucher');
 const redeemVoucher = require('../buyer/redeemVoucher');
 const checkBalance = require('../helpers/checkBalance');
 const Utils = require('../helpers/utils');
+const Users = require('../helpers/users');
 const {describe, it} = require('mocha');
 let format = require('../helpers/formatter');
 let helpers = require('../helpers/constants');
-const {BUYER_PUBLIC, SELLER_PUBLIC, contracts} = require('../helpers/config');
 let assert = require('chai').assert;
+let Web3 = require('web3');
+let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 
 describe('TEST SCENARIO 004 :: SELLER CREATES, BUYER COMMITS & BUYER REDEEMS', async function () {
   let committedVoucher;
   let voucherSetDetails;
   let redeemedVoucher;
+  let users;
   let aql = assert.equal;
 
-  before('Check Balances', async function () {
+  before('Before test cases', async function () {
     await Utils.deployContracts();
-    let balances = await checkBalance();
+    users = new Users( await web3.eth.getAccounts() );
+    let balances = await checkBalance(users);
     console.log(balances);
   });
 
   it('TEST SCENARIO 04 :: SELLER CREATE :: 1.0 Seller creates a voucher set', async function () {
     const timestamp = await Utils.getCurrTimestamp();
-    voucherSetDetails = await sellerCreate(timestamp);
+    voucherSetDetails = await sellerCreate(timestamp, users);
     await format(voucherSetDetails);
   });
 
@@ -40,7 +44,7 @@ describe('TEST SCENARIO 004 :: SELLER CREATES, BUYER COMMITS & BUYER REDEEMS', a
   });
 
   it('TEST SCENARIO 04 :: SELLER CREATE :: 1.4 VALIDATE SELLER', async function () {
-    aql(voucherSetDetails['nftSeller'], SELLER_PUBLIC);
+    aql(voucherSetDetails['nftSeller'], users.seller.address);
   });
 
   it('TEST SCENARIO 04 :: SELLER CREATE :: 1.5 VALIDATE PAYMENT TYPE', async function () {
@@ -50,29 +54,30 @@ describe('TEST SCENARIO 004 :: SELLER CREATES, BUYER COMMITS & BUYER REDEEMS', a
   it('TEST SCENARIO 04 :: SELLER CREATE :: 1.6 VALIDATE ERC1155ERC721 DATA', async function () {
     aql(voucherSetDetails['operator'], Utils.contractVoucherKernel.address);
     aql(voucherSetDetails['transferFrom'], helpers.ZERO_ADDRESS);
-    aql(voucherSetDetails['transferTo'], SELLER_PUBLIC);
+    aql(voucherSetDetails['transferTo'], users.seller.address);
     aql(voucherSetDetails['transferValue'], helpers.ORDER_QUANTITY1);
   });
 
   it('TEST SCENARIO 04 :: BUYER COMMITS :: 2.0 Buyer commits to purchases a voucher', async function () {
-    console.log(await checkBalance());
+    console.log(await checkBalance(users));
     committedVoucher = await commitVocucher(
-      voucherSetDetails['createdVoucherSetID']
+      voucherSetDetails['createdVoucherSetID'],
+      users
     );
     await format(committedVoucher);
   });
 
   it('TEST SCENARIO 04 :: SELLER CREATE :: 2.1 VALIDATE ISSUER', async function () {
-    aql(committedVoucher['issuer'], SELLER_PUBLIC);
+    aql(committedVoucher['issuer'], users.seller.address);
   });
 
   it('TEST SCENARIO 04 :: SELLER CREATE :: 2.2 VALIDATE HOLDER', async function () {
-    aql(committedVoucher['holder'], BUYER_PUBLIC);
+    aql(committedVoucher['holder'], users.buyer.address);
   });
 
   it('TEST SCENARIO 04 :: BUYER REDEEMS :: 3.0 Buyer redeems a purchased voucher', async function () {
-    console.log(await checkBalance());
-    redeemedVoucher = await redeemVoucher(committedVoucher['MintedVoucherID']);
+    console.log(await checkBalance(users));
+    redeemedVoucher = await redeemVoucher(committedVoucher['MintedVoucherID'], users);
     await format(redeemedVoucher);
   });
 
@@ -81,12 +86,12 @@ describe('TEST SCENARIO 004 :: SELLER CREATES, BUYER COMMITS & BUYER REDEEMS', a
       redeemedVoucher['redeemedVoucherID'],
       committedVoucher['MintedVoucherID']
     );
-    aql(redeemedVoucher[('holder', BUYER_PUBLIC)]);
+    aql(redeemedVoucher[('holder', users.buyer.public)]);
     aql(redeemedVoucher['promiseID'], committedVoucher['promiseID']);
   });
 
   after('Check Balances', async function () {
-    let balances = await checkBalance();
+    let balances = await checkBalance(users);
     console.log(balances);
   });
 });

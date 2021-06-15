@@ -1,26 +1,30 @@
 const sellerCreate = require('../seller/createVoucher');
 const checkBalance = require('../helpers/checkBalance');
 const Utils = require('../helpers/utils');
-const {SELLER_PUBLIC, contracts} = require('../helpers/config');
+const Users = require('../helpers/users');
 const {describe, it} = require('mocha');
 const truffleContract = require("truffle-contract");
 let format = require('../helpers/formatter');
-let helpers = require('../helpers/constants');
+const helpers = require('../helpers/constants');
 let assert = require('chai').assert;
+let Web3 = require('web3');
+let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 
 describe('TEST SCENARIO 001 :: SELLER CREATES A VOUCHER SET', async function () {
-  let value;
+  let value, users;
   let aql = assert.equal;
 
-  before('Check Balances', async function () {
+
+  before('Before test cases', async function () {
     await Utils.deployContracts();
-    let balances = await checkBalance();
+    users = new Users( await web3.eth.getAccounts() );
+    let balances = await checkBalance(users);
     console.log(balances);
   });
 
   it('TEST SCENARIO 01 :: SELLER CREATE :: 1.0 CREATION OF VOUCHER', async function () {
     const timestamp = await Utils.getCurrTimestamp();
-    value = await sellerCreate(timestamp);
+    value = await sellerCreate(timestamp, users);
     await format(value);
   });
 
@@ -37,7 +41,7 @@ describe('TEST SCENARIO 001 :: SELLER CREATES A VOUCHER SET', async function () 
   });
 
   it('TEST SCENARIO 01 :: SELLER CREATE :: 1.4 VALIDATE SELLER', async function () {
-    aql(value['nftSeller'], SELLER_PUBLIC);
+    aql(value['nftSeller'], users.seller.address);
   });
 
   it('TEST SCENARIO 01 :: SELLER CREATE :: 1.5 VALIDATE PAYMENT TYPE', async function () {
@@ -47,12 +51,12 @@ describe('TEST SCENARIO 001 :: SELLER CREATES A VOUCHER SET', async function () 
   it('TEST SCENARIO 01 :: SELLER CREATE :: 1.6 VALIDATE ERC1155ERC721 DATA', async function () {
     aql(value['operator'], Utils.contractVoucherKernel.address);
     aql(value['transferFrom'], helpers.ZERO_ADDRESS);
-    aql(value['transferTo'], SELLER_PUBLIC);
+    aql(value['transferTo'], users.seller.address);
     aql(value['transferValue'], helpers.ORDER_QUANTITY1);
   });
 
   after('Check Balances', async function () {
-    let balances = await checkBalance();
+    let balances = await checkBalance(users);
     console.log(balances);
   });
 });

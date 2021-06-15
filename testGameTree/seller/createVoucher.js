@@ -8,23 +8,14 @@ let converter = require('hex2dec');
 const BosonRouter = require('../../build/contracts/BosonRouter.json').abi;
 const VoucherKernel = require('../../build/contracts/VoucherKernel.json').abi;
 const ERC1155ERC721 = require('../../build/contracts/ERC1155ERC721.json').abi;
-const {
-  SELLER_SECRET,
-  SELLER_PUBLIC,
-  contracts,
-  PROVIDER,
-} = require('../helpers/config');
+let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 
-let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
 // set provider for all later instances to use
-Contract.setProvider(PROVIDER);
+Contract.setProvider(helpers.PROVIDER);
 
-const seller = SELLER_PUBLIC;
-const networkId = web3.eth.net.getId();
+function CreateOrderETHETH(timestamp, users) {
+  const seller = users.seller.address;
 
-console.log("networkId in createVoucher.js", networkId);
-
-function CreateOrderETHETH(timestamp) {
   return new Promise((resolve, reject) => {
     const bosonRouter = new Contract(BosonRouter, Utils.contractBSNRouter.address);
     const voucherKernel = new Contract(VoucherKernel, Utils.contractVoucherKernel.address);
@@ -36,7 +27,7 @@ function CreateOrderETHETH(timestamp) {
     helpers.PROMISE_VALID_TO = timestamp + 2 * helpers.SECONDS_IN_DAY;
 
     // gets the current nonce of the sellers account and the proceeds to structure the transaction
-    web3.eth.getTransactionCount(seller, function (error, txCount) {
+    web3.eth.getTransactionCount(users.seller.address, function (error, txCount) {
       const txValue = new BN(helpers.PROMISE_PRICE1);
       const encoded = bosonRouter.methods
         .requestCreateOrderETHETH([
@@ -56,8 +47,8 @@ function CreateOrderETHETH(timestamp) {
         value: txValue,
         data: encoded,
       };
-      let privKey = Buffer.from(SELLER_SECRET, 'hex');
-      let tx = new Tx(rawTransaction, {chain: 'rinkeby' });
+      let privKey = Buffer.from(users.privateKeys[users.seller.address.toLowerCase()], 'hex');
+      let tx = new Tx(rawTransaction, {chain: 'rinkeby' }); //need to specificy something, or it will defaut to mainnet
       tx.sign(privKey);
       let serializedTx = tx.serialize();
       // executes the transaction

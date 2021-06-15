@@ -1,5 +1,6 @@
 let Web3 = require('web3');
 let Contract = require('web3-eth-contract');
+const helpers = require('../helpers/constants');
 const Tx = require('ethereumjs-tx').Transaction;
 const Utils = require('../helpers/utils');
 let converter = require('hex2dec');
@@ -7,18 +8,12 @@ const BosonRouter = require('../../build/contracts/BosonRouter.json').abi;
 const VoucherKernel = require('../../build/contracts/VoucherKernel.json').abi;
 const ERC1155ERC721 = require('../../build/contracts/ERC1155ERC721.json').abi;
 const Cashier = require('../../build/contracts/Cashier.json').abi;
-const {
-  SELLER_SECRET,
-  SELLER_PUBLIC,
-  contracts,
-  PROVIDER,
-} = require('../helpers/config');
-let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
-// set provider for all later instances to use
-Contract.setProvider(PROVIDER);
-const seller = SELLER_PUBLIC;
+let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 
-function requestCancelorFault(_voucherSetID) {
+// set provider for all later instances to use
+Contract.setProvider(helpers.PROVIDER);
+
+function requestCancelorFault(_voucherSetID, users) {
   return new Promise((resolve, reject) => {
     const bosonRouter = new Contract(BosonRouter, Utils.contractBSNRouter.address);
     const voucherKernel = new Contract(VoucherKernel, Utils.contractVoucherKernel.address);
@@ -27,7 +22,7 @@ function requestCancelorFault(_voucherSetID) {
 
     let gasSent = '0xF458F';
     // gets the current nounce of the sellers account and the proceeds to structure the transaction
-    web3.eth.getTransactionCount(seller, function (error, txCount) {
+    web3.eth.getTransactionCount(users.seller.address, function (error, txCount) {
       const encoded = bosonRouter.methods
         .requestCancelOrFaultVoucherSet(_voucherSetID)
         .encodeABI();
@@ -39,7 +34,7 @@ function requestCancelorFault(_voucherSetID) {
         value: 0x0,
         data: encoded,
       };
-      let privKey = Buffer.from(SELLER_SECRET, 'hex');
+      let privKey = Buffer.from(users.privateKeys[users.seller.address.toLowerCase()], 'hex');
       let tx = new Tx(rawTransaction, {chain: 'rinkeby'});
       tx.sign(privKey);
       let serializedTx = tx.serialize();

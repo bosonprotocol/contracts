@@ -1,10 +1,10 @@
 let Contract = require('web3-eth-contract');
 const Utils = require('../helpers/utils');
-const VoucherKernel = require('../../build/contracts/VoucherKernel.json')
-  .abi;
-const {contracts, PROVIDER} = require('../helpers/config');
+const helpers = require('../helpers/constants');
+const VoucherKernel = require('../../build/contracts/VoucherKernel.json').abi;
+
 // set provider for all later instances to use
-Contract.setProvider(PROVIDER);
+Contract.setProvider(helpers.PROVIDER);
 
 function checkVoucherStatus(_voucherID) {
   return new Promise((resolve) => {

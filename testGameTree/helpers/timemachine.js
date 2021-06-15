@@ -1,6 +1,7 @@
 let Web3 = require('web3');
-const { PROVIDER } = require('../helpers/config');
-let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
+//const { PROVIDER } = require('../helpers/config');
+let helpers = require('../helpers/constants');
+let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 
 function advanceTimeBlocks(_blocks) {
   return new Promise(function (resolve) {

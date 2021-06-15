@@ -1,27 +1,31 @@
 const sellerCreate = require('../seller/createVoucher');
 const sellerCancel = require('../seller/cancelVoucherSet');
 const Utils = require('../helpers/utils');
-const {SELLER_PUBLIC, contracts} = require('../helpers/config');
+const Users = require('../helpers/users');
 const {describe, it} = require('mocha');
 let format = require('../helpers/formatter');
 const checkBalance = require('../helpers/checkBalance');
-let helpers = require('../helpers/constants');
+const helpers = require('../helpers/constants');
 let assert = require('chai').assert;
+let Web3 = require('web3');
+let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 
 describe('TEST SCENARIO 002 :: SELLER CREATES & CANCELS', async function () {
   let voucherSetDetails;
   let cancelledVoucher;
+  let users;
   let aql = assert.equal;
 
-  before('Check Balances', async function () {
+  before('Before test cases', async function () {
     await Utils.deployContracts();
-    let balances = await checkBalance();
+    users = new Users( await web3.eth.getAccounts() );
+    let balances = await checkBalance(users);
     console.log(balances);
   });
 
   it('TEST SCENARIO 02 :: SELLER CREATE :: 1.0 Seller creates a voucher-set', async function () {
     const timestamp = await Utils.getCurrTimestamp();
-    voucherSetDetails = await sellerCreate(timestamp);
+    voucherSetDetails = await sellerCreate(timestamp, users);
     await format(voucherSetDetails);
   });
 
@@ -38,7 +42,7 @@ describe('TEST SCENARIO 002 :: SELLER CREATES & CANCELS', async function () {
   });
 
   it('TEST SCENARIO 02 :: SELLER CREATE :: 1.4 VALIDATE SELLER', async function () {
-    aql(voucherSetDetails['nftSeller'], SELLER_PUBLIC);
+    aql(voucherSetDetails['nftSeller'], users.seller.address);
   });
 
   it('TEST SCENARIO 02 :: SELLER CREATE :: 1.5 VALIDATE PAYMENT TYPE', async function () {
@@ -48,13 +52,14 @@ describe('TEST SCENARIO 002 :: SELLER CREATES & CANCELS', async function () {
   it('TEST SCENARIO 02 :: SELLER CREATE :: 1.6 VALIDATE ERC1155ERC721 DATA', async function () {
     aql(voucherSetDetails['operator'], Utils.contractVoucherKernel.address);
     aql(voucherSetDetails['transferFrom'], helpers.ZERO_ADDRESS);
-    aql(voucherSetDetails['transferTo'], SELLER_PUBLIC);
+    aql(voucherSetDetails['transferTo'], users.seller.address);
     aql(voucherSetDetails['transferValue'], helpers.ORDER_QUANTITY1);
   });
 
   it('TEST SCENARIO 02:: SELLER CANCEL :: 2.0 Seller cancels a voucher-set', async function () {
     cancelledVoucher = await sellerCancel(
-      voucherSetDetails['createdVoucherSetID']
+      voucherSetDetails['createdVoucherSetID'],
+      users
     );
     await format(cancelledVoucher);
   });
@@ -65,11 +70,11 @@ describe('TEST SCENARIO 002 :: SELLER CREATES & CANCELS', async function () {
 
   it('TEST SCENARIO 02 :: SELLER CANCEL :: 2.2 VALIDATE REFUNDED SELLER DEPOSIT', async function () {
     aql(cancelledVoucher['redfundedSellerDeposit'], helpers.seller_deposit);
-    aql(cancelledVoucher['redfundSellerDepositRecipient'], SELLER_PUBLIC);
+    aql(cancelledVoucher['redfundSellerDepositRecipient'], users.seller.address);
   });
 
   after('Check Balances', async function () {
-    let balances = await checkBalance();
+    let balances = await checkBalance(users);
     console.log(balances);
   });
 

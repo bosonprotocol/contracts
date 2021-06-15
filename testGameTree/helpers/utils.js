@@ -1,7 +1,7 @@
 let Web3 = require('web3');
-const {PROVIDER} = require('../helpers/config');
 const truffleContract = require("truffle-contract");
-let web3 = new Web3(new Web3.providers.HttpProvider(PROVIDER));
+const helpers = require('../helpers/constants');
+let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 const BosonRouter = truffleContract(require(__dirname + "/../../build/contracts/BosonRouter.json"));
 BosonRouter.setProvider(web3.currentProvider);
 const VoucherKernel = truffleContract(require(__dirname + "/../../build/contracts/VoucherKernel.json"));
