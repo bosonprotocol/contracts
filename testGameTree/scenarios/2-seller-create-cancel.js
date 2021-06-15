@@ -18,7 +18,7 @@ describe('TEST SCENARIO 002 :: SELLER CREATES & CANCELS', async function () {
 
   before('Before test cases', async function () {
     await Utils.deployContracts();
-    users = new Users( await web3.eth.getAccounts() );
+    users = new Users(await web3.eth.getAccounts());
     let balances = await checkBalance(users);
     console.log(balances);
   });
@@ -70,12 +70,14 @@ describe('TEST SCENARIO 002 :: SELLER CREATES & CANCELS', async function () {
 
   it('TEST SCENARIO 02 :: SELLER CANCEL :: 2.2 VALIDATE REFUNDED SELLER DEPOSIT', async function () {
     aql(cancelledVoucher['redfundedSellerDeposit'], helpers.seller_deposit);
-    aql(cancelledVoucher['redfundSellerDepositRecipient'], users.seller.address);
+    aql(
+      cancelledVoucher['redfundSellerDepositRecipient'],
+      users.seller.address
+    );
   });
 
   after('Check Balances', async function () {
     let balances = await checkBalance(users);
     console.log(balances);
   });
-
 });

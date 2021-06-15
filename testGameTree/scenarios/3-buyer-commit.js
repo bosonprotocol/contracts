@@ -20,7 +20,7 @@ describe('TEST SCENARIO 003 :: SELLER CREATES & BUYER COMMITS', async function (
 
   before('Before test cases', async function () {
     await Utils.deployContracts();
-    users = new Users( await web3.eth.getAccounts() );
+    users = new Users(await web3.eth.getAccounts());
     let balances = await checkBalance(users);
     console.log(balances);
   });

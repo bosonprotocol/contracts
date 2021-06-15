@@ -8,7 +8,10 @@ Contract.setProvider(helpers.PROVIDER);
 
 function checkVoucherStatus(_voucherID) {
   return new Promise((resolve) => {
-    const voucherKernel = new Contract(VoucherKernel, Utils.contractVoucherKernel.address);
+    const voucherKernel = new Contract(
+      VoucherKernel,
+      Utils.contractVoucherKernel.address
+    );
 
     voucherKernel.methods
       .getVoucherStatus(_voucherID)

@@ -24,7 +24,7 @@ describe('TEST SCENARIO 009 :: SELLER CREATES, BUYER COMMITS, REFUNDS & COMPLAIN
 
   before('Before test cases', async function () {
     await Utils.deployContracts();
-    users = new Users( await web3.eth.getAccounts() );
+    users = new Users(await web3.eth.getAccounts());
     let balances = await checkBalance(users);
     console.log(balances);
   });
@@ -81,7 +81,10 @@ describe('TEST SCENARIO 009 :: SELLER CREATES, BUYER COMMITS, REFUNDS & COMPLAIN
 
   it('TEST SCENARIO 09 :: BUYER REFUNDS :: 3.0 Buyer refunds a purchased voucher', async function () {
     console.log(await checkBalance(users));
-    refundedVoucher = await refundVoucher(committedVoucher['MintedVoucherID'], users);
+    refundedVoucher = await refundVoucher(
+      committedVoucher['MintedVoucherID'],
+      users
+    );
     await format(refundedVoucher);
   });
 
@@ -110,7 +113,10 @@ describe('TEST SCENARIO 009 :: SELLER CREATES, BUYER COMMITS, REFUNDS & COMPLAIN
 
   it('TEST SCENARIO 09 :: SELLER FAULTS :: 5.0 Seller faults a complained voucher', async function () {
     console.log(await checkBalance(users));
-    faultedVoucher = await faultVoucher(committedVoucher['MintedVoucherID'], users);
+    faultedVoucher = await faultVoucher(
+      committedVoucher['MintedVoucherID'],
+      users
+    );
     await format(faultedVoucher);
   });
 

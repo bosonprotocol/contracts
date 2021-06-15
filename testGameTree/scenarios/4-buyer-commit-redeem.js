@@ -20,7 +20,7 @@ describe('TEST SCENARIO 004 :: SELLER CREATES, BUYER COMMITS & BUYER REDEEMS', a
 
   before('Before test cases', async function () {
     await Utils.deployContracts();
-    users = new Users( await web3.eth.getAccounts() );
+    users = new Users(await web3.eth.getAccounts());
     let balances = await checkBalance(users);
     console.log(balances);
   });
@@ -77,7 +77,10 @@ describe('TEST SCENARIO 004 :: SELLER CREATES, BUYER COMMITS & BUYER REDEEMS', a
 
   it('TEST SCENARIO 04 :: BUYER REDEEMS :: 3.0 Buyer redeems a purchased voucher', async function () {
     console.log(await checkBalance(users));
-    redeemedVoucher = await redeemVoucher(committedVoucher['MintedVoucherID'], users);
+    redeemedVoucher = await redeemVoucher(
+      committedVoucher['MintedVoucherID'],
+      users
+    );
     await format(redeemedVoucher);
   });
 

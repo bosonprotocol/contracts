@@ -13,8 +13,6 @@ const timemachine = require('../helpers/timemachine');
 let Web3 = require('web3');
 let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 
-const TIMEOUT = 500 * 1000;
-
 describe('TEST SCENARIO 013 :: SELLER CREATES & BUYER COMMITS', async function () {
   let commitVoucherDetails;
   let voucherSetDetails;
@@ -22,11 +20,10 @@ describe('TEST SCENARIO 013 :: SELLER CREATES & BUYER COMMITS', async function (
   let checkExpireDetails;
   let users;
   let aql = assert.equal;
-  let timestamp;
 
   before('Before test cases', async function () {
     await Utils.deployContracts();
-    users = new Users( await web3.eth.getAccounts() );
+    users = new Users(await web3.eth.getAccounts());
     let balances = await checkBalance(users);
     console.log(balances);
   });

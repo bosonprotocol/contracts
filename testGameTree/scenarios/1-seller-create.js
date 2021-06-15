@@ -3,7 +3,6 @@ const checkBalance = require('../helpers/checkBalance');
 const Utils = require('../helpers/utils');
 const Users = require('../helpers/users');
 const {describe, it} = require('mocha');
-const truffleContract = require("truffle-contract");
 let format = require('../helpers/formatter');
 const helpers = require('../helpers/constants');
 let assert = require('chai').assert;
@@ -14,10 +13,9 @@ describe('TEST SCENARIO 001 :: SELLER CREATES A VOUCHER SET', async function () 
   let value, users;
   let aql = assert.equal;
 
-
   before('Before test cases', async function () {
     await Utils.deployContracts();
-    users = new Users( await web3.eth.getAccounts() );
+    users = new Users(await web3.eth.getAccounts());
     let balances = await checkBalance(users);
     console.log(balances);
   });

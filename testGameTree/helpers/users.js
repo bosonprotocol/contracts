@@ -25,9 +25,7 @@ class Users {
   constructor(addresses) {
     this.addresses = addresses;
 
-    this.privateKeys = loadPrivateKeys(
-      'build/ganache/accounts-gametree.json'
-    );
+    this.privateKeys = loadPrivateKeys('build/ganache/accounts-gametree.json');
   }
 
   getAccountAtIndex(index) {

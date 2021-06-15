@@ -13,8 +13,6 @@ let assert = require('chai').assert;
 let Web3 = require('web3');
 let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 
-const TIMEOUT = 500 * 1000;
-
 describe('TEST SCENARIO 011 :: SELLER CREATES, BUYER COMMITS, REFUND, SELLER FAULTS & BUYER COMPLAINS', async function () {
   let committedVoucher;
   let voucherSetDetails;
@@ -26,7 +24,7 @@ describe('TEST SCENARIO 011 :: SELLER CREATES, BUYER COMMITS, REFUND, SELLER FAU
 
   before('Before test cases', async function () {
     await Utils.deployContracts();
-    users = new Users( await web3.eth.getAccounts() );
+    users = new Users(await web3.eth.getAccounts());
     let balances = await checkBalance(users);
     console.log(balances);
   });
@@ -83,7 +81,10 @@ describe('TEST SCENARIO 011 :: SELLER CREATES, BUYER COMMITS, REFUND, SELLER FAU
 
   it('TEST SCENARIO 11 :: BUYER REDEEMS :: 3.0 Buyer refunds a purchased voucher', async function () {
     console.log(await checkBalance(users));
-    refundedVoucher = await refundVoucher(committedVoucher['MintedVoucherID'], users);
+    refundedVoucher = await refundVoucher(
+      committedVoucher['MintedVoucherID'],
+      users
+    );
     await format(refundedVoucher);
   });
 
@@ -96,7 +97,10 @@ describe('TEST SCENARIO 011 :: SELLER CREATES, BUYER COMMITS, REFUND, SELLER FAU
 
   it('TEST SCENARIO 11 :: SELLER FAULTS :: 4.0 Seller accepts fault on a complained voucher', async function () {
     console.log(await checkBalance(users));
-    faultedVoucher = await faultVoucher(committedVoucher['MintedVoucherID'], users);
+    faultedVoucher = await faultVoucher(
+      committedVoucher['MintedVoucherID'],
+      users
+    );
     await format(faultedVoucher);
   });
 

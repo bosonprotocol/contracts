@@ -1,4 +1,3 @@
-
 const sellerCreate = require('../seller/createVoucher');
 const commitVocucher = require('../buyer/commitVoucher');
 const redeemVoucher = require('../buyer/redeemVoucher');
@@ -23,19 +22,17 @@ describe('TEST SCENARIO 006 :: SELLER CREATES, BUYER COMMITS, REDEEMS & COMPLAIN
 
   before('Before test cases', async function () {
     await Utils.deployContracts();
-    users = new Users( await web3.eth.getAccounts() );
+    users = new Users(await web3.eth.getAccounts());
     let balances = await checkBalance(users);
     console.log(balances);
   });
-
-  
 
   it('TEST SCENARIO 06 :: SELLER CREATE :: 1.0 Seller creates a voucher set', async function () {
     const timestamp = await Utils.getCurrTimestamp();
     voucherSetDetails = await sellerCreate(timestamp, users);
     await format(voucherSetDetails);
   });
-/*
+
   it('TEST SCENARIO 06 :: SELLER CREATE :: 1.1 VALIDATE VALID FROM', async function () {
     aql(voucherSetDetails['ValidFrom'], helpers.PROMISE_VALID_FROM);
   });
@@ -82,7 +79,10 @@ describe('TEST SCENARIO 006 :: SELLER CREATES, BUYER COMMITS, REDEEMS & COMPLAIN
 
   it('TEST SCENARIO 06 :: BUYER REDEEMS :: 3.0 Buyer redeems a purchased voucher', async function () {
     console.log(await checkBalance(users));
-    redeemedVoucher = await redeemVoucher(committedVoucher['MintedVoucherID']);
+    redeemedVoucher = await redeemVoucher(
+      committedVoucher['MintedVoucherID'],
+      users
+    );
     await format(redeemedVoucher);
   });
 
@@ -91,7 +91,7 @@ describe('TEST SCENARIO 006 :: SELLER CREATES, BUYER COMMITS, REDEEMS & COMPLAIN
       redeemedVoucher['redeemedVoucherID'],
       committedVoucher['MintedVoucherID']
     );
-    aql(redeemedVoucher[('holder', BUYER_PUBLIC)]);
+    aql(redeemedVoucher[('holder', users.buyer.address)]);
     aql(redeemedVoucher['promiseID'], committedVoucher['promiseID']);
   });
 
@@ -115,5 +115,4 @@ describe('TEST SCENARIO 006 :: SELLER CREATES, BUYER COMMITS, REDEEMS & COMPLAIN
     let balances = await checkBalance(users);
     console.log(balances);
   });
-*/
 });
