@@ -15,15 +15,20 @@ the latest deployment details here, as well.
 For more details about how Boson Protocol works and how you might make use of
 it, please see the [documentation site](https://docs.bosonprotocol.io/).  
 
+---
 **Table of Contents**
 
 - [Local Development](#local-development)
-- [Testing](#testing)
-- [Code Linting](#code-linting)
-- [Documentation](#documentation)
+  - [Prerequisites](#prerequisites)
+  - [Build](#build)
+  - [Run](#run)
+  - [Test](#test)
+  - [Code Linting & Formatting](#code-linting--formatting)
+- [Documentation](#documentation)  
 - [Contributing](#contributing)
 - [License](#license)
 
+---
 ## Local Development
 
 ### Prerequisites
@@ -43,7 +48,8 @@ For instructions on how to get set up with these specific versions:
 * See the [OS X guide](docs/setup/osx.md) if you are on a Mac.
 * See the [Linux guide](docs/setup/linux.md) if you use a Linux distribution.
 
-### Running the build
+---
+### Build
 
 We have a fully automated local build process to check that your changes are
 good to be merged. To run the build:
@@ -68,9 +74,17 @@ To compile the contracts:
 ./go contracts:compile
 ```
 
-## Testing
+---
+### Run
+To deploy a local instance of the contracts run the following command:
+```shell
+./go contracts:run
+```
 
-### Unit Tests
+---
+### Test
+
+#### Unit Tests
 
 All contracts are thoroughly unit tested using 
 [Truffle's JavaScript testing](https://www.trufflesuite.com/docs/truffle/testing/writing-tests-in-javascript) 
@@ -94,7 +108,7 @@ otherwise, create a JSON file creating accounts in the same format as
 ./go "tests:unit[<port>,<path-to-accounts-json>]"
 ```
 
-### Coverage
+#### Coverage
 
 We use [solidity-coverage](https://github.com/sc-forks/solidity-coverage) to 
 provide test coverage reports. 
@@ -108,12 +122,13 @@ To check the test coverage:
 `solidity-coverage` runs its own instance of Ganache internally, as well as
 instrumenting contracts before running.
 
-### Interaction Tests
+#### Interaction Tests
 
 To run the interaction tests, follow the instructions in the
 [interaction tests README.md](testUserInteractions/README.md).
 
-## Code Linting
+---
+### Code Linting & Formatting
 
 Both the contracts themselves and the tests are linted and formatted as part of
 the build process.
@@ -161,12 +176,14 @@ Similarly, for the tests, to perform the same tasks:
 ./go tests:format_fix
 ```
 
+---
 ## Documentation
 
 For an overview of the contracts and their responsibilities, see 
 [Overview](docs/contracts/overview.md).  
 The whitepaper is available through the project's [website](https://www.bosonprotocol.io/).
 
+---
 ## Contributing
 
 We welcome contributions! Until now, Boson Protocol has been largely worked on by a small dedicated team. However, the ultimate goal is for all of the Boson Protocol repositories to be fully owned by the community and contributors. Issues, pull requests, suggestions, and any sort of involvement are more than welcome.
@@ -179,6 +196,7 @@ All PRs must pass all tests before being merged.
 
 By being in this community, you agree to the [Code of Conduct](CODE_OF_CONDUCT.md). Take a look at it, if you haven't already.
 
+---
 ## License
 
 Licensed under [LGPL v3](LICENSE).
