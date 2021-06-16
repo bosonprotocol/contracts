@@ -29,7 +29,8 @@ task :build_fix => [
 ]
 
 task :test => [
-    :"tests:unit"
+    :"tests:unit",
+    :"tests:gametree"
 ]
 
 namespace :ganache do
@@ -138,6 +139,32 @@ namespace :tests do
       Ganache.on_available_port(
           allow_unlimited_contract_size: true) do |ganache|
         run_unit_tests.call(ganache.port, ganache.account_keys_file)
+      end
+    end
+  end
+
+  desc "Run gametree tests"
+  task :gametree, [:port, :account_keys_file] =>
+      [:'dependencies:install'] do |_, args|
+    run_gametree_tests = lambda do |port, account_keys_file|
+      sh({
+          "HOST" => "127.0.0.1",
+          "PORT" => "#{port}",
+          "ACCOUNT_KEYS_FILE" => "#{account_keys_file}"
+      }, 'npm', 'run', 'tests:gametree')
+    end
+
+    if args.port
+      puts "Running gametree tests against node listening on #{args.port}..."
+      run_gametree_tests.call(
+          args.port,
+          args.account_keys_file || 'config/accounts.json')
+    else
+      puts "Running gametree tests against node listening on random available " +
+          "port..."
+      Ganache.on_available_port(
+          allow_unlimited_contract_size: true) do |ganache|
+        run_gametree_tests.call(ganache.port, ganache.account_keys_file)
       end
     end
   end

@@ -94,6 +94,20 @@ otherwise, create a JSON file creating accounts in the same format as
 ./go "tests:unit[<port>,<path-to-accounts-json>]"
 ```
 
+### Gametree Tests
+
+To run the gametree tests:
+
+```shell script
+./go tests:gametree
+```
+The gametree tests do not run when the `./go` command is run by itself without specifiying any tasks.
+As with the unit tests, the build system automates starting and stopping 
+[Ganache](https://www.trufflesuite.com/docs/ganache/overview) on a free port in
+the background ready for each test run.
+For more infomration on the Gametree tests, see
+gametree tests [README.md](testGameTree/README.md).
+
 ### Coverage
 
 We use [solidity-coverage](https://github.com/sc-forks/solidity-coverage) to 
@@ -109,9 +123,7 @@ To check the test coverage:
 instrumenting contracts before running.
 
 
-### Gametree Tests
-To run the gametree tests, follow the instructions in the
-[gametree tests README.md](testGameTree/README.md).
+
 
 ## Code Linting
 

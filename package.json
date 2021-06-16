@@ -7,9 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test:ganache": "node ./node_modules/.bin/ganache-cli --port 8545 --allowUnlimitedContractSize --mnemonic 'arrow uncle ring dirt apply lock sunny enforce boat robot exit arctic' ",
-    "deploy": "node ./node_modules/truffle migrate --network development",
-    "test:gametree": "test:ganache && deploy && mocha ./testGameTree/1_test.js",
+    "tests:gametree": "mocha ./testGameTree/1_test.js",
     "contracts:compile": "truffle compile --all",
     "contracts:lint": "solhint contracts/**/*.sol -w 0",
     "contracts:lint-fix": "solhint contracts/**/*.sol -w 0 --fix",

@@ -1,21 +1,12 @@
 # GAME TREE SCENARIOS
 #### These tests cover the overall game tree scenarios
-The tests run against Rinkeby and perform assertions on event parameters. Because the provider sometimes misses events, test scenarios occassionally randomly fail with the message
-about not being able to reference `returnValues` on `undefined`. If this happens, re-run the test.
-
-The tests can also be run locally by deploying to a local ganache instance and then configuring  local contract addresses and buyer/seller addresses and private keys in config.js.
-Comment out the Rinkeby provider and uncomment the local provider.  The tests to not use the "time machine" utility to advance time or blocks, so scenario 13 does not always run properly
-against a local ganache instance.
+The tests run against a local Ganache instance and perform assertions on event parameters. By default, the build system automates starting and stopping Ganache on a free port in the background ready for each test run.
 
 ### How To Run
 
-- Install the dependencies: `npm install`.
-- Copy `testGameTree/helpers/config.example.js` to  `testGameTree/helpers/config.js` and update it with current Rinkeby contract addresses.
-- Compile the contracts: `truffle compile`. 
-- To run tests:
-    - Run the tests with saving the logs: `npm run test:gametree >> log.txt`.
-        - These logs can be found in `log.txt`.
-    - Run the tests without saving the logs `npm run test:gametree`.
+* Carry out the configuration instructions in the main [README.md](../README.md)
+* To run the gametree tests:  `./go tests:gametree` 
+* This kicks off a task in the Ruby rakefile
 
 ### Scenarios
 

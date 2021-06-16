@@ -2,7 +2,7 @@
 const SECONDS_IN_DAY = 86400;
 const SECONDS_IN_A_MINUTE = 60;
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-const PROVIDER = 'http://localhost:8545'; // for local ganache
+const PROVIDER = 'http://' + process.env.HOST + ':' + process.env.PORT;
 
 // promise
 const PROMISE_VALID_FROM = ''; // evaluated based on the current block timestamp
