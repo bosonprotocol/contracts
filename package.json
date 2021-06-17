@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "contracts:run": "truffle migrate --network development",
+    "contracts:run": "truffle migrate --network test",
     "contracts:compile": "truffle compile --all",
     "contracts:lint": "solhint contracts/**/*.sol -w 0",
     "contracts:lint-fix": "solhint contracts/**/*.sol -w 0 --fix",
