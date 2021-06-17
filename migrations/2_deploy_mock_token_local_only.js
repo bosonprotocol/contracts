@@ -4,7 +4,6 @@ const FundLimitsOracle = artifacts.require('FundLimitsOracle');
 
 module.exports = async function(deployer, network, accounts) {
     console.log("network: ", network);
-    console.log("accounts: ", accounts);
 
     //Only deploy the mock token for running contracts locally
     if(network == 'development' || network == 'test'){
@@ -20,5 +19,7 @@ module.exports = async function(deployer, network, accounts) {
             mockBOSONToken.address,
             TOKEN_LIMIT
         );
+    } else {
+        console.log("NOT deploying mock token");
     }
 };
