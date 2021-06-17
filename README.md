@@ -52,14 +52,16 @@ For instructions on how to get set up with these specific versions:
 ### Build
 
 We have a fully automated local build process to check that your changes are
-good to be merged. To run the build:
+good to be merged. It is based on a script called `go`, which is implemented using Ruby and Rake. Always run the `go` script before committing or pushing to GitHub.
+To run the build:
 
 ```shell script
 ./go
 ````
 
 By default, the build process fetches all dependencies, compiles, lints, 
-formats and tests the codebase. There are also tasks for each step. This and
+formats and tests the codebase. If the linting or formatting tasks find problems, the script will attempt to fix them silently, so always check for changes in your files before committing or pushing to GitHub.
+There are also tasks for each step that can be run separately. This and
 subsequent sections provide more details of each of the tasks.
 
 To fetch dependencies:
@@ -76,10 +78,28 @@ To compile the contracts:
 
 ---
 ### Run
-To deploy a local instance of the contracts run the following command:
+To deploy instances of the contracts for local development without prior knowledge Ganache and Truffle, run the following command:
 ```shell
 ./go contracts:run
 ```
+
+This command starts up Ganache on a random port and migrates all contracts to the Ganache instance. The Ganache instance will remain running the the background, even though the command prompt is available.
+The pid of the Ganache instance is written to a file in the run/pid directory.
+
+To stop the Ganache instance, run the folloing command:
+```shell
+./go ganache:stop
+```
+
+If preferred by those who are familiar with Truffle and Ganache, Ganache can be started up manually in a terminal using the command (or other desired port):
+```shell
+  node ./node_modules/.bin/ganache-cli --port 8545 --allowUnlimitedContractSize --acctKeys build/ganache/accounts-8545.json
+```
+In a separate terminal, contracts can be deployed using
+```shell
+  ./node_modules/.bin/truffle migrate
+```
+One of the contracts that gets deployed locally is a mock contract that represents the $BOSON token. The mock exists for unit testing purposes and so that those who want to develop against the protocol locally don't have to point to a testnet deployment of the $BOSON token.
 
 ---
 ### Test
