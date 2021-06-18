@@ -83,15 +83,15 @@ To deploy instances of the contracts for local development without prior knowled
 ./go contracts:run
 ```
 
-This command starts up Ganache on a random port and migrates all contracts to the Ganache instance. The Ganache instance will remain running the the background, even though the command prompt is available.
+This command starts up Ganache on a random port and migrates all contracts to the Ganache instance. The Ganache instance will remain running in the background, even though the command prompt returns.
 The pid of the Ganache instance is written to a file in the run/pid directory.
 
-To stop the Ganache instance, run the folloing command:
+To stop the Ganache instance, run the following command:
 ```shell
 ./go ganache:stop
 ```
 
-If preferred by those who are familiar with Truffle and Ganache, Ganache can be started up manually in a terminal using the command (or other desired port):
+If preferred by those who are familiar with Truffle and Ganache, the standard Truffle and Ganache commands can be used. Ganache can be started up manually in a terminal using the command:
 ```shell
   node ./node_modules/.bin/ganache-cli --port 8545 --allowUnlimitedContractSize --acctKeys build/ganache/accounts-8545.json
 ```
