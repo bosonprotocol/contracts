@@ -71,7 +71,7 @@ class Utils {
       txReceipt,
       this.factories.BosonRouter,
       events.eventNames.LOG_ORDER_CREATED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
@@ -132,7 +132,7 @@ class Utils {
       txReceipt,
       this.factories.BosonRouter,
       events.eventNames.LOG_ORDER_CREATED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
@@ -192,7 +192,7 @@ class Utils {
       txReceipt,
       this.factories.BosonRouter,
       events.eventNames.LOG_ORDER_CREATED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return eventArgs._tokenIdSupply.toString();
@@ -251,7 +251,7 @@ class Utils {
       txReceipt,
       this.factories.BosonRouter,
       events.eventNames.LOG_ORDER_CREATED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
@@ -290,7 +290,7 @@ class Utils {
       txReceipt,
       this.factories.BosonRouter,
       events.eventNames.LOG_ORDER_CREATED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
@@ -361,7 +361,7 @@ class Utils {
       txReceipt,
       this.factories.VoucherKernel,
       events.eventNames.LOG_VOUCHER_DELIVERED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return eventArgs._tokenIdVoucher;
@@ -409,7 +409,7 @@ class Utils {
       txReceipt,
       this.factories.VoucherKernel,
       events.eventNames.LOG_VOUCHER_DELIVERED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return eventArgs._tokenIdVoucher;
@@ -451,7 +451,7 @@ class Utils {
       txReceipt,
       this.factories.VoucherKernel,
       events.eventNames.LOG_VOUCHER_DELIVERED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return eventArgs._tokenIdVoucher;
@@ -478,7 +478,7 @@ class Utils {
       txReceipt,
       this.factories.VoucherKernel,
       events.eventNames.LOG_VOUCHER_DELIVERED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return returnTx ? txReceipt : eventArgs._tokenIdVoucher;
@@ -520,7 +520,7 @@ class Utils {
       txReceipt,
       this.factories.VoucherKernel,
       events.eventNames.LOG_VOUCHER_DELIVERED,
-      e => eventArgs = e
+      (e) => (eventArgs = e)
     );
 
     return eventArgs._tokenIdVoucher;

@@ -239,12 +239,8 @@ describe('Cashier withdrawals ', () => {
         const expectedBuyerAmount = BN(helpers.buyer_deposit)
           .add(BN(helpers.product_price))
           .add(BN(helpers.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
-        const expectedSellerAmount = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
-        const expectedEscrowAmount = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedSellerAmount = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
+        const expectedEscrowAmount = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
 
         const voucherID = await utils.commitToBuy(
           users.buyer,
@@ -296,12 +292,8 @@ describe('Cashier withdrawals ', () => {
         const expectedBuyerAmount = BN(helpers.buyer_deposit)
           .add(BN(helpers.product_price))
           .add(BN(helpers.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
-        const expectedSellerAmount = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
-        const expectedEscrowAmount = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedSellerAmount = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
+        const expectedEscrowAmount = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
 
         const voucherID = await utils.commitToBuy(
           users.buyer,
@@ -406,9 +398,7 @@ describe('Cashier withdrawals ', () => {
         const expectedBuyerAmount = BN(helpers.buyer_deposit)
           .add(BN(helpers.product_price))
           .add(BN(helpers.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
-        const expectedSellerAmount = BN(helpers.seller_deposit).div(
-          BN(2)
-        ); // 0.025
+        const expectedSellerAmount = BN(helpers.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmount = BN(0); //0
 
         const voucherID = await utils.commitToBuy(
@@ -514,9 +504,7 @@ describe('Cashier withdrawals ', () => {
         const expectedBuyerAmount = BN(helpers.buyer_deposit)
           .add(BN(helpers.product_price))
           .add(BN(helpers.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
-        const expectedSellerAmount = BN(helpers.seller_deposit).div(
-          BN(2)
-        ); // 0.025
+        const expectedSellerAmount = BN(helpers.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmount = BN(0); // 0
 
         const voucherID = await utils.commitToBuy(
@@ -677,9 +665,7 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerAmount = BN(helpers.product_price).add(
           BN(helpers.seller_deposit).div(BN(4))
         ); // 0.3125
-        const expectedEscrowAmount = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedEscrowAmount = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
 
         const voucherID = await utils.commitToBuy(
           users.buyer,
@@ -736,9 +722,7 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerAmount = BN(helpers.product_price).add(
           BN(helpers.seller_deposit).div(BN(4))
         ); // 0.3125
-        const expectedEscrowAmount = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedEscrowAmount = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
 
         const voucherID = await utils.commitToBuy(
           users.buyer,
@@ -861,23 +845,20 @@ describe('Cashier withdrawals ', () => {
         balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
           users.buyer.address
         );
-        balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.buyer.address
-        );
+        balanceBuyerFromDeposits =
+          await utils.contractBSNTokenDeposit.balanceOf(users.buyer.address);
 
         balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
           users.seller.address
         );
-        balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.seller.address
-        );
+        balanceSellerFromDeposits =
+          await utils.contractBSNTokenDeposit.balanceOf(users.seller.address);
 
         escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(
           users.deployer.address
         );
-        escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.deployer.address
-        );
+        escrowBalanceFromDeposits =
+          await utils.contractBSNTokenDeposit.balanceOf(users.deployer.address);
 
         cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(
           utils.contractCashier.address
@@ -901,9 +882,7 @@ describe('Cashier withdrawals ', () => {
           );
 
         const supplyQty = 1;
-        const tokensToMint = BN(helpers.seller_deposit).mul(
-          BN(supplyQty)
-        );
+        const tokensToMint = BN(helpers.seller_deposit).mul(BN(supplyQty));
 
         await utils.mintTokens(
           'contractBSNTokenDeposit',
@@ -1055,9 +1034,7 @@ describe('Cashier withdrawals ', () => {
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
         const expectedSellerPrice = BN(0);
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
         const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
           BN(4)
         ); // 0.0125
@@ -1218,9 +1195,7 @@ describe('Cashier withdrawals ', () => {
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
         const expectedSellerPrice = BN(0);
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(2)
-        ); // 0.025
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountDeposit = BN(0);
         const expectedEscrowAmountPrice = BN(0);
 
@@ -1373,9 +1348,7 @@ describe('Cashier withdrawals ', () => {
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
         const expectedSellerPrice = BN(0);
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(2)
-        ); // 0.025
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountPrice = BN(0);
         const expectedEscrowAmountDeposit = BN(0);
 
@@ -1606,9 +1579,7 @@ describe('Cashier withdrawals ', () => {
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
         const expectedSellerPrice = BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
         const expectedEscrowAmountPrice = BN(0);
         const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
           BN(4)
@@ -1689,9 +1660,7 @@ describe('Cashier withdrawals ', () => {
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
         const expectedSellerPrice = BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
         const expectedEscrowAmountPrice = BN(0);
         const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
           BN(4)
@@ -1772,9 +1741,7 @@ describe('Cashier withdrawals ', () => {
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
         const expectedSellerPrice = BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(2)
-        ); // 0.025
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountPrice = BN(0);
         const expectedEscrowAmountDeposit = BN(0);
 
@@ -1929,9 +1896,7 @@ describe('Cashier withdrawals ', () => {
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
         const expectedSellerPrice = BN(0);
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
         const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
           BN(4)
         ); // 0.0125
@@ -1993,9 +1958,7 @@ describe('Cashier withdrawals ', () => {
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
         const expectedSellerPrice = BN(0);
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
         const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
           BN(4)
         ); // 0.0125
@@ -2122,9 +2085,7 @@ describe('Cashier withdrawals ', () => {
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
         const expectedSellerPrice = BN(0);
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(2)
-        ); // 0.025
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountDeposit = BN(0);
         const expectedEscrowAmountPrice = BN(0);
 
@@ -2243,9 +2204,7 @@ describe('Cashier withdrawals ', () => {
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
         const expectedSellerPrice = BN(0);
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(2)
-        ); // 0.025
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountPrice = BN(0);
         const expectedEscrowAmountDeposit = BN(0);
 
@@ -2424,9 +2383,7 @@ describe('Cashier withdrawals ', () => {
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
         const expectedSellerPrice = BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
         const expectedEscrowAmountPrice = BN(0);
         const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
           BN(4)
@@ -2490,9 +2447,7 @@ describe('Cashier withdrawals ', () => {
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
         const expectedSellerPrice = BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
         const expectedEscrowAmountPrice = BN(0);
         const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
           BN(4)
@@ -2556,9 +2511,7 @@ describe('Cashier withdrawals ', () => {
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
         const expectedSellerPrice = BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(2)
-        ); // 0.025
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountPrice = BN(0);
         const expectedEscrowAmountDeposit = BN(0);
 
@@ -2605,15 +2558,12 @@ describe('Cashier withdrawals ', () => {
       let cashierDepositLeft = BN(0);
 
       async function getBalancesDepositToken() {
-        balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.buyer.address
-        );
-        balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.seller.address
-        );
-        escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.deployer.address
-        );
+        balanceBuyerFromDeposits =
+          await utils.contractBSNTokenDeposit.balanceOf(users.buyer.address);
+        balanceSellerFromDeposits =
+          await utils.contractBSNTokenDeposit.balanceOf(users.seller.address);
+        escrowBalanceFromDeposits =
+          await utils.contractBSNTokenDeposit.balanceOf(users.deployer.address);
         cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(
           utils.contractCashier.address
         );
@@ -2633,9 +2583,7 @@ describe('Cashier withdrawals ', () => {
           );
 
         const supplyQty = 1;
-        const tokensToMint = BN(helpers.seller_deposit).mul(
-          BN(supplyQty)
-        );
+        const tokensToMint = BN(helpers.seller_deposit).mul(BN(supplyQty));
 
         await utils.mintTokens(
           'contractBSNTokenDeposit',
@@ -2697,9 +2645,7 @@ describe('Cashier withdrawals ', () => {
         const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
         const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
           BN(4)
         ); // 0.0125
@@ -2771,9 +2717,7 @@ describe('Cashier withdrawals ', () => {
         const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
         const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
           BN(4)
         ); // 0.0125
@@ -2926,9 +2870,7 @@ describe('Cashier withdrawals ', () => {
         const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(2)
-        ); // 0.025
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesDepositToken();
@@ -3071,9 +3013,7 @@ describe('Cashier withdrawals ', () => {
         const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(2)
-        ); // 0.025
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesDepositToken();
@@ -3289,9 +3229,7 @@ describe('Cashier withdrawals ', () => {
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
         const expectedSellerPrice = BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
         const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
           BN(4)
         ); // 0.0125
@@ -3367,9 +3305,7 @@ describe('Cashier withdrawals ', () => {
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
         const expectedSellerPrice = BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
         const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
           BN(4)
         ); // 0.0125
@@ -3445,9 +3381,7 @@ describe('Cashier withdrawals ', () => {
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
         const expectedSellerPrice = BN(helpers.product_price); // 0.3
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(2)
-        ); // 0.025
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesDepositToken();
@@ -3574,9 +3508,7 @@ describe('Cashier withdrawals ', () => {
         const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
         const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
           BN(4)
         ); // 0.0125
@@ -3671,9 +3603,7 @@ describe('Cashier withdrawals ', () => {
         const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
         const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
           BN(4)
         ); // 0.0125
@@ -3866,9 +3796,7 @@ describe('Cashier withdrawals ', () => {
         const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(2)
-        ); // 0.025
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesPriceToken();
@@ -4053,9 +3981,7 @@ describe('Cashier withdrawals ', () => {
         const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(2)
-        ); // 0.025
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesPriceToken();
@@ -4334,9 +4260,7 @@ describe('Cashier withdrawals ', () => {
         const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
         const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
           BN(4)
         ); // 0.0125
@@ -4433,9 +4357,7 @@ describe('Cashier withdrawals ', () => {
         const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(4)
-        ); // 0.0125
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(4)); // 0.0125
         const expectedEscrowAmountDeposit = BN(helpers.seller_deposit).div(
           BN(4)
         ); // 0.0125
@@ -4532,9 +4454,7 @@ describe('Cashier withdrawals ', () => {
         const expectedBuyerDeposit = BN(helpers.buyer_deposit).add(
           BN(helpers.seller_deposit).div(BN(2))
         ); // 0.065
-        const expectedSellerDeposit = BN(helpers.seller_deposit).div(
-          BN(2)
-        ); // 0.025
+        const expectedSellerDeposit = BN(helpers.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountDeposit = BN(0);
 
         await getBalancesPriceToken();
@@ -4707,10 +4627,11 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('Remaining QTY for Token Supply should be ZERO', async () => {
-        let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
-          TOKEN_SUPPLY_ID,
-          users.seller.address
-        );
+        let remainingQtyInContract =
+          await contractVoucherKernel.getRemQtyForSupply(
+            TOKEN_SUPPLY_ID,
+            users.seller.address
+          );
 
         assert.isTrue(
           remainingQtyInContract.eq(BN(0)),
@@ -4762,9 +4683,7 @@ describe('Cashier withdrawals ', () => {
           tokensToMintSeller = BN(helpers.seller_deposit).mul(
             BN(helpers.QTY_10)
           );
-          tokensToMintBuyer = BN(helpers.product_price).mul(
-            BN(helpers.QTY_10)
-          );
+          tokensToMintBuyer = BN(helpers.product_price).mul(BN(helpers.QTY_10));
 
           await utils.mintTokens(
             'contractBSNTokenDeposit',
@@ -4868,10 +4787,11 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Remaining QTY for Token Supply should be ZERO', async () => {
-          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
-            TOKEN_SUPPLY_ID,
-            users.seller.address
-          );
+          let remainingQtyInContract =
+            await contractVoucherKernel.getRemQtyForSupply(
+              TOKEN_SUPPLY_ID,
+              users.seller.address
+            );
 
           assert.isTrue(
             remainingQtyInContract.eq(BN(0)),
@@ -4927,9 +4847,7 @@ describe('Cashier withdrawals ', () => {
           tokensToMintSeller = BN(helpers.seller_deposit).mul(
             BN(helpers.QTY_10)
           );
-          tokensToMintBuyer = BN(helpers.product_price).mul(
-            BN(helpers.QTY_10)
-          );
+          tokensToMintBuyer = BN(helpers.product_price).mul(BN(helpers.QTY_10));
 
           await utils.mintTokens(
             'contractBSNTokenDeposit',
@@ -5027,10 +4945,11 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Remaining QTY for Token Supply should be ZERO', async () => {
-          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
-            TOKEN_SUPPLY_ID,
-            users.seller.address
-          );
+          let remainingQtyInContract =
+            await contractVoucherKernel.getRemQtyForSupply(
+              TOKEN_SUPPLY_ID,
+              users.seller.address
+            );
 
           assert.isTrue(
             remainingQtyInContract.eq(BN(0)),
@@ -5084,9 +5003,7 @@ describe('Cashier withdrawals ', () => {
               ''
             );
 
-          tokensToMintBuyer = BN(helpers.product_price).mul(
-            BN(helpers.QTY_10)
-          );
+          tokensToMintBuyer = BN(helpers.product_price).mul(BN(helpers.QTY_10));
 
           await utils.mintTokens(
             'contractBSNTokenPrice',
@@ -5164,10 +5081,11 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Remaining QTY for Token Supply should be ZERO', async () => {
-          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
-            TOKEN_SUPPLY_ID,
-            users.seller.address
-          );
+          let remainingQtyInContract =
+            await contractVoucherKernel.getRemQtyForSupply(
+              TOKEN_SUPPLY_ID,
+              users.seller.address
+            );
 
           assert.isTrue(
             remainingQtyInContract.eq(BN(0)),
@@ -5286,9 +5204,15 @@ describe('Cashier withdrawals ', () => {
         );
       });
 
+      it('Disaster State should be falsy value initially', async () => {
+        const disasterState = await contractCashier.isDisasterStateSet();
+
+        assert.isFalse(disasterState);
+      });
+
       it('Admin should be able to set the Cashier at disaster state', async () => {
-        const tx = await contractCashier.setDisasterState();
-        const txReceipt = await tx.wait();
+        let tx = await contractCashier.setDisasterState();
+        let txReceipt = await tx.wait();
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -5298,6 +5222,25 @@ describe('Cashier withdrawals ', () => {
             assert.equal(ev._triggeredBy, users.deployer.address);
           }
         );
+
+        const cashier = await contractCashier.attach(
+          await contractBosonRouter.getCashierAddress()
+        );
+
+        tx = await cashier.setDisasterState();
+        txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_DISASTER_STATE_SET,
+          (ev) => {
+            assert.isTrue(ev._triggeredBy == users.deployer.address);
+          }
+        );
+
+        const disasterState = await contractCashier.isDisasterStateSet();
+        assert.isTrue(disasterState);
       });
 
       it('Buyer should be able to withdraw all the funds locked in escrow', async () => {

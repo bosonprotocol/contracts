@@ -55,7 +55,6 @@ async function verifyContracts() {
       address: contracts.br,
       constructorArguments: [
         contracts.voucherKernel,
-        contracts.erc1155erc721,
         contracts.flo,
         contracts.cashier,
       ],

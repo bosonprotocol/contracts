@@ -57,6 +57,39 @@ const ABOVE_ETH_LIMIT = (10 * 10 ** 18).toString();
 const TOKEN_LIMIT = (5 * 10 ** 18).toString();
 const ABOVE_TOKEN_LIMIT = (10 * 10 ** 18).toString();
 
+let PROMISE_DATA_FIELDS = {};
+{
+  let index = 0;
+  let keys = ['promiseId', 'nonce', 'validFrom', 'validTo', 'idx'];
+  for (let key of keys) {
+    PROMISE_DATA_FIELDS[key] = index++;
+  }
+}
+
+let VOUCHER_STATUS_FIELDS = {};
+{
+  let index = 0;
+  let keys = [
+    'status',
+    'isPaymentReleased',
+    'isDepositsReleased',
+    'complainPeriodStart',
+    'cancelFaultPeriodStart',
+  ];
+  for (let key of keys) {
+    VOUCHER_STATUS_FIELDS[key] = index++;
+  }
+}
+
+let PROMISE_ORDER_FIELDS = {};
+{
+  let index = 0;
+  let keys = ['price', 'depositSe', 'depositBu'];
+  for (let key of keys) {
+    PROMISE_ORDER_FIELDS[key] = index++;
+  }
+}
+
 module.exports = {
   ASSET_VERSION,
   ASSET_TITLE,
@@ -101,4 +134,7 @@ module.exports = {
   ZERO,
   ONE,
   TWO,
+  PROMISE_DATA_FIELDS,
+  VOUCHER_STATUS_FIELDS,
+  PROMISE_ORDER_FIELDS,
 };

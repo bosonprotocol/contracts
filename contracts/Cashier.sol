@@ -22,16 +22,16 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     using Address for address payable;
     using SafeMath for uint256;
 
-    address public voucherKernel;
-    address public bosonRouterAddress;
-    address public tokensContractAddress;
-    bool public disasterState;
+    address private voucherKernel;
+    address private bosonRouterAddress;
+    address private tokensContractAddress;
+    bool private disasterState;
 
     enum PaymentType {PAYMENT, DEPOSIT_SELLER, DEPOSIT_BUYER}
 
-    mapping(address => uint256) public escrow; // both types of deposits AND payments >> can be released token-by-token if checks pass
+    mapping(address => uint256) private escrow; // both types of deposits AND payments >> can be released token-by-token if checks pass
     // slashedDepositPool can be obtained through getEscrowAmount(poolAddress)
-    mapping(address => mapping(address => uint256)) public escrowTokens; //token address => mgsSender => amount
+    mapping(address => mapping(address => uint256)) private escrowTokens; //token address => mgsSender => amount
 
     uint256 internal constant CANCELFAULT_SPLIT = 2; //for POC purposes, this is hardcoded; e.g. each party gets depositSe / 2
 
@@ -178,7 +178,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         (
             voucherDetails.currStatus.status,
             voucherDetails.currStatus.isPaymentReleased,
-            voucherDetails.currStatus.isDepositsReleased
+            voucherDetails.currStatus.isDepositsReleased,
+            ,
         ) = IVoucherKernel(voucherKernel).getVoucherStatus(
             voucherDetails.tokenIdVoucher
         );
@@ -1048,6 +1049,53 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     // // // // // // // //
     // GETTERS
     // // // // // // // //
+
+    /**
+     * @notice Get the address of Voucher Kernel contract
+     * @return Address of Voucher Kernel contract
+     */
+    function getVoucherKernelAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return voucherKernel;
+    }
+
+    /**
+     * @notice Get the address of Boson Router contract
+     * @return Address of Boson Router contract
+     */
+    function getBosonRouterAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return bosonRouterAddress;
+    }
+
+    /**
+     * @notice Get the address of ERC1155ERC721 contract
+     * @return Address of ERC1155ERC721 contract
+     */
+    function getTokensContractAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return tokensContractAddress;
+    }
+
+    /**
+     * @notice Ensure whether or not contract has been set to disaster state 
+     * @return disasterState
+     */
+    function isDisasterStateSet() external view override returns(bool) {
+        return disasterState;
+    }
 
     /**
      * @notice Get the amount in escrow of an address
