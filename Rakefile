@@ -69,6 +69,19 @@ namespace :dependencies do
 end
 
 namespace :contracts do
+  desc "Run all contracts (must be manually stopped)"
+  task :run, [:port, :account_keys_file] =>
+    [:'ganache:start'] do |_, args|
+    Ganache.on_available_port(
+      allow_unlimited_contract_size: true) do |ganache|
+      sh({
+           "HOST" => "127.0.0.1",
+           "PORT" => "#{ganache.port}",
+           "ACCOUNT_KEYS_FILE" => "#{ganache.account_keys_file}"
+         }, 'npm', 'run', 'contracts:run')
+    end
+  end
+
   desc "Compile all contracts"
   task :compile => [:'dependencies:install'] do
     sh('npm', 'run', 'contracts:compile')
