@@ -28,8 +28,6 @@ contract BosonRouter is
 
     mapping(address => uint256) private correlationIds; // whenever a seller or a buyer interacts with the smart contract, a personal txID is emitted from an event.
 
-    using SafeMath for uint256;
-
     address private cashierAddress;
     address private voucherKernel;
     address private fundLimitsOracle;
