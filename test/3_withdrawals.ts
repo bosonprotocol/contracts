@@ -14,12 +14,14 @@ import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
 const eventNames = eventUtils.eventNames;
 
-let ERC1155ERC721: ContractFactory;
-let VoucherKernel: ContractFactory;
-let Cashier: ContractFactory;
-let BosonRouter: ContractFactory;
-let MockERC20Permit: ContractFactory;
-let FundLimitsOracle: ContractFactory;
+import {BosonRouter, ERC1155ERC721, VoucherKernel, Cashier, FundLimitsOracle, MockERC20Permit} from '../typechain'
+
+let ERC1155ERC721_Factory: ContractFactory;
+let VoucherKernel_Factory: ContractFactory;
+let Cashier_Factory: ContractFactory;
+let BosonRouter_Factory: ContractFactory;
+let FundLimitsOracle_Factory: ContractFactory;
+let MockERC20Permit_Factory: ContractFactory;
 
 const BN = ethers.BigNumber.from;
 
@@ -34,21 +36,21 @@ describe('Cashier withdrawals ', () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
 
-    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
-    VoucherKernel = await ethers.getContractFactory('VoucherKernel');
-    Cashier = await ethers.getContractFactory('Cashier');
-    BosonRouter = await ethers.getContractFactory('BosonRouter');
-    FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
-    MockERC20Permit = await ethers.getContractFactory('MockERC20Permit');
+    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
+    Cashier_Factory = await ethers.getContractFactory('Cashier');
+    BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
+    FundLimitsOracle_Factory = await ethers.getContractFactory('FundLimitsOracle');
+    MockERC20Permit_Factory = await ethers.getContractFactory('MockERC20Permit');
   });
 
-  let contractERC1155ERC721: Contract,
-    contractVoucherKernel: Contract,
-    contractCashier: Contract,
-    contractBosonRouter: Contract,
-    contractBSNTokenPrice: Contract,
-    contractBSNTokenDeposit: Contract,
-    contractFundLimitsOracle: Contract;
+  let contractERC1155ERC721: Contract & ERC1155ERC721,
+    contractVoucherKernel: Contract & VoucherKernel,
+    contractCashier: Contract & Cashier,
+    contractBosonRouter: Contract & BosonRouter,
+    contractBSNTokenPrice: Contract & MockERC20Permit,
+    contractBSNTokenDeposit: Contract & MockERC20Permit,
+    contractFundLimitsOracle: Contract & FundLimitsOracle;
 
   let distributedAmounts = {
     buyerAmount: BN(0),
@@ -59,27 +61,27 @@ describe('Cashier withdrawals ', () => {
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle = await FundLimitsOracle.deploy();
-    contractERC1155ERC721 = await ERC1155ERC721.deploy();
-    contractVoucherKernel = await VoucherKernel.deploy(
+    contractFundLimitsOracle = await FundLimitsOracle_Factory.deploy() as Contract & FundLimitsOracle;
+    contractERC1155ERC721 = await ERC1155ERC721_Factory.deploy() as Contract & ERC1155ERC721;
+    contractVoucherKernel = await VoucherKernel_Factory.deploy(
       contractERC1155ERC721.address
-    );
-    contractCashier = await Cashier.deploy(contractVoucherKernel.address);
-    contractBosonRouter = await BosonRouter.deploy(
+    ) as Contract & VoucherKernel;
+    contractCashier = await Cashier_Factory.deploy(contractVoucherKernel.address) as Contract & Cashier;
+    contractBosonRouter = await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
-    );
+    ) as Contract & BosonRouter;
 
-    contractBSNTokenPrice = await MockERC20Permit.deploy(
+    contractBSNTokenPrice = await MockERC20Permit_Factory.deploy(
       'BosonTokenPrice',
       'BPRC'
-    );
+    ) as Contract & MockERC20Permit;
 
-    contractBSNTokenDeposit = await MockERC20Permit.deploy(
+    contractBSNTokenDeposit = await MockERC20Permit_Factory.deploy(
       'BosonTokenDeposit',
       'BDEP'
-    );
+    ) as Contract & MockERC20Permit;
 
     await contractFundLimitsOracle.deployed();
     await contractERC1155ERC721.deployed();
@@ -91,7 +93,7 @@ describe('Cashier withdrawals ', () => {
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
-      'true'
+      true
     );
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
@@ -263,7 +265,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -315,7 +317,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -369,7 +371,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -424,7 +426,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -475,7 +477,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -528,7 +530,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -581,7 +583,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -633,7 +635,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -690,7 +692,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -747,7 +749,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -802,7 +804,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -1005,7 +1007,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -1084,7 +1086,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -1163,7 +1165,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -1243,7 +1245,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -1318,7 +1320,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -1396,7 +1398,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -1471,7 +1473,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -1548,7 +1550,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -1629,7 +1631,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -1710,7 +1712,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -1789,7 +1791,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -1929,7 +1931,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -1991,7 +1993,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -2053,7 +2055,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -2116,7 +2118,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -2174,7 +2176,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -2235,7 +2237,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -2292,7 +2294,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -2352,7 +2354,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -2416,7 +2418,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -2480,7 +2482,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -2542,7 +2544,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -2657,7 +2659,7 @@ describe('Cashier withdrawals ', () => {
         // Payment should have been returned to buyer
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
@@ -2691,7 +2693,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -2731,7 +2733,7 @@ describe('Cashier withdrawals ', () => {
         // Payment should have been returned to buyer
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
@@ -2765,7 +2767,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -2805,7 +2807,7 @@ describe('Cashier withdrawals ', () => {
         // Payment should have been returned to buyer
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
@@ -2839,7 +2841,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -2880,7 +2882,7 @@ describe('Cashier withdrawals ', () => {
         // Payment should have been returned to buyer
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
@@ -2914,7 +2916,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -2950,7 +2952,7 @@ describe('Cashier withdrawals ', () => {
         // Payment should have been returned to buyer
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
@@ -2984,7 +2986,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -3023,7 +3025,7 @@ describe('Cashier withdrawals ', () => {
         // Payment should have been returned to buyer
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
@@ -3057,7 +3059,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -3093,7 +3095,7 @@ describe('Cashier withdrawals ', () => {
         // Payment should have been sent to seller
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
@@ -3127,7 +3129,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -3165,7 +3167,7 @@ describe('Cashier withdrawals ', () => {
         // Payment should have been sent to seller
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
@@ -3199,7 +3201,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -3241,7 +3243,7 @@ describe('Cashier withdrawals ', () => {
         // Payment should have been sent to seller
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
@@ -3275,7 +3277,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -3317,7 +3319,7 @@ describe('Cashier withdrawals ', () => {
         // Payment should have been sent to seller
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
@@ -3351,7 +3353,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -3391,7 +3393,7 @@ describe('Cashier withdrawals ', () => {
         // Payment should have been sent to seller
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
@@ -3425,7 +3427,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -3535,7 +3537,7 @@ describe('Cashier withdrawals ', () => {
         //Deposits in ETH
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -3573,7 +3575,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -3630,7 +3632,7 @@ describe('Cashier withdrawals ', () => {
         //Deposits in ETH
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -3668,7 +3670,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -3725,7 +3727,7 @@ describe('Cashier withdrawals ', () => {
         //Deposits in ETH
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -3763,7 +3765,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -3821,7 +3823,7 @@ describe('Cashier withdrawals ', () => {
         //Deposits in ETH
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -3859,7 +3861,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -3912,7 +3914,7 @@ describe('Cashier withdrawals ', () => {
         //Deposits in ETH
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -3950,7 +3952,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -4006,7 +4008,7 @@ describe('Cashier withdrawals ', () => {
         //Deposits in ETH
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -4044,7 +4046,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -4097,7 +4099,7 @@ describe('Cashier withdrawals ', () => {
         //Deposits in ETH
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -4135,7 +4137,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -4190,7 +4192,7 @@ describe('Cashier withdrawals ', () => {
         //Deposits in ETH
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -4228,7 +4230,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -4287,7 +4289,7 @@ describe('Cashier withdrawals ', () => {
         //Deposits in ETH
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -4325,7 +4327,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -4384,7 +4386,7 @@ describe('Cashier withdrawals ', () => {
         //Deposits in ETH
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -4422,7 +4424,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -4478,7 +4480,7 @@ describe('Cashier withdrawals ', () => {
         //Deposits in ETH
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -4516,7 +4518,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
@@ -4605,7 +4607,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
@@ -4753,7 +4755,7 @@ describe('Cashier withdrawals ', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            MockERC20Permit,
+            MockERC20Permit_Factory,
             eventNames.TRANSFER,
             (ev) => {
               assert.equal(ev.to, users.seller.address, 'Incorrect Payee');
@@ -4914,7 +4916,7 @@ describe('Cashier withdrawals ', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            MockERC20Permit,
+            MockERC20Permit_Factory,
             eventNames.TRANSFER,
             (ev) => {
               assert.equal(ev.to, users.seller.address, 'Incorrect Payee');
@@ -5068,7 +5070,7 @@ describe('Cashier withdrawals ', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            Cashier,
+            Cashier_Factory,
             eventNames.LOG_WITHDRAWAL,
             (ev) => {
               assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
@@ -5227,7 +5229,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_DISASTER_STATE_SET,
           (ev) => {
             assert.equal(ev._triggeredBy, users.deployer.address);
@@ -5243,7 +5245,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_DISASTER_STATE_SET,
           (ev) => {
             assert.isTrue(ev._triggeredBy == users.deployer.address);
@@ -5267,7 +5269,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAW_ETH_ON_DISASTER,
           (ev) => {
             assert.equal(
@@ -5294,7 +5296,7 @@ describe('Cashier withdrawals ', () => {
         const txReceipt = await tx.wait();
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAW_ETH_ON_DISASTER,
           (ev) => {
             assert.equal(
@@ -5388,7 +5390,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_DISASTER_STATE_SET,
           (ev) => {
             assert.equal(ev._triggeredBy, users.deployer.address);
@@ -5414,7 +5416,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           receiptTknPrice,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAW_TOKENS_ON_DISASTER,
           (ev) => {
             assert.equal(
@@ -5438,7 +5440,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           receiptTknDeposit,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAW_TOKENS_ON_DISASTER,
           (ev) => {
             assert.equal(
@@ -5468,7 +5470,7 @@ describe('Cashier withdrawals ', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_WITHDRAW_TOKENS_ON_DISASTER,
           (ev) => {
             assert.equal(

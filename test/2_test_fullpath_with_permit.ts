@@ -1,5 +1,5 @@
 import {ethers} from 'hardhat';
-import {Signer, ContractFactory, Contract} from 'ethers';
+import {Signer, ContractFactory, Contract, BigNumber} from 'ethers';
 
 import {assert, expect} from 'chai';
 import {ecsign} from 'ethereumjs-util';
@@ -13,12 +13,14 @@ import UtilsBuilder from '../testHelpers/utilsBuilder';
 
 import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
 
-let ERC1155ERC721: ContractFactory;
-let VoucherKernel: ContractFactory;
-let Cashier: ContractFactory;
-let BosonRouter: ContractFactory;
-let FundLimitsOracle: ContractFactory;
-let MockERC20Permit: ContractFactory;
+import {BosonRouter, ERC1155ERC721, VoucherKernel, Cashier, FundLimitsOracle, MockERC20Permit} from '../typechain'
+
+let ERC1155ERC721_Factory: ContractFactory;
+let VoucherKernel_Factory: ContractFactory;
+let Cashier_Factory: ContractFactory;
+let BosonRouter_Factory: ContractFactory;
+let FundLimitsOracle_Factory: ContractFactory;
+let MockERC20Permit_Factory: ContractFactory;
 
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
@@ -35,21 +37,21 @@ describe('Cashier and VoucherKernel', () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
 
-    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
-    VoucherKernel = await ethers.getContractFactory('VoucherKernel');
-    Cashier = await ethers.getContractFactory('Cashier');
-    BosonRouter = await ethers.getContractFactory('BosonRouter');
-    FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
-    MockERC20Permit = await ethers.getContractFactory('MockERC20Permit');
+    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
+    Cashier_Factory = await ethers.getContractFactory('Cashier');
+    BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
+    FundLimitsOracle_Factory = await ethers.getContractFactory('FundLimitsOracle');
+    MockERC20Permit_Factory = await ethers.getContractFactory('MockERC20Permit');
   });
 
-  let contractERC1155ERC721: Contract,
-    contractVoucherKernel: Contract,
-    contractCashier: Contract,
-    contractBosonRouter: Contract,
+  let contractERC1155ERC721: Contract & ERC1155ERC721,
+    contractVoucherKernel: Contract & VoucherKernel,
+    contractCashier: Contract & Cashier,
+    contractBosonRouter: Contract & BosonRouter,
     contractBSNTokenPrice: Contract,
     contractBSNTokenDeposit: Contract,
-    contractFundLimitsOracle: Contract;
+    contractFundLimitsOracle: Contract & FundLimitsOracle;
   let tokenSupplyKey, tokenVoucherKey, tokenVoucherKey1;
 
   const ZERO = BN(0);
@@ -75,27 +77,27 @@ describe('Cashier and VoucherKernel', () => {
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle = await FundLimitsOracle.deploy();
-    contractERC1155ERC721 = await ERC1155ERC721.deploy();
-    contractVoucherKernel = await VoucherKernel.deploy(
+    contractFundLimitsOracle = await FundLimitsOracle_Factory.deploy() as Contract & FundLimitsOracle;
+    contractERC1155ERC721 = await ERC1155ERC721_Factory.deploy() as Contract & ERC1155ERC721;
+    contractVoucherKernel = await VoucherKernel_Factory.deploy(
       contractERC1155ERC721.address
-    );
-    contractCashier = await Cashier.deploy(contractVoucherKernel.address);
-    contractBosonRouter = await BosonRouter.deploy(
+    ) as Contract & VoucherKernel;
+    contractCashier = await Cashier_Factory.deploy(contractVoucherKernel.address) as Contract & Cashier;
+    contractBosonRouter = await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
-    );
+    ) as Contract & BosonRouter;
 
-    contractBSNTokenPrice = await MockERC20Permit.deploy(
+    contractBSNTokenPrice = await MockERC20Permit_Factory.deploy(
       'BosonTokenPrice',
       'BPRC'
-    );
+    ) as Contract & MockERC20Permit;
 
-    contractBSNTokenDeposit = await MockERC20Permit.deploy(
+    contractBSNTokenDeposit = await MockERC20Permit_Factory.deploy(
       'BosonTokenDeposit',
       'BDEP'
-    );
+    ) as Contract & MockERC20Permit;
 
     await contractFundLimitsOracle.deployed();
     await contractERC1155ERC721.deployed();
@@ -107,7 +109,7 @@ describe('Cashier and VoucherKernel', () => {
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
-      'true'
+      true
     );
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
@@ -140,7 +142,7 @@ describe('Cashier and VoucherKernel', () => {
   }
 
   describe('TOKEN SUPPLY CREATION (Voucher batch creation)', () => {
-    let remQty = constants.QTY_10;
+    let remQty = constants.QTY_10 as number | string;
     const vouchersToBuy = 5;
 
     const paymentMethods = {
@@ -176,7 +178,7 @@ describe('Cashier and VoucherKernel', () => {
         );
         assert.equal(
           correlationId.toString(),
-          0,
+          '0',
           'Seller correlationId is not as expected'
         );
 
@@ -208,7 +210,7 @@ describe('Cashier and VoucherKernel', () => {
 
         assert.equal(
           correlationId.toString(),
-          1,
+          '1',
           'Seller correlationId is not as expected'
         );
       });
@@ -244,9 +246,10 @@ describe('Cashier and VoucherKernel', () => {
             users.seller.address
           );
 
+
         assert.equal(
-          remainingQtyInContract,
-          remQty,
+          remainingQtyInContract.toString(),
+          remQty.toString(),
           'Remaining qty is not correct'
         );
 
@@ -257,10 +260,12 @@ describe('Cashier and VoucherKernel', () => {
               tokenSupplyKey,
               users.seller.address
             );
+            
+          remQty = BN(remQty).sub(1).toString();
 
           assert.equal(
-            remainingQtyInContract,
-            --remQty,
+            remainingQtyInContract.toString(),
+            remQty,
             'Remaining qty is not correct'
           );
         }
@@ -287,7 +292,7 @@ describe('Cashier and VoucherKernel', () => {
 
         assert.equal(
           paymentMethod.toString(),
-          paymentMethods.ETHETH,
+          paymentMethods.ETHETH.toString(),
           'Payment Method ETHETH not set correctly'
         );
         assert.equal(
@@ -422,7 +427,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'Seller correlationId is not as expected'
           );
 
@@ -458,7 +463,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'Seller correlationId is not as expected'
           );
         });
@@ -499,8 +504,8 @@ describe('Cashier and VoucherKernel', () => {
               users.seller.address
             );
           assert.equal(
-            remainingQtyInContract,
-            remQty,
+            remainingQtyInContract.toString(),
+            remQty.toString(),
             'Remaining qty is not correct'
           );
 
@@ -512,9 +517,12 @@ describe('Cashier and VoucherKernel', () => {
                 users.seller.address
               );
 
+          remQty = BN(remQty).sub(1).toString();
+            
+
             assert.equal(
-              remainingQtyInContract,
-              --remQty,
+              remainingQtyInContract.toString(),
+              remQty,
               'Remaining qty is not correct'
             );
           }
@@ -540,7 +548,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             paymentMethod.toString(),
-            paymentMethods.ETHTKN,
+            paymentMethods.ETHTKN.toString(),
             'Payment Method ETHTKN not set correctly'
           );
           assert.equal(
@@ -800,7 +808,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'Seller correlationIds is not as expected'
           );
 
@@ -845,7 +853,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'Seller correlationId is not as expected'
           );
         });
@@ -882,8 +890,8 @@ describe('Cashier and VoucherKernel', () => {
             );
 
           assert.equal(
-            remainingQtyInContract,
-            remQty,
+            remainingQtyInContract.toString(),
+            remQty.toString(),
             'Remaining qty is not correct'
           );
 
@@ -895,9 +903,11 @@ describe('Cashier and VoucherKernel', () => {
                 users.seller.address
               );
 
+              remQty = BN(remQty).sub(1).toString();
+
             assert.equal(
-              remainingQtyInContract,
-              --remQty,
+              remainingQtyInContract.toString(),
+              remQty,
               'Remaining qty is not correct'
             );
           }
@@ -923,7 +933,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             paymentMethod.toString(),
-            paymentMethods.TKNETH,
+            paymentMethods.TKNETH.toString(),
             'Payment Method TKNETH not set correctly'
           );
           assert.equal(
@@ -1069,7 +1079,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'Seller correlationId is not as expected'
           );
 
@@ -1125,7 +1135,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'Seller correlationId is not as expected'
           );
         });
@@ -1165,8 +1175,8 @@ describe('Cashier and VoucherKernel', () => {
             );
 
           assert.equal(
-            remainingQtyInContract,
-            remQty,
+            remainingQtyInContract.toString(),
+            remQty.toString(),
             'Remaining qty is not correct'
           );
 
@@ -1178,9 +1188,12 @@ describe('Cashier and VoucherKernel', () => {
                 users.seller.address
               );
 
+              remQty = BN(remQty).sub(1).toString();
+
+
             assert.equal(
-              remainingQtyInContract,
-              --remQty,
+              remainingQtyInContract.toString(),
+              remQty,
               'Remaining qty is not correct'
             );
           }
@@ -1206,7 +1219,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             paymentMethod.toString(),
-            paymentMethods.TKNTKN,
+            paymentMethods.TKNTKN.toString(),
             'Payment Method TKNTKN not set correctly'
           );
           assert.equal(
@@ -1560,7 +1573,7 @@ describe('Cashier and VoucherKernel', () => {
       );
       assert.equal(
         correlationId.toString(),
-        0,
+        '0',
         'Seller correlationId is not as expected'
       );
 
@@ -1629,7 +1642,7 @@ describe('Cashier and VoucherKernel', () => {
 
         assert.equal(
           correlationId.toString(),
-          0,
+          '0',
           'Buyer correlationId is not as expected'
         );
       });
@@ -1651,7 +1664,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          VoucherKernel,
+          VoucherKernel_Factory,
           eventNames.LOG_VOUCHER_DELIVERED,
           (ev) => {
             assert.equal(ev._issuer, users.seller.address);
@@ -1685,7 +1698,7 @@ describe('Cashier and VoucherKernel', () => {
 
         assert.equal(
           correlationId.toString(),
-          1,
+          '1',
           'Buyer correlationId is not as expected'
         );
       });
@@ -1825,7 +1838,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'Buyer correlationId is not as expected'
           );
         });
@@ -1866,7 +1879,7 @@ describe('Cashier and VoucherKernel', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            VoucherKernel,
+            VoucherKernel_Factory,
             eventNames.LOG_VOUCHER_DELIVERED,
             (ev) => {
               assert.equal(ev._issuer, users.seller.address);
@@ -1900,7 +1913,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'Buyer correlationId is not as expected'
           );
         });
@@ -2092,7 +2105,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'Buyer correlationId is not as expected'
           );
         });
@@ -2165,7 +2178,7 @@ describe('Cashier and VoucherKernel', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            VoucherKernel,
+            VoucherKernel_Factory,
             eventNames.LOG_VOUCHER_DELIVERED,
             (ev) => {
               assert.equal(ev._issuer, users.seller.address);
@@ -2199,7 +2212,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'Buyer correlationId is not as expected'
           );
         });
@@ -2448,7 +2461,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'Buyer correlationId is not as expected'
           );
         });
@@ -2496,7 +2509,7 @@ describe('Cashier and VoucherKernel', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            VoucherKernel,
+            VoucherKernel_Factory,
             eventNames.LOG_VOUCHER_DELIVERED,
             (ev) => {
               assert.equal(ev._issuer, users.seller.address);
@@ -2532,7 +2545,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'Buyer correlationId is not as expected'
           );
         });
@@ -2784,7 +2797,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'Buyer correlationId is not as expected'
           );
         });
@@ -2824,7 +2837,7 @@ describe('Cashier and VoucherKernel', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            VoucherKernel,
+            VoucherKernel_Factory,
             eventNames.LOG_VOUCHER_DELIVERED,
             (ev) => {
               assert.equal(ev._issuer, users.seller.address);
@@ -2860,7 +2873,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'Buyer correlationId is not as expected'
           );
         });
@@ -3283,7 +3296,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          ERC1155ERC721,
+          ERC1155ERC721_Factory,
           eventNames.TRANSFER_SINGLE,
           (ev) => {
             assert.isTrue(ev._operator === users.other1.address);
@@ -3327,7 +3340,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          ERC1155ERC721,
+          ERC1155ERC721_Factory,
           eventNames.TRANSFER_SINGLE,
           (ev) => {
             assert.equal(ev._from, users.other1.address);
@@ -3375,7 +3388,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          ERC1155ERC721,
+          ERC1155ERC721_Factory,
           eventNames.TRANSFER_BATCH,
           (ev) => {
             assert.equal(ev._from, users.other1.address);
@@ -3424,7 +3437,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          ERC1155ERC721,
+          ERC1155ERC721_Factory,
           eventNames.TRANSFER_BATCH,
           (ev) => {
             assert.equal(ev._from, users.other1.address);
@@ -3495,7 +3508,7 @@ describe('Cashier and VoucherKernel', () => {
         );
         assert.equal(
           correlationId.toString(),
-          0,
+          '0',
           'New Supply Owner correlationId is not as expected'
         );
 
@@ -3513,7 +3526,7 @@ describe('Cashier and VoucherKernel', () => {
 
         assert.equal(
           correlationId.toString(),
-          1,
+          '1',
           'New Supply Owner correlationId is not as expected'
         );
       });
@@ -3597,7 +3610,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -3646,7 +3659,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          VoucherKernel,
+          VoucherKernel_Factory,
           eventNames.LOG_VOUCHER_FAULT_CANCEL,
           (ev) => {
             assert.isTrue(ev._tokenIdVoucher.eq(voucherID));
@@ -3750,7 +3763,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'New Supply Owner correlationId is not as expected'
           );
 
@@ -3768,7 +3781,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'New Supply Owner correlationId is not as expected'
           );
         });
@@ -3861,7 +3874,7 @@ describe('Cashier and VoucherKernel', () => {
           const txReceipt = await withdrawTx.wait();
           eventUtils.assertEventEmitted(
             txReceipt,
-            Cashier,
+            Cashier_Factory,
             eventNames.LOG_WITHDRAWAL,
             (ev) => {
               assert.equal(ev._payee, users.other2.address, 'Incorrect Payee');
@@ -4027,7 +4040,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'New Supply Owner correlationId is not as expected'
           );
 
@@ -4045,7 +4058,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            "1",
             'New Supply Owner correlationId is not as expected'
           );
         });
@@ -4195,7 +4208,7 @@ describe('Cashier and VoucherKernel', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            VoucherKernel,
+            VoucherKernel_Factory,
             eventNames.LOG_VOUCHER_FAULT_CANCEL,
             (ev) => {
               assert.isTrue(ev._tokenIdVoucher.eq(voucherID));
@@ -4284,7 +4297,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'New Supply Owner correlationId is not as expected'
           );
 
@@ -4302,7 +4315,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'New Supply Owner correlationId is not as expected'
           );
         });
@@ -4401,7 +4414,7 @@ describe('Cashier and VoucherKernel', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            Cashier,
+            Cashier_Factory,
             eventNames.LOG_WITHDRAWAL,
             (ev) => {
               utils.calcTotalAmountToRecipients(
@@ -4461,7 +4474,7 @@ describe('Cashier and VoucherKernel', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            VoucherKernel,
+            VoucherKernel_Factory,
             eventNames.LOG_VOUCHER_FAULT_CANCEL,
             (ev) => {
               assert.isTrue(ev._tokenIdVoucher.eq(voucherID));
@@ -4554,7 +4567,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          ERC1155ERC721,
+          ERC1155ERC721_Factory,
           eventNames.TRANSFER,
           (ev) => {
             assert.equal(ev._from, users.other1.address);
@@ -4596,7 +4609,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          ERC1155ERC721,
+          ERC1155ERC721_Factory,
           eventNames.TRANSFER,
           (ev) => {
             assert.equal(ev._from, users.other1.address);
@@ -4642,7 +4655,7 @@ describe('Cashier and VoucherKernel', () => {
         );
         assert.equal(
           correlationId.toString(),
-          0,
+          '0',
           'New Voucher Owner correlationId is not as expected'
         );
 
@@ -4658,7 +4671,7 @@ describe('Cashier and VoucherKernel', () => {
         );
         assert.equal(
           correlationId.toString(),
-          1,
+          '1',
           'New Voucher Owner correlationId is not as expected'
         );
       });
@@ -4743,7 +4756,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -4929,7 +4942,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'New Voucher Owner correlationId is not as expected'
           );
 
@@ -4945,7 +4958,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'New Voucher Owner correlationId is not as expected'
           );
         });
@@ -5083,7 +5096,7 @@ describe('Cashier and VoucherKernel', () => {
           const txReceipt = await withdrawTx.wait();
           eventUtils.assertEventEmitted(
             txReceipt,
-            Cashier,
+            Cashier_Factory,
             eventNames.LOG_WITHDRAWAL,
             (ev) => {
               assert.equal(ev._payee, users.other2.address, 'Incorrect Payee');
@@ -5277,7 +5290,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'New Voucher Owner correlationId is not as expected'
           );
 
@@ -5293,7 +5306,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'New Voucher Owner correlationId is not as expected'
           );
         });
@@ -5612,7 +5625,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'New Voucher Owner correlationId is not as expected'
           );
 
@@ -5628,7 +5641,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'New Voucher Owner correlationId is not as expected'
           );
         });
@@ -5780,7 +5793,7 @@ describe('Cashier and VoucherKernel', () => {
           //Deposits in ETH
           eventUtils.assertEventEmitted(
             txReceipt,
-            Cashier,
+            Cashier_Factory,
             eventNames.LOG_WITHDRAWAL,
             (ev) => {
               utils.calcTotalAmountToRecipients(

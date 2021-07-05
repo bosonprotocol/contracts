@@ -1,5 +1,5 @@
 import {ethers} from 'hardhat';
-import {Signer, ContractFactory, Contract} from 'ethers';
+import {Signer, ContractFactory, Contract, BigNumber} from 'ethers';
 
 // later consider using
 // https://github.com/OpenZeppelin/openzeppelin-test-helpers
@@ -16,24 +16,26 @@ import * as eventUtils from '../testHelpers/events';
 const eventNames = eventUtils.eventNames;
 import fnSignatures from '../testHelpers/functionSignatures';
 
-let ERC1155ERC721: ContractFactory;
-let VoucherKernel: ContractFactory;
-let Cashier: ContractFactory;
-let BosonRouter: ContractFactory;
-let FundLimitsOracle: ContractFactory;
-let MockBosonRouter: ContractFactory;
+import {BosonRouter, ERC1155ERC721, VoucherKernel, Cashier, FundLimitsOracle, MockBosonRouter} from '../typechain'
+
+let ERC1155ERC721_Factory: ContractFactory;
+let VoucherKernel_Factory: ContractFactory;
+let Cashier_Factory: ContractFactory;
+let BosonRouter_Factory: ContractFactory;
+let FundLimitsOracle_Factory: ContractFactory;
+let MockBosonRouter_Factory: ContractFactory;
 
 const BN = ethers.BigNumber.from;
 
 let users;
 
 describe('Voucher tests', () => {
-  let contractERC1155ERC721: Contract,
-    contractVoucherKernel: Contract,
-    contractCashier: Contract,
-    contractBosonRouter: Contract,
-    contractFundLimitsOracle: Contract,
-    contractMockBosonRouter: Contract;
+  let contractERC1155ERC721: Contract & ERC1155ERC721,
+    contractVoucherKernel: Contract & VoucherKernel,
+    contractCashier: Contract & Cashier,
+    contractBosonRouter: Contract & BosonRouter,
+    contractFundLimitsOracle: Contract & FundLimitsOracle,
+    contractMockBosonRouter: Contract & MockBosonRouter;
 
   let tokenSupplyKey1,
     tokenSupplyKey2,
@@ -46,35 +48,35 @@ describe('Voucher tests', () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
 
-    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
-    VoucherKernel = await ethers.getContractFactory('VoucherKernel');
-    Cashier = await ethers.getContractFactory('Cashier');
-    BosonRouter = await ethers.getContractFactory('BosonRouter');
-    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
-    FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
-    MockBosonRouter = await ethers.getContractFactory('MockBosonRouter');
+    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
+    Cashier_Factory = await ethers.getContractFactory('Cashier');
+    BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
+    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    FundLimitsOracle_Factory = await ethers.getContractFactory('FundLimitsOracle');
+    MockBosonRouter_Factory = await ethers.getContractFactory('MockBosonRouter');
   });
 
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle = await FundLimitsOracle.deploy();
-    contractERC1155ERC721 = await ERC1155ERC721.deploy();
-    contractVoucherKernel = await VoucherKernel.deploy(
+    contractFundLimitsOracle = await FundLimitsOracle_Factory.deploy() as Contract & FundLimitsOracle;
+    contractERC1155ERC721 = await ERC1155ERC721_Factory.deploy() as Contract & ERC1155ERC721;
+    contractVoucherKernel = await VoucherKernel_Factory.deploy(
       contractERC1155ERC721.address
-    );
-    contractCashier = await Cashier.deploy(contractVoucherKernel.address);
-    contractBosonRouter = await BosonRouter.deploy(
+    ) as Contract & VoucherKernel;
+    contractCashier = await Cashier_Factory.deploy(contractVoucherKernel.address) as Contract & Cashier;
+    contractBosonRouter = await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
-    );
+    ) as Contract & BosonRouter;
 
-    contractMockBosonRouter = await MockBosonRouter.deploy(
+    contractMockBosonRouter = await MockBosonRouter_Factory.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
-    );
+    ) as Contract & MockBosonRouter;
 
     await contractFundLimitsOracle.deployed();
     await contractERC1155ERC721.deployed();
@@ -85,7 +87,7 @@ describe('Voucher tests', () => {
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
-      'true'
+      true
     );
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
@@ -198,7 +200,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        BosonRouter,
+        BosonRouter_Factory,
         eventNames.LOG_ORDER_CREATED,
         (ev) => {
           assert.isTrue(ev._tokenIdSupply.gt(constants.ZERO));
@@ -215,7 +217,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_PROMISE_CREATED,
         (ev) => {
           assert.isTrue(ev._promiseId > constants.ZERO_BYTES);
@@ -231,7 +233,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        ERC1155ERC721,
+        ERC1155ERC721_Factory,
         eventNames.TRANSFER_SINGLE,
         (ev) => {
           assert.isTrue(ev._operator === contractVoucherKernel.address);
@@ -244,8 +246,8 @@ describe('Voucher tests', () => {
 
       //Check BosonRouter state
       assert.equal(
-        await contractBosonRouter.getCorrelationId(users.seller.address),
-        1,
+        (await contractBosonRouter.getCorrelationId(users.seller.address)).toString(),
+        '1',
         'Correlation Id incorrect'
       );
 
@@ -258,22 +260,24 @@ describe('Voucher tests', () => {
         promiseId1,
         'Promise Id incorrect'
       );
-      assert.isTrue(
-        promiseData[constants.PROMISE_DATA_FIELDS.nonce].eq(constants.ONE),
+
+      assert.equal(
+        promiseData[constants.PROMISE_DATA_FIELDS.nonce].toString(), constants.ONE.toString(),
         'Nonce is incorrect'
       );
-      assert.isTrue(
-        promiseData[constants.PROMISE_DATA_FIELDS.validFrom].eq(
-          BN(constants.PROMISE_VALID_FROM)
-        )
+      assert.equal(
+        promiseData[constants.PROMISE_DATA_FIELDS.validFrom].toString(),
+          constants.PROMISE_VALID_FROM.toString()
+        
       );
-      assert.isTrue(
-        promiseData[constants.PROMISE_DATA_FIELDS.validTo].eq(
-          BN(constants.PROMISE_VALID_TO)
-        )
+
+      assert.equal(
+        promiseData[constants.PROMISE_DATA_FIELDS.validTo].toString(),
+          constants.PROMISE_VALID_TO.toString()
+        
       );
-      assert.isTrue(
-        promiseData[constants.PROMISE_DATA_FIELDS.idx].eq(constants.ZERO)
+      assert.equal(
+        promiseData[constants.PROMISE_DATA_FIELDS.idx].toString(), constants.ZERO.toString()
       );
 
       const promiseSeller = await contractVoucherKernel.getSupplyHolder(
@@ -348,7 +352,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        BosonRouter,
+        BosonRouter_Factory,
         eventNames.LOG_ORDER_CREATED,
         (ev) => {
           assert.isTrue(ev._tokenIdSupply.gt(constants.ZERO));
@@ -379,7 +383,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt2,
-        BosonRouter,
+        BosonRouter_Factory,
         eventNames.LOG_ORDER_CREATED,
         (ev) => {
           assert.isTrue(ev._tokenIdSupply.gt(constants.ZERO));
@@ -394,7 +398,7 @@ describe('Voucher tests', () => {
       let promiseId2;
       eventUtils.assertEventEmitted(
         txReceipt2,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_PROMISE_CREATED,
         (ev) => {
           assert.isTrue(ev._promiseId > constants.ZERO_BYTES);
@@ -410,7 +414,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt2,
-        ERC1155ERC721,
+        ERC1155ERC721_Factory,
         eventNames.TRANSFER_SINGLE,
         (ev) => {
           assert.isTrue(ev._operator === contractVoucherKernel.address);
@@ -420,6 +424,7 @@ describe('Voucher tests', () => {
           assert.isTrue(ev._value.eq(constants.ORDER_QUANTITY2));
         }
       );
+
 
       //Check BosonRouter state
       assert.isTrue(
@@ -439,22 +444,22 @@ describe('Voucher tests', () => {
         promiseId2,
         'Promise Id incorrect'
       );
-      assert.isTrue(
-        promiseData[constants.PROMISE_DATA_FIELDS.nonce].eq(constants.TWO),
+      assert.equal(
+        promiseData[constants.PROMISE_DATA_FIELDS.nonce].toString(), constants.TWO.toString(),
         'Nonce is incorrect'
       );
-      assert.isTrue(
-        promiseData[constants.PROMISE_DATA_FIELDS.validFrom].eq(
-          BN(constants.PROMISE_VALID_FROM)
-        )
+      assert.equal(
+        promiseData[constants.PROMISE_DATA_FIELDS.validFrom].toString(), 
+        constants.PROMISE_VALID_FROM.toString()
+        
       );
-      assert.isTrue(
-        promiseData[constants.PROMISE_DATA_FIELDS.validTo].eq(
-          BN(constants.PROMISE_VALID_TO)
-        )
+      assert.equal(
+        promiseData[constants.PROMISE_DATA_FIELDS.validTo].toString(), 
+        constants.PROMISE_VALID_TO.toString()
+        
       );
-      assert.isTrue(
-        promiseData[constants.PROMISE_DATA_FIELDS.idx].eq(constants.ONE)
+      assert.equal(
+        promiseData[constants.PROMISE_DATA_FIELDS.idx].toString(), constants.ONE.toString()
       );
 
       const promiseSeller = await contractVoucherKernel.getSupplyHolder(
@@ -531,7 +536,7 @@ describe('Voucher tests', () => {
       const txReceipt = await txOrder.wait();
       eventUtils.assertEventEmitted(
         txReceipt,
-        BosonRouter,
+        BosonRouter_Factory,
         eventNames.LOG_ORDER_CREATED,
         (ev) => {
           assert.isTrue(ev._tokenIdSupply.gt(constants.ZERO));
@@ -541,7 +546,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_PROMISE_CREATED,
         (ev) => {
           assert.isTrue(ev._promiseId > 0);
@@ -568,7 +573,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt2,
-        BosonRouter,
+        BosonRouter_Factory,
         eventNames.LOG_ORDER_CREATED,
         (ev) => {
           assert.isTrue(ev._tokenIdSupply.gt(constants.ZERO));
@@ -578,7 +583,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt2,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_PROMISE_CREATED,
         (ev) => {
           assert.isTrue(ev._promiseId > 0);
@@ -605,7 +610,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_VOUCHER_DELIVERED,
         (ev) => {
           assert.isTrue(ev._tokenIdSupply.eq(tokenSupplyKey1));
@@ -621,7 +626,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        ERC1155ERC721,
+        ERC1155ERC721_Factory,
         eventNames.TRANSFER_SINGLE,
         (ev) => {
           assert.isTrue(ev._operator === contractVoucherKernel.address);
@@ -634,7 +639,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        ERC1155ERC721,
+        ERC1155ERC721_Factory,
         eventNames.TRANSFER,
         (ev) => {
           assert.isTrue(ev._from === constants.ZERO_ADDRESS);
@@ -645,8 +650,8 @@ describe('Voucher tests', () => {
 
       //Check BosonRouter state
       assert.equal(
-        await contractBosonRouter.getCorrelationId(users.buyer.address),
-        1,
+        (await contractBosonRouter.getCorrelationId(users.buyer.address)).toString(),
+        '1',
         'Correlation Id incorrect'
       );
 
@@ -705,7 +710,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_VOUCHER_DELIVERED,
         (ev) => {
           assert.isTrue(ev._tokenIdSupply.eq(tokenSupplyKey2));
@@ -721,7 +726,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        ERC1155ERC721,
+        ERC1155ERC721_Factory,
         eventNames.TRANSFER_SINGLE,
         (ev) => {
           assert.isTrue(ev._operator === contractVoucherKernel.address);
@@ -734,7 +739,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        ERC1155ERC721,
+        ERC1155ERC721_Factory,
         eventNames.TRANSFER,
         (ev) => {
           assert.isTrue(ev._from === constants.ZERO_ADDRESS);
@@ -745,8 +750,8 @@ describe('Voucher tests', () => {
 
       //Check BosonRouter state
       assert.equal(
-        await contractBosonRouter.getCorrelationId(users.buyer.address),
-        1,
+        (await contractBosonRouter.getCorrelationId(users.buyer.address)).toString(),
+        '1',
         'Correlation Id incorrect'
       );
 
@@ -874,7 +879,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        BosonRouter,
+        BosonRouter_Factory,
         eventNames.LOG_ORDER_CREATED,
         (ev) => {
           tokenSupplyKey1 = ev._tokenIdSupply;
@@ -884,7 +889,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_PROMISE_CREATED,
         (ev) => {
           promiseId1 = ev._promiseId;
@@ -905,7 +910,7 @@ describe('Voucher tests', () => {
       txReceipt = await txFillOrder.wait();
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_VOUCHER_DELIVERED,
         (ev) => {
           tokenVoucherKey1 = ev._tokenIdVoucher;
@@ -932,7 +937,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        BosonRouter,
+        BosonRouter_Factory,
         eventNames.LOG_ORDER_CREATED,
         (ev) => {
           tokenSupplyKey2 = ev._tokenIdSupply;
@@ -952,7 +957,7 @@ describe('Voucher tests', () => {
       txReceipt = await txFillOrder2.wait();
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_VOUCHER_DELIVERED,
         (ev) => {
           tokenVoucherKey2 = ev._tokenIdVoucher;
@@ -970,7 +975,7 @@ describe('Voucher tests', () => {
       const txReceipt = await txRedeem.wait();
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_VOUCHER_REDEEMED,
         (ev) => {
           assert.isTrue(ev._tokenIdVoucher.eq(tokenVoucherKey1));
@@ -990,10 +995,9 @@ describe('Voucher tests', () => {
       const transactionBlock = await ethers.provider.getBlock(
         txRedeem.blockNumber
       );
-      assert.isTrue(
-        voucherStatus[constants.VOUCHER_STATUS_FIELDS.complainPeriodStart].eq(
-          BN(transactionBlock.timestamp)
-        )
+      assert.equal(
+        voucherStatus[constants.VOUCHER_STATUS_FIELDS.complainPeriodStart].toString(), 
+        transactionBlock.timestamp.toString()
       );
     });
 
@@ -1005,7 +1009,7 @@ describe('Voucher tests', () => {
       // [1000.0000] = hex"80" = 128 = COMMITTED
       assert.equal(
         ethers.utils.hexlify(
-          statusBefore[constants.VOUCHER_STATUS_FIELDS.status]
+          statusBefore[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
         ethers.utils.hexlify(128),
         'initial voucher status not as expected (COMMITTED)'
@@ -1020,7 +1024,7 @@ describe('Voucher tests', () => {
       const txReceipt = await expTx.wait();
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_EXPIRATION_TRIGGERED,
         (ev) => {
           assert.isTrue(ev._tokenIdVoucher.eq(tokenVoucherKey2));
@@ -1036,7 +1040,7 @@ describe('Voucher tests', () => {
       //[1001.0000] = hex"90" = 144 = EXPIRED
       assert.equal(
         ethers.utils.hexlify(
-          voucherStatus[constants.VOUCHER_STATUS_FIELDS.status]
+          voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
         ethers.utils.hexlify(144),
         'end voucher status not as expected (EXPIRED)'
@@ -1057,7 +1061,7 @@ describe('Voucher tests', () => {
       const txReceipt = await txFinalize.wait();
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_FINALIZED_VOUCHER,
         (ev) => {
           assert.isTrue(ev._tokenIdVoucher.eq(tokenVoucherKey1));
@@ -1108,7 +1112,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        BosonRouter,
+        BosonRouter_Factory,
         eventNames.LOG_ORDER_CREATED,
         (ev) => {
           tokenSupplyKey1 = ev._tokenIdSupply;
@@ -1118,7 +1122,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_PROMISE_CREATED,
         (ev) => {
           promiseId1 = ev._promiseId;
@@ -1139,7 +1143,7 @@ describe('Voucher tests', () => {
       txReceipt = await txFillOrder.wait();
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_VOUCHER_DELIVERED,
         (ev) => {
           tokenVoucherKey1 = ev._tokenIdVoucher;
@@ -1171,7 +1175,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        Cashier,
+        Cashier_Factory,
         eventNames.LOG_AMOUNT_DISTRIBUTION,
         (ev) => {
           assert.isTrue(ev._tokenIdVoucher.eq(tokenVoucherKey1));
@@ -1183,7 +1187,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        Cashier,
+        Cashier_Factory,
         eventNames.LOG_WITHDRAWAL,
         (ev) => {
           assert.isTrue(ev._caller === users.deployer.address);
@@ -1194,7 +1198,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_FUNDS_RELEASED,
         (ev) => {
           assert.isTrue(ev._tokenIdVoucher.eq(tokenVoucherKey1));
@@ -1231,37 +1235,38 @@ describe('Voucher tests', () => {
 }); //end of contract
 
 describe('Voucher tests - UNHAPPY PATH', () => {
-  let contractERC1155ERC721: Contract,
-    contractVoucherKernel: Contract,
-    contractCashier: Contract,
-    contractBosonRouter: Contract,
-    contractFundLimitsOracle: Contract;
+  let contractERC1155ERC721: Contract & ERC1155ERC721,
+    contractVoucherKernel: Contract & VoucherKernel,
+    contractCashier: Contract & Cashier,
+    contractBosonRouter: Contract & BosonRouter,
+    contractFundLimitsOracle: Contract & FundLimitsOracle;
   let tokenSupplyKey1, tokenVoucherKey1;
 
   before(async () => {
     const signers = await ethers.getSigners();
     users = new Users(signers);
 
-    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
-    VoucherKernel = await ethers.getContractFactory('VoucherKernel');
-    Cashier = await ethers.getContractFactory('Cashier');
-    BosonRouter = await ethers.getContractFactory('BosonRouter');
-    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
-    FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
+    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
+    Cashier_Factory = await ethers.getContractFactory('Cashier');
+    BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
+    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    FundLimitsOracle_Factory = await ethers.getContractFactory('FundLimitsOracle');
+    MockBosonRouter_Factory = await ethers.getContractFactory('MockBosonRouter');
   });
 
   async function deployContracts() {
-    contractFundLimitsOracle = await FundLimitsOracle.deploy();
-    contractERC1155ERC721 = await ERC1155ERC721.deploy();
-    contractVoucherKernel = await VoucherKernel.deploy(
+    contractFundLimitsOracle = await FundLimitsOracle_Factory.deploy() as Contract & FundLimitsOracle;
+    contractERC1155ERC721 = await ERC1155ERC721_Factory.deploy() as Contract & ERC1155ERC721;
+    contractVoucherKernel = await VoucherKernel_Factory.deploy(
       contractERC1155ERC721.address
-    );
-    contractCashier = await Cashier.deploy(contractVoucherKernel.address);
-    contractBosonRouter = await BosonRouter.deploy(
+    ) as Contract & VoucherKernel;
+    contractCashier = await Cashier_Factory.deploy(contractVoucherKernel.address) as Contract & Cashier;
+    contractBosonRouter = await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
-    );
+    ) as Contract & BosonRouter;
 
     await contractFundLimitsOracle.deployed();
     await contractERC1155ERC721.deployed();
@@ -1271,7 +1276,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
-      'true'
+      true
     );
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
@@ -1318,7 +1323,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
     let txReceipt = await txOrder.wait();
     eventUtils.assertEventEmitted(
       txReceipt,
-      BosonRouter,
+      BosonRouter_Factory,
       eventNames.LOG_ORDER_CREATED,
       (ev) => {
         assert.equal(ev._seller, users.seller.address);
@@ -1338,7 +1343,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
     txReceipt = await txFillOrder.wait();
     eventUtils.assertEventEmitted(
       txReceipt,
-      VoucherKernel,
+      VoucherKernel_Factory,
       eventNames.LOG_VOUCHER_DELIVERED,
       (ev) => {
         tokenVoucherKey1 = ev._tokenIdVoucher;
@@ -1359,7 +1364,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       const txReceipt = await txChangePeriod.wait();
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_COMPLAIN_PERIOD_CHANGED,
         (ev) => {
           assert.isTrue(ev._newComplainPeriod.eq(BN(complainPeriodSeconds)));
@@ -1394,7 +1399,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       const txReceipt = await txChangePeriod.wait();
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_CANCEL_FAULT_PERIOD_CHANGED,
         (ev) => {
           assert.isTrue(
@@ -1431,7 +1436,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       const txReceipt = await txRefund.wait();
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_VOUCHER_REFUNDED,
         (ev) => {
           assert.isTrue(ev._tokenIdVoucher.eq(BN(tokenVoucherKey1)));
@@ -1445,16 +1450,16 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       const transactionBlock = await ethers.provider.getBlock(
         txRefund.blockNumber
       );
-      assert.isTrue(
-        voucherStatus[constants.VOUCHER_STATUS_FIELDS.complainPeriodStart].eq(
-          BN(transactionBlock.timestamp)
-        )
+      assert.equal(
+        voucherStatus[constants.VOUCHER_STATUS_FIELDS.complainPeriodStart].toString(),
+        transactionBlock.timestamp.toString()
+        
       );
 
       // [1010.0000] = hex"A0" = 160 = REFUND
       assert.equal(
         ethers.utils.hexlify(
-          voucherStatus[constants.VOUCHER_STATUS_FIELDS.status]
+          voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
         ethers.utils.hexlify(160),
         'end voucher status not as expected (REFUNDED)'
@@ -1470,7 +1475,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       const txReceipt = await complainTx.wait();
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_VOUCHER_COMPLAIN,
         (ev) => {
           assert.isTrue(ev._tokenIdVoucher.eq(BN(tokenVoucherKey1)));
@@ -1484,16 +1489,16 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       const transactionBlock = await ethers.provider.getBlock(
         complainTx.blockNumber
       );
-      assert.isTrue(
+      assert.equal(
         voucherStatus[
           constants.VOUCHER_STATUS_FIELDS.cancelFaultPeriodStart
-        ].eq(BN(transactionBlock.timestamp))
+        ].toString(), transactionBlock.timestamp.toString()
       );
 
       // [1010.1000] = hex"A8" = 168 = REFUND_COMPLAIN
       assert.equal(
         ethers.utils.hexlify(
-          voucherStatus[constants.VOUCHER_STATUS_FIELDS.status]
+          voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
         ethers.utils.hexlify(168),
         'end voucher status not as expected (REFUNDED_COMPLAINED)'
@@ -1517,19 +1522,20 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       const transactionBlock = await ethers.provider.getBlock(
         complainTx.blockNumber
       );
-      assert.isTrue(
+      assert.equal(
         voucherStatusBefore[
           constants.VOUCHER_STATUS_FIELDS.cancelFaultPeriodStart
-        ].eq(BN(transactionBlock.timestamp))
+        ].toString(), transactionBlock.timestamp.toString()
       );
 
+      
       const sellerInstance = contractBosonRouter.connect(users.seller.signer);
       const cancelTx = await sellerInstance.cancelOrFault(tokenVoucherKey1);
 
       const txReceipt = await cancelTx.wait();
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_VOUCHER_FAULT_CANCEL,
         (ev) => {
           assert.isTrue(ev._tokenIdVoucher.eq(BN(tokenVoucherKey1)));
@@ -1542,20 +1548,20 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       );
 
       //Check it didn't go into a code branch that changes the complainPeriodStart
-      assert.isTrue(
+      assert.equal(
         voucherStatusAfter[
           constants.VOUCHER_STATUS_FIELDS.complainPeriodStart
-        ].eq(
+        ].toString(), 
           voucherStatusBefore[
             constants.VOUCHER_STATUS_FIELDS.complainPeriodStart
-          ]
-        )
+          ].toString()
+        
       );
 
       // [1010.1100] = hex"AC" = 172 = REFUND_COMPLAIN_COF
       assert.equal(
         ethers.utils.hexlify(
-          voucherStatusAfter[constants.VOUCHER_STATUS_FIELDS.status]
+          voucherStatusAfter[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
         ethers.utils.hexlify(172),
         'end voucher status not as expected ' +
@@ -1585,7 +1591,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       // [1000.0100] = hex"84" = 132 = CANCELORFAULT
       assert.equal(
         ethers.utils.hexlify(
-          voucherStatus[constants.VOUCHER_STATUS_FIELDS.status]
+          voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
         ethers.utils.hexlify(132),
         'end voucher status not as expected (CANCELORFAULT)'
@@ -1618,7 +1624,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       // [1001.0000] = hex"90" = 144 = EXPIRED
       assert.equal(
         ethers.utils.hexlify(
-          statusAfter[constants.VOUCHER_STATUS_FIELDS.status]
+          statusAfter[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
         ethers.utils.hexlify(144),
         'end voucher status not as expected (EXPIRED)'
@@ -1630,7 +1636,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       let txReceipt = await complainTx.wait();
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_VOUCHER_COMPLAIN,
         (ev) => {
           assert.isTrue(ev._tokenIdVoucher.eq(BN(tokenVoucherKey1)));
@@ -1644,7 +1650,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       // [1001.1000] = hex"98" = 152 = EXPIRED_COMPLAIN
       assert.equal(
         ethers.utils.hexlify(
-          statusAfter[constants.VOUCHER_STATUS_FIELDS.status]
+          statusAfter[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
         ethers.utils.hexlify(152),
         'end voucher status not as expected (EXPIRED_COMPLAINED)'
@@ -1657,7 +1663,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       txReceipt = await cancelTx.wait();
       eventUtils.assertEventEmitted(
         txReceipt,
-        VoucherKernel,
+        VoucherKernel_Factory,
         eventNames.LOG_VOUCHER_FAULT_CANCEL,
         (ev) => {
           assert.isTrue(ev._tokenIdVoucher.eq(BN(tokenVoucherKey1)));
@@ -1671,7 +1677,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       // [1001.1000] = hex"9C" = 156 = EXPIRED_COMPLAINED_CANCELORFAULT
       assert.equal(
         ethers.utils.hexlify(
-          statusAfter[constants.VOUCHER_STATUS_FIELDS.status]
+          statusAfter[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
         ethers.utils.hexlify(156),
         'end voucher status not as expected ' +

@@ -7,6 +7,8 @@ import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
 
+import {BosonRouter, ERC1155ERC721, VoucherKernel, Cashier, FundLimitsOracle, MockERC20Permit} from '../typechain'
+
 let ERC1155ERC721_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
@@ -33,11 +35,11 @@ describe('Admin functionality', async () => {
     );
   });
 
-  let contractERC1155ERC721: Contract,
-    contractVoucherKernel: Contract,
-    contractCashier: Contract,
-    contractBosonRouter: Contract,
-    contractFundLimitsOracle: Contract;
+  let contractERC1155ERC721: Contract & ERC1155ERC721,
+  contractVoucherKernel: Contract & VoucherKernel,
+  contractCashier: Contract & Cashier,
+  contractBosonRouter: Contract & BosonRouter,
+  contractFundLimitsOracle: Contract & FundLimitsOracle;
 
   async function deployContracts() {
     const timestamp = await Utils.getCurrTimestamp();
@@ -45,20 +47,18 @@ describe('Admin functionality', async () => {
     constants.PROMISE_VALID_FROM = timestamp;
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
-    contractFundLimitsOracle = await FundLimitsOracle_Factory.deploy();
-
-    contractERC1155ERC721 = await ERC1155ERC721_Factory.deploy();
+    contractFundLimitsOracle = await FundLimitsOracle_Factory.deploy() as Contract & FundLimitsOracle;
+    contractERC1155ERC721 = await ERC1155ERC721_Factory.deploy() as Contract & ERC1155ERC721;
     contractVoucherKernel = await VoucherKernel_Factory.deploy(
       contractERC1155ERC721.address
-    );
-    contractCashier = await Cashier_Factory.deploy(
-      contractVoucherKernel.address
-    );
+    ) as Contract & VoucherKernel;
+    contractCashier = await Cashier_Factory.deploy(contractVoucherKernel.address) as Contract & Cashier;
     contractBosonRouter = await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
-    );
+    ) as Contract & BosonRouter;
+
 
     await contractFundLimitsOracle.deployed();
     await contractERC1155ERC721.deployed();
