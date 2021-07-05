@@ -9,7 +9,14 @@ import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
 import UtilsBuilder from '../testHelpers/utilsBuilder';
 
-import {BosonRouter, ERC1155ERC721, VoucherKernel, Cashier, FundLimitsOracle, MockERC20Permit} from '../typechain'
+import {
+  BosonRouter,
+  ERC1155ERC721,
+  VoucherKernel,
+  Cashier,
+  FundLimitsOracle,
+  MockERC20Permit,
+} from '../typechain';
 
 let ERC1155ERC721_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
@@ -40,8 +47,12 @@ describe('Cashier && VK', () => {
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
-    FundLimitsOracle_Factory = await ethers.getContractFactory('FundLimitsOracle');
-    MockERC20Permit_Factory = await ethers.getContractFactory('MockERC20Permit');
+    FundLimitsOracle_Factory = await ethers.getContractFactory(
+      'FundLimitsOracle'
+    );
+    MockERC20Permit_Factory = await ethers.getContractFactory(
+      'MockERC20Permit'
+    );
   });
 
   let contractERC1155ERC721: Contract & ERC1155ERC721,
@@ -58,27 +69,31 @@ describe('Cashier && VK', () => {
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle = await FundLimitsOracle_Factory.deploy() as Contract & FundLimitsOracle;
-    contractERC1155ERC721 = await ERC1155ERC721_Factory.deploy() as Contract & ERC1155ERC721;
-    contractVoucherKernel = await VoucherKernel_Factory.deploy(
+    contractFundLimitsOracle =
+      (await FundLimitsOracle_Factory.deploy()) as Contract & FundLimitsOracle;
+    contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
+      ERC1155ERC721;
+    contractVoucherKernel = (await VoucherKernel_Factory.deploy(
       contractERC1155ERC721.address
-    ) as Contract & VoucherKernel;
-    contractCashier = await Cashier_Factory.deploy(contractVoucherKernel.address) as Contract & Cashier;
-    contractBosonRouter = await BosonRouter_Factory.deploy(
+    )) as Contract & VoucherKernel;
+    contractCashier = (await Cashier_Factory.deploy(
+      contractVoucherKernel.address
+    )) as Contract & Cashier;
+    contractBosonRouter = (await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
-    ) as Contract & BosonRouter;
+    )) as Contract & BosonRouter;
 
-    contractBSNTokenPrice = await MockERC20Permit_Factory.deploy(
+    contractBSNTokenPrice = (await MockERC20Permit_Factory.deploy(
       'BosonTokenPrice',
       'BPRC'
-    ) as Contract & MockERC20Permit;
+    )) as Contract & MockERC20Permit;
 
-    contractBSNTokenDeposit = await MockERC20Permit_Factory.deploy(
+    contractBSNTokenDeposit = (await MockERC20Permit_Factory.deploy(
       'BosonTokenDeposit',
       'BDEP'
-    ) as Contract & MockERC20Permit;
+    )) as Contract & MockERC20Permit;
 
     await contractFundLimitsOracle.deployed();
     await contractERC1155ERC721.deployed();
@@ -162,7 +177,7 @@ describe('Cashier && VK', () => {
         it('[NEGATIVE] Attacker should not be able to pause the contract', async () => {
           const attackerInstance = contractBosonRouter.connect(
             users.attacker.signer
-          );
+          ) as BosonRouter;
           await expect(attackerInstance.pause()).to.be.revertedWith(
             revertReasons.ONLY_ROUTER_OWNER
           );
@@ -173,7 +188,7 @@ describe('Cashier && VK', () => {
 
           const attackerInstance = contractBosonRouter.connect(
             users.attacker.signer
-          );
+          ) as BosonRouter;
 
           await expect(attackerInstance.unpause()).to.be.revertedWith(
             revertReasons.ONLY_ROUTER_OWNER

@@ -9,7 +9,14 @@ import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
 import UtilsBuilder from '../testHelpers/utilsBuilder';
 
-import {BosonRouter, ERC1155ERC721, VoucherKernel, Cashier, FundLimitsOracle, MockERC20Permit} from '../typechain'
+import {
+  BosonRouter,
+  ERC1155ERC721,
+  VoucherKernel,
+  Cashier,
+  FundLimitsOracle,
+  MockERC20Permit,
+} from '../typechain';
 
 let ERC1155ERC721_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
@@ -37,8 +44,12 @@ describe('ERC1155ERC721', () => {
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
-    FundLimitsOracle_Factory = await ethers.getContractFactory('FundLimitsOracle');
-    MockERC20Permit_Factory = await ethers.getContractFactory('MockERC20Permit');
+    FundLimitsOracle_Factory = await ethers.getContractFactory(
+      'FundLimitsOracle'
+    );
+    MockERC20Permit_Factory = await ethers.getContractFactory(
+      'MockERC20Permit'
+    );
   });
 
   let contractERC1155ERC721: Contract & ERC1155ERC721,
@@ -54,27 +65,31 @@ describe('ERC1155ERC721', () => {
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle = await FundLimitsOracle_Factory.deploy() as Contract & FundLimitsOracle;
-    contractERC1155ERC721 = await ERC1155ERC721_Factory.deploy() as Contract & ERC1155ERC721;
-    contractVoucherKernel = await VoucherKernel_Factory.deploy(
+    contractFundLimitsOracle =
+      (await FundLimitsOracle_Factory.deploy()) as Contract & FundLimitsOracle;
+    contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
+      ERC1155ERC721;
+    contractVoucherKernel = (await VoucherKernel_Factory.deploy(
       contractERC1155ERC721.address
-    ) as Contract & VoucherKernel;
-    contractCashier = await Cashier_Factory.deploy(contractVoucherKernel.address) as Contract & Cashier;
-    contractBosonRouter = await BosonRouter_Factory.deploy(
+    )) as Contract & VoucherKernel;
+    contractCashier = (await Cashier_Factory.deploy(
+      contractVoucherKernel.address
+    )) as Contract & Cashier;
+    contractBosonRouter = (await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
-    ) as Contract & BosonRouter;
+    )) as Contract & BosonRouter;
 
-    contractBSNTokenPrice = await MockERC20Permit_Factory.deploy(
+    contractBSNTokenPrice = (await MockERC20Permit_Factory.deploy(
       'BosonTokenPrice',
       'BPRC'
-    ) as Contract & MockERC20Permit;
+    )) as Contract & MockERC20Permit;
 
-    contractBSNTokenDeposit = await MockERC20Permit_Factory.deploy(
+    contractBSNTokenDeposit = (await MockERC20Permit_Factory.deploy(
       'BosonTokenDeposit',
       'BDEP'
-    ) as Contract & MockERC20Permit;
+    )) as Contract & MockERC20Permit;
 
     await contractFundLimitsOracle.deployed();
     await contractERC1155ERC721.deployed();
@@ -152,10 +167,7 @@ describe('ERC1155ERC721', () => {
 
       it('[NEGATIVE][setApprovalForAll] Should revert if tries to set self as an operator', async () => {
         await expect(
-          contractERC1155ERC721.setApprovalForAll(
-            users.deployer.address,
-            true
-          )
+          contractERC1155ERC721.setApprovalForAll(users.deployer.address, true)
         ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
       });
 
@@ -277,7 +289,7 @@ describe('ERC1155ERC721', () => {
 
         const owner721Instance = contractERC1155ERC721.connect(
           users.buyer.signer
-        );
+        ) as ERC1155ERC721;
         const tx = await owner721Instance.approve(
           users.other1.address,
           token721
@@ -317,7 +329,7 @@ describe('ERC1155ERC721', () => {
 
         const attackerInstance = contractERC1155ERC721.connect(
           users.attacker.signer
-        );
+        ) as ERC1155ERC721;
 
         await expect(
           attackerInstance.approve(users.other1.address, token721)
@@ -333,7 +345,7 @@ describe('ERC1155ERC721', () => {
 
         const attackerInstance = contractERC1155ERC721.connect(
           users.attacker.signer
-        );
+        ) as ERC1155ERC721;
 
         await expect(
           attackerInstance.approve(users.buyer.address, token721)
@@ -486,7 +498,7 @@ describe('ERC1155ERC721', () => {
       it('[ownerOf] should revert if incorrectId id provided', async () => {
         const sellerInstance = contractERC1155ERC721.connect(
           users.seller.signer
-        );
+        ) as ERC1155ERC721;
         await expect(sellerInstance.ownerOf(1)).to.be.revertedWith(
           revertReasons.UNDEFINED_OWNER
         );
@@ -631,7 +643,7 @@ describe('ERC1155ERC721', () => {
       it('[NEGATIVE] Should revert if attacker tries to set metadataBase', async () => {
         const attackerInstance = contractERC1155ERC721.connect(
           users.attacker.signer
-        );
+        ) as ERC1155ERC721;
 
         await expect(
           attackerInstance._setMetadataBase(metadataBase)
@@ -641,7 +653,7 @@ describe('ERC1155ERC721', () => {
       it('[NEGATIVE] Should revert if attacker tries to set metadata1155Route', async () => {
         const attackerInstance = contractERC1155ERC721.connect(
           users.attacker.signer
-        );
+        ) as ERC1155ERC721;
         await expect(
           attackerInstance._set1155Route(metadata1155Route)
         ).to.be.revertedWith(revertReasons.NOT_OWNER);
@@ -650,7 +662,7 @@ describe('ERC1155ERC721', () => {
       it('[NEGATIVE] Should revert if attacker tries to set metadata721Route', async () => {
         const attackerInstance = contractERC1155ERC721.connect(
           users.attacker.signer
-        );
+        ) as ERC1155ERC721;
 
         await expect(
           attackerInstance._set721Route(metadata721Route)

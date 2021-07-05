@@ -56,12 +56,12 @@ class UtilsBuilder {
   }
 
   async buildAsync(
-    erc1155721: ERC1155ERC721 | Contract,
-    voucherKernel: VoucherKernel | Contract,
-    cashier: Cashier | Contract,
-    bsnRouter: BosonRouter | Contract,
-    bsnTokenPrice?: MockERC20Permit | Contract,
-    bsnTokenDeposit?: MockERC20Permit | Contract
+    erc1155721: Contract & ERC1155ERC721,
+    voucherKernel: Contract & VoucherKernel,
+    cashier: Contract & Cashier,
+    bsnRouter: Contract & BosonRouter,
+    bsnTokenPrice?: Contract & MockERC20Permit,
+    bsnTokenDeposit?: Contract & MockERC20Permit
   ): Promise<Utils> {
     this.utils.setContracts(
       erc1155721,

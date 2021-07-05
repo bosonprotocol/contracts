@@ -39,25 +39,25 @@ class Utils {
     MockERC20Permit: MockERC20Permit__factory | any;
   };
   deadline: any;
-  contractERC1155ERC721?: ERC1155ERC721 | any;
-  contractVoucherKernel?: VoucherKernel | any;
-  contractCashier?: Cashier | any;
-  contractBSNRouter?: BosonRouter | any;
-  contractBSNTokenPrice?: MockERC20Permit | any;
-  contractBSNTokenDeposit?: MockERC20Permit | any;
-  contractBSNTokenSame?: MockERC20Permit | any;
+  contractERC1155ERC721?: Contract & ERC1155ERC721;
+  contractVoucherKernel?: Contract & VoucherKernel;
+  contractCashier?: Contract & Cashier;
+  contractBSNRouter?: Contract & BosonRouter;
+  contractBSNTokenPrice?: Contract & MockERC20Permit;
+  contractBSNTokenDeposit?: Contract & MockERC20Permit;
+  contractBSNTokenSame?: Contract & MockERC20Permit;
 
   constructor() {
     this.deadline = toWei(1);
   }
 
   setContracts(
-    erc1155721: ERC1155ERC721 | Contract,
-    voucherKernel: VoucherKernel | Contract,
-    cashier: Cashier | Contract,
-    bsnRouter: BosonRouter | Contract,
-    bsnTokenPrice?: MockERC20Permit | Contract,
-    bsnTokenDeposit?: MockERC20Permit | Contract
+    erc1155721: Contract & ERC1155ERC721,
+    voucherKernel: Contract & VoucherKernel,
+    cashier: Contract & Cashier,
+    bsnRouter: Contract & BosonRouter,
+    bsnTokenPrice?: Contract & MockERC20Permit,
+    bsnTokenDeposit?: Contract & MockERC20Permit
   ): void {
     this.contractERC1155ERC721 = erc1155721;
     this.contractVoucherKernel = voucherKernel;
@@ -78,7 +78,9 @@ class Utils {
   ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
-    const sellerInstance = this.contractBSNRouter.connect(seller.signer);
+    const sellerInstance = this.contractBSNRouter.connect(
+      seller.signer
+    ) as BosonRouter;
     const txOrder = await sellerInstance.requestCreateOrderETHETH(
       [
         from,
@@ -132,7 +134,10 @@ class Utils {
       Buffer.from(seller.privateKey.slice(2), 'hex')
     );
 
-    const sellerInstance = this.contractBSNRouter.connect(seller.signer);
+    const sellerInstance = this.contractBSNRouter.connect(
+      seller.signer
+    ) as BosonRouter;
+
     const txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermit(
       this.contractBSNTokenSame.address,
       this.contractBSNTokenSame.address,
@@ -192,7 +197,9 @@ class Utils {
       Buffer.from(seller.privateKey.slice(2), 'hex')
     );
 
-    const sellerInstance = this.contractBSNRouter.connect(seller.signer);
+    const sellerInstance = this.contractBSNRouter.connect(
+      seller.signer
+    ) as BosonRouter;
     const txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermit(
       this.contractBSNTokenPrice.address,
       this.contractBSNTokenDeposit.address,
@@ -252,7 +259,9 @@ class Utils {
       Buffer.from(seller.privateKey.slice(2), 'hex')
     );
 
-    const sellerInstance = this.contractBSNRouter.connect(seller.signer);
+    const sellerInstance = this.contractBSNRouter.connect(
+      seller.signer
+    ) as BosonRouter;
     const txOrder = await sellerInstance.requestCreateOrderETHTKNWithPermit(
       this.contractBSNTokenDeposit.address,
       txValue,
@@ -296,7 +305,9 @@ class Utils {
   ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
-    const sellerInstance = this.contractBSNRouter.connect(seller.signer);
+    const sellerInstance = this.contractBSNRouter.connect(
+      seller.signer
+    ) as BosonRouter;
     const txOrder = await sellerInstance.requestCreateOrderTKNETH(
       this.contractBSNTokenPrice.address,
       [
@@ -373,7 +384,9 @@ class Utils {
     const rPrice = VRS_PRICE.r;
     const sPrice = VRS_PRICE.s;
 
-    const buyerInstance = this.contractBSNRouter.connect(buyer.signer);
+    const buyerInstance = this.contractBSNRouter.connect(
+      buyer.signer
+    ) as BosonRouter;
     const commitTx = await buyerInstance.requestVoucherTKNTKNWithPermit(
       tokenSupplyId,
       seller.address,
@@ -428,7 +441,9 @@ class Utils {
     const r = VRS_TX_VALUE.r;
     const s = VRS_TX_VALUE.s;
 
-    const buyerInstance = this.contractBSNRouter.connect(buyer.signer);
+    const buyerInstance = this.contractBSNRouter.connect(
+      buyer.signer
+    ) as BosonRouter;
     const commitTx = await buyerInstance.requestVoucherTKNTKNSameWithPermit(
       tokenSupplyId,
       seller.address,
@@ -473,7 +488,9 @@ class Utils {
       Buffer.from(buyer.privateKey.slice(2), 'hex')
     );
 
-    const buyerInstance = this.contractBSNRouter.connect(buyer.signer);
+    const buyerInstance = this.contractBSNRouter.connect(
+      buyer.signer
+    ) as BosonRouter;
     const txOrder = await buyerInstance.requestVoucherETHTKNWithPermit(
       tokenSupplyId,
       seller.address,
@@ -508,7 +525,9 @@ class Utils {
       BN(constants.product_price)
     );
 
-    const buyerInstance = this.contractBSNRouter.connect(buyer.signer);
+    const buyerInstance = this.contractBSNRouter.connect(
+      buyer.signer
+    ) as BosonRouter;
     const commitTx = await buyerInstance.requestVoucherETHETH(
       tokenSupplyId,
       seller.address,
@@ -551,7 +570,9 @@ class Utils {
       Buffer.from(buyer.privateKey.slice(2), 'hex')
     );
 
-    const buyerInstance = this.contractBSNRouter.connect(buyer.signer);
+    const buyerInstance = this.contractBSNRouter.connect(
+      buyer.signer
+    ) as BosonRouter;
     const txOrder = await buyerInstance.requestVoucherTKNETHWithPermit(
       tokenSupplyId,
       seller.address,
@@ -577,12 +598,12 @@ class Utils {
   }
 
   async refund(voucherID: string, buyer: Signer): Promise<ContractTransaction> {
-    const buyerInstance = this.contractBSNRouter.connect(buyer);
+    const buyerInstance = this.contractBSNRouter.connect(buyer) as BosonRouter;
     return await buyerInstance.refund(voucherID);
   }
 
   async redeem(voucherID: string, buyer: Signer): Promise<ContractTransaction> {
-    const buyerInstance = this.contractBSNRouter.connect(buyer);
+    const buyerInstance = this.contractBSNRouter.connect(buyer) as BosonRouter;
     return await buyerInstance.redeem(voucherID);
   }
 
@@ -590,7 +611,7 @@ class Utils {
     voucherID: string,
     buyer: Signer
   ): Promise<ContractTransaction> {
-    const buyerInstance = this.contractBSNRouter.connect(buyer);
+    const buyerInstance = this.contractBSNRouter.connect(buyer) as BosonRouter;
     return await buyerInstance.complain(voucherID);
   }
 
@@ -598,7 +619,9 @@ class Utils {
     voucherID: string,
     seller: Signer
   ): Promise<ContractTransaction> {
-    const sellerInstance = this.contractBSNRouter.connect(seller);
+    const sellerInstance = this.contractBSNRouter.connect(
+      seller
+    ) as BosonRouter;
     return await sellerInstance.cancelOrFault(voucherID);
   }
 
@@ -606,7 +629,9 @@ class Utils {
     voucherID: string,
     deployer: Signer
   ): Promise<ContractTransaction> {
-    const deployerInstance = this.contractVoucherKernel.connect(deployer);
+    const deployerInstance = this.contractVoucherKernel.connect(
+      deployer
+    ) as VoucherKernel;
     return await deployerInstance.triggerFinalizeVoucher(voucherID);
   }
 
@@ -614,7 +639,7 @@ class Utils {
     voucherID: string,
     deployer: Signer
   ): Promise<ContractTransaction> {
-    const deployerInstance = this.contractCashier.connect(deployer);
+    const deployerInstance = this.contractCashier.connect(deployer) as Cashier;
     const tx = await deployerInstance.withdraw(voucherID);
 
     const receipt = await tx.wait();
@@ -625,7 +650,9 @@ class Utils {
   }
 
   async pause(deployer: Signer): Promise<void> {
-    const deployerInstance = this.contractVoucherKernel.connect(deployer);
+    const deployerInstance = this.contractVoucherKernel.connect(
+      deployer
+    ) as VoucherKernel;
     await deployerInstance.pause();
   }
 
@@ -636,7 +663,9 @@ class Utils {
     signer: Signer
   ): Promise<ContractTransaction> {
     const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
-    const fromInstance = this.contractERC1155ERC721.connect(signer);
+    const fromInstance = this.contractERC1155ERC721.connect(
+      signer
+    ) as ERC1155ERC721;
 
     const method = fromInstance.functions[fnSignatures.safeTransfer721];
 
@@ -656,7 +685,9 @@ class Utils {
     signer: Signer
   ): Promise<ContractTransaction> {
     const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
-    const fromInstance = this.contractERC1155ERC721.connect(signer);
+    const fromInstance = this.contractERC1155ERC721.connect(
+      signer
+    ) as ERC1155ERC721;
 
     const method = fromInstance.functions[fnSignatures.safeTransfer1155];
 
@@ -677,7 +708,9 @@ class Utils {
     signer: Signer
   ): Promise<ContractTransaction> {
     const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
-    const fromInstance = this.contractERC1155ERC721.connect(signer);
+    const fromInstance = this.contractERC1155ERC721.connect(
+      signer
+    ) as ERC1155ERC721;
 
     const method = fromInstance.functions[fnSignatures.safeBatchTransfer1155];
 

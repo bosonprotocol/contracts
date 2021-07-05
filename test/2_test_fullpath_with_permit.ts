@@ -1,5 +1,5 @@
 import {ethers} from 'hardhat';
-import {Signer, ContractFactory, Contract, BigNumber} from 'ethers';
+import {Signer, ContractFactory, Contract} from 'ethers';
 
 import {assert, expect} from 'chai';
 import {ecsign} from 'ethereumjs-util';
@@ -13,7 +13,14 @@ import UtilsBuilder from '../testHelpers/utilsBuilder';
 
 import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
 
-import {BosonRouter, ERC1155ERC721, VoucherKernel, Cashier, FundLimitsOracle, MockERC20Permit} from '../typechain'
+import {
+  BosonRouter,
+  ERC1155ERC721,
+  VoucherKernel,
+  Cashier,
+  FundLimitsOracle,
+  MockERC20Permit,
+} from '../typechain';
 
 let ERC1155ERC721_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
@@ -41,16 +48,20 @@ describe('Cashier and VoucherKernel', () => {
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
-    FundLimitsOracle_Factory = await ethers.getContractFactory('FundLimitsOracle');
-    MockERC20Permit_Factory = await ethers.getContractFactory('MockERC20Permit');
+    FundLimitsOracle_Factory = await ethers.getContractFactory(
+      'FundLimitsOracle'
+    );
+    MockERC20Permit_Factory = await ethers.getContractFactory(
+      'MockERC20Permit'
+    );
   });
 
   let contractERC1155ERC721: Contract & ERC1155ERC721,
     contractVoucherKernel: Contract & VoucherKernel,
     contractCashier: Contract & Cashier,
     contractBosonRouter: Contract & BosonRouter,
-    contractBSNTokenPrice: Contract,
-    contractBSNTokenDeposit: Contract,
+    contractBSNTokenPrice: Contract & MockERC20Permit,
+    contractBSNTokenDeposit: Contract & MockERC20Permit,
     contractFundLimitsOracle: Contract & FundLimitsOracle;
   let tokenSupplyKey, tokenVoucherKey, tokenVoucherKey1;
 
@@ -77,27 +88,31 @@ describe('Cashier and VoucherKernel', () => {
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle = await FundLimitsOracle_Factory.deploy() as Contract & FundLimitsOracle;
-    contractERC1155ERC721 = await ERC1155ERC721_Factory.deploy() as Contract & ERC1155ERC721;
-    contractVoucherKernel = await VoucherKernel_Factory.deploy(
+    contractFundLimitsOracle =
+      (await FundLimitsOracle_Factory.deploy()) as Contract & FundLimitsOracle;
+    contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
+      ERC1155ERC721;
+    contractVoucherKernel = (await VoucherKernel_Factory.deploy(
       contractERC1155ERC721.address
-    ) as Contract & VoucherKernel;
-    contractCashier = await Cashier_Factory.deploy(contractVoucherKernel.address) as Contract & Cashier;
-    contractBosonRouter = await BosonRouter_Factory.deploy(
+    )) as Contract & VoucherKernel;
+    contractCashier = (await Cashier_Factory.deploy(
+      contractVoucherKernel.address
+    )) as Contract & Cashier;
+    contractBosonRouter = (await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
-    ) as Contract & BosonRouter;
+    )) as Contract & BosonRouter;
 
-    contractBSNTokenPrice = await MockERC20Permit_Factory.deploy(
+    contractBSNTokenPrice = (await MockERC20Permit_Factory.deploy(
       'BosonTokenPrice',
       'BPRC'
-    ) as Contract & MockERC20Permit;
+    )) as Contract & MockERC20Permit;
 
-    contractBSNTokenDeposit = await MockERC20Permit_Factory.deploy(
+    contractBSNTokenDeposit = (await MockERC20Permit_Factory.deploy(
       'BosonTokenDeposit',
       'BDEP'
-    ) as Contract & MockERC20Permit;
+    )) as Contract & MockERC20Permit;
 
     await contractFundLimitsOracle.deployed();
     await contractERC1155ERC721.deployed();
@@ -246,7 +261,6 @@ describe('Cashier and VoucherKernel', () => {
             users.seller.address
           );
 
-
         assert.equal(
           remainingQtyInContract.toString(),
           remQty.toString(),
@@ -260,7 +274,7 @@ describe('Cashier and VoucherKernel', () => {
               tokenSupplyKey,
               users.seller.address
             );
-            
+
           remQty = BN(remQty).sub(1).toString();
 
           assert.equal(
@@ -332,7 +346,9 @@ describe('Cashier and VoucherKernel', () => {
       it('[NEGATIVE] Should not create a supply if price is above the limit', async () => {
         const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
 
-        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+        const sellerInstance = contractBosonRouter.connect(
+          users.seller.signer
+        ) as BosonRouter;
 
         await expect(
           sellerInstance.requestCreateOrderETHETH(
@@ -352,7 +368,9 @@ describe('Cashier and VoucherKernel', () => {
       it('[NEGATIVE] Should not create a supply if depositBu is above the limit', async () => {
         const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
 
-        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+        const sellerInstance = contractBosonRouter.connect(
+          users.seller.signer
+        ) as BosonRouter;
 
         await expect(
           sellerInstance.requestCreateOrderETHETH(
@@ -372,7 +390,9 @@ describe('Cashier and VoucherKernel', () => {
       it('[NEGATIVE] Should not create a supply if depositSe is above the limit', async () => {
         const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
 
-        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+        const sellerInstance = contractBosonRouter.connect(
+          users.seller.signer
+        ) as BosonRouter;
 
         await expect(
           sellerInstance.requestCreateOrderETHETH(
@@ -517,8 +537,7 @@ describe('Cashier and VoucherKernel', () => {
                 users.seller.address
               );
 
-          remQty = BN(remQty).sub(1).toString();
-            
+            remQty = BN(remQty).sub(1).toString();
 
             assert.equal(
               remainingQtyInContract.toString(),
@@ -585,7 +604,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          );
+          ) as BosonRouter;
 
           await expect(
             sellerInstance.requestCreateOrderETHTKNWithPermit(
@@ -629,7 +648,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          );
+          ) as BosonRouter;
 
           await expect(
             sellerInstance.requestCreateOrderETHTKNWithPermit(
@@ -674,7 +693,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          );
+          ) as BosonRouter;
 
           await expect(
             sellerInstance.requestCreateOrderETHTKNWithPermit(
@@ -719,7 +738,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          );
+          ) as BosonRouter;
 
           await expect(
             sellerInstance.requestCreateOrderETHTKNWithPermit(
@@ -764,7 +783,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          );
+          ) as BosonRouter;
 
           await expect(
             sellerInstance.requestCreateOrderETHTKNWithPermit(
@@ -903,7 +922,7 @@ describe('Cashier and VoucherKernel', () => {
                 users.seller.address
               );
 
-              remQty = BN(remQty).sub(1).toString();
+            remQty = BN(remQty).sub(1).toString();
 
             assert.equal(
               remainingQtyInContract.toString(),
@@ -953,7 +972,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          );
+          ) as BosonRouter;
 
           await expect(
             sellerInstance.requestCreateOrderTKNETH(
@@ -974,7 +993,7 @@ describe('Cashier and VoucherKernel', () => {
         it('[NEGATIVE] Should fail if token price contract is zero address', async () => {
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          );
+          ) as BosonRouter;
 
           await expect(
             sellerInstance.requestCreateOrderTKNETH(constants.ZERO_ADDRESS, [
@@ -993,7 +1012,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          );
+          ) as BosonRouter;
 
           await expect(
             sellerInstance.requestCreateOrderTKNETH(
@@ -1016,7 +1035,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          );
+          ) as BosonRouter;
 
           await expect(
             sellerInstance.requestCreateOrderTKNETH(
@@ -1039,7 +1058,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          );
+          ) as BosonRouter;
 
           await expect(
             sellerInstance.requestCreateOrderTKNETH(
@@ -1188,8 +1207,7 @@ describe('Cashier and VoucherKernel', () => {
                 users.seller.address
               );
 
-              remQty = BN(remQty).sub(1).toString();
-
+            remQty = BN(remQty).sub(1).toString();
 
             assert.equal(
               remainingQtyInContract.toString(),
@@ -1256,7 +1274,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          );
+          ) as BosonRouter;
 
           await expect(
             sellerInstance.requestCreateOrderTKNTKNWithPermit(
@@ -1301,7 +1319,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          );
+          ) as BosonRouter;
 
           await expect(
             sellerInstance.requestCreateOrderTKNTKNWithPermit(
@@ -1346,7 +1364,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          );
+          ) as BosonRouter;
 
           await expect(
             sellerInstance.requestCreateOrderTKNTKNWithPermit(
@@ -1392,7 +1410,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          );
+          ) as BosonRouter;
 
           await expect(
             sellerInstance.requestCreateOrderTKNTKNWithPermit(
@@ -1437,7 +1455,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          );
+          ) as BosonRouter;
 
           await expect(
             sellerInstance.requestCreateOrderTKNTKNWithPermit(
@@ -1482,7 +1500,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          );
+          ) as BosonRouter;
 
           await expect(
             sellerInstance.requestCreateOrderTKNTKNWithPermit(
@@ -1527,7 +1545,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          );
+          ) as BosonRouter;
 
           await expect(
             sellerInstance.requestCreateOrderTKNTKNWithPermit(
@@ -1591,7 +1609,9 @@ describe('Cashier and VoucherKernel', () => {
         users.seller.address
       );
 
-      const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+      const sellerInstance = contractBosonRouter.connect(
+        users.seller.signer
+      ) as BosonRouter;
 
       await sellerInstance.requestCancelOrFaultVoucherSet(tokenSupplyKey);
       const nextCorrId = await contractBosonRouter.getCorrelationId(
@@ -1651,7 +1671,9 @@ describe('Cashier and VoucherKernel', () => {
         const txValue = BN(constants.buyer_deposit).add(
           BN(constants.product_price)
         );
-        const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+        const buyerInstance = contractBosonRouter.connect(
+          users.buyer.signer
+        ) as BosonRouter;
         const txFillOrder = await buyerInstance.requestVoucherETHETH(
           TOKEN_SUPPLY_ID,
           users.seller.address,
@@ -1753,7 +1775,9 @@ describe('Cashier and VoucherKernel', () => {
           BN(constants.incorrect_product_price)
         );
 
-        const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+        const buyerInstance = contractBosonRouter.connect(
+          users.buyer.signer
+        ) as BosonRouter;
 
         await expect(
           buyerInstance.requestVoucherETHETH(
@@ -1771,7 +1795,9 @@ describe('Cashier and VoucherKernel', () => {
           BN(constants.product_price)
         );
 
-        const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+        const buyerInstance = contractBosonRouter.connect(
+          users.buyer.signer
+        ) as BosonRouter;
 
         await expect(
           buyerInstance.requestVoucherETHETH(
@@ -1861,7 +1887,9 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+          const buyerInstance = contractBosonRouter.connect(
+            users.buyer.signer
+          ) as BosonRouter;
 
           const txFillOrder =
             await buyerInstance.requestVoucherETHTKNWithPermit(
@@ -1996,7 +2024,9 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+          const buyerInstance = contractBosonRouter.connect(
+            users.buyer.signer
+          ) as BosonRouter;
 
           await expect(
             buyerInstance.requestVoucherETHTKNWithPermit(
@@ -2032,7 +2062,9 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+          const buyerInstance = contractBosonRouter.connect(
+            users.buyer.signer
+          ) as BosonRouter;
 
           await expect(
             buyerInstance.requestVoucherETHTKNWithPermit(
@@ -2158,7 +2190,9 @@ describe('Cashier and VoucherKernel', () => {
           const rPrice = VRS_PRICE.r;
           const sPrice = VRS_PRICE.s;
 
-          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+          const buyerInstance = contractBosonRouter.connect(
+            users.buyer.signer
+          ) as BosonRouter;
 
           const txFillOrder =
             await buyerInstance.requestVoucherTKNTKNWithPermit(
@@ -2324,7 +2358,9 @@ describe('Cashier and VoucherKernel', () => {
           const rPrice = VRS_PRICE.r;
           const sPrice = VRS_PRICE.s;
 
-          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+          const buyerInstance = contractBosonRouter.connect(
+            users.buyer.signer
+          ) as BosonRouter;
 
           await expect(
             buyerInstance.requestVoucherTKNTKNWithPermit(
@@ -2390,7 +2426,9 @@ describe('Cashier and VoucherKernel', () => {
           const rPrice = VRS_PRICE.r;
           const sPrice = VRS_PRICE.s;
 
-          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+          const buyerInstance = contractBosonRouter.connect(
+            users.buyer.signer
+          ) as BosonRouter;
 
           await expect(
             buyerInstance.requestVoucherTKNTKNWithPermit(
@@ -2492,7 +2530,9 @@ describe('Cashier and VoucherKernel', () => {
           const r = VRS_TOKENS.r;
           const s = VRS_TOKENS.s;
 
-          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+          const buyerInstance = contractBosonRouter.connect(
+            users.buyer.signer
+          ) as BosonRouter;
 
           const txFillOrder =
             await buyerInstance.requestVoucherTKNTKNSameWithPermit(
@@ -2621,7 +2661,9 @@ describe('Cashier and VoucherKernel', () => {
           const r = VRS_TOKENS.r;
           const s = VRS_TOKENS.s;
 
-          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+          const buyerInstance = contractBosonRouter.connect(
+            users.buyer.signer
+          ) as BosonRouter;
 
           await expect(
             buyerInstance.requestVoucherTKNTKNSameWithPermit(
@@ -2661,7 +2703,9 @@ describe('Cashier and VoucherKernel', () => {
           const r = VRS_TOKENS.r;
           const s = VRS_TOKENS.s;
 
-          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+          const buyerInstance = contractBosonRouter.connect(
+            users.buyer.signer
+          ) as BosonRouter;
 
           await expect(
             buyerInstance.requestVoucherTKNTKNSameWithPermit(
@@ -2736,7 +2780,9 @@ describe('Cashier and VoucherKernel', () => {
           const r = VRS_TOKENS.r;
           const s = VRS_TOKENS.s;
 
-          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+          const buyerInstance = contractBosonRouter.connect(
+            users.buyer.signer
+          ) as BosonRouter;
 
           await expect(
             buyerInstance.requestVoucherTKNTKNSameWithPermit(
@@ -2819,7 +2865,9 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+          const buyerInstance = contractBosonRouter.connect(
+            users.buyer.signer
+          ) as BosonRouter;
 
           const txFillOrder =
             await buyerInstance.requestVoucherTKNETHWithPermit(
@@ -2954,7 +3002,9 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+          const buyerInstance = contractBosonRouter.connect(
+            users.buyer.signer
+          ) as BosonRouter;
 
           await expect(
             buyerInstance.requestVoucherTKNETHWithPermit(
@@ -2989,7 +3039,9 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+          const buyerInstance = contractBosonRouter.connect(
+            users.buyer.signer
+          ) as BosonRouter;
 
           await expect(
             buyerInstance.requestVoucherTKNETHWithPermit(
@@ -4058,7 +4110,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            "1",
+            '1',
             'New Supply Owner correlationId is not as expected'
           );
         });

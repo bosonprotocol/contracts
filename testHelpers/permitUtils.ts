@@ -25,7 +25,7 @@ export async function getApprovalDigest(
   owner: string,
   spender: string,
   value: string | number | BigNumber,
-  nonce: string | number,
+  nonce: string | number | BigNumber,
   deadline: string | number | BigNumber
 ): Promise<any> {
   const name = await token.name();
