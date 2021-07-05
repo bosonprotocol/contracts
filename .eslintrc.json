@@ -17,7 +17,6 @@
     "ecmaVersion": 2020
   },
   "plugins": [
-    // "truffle"
     "@typescript-eslint"
   ],
   "rules": {

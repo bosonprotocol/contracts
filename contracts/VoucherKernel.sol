@@ -30,7 +30,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     using SafeMath for uint256;
 
     //AssetRegistry assetRegistry;
-    address public tokensContract;
+    address private tokensContract;
 
     //promise for an asset could be reusable, but simplified here for brevity
     struct Promise {
@@ -52,35 +52,31 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         address addressTokenDeposits;
     }
 
-    address public bosonRouterAddress; //address of the Boson Router contract
-    address public cashierAddress; //address of the Cashier contract
+    address private bosonRouterAddress; //address of the Boson Router contract
+    address private cashierAddress; //address of the Cashier contract
 
-    mapping(bytes32 => Promise) public promises; //promises to deliver goods or services
-    mapping(address => uint256) public tokenNonces; //mapping between seller address and its own nonces. Every time seller creates supply ID it gets incremented. Used to avoid duplicate ID's
-    mapping(uint256 => VoucherPaymentMethod) public paymentDetails; // tokenSupplyId to VoucherPaymentMethod
+    mapping(bytes32 => Promise) private promises; //promises to deliver goods or services
+    mapping(address => uint256) private tokenNonces; //mapping between seller address and its own nonces. Every time seller creates supply ID it gets incremented. Used to avoid duplicate ID's
+    mapping(uint256 => VoucherPaymentMethod) private paymentDetails; // tokenSupplyId to VoucherPaymentMethod
 
-    bytes32[] public promiseKeys;
+    bytes32[] private promiseKeys;
 
-    mapping(uint256 => bytes32) public ordersPromise; //mapping between an order (supply a.k.a. VoucherSet token) and a promise
+    mapping(uint256 => bytes32) private ordersPromise; //mapping between an order (supply a.k.a. VoucherSet token) and a promise
 
-    mapping(uint256 => VoucherStatus) public vouchersStatus; //recording the vouchers evolution
-
-    //standard reqs
-    mapping(uint256 => mapping(address => uint256)) private balances; //balance of token ids of an account
-    mapping(address => mapping(address => bool)) private operatorApprovals; //approval of accounts of an operator
+    mapping(uint256 => VoucherStatus) private vouchersStatus; //recording the vouchers evolution
 
     //ID reqs
-    mapping(uint256 => uint256) public typeCounters; //counter for ID of a particular type of NFT
-    uint256 public constant MASK_TYPE = uint256(uint128(~0)) << 128; //the type mask in the upper 128 bits
+    mapping(uint256 => uint256) private typeCounters; //counter for ID of a particular type of NFT
+    uint256 private constant MASK_TYPE = uint256(uint128(~0)) << 128; //the type mask in the upper 128 bits
     //1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 
-    uint256 public constant MASK_NF_INDEX = uint128(~0); //the non-fungible index mask in the lower 128
+    uint256 private constant MASK_NF_INDEX = uint128(~0); //the non-fungible index mask in the lower 128
     //0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
 
-    uint256 public constant TYPE_NF_BIT = 1 << 255; //the first bit represents an NFT type
+    uint256 private constant TYPE_NF_BIT = 1 << 255; //the first bit represents an NFT type
     //1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 
-    uint256 public typeId; //base token type ... 127-bits cover 1.701411835*10^38 types (not differentiating between FTs and NFTs)
+    uint256 private typeId; //base token type ... 127-bits cover 1.701411835*10^38 types (not differentiating between FTs and NFTs)
     /* Token IDs:
     Fungibles: 0, followed by 127-bit FT type ID, in the upper 128 bits, followed by 0 in lower 128-bits
     <0><uint127: base token id><uint128: 0>
@@ -92,8 +88,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     <1><uint127: base token id><uint128: index of non-fungible>
     */
 
-    uint256 public complainPeriod;
-    uint256 public cancelFaultPeriod;
+    uint256 private complainPeriod;
+    uint256 private cancelFaultPeriod;
 
     event LogPromiseCreated(
         bytes32 indexed _promiseId,
@@ -268,6 +264,12 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         address _tokenPrice,
         address _tokenDeposits
     ) external override onlyFromRouter {
+        require(
+            _paymentMethod > 0 &&
+                _paymentMethod <= 4,
+            "INVALID PAYMENT METHOD"
+        );
+        
         paymentDetails[_tokenIdSupply] = VoucherPaymentMethod({
             paymentMethod: _paymentMethod,
             addressTokenPrice: _tokenPrice,
@@ -1058,6 +1060,36 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     }
 
     /**
+     * @notice Get the holder of a supply
+     * @param _tokenIdSupply ID of the order (aka VoucherSet) which is mapped to the corresponding Promise.
+     * @return                  Address of the holder
+     */
+    function getSupplyHolder(uint256 _tokenIdSupply)
+        public
+        view
+        override
+        returns (address)
+    {
+        bytes32 promiseKey = ordersPromise[_tokenIdSupply];
+        return promises[promiseKey].seller;
+    }
+
+    /**
+     * @notice Get promise data not retrieved by other accessor functions
+     * @param _promiseKey   ID of the promise
+     * @return promise data not returned by other accessor methods
+     */
+    function getPromiseData(bytes32 _promiseKey)
+        external
+        view
+        override
+        returns (bytes32, uint256, uint256, uint256, uint256 )
+    {
+        Promise memory tPromise = promises[_promiseKey];
+        return (tPromise.promiseId, tPromise.nonce, tPromise.validFrom, tPromise.validTo, tPromise.idx); 
+    }
+
+    /**
      * @notice Get the current status of a voucher
      * @param _tokenIdVoucher   ID of the voucher token
      * @return                  Status of the voucher (via enum)
@@ -1069,13 +1101,17 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         returns (
             uint8,
             bool,
-            bool
+            bool,
+            uint256,
+            uint256
         )
     {
         return (
             vouchersStatus[_tokenIdVoucher].status,
             vouchersStatus[_tokenIdVoucher].isPaymentReleased,
-            vouchersStatus[_tokenIdVoucher].isDepositsReleased
+            vouchersStatus[_tokenIdVoucher].isDepositsReleased,
+            vouchersStatus[_tokenIdVoucher].complainPeriodStart,
+            vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart
         );
     }
 
@@ -1091,21 +1127,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         returns (address)
     {
         return IERC721(tokensContract).ownerOf(_tokenIdVoucher);
-    }
-
-    /**
-     * @notice Get the holder of a supply
-     * @param _tokenIdSupply        ID of a promise which is mapped to the corresponding Promise
-     * @return                  Address of the holder
-     */
-    function getSupplyHolder(uint256 _tokenIdSupply)
-        public
-        view
-        override
-        returns (address)
-    {
-        bytes32 promiseKey = ordersPromise[_tokenIdSupply];
-        return promises[promiseKey].seller;
     }
 
     /**
@@ -1182,5 +1203,111 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         return
             !(vouchersStatus[_tokenIdVoucher].isPaymentReleased ||
                 vouchersStatus[_tokenIdVoucher].isDepositsReleased);
+    }
+
+    /**
+     * @notice Get address of the Boson Router to which this contract points
+     * @return Address of the Boson Router contract
+     */
+    function getBosonRouterAddress()
+        external
+        view
+        override
+        returns (address) 
+    {
+        return bosonRouterAddress;
+    }
+
+    /**
+     * @notice Get address of the Cashier contract to which this contract points
+     * @return Address of the Cashier contract
+     */
+    function getCashierAddress()
+        external
+        view
+        override
+        returns (address)
+    {
+        return cashierAddress;
+    }
+
+    /**
+     * @notice Get the token nonce for a seller
+     * @param _seller Address of the seller
+     * @return The seller's nonce
+     */
+    function getTokenNonce(address _seller)
+        external
+        view
+        override
+        returns (uint256) 
+    {
+        return tokenNonces[_seller];
+    }
+
+    /**
+     * @notice Get the current type Id
+     * @return type Id
+     */
+    function getTypeId()
+        external
+        view
+        override
+        returns (uint256)
+    {
+        return typeId;
+    }
+
+    /**
+     * @notice Get the complain period
+     * @return complain period
+     */
+    function getComplainPeriod()
+        external
+        view
+        override
+        returns (uint256)
+    {
+        return complainPeriod;
+    }
+
+    /**
+     * @notice Get the cancel or fault period
+     * @return cancel or fault period
+     */
+    function getCancelFaultPeriod()
+        external
+        view
+        override
+        returns (uint256)
+    {
+        return cancelFaultPeriod;
+    }
+    
+     /**
+     * @notice Get the promise ID from a voucher set
+     * @param _tokenIdSupply   ID of the voucher token
+     * @return                  ID of the promise
+     */
+    function getPromiseIdFromSupplyId(uint256 _tokenIdSupply)
+        external
+        view
+        override
+        returns (bytes32) 
+    {
+        return ordersPromise[_tokenIdSupply];
+    }
+
+    /**
+     * @notice Get the address of ERC1155ERC721 contract
+     * @return Address of ERC1155ERC721 contract
+     */
+    function getTokensContractAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return tokensContract;
     }
 }

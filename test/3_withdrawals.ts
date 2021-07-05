@@ -847,23 +847,20 @@ describe('Cashier withdrawals ', () => {
         balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
           users.buyer.address
         );
-        balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.buyer.address
-        );
+        balanceBuyerFromDeposits =
+          await utils.contractBSNTokenDeposit.balanceOf(users.buyer.address);
 
         balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
           users.seller.address
         );
-        balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.seller.address
-        );
+        balanceSellerFromDeposits =
+          await utils.contractBSNTokenDeposit.balanceOf(users.seller.address);
 
         escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(
           users.deployer.address
         );
-        escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.deployer.address
-        );
+        escrowBalanceFromDeposits =
+          await utils.contractBSNTokenDeposit.balanceOf(users.deployer.address);
 
         cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(
           utils.contractCashier.address
@@ -2563,15 +2560,12 @@ describe('Cashier withdrawals ', () => {
       let cashierDepositLeft = BN(0);
 
       async function getBalancesDepositToken() {
-        balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.buyer.address
-        );
-        balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.seller.address
-        );
-        escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.deployer.address
-        );
+        balanceBuyerFromDeposits =
+          await utils.contractBSNTokenDeposit.balanceOf(users.buyer.address);
+        balanceSellerFromDeposits =
+          await utils.contractBSNTokenDeposit.balanceOf(users.seller.address);
+        escrowBalanceFromDeposits =
+          await utils.contractBSNTokenDeposit.balanceOf(users.deployer.address);
         cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(
           utils.contractCashier.address
         );
@@ -4635,10 +4629,11 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('Remaining QTY for Token Supply should be ZERO', async () => {
-        const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
-          TOKEN_SUPPLY_ID,
-          users.seller.address
-        );
+        const remainingQtyInContract =
+          await contractVoucherKernel.getRemQtyForSupply(
+            TOKEN_SUPPLY_ID,
+            users.seller.address
+          );
 
         assert.isTrue(
           remainingQtyInContract.eq(BN(0)),
@@ -4745,9 +4740,10 @@ describe('Cashier withdrawals ', () => {
             users.seller.signer
           );
 
-          const withdrawTx = await sellerInstance.requestCancelOrFaultVoucherSet(
-            TOKEN_SUPPLY_ID
-          );
+          const withdrawTx =
+            await sellerInstance.requestCancelOrFaultVoucherSet(
+              TOKEN_SUPPLY_ID
+            );
 
           const txReceipt = await withdrawTx.wait();
 
@@ -4796,10 +4792,11 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Remaining QTY for Token Supply should be ZERO', async () => {
-          const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
-            TOKEN_SUPPLY_ID,
-            users.seller.address
-          );
+          const remainingQtyInContract =
+            await contractVoucherKernel.getRemQtyForSupply(
+              TOKEN_SUPPLY_ID,
+              users.seller.address
+            );
 
           assert.isTrue(
             remainingQtyInContract.eq(BN(0)),
@@ -4904,9 +4901,10 @@ describe('Cashier withdrawals ', () => {
             users.seller.signer
           );
 
-          const withdrawTx = await sellerInstance.requestCancelOrFaultVoucherSet(
-            TOKEN_SUPPLY_ID
-          );
+          const withdrawTx =
+            await sellerInstance.requestCancelOrFaultVoucherSet(
+              TOKEN_SUPPLY_ID
+            );
 
           const expectedSellerDeposit = BN(constants.seller_deposit).mul(
             BN(remQty)
@@ -4955,10 +4953,11 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Remaining QTY for Token Supply should be ZERO', async () => {
-          const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
-            TOKEN_SUPPLY_ID,
-            users.seller.address
-          );
+          const remainingQtyInContract =
+            await contractVoucherKernel.getRemQtyForSupply(
+              TOKEN_SUPPLY_ID,
+              users.seller.address
+            );
 
           assert.isTrue(
             remainingQtyInContract.eq(BN(0)),
@@ -5056,9 +5055,10 @@ describe('Cashier withdrawals ', () => {
             users.seller.signer
           );
 
-          const withdrawTx = await sellerInstance.requestCancelOrFaultVoucherSet(
-            TOKEN_SUPPLY_ID
-          );
+          const withdrawTx =
+            await sellerInstance.requestCancelOrFaultVoucherSet(
+              TOKEN_SUPPLY_ID
+            );
 
           const txReceipt = await withdrawTx.wait();
 
@@ -5092,10 +5092,11 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Remaining QTY for Token Supply should be ZERO', async () => {
-          const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
-            TOKEN_SUPPLY_ID,
-            users.seller.address
-          );
+          const remainingQtyInContract =
+            await contractVoucherKernel.getRemQtyForSupply(
+              TOKEN_SUPPLY_ID,
+              users.seller.address
+            );
 
           assert.isTrue(
             remainingQtyInContract.eq(BN(0)),
@@ -5214,9 +5215,15 @@ describe('Cashier withdrawals ', () => {
         );
       });
 
+      it('Disaster State should be falsy value initially', async () => {
+        const disasterState = await contractCashier.isDisasterStateSet();
+
+        assert.isFalse(disasterState);
+      });
+
       it('Admin should be able to set the Cashier at disaster state', async () => {
-        const tx = await contractCashier.setDisasterState();
-        const txReceipt = await tx.wait();
+        let tx = await contractCashier.setDisasterState();
+        let txReceipt = await tx.wait();
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -5226,6 +5233,25 @@ describe('Cashier withdrawals ', () => {
             assert.equal(ev._triggeredBy, users.deployer.address);
           }
         );
+
+        const cashier = await contractCashier.attach(
+          await contractBosonRouter.getCashierAddress()
+        );
+
+        tx = await cashier.setDisasterState();
+        txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier,
+          eventNames.LOG_DISASTER_STATE_SET,
+          (ev) => {
+            assert.isTrue(ev._triggeredBy == users.deployer.address);
+          }
+        );
+
+        const disasterState = await contractCashier.isDisasterStateSet();
+        assert.isTrue(disasterState);
       });
 
       it('Buyer should be able to withdraw all the funds locked in escrow', async () => {

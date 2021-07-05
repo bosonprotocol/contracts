@@ -31,3 +31,4 @@ coverage*
 
 # Personal Preferences
 .vscode
+*.txt

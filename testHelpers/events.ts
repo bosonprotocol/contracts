@@ -83,11 +83,7 @@ export function assertEventEmitted(
         if (event.name == eventName) {
           found = true;
           const eventArgs = iface.parseLog(receipt.logs[log]).args;
-          try {
-            callback(eventArgs);
-          } catch (e) {
-            throw new Error(e);
-          }
+          callback(eventArgs);
         }
       } catch (e) {
         if (e.message.includes('no matching event')) continue;

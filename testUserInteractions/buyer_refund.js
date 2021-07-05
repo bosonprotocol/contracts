@@ -37,9 +37,8 @@ async function findEventByName(txReceipt, eventName, ...eventFields) {
       };
 
       for (let index = 0; index < eventFields.length; index++) {
-        resultObj[eventFields[index]] = event.args[
-          eventFields[index]
-        ].toString();
+        resultObj[eventFields[index]] =
+          event.args[eventFields[index]].toString();
       }
       return resultObj;
     }

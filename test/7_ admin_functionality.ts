@@ -165,7 +165,7 @@ describe('Admin functionality', async () => {
 
     it('Owner should be the deployer', async () => {
       const expectedOwner = users.deployer.address;
-      const owner = await contractERC1155ERC721.owner();
+      const owner = await contractERC1155ERC721.getOwner();
 
       assert.equal(owner, expectedOwner, 'Owner is not as expected');
     });
