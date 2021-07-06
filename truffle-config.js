@@ -80,7 +80,11 @@ module.exports = {
           `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`
         )
       },
-      network_id: 4
+      network_id: 4,
+      networkCheckTimeout: 1000000,
+      timeoutBlocks: 200,
+      skipDryRun: true,
+      confirmations: 1
     }
 
     // Another network with more advanced options...

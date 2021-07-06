@@ -35,7 +35,7 @@
   "homepage": "https://github.com/bosonprotocol/contracts#readme",
   "dependencies": {
     "@openzeppelin/contracts": "3.4.0-solc-0.7",
-    "@truffle/hdwallet-provider": "^1.2.5",
+    "@truffle/hdwallet-provider": "^1.4.1",
     "axios": "^0.21.1",
     "chai": "^4.2.0",
     "dotenv": "^8.2.0",
