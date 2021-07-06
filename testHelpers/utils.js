@@ -460,19 +460,21 @@ class Utils {
   }
 
   async refund(voucherID, buyer) {
-    await this.contractBSNRouter.refund(voucherID, {from: buyer});
+    return await this.contractBSNRouter.refund(voucherID, {from: buyer});
   }
 
   async redeem(voucherID, buyer) {
-    await this.contractBSNRouter.redeem(voucherID, {from: buyer});
+    return await this.contractBSNRouter.redeem(voucherID, {from: buyer});
   }
 
   async complain(voucherID, buyer) {
-    await this.contractBSNRouter.complain(voucherID, {from: buyer});
+    return await this.contractBSNRouter.complain(voucherID, {from: buyer});
   }
 
   async cancel(voucherID, seller) {
-    await this.contractBSNRouter.cancelOrFault(voucherID, {from: seller});
+    return await this.contractBSNRouter.cancelOrFault(voucherID, {
+      from: seller,
+    });
   }
 
   async finalize(voucherID, deployer) {
