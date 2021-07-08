@@ -21,10 +21,14 @@ it, please see the [documentation site](https://docs.bosonprotocol.io/).
 - [Local Development](#local-development)
   - [Prerequisites](#prerequisites)
   - [Build](#build)
-  - [Run](#run)
+  - [Run (Linux / Mac OS X)](#run-linux--mac-os-x)
+  - [Run (Windows)](#run-windows)
   - [Test](#test)
+    - [Unit Tests](#unit-tests)
+    - [Coverage](#coverage)
+    - [Interaction Tests](#interaction-tests)
   - [Code Linting & Formatting](#code-linting--formatting)
-- [Documentation](#documentation)  
+- [Documentation](#documentation)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -77,7 +81,7 @@ To compile the contracts:
 ```
 
 ---
-### Run
+### Run (Linux / Mac OS X)
 To deploy instances of the contracts for local development without prior knowledge Ganache and Truffle, run the following command:
 ```shell
 ./go contracts:run
@@ -98,6 +102,20 @@ If preferred by those who are familiar with Truffle and Ganache, the standard Tr
 In a separate terminal, contracts can be deployed using
 ```shell
   ./node_modules/.bin/truffle migrate
+```
+One of the contracts that gets deployed locally is a mock contract that represents the $BOSON token. The mock exists for unit testing purposes and so that those who want to develop against the protocol locally don't have to point to a testnet deployment of the $BOSON token.
+
+---
+### Run (Windows)
+On Windows, the 'go' script is not supported. The standard Truffle and Ganache commands need to be used.
+
+Ganache can be started up manually in a terminal using the command:
+```shell
+  .\node_modules\.bin\ganache-cli.cmd --port 8545 --allowUnlimitedContractSize --acctKeys config/accounts.json
+```
+In a separate terminal, contracts can be deployed using
+```shell
+  .\node_modules\.bin\truffle migrate
 ```
 One of the contracts that gets deployed locally is a mock contract that represents the $BOSON token. The mock exists for unit testing purposes and so that those who want to develop against the protocol locally don't have to point to a testnet deployment of the $BOSON token.
 
