@@ -78,7 +78,7 @@ To compile the contracts:
 
 ---
 ### Run
-To deploy instances of the contracts for local development without prior knowledge Ganache and Truffle, run the following command:
+To deploy instances of the contracts for local development without prior knowledge Ganache and Hardhat, run the following command:
 ```shell
 ./go contracts:run
 ```
