@@ -2964,7 +2964,7 @@ contract('Cashier and VoucherKernel', (addresses) => {
       });
     });
 
-    describe('[NEGATIVE] Common voucher interactions after expiry', () => {
+    describe('Common voucher interactions after expiry', () => {
       const TEN_MINUTES = 10 * constants.ONE_MINUTE;
       const cancelPeriod = constants.ONE_MINUTE;
       const complainPeriod = constants.ONE_MINUTE;
@@ -3229,6 +3229,186 @@ contract('Cashier and VoucherKernel', (addresses) => {
         await truffleAssert.reverts(
           utils.complain(voucherID, users.buyer.address),
           truffleAssert.ErrorType.reverts
+        );
+      });
+
+      it('[COMMIT->EXPIRY TRIGGERED->CANCEL] Seller should be able to cancel within the cancel period after expiry triggered', async () => {
+        const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
+        await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
+        await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
+
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await timemachine.advanceTimeSeconds(ONE_WEEK);
+
+        let expiryTx = await contractVoucherKernel.triggerExpiration(voucherID);
+
+        await truffleAssert.eventEmitted(
+          expiryTx,
+          'LogExpirationTriggered',
+          (ev) => {
+            return ev._triggeredBy === users.deployer.address;
+          }
+        );
+
+        let cancelTx = await utils.cancel(voucherID, users.seller.address);
+
+        const internalCancel = await truffleAssert.createTransactionResult(
+          contractVoucherKernel,
+          cancelTx.tx
+        );
+        await truffleAssert.eventEmitted(
+          internalCancel,
+          'LogVoucherFaultCancel',
+          (ev) => {
+            return ev._tokenIdVoucher.toString() == voucherID;
+          }
+        );
+      });
+
+      it('[COMMIT->EXPIRY TRIGGERED->COMPLAIN] Buyer should be able to complain within the complain period after expiry triggered', async () => {
+        const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
+        await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
+        await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
+
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await timemachine.advanceTimeSeconds(ONE_WEEK);
+
+        let expiryTx = await contractVoucherKernel.triggerExpiration(voucherID);
+
+        await truffleAssert.eventEmitted(
+          expiryTx,
+          'LogExpirationTriggered',
+          (ev) => {
+            return ev._triggeredBy === users.deployer.address;
+          }
+        );
+
+        let complainTx = await utils.complain(voucherID, users.buyer.address);
+
+        const internalComplain = await truffleAssert.createTransactionResult(
+          contractVoucherKernel,
+          complainTx.tx
+        );
+        await truffleAssert.eventEmitted(
+          internalComplain,
+          'LogVoucherComplain',
+          (ev) => {
+            return ev._tokenIdVoucher.toString() == voucherID;
+          }
+        );
+      });
+
+      it('[COMMIT->EXPIRY TRIGGERED->CANCEL->COMPLAIN] Buyer should be able to complain within the complain period after expiry triggered and seller cancels', async () => {
+        const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
+        await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
+        await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
+
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await timemachine.advanceTimeSeconds(ONE_WEEK);
+
+        let expiryTx = await contractVoucherKernel.triggerExpiration(voucherID);
+
+        await truffleAssert.eventEmitted(
+          expiryTx,
+          'LogExpirationTriggered',
+          (ev) => {
+            return ev._triggeredBy === users.deployer.address;
+          }
+        );
+
+        let cancelTx = await utils.cancel(voucherID, users.seller.address);
+
+        const internalCancel = await truffleAssert.createTransactionResult(
+          contractVoucherKernel,
+          cancelTx.tx
+        );
+        await truffleAssert.eventEmitted(
+          internalCancel,
+          'LogVoucherFaultCancel',
+          (ev) => {
+            return ev._tokenIdVoucher.toString() == voucherID;
+          }
+        );
+
+        let complainTx = await utils.complain(voucherID, users.buyer.address);
+
+        const internalComplain = await truffleAssert.createTransactionResult(
+          contractVoucherKernel,
+          complainTx.tx
+        );
+        await truffleAssert.eventEmitted(
+          internalComplain,
+          'LogVoucherComplain',
+          (ev) => {
+            return ev._tokenIdVoucher.toString() == voucherID;
+          }
+        );
+      });
+
+      it('[COMMIT->EXPIRY TRIGGERED->COMPLAIN->CANCEL] Seller should be able to cancel within the cancel period after expiry triggered and buyer complains', async () => {
+        const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
+        await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
+        await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
+
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await timemachine.advanceTimeSeconds(ONE_WEEK);
+
+        let expiryTx = await contractVoucherKernel.triggerExpiration(voucherID);
+
+        await truffleAssert.eventEmitted(
+          expiryTx,
+          'LogExpirationTriggered',
+          (ev) => {
+            return ev._triggeredBy === users.deployer.address;
+          }
+        );
+
+        let complainTx = await utils.complain(voucherID, users.buyer.address);
+
+        const internalComplain = await truffleAssert.createTransactionResult(
+          contractVoucherKernel,
+          complainTx.tx
+        );
+        await truffleAssert.eventEmitted(
+          internalComplain,
+          'LogVoucherComplain',
+          (ev) => {
+            return ev._tokenIdVoucher.toString() == voucherID;
+          }
+        );
+
+        let cancelTx = await utils.cancel(voucherID, users.seller.address);
+
+        const internalCancel = await truffleAssert.createTransactionResult(
+          contractVoucherKernel,
+          cancelTx.tx
+        );
+        await truffleAssert.eventEmitted(
+          internalCancel,
+          'LogVoucherFaultCancel',
+          (ev) => {
+            return ev._tokenIdVoucher.toString() == voucherID;
+          }
         );
       });
     });
