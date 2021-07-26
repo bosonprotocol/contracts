@@ -83,7 +83,7 @@ To deploy instances of the contracts for local development without prior knowled
 ./go contracts:run
 ```
 
-This command starts up Ganache on a random port and migrates all contracts to the Ganache instance. The Ganache instance will remain running in the background, even though the command prompt returns.
+This command starts up built-in Hardhat Network and migrates all contracts to the Hardhat Network instance.
 The pid of the Ganache instance is written to a file in the run/pid directory.
 
 To stop the Ganache instance, run the following command:
@@ -91,13 +91,11 @@ To stop the Ganache instance, run the following command:
 ./go ganache:stop
 ```
 
-If preferred by those who are familiar with Truffle and Ganache, the standard Truffle and Ganache commands can be used. Ganache can be started up manually in a terminal using the command:
-```shell
-  node ./node_modules/.bin/ganache-cli --port 8545 --allowUnlimitedContractSize --acctKeys build/ganache/accounts-8545.json
-```
+If preferred by those who are familiar with Hardhat, the standard Hardhat commands can be used. Ganache can be started up manually by configuring a local network to be run against or using the `hardhat-ganache` plugin. For more information on how this can be achieved refer to the [official Hardhat documentation](https://hardhat.org/guides/ganache-tests.html#running-tests-with-ganache)
+
 In a separate terminal, contracts can be deployed using
 ```shell
-  ./node_modules/.bin/truffle migrate
+  npx hardhat --network [customNetworkName] deploy
 ```
 One of the contracts that gets deployed locally is a mock contract that represents the $BOSON token. The mock exists for unit testing purposes and so that those who want to develop against the protocol locally don't have to point to a testnet deployment of the $BOSON token.
 
@@ -117,7 +115,7 @@ To run the unit tests:
 ```
 
 By default, the build system automates starting and stopping 
-[Ganache](https://www.trufflesuite.com/docs/ganache/overview) on a free port in
+[Hardhat Network](https://hardhat.org/hardhat-network/#hardhat-network) on port `http://localhost:8545` in
 the background ready for each test run.
 
 If instead, you want to run the tests against an existing node, Ganache or

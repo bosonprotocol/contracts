@@ -2,7 +2,7 @@
   "name": "y",
   "version": "1.0.0",
   "description": "Repo for Boson Protocol prototype of the core exchange mechanism",
-  "main": "truffle-config.js",
+  "main": "hardhat.config.js",
   "directories": {
     "test": "test"
   },
