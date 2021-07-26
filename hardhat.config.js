@@ -18,16 +18,17 @@ const lazyImport = async (module) => {
 }
 
 task("deploy", "Deploy contracts on a provided network")
-	.addOptionalParam("env", "Which network is going to be used for contract deployment", "prod")
-	.setAction( async () => {
+	.addOptionalParam("env", "Which environment is going to be used for contract deployment. Choose between prod, demo, dev or empty for local deployment", "hardhat")
+	.setAction( async ({env}) => {
 		const deploymentScript = await lazyImport('./scripts/deploy')
-		await deploymentScript();
+		await deploymentScript(env);
 	})
 
 task("contracts-verify", "Verify already deployed contracts. Bear in mind that at least couple of blocks should be mined before execution!")
-	.setAction(async () => {
+	.addOptionalParam("env", "Which environment is going to be used for contract deployment. Choose between prod, demo & dev", "dev")
+	.setAction(async ({env}) => {
 		const verifyScript = await lazyImport('./scripts/verify')
-		await verifyScript();
+		await verifyScript(env);
 	})
 
 module.exports = {
