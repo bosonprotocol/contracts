@@ -18,6 +18,7 @@ const lazyImport = async (module) => {
 }
 
 task("deploy", "Deploy contracts on a provided network")
+	.addOptionalParam("env", "Which network is going to be used for contract deployment", "prod")
 	.setAction( async () => {
 		const deploymentScript = await lazyImport('./scripts/deploy')
 		await deploymentScript();

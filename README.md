@@ -78,18 +78,12 @@ To compile the contracts:
 
 ---
 ### Run
-To deploy instances of the contracts for local development without prior knowledge Ganache and Hardhat, run the following command:
+To deploy instances of the contracts for local development without prior knowledge to Hardhat, run the following command:
 ```shell
 ./go contracts:run
 ```
 
 This command starts up built-in Hardhat Network and migrates all contracts to the Hardhat Network instance.
-The pid of the Ganache instance is written to a file in the run/pid directory.
-
-To stop the Ganache instance, run the following command:
-```shell
-./go ganache:stop
-```
 
 If preferred by those who are familiar with Hardhat, the standard Hardhat commands can be used. Ganache can be started up manually by configuring a local network to be run against or using the `hardhat-ganache` plugin. For more information on how this can be achieved refer to the [official Hardhat documentation](https://hardhat.org/guides/ganache-tests.html#running-tests-with-ganache)
 
@@ -105,7 +99,7 @@ One of the contracts that gets deployed locally is a mock contract that represen
 #### Unit Tests
 
 All contracts are thoroughly unit tested using 
-[Truffle's JavaScript testing](https://www.trufflesuite.com/docs/truffle/testing/writing-tests-in-javascript) 
+[Hardhat's testing framework](https://hardhat.org/tutorial/testing-contracts.html#_5-testing-contracts) 
 support.
 
 To run the unit tests:
