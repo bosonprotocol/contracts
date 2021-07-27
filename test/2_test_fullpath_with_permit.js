@@ -139,7 +139,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
 
         timestamp = await Utils.getCurrTimestamp();
 
-        const correlationId = await contractBosonRouter.correlationIds(
+        const correlationId = await contractBosonRouter.getCorrelationId(
           users.seller.address
         );
         assert.equal(
@@ -171,7 +171,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
       });
 
       it('Seller correlationId should be incremented after order is created', async () => {
-        const correlationId = await contractBosonRouter.correlationIds(
+        const correlationId = await contractBosonRouter.getCorrelationId(
           users.seller.address
         );
 
@@ -247,22 +247,30 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           constants.QTY_10
         );
 
-        const paymentDetails = await contractVoucherKernel.paymentDetails(
+        const paymentMethod = await contractVoucherKernel.getVoucherPaymentMethod(
+          tokenSupplyKey
+        );
+
+        const addressTokenPrice = await contractVoucherKernel.getVoucherPriceToken(
+          tokenSupplyKey
+        );
+
+        const addressTokenDeposits = await contractVoucherKernel.getVoucherDepositToken(
           tokenSupplyKey
         );
 
         assert.equal(
-          paymentDetails.paymentMethod.toString(),
+          paymentMethod.toString(),
           paymentMethods.ETHETH,
           'Payment Method ETHETH not set correctly'
         );
         assert.equal(
-          paymentDetails.addressTokenPrice.toString(),
+          addressTokenPrice.toString(),
           constants.ZERO_ADDRESS,
           'ETHETH Method Price Token Address mismatch'
         );
         assert.equal(
-          paymentDetails.addressTokenDeposits.toString(),
+          addressTokenDeposits.toString(),
           constants.ZERO_ADDRESS,
           'ETHETH Method Deposit Token Address mismatch'
         );
@@ -386,7 +394,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             tokensToMint
           );
 
-          const correlationId = await contractBosonRouter.correlationIds(
+          const correlationId = await contractBosonRouter.getCorrelationId(
             users.seller.address
           );
           assert.equal(
@@ -419,7 +427,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('Seller correlationId should be incremented after order is created', async () => {
-          const correlationId = await contractBosonRouter.correlationIds(
+          const correlationId = await contractBosonRouter.getCorrelationId(
             users.seller.address
           );
 
@@ -494,22 +502,30 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             constants.QTY_10
           );
 
-          const paymentDetails = await contractVoucherKernel.paymentDetails(
+          const paymentMethod = await contractVoucherKernel.getVoucherPaymentMethod(
+            tokenSupplyKey
+          );
+
+          const addressTokenPrice = await contractVoucherKernel.getVoucherPriceToken(
+            tokenSupplyKey
+          );
+
+          const addressTokenDeposits = await contractVoucherKernel.getVoucherDepositToken(
             tokenSupplyKey
           );
 
           assert.equal(
-            paymentDetails.paymentMethod.toString(),
+            paymentMethod.toString(),
             paymentMethods.ETHTKN,
             'Payment Method ETHTKN not set correctly'
           );
           assert.equal(
-            paymentDetails.addressTokenPrice.toString(),
+            addressTokenPrice.toString(),
             constants.ZERO_ADDRESS,
             'ETHTKN Method Price Token Address mismatch'
           );
           assert.equal(
-            paymentDetails.addressTokenDeposits.toString(),
+            addressTokenDeposits.toString(),
             contractBSNTokenDeposit.address,
             'ETHTKN Method Deposit Token Address mismatch'
           );
@@ -754,7 +770,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
               ''
             );
 
-          const correlationId = await contractBosonRouter.correlationIds(
+          const correlationId = await contractBosonRouter.getCorrelationId(
             users.seller.address
           );
           assert.equal(
@@ -797,7 +813,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('Seller correlationId should be incremented after order is created', async () => {
-          const correlationId = await contractBosonRouter.correlationIds(
+          const correlationId = await contractBosonRouter.getCorrelationId(
             users.seller.address
           );
 
@@ -872,22 +888,30 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             constants.QTY_1
           );
 
-          const paymentDetails = await contractVoucherKernel.paymentDetails(
+          const paymentMethod = await contractVoucherKernel.getVoucherPaymentMethod(
+            tokenSupplyKey
+          );
+
+          const addressTokenPrice = await contractVoucherKernel.getVoucherPriceToken(
+            tokenSupplyKey
+          );
+
+          const addressTokenDeposits = await contractVoucherKernel.getVoucherDepositToken(
             tokenSupplyKey
           );
 
           assert.equal(
-            paymentDetails.paymentMethod.toString(),
+            paymentMethod.toString(),
             paymentMethods.TKNETH,
             'Payment Method TKNETH not set correctly'
           );
           assert.equal(
-            paymentDetails.addressTokenPrice.toString(),
+            addressTokenPrice.toString(),
             contractBSNTokenPrice.address,
             'TKNETH Method Price Token Address mismatch'
           );
           assert.equal(
-            paymentDetails.addressTokenDeposits.toString(),
+            addressTokenDeposits.toString(),
             constants.ZERO_ADDRESS,
             'TKNETH Method Deposit Token Address mismatch'
           );
@@ -1015,7 +1039,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
               contractBSNTokenDeposit
             );
 
-          const correlationId = await contractBosonRouter.correlationIds(
+          const correlationId = await contractBosonRouter.getCorrelationId(
             users.seller.address
           );
           assert.equal(
@@ -1069,7 +1093,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('Seller correlationId should be incremented after order is created', async () => {
-          const correlationId = await contractBosonRouter.correlationIds(
+          const correlationId = await contractBosonRouter.getCorrelationId(
             users.seller.address
           );
 
@@ -1145,22 +1169,30 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             constants.QTY_1
           );
 
-          const paymentDetails = await contractVoucherKernel.paymentDetails(
+          const paymentMethod = await contractVoucherKernel.getVoucherPaymentMethod(
+            tokenSupplyKey
+          );
+
+          const addressTokenPrice = await contractVoucherKernel.getVoucherPriceToken(
+            tokenSupplyKey
+          );
+
+          const addressTokenDeposits = await contractVoucherKernel.getVoucherDepositToken(
             tokenSupplyKey
           );
 
           assert.equal(
-            paymentDetails.paymentMethod.toString(),
+            paymentMethod.toString(),
             paymentMethods.TKNTKN,
             'Payment Method TKNTKN not set correctly'
           );
           assert.equal(
-            paymentDetails.addressTokenPrice.toString(),
+            addressTokenPrice.toString(),
             contractBSNTokenPrice.address,
             'TKNTKN Method Price Token Address mismatch'
           );
           assert.equal(
-            paymentDetails.addressTokenDeposits.toString(),
+            addressTokenDeposits.toString(),
             contractBSNTokenDeposit.address,
             'TKNTKN Method Deposit Token Address mismatch'
           );
@@ -1498,7 +1530,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
 
       timestamp = await Utils.getCurrTimestamp();
 
-      const correlationId = await contractBosonRouter.correlationIds(
+      const correlationId = await contractBosonRouter.getCorrelationId(
         users.seller.address
       );
       assert.equal(
@@ -1517,14 +1549,14 @@ contract('Cashier and VoucherKernel', async (addresses) => {
     });
 
     it('Seller correlationId should be incremented after supply is cancelled', async () => {
-      let prevCorrId = await contractBosonRouter.correlationIds(
+      let prevCorrId = await contractBosonRouter.getCorrelationId(
         users.seller.address
       );
 
       await contractBosonRouter.requestCancelOrFaultVoucherSet(tokenSupplyKey, {
         from: users.seller.address,
       });
-      let nextCorrId = await contractBosonRouter.correlationIds(
+      let nextCorrId = await contractBosonRouter.getCorrelationId(
         users.seller.address
       );
 
@@ -1562,7 +1594,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
       });
 
       it('Buyer correlationId should be zero initially', async () => {
-        const correlationId = await contractBosonRouter.correlationIds(
+        const correlationId = await contractBosonRouter.getCorrelationId(
           users.buyer.address
         );
 
@@ -1622,7 +1654,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
       });
 
       it('Buyer correlationId should be incremented after requesting a voucher', async () => {
-        const correlationId = await contractBosonRouter.correlationIds(
+        const correlationId = await contractBosonRouter.getCorrelationId(
           users.buyer.address
         );
 
@@ -1758,7 +1790,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('Buyer correlationId should be zero initially', async () => {
-          const correlationId = await contractBosonRouter.correlationIds(
+          const correlationId = await contractBosonRouter.getCorrelationId(
             users.buyer.address
           );
 
@@ -1834,7 +1866,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('Buyer correlationId should be incremented after requesting a voucher', async () => {
-          const correlationId = await contractBosonRouter.correlationIds(
+          const correlationId = await contractBosonRouter.getCorrelationId(
             users.buyer.address
           );
 
@@ -2022,7 +2054,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('Buyer correlationId should be zero initially', async () => {
-          const correlationId = await contractBosonRouter.correlationIds(
+          const correlationId = await contractBosonRouter.getCorrelationId(
             users.buyer.address
           );
 
@@ -2131,7 +2163,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('Buyer correlationId should be incremented after requesting a voucher', async () => {
-          const correlationId = await contractBosonRouter.correlationIds(
+          const correlationId = await contractBosonRouter.getCorrelationId(
             users.buyer.address
           );
 
@@ -2379,7 +2411,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('Buyer correlationId should be zero initially', async () => {
-          const correlationId = await contractBosonRouter.correlationIds(
+          const correlationId = await contractBosonRouter.getCorrelationId(
             users.buyer.address
           );
 
@@ -2465,7 +2497,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('Buyer correlationId should be incremented after requesting a voucher', async () => {
-          const correlationId = await contractBosonRouter.correlationIds(
+          const correlationId = await contractBosonRouter.getCorrelationId(
             users.buyer.address
           );
 
@@ -2713,7 +2745,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('Buyer correlationId should be zero initially', async () => {
-          const correlationId = await contractBosonRouter.correlationIds(
+          const correlationId = await contractBosonRouter.getCorrelationId(
             users.buyer.address
           );
 
@@ -2790,7 +2822,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         });
 
         it('Buyer correlationId should be incremented after requesting a voucher', async () => {
-          const correlationId = await contractBosonRouter.correlationIds(
+          const correlationId = await contractBosonRouter.getCorrelationId(
             users.buyer.address
           );
 
@@ -2932,7 +2964,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
       });
     });
 
-    describe('[NEGATIVE] Common voucher interactions after expiry', () => {
+    describe('Common voucher interactions after expiry', () => {
       const TEN_MINUTES = 10 * constants.ONE_MINUTE;
       const cancelPeriod = constants.ONE_MINUTE;
       const complainPeriod = constants.ONE_MINUTE;
@@ -3199,6 +3231,186 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           truffleAssert.ErrorType.reverts
         );
       });
+
+      it('[COMMIT->EXPIRY TRIGGERED->CANCEL] Seller should be able to cancel within the cancel period after expiry triggered', async () => {
+        const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
+        await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
+        await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
+
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await timemachine.advanceTimeSeconds(ONE_WEEK);
+
+        let expiryTx = await contractVoucherKernel.triggerExpiration(voucherID);
+
+        await truffleAssert.eventEmitted(
+          expiryTx,
+          'LogExpirationTriggered',
+          (ev) => {
+            return ev._triggeredBy === users.deployer.address;
+          }
+        );
+
+        let cancelTx = await utils.cancel(voucherID, users.seller.address);
+
+        const internalCancel = await truffleAssert.createTransactionResult(
+          contractVoucherKernel,
+          cancelTx.tx
+        );
+        await truffleAssert.eventEmitted(
+          internalCancel,
+          'LogVoucherFaultCancel',
+          (ev) => {
+            return ev._tokenIdVoucher.toString() == voucherID;
+          }
+        );
+      });
+
+      it('[COMMIT->EXPIRY TRIGGERED->COMPLAIN] Buyer should be able to complain within the complain period after expiry triggered', async () => {
+        const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
+        await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
+        await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
+
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await timemachine.advanceTimeSeconds(ONE_WEEK);
+
+        let expiryTx = await contractVoucherKernel.triggerExpiration(voucherID);
+
+        await truffleAssert.eventEmitted(
+          expiryTx,
+          'LogExpirationTriggered',
+          (ev) => {
+            return ev._triggeredBy === users.deployer.address;
+          }
+        );
+
+        let complainTx = await utils.complain(voucherID, users.buyer.address);
+
+        const internalComplain = await truffleAssert.createTransactionResult(
+          contractVoucherKernel,
+          complainTx.tx
+        );
+        await truffleAssert.eventEmitted(
+          internalComplain,
+          'LogVoucherComplain',
+          (ev) => {
+            return ev._tokenIdVoucher.toString() == voucherID;
+          }
+        );
+      });
+
+      it('[COMMIT->EXPIRY TRIGGERED->CANCEL->COMPLAIN] Buyer should be able to complain within the complain period after expiry triggered and seller cancels', async () => {
+        const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
+        await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
+        await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
+
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await timemachine.advanceTimeSeconds(ONE_WEEK);
+
+        let expiryTx = await contractVoucherKernel.triggerExpiration(voucherID);
+
+        await truffleAssert.eventEmitted(
+          expiryTx,
+          'LogExpirationTriggered',
+          (ev) => {
+            return ev._triggeredBy === users.deployer.address;
+          }
+        );
+
+        let cancelTx = await utils.cancel(voucherID, users.seller.address);
+
+        const internalCancel = await truffleAssert.createTransactionResult(
+          contractVoucherKernel,
+          cancelTx.tx
+        );
+        await truffleAssert.eventEmitted(
+          internalCancel,
+          'LogVoucherFaultCancel',
+          (ev) => {
+            return ev._tokenIdVoucher.toString() == voucherID;
+          }
+        );
+
+        let complainTx = await utils.complain(voucherID, users.buyer.address);
+
+        const internalComplain = await truffleAssert.createTransactionResult(
+          contractVoucherKernel,
+          complainTx.tx
+        );
+        await truffleAssert.eventEmitted(
+          internalComplain,
+          'LogVoucherComplain',
+          (ev) => {
+            return ev._tokenIdVoucher.toString() == voucherID;
+          }
+        );
+      });
+
+      it('[COMMIT->EXPIRY TRIGGERED->COMPLAIN->CANCEL] Seller should be able to cancel within the cancel period after expiry triggered and buyer complains', async () => {
+        const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
+        await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
+        await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
+
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await timemachine.advanceTimeSeconds(ONE_WEEK);
+
+        let expiryTx = await contractVoucherKernel.triggerExpiration(voucherID);
+
+        await truffleAssert.eventEmitted(
+          expiryTx,
+          'LogExpirationTriggered',
+          (ev) => {
+            return ev._triggeredBy === users.deployer.address;
+          }
+        );
+
+        let complainTx = await utils.complain(voucherID, users.buyer.address);
+
+        const internalComplain = await truffleAssert.createTransactionResult(
+          contractVoucherKernel,
+          complainTx.tx
+        );
+        await truffleAssert.eventEmitted(
+          internalComplain,
+          'LogVoucherComplain',
+          (ev) => {
+            return ev._tokenIdVoucher.toString() == voucherID;
+          }
+        );
+
+        let cancelTx = await utils.cancel(voucherID, users.seller.address);
+
+        const internalCancel = await truffleAssert.createTransactionResult(
+          contractVoucherKernel,
+          cancelTx.tx
+        );
+        await truffleAssert.eventEmitted(
+          internalCancel,
+          'LogVoucherFaultCancel',
+          (ev) => {
+            return ev._tokenIdVoucher.toString() == voucherID;
+          }
+        );
+      });
     });
   });
 
@@ -3452,7 +3664,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
       });
 
       it('New Supply Owner correlationId should be incremented properly', async () => {
-        let correlationId = await contractBosonRouter.correlationIds(
+        let correlationId = await contractBosonRouter.getCorrelationId(
           users.other2.address
         );
         assert.equal(
@@ -3469,7 +3681,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           {from: users.other1.address}
         );
 
-        correlationId = await contractBosonRouter.correlationIds(
+        correlationId = await contractBosonRouter.getCorrelationId(
           users.other2.address
         );
 
@@ -3485,10 +3697,10 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           new BN(constants.QTY_1)
         );
 
-        actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
+        actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
           users.other1.address
         );
-        actualNewOwnerBalanceFromEscrow = await contractCashier.escrow(
+        actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
           users.other2.address
         );
 
@@ -3510,10 +3722,10 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             from: users.other1.address,
           }
         ),
-          (actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
+          (actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
             users.other1.address
           ));
-        actualNewOwnerBalanceFromEscrow = await contractCashier.escrow(
+        actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
           users.other2.address
         );
 
@@ -3706,7 +3918,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         }
 
         it('New Supply Owner correlationId should be incremented properly', async () => {
-          let correlationId = await contractBosonRouter.correlationIds(
+          let correlationId = await contractBosonRouter.getCorrelationId(
             users.other2.address
           );
           assert.equal(
@@ -3723,7 +3935,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             {from: users.other1.address}
           );
 
-          correlationId = await contractBosonRouter.correlationIds(
+          correlationId = await contractBosonRouter.getCorrelationId(
             users.other2.address
           );
 
@@ -3999,7 +4211,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         }
 
         it('New Supply Owner correlationId should be incremented properly', async () => {
-          let correlationId = await contractBosonRouter.correlationIds(
+          let correlationId = await contractBosonRouter.getCorrelationId(
             users.other2.address
           );
           assert.equal(
@@ -4016,7 +4228,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             {from: users.other1.address}
           );
 
-          correlationId = await contractBosonRouter.correlationIds(
+          correlationId = await contractBosonRouter.getCorrelationId(
             users.other2.address
           );
 
@@ -4260,7 +4472,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
         }
 
         it('New Supply Owner correlationId should be incremented properly', async () => {
-          let correlationId = await contractBosonRouter.correlationIds(
+          let correlationId = await contractBosonRouter.getCorrelationId(
             users.other2.address
           );
           assert.equal(
@@ -4277,7 +4489,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             {from: users.other1.address}
           );
 
-          correlationId = await contractBosonRouter.correlationIds(
+          correlationId = await contractBosonRouter.getCorrelationId(
             users.other2.address
           );
 
@@ -4293,10 +4505,10 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             new BN(constants.QTY_1)
           );
 
-          actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
+          actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
             users.other1.address
           );
-          actualNewOwnerBalanceFromEscrow = await contractCashier.escrow(
+          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
             users.other2.address
           );
 
@@ -4317,10 +4529,10 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             {from: users.other1.address}
           );
 
-          actualOldOwnerBalanceFromEscrow = await contractCashier.escrow(
+          actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
             users.other1.address
           );
-          actualNewOwnerBalanceFromEscrow = await contractCashier.escrow(
+          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
             users.other2.address
           );
 
@@ -4621,7 +4833,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           tokenSupplyKey
         );
 
-        let correlationId = await contractBosonRouter.correlationIds(
+        let correlationId = await contractBosonRouter.getCorrelationId(
           users.other2.address
         );
         assert.equal(
@@ -4637,7 +4849,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           {from: users.other1.address}
         );
 
-        correlationId = await contractBosonRouter.correlationIds(
+        correlationId = await contractBosonRouter.getCorrelationId(
           users.other2.address
         );
         assert.equal(
@@ -4657,10 +4869,10 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           tokenSupplyKey
         );
 
-        actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
+        actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
           users.other1.address
         );
-        actualNewOwnerBalanceFromEscrowEth = await contractCashier.escrow(
+        actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
           users.other2.address
         );
 
@@ -4682,10 +4894,10 @@ contract('Cashier and VoucherKernel', async (addresses) => {
           }
         );
 
-        actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
+        actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
           users.other1.address
         );
-        actualNewOwnerBalanceFromEscrowEth = await contractCashier.escrow(
+        actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
           users.other2.address
         );
 
@@ -4933,7 +5145,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             tokenSupplyKey
           );
 
-          let correlationId = await contractBosonRouter.correlationIds(
+          let correlationId = await contractBosonRouter.getCorrelationId(
             users.other2.address
           );
           assert.equal(
@@ -4949,7 +5161,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             {from: users.other1.address}
           );
 
-          correlationId = await contractBosonRouter.correlationIds(
+          correlationId = await contractBosonRouter.getCorrelationId(
             users.other2.address
           );
           assert.equal(
@@ -4969,7 +5181,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             tokenSupplyKey
           );
 
-          actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
+          actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
             users.other1.address
           );
 
@@ -4978,7 +5190,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             users.other1.address
           );
 
-          actualNewOwnerBalanceFromEscrowEth = await contractCashier.escrow(
+          actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
             users.other2.address
           );
 
@@ -5016,7 +5228,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             }
           );
 
-          actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
+          actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
             users.other1.address
           );
 
@@ -5025,7 +5237,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             users.other1.address
           );
 
-          actualNewOwnerBalanceFromEscrowEth = await contractCashier.escrow(
+          actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
             users.other2.address
           );
 
@@ -5320,7 +5532,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             tokenSupplyKey
           );
 
-          let correlationId = await contractBosonRouter.correlationIds(
+          let correlationId = await contractBosonRouter.getCorrelationId(
             users.other2.address
           );
           assert.equal(
@@ -5336,7 +5548,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             {from: users.other1.address}
           );
 
-          correlationId = await contractBosonRouter.correlationIds(
+          correlationId = await contractBosonRouter.getCorrelationId(
             users.other2.address
           );
           assert.equal(
@@ -5678,7 +5890,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             tokenSupplyKey
           );
 
-          let correlationId = await contractBosonRouter.correlationIds(
+          let correlationId = await contractBosonRouter.getCorrelationId(
             users.other2.address
           );
           assert.equal(
@@ -5694,7 +5906,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             {from: users.other1.address}
           );
 
-          correlationId = await contractBosonRouter.correlationIds(
+          correlationId = await contractBosonRouter.getCorrelationId(
             users.other2.address
           );
           assert.equal(
@@ -5713,7 +5925,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             tokenSupplyKey
           );
 
-          actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
+          actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
             users.other1.address
           );
 
@@ -5722,7 +5934,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             users.other1.address
           );
 
-          actualNewOwnerBalanceFromEscrowEth = await contractCashier.escrow(
+          actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
             users.other2.address
           );
 
@@ -5759,7 +5971,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
               from: users.other1.address,
             }
           ),
-            (actualOldOwnerBalanceFromEscrowEth = await contractCashier.escrow(
+            (actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
               users.other1.address
             ));
 
@@ -5768,7 +5980,7 @@ contract('Cashier and VoucherKernel', async (addresses) => {
             users.other1.address
           );
 
-          actualNewOwnerBalanceFromEscrowEth = await contractCashier.escrow(
+          actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
             users.other2.address
           );
 

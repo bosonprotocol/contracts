@@ -5238,12 +5238,24 @@ contract('Cashier withdrawals ', async (addresses) => {
         );
       });
 
+      it('Disaster State should be falsy value initially', async () => {
+        const disasterState = await contractCashier.isDisasterStateSet();
+
+        assert.isFalse(disasterState);
+      });
+
       it('Admin should be able to set the Cashier at disaster state', async () => {
-        const tx = await contractCashier.setDisasterState();
+        const cashier = await Cashier.at(
+          await contractBosonRouter.getCashierAddress()
+        );
+        const tx = await cashier.setDisasterState();
 
         truffleAssert.eventEmitted(tx, 'LogDisasterStateSet', (ev) => {
           return ev._triggeredBy == users.deployer.address;
         });
+
+        const disasterState = await contractCashier.isDisasterStateSet();
+        assert.isTrue(disasterState);
       });
 
       it('Buyer should be able to withdraw all the funds locked in escrow', async () => {

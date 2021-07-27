@@ -80,7 +80,11 @@ module.exports = {
           `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`
         )
       },
-      network_id: 4
+      network_id: 4,
+      networkCheckTimeout: 1000000,
+      timeoutBlocks: 200,
+      skipDryRun: true,
+      confirmations: 1
     }
 
     // Another network with more advanced options...
@@ -134,7 +138,11 @@ module.exports = {
   },
 
   mocha: {
-    timeout: 120000
+    timeout: 120000,
+    reporter: 'eth-gas-reporter',
+    reporterOptions : { 
+      outputFile: 'gas-reporter.txt'
+    }
   },
 
   compilers: {

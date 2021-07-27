@@ -133,7 +133,7 @@ contract('Admin functionality', async (addresses) => {
 
     it('Owner should be the deployer', async () => {
       let expectedOwner = users.deployer.address;
-      let owner = await contractERC1155ERC721.owner();
+      let owner = await contractERC1155ERC721.getOwner();
 
       assert.equal(owner, expectedOwner, 'Owner is not as expected');
     });
