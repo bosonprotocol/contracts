@@ -47,7 +47,6 @@ namespace :contracts do
 
   desc "Compile all contracts"
   task :compile => [:'dependencies:install'] do
-    sh('npm', 'run', 'contracts:compile')
     sh({"PK" => "123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234"}, 'npm', 'run', 'contracts:compile')
   end
 
