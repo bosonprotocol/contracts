@@ -96,7 +96,7 @@ namespace :tests do
   task :unit, [:port, :account_keys_file] =>
       [:'dependencies:install'] do |_, args|
     run_unit_tests = lambda do ||
-      sh({}, 'npm', 'run', 'tests:unit')
+      sh({"PK" => "123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234"}, 'npm', 'run', 'tests:unit')
     
     # run_unit_tests.call()
     end
