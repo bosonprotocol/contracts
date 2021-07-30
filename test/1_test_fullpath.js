@@ -126,8 +126,7 @@ describe('Voucher tests', () => {
     });
 
     it('Should have set contract addresses properly for ERC1155ERC721', async () => {
-      const voucherKernel =
-        await contractERC1155ERC721.getVoucherKernelAddress();
+      const voucherKernel = await contractERC1155ERC721.getVoucherKernelAddress();
       const cashier = await contractERC1155ERC721.getCashierAddress();
 
       assert.equal(voucherKernel, contractVoucherKernel.address);
@@ -135,8 +134,7 @@ describe('Voucher tests', () => {
     });
 
     it('Should have set contract addresses properly for VoucherKernel', async () => {
-      const tokensContract =
-        await contractVoucherKernel.getTokensContractAddress();
+      const tokensContract = await contractVoucherKernel.getTokensContractAddress();
 
       assert.equal(tokensContract, contractERC1155ERC721.address);
     });
@@ -1404,8 +1402,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       );
 
       //Check VoucherKernel state
-      const newCancelOrFaultPeriod =
-        await contractVoucherKernel.getCancelFaultPeriod();
+      const newCancelOrFaultPeriod = await contractVoucherKernel.getCancelFaultPeriod();
       assert.isTrue(newCancelOrFaultPeriod.eq(BN(cancelFaultPeriodSeconds)));
     });
 

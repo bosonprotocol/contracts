@@ -845,20 +845,23 @@ describe('Cashier withdrawals ', () => {
         balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
           users.buyer.address
         );
-        balanceBuyerFromDeposits =
-          await utils.contractBSNTokenDeposit.balanceOf(users.buyer.address);
+        balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+          users.buyer.address
+        );
 
         balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
           users.seller.address
         );
-        balanceSellerFromDeposits =
-          await utils.contractBSNTokenDeposit.balanceOf(users.seller.address);
+        balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+          users.seller.address
+        );
 
         escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(
           users.deployer.address
         );
-        escrowBalanceFromDeposits =
-          await utils.contractBSNTokenDeposit.balanceOf(users.deployer.address);
+        escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+          users.deployer.address
+        );
 
         cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(
           utils.contractCashier.address
@@ -2558,12 +2561,15 @@ describe('Cashier withdrawals ', () => {
       let cashierDepositLeft = BN(0);
 
       async function getBalancesDepositToken() {
-        balanceBuyerFromDeposits =
-          await utils.contractBSNTokenDeposit.balanceOf(users.buyer.address);
-        balanceSellerFromDeposits =
-          await utils.contractBSNTokenDeposit.balanceOf(users.seller.address);
-        escrowBalanceFromDeposits =
-          await utils.contractBSNTokenDeposit.balanceOf(users.deployer.address);
+        balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+          users.buyer.address
+        );
+        balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+          users.seller.address
+        );
+        escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+          users.deployer.address
+        );
         cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(
           utils.contractCashier.address
         );
@@ -4627,11 +4633,10 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('Remaining QTY for Token Supply should be ZERO', async () => {
-        let remainingQtyInContract =
-          await contractVoucherKernel.getRemQtyForSupply(
-            TOKEN_SUPPLY_ID,
-            users.seller.address
-          );
+        let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+          TOKEN_SUPPLY_ID,
+          users.seller.address
+        );
 
         assert.isTrue(
           remainingQtyInContract.eq(BN(0)),
@@ -4787,11 +4792,10 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Remaining QTY for Token Supply should be ZERO', async () => {
-          let remainingQtyInContract =
-            await contractVoucherKernel.getRemQtyForSupply(
-              TOKEN_SUPPLY_ID,
-              users.seller.address
-            );
+          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+            TOKEN_SUPPLY_ID,
+            users.seller.address
+          );
 
           assert.isTrue(
             remainingQtyInContract.eq(BN(0)),
@@ -4945,11 +4949,10 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Remaining QTY for Token Supply should be ZERO', async () => {
-          let remainingQtyInContract =
-            await contractVoucherKernel.getRemQtyForSupply(
-              TOKEN_SUPPLY_ID,
-              users.seller.address
-            );
+          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+            TOKEN_SUPPLY_ID,
+            users.seller.address
+          );
 
           assert.isTrue(
             remainingQtyInContract.eq(BN(0)),
@@ -5081,11 +5084,10 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Remaining QTY for Token Supply should be ZERO', async () => {
-          let remainingQtyInContract =
-            await contractVoucherKernel.getRemQtyForSupply(
-              TOKEN_SUPPLY_ID,
-              users.seller.address
-            );
+          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+            TOKEN_SUPPLY_ID,
+            users.seller.address
+          );
 
           assert.isTrue(
             remainingQtyInContract.eq(BN(0)),
