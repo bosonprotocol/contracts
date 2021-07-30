@@ -21,7 +21,7 @@ let utils;
 let TOKEN_SUPPLY_ID;
 let VOUCHER_ID;
 
-contract('Cashier && VK', async (addresses) => {
+contract('Cashier && VK', (addresses) => {
   const users = new Users(addresses);
 
   let contractERC1155ERC721,

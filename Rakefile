@@ -32,35 +32,6 @@ task :test => [
     :"tests:unit"
 ]
 
-namespace :ganache do
-  desc "Start ganache on provided port, default 8545"
-  task :start, [:port] => [:'dependencies:install'] do |_, args|
-    args.with_defaults(port: 8545)
-
-    puts "Starting ganache on port #{args.port}..."
-    ganache = Ganache.builder
-        .on_port(args.port)
-        .allowing_unlimited_contract_size
-        .build
-    ganache.start
-    puts "Started ganache on port #{args.port}"
-    puts "  - with pidfile at #{ganache.pidfile}"
-    puts "  - with account keys file at #{ganache.account_keys_file}"
-  end
-
-  desc "Stop ganache on provided port, default 8545"
-  task :stop, [:port] => [:'dependencies:install'] do |_, args|
-    args.with_defaults(port: 8545)
-
-    puts "Stopping ganache on port #{args.port}..."
-    ganache = Ganache.builder
-        .on_port(args.port)
-        .build
-    ganache.stop
-    puts "Stopped ganache on port #{args.port}"
-  end
-end
-
 namespace :dependencies do
   desc "Install all dependencies"
   task :install do
@@ -69,22 +40,14 @@ namespace :dependencies do
 end
 
 namespace :contracts do
-  desc "Run all contracts (must be manually stopped)"
-  task :run, [:port, :account_keys_file] =>
-    [:'ganache:start'] do |_, args|
-    Ganache.on_available_port(
-      allow_unlimited_contract_size: true) do |ganache|
-      sh({
-           "HOST" => "127.0.0.1",
-           "PORT" => "#{ganache.port}",
-           "ACCOUNT_KEYS_FILE" => "#{ganache.account_keys_file}"
-         }, 'npm', 'run', 'contracts:run')
-    end
+  desc "Run all contracts"
+  task :run => [:'dependencies:install'] do
+    sh('npm', 'run', 'contracts:run')
   end
 
   desc "Compile all contracts"
   task :compile => [:'dependencies:install'] do
-    sh('npm', 'run', 'contracts:compile')
+    sh({"PK" => "123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234"}, 'npm', 'run', 'contracts:compile')
   end
 
   desc "Lint all contracts"
@@ -132,26 +95,22 @@ namespace :tests do
   desc "Run all contract unit tests"
   task :unit, [:port, :account_keys_file] =>
       [:'dependencies:install'] do |_, args|
-    run_unit_tests = lambda do |port, account_keys_file|
-      sh({
-          "HOST" => "127.0.0.1",
-          "PORT" => "#{port}",
-          "ACCOUNT_KEYS_FILE" => "#{account_keys_file}"
-      }, 'npm', 'run', 'tests:unit')
+    run_unit_tests = lambda do ||
+      sh({"PK" => "123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234"}, 'npm', 'run', 'tests:unit')
+    
+    # run_unit_tests.call()
     end
 
     if args.port
-      puts "Running unit tests against node listening on #{args.port}..."
-      run_unit_tests.call(
-          args.port,
-          args.account_keys_file || 'config/accounts.json')
+      # puts "Running unit tests against node listening on #{args.port}..."
+      run_unit_tests.call()
     else
-      puts "Running unit tests against node listening on random available " +
-          "port..."
-      Ganache.on_available_port(
-          allow_unlimited_contract_size: true) do |ganache|
-        run_unit_tests.call(ganache.port, ganache.account_keys_file)
-      end
+      # puts "Running unit tests against node listening on random available " +
+      #     "port..."
+      # Ganache.on_available_port(
+      #     allow_unlimited_contract_size: true) do |ganache|
+        run_unit_tests.call()
+      # end
     end
   end
 

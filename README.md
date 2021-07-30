@@ -78,26 +78,18 @@ To compile the contracts:
 
 ---
 ### Run
-To deploy instances of the contracts for local development without prior knowledge Ganache and Truffle, run the following command:
+To deploy instances of the contracts for local development without prior knowledge to Hardhat, run the following command:
 ```shell
 ./go contracts:run
 ```
 
-This command starts up Ganache on a random port and migrates all contracts to the Ganache instance. The Ganache instance will remain running in the background, even though the command prompt returns.
-The pid of the Ganache instance is written to a file in the run/pid directory.
+This command starts up built-in Hardhat Network and migrates all contracts to the Hardhat Network instance.
 
-To stop the Ganache instance, run the following command:
-```shell
-./go ganache:stop
-```
+If preferred by those who are familiar with Hardhat, the standard Hardhat commands can be used. Ganache can be started up manually by configuring a local network to be run against or using the `hardhat-ganache` plugin or you could start a Hardhat Network using `npx hardhat node`. For more information on how this can be achieved refer to the [official Hardhat documentation](https://hardhat.org/guides/ganache-tests.html#running-tests-with-ganache)
 
-If preferred by those who are familiar with Truffle and Ganache, the standard Truffle and Ganache commands can be used. Ganache can be started up manually in a terminal using the command:
-```shell
-  node ./node_modules/.bin/ganache-cli --port 8545 --allowUnlimitedContractSize --acctKeys build/ganache/accounts-8545.json
-```
 In a separate terminal, contracts can be deployed using
 ```shell
-  ./node_modules/.bin/truffle migrate
+  npx hardhat --network [customNetworkName] deploy
 ```
 One of the contracts that gets deployed locally is a mock contract that represents the $BOSON token. The mock exists for unit testing purposes and so that those who want to develop against the protocol locally don't have to point to a testnet deployment of the $BOSON token.
 
@@ -107,7 +99,7 @@ One of the contracts that gets deployed locally is a mock contract that represen
 #### Unit Tests
 
 All contracts are thoroughly unit tested using 
-[Truffle's JavaScript testing](https://www.trufflesuite.com/docs/truffle/testing/writing-tests-in-javascript) 
+[Hardhat's testing framework](https://hardhat.org/tutorial/testing-contracts.html#_5-testing-contracts) 
 support.
 
 To run the unit tests:
@@ -117,7 +109,7 @@ To run the unit tests:
 ```
 
 By default, the build system automates starting and stopping 
-[Ganache](https://www.trufflesuite.com/docs/ganache/overview) on a free port in
+[Hardhat Network](https://hardhat.org/hardhat-network/#hardhat-network) on port `http://localhost:8545` in
 the background ready for each test run.
 
 If instead, you want to run the tests against an existing node, Ganache or
