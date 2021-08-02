@@ -16,7 +16,7 @@ const FundLimitsOracle = artifacts.require('FundLimitsOracle');
 const MockBosonRouter = artifacts.require('MockBosonRouter');
 const BN = web3.utils.BN;
 
-contract('Voucher tests', async (addresses) => {
+contract('Voucher tests', (addresses) => {
   const users = new Users(addresses);
 
   let contractERC1155ERC721,
@@ -1270,7 +1270,7 @@ contract('Voucher tests', async (addresses) => {
   });
 }); //end of contract
 
-contract('Voucher tests - UNHAPPY PATH', async (addresses) => {
+contract('Voucher tests - UNHAPPY PATH', (addresses) => {
   const users = new Users(addresses);
 
   let contractERC1155ERC721,
