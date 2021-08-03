@@ -1,7 +1,8 @@
 let Contract = require('web3-eth-contract');
 const Utils = require('../helpers/utils');
 const helpers = require('../helpers/constants');
-const VoucherKernel = require('../../build/contracts/VoucherKernel.json').abi;
+const VoucherKernel = require('../../artifacts/contracts/VoucherKernel.sol/VoucherKernel.json')
+  .abi;
 
 // set provider for all later instances to use
 Contract.setProvider(helpers.PROVIDER);

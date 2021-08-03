@@ -3,23 +3,27 @@ const truffleContract = require('truffle-contract');
 const helpers = require('../helpers/constants');
 let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 const BosonRouter = truffleContract(
-  require(__dirname + '/../../build/contracts/BosonRouter.json')
+  require(__dirname +
+    '/../../artifacts/contracts/BosonRouter.sol/BosonRouter.json')
 );
 BosonRouter.setProvider(web3.currentProvider);
 const VoucherKernel = truffleContract(
-  require(__dirname + '/../../build/contracts/VoucherKernel.json')
+  require(__dirname +
+    '/../../artifacts/contracts/VoucherKernel.sol/VoucherKernel.json')
 );
 VoucherKernel.setProvider(web3.currentProvider);
 const ERC1155ERC721 = truffleContract(
-  require(__dirname + '/../../build/contracts/ERC1155ERC721.json')
+  require(__dirname +
+    '/../../artifacts/contracts/ERC1155ERC721.sol/ERC1155ERC721.json')
 );
 ERC1155ERC721.setProvider(web3.currentProvider);
 const Cashier = truffleContract(
-  require(__dirname + '/../../build/contracts/Cashier.json')
+  require(__dirname + '/../../artifacts/contracts/Cashier.sol/Cashier.json')
 );
 Cashier.setProvider(web3.currentProvider);
 const FundLimitsOracle = truffleContract(
-  require(__dirname + '/../../build/contracts/FundLimitsOracle.json')
+  require(__dirname +
+    '/../../artifacts/contracts/FundLimitsOracle.sol/FundLimitsOracle.json')
 );
 FundLimitsOracle.setProvider(web3.currentProvider);
 

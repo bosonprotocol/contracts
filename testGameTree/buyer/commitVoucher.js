@@ -5,8 +5,10 @@ const helpers = require('../helpers/constants');
 const Tx = require('ethereumjs-tx').Transaction;
 const Utils = require('../helpers/utils');
 let converter = require('hex2dec');
-const BosonRouter = require('../../build/contracts/BosonRouter.json').abi;
-const VoucherKernel = require('../../build/contracts/VoucherKernel.json').abi;
+const BosonRouter = require('../../artifacts/contracts/BosonRouter.sol/BosonRouter.json')
+  .abi;
+const VoucherKernel = require('../../artifacts/contracts/VoucherKernel.sol/VoucherKernel.json')
+  .abi;
 let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 
 // set provider for all later instances to use
