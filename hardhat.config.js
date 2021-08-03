@@ -1,14 +1,11 @@
 require('dotenv').config();
 require("solidity-coverage");
 require('hardhat-contract-sizer');
-require("@nomiclabs/hardhat-truffle5");
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-ethers");
-require("@nomiclabs/hardhat-web3")
 require("@nomiclabs/hardhat-waffle");
 
 const { task } = require("hardhat/config");
-
 const testMnemonic = 'inhale wood champion certain immense wash pepper enact enrich infant purse maid'
 const INFURA_KEY = process.env.INFURA_API_KEY;
 const DEPLOYER_PRIVATE_KEY = process.env.PK;
@@ -45,7 +42,7 @@ module.exports = {
 	networks: {
 		hardhat: {
 			accounts: {mnemonic: testMnemonic, count: 10},
-			chainId: 1,
+			chainId: 1
 		},
 		rinkeby: {
 			url: `https://rinkeby.infura.io/v3/${INFURA_KEY}`,

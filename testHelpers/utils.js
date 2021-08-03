@@ -1,15 +1,24 @@
+const ethers = require('hardhat').ethers;
 const constants = require('./constants');
-const BN = web3.utils.BN;
-const truffleAssert = require('truffle-assertions');
+const BN = ethers.BigNumber.from;
+const events = require('./events');
+const fnSignatures = require('./functionSignatures');
 
 const {ecsign} = require('ethereumjs-util');
 
 const {toWei, getApprovalDigest} = require('../testHelpers/permitUtils');
-
 class Utils {
   constructor() {
     this.createOrder = '';
     this.commitToBuy = '';
+    this.factories = {
+      ERC1155ERC721: '',
+      VoucherKernel: '',
+      Cashier: '',
+      BosonRouter: '',
+      FundLimitsOracle: '',
+      MockERC20Permit: '',
+    };
     this.deadline = toWei(1);
   }
 
@@ -38,9 +47,10 @@ class Utils {
     qty,
     returnTx = false
   ) {
-    const txValue = new BN(sellerDeposit).mul(new BN(qty));
+    const txValue = BN(sellerDeposit).mul(BN(qty));
 
-    let txOrder = await this.contractBSNRouter.requestCreateOrderETHETH(
+    const sellerInstance = this.contractBSNRouter.connect(seller.signer);
+    let txOrder = await sellerInstance.requestCreateOrderETHETH(
       [
         from,
         to,
@@ -50,12 +60,21 @@ class Utils {
         qty,
       ],
       {
-        from: seller.address,
         value: txValue,
       }
     );
 
-    return returnTx ? txOrder : txOrder.logs[0].args._tokenIdSupply.toString();
+    const txReceipt = await txOrder.wait();
+    let eventArgs;
+
+    events.assertEventEmitted(
+      txReceipt,
+      this.factories.BosonRouter,
+      events.eventNames.LOG_ORDER_CREATED,
+      (e) => (eventArgs = e)
+    );
+
+    return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
   }
 
   async requestCreateOrderETHTKNSameWithPermit(
@@ -63,9 +82,10 @@ class Utils {
     from,
     to,
     sellerDeposit,
-    qty
+    qty,
+    returnTx = false
   ) {
-    const txValue = new BN(sellerDeposit).mul(new BN(qty));
+    const txValue = BN(sellerDeposit).mul(BN(qty));
 
     const nonce = await this.contractBSNTokenSame.nonces(seller.address);
 
@@ -83,7 +103,8 @@ class Utils {
       Buffer.from(seller.privateKey.slice(2), 'hex')
     );
 
-    let txOrder = await this.contractBSNRouter.requestCreateOrderTKNTKNWithPermit(
+    const sellerInstance = this.contractBSNRouter.connect(seller.signer);
+    let txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermit(
       this.contractBSNTokenSame.address,
       this.contractBSNTokenSame.address,
       txValue,
@@ -104,7 +125,17 @@ class Utils {
       }
     );
 
-    return txOrder.logs[0].args._tokenIdSupply.toString();
+    const txReceipt = await txOrder.wait();
+    let eventArgs;
+
+    events.assertEventEmitted(
+      txReceipt,
+      this.factories.BosonRouter,
+      events.eventNames.LOG_ORDER_CREATED,
+      (e) => (eventArgs = e)
+    );
+
+    return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
   }
 
   async requestCreateOrderTKNTKNWithPermit(
@@ -114,7 +145,7 @@ class Utils {
     sellerDeposit,
     qty
   ) {
-    const txValue = new BN(sellerDeposit).mul(new BN(qty));
+    const txValue = BN(sellerDeposit).mul(BN(qty));
 
     const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
 
@@ -132,7 +163,8 @@ class Utils {
       Buffer.from(seller.privateKey.slice(2), 'hex')
     );
 
-    let txOrder = await this.contractBSNRouter.requestCreateOrderTKNTKNWithPermit(
+    const sellerInstance = this.contractBSNRouter.connect(seller.signer);
+    let txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermit(
       this.contractBSNTokenPrice.address,
       this.contractBSNTokenDeposit.address,
       txValue,
@@ -153,7 +185,17 @@ class Utils {
       }
     );
 
-    return txOrder.logs[0].args._tokenIdSupply.toString();
+    const txReceipt = await txOrder.wait();
+    let eventArgs;
+
+    events.assertEventEmitted(
+      txReceipt,
+      this.factories.BosonRouter,
+      events.eventNames.LOG_ORDER_CREATED,
+      (e) => (eventArgs = e)
+    );
+
+    return eventArgs._tokenIdSupply.toString();
   }
 
   async requestCreateOrderETHTKNWithPermit(
@@ -164,7 +206,7 @@ class Utils {
     qty,
     returnTx = false
   ) {
-    const txValue = new BN(sellerDeposit).mul(new BN(qty));
+    const txValue = BN(sellerDeposit).mul(BN(qty));
     const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
 
     const digest = await getApprovalDigest(
@@ -181,7 +223,8 @@ class Utils {
       Buffer.from(seller.privateKey.slice(2), 'hex')
     );
 
-    let txOrder = await this.contractBSNRouter.requestCreateOrderETHTKNWithPermit(
+    const sellerInstance = this.contractBSNRouter.connect(seller.signer);
+    let txOrder = await sellerInstance.requestCreateOrderETHTKNWithPermit(
       this.contractBSNTokenDeposit.address,
       txValue,
       this.deadline,
@@ -201,13 +244,31 @@ class Utils {
       }
     );
 
-    return returnTx ? txOrder : txOrder.logs[0].args._tokenIdSupply.toString();
+    const txReceipt = await txOrder.wait();
+    let eventArgs;
+
+    events.assertEventEmitted(
+      txReceipt,
+      this.factories.BosonRouter,
+      events.eventNames.LOG_ORDER_CREATED,
+      (e) => (eventArgs = e)
+    );
+
+    return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
   }
 
-  async requestCreateOrderTKNETH(seller, from, to, sellerDeposit, qty) {
-    const txValue = new BN(sellerDeposit).mul(new BN(qty));
+  async requestCreateOrderTKNETH(
+    seller,
+    from,
+    to,
+    sellerDeposit,
+    qty,
+    returnTx = false
+  ) {
+    const txValue = BN(sellerDeposit).mul(BN(qty));
 
-    let txOrder = await this.contractBSNRouter.requestCreateOrderTKNETH(
+    const sellerInstance = this.contractBSNRouter.connect(seller.signer);
+    let txOrder = await sellerInstance.requestCreateOrderTKNETH(
       this.contractBSNTokenPrice.address,
       [
         from,
@@ -218,17 +279,26 @@ class Utils {
         qty,
       ],
       {
-        from: seller.address,
         value: txValue,
       }
     );
 
-    return txOrder.logs[0].args._tokenIdSupply.toString();
+    const txReceipt = await txOrder.wait();
+    let eventArgs;
+
+    events.assertEventEmitted(
+      txReceipt,
+      this.factories.BosonRouter,
+      events.eventNames.LOG_ORDER_CREATED,
+      (e) => (eventArgs = e)
+    );
+
+    return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
   }
 
   async commitToBuyTKNTKNWithPermit(buyer, seller, tokenSupplyId) {
-    const txValue = new BN(constants.buyer_deposit).add(
-      new BN(constants.product_price)
+    const txValue = BN(constants.buyer_deposit).add(
+      BN(constants.product_price)
     );
     const nonce1 = await this.contractBSNTokenDeposit.nonces(buyer.address);
 
@@ -270,7 +340,8 @@ class Utils {
     let rPrice = VRS_PRICE.r;
     let sPrice = VRS_PRICE.s;
 
-    let CommitTx = await this.contractBSNRouter.requestVoucherTKNTKNWithPermit(
+    const buyerInstance = this.contractBSNRouter.connect(buyer.signer);
+    let commitTx = await buyerInstance.requestVoucherTKNTKNWithPermit(
       tokenSupplyId,
       seller.address,
       txValue,
@@ -280,27 +351,25 @@ class Utils {
       sPrice,
       vDeposit,
       rDeposit,
-      sDeposit,
-      {from: buyer.address}
+      sDeposit
     );
 
-    let nestedValue = (
-      await truffleAssert.createTransactionResult(
-        this.contractVoucherKernel,
-        CommitTx.tx
-      )
-    ).logs;
+    const txReceipt = await commitTx.wait();
+    let eventArgs;
 
-    let filtered = nestedValue.filter(
-      (e) => e.event === 'LogVoucherDelivered'
-    )[0];
+    events.assertEventEmitted(
+      txReceipt,
+      this.factories.VoucherKernel,
+      events.eventNames.LOG_VOUCHER_DELIVERED,
+      (e) => (eventArgs = e)
+    );
 
-    return filtered.returnValues['_tokenIdVoucher'];
+    return eventArgs._tokenIdVoucher;
   }
 
   async commitToBuyTKNTKNSameWithPermit(buyer, seller, tokenSupplyId) {
-    const txValue = new BN(constants.buyer_deposit).add(
-      new BN(constants.product_price)
+    const txValue = BN(constants.buyer_deposit).add(
+      BN(constants.product_price)
     );
     const nonce = await this.contractBSNTokenSame.nonces(buyer.address);
 
@@ -322,29 +391,28 @@ class Utils {
     let r = VRS_TX_VALUE.r;
     let s = VRS_TX_VALUE.s;
 
-    let CommitTx = await this.contractBSNRouter.requestVoucherTKNTKNSameWithPermit(
+    const buyerInstance = this.contractBSNRouter.connect(buyer.signer);
+    let commitTx = await buyerInstance.requestVoucherTKNTKNSameWithPermit(
       tokenSupplyId,
       seller.address,
       txValue,
       this.deadline,
       v,
       r,
-      s,
-      {from: buyer.address}
+      s
     );
 
-    let nestedValue = (
-      await truffleAssert.createTransactionResult(
-        this.contractVoucherKernel,
-        CommitTx.tx
-      )
-    ).logs;
+    const txReceipt = await commitTx.wait();
+    let eventArgs;
 
-    let filtered = nestedValue.filter(
-      (e) => e.event === 'LogVoucherDelivered'
-    )[0];
+    events.assertEventEmitted(
+      txReceipt,
+      this.factories.VoucherKernel,
+      events.eventNames.LOG_VOUCHER_DELIVERED,
+      (e) => (eventArgs = e)
+    );
 
-    return filtered.returnValues['_tokenIdVoucher'];
+    return eventArgs._tokenIdVoucher;
   }
 
   async commitToBuyETHTKNWithPermit(buyer, seller, tokenSupplyId) {
@@ -364,7 +432,8 @@ class Utils {
       Buffer.from(buyer.privateKey.slice(2), 'hex')
     );
 
-    let txOrder = await this.contractBSNRouter.requestVoucherETHTKNWithPermit(
+    const buyerInstance = this.contractBSNRouter.connect(buyer.signer);
+    let txOrder = await buyerInstance.requestVoucherETHTKNWithPermit(
       tokenSupplyId,
       seller.address,
       constants.buyer_deposit,
@@ -372,49 +441,47 @@ class Utils {
       v,
       r,
       s,
-      {from: buyer.address, value: constants.product_price.toString()}
+      {value: constants.product_price.toString()}
     );
 
-    let nestedValue = (
-      await truffleAssert.createTransactionResult(
-        this.contractVoucherKernel,
-        txOrder.tx
-      )
-    ).logs;
+    const txReceipt = await txOrder.wait();
+    let eventArgs;
 
-    let filtered = nestedValue.filter(
-      (e) => e.event === 'LogVoucherDelivered'
-    )[0];
+    events.assertEventEmitted(
+      txReceipt,
+      this.factories.VoucherKernel,
+      events.eventNames.LOG_VOUCHER_DELIVERED,
+      (e) => (eventArgs = e)
+    );
 
-    return filtered.returnValues['_tokenIdVoucher'];
+    return eventArgs._tokenIdVoucher;
   }
 
   async commitToBuyETHETH(buyer, seller, tokenSupplyId, returnTx = false) {
-    const txValue = new BN(constants.buyer_deposit).add(
-      new BN(constants.product_price)
+    const txValue = BN(constants.buyer_deposit).add(
+      BN(constants.product_price)
     );
 
-    let CommitTx = await this.contractBSNRouter.requestVoucherETHETH(
+    const buyerInstance = this.contractBSNRouter.connect(buyer.signer);
+    let commitTx = await buyerInstance.requestVoucherETHETH(
       tokenSupplyId,
       seller.address,
       {
-        from: buyer.address,
         value: txValue.toString(),
       }
     );
 
-    let nestedValue = (
-      await truffleAssert.createTransactionResult(
-        this.contractVoucherKernel,
-        CommitTx.tx
-      )
-    ).logs;
+    const txReceipt = await commitTx.wait();
+    let eventArgs;
 
-    let filtered = nestedValue.filter(
-      (e) => e.event === 'LogVoucherDelivered'
-    )[0];
+    events.assertEventEmitted(
+      txReceipt,
+      this.factories.VoucherKernel,
+      events.eventNames.LOG_VOUCHER_DELIVERED,
+      (e) => (eventArgs = e)
+    );
 
-    return returnTx ? CommitTx : filtered.returnValues['_tokenIdVoucher'];
+    return returnTx ? txReceipt : eventArgs._tokenIdVoucher;
   }
 
   async commitToBuyTKNETHWithPermit(buyer, seller, tokenSupplyId) {
@@ -434,7 +501,8 @@ class Utils {
       Buffer.from(buyer.privateKey.slice(2), 'hex')
     );
 
-    let txOrder = await this.contractBSNRouter.requestVoucherTKNETHWithPermit(
+    const buyerInstance = this.contractBSNRouter.connect(buyer.signer);
+    let txOrder = await buyerInstance.requestVoucherTKNETHWithPermit(
       tokenSupplyId,
       seller.address,
       constants.product_price,
@@ -442,94 +510,95 @@ class Utils {
       v,
       r,
       s,
-      {from: buyer.address, value: constants.buyer_deposit}
+      {value: constants.buyer_deposit}
     );
 
-    let nestedValue = (
-      await truffleAssert.createTransactionResult(
-        this.contractVoucherKernel,
-        txOrder.tx
-      )
-    ).logs;
+    const txReceipt = await txOrder.wait();
+    let eventArgs;
 
-    let filtered = nestedValue.filter(
-      (e) => e.event === 'LogVoucherDelivered'
-    )[0];
+    events.assertEventEmitted(
+      txReceipt,
+      this.factories.VoucherKernel,
+      events.eventNames.LOG_VOUCHER_DELIVERED,
+      (e) => (eventArgs = e)
+    );
 
-    return filtered.returnValues['_tokenIdVoucher'];
+    return eventArgs._tokenIdVoucher;
   }
 
   async refund(voucherID, buyer) {
-    return await this.contractBSNRouter.refund(voucherID, {from: buyer});
+    const buyerInstance = this.contractBSNRouter.connect(buyer);
+    return await buyerInstance.refund(voucherID);
   }
 
   async redeem(voucherID, buyer) {
-    return await this.contractBSNRouter.redeem(voucherID, {from: buyer});
+    const buyerInstance = this.contractBSNRouter.connect(buyer);
+    return await buyerInstance.redeem(voucherID);
   }
 
   async complain(voucherID, buyer) {
-    return await this.contractBSNRouter.complain(voucherID, {from: buyer});
+    const buyerInstance = this.contractBSNRouter.connect(buyer);
+    return await buyerInstance.complain(voucherID);
   }
 
   async cancel(voucherID, seller) {
-    return await this.contractBSNRouter.cancelOrFault(voucherID, {
-      from: seller,
-    });
+    const sellerInstance = this.contractBSNRouter.connect(seller);
+    return await sellerInstance.cancelOrFault(voucherID);
   }
 
   async finalize(voucherID, deployer) {
-    await this.contractVoucherKernel.triggerFinalizeVoucher(voucherID, {
-      from: deployer,
-    });
+    const deployerInstance = this.contractVoucherKernel.connect(deployer);
+    return await deployerInstance.triggerFinalizeVoucher(voucherID);
   }
 
   async withdraw(voucherID, deployer) {
-    const tx = await this.contractCashier.withdraw(voucherID, {from: deployer});
+    const deployerInstance = this.contractCashier.connect(deployer);
+    const tx = await deployerInstance.withdraw(voucherID);
 
-    console.log('GAS USED: ', tx.receipt.gasUsed);
+    const receipt = await tx.wait();
+
+    console.log('GAS USED: ', receipt.gasUsed.toString());
 
     return tx;
   }
 
   async pause(deployer) {
-    await this.contractBSNRouter.pause({from: deployer});
+    const deployerInstance = this.contractVoucherKernel.connect(deployer);
+    await deployerInstance.pause();
   }
 
-  async safeTransfer721(oldVoucherOwner, newVoucherOwner, voucherID, from) {
-    const arbitraryBytes = web3.utils.fromAscii('0x0').padEnd(66, '0');
+  async safeTransfer721(oldVoucherOwner, newVoucherOwner, voucherID, signer) {
+    const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
+    const fromInstance = this.contractERC1155ERC721.connect(signer);
 
-    const methodSignature =
-      'safeTransferFrom(' + 'address,' + 'address,' + 'uint256,' + 'bytes)';
-    const method = this.contractERC1155ERC721.methods[methodSignature];
+    const method = fromInstance.functions[fnSignatures.safeTransfer721];
 
     return await method(
       oldVoucherOwner,
       newVoucherOwner,
       voucherID,
-      arbitraryBytes,
-      from
+      arbitraryBytes
     );
   }
 
-  async safeTransfer1155(oldSupplyOwner, newSupplyOwner, supplyID, qty, from) {
-    const arbitraryBytes = web3.utils.fromAscii('0x0').padEnd(66, '0');
+  async safeTransfer1155(
+    oldSupplyOwner,
+    newSupplyOwner,
+    supplyID,
+    qty,
+    signer
+  ) {
+    const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
+    const fromInstance = this.contractERC1155ERC721.connect(signer);
 
-    const methodSignature =
-      'safeTransferFrom(' +
-      'address,' +
-      'address,' +
-      'uint256,' +
-      'uint256,' +
-      'bytes)';
-    const method = this.contractERC1155ERC721.methods[methodSignature];
+    const method = fromInstance.functions[fnSignatures.safeTransfer1155];
 
     return await method(
       oldSupplyOwner,
       newSupplyOwner,
       supplyID,
       qty,
-      arbitraryBytes,
-      from
+      arbitraryBytes
     );
   }
 
@@ -538,26 +607,19 @@ class Utils {
     newSupplyOwner,
     supplyIDs,
     values,
-    from
+    signer
   ) {
-    const arbitraryBytes = web3.utils.fromAscii('0x0').padEnd(66, '0');
+    const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
+    const fromInstance = this.contractERC1155ERC721.connect(signer);
 
-    const methodSignature =
-      'safeBatchTransferFrom(' +
-      'address,' +
-      'address,' +
-      'uint256[],' +
-      'uint256[],' +
-      'bytes)';
-    const method = this.contractERC1155ERC721.methods[methodSignature];
+    const method = fromInstance.functions[fnSignatures.safeBatchTransfer1155];
 
     return await method(
       oldSupplyOwner,
       newSupplyOwner,
       supplyIDs,
       values,
-      arbitraryBytes,
-      from
+      arbitraryBytes
     );
   }
 
@@ -569,17 +631,17 @@ class Utils {
     seller
   ) {
     if (event[recipient] === buyer) {
-      distributionAmounts.buyerAmount = new BN(
+      distributionAmounts.buyerAmount = BN(
         distributionAmounts.buyerAmount.toString()
-      ).add(new BN(event._payment.toString()));
+      ).add(BN(event._payment.toString()));
     } else if (event[recipient] === seller) {
-      distributionAmounts.sellerAmount = new BN(
+      distributionAmounts.sellerAmount = BN(
         distributionAmounts.sellerAmount.toString()
-      ).add(new BN(event._payment.toString()));
+      ).add(BN(event._payment.toString()));
     } else {
-      distributionAmounts.escrowAmount = new BN(
+      distributionAmounts.escrowAmount = BN(
         distributionAmounts.escrowAmount.toString()
-      ).add(new BN(event._payment.toString()));
+      ).add(BN(event._payment.toString()));
     }
   }
 
@@ -588,8 +650,8 @@ class Utils {
   }
 
   static async getCurrTimestamp() {
-    let blockNumber = await web3.eth.getBlockNumber();
-    let block = await web3.eth.getBlock(blockNumber);
+    let blockNumber = await ethers.provider.getBlockNumber();
+    let block = await ethers.provider.getBlock(blockNumber);
 
     return block.timestamp;
   }
