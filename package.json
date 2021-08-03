@@ -20,9 +20,9 @@
     "contracts:verify:demo": "npx hardhat contracts-verify --network rinkeby --env demo",
     "contracts:verify:prod": "npx hardhat contracts-verify --network rinkeby --env prod",
     "tests:lint": "eslint test/**/*.ts testHelpers/**/*.ts",
-    "tests:lint-fix": "eslint --fix test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts config/**/*.ts",
-    "tests:format": "prettier --list-different test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts config/**/*.ts",
-    "tests:format-fix": "prettier --write test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts config/**/*.ts",
+    "tests:lint-fix": "eslint --fix test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
+    "tests:format": "prettier --list-different test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
+    "tests:format-fix": "prettier --write test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
     "tests:unit": "hardhat test",
     "tests:coverage": "npx hardhat coverage",
     "contracts:size": "hardhat size-contracts"
