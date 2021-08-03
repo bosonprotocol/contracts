@@ -39,25 +39,25 @@ class Utils {
     MockERC20Permit: MockERC20Permit__factory | any;
   };
   deadline: any;
-  contractERC1155ERC721?: Contract & ERC1155ERC721;
-  contractVoucherKernel?: Contract & VoucherKernel;
-  contractCashier?: Contract & Cashier;
-  contractBSNRouter?: Contract & BosonRouter;
-  contractBSNTokenPrice?: Contract & MockERC20Permit;
-  contractBSNTokenDeposit?: Contract & MockERC20Permit;
-  contractBSNTokenSame?: Contract & MockERC20Permit;
+  contractERC1155ERC721?: ERC1155ERC721;
+  contractVoucherKernel?: VoucherKernel;
+  contractCashier?: Cashier;
+  contractBSNRouter?: BosonRouter;
+  contractBSNTokenPrice?: MockERC20Permit;
+  contractBSNTokenDeposit?: MockERC20Permit;
+  contractBSNTokenSame?: MockERC20Permit;
 
   constructor() {
     this.deadline = toWei(1);
   }
 
   setContracts(
-    erc1155721: Contract & ERC1155ERC721,
-    voucherKernel: Contract & VoucherKernel,
-    cashier: Contract & Cashier,
-    bsnRouter: Contract & BosonRouter,
-    bsnTokenPrice?: Contract & MockERC20Permit,
-    bsnTokenDeposit?: Contract & MockERC20Permit
+    erc1155721: ERC1155ERC721,
+    voucherKernel: VoucherKernel,
+    cashier: Cashier,
+    bsnRouter: BosonRouter,
+    bsnTokenPrice?: MockERC20Permit,
+    bsnTokenDeposit?: MockERC20Permit
   ): void {
     this.contractERC1155ERC721 = erc1155721;
     this.contractVoucherKernel = voucherKernel;

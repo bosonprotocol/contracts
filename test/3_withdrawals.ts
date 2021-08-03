@@ -55,13 +55,13 @@ describe('Cashier withdrawals ', () => {
     );
   });
 
-  let contractERC1155ERC721: Contract & ERC1155ERC721,
-    contractVoucherKernel: Contract & VoucherKernel,
-    contractCashier: Contract & Cashier,
-    contractBosonRouter: Contract & BosonRouter,
-    contractBSNTokenPrice: Contract & MockERC20Permit,
-    contractBSNTokenDeposit: Contract & MockERC20Permit,
-    contractFundLimitsOracle: Contract & FundLimitsOracle;
+  let contractERC1155ERC721: ERC1155ERC721,
+    contractVoucherKernel: VoucherKernel,
+    contractCashier: Cashier,
+    contractBosonRouter: BosonRouter,
+    contractBSNTokenPrice: MockERC20Permit,
+    contractBSNTokenDeposit: MockERC20Permit,
+    contractFundLimitsOracle: FundLimitsOracle;
 
   let distributedAmounts = {
     buyerAmount: BN(0),
@@ -72,8 +72,8 @@ describe('Cashier withdrawals ', () => {
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle =
-      (await FundLimitsOracle_Factory.deploy()) as Contract & FundLimitsOracle;
+    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
+      FundLimitsOracle;
     contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
       ERC1155ERC721;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
@@ -172,22 +172,22 @@ describe('Cashier withdrawals ', () => {
 
     const buyerPriceInstance = contractBSNTokenPrice.connect(
       users.buyer.signer
-    ) as MockERC20Permit;
+    );
     const buyerDepositInstance = contractBSNTokenDeposit.connect(
       users.buyer.signer
-    ) as MockERC20Permit;
+    );
     const sellerPriceInstance = contractBSNTokenPrice.connect(
       users.seller.signer
-    ) as MockERC20Permit;
+    );
     const sellerDepositInstance = contractBSNTokenDeposit.connect(
       users.seller.signer
-    ) as MockERC20Permit;
+    );
     const deployerPriceInstance = contractBSNTokenPrice.connect(
       users.deployer.signer
-    ) as MockERC20Permit;
+    );
     const deployerDepositInstance = contractBSNTokenDeposit.connect(
       users.deployer.signer
-    ) as MockERC20Permit;
+    );
 
     await buyerPriceInstance.transfer(
       users.other1.address,
@@ -864,20 +864,23 @@ describe('Cashier withdrawals ', () => {
         balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
           users.buyer.address
         );
-        balanceBuyerFromDeposits =
-          await utils.contractBSNTokenDeposit.balanceOf(users.buyer.address);
+        balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+          users.buyer.address
+        );
 
         balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
           users.seller.address
         );
-        balanceSellerFromDeposits =
-          await utils.contractBSNTokenDeposit.balanceOf(users.seller.address);
+        balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+          users.seller.address
+        );
 
         escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(
           users.deployer.address
         );
-        escrowBalanceFromDeposits =
-          await utils.contractBSNTokenDeposit.balanceOf(users.deployer.address);
+        escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+          users.deployer.address
+        );
 
         cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(
           utils.contractCashier.address
@@ -2577,12 +2580,15 @@ describe('Cashier withdrawals ', () => {
       let cashierDepositLeft = BN(0);
 
       async function getBalancesDepositToken() {
-        balanceBuyerFromDeposits =
-          await utils.contractBSNTokenDeposit.balanceOf(users.buyer.address);
-        balanceSellerFromDeposits =
-          await utils.contractBSNTokenDeposit.balanceOf(users.seller.address);
-        escrowBalanceFromDeposits =
-          await utils.contractBSNTokenDeposit.balanceOf(users.deployer.address);
+        balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+          users.buyer.address
+        );
+        balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+          users.seller.address
+        );
+        escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+          users.deployer.address
+        );
         cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(
           utils.contractCashier.address
         );
@@ -4601,7 +4607,7 @@ describe('Cashier withdrawals ', () => {
       it('[NEGATIVE] should revert if not called from the seller', async () => {
         const attackerInstance = contractBosonRouter.connect(
           users.attacker.signer
-        ) as BosonRouter;
+        );
 
         await expect(
           attackerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
@@ -4609,9 +4615,7 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
-        const sellerInstance = contractBosonRouter.connect(
-          users.seller.signer
-        ) as BosonRouter;
+        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
         const withdrawTx = await sellerInstance.requestCancelOrFaultVoucherSet(
           TOKEN_SUPPLY_ID
         );
@@ -4648,11 +4652,10 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('Remaining QTY for Token Supply should be ZERO', async () => {
-        const remainingQtyInContract =
-          await contractVoucherKernel.getRemQtyForSupply(
-            TOKEN_SUPPLY_ID,
-            users.seller.address
-          );
+        const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+          TOKEN_SUPPLY_ID,
+          users.seller.address
+        );
 
         assert.isTrue(
           remainingQtyInContract.eq(BN(0)),
@@ -4667,9 +4670,7 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
-        const sellerInstance = contractBosonRouter.connect(
-          users.seller.signer
-        ) as BosonRouter;
+        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
 
         await expect(
           sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
@@ -4677,9 +4678,7 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('[NEGATIVE] Should revert if called when contract is paused', async () => {
-        const sellerInstance = contractBosonRouter.connect(
-          users.seller.signer
-        ) as BosonRouter;
+        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
         await contractBosonRouter.pause();
 
         await expect(
@@ -4751,7 +4750,7 @@ describe('Cashier withdrawals ', () => {
         it('[NEGATIVE] should revert if not called from the seller', async () => {
           const attackerInstance = contractBosonRouter.connect(
             users.attacker.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             attackerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
@@ -4761,12 +4760,11 @@ describe('Cashier withdrawals ', () => {
         it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
-          const withdrawTx =
-            await sellerInstance.requestCancelOrFaultVoucherSet(
-              TOKEN_SUPPLY_ID
-            );
+          const withdrawTx = await sellerInstance.requestCancelOrFaultVoucherSet(
+            TOKEN_SUPPLY_ID
+          );
 
           const txReceipt = await withdrawTx.wait();
 
@@ -4815,11 +4813,10 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Remaining QTY for Token Supply should be ZERO', async () => {
-          const remainingQtyInContract =
-            await contractVoucherKernel.getRemQtyForSupply(
-              TOKEN_SUPPLY_ID,
-              users.seller.address
-            );
+          const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+            TOKEN_SUPPLY_ID,
+            users.seller.address
+          );
 
           assert.isTrue(
             remainingQtyInContract.eq(BN(0)),
@@ -4836,7 +4833,7 @@ describe('Cashier withdrawals ', () => {
         it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
@@ -4846,7 +4843,7 @@ describe('Cashier withdrawals ', () => {
         it('[NEGATIVE] Should revert if called when contract is paused', async () => {
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
           await contractBosonRouter.pause();
 
           await expect(
@@ -4912,7 +4909,7 @@ describe('Cashier withdrawals ', () => {
         it('[NEGATIVE] should revert if not called from the seller', async () => {
           const attackerInstance = contractBosonRouter.connect(
             users.attacker.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             attackerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
@@ -4922,12 +4919,11 @@ describe('Cashier withdrawals ', () => {
         it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
-          const withdrawTx =
-            await sellerInstance.requestCancelOrFaultVoucherSet(
-              TOKEN_SUPPLY_ID
-            );
+          const withdrawTx = await sellerInstance.requestCancelOrFaultVoucherSet(
+            TOKEN_SUPPLY_ID
+          );
 
           const expectedSellerDeposit = BN(constants.seller_deposit).mul(
             BN(remQty)
@@ -4976,11 +4972,10 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Remaining QTY for Token Supply should be ZERO', async () => {
-          const remainingQtyInContract =
-            await contractVoucherKernel.getRemQtyForSupply(
-              TOKEN_SUPPLY_ID,
-              users.seller.address
-            );
+          const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+            TOKEN_SUPPLY_ID,
+            users.seller.address
+          );
 
           assert.isTrue(
             remainingQtyInContract.eq(BN(0)),
@@ -4997,7 +4992,7 @@ describe('Cashier withdrawals ', () => {
         it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
@@ -5007,7 +5002,7 @@ describe('Cashier withdrawals ', () => {
         it('[NEGATIVE] Should revert if called when contract is paused', async () => {
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await contractBosonRouter.pause();
 
@@ -5066,7 +5061,7 @@ describe('Cashier withdrawals ', () => {
         it('[NEGATIVE] should revert if not called from the seller', async () => {
           const attackerInstance = contractBosonRouter.connect(
             users.attacker.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             attackerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
@@ -5076,12 +5071,11 @@ describe('Cashier withdrawals ', () => {
         it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
-          const withdrawTx =
-            await sellerInstance.requestCancelOrFaultVoucherSet(
-              TOKEN_SUPPLY_ID
-            );
+          const withdrawTx = await sellerInstance.requestCancelOrFaultVoucherSet(
+            TOKEN_SUPPLY_ID
+          );
 
           const txReceipt = await withdrawTx.wait();
 
@@ -5115,11 +5109,10 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Remaining QTY for Token Supply should be ZERO', async () => {
-          const remainingQtyInContract =
-            await contractVoucherKernel.getRemQtyForSupply(
-              TOKEN_SUPPLY_ID,
-              users.seller.address
-            );
+          const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+            TOKEN_SUPPLY_ID,
+            users.seller.address
+          );
 
           assert.isTrue(
             remainingQtyInContract.eq(BN(0)),
@@ -5136,7 +5129,7 @@ describe('Cashier withdrawals ', () => {
         it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
@@ -5146,7 +5139,7 @@ describe('Cashier withdrawals ', () => {
         it('[NEGATIVE] Should revert if called when contract is paused', async () => {
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await contractBosonRouter.pause();
 
@@ -5191,9 +5184,7 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('[NEGATIVE] Disaster state should not be set from attacker', async () => {
-        const attackerInstance = contractCashier.connect(
-          users.attacker.signer
-        ) as Cashier;
+        const attackerInstance = contractCashier.connect(users.attacker.signer);
 
         await contractBosonRouter.pause();
 
@@ -5233,9 +5224,7 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('[NEGATIVE] withdrawEthOnDisaster should not be executable before admin allows to', async () => {
-        const buyerInstance = contractCashier.connect(
-          users.buyer.signer
-        ) as Cashier;
+        const buyerInstance = contractCashier.connect(users.buyer.signer);
 
         await expect(buyerInstance.withdrawEthOnDisaster()).to.be.revertedWith(
           revertReasons.MANUAL_WITHDRAW_NOT_ALLOWED
@@ -5282,9 +5271,7 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('Buyer should be able to withdraw all the funds locked in escrow', async () => {
-        const buyerInstance = contractCashier.connect(
-          users.buyer.signer
-        ) as Cashier;
+        const buyerInstance = contractCashier.connect(users.buyer.signer);
 
         const expectedBuyerBalance = BN(constants.product_price)
           .add(BN(constants.buyer_deposit))
@@ -5314,9 +5301,7 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('Seller should be able to withdraw all the funds locked in escrow', async () => {
-        const sellerInstance = contractCashier.connect(
-          users.seller.signer
-        ) as Cashier;
+        const sellerInstance = contractCashier.connect(users.seller.signer);
         const expectedSellerBalance = BN(constants.seller_deposit).mul(
           BN(constants.QTY_10)
         );
@@ -5343,9 +5328,7 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('[NEGATIVE] withdrawEthOnDisaster should revert if funds already withdrawn for an account', async () => {
-        const buyerInstance = contractCashier.connect(
-          users.buyer.signer
-        ) as Cashier;
+        const buyerInstance = contractCashier.connect(users.buyer.signer);
         await expect(buyerInstance.withdrawEthOnDisaster()).to.be.revertedWith(
           revertReasons.ESCROW_EMPTY
         );
@@ -5408,9 +5391,7 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('[NEGATIVE] withdrawTokensOnDisaster should not be executable before admin allows to', async () => {
-        const buyerInstance = contractCashier.connect(
-          users.buyer.signer
-        ) as Cashier;
+        const buyerInstance = contractCashier.connect(users.buyer.signer);
 
         await expect(
           buyerInstance.withdrawTokensOnDisaster(contractBSNTokenPrice.address)
@@ -5439,9 +5420,7 @@ describe('Cashier withdrawals ', () => {
           BN(vouchersToBuy)
         );
 
-        const buyerInstance = contractCashier.connect(
-          users.buyer.signer
-        ) as Cashier;
+        const buyerInstance = contractCashier.connect(users.buyer.signer);
 
         const txTknPrice = await buyerInstance.withdrawTokensOnDisaster(
           contractBSNTokenPrice.address
@@ -5493,9 +5472,7 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('Seller should be able to withdraw all the funds locked in escrow', async () => {
-        const sellerInstance = contractCashier.connect(
-          users.seller.signer
-        ) as Cashier;
+        const sellerInstance = contractCashier.connect(users.seller.signer);
         const expectedSellerBalance = BN(constants.seller_deposit).mul(
           BN(constants.QTY_10)
         );
@@ -5525,9 +5502,7 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('Escrow amount should revert if funds already withdrawn for an account', async () => {
-        const buyerInstance = contractCashier.connect(
-          users.buyer.signer
-        ) as Cashier;
+        const buyerInstance = contractCashier.connect(users.buyer.signer);
         await expect(
           buyerInstance.withdrawTokensOnDisaster(contractBSNTokenPrice.address)
         ).to.be.revertedWith(revertReasons.ESCROW_EMPTY);

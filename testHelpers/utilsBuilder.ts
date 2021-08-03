@@ -9,8 +9,6 @@ import {
   MockERC20Permit,
 } from '../typechain';
 
-import {Contract} from 'ethers';
-
 class UtilsBuilder {
   utils: Utils;
   ETHTKN;
@@ -56,12 +54,12 @@ class UtilsBuilder {
   }
 
   async buildAsync(
-    erc1155721: Contract & ERC1155ERC721,
-    voucherKernel: Contract & VoucherKernel,
-    cashier: Contract & Cashier,
-    bsnRouter: Contract & BosonRouter,
-    bsnTokenPrice?: Contract & MockERC20Permit,
-    bsnTokenDeposit?: Contract & MockERC20Permit
+    erc1155721: ERC1155ERC721,
+    voucherKernel: VoucherKernel,
+    cashier: Cashier,
+    bsnRouter: BosonRouter,
+    bsnTokenPrice?: MockERC20Permit,
+    bsnTokenDeposit?: MockERC20Permit
   ): Promise<Utils> {
     this.utils.setContracts(
       erc1155721,

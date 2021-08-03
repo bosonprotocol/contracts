@@ -47,12 +47,12 @@ describe('FundLimitsOracle', () => {
     );
   });
 
-  let contractERC1155ERC721: Contract & ERC1155ERC721,
-    contractVoucherKernel: Contract & VoucherKernel,
-    contractCashier: Contract & Cashier,
-    contractBosonRouter: Contract & BosonRouter,
-    contractBSNTokenPrice: Contract & MockERC20Permit,
-    contractFundLimitsOracle: Contract & FundLimitsOracle;
+  let contractERC1155ERC721: ERC1155ERC721,
+    contractVoucherKernel: VoucherKernel,
+    contractCashier: Cashier,
+    contractBosonRouter: BosonRouter,
+    contractBSNTokenPrice: MockERC20Permit,
+    contractFundLimitsOracle: FundLimitsOracle;
 
   let expectedLimit;
 
@@ -67,8 +67,8 @@ describe('FundLimitsOracle', () => {
 
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle =
-      (await FundLimitsOracle_Factory.deploy()) as Contract & FundLimitsOracle;
+    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
+      FundLimitsOracle;
     contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
       ERC1155ERC721;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
@@ -169,7 +169,7 @@ describe('FundLimitsOracle', () => {
       it('[NEGATIVE] Should revert if attacker tries to change ETH Limit', async () => {
         const attackerInstance = contractFundLimitsOracle.connect(
           users.attacker.signer
-        ) as FundLimitsOracle;
+        );
         await expect(
           attackerInstance.setETHLimit(FIVE_ETHERS)
         ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
@@ -217,7 +217,7 @@ describe('FundLimitsOracle', () => {
         async () => {
           const attackerInstance = contractFundLimitsOracle.connect(
             users.attacker.signer
-          ) as FundLimitsOracle;
+          );
           await expect(
             attackerInstance.setTokenLimit(
               contractBSNTokenPrice.address,

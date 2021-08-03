@@ -1,116 +1,217 @@
 //AssetRegistry not used in demo-app
 //const AssetRegistry = artifacts.require("AssetRegistry");
 
+import hre from 'hardhat';
 import fs from 'fs';
-import hre, {ethers} from 'hardhat';
+import {isValidEnv} from './env-validator';
+const ethers = hre.ethers;
 
-export default async function (): Promise<void> {
-  const ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
-  const VoucherKernel = await ethers.getContractFactory('VoucherKernel');
-  const Cashier = await ethers.getContractFactory('Cashier');
-  const BosonRouter = await ethers.getContractFactory('BosonRouter');
-  const FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
+/**
+ * Abstract Class DeploymentExecutor.
+ *
+ * @class DeploymentExecutor
+ */
+class DeploymentExecutor {
+  env;
+  flo;
+  erc1155erc721;
+  voucherKernel;
+  cashier;
+  br;
+  boson_token;
+  TOKEN_LIMIT;
 
-  const flo = await FundLimitsOracle.deploy();
-  const erc1155erc721 = await ERC1155ERC721.deploy();
-  const voucherKernel = await VoucherKernel.deploy(erc1155erc721.address);
-  const cashier = await Cashier.deploy(voucherKernel.address);
-  const br = await BosonRouter.deploy(
-    voucherKernel.address,
-    flo.address,
-    cashier.address
-  );
+  constructor() {
+    if (this.constructor == DeploymentExecutor) {
+      throw new Error("Abstract class - can't be instantiated!");
+    }
 
-  await flo.deployed();
-  await erc1155erc721.deployed();
-  await voucherKernel.deployed();
-  await cashier.deployed();
-  await br.deployed();
+    this.env;
 
-  let tx, txReceipt, event;
+    this.flo;
+    this.erc1155erc721;
+    this.voucherKernel;
+    this.cashier;
+    this.br;
 
-  console.log('$ Setting initial values ...');
+    this.boson_token;
+    this.TOKEN_LIMIT;
 
-  tx = await erc1155erc721.setApprovalForAll(voucherKernel.address, 'true');
-  txReceipt = await tx.wait();
-  event = txReceipt.events[0];
-  console.log(
-    '\n$ ERC1155ERC721: ',
-    event.event,
-    'approved VoucherKernel:',
-    event.args._approved
-  );
+    this.boson_token = process.env.BOSON_TOKEN;
+    this.TOKEN_LIMIT = (1 * 10 ** 18).toString();
+  }
 
-  tx = await erc1155erc721.setVoucherKernelAddress(voucherKernel.address);
-  txReceipt = await tx.wait();
-  event = txReceipt.events[0];
-  console.log(
-    '$ ERC1155ERC721: ',
-    event.event,
-    'at:',
-    event.args._newVoucherKernel
-  );
+  async setDefaults() {
+    let tx, txReceipt, event;
 
-  tx = await erc1155erc721.setCashierAddress(cashier.address);
-  txReceipt = await tx.wait();
-  event = txReceipt.events[0];
-  console.log('$ ERC1155ERC721: ', event.event, 'at:', event.args._newCashier);
+    console.log('$ Setting initial values ...');
 
-  tx = await voucherKernel.setBosonRouterAddress(br.address);
-  txReceipt = await tx.wait();
-  event = txReceipt.events[0];
-  console.log(
-    '\n$ VoucherKernel',
-    event.event,
-    'at:',
-    event.args._newBosonRouter
-  );
+    tx = await this.erc1155erc721.setApprovalForAll(
+      this.voucherKernel.address,
+      'true'
+    );
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log(
+      '\n$ ERC1155ERC721: ',
+      event.event,
+      'approved VoucherKernel:',
+      event.args._approved
+    );
 
-  tx = await voucherKernel.setCashierAddress(cashier.address);
-  txReceipt = await tx.wait();
-  event = txReceipt.events[0];
-  console.log('$ VoucherKernel', event.event, 'at:', event.args._newCashier);
+    tx = await this.erc1155erc721.setVoucherKernelAddress(
+      this.voucherKernel.address
+    );
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log(
+      '$ ERC1155ERC721: ',
+      event.event,
+      'at:',
+      event.args._newVoucherKernel
+    );
 
-  tx = await cashier.setBosonRouterAddress(br.address);
-  txReceipt = await tx.wait();
-  event = txReceipt.events[0];
-  console.log('\n$ Cashier', event.event, 'at:', event.args._newBosonRouter);
+    tx = await this.erc1155erc721.setCashierAddress(this.cashier.address);
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log(
+      '$ ERC1155ERC721: ',
+      event.event,
+      'at:',
+      event.args._newCashier
+    );
 
-  tx = await cashier.setTokenContractAddress(erc1155erc721.address);
-  txReceipt = await tx.wait();
-  event = txReceipt.events[0];
-  console.log('$ Cashier', event.event, 'at:', event.args._newTokenContract);
+    tx = await this.voucherKernel.setBosonRouterAddress(this.br.address);
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log(
+      '\n$ VoucherKernel',
+      event.event,
+      'at:',
+      event.args._newBosonRouter
+    );
 
-  //! for testnet, otherwise below setters for complainPeriod, cancelFaultPeriod && tokenLimit should be removed!
-  const SIXTY_SECONDS = 60;
-  const TOKEN_LIMIT = (1 * 10 ** 18).toString();
-  const BOSON_TOKEN_ON_RINKEBY = '0x5c70A0c47440128eAAA66801B0ec04E9d8C3a570';
+    tx = await this.voucherKernel.setCashierAddress(this.cashier.address);
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log('$ VoucherKernel', event.event, 'at:', event.args._newCashier);
 
-  await voucherKernel.setComplainPeriod(2 * SIXTY_SECONDS);
-  await voucherKernel.setCancelFaultPeriod(2 * SIXTY_SECONDS);
-  await flo.setTokenLimit(BOSON_TOKEN_ON_RINKEBY, TOKEN_LIMIT);
-  //! End for testnet
+    tx = await this.cashier.setBosonRouterAddress(this.br.address);
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log('\n$ Cashier', event.event, 'at:', event.args._newBosonRouter);
 
-  console.log('\nFundLimitsOracle Contract Address: ', flo.address);
-  console.log('ERC1155ERC721 Contract Address: ', erc1155erc721.address);
-  console.log('VoucherKernel Contract Address: ', voucherKernel.address);
-  console.log('Cashier Contract Address: ', cashier.address);
-  console.log('Boson Router Contract Address: ', br.address);
+    tx = await this.cashier.setTokenContractAddress(this.erc1155erc721.address);
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log('$ Cashier', event.event, 'at:', event.args._newTokenContract);
+  }
 
-  fs.writeFileSync(
-    'scripts/contracts.json',
-    JSON.stringify(
-      {
-        network: hre.network.name,
-        flo: flo.address,
-        erc1155erc721: erc1155erc721.address,
-        voucherKernel: voucherKernel.address,
-        cashier: cashier.address,
-        br: br.address,
-      },
-      this,
-      2
-    ),
-    'utf-8'
-  );
+  async deployContracts() {
+    const ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
+    const VoucherKernel = await ethers.getContractFactory('VoucherKernel');
+    const Cashier = await ethers.getContractFactory('Cashier');
+    const BosonRouter = await ethers.getContractFactory('BosonRouter');
+    const FundLimitsOracle = await ethers.getContractFactory(
+      'FundLimitsOracle'
+    );
+
+    this.flo = await FundLimitsOracle.deploy();
+    this.erc1155erc721 = await ERC1155ERC721.deploy();
+    this.voucherKernel = await VoucherKernel.deploy(this.erc1155erc721.address);
+    this.cashier = await Cashier.deploy(this.voucherKernel.address);
+    this.br = await BosonRouter.deploy(
+      this.voucherKernel.address,
+      this.flo.address,
+      this.cashier.address
+    );
+
+    await this.flo.deployed();
+    await this.erc1155erc721.deployed();
+    await this.voucherKernel.deployed();
+    await this.cashier.deployed();
+    await this.br.deployed();
+  }
+
+  logContracts() {
+    console.log('\nFundLimitsOracle Contract Address: ', this.flo.address);
+    console.log('ERC1155ERC721 Contract Address: ', this.erc1155erc721.address);
+    console.log('VoucherKernel Contract Address: ', this.voucherKernel.address);
+    console.log('Cashier Contract Address: ', this.cashier.address);
+    console.log('Boson Router Contract Address: ', this.br.address);
+  }
+
+  writeContracts() {
+    fs.writeFileSync(
+      `scripts/contracts-${this.env.toLowerCase()}.json`,
+      JSON.stringify(
+        {
+          network: hre.network.name,
+          flo: this.flo.address,
+          erc1155erc721: this.erc1155erc721.address,
+          voucherKernel: this.voucherKernel.address,
+          cashier: this.cashier.address,
+          br: this.br.address,
+        },
+        null,
+        2
+      ),
+      'utf-8'
+    );
+  }
+}
+
+/**
+ * @class ProdExecutor
+ * @extends {DeploymentExecutor}
+ */
+class ProdExecutor extends DeploymentExecutor {
+  constructor() {
+    super();
+    this.env = 'prod';
+    this.boson_token = process.env.BOSON_TOKEN;
+  }
+
+  async setDefaults() {
+    await super.setDefaults();
+    await this.flo.setTokenLimit(this.boson_token, this.TOKEN_LIMIT);
+  }
+}
+
+/**
+ * @class NonProdExecutor
+ * @extends {DeploymentExecutor}
+ */
+class NonProdExecutor extends DeploymentExecutor {
+  SIXTY_SECONDS: number;
+
+  constructor(env) {
+    super();
+    this.env = env;
+    this.SIXTY_SECONDS = 60;
+  }
+
+  async setDefaults() {
+    await super.setDefaults();
+
+    await this.voucherKernel.setComplainPeriod(2 * this.SIXTY_SECONDS);
+    await this.voucherKernel.setCancelFaultPeriod(2 * this.SIXTY_SECONDS);
+    await this.flo.setTokenLimit(this.boson_token, this.TOKEN_LIMIT);
+  }
+}
+
+export async function deploy(_env: string): Promise<void> {
+  const env = _env.toLowerCase();
+  if (!isValidEnv(env)) {
+    throw new Error(`Env: ${env} is not recognized!`);
+  }
+
+  const executor =
+    env == 'prod' ? new ProdExecutor() : new NonProdExecutor(env);
+
+  await executor.deployContracts();
+  await executor.setDefaults();
+
+  executor.logContracts();
+  executor.writeContracts();
 }

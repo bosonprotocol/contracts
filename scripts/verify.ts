@@ -1,14 +1,23 @@
+// export default async function (): Promise<void> {
+// const hre = require('hardhat');
+// const fs = require('fs');
+import {isValidEnv} from './env-validator';
 import hre from 'hardhat';
 import fs from 'fs';
-const contracts = JSON.parse(
-  fs.readFileSync('./scripts/contracts.json', 'utf-8')
-);
 
-export default async function (): Promise<void> {
+export async function verifyContracts(env: string): Promise<void> {
+  const contracts = JSON.parse(
+    fs.readFileSync(`./scripts/contracts-${env}.json`, 'utf-8')
+  );
+
   if (contracts.network != hre.network.name) {
     throw new Error(
-      'Contracts are not deployer on the same network, that you are trying to verify!'
+      'Contracts are not deployed on the same network, that you are trying to verify!'
     );
+  }
+
+  if (!isValidEnv(env.toLowerCase())) {
+    throw new Error(`Env: ${env} is not recognized!`);
   }
 
   //verify Fund Limits Oracle

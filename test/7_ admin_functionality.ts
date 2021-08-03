@@ -41,11 +41,11 @@ describe('Admin functionality', async () => {
     );
   });
 
-  let contractERC1155ERC721: Contract & ERC1155ERC721,
-    contractVoucherKernel: Contract & VoucherKernel,
-    contractCashier: Contract & Cashier,
-    contractBosonRouter: Contract & BosonRouter,
-    contractFundLimitsOracle: Contract & FundLimitsOracle;
+  let contractERC1155ERC721: ERC1155ERC721,
+    contractVoucherKernel: VoucherKernel,
+    contractCashier: Cashier,
+    contractBosonRouter: BosonRouter,
+    contractFundLimitsOracle: FundLimitsOracle;
 
   async function deployContracts() {
     const timestamp = await Utils.getCurrTimestamp();
@@ -53,8 +53,8 @@ describe('Admin functionality', async () => {
     constants.PROMISE_VALID_FROM = timestamp;
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
-    contractFundLimitsOracle =
-      (await FundLimitsOracle_Factory.deploy()) as Contract & FundLimitsOracle;
+    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
+      FundLimitsOracle;
     contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
       ERC1155ERC721;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
@@ -115,9 +115,7 @@ describe('Admin functionality', async () => {
     });
 
     it('[NEGATIVE][setBosonRouterAddress] Should revert if executed by attacker', async () => {
-      const attackerInstance = contractCashier.connect(
-        users.attacker.signer
-      ) as Cashier;
+      const attackerInstance = contractCashier.connect(users.attacker.signer);
       await expect(
         attackerInstance.setBosonRouterAddress(contractBosonRouter.address)
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
@@ -156,9 +154,7 @@ describe('Admin functionality', async () => {
     });
 
     it('[NEGATIVE][setTokenContractAddress] Should revert if executed by attacker', async () => {
-      const attackerInstance = contractCashier.connect(
-        users.attacker.signer
-      ) as Cashier;
+      const attackerInstance = contractCashier.connect(users.attacker.signer);
       await expect(
         attackerInstance.setTokenContractAddress(contractERC1155ERC721.address)
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
@@ -212,7 +208,7 @@ describe('Admin functionality', async () => {
     it('[NEGATIVE][setVoucherKernelAddress] Should revert if executed by attacker', async () => {
       const attackerInstance = contractERC1155ERC721.connect(
         users.attacker.signer
-      ) as ERC1155ERC721;
+      );
       await expect(
         attackerInstance.setVoucherKernelAddress(contractVoucherKernel.address)
       ).to.be.revertedWith(revertReasons.NOT_OWNER);
@@ -252,7 +248,7 @@ describe('Admin functionality', async () => {
     it('[NEGATIVE][setCashierAddress] Attacker should not be able to set Cashier address', async () => {
       const attackerInstance = contractERC1155ERC721.connect(
         users.attacker.signer
-      ) as ERC1155ERC721;
+      );
 
       await expect(
         attackerInstance.setCashierAddress(contractCashier.address)
@@ -307,7 +303,7 @@ describe('Admin functionality', async () => {
     it('[NEGATIVE][setCashierAddress] Attacker should not be able to set Cashier address', async () => {
       const attackerInstance = contractVoucherKernel.connect(
         users.attacker.signer
-      ) as VoucherKernel;
+      );
       await expect(
         attackerInstance.setCashierAddress(contractCashier.address)
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
@@ -348,7 +344,7 @@ describe('Admin functionality', async () => {
     it('[NEGATIVE][setBosonRouterAddress] Should revert if executed by attacker', async () => {
       const attackerInstance = contractVoucherKernel.connect(
         users.attacker.signer
-      ) as VoucherKernel;
+      );
       await expect(
         attackerInstance.setBosonRouterAddress(contractBosonRouter.address)
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);

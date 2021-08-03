@@ -37,12 +37,12 @@ const BN = ethers.BigNumber.from;
 let users;
 
 describe('Voucher tests', () => {
-  let contractERC1155ERC721: Contract & ERC1155ERC721,
-    contractVoucherKernel: Contract & VoucherKernel,
-    contractCashier: Contract & Cashier,
-    contractBosonRouter: Contract & BosonRouter,
-    contractFundLimitsOracle: Contract & FundLimitsOracle,
-    contractMockBosonRouter: Contract & MockBosonRouter;
+  let contractERC1155ERC721: ERC1155ERC721,
+    contractVoucherKernel: VoucherKernel,
+    contractCashier: Cashier,
+    contractBosonRouter: BosonRouter,
+    contractFundLimitsOracle: FundLimitsOracle,
+    contractMockBosonRouter: MockBosonRouter;
 
   let tokenSupplyKey1,
     tokenSupplyKey2,
@@ -59,7 +59,6 @@ describe('Voucher tests', () => {
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
-    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
     FundLimitsOracle_Factory = await ethers.getContractFactory(
       'FundLimitsOracle'
     );
@@ -71,8 +70,8 @@ describe('Voucher tests', () => {
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle =
-      (await FundLimitsOracle_Factory.deploy()) as Contract & FundLimitsOracle;
+    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
+      FundLimitsOracle;
     contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
       ERC1155ERC721;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
@@ -144,8 +143,7 @@ describe('Voucher tests', () => {
     });
 
     it('Should have set contract addresses properly for ERC1155ERC721', async () => {
-      const voucherKernel =
-        await contractERC1155ERC721.getVoucherKernelAddress();
+      const voucherKernel = await contractERC1155ERC721.getVoucherKernelAddress();
       const cashier = await contractERC1155ERC721.getCashierAddress();
 
       assert.equal(voucherKernel, contractVoucherKernel.address);
@@ -153,8 +151,7 @@ describe('Voucher tests', () => {
     });
 
     it('Should have set contract addresses properly for VoucherKernel', async () => {
-      const tokensContract =
-        await contractVoucherKernel.getTokensContractAddress();
+      const tokensContract = await contractVoucherKernel.getTokensContractAddress();
 
       assert.equal(tokensContract, contractERC1155ERC721.address);
     });
@@ -194,9 +191,8 @@ describe('Voucher tests', () => {
 
   describe('Create Voucher Sets (ERC1155)', () => {
     it('adding one new order / promise', async () => {
-      const sellerInstance = contractBosonRouter.connect(
-        users.seller.signer
-      ) as BosonRouter;
+      const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+
       const txOrder = await sellerInstance.requestCreateOrderETHETH(
         [
           constants.PROMISE_VALID_FROM,
@@ -350,9 +346,7 @@ describe('Voucher tests', () => {
     });
 
     it('adding two new orders / promises', async () => {
-      const sellerInstance = contractBosonRouter.connect(
-        users.seller.signer
-      ) as BosonRouter;
+      const sellerInstance = contractBosonRouter.connect(users.seller.signer);
 
       //Create 1st order
       const txOrder = await sellerInstance.requestCreateOrderETHETH(
@@ -538,9 +532,7 @@ describe('Voucher tests', () => {
   describe('Commit to buy a voucher (ERC1155)', () => {
     beforeEach('execute prerequisite steps', async () => {
       //Create first voucher set
-      const sellerInstance = contractBosonRouter.connect(
-        users.seller.signer
-      ) as BosonRouter;
+      const sellerInstance = contractBosonRouter.connect(users.seller.signer);
       const txOrder = await sellerInstance.requestCreateOrderETHETH(
         [
           constants.PROMISE_VALID_FROM,
@@ -616,9 +608,7 @@ describe('Voucher tests', () => {
 
     it('fill one order (aka commit to buy a voucher)', async () => {
       //Buyer commits
-      const routerFromBuyer = contractBosonRouter.connect(
-        users.buyer.signer
-      ) as BosonRouter;
+      const routerFromBuyer = contractBosonRouter.connect(users.buyer.signer);
 
       const txFillOrder = await routerFromBuyer.requestVoucherETHETH(
         tokenSupplyKey1,
@@ -722,9 +712,7 @@ describe('Voucher tests', () => {
     });
 
     it('fill second order (aka commit to buy a voucher)', async () => {
-      const routerFromBuyer = contractBosonRouter.connect(
-        users.buyer.signer
-      ) as BosonRouter;
+      const routerFromBuyer = contractBosonRouter.connect(users.buyer.signer);
 
       const txFillOrder = await routerFromBuyer.requestVoucherETHETH(
         tokenSupplyKey2,
@@ -826,9 +814,7 @@ describe('Voucher tests', () => {
     });
 
     it('must fail: adding new order with incorrect value sent', async () => {
-      const sellerInstance = contractBosonRouter.connect(
-        users.seller.signer
-      ) as BosonRouter;
+      const sellerInstance = contractBosonRouter.connect(users.seller.signer);
 
       await expect(
         sellerInstance.requestCreateOrderETHETH(
@@ -848,9 +834,7 @@ describe('Voucher tests', () => {
     });
 
     it('must fail: fill an order with incorrect value', async () => {
-      const buyerInstance = contractBosonRouter.connect(
-        users.buyer.signer
-      ) as BosonRouter;
+      const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
       await expect(
         buyerInstance.requestVoucherETHETH(
@@ -894,9 +878,7 @@ describe('Voucher tests', () => {
   describe('Vouchers (ERC721)', function () {
     beforeEach('execute prerequisite steps', async () => {
       //Create first voucher set
-      const sellerInstance = contractBosonRouter.connect(
-        users.seller.signer
-      ) as BosonRouter;
+      const sellerInstance = contractBosonRouter.connect(users.seller.signer);
       const txOrder = await sellerInstance.requestCreateOrderETHETH(
         [
           constants.PROMISE_VALID_FROM,
@@ -934,9 +916,7 @@ describe('Voucher tests', () => {
       );
 
       //Buyer commits - voucher set 1
-      const buyerInstance = contractBosonRouter.connect(
-        users.buyer.signer
-      ) as BosonRouter;
+      const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
       const txFillOrder = await buyerInstance.requestVoucherETHETH(
         tokenSupplyKey1,
         users.seller.address,
@@ -1005,9 +985,7 @@ describe('Voucher tests', () => {
     });
 
     it('redeeming one voucher', async () => {
-      const buyerInstance = contractBosonRouter.connect(
-        users.buyer.signer
-      ) as BosonRouter;
+      const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
       const txRedeem = await buyerInstance.redeem(tokenVoucherKey1, {
         from: users.buyer.address,
       });
@@ -1090,9 +1068,7 @@ describe('Voucher tests', () => {
     });
 
     it('mark voucher as finalized', async () => {
-      const buyerInstance = contractBosonRouter.connect(
-        users.buyer.signer
-      ) as BosonRouter;
+      const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
       await buyerInstance.redeem(tokenVoucherKey1);
 
@@ -1124,7 +1100,7 @@ describe('Voucher tests', () => {
     it('must fail: unauthorized redemption', async () => {
       const attackerInstance = contractBosonRouter.connect(
         users.attacker.signer
-      ) as BosonRouter;
+      );
       await expect(
         attackerInstance.redeem(tokenVoucherKey1, {
           from: users.attacker.address,
@@ -1137,9 +1113,7 @@ describe('Voucher tests', () => {
   describe('Withdrawals', function () {
     beforeEach('execute prerequisite steps', async () => {
       //Create first voucher set
-      const sellerInstance = contractBosonRouter.connect(
-        users.seller.signer
-      ) as BosonRouter;
+      const sellerInstance = contractBosonRouter.connect(users.seller.signer);
       const txOrder = await sellerInstance.requestCreateOrderETHETH(
         [
           constants.PROMISE_VALID_FROM,
@@ -1177,9 +1151,7 @@ describe('Voucher tests', () => {
       );
 
       //Buyer commits - voucher set 1
-      const buyerInstance = contractBosonRouter.connect(
-        users.buyer.signer
-      ) as BosonRouter;
+      const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
       const txFillOrder = await buyerInstance.requestVoucherETHETH(
         tokenSupplyKey1,
         users.seller.address,
@@ -1214,9 +1186,7 @@ describe('Voucher tests', () => {
         users.seller.address
       );
 
-      const cashierDeployer = contractCashier.connect(
-        users.deployer.signer
-      ) as Cashier;
+      const cashierDeployer = contractCashier.connect(users.deployer.signer);
       const txWithdraw = await cashierDeployer.withdraw(tokenVoucherKey1, {
         from: users.deployer.address,
       });
@@ -1285,11 +1255,11 @@ describe('Voucher tests', () => {
 }); //end of contract
 
 describe('Voucher tests - UNHAPPY PATH', () => {
-  let contractERC1155ERC721: Contract & ERC1155ERC721,
-    contractVoucherKernel: Contract & VoucherKernel,
-    contractCashier: Contract & Cashier,
-    contractBosonRouter: Contract & BosonRouter,
-    contractFundLimitsOracle: Contract & FundLimitsOracle;
+  let contractERC1155ERC721: ERC1155ERC721,
+    contractVoucherKernel: VoucherKernel,
+    contractCashier: Cashier,
+    contractBosonRouter: BosonRouter,
+    contractFundLimitsOracle: FundLimitsOracle;
   let tokenSupplyKey1, tokenVoucherKey1;
 
   before(async () => {
@@ -1310,8 +1280,8 @@ describe('Voucher tests - UNHAPPY PATH', () => {
   });
 
   async function deployContracts() {
-    contractFundLimitsOracle =
-      (await FundLimitsOracle_Factory.deploy()) as Contract & FundLimitsOracle;
+    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
+      FundLimitsOracle;
     contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
       ERC1155ERC721;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
@@ -1363,9 +1333,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
   });
 
   beforeEach('execute prerequisite steps', async () => {
-    const sellerInstance = contractBosonRouter.connect(
-      users.seller.signer
-    ) as BosonRouter;
+    const sellerInstance = contractBosonRouter.connect(users.seller.signer);
     const txOrder = await sellerInstance.requestCreateOrderETHETH(
       [
         constants.PROMISE_VALID_FROM,
@@ -1391,9 +1359,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       }
     );
 
-    const buyerInstance = contractBosonRouter.connect(
-      users.buyer.signer
-    ) as BosonRouter;
+    const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
     const txFillOrder = await buyerInstance.requestVoucherETHETH(
       tokenSupplyKey1,
       users.seller.address,
@@ -1442,7 +1408,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
     it('must fail: unauthorized change of complain period', async () => {
       const attackerInstance = contractVoucherKernel.connect(
         users.attacker.signer
-      ) as VoucherKernel;
+      );
       const complainPeriodSeconds =
         constants.PROMISE_CHALLENGE_PERIOD * constants.SECONDS_IN_DAY;
 
@@ -1472,15 +1438,14 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       );
 
       //Check VoucherKernel state
-      const newCancelOrFaultPeriod =
-        await contractVoucherKernel.getCancelFaultPeriod();
+      const newCancelOrFaultPeriod = await contractVoucherKernel.getCancelFaultPeriod();
       assert.isTrue(newCancelOrFaultPeriod.eq(BN(cancelFaultPeriodSeconds)));
     });
 
     it('must fail: unauthorized change of cancelOrFault period', async () => {
       const attackerInstance = contractVoucherKernel.connect(
         users.attacker.signer
-      ) as VoucherKernel;
+      );
       const cancelFaultPeriodSeconds =
         constants.PROMISE_CANCELORFAULT_PERIOD * constants.SECONDS_IN_DAY;
 
@@ -1492,9 +1457,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
 
   describe('Refunds ...', function () {
     it('refunding one voucher', async () => {
-      const buyerInstance = contractBosonRouter.connect(
-        users.buyer.signer
-      ) as BosonRouter;
+      const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
       const txRefund = await buyerInstance.refund(tokenVoucherKey1);
 
       const txReceipt = await txRefund.wait();
@@ -1532,9 +1495,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
     });
 
     it('refunding one voucher, then complain', async () => {
-      const buyerInstance = contractBosonRouter.connect(
-        users.buyer.signer
-      ) as BosonRouter;
+      const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
       await buyerInstance.refund(tokenVoucherKey1);
       const complainTx = await buyerInstance.complain(tokenVoucherKey1);
@@ -1574,9 +1535,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
     });
 
     it('refunding one voucher, then complain, then cancel/fault', async () => {
-      const buyerInstance = contractBosonRouter.connect(
-        users.buyer.signer
-      ) as BosonRouter;
+      const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
       await buyerInstance.refund(tokenVoucherKey1, {
         from: users.buyer.address,
@@ -1599,9 +1558,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
         transactionBlock.timestamp.toString()
       );
 
-      const sellerInstance = contractBosonRouter.connect(
-        users.seller.signer
-      ) as BosonRouter;
+      const sellerInstance = contractBosonRouter.connect(users.seller.signer);
       const cancelTx = await sellerInstance.cancelOrFault(tokenVoucherKey1);
 
       const txReceipt = await cancelTx.wait();
@@ -1641,9 +1598,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
     });
 
     it('must fail: refund then try to redeem', async () => {
-      const buyerInstance = contractBosonRouter.connect(
-        users.buyer.signer
-      ) as BosonRouter;
+      const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
       await buyerInstance.refund(tokenVoucherKey1);
 
       await expect(buyerInstance.redeem(tokenVoucherKey1)).to.be.revertedWith(
@@ -1654,9 +1609,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
 
   describe('Cancel/Fault by the seller ...', () => {
     it('canceling one voucher', async () => {
-      const sellerInstance = contractBosonRouter.connect(
-        users.seller.signer
-      ) as BosonRouter;
+      const sellerInstance = contractBosonRouter.connect(users.seller.signer);
       await sellerInstance.cancelOrFault(tokenVoucherKey1);
 
       const voucherStatus = await contractVoucherKernel.getVoucherStatus(
@@ -1674,12 +1627,8 @@ describe('Voucher tests - UNHAPPY PATH', () => {
     });
 
     it('must fail: cancel/fault then try to redeem', async () => {
-      const sellerInstance = contractBosonRouter.connect(
-        users.seller.signer
-      ) as BosonRouter;
-      const buyerInstance = contractBosonRouter.connect(
-        users.buyer.signer
-      ) as BosonRouter;
+      const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+      const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
       await sellerInstance.cancelOrFault(tokenVoucherKey1);
       await expect(buyerInstance.redeem(tokenVoucherKey1)).to.be.revertedWith(
@@ -1709,9 +1658,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
         'end voucher status not as expected (EXPIRED)'
       );
 
-      const buyerInstance = contractBosonRouter.connect(
-        users.buyer.signer
-      ) as BosonRouter;
+      const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
       const complainTx = await buyerInstance.complain(tokenVoucherKey1);
 
       let txReceipt = await complainTx.wait();
@@ -1738,9 +1685,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       );
 
       // in the same test, because the EVM time machine is funky ...
-      const sellerInstance = contractBosonRouter.connect(
-        users.seller.signer
-      ) as BosonRouter;
+      const sellerInstance = contractBosonRouter.connect(users.seller.signer);
       const cancelTx = await sellerInstance.cancelOrFault(tokenVoucherKey1);
 
       txReceipt = await cancelTx.wait();

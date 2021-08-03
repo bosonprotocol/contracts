@@ -56,13 +56,13 @@ describe('Cashier and VoucherKernel', () => {
     );
   });
 
-  let contractERC1155ERC721: Contract & ERC1155ERC721,
-    contractVoucherKernel: Contract & VoucherKernel,
-    contractCashier: Contract & Cashier,
-    contractBosonRouter: Contract & BosonRouter,
-    contractBSNTokenPrice: Contract & MockERC20Permit,
-    contractBSNTokenDeposit: Contract & MockERC20Permit,
-    contractFundLimitsOracle: Contract & FundLimitsOracle;
+  let contractERC1155ERC721: ERC1155ERC721,
+    contractVoucherKernel: VoucherKernel,
+    contractCashier: Cashier,
+    contractBosonRouter: BosonRouter,
+    contractBSNTokenPrice: MockERC20Permit,
+    contractBSNTokenDeposit: MockERC20Permit,
+    contractFundLimitsOracle: FundLimitsOracle;
   let tokenSupplyKey, tokenVoucherKey, tokenVoucherKey1;
 
   const ZERO = BN(0);
@@ -88,8 +88,8 @@ describe('Cashier and VoucherKernel', () => {
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle =
-      (await FundLimitsOracle_Factory.deploy()) as Contract & FundLimitsOracle;
+    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
+      FundLimitsOracle;
     contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
       ERC1155ERC721;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
@@ -255,11 +255,10 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Get correct remaining qty for supply', async () => {
-        let remainingQtyInContract =
-          await contractVoucherKernel.getRemQtyForSupply(
-            tokenSupplyKey,
-            users.seller.address
-          );
+        let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+          tokenSupplyKey,
+          users.seller.address
+        );
 
         assert.equal(
           remainingQtyInContract.toString(),
@@ -269,11 +268,10 @@ describe('Cashier and VoucherKernel', () => {
 
         for (let i = 0; i < vouchersToBuy; i++) {
           await utils.commitToBuy(users.buyer, users.seller, tokenSupplyKey);
-          remainingQtyInContract =
-            await contractVoucherKernel.getRemQtyForSupply(
-              tokenSupplyKey,
-              users.seller.address
-            );
+          remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+            tokenSupplyKey,
+            users.seller.address
+          );
 
           remQty = BN(remQty).sub(1).toString();
 
@@ -295,14 +293,17 @@ describe('Cashier and VoucherKernel', () => {
           constants.QTY_10
         );
 
-        const paymentMethod =
-          await contractVoucherKernel.getVoucherPaymentMethod(tokenSupplyKey);
+        const paymentMethod = await contractVoucherKernel.getVoucherPaymentMethod(
+          tokenSupplyKey
+        );
 
-        const addressTokenPrice =
-          await contractVoucherKernel.getVoucherPriceToken(tokenSupplyKey);
+        const addressTokenPrice = await contractVoucherKernel.getVoucherPriceToken(
+          tokenSupplyKey
+        );
 
-        const addressTokenDeposits =
-          await contractVoucherKernel.getVoucherDepositToken(tokenSupplyKey);
+        const addressTokenDeposits = await contractVoucherKernel.getVoucherDepositToken(
+          tokenSupplyKey
+        );
 
         assert.equal(
           paymentMethod.toString(),
@@ -321,34 +322,10 @@ describe('Cashier and VoucherKernel', () => {
         );
       });
 
-      it('[NEGATIVE] Should fail if additional token address is provided', async () => {
-        const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
-        timestamp = await Utils.getCurrTimestamp();
-
-        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
-
-        await expect(
-          sellerInstance.requestCreateOrderETHETH(
-            contractBSNTokenDeposit.address,
-            [
-              timestamp,
-              timestamp + constants.SECONDS_IN_DAY,
-              constants.PROMISE_PRICE1,
-              constants.seller_deposit,
-              constants.PROMISE_DEPOSITBU1,
-              constants.ORDER_QUANTITY1,
-            ],
-            {value: txValue}
-          )
-        ).to.be.reverted;
-      });
-
       it('[NEGATIVE] Should not create a supply if price is above the limit', async () => {
         const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
 
-        const sellerInstance = contractBosonRouter.connect(
-          users.seller.signer
-        ) as BosonRouter;
+        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
 
         await expect(
           sellerInstance.requestCreateOrderETHETH(
@@ -368,9 +345,7 @@ describe('Cashier and VoucherKernel', () => {
       it('[NEGATIVE] Should not create a supply if depositBu is above the limit', async () => {
         const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
 
-        const sellerInstance = contractBosonRouter.connect(
-          users.seller.signer
-        ) as BosonRouter;
+        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
 
         await expect(
           sellerInstance.requestCreateOrderETHETH(
@@ -390,9 +365,7 @@ describe('Cashier and VoucherKernel', () => {
       it('[NEGATIVE] Should not create a supply if depositSe is above the limit', async () => {
         const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
 
-        const sellerInstance = contractBosonRouter.connect(
-          users.seller.signer
-        ) as BosonRouter;
+        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
 
         await expect(
           sellerInstance.requestCreateOrderETHETH(
@@ -518,11 +491,10 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Get correct remaining qty for supply', async () => {
-          let remainingQtyInContract =
-            await contractVoucherKernel.getRemQtyForSupply(
-              tokenSupplyKey,
-              users.seller.address
-            );
+          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+            tokenSupplyKey,
+            users.seller.address
+          );
           assert.equal(
             remainingQtyInContract.toString(),
             remQty.toString(),
@@ -531,11 +503,10 @@ describe('Cashier and VoucherKernel', () => {
 
           for (let i = 0; i < vouchersToBuy; i++) {
             await utils.commitToBuy(users.buyer, users.seller, tokenSupplyKey);
-            remainingQtyInContract =
-              await contractVoucherKernel.getRemQtyForSupply(
-                tokenSupplyKey,
-                users.seller.address
-              );
+            remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+              tokenSupplyKey,
+              users.seller.address
+            );
 
             remQty = BN(remQty).sub(1).toString();
 
@@ -556,14 +527,17 @@ describe('Cashier and VoucherKernel', () => {
             constants.QTY_10
           );
 
-          const paymentMethod =
-            await contractVoucherKernel.getVoucherPaymentMethod(tokenSupplyKey);
+          const paymentMethod = await contractVoucherKernel.getVoucherPaymentMethod(
+            tokenSupplyKey
+          );
 
-          const addressTokenPrice =
-            await contractVoucherKernel.getVoucherPriceToken(tokenSupplyKey);
+          const addressTokenPrice = await contractVoucherKernel.getVoucherPriceToken(
+            tokenSupplyKey
+          );
 
-          const addressTokenDeposits =
-            await contractVoucherKernel.getVoucherDepositToken(tokenSupplyKey);
+          const addressTokenDeposits = await contractVoucherKernel.getVoucherDepositToken(
+            tokenSupplyKey
+          );
 
           assert.equal(
             paymentMethod.toString(),
@@ -604,7 +578,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCreateOrderETHTKNWithPermit(
@@ -648,7 +622,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCreateOrderETHTKNWithPermit(
@@ -693,7 +667,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCreateOrderETHTKNWithPermit(
@@ -738,7 +712,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCreateOrderETHTKNWithPermit(
@@ -783,7 +757,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCreateOrderETHTKNWithPermit(
@@ -902,11 +876,10 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Get correct remaining qty for supply', async () => {
-          let remainingQtyInContract =
-            await contractVoucherKernel.getRemQtyForSupply(
-              tokenSupplyKey,
-              users.seller.address
-            );
+          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+            tokenSupplyKey,
+            users.seller.address
+          );
 
           assert.equal(
             remainingQtyInContract.toString(),
@@ -916,11 +889,10 @@ describe('Cashier and VoucherKernel', () => {
 
           for (let i = 0; i < vouchersToBuy; i++) {
             await utils.commitToBuy(users.buyer, users.seller, tokenSupplyKey);
-            remainingQtyInContract =
-              await contractVoucherKernel.getRemQtyForSupply(
-                tokenSupplyKey,
-                users.seller.address
-              );
+            remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+              tokenSupplyKey,
+              users.seller.address
+            );
 
             remQty = BN(remQty).sub(1).toString();
 
@@ -941,14 +913,17 @@ describe('Cashier and VoucherKernel', () => {
             constants.QTY_1
           );
 
-          const paymentMethod =
-            await contractVoucherKernel.getVoucherPaymentMethod(tokenSupplyKey);
+          const paymentMethod = await contractVoucherKernel.getVoucherPaymentMethod(
+            tokenSupplyKey
+          );
 
-          const addressTokenPrice =
-            await contractVoucherKernel.getVoucherPriceToken(tokenSupplyKey);
+          const addressTokenPrice = await contractVoucherKernel.getVoucherPriceToken(
+            tokenSupplyKey
+          );
 
-          const addressTokenDeposits =
-            await contractVoucherKernel.getVoucherDepositToken(tokenSupplyKey);
+          const addressTokenDeposits = await contractVoucherKernel.getVoucherDepositToken(
+            tokenSupplyKey
+          );
 
           assert.equal(
             paymentMethod.toString(),
@@ -972,7 +947,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCreateOrderTKNETH(
@@ -993,7 +968,7 @@ describe('Cashier and VoucherKernel', () => {
         it('[NEGATIVE] Should fail if token price contract is zero address', async () => {
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCreateOrderTKNETH(constants.ZERO_ADDRESS, [
@@ -1012,7 +987,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCreateOrderTKNETH(
@@ -1035,7 +1010,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCreateOrderTKNETH(
@@ -1058,7 +1033,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCreateOrderTKNETH(
@@ -1187,11 +1162,10 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Get correct remaining qty for supply', async () => {
-          let remainingQtyInContract =
-            await contractVoucherKernel.getRemQtyForSupply(
-              tokenSupplyKey,
-              users.seller.address
-            );
+          let remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+            tokenSupplyKey,
+            users.seller.address
+          );
 
           assert.equal(
             remainingQtyInContract.toString(),
@@ -1201,11 +1175,10 @@ describe('Cashier and VoucherKernel', () => {
 
           for (let i = 0; i < vouchersToBuy; i++) {
             await utils.commitToBuy(users.buyer, users.seller, tokenSupplyKey);
-            remainingQtyInContract =
-              await contractVoucherKernel.getRemQtyForSupply(
-                tokenSupplyKey,
-                users.seller.address
-              );
+            remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+              tokenSupplyKey,
+              users.seller.address
+            );
 
             remQty = BN(remQty).sub(1).toString();
 
@@ -1226,14 +1199,17 @@ describe('Cashier and VoucherKernel', () => {
             constants.QTY_1
           );
 
-          const paymentMethod =
-            await contractVoucherKernel.getVoucherPaymentMethod(tokenSupplyKey);
+          const paymentMethod = await contractVoucherKernel.getVoucherPaymentMethod(
+            tokenSupplyKey
+          );
 
-          const addressTokenPrice =
-            await contractVoucherKernel.getVoucherPriceToken(tokenSupplyKey);
+          const addressTokenPrice = await contractVoucherKernel.getVoucherPriceToken(
+            tokenSupplyKey
+          );
 
-          const addressTokenDeposits =
-            await contractVoucherKernel.getVoucherDepositToken(tokenSupplyKey);
+          const addressTokenDeposits = await contractVoucherKernel.getVoucherDepositToken(
+            tokenSupplyKey
+          );
 
           assert.equal(
             paymentMethod.toString(),
@@ -1274,7 +1250,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCreateOrderTKNTKNWithPermit(
@@ -1319,7 +1295,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCreateOrderTKNTKNWithPermit(
@@ -1364,7 +1340,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCreateOrderTKNTKNWithPermit(
@@ -1410,7 +1386,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCreateOrderTKNTKNWithPermit(
@@ -1455,7 +1431,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCreateOrderTKNTKNWithPermit(
@@ -1500,7 +1476,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCreateOrderTKNTKNWithPermit(
@@ -1545,7 +1521,7 @@ describe('Cashier and VoucherKernel', () => {
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
-          ) as BosonRouter;
+          );
 
           await expect(
             sellerInstance.requestCreateOrderTKNTKNWithPermit(
@@ -1609,9 +1585,7 @@ describe('Cashier and VoucherKernel', () => {
         users.seller.address
       );
 
-      const sellerInstance = contractBosonRouter.connect(
-        users.seller.signer
-      ) as BosonRouter;
+      const sellerInstance = contractBosonRouter.connect(users.seller.signer);
 
       await sellerInstance.requestCancelOrFaultVoucherSet(tokenSupplyKey);
       const nextCorrId = await contractBosonRouter.getCorrelationId(
@@ -1671,9 +1645,7 @@ describe('Cashier and VoucherKernel', () => {
         const txValue = BN(constants.buyer_deposit).add(
           BN(constants.product_price)
         );
-        const buyerInstance = contractBosonRouter.connect(
-          users.buyer.signer
-        ) as BosonRouter;
+        const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
         const txFillOrder = await buyerInstance.requestVoucherETHETH(
           TOKEN_SUPPLY_ID,
           users.seller.address,
@@ -1775,9 +1747,7 @@ describe('Cashier and VoucherKernel', () => {
           BN(constants.incorrect_product_price)
         );
 
-        const buyerInstance = contractBosonRouter.connect(
-          users.buyer.signer
-        ) as BosonRouter;
+        const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
         await expect(
           buyerInstance.requestVoucherETHETH(
@@ -1795,9 +1765,7 @@ describe('Cashier and VoucherKernel', () => {
           BN(constants.product_price)
         );
 
-        const buyerInstance = contractBosonRouter.connect(
-          users.buyer.signer
-        ) as BosonRouter;
+        const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
         await expect(
           buyerInstance.requestVoucherETHETH(
@@ -1887,21 +1855,18 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          const buyerInstance = contractBosonRouter.connect(
-            users.buyer.signer
-          ) as BosonRouter;
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
-          const txFillOrder =
-            await buyerInstance.requestVoucherETHTKNWithPermit(
-              TOKEN_SUPPLY_ID,
-              users.seller.address,
-              constants.buyer_deposit,
-              deadline,
-              v,
-              r,
-              s,
-              {value: constants.product_price}
-            );
+          const txFillOrder = await buyerInstance.requestVoucherETHTKNWithPermit(
+            TOKEN_SUPPLY_ID,
+            users.seller.address,
+            constants.buyer_deposit,
+            deadline,
+            v,
+            r,
+            s,
+            {value: constants.product_price}
+          );
 
           const txReceipt = await txFillOrder.wait();
 
@@ -1952,8 +1917,9 @@ describe('Cashier and VoucherKernel', () => {
             contractCashier.address
           );
 
-          const cashierDepositTokenBalance =
-            await contractBSNTokenDeposit.balanceOf(contractCashier.address);
+          const cashierDepositTokenBalance = await contractBSNTokenDeposit.balanceOf(
+            contractCashier.address
+          );
           const sellerTokenDeposits = BN(constants.seller_deposit).mul(
             BN(ORDER_QTY)
           );
@@ -2024,9 +1990,7 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          const buyerInstance = contractBosonRouter.connect(
-            users.buyer.signer
-          ) as BosonRouter;
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
           await expect(
             buyerInstance.requestVoucherETHTKNWithPermit(
@@ -2062,9 +2026,7 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          const buyerInstance = contractBosonRouter.connect(
-            users.buyer.signer
-          ) as BosonRouter;
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
           await expect(
             buyerInstance.requestVoucherETHTKNWithPermit(
@@ -2190,23 +2152,20 @@ describe('Cashier and VoucherKernel', () => {
           const rPrice = VRS_PRICE.r;
           const sPrice = VRS_PRICE.s;
 
-          const buyerInstance = contractBosonRouter.connect(
-            users.buyer.signer
-          ) as BosonRouter;
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
-          const txFillOrder =
-            await buyerInstance.requestVoucherTKNTKNWithPermit(
-              TOKEN_SUPPLY_ID,
-              users.seller.address,
-              tokensToSend,
-              deadline,
-              vPrice,
-              rPrice,
-              sPrice,
-              vDeposit,
-              rDeposit,
-              sDeposit
-            );
+          const txFillOrder = await buyerInstance.requestVoucherTKNTKNWithPermit(
+            TOKEN_SUPPLY_ID,
+            users.seller.address,
+            tokensToSend,
+            deadline,
+            vPrice,
+            rPrice,
+            sPrice,
+            vDeposit,
+            rDeposit,
+            sDeposit
+          );
 
           const txReceipt = await txFillOrder.wait();
 
@@ -2252,10 +2211,12 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Cashier Contract has correct amount of funds', async () => {
-          const cashierPriceTokenBalance =
-            await contractBSNTokenPrice.balanceOf(contractCashier.address);
-          const cashierDepositTokenBalance =
-            await contractBSNTokenDeposit.balanceOf(contractCashier.address);
+          const cashierPriceTokenBalance = await contractBSNTokenPrice.balanceOf(
+            contractCashier.address
+          );
+          const cashierDepositTokenBalance = await contractBSNTokenDeposit.balanceOf(
+            contractCashier.address
+          );
           const sellerDeposit = BN(constants.seller_deposit).mul(BN(ORDER_QTY));
           const expectedDepositBalance = BN(constants.buyer_deposit).add(
             sellerDeposit
@@ -2278,21 +2239,18 @@ describe('Cashier and VoucherKernel', () => {
           const buyerTknPriceSent = BN(constants.product_price);
           const buyerTknDepositSent = BN(constants.buyer_deposit);
 
-          const escrowSellerTknDeposit =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenDeposit.address,
-              users.seller.address
-            );
-          const escrowBuyerTknPrice =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenPrice.address,
-              users.buyer.address
-            );
-          const escrowBuyerTknDeposit =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenDeposit.address,
-              users.buyer.address
-            );
+          const escrowSellerTknDeposit = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          );
+          const escrowBuyerTknPrice = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.buyer.address
+          );
+          const escrowBuyerTknDeposit = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.buyer.address
+          );
 
           assert.isTrue(
             BN(sellerDeposits).eq(escrowSellerTknDeposit),
@@ -2358,9 +2316,7 @@ describe('Cashier and VoucherKernel', () => {
           const rPrice = VRS_PRICE.r;
           const sPrice = VRS_PRICE.s;
 
-          const buyerInstance = contractBosonRouter.connect(
-            users.buyer.signer
-          ) as BosonRouter;
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
           await expect(
             buyerInstance.requestVoucherTKNTKNWithPermit(
@@ -2426,9 +2382,7 @@ describe('Cashier and VoucherKernel', () => {
           const rPrice = VRS_PRICE.r;
           const sPrice = VRS_PRICE.s;
 
-          const buyerInstance = contractBosonRouter.connect(
-            users.buyer.signer
-          ) as BosonRouter;
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
           await expect(
             buyerInstance.requestVoucherTKNTKNWithPermit(
@@ -2530,20 +2484,17 @@ describe('Cashier and VoucherKernel', () => {
           const r = VRS_TOKENS.r;
           const s = VRS_TOKENS.s;
 
-          const buyerInstance = contractBosonRouter.connect(
-            users.buyer.signer
-          ) as BosonRouter;
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
-          const txFillOrder =
-            await buyerInstance.requestVoucherTKNTKNSameWithPermit(
-              TOKEN_SUPPLY_ID,
-              users.seller.address,
-              tokensToSend,
-              deadline,
-              v,
-              r,
-              s
-            );
+          const txFillOrder = await buyerInstance.requestVoucherTKNTKNSameWithPermit(
+            TOKEN_SUPPLY_ID,
+            users.seller.address,
+            tokensToSend,
+            deadline,
+            v,
+            r,
+            s
+          );
 
           const txReceipt = await txFillOrder.wait();
 
@@ -2591,8 +2542,9 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Cashier Contract has correct amount of funds', async () => {
-          const cashierTokenBalanceSame =
-            await utils.contractBSNTokenSame.balanceOf(contractCashier.address);
+          const cashierTokenBalanceSame = await utils.contractBSNTokenSame.balanceOf(
+            contractCashier.address
+          );
           const sellerDeposits = BN(constants.seller_deposit).mul(
             BN(ORDER_QTY)
           );
@@ -2615,11 +2567,10 @@ describe('Cashier and VoucherKernel', () => {
             BN(constants.buyer_deposit)
           );
 
-          const escrowSellerTknDeposit =
-            await contractCashier.getEscrowTokensAmount(
-              utils.contractBSNTokenSame.address,
-              users.seller.address
-            );
+          const escrowSellerTknDeposit = await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.seller.address
+          );
           const escrowBuyerTkn = await contractCashier.getEscrowTokensAmount(
             utils.contractBSNTokenSame.address,
             users.buyer.address
@@ -2661,9 +2612,7 @@ describe('Cashier and VoucherKernel', () => {
           const r = VRS_TOKENS.r;
           const s = VRS_TOKENS.s;
 
-          const buyerInstance = contractBosonRouter.connect(
-            users.buyer.signer
-          ) as BosonRouter;
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
           await expect(
             buyerInstance.requestVoucherTKNTKNSameWithPermit(
@@ -2703,9 +2652,7 @@ describe('Cashier and VoucherKernel', () => {
           const r = VRS_TOKENS.r;
           const s = VRS_TOKENS.s;
 
-          const buyerInstance = contractBosonRouter.connect(
-            users.buyer.signer
-          ) as BosonRouter;
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
           await expect(
             buyerInstance.requestVoucherTKNTKNSameWithPermit(
@@ -2780,9 +2727,7 @@ describe('Cashier and VoucherKernel', () => {
           const r = VRS_TOKENS.r;
           const s = VRS_TOKENS.s;
 
-          const buyerInstance = contractBosonRouter.connect(
-            users.buyer.signer
-          ) as BosonRouter;
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
           await expect(
             buyerInstance.requestVoucherTKNTKNSameWithPermit(
@@ -2865,21 +2810,18 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          const buyerInstance = contractBosonRouter.connect(
-            users.buyer.signer
-          ) as BosonRouter;
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
-          const txFillOrder =
-            await buyerInstance.requestVoucherTKNETHWithPermit(
-              TOKEN_SUPPLY_ID,
-              users.seller.address,
-              constants.product_price,
-              deadline,
-              v,
-              r,
-              s,
-              {value: constants.buyer_deposit}
-            );
+          const txFillOrder = await buyerInstance.requestVoucherTKNETHWithPermit(
+            TOKEN_SUPPLY_ID,
+            users.seller.address,
+            constants.product_price,
+            deadline,
+            v,
+            r,
+            s,
+            {value: constants.buyer_deposit}
+          );
 
           const txReceipt = await txFillOrder.wait();
 
@@ -2937,8 +2879,9 @@ describe('Cashier and VoucherKernel', () => {
             sellerDeposits
           );
 
-          const cashierPriceTokenBalance =
-            await contractBSNTokenPrice.balanceOf(contractCashier.address);
+          const cashierPriceTokenBalance = await contractBSNTokenPrice.balanceOf(
+            contractCashier.address
+          );
 
           assert.isTrue(
             BN(cashierDepositETH).eq(expectedDepositBalance),
@@ -3002,9 +2945,7 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          const buyerInstance = contractBosonRouter.connect(
-            users.buyer.signer
-          ) as BosonRouter;
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
           await expect(
             buyerInstance.requestVoucherTKNETHWithPermit(
@@ -3039,9 +2980,7 @@ describe('Cashier and VoucherKernel', () => {
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          const buyerInstance = contractBosonRouter.connect(
-            users.buyer.signer
-          ) as BosonRouter;
+          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
           await expect(
             buyerInstance.requestVoucherTKNETHWithPermit(
@@ -3059,7 +2998,7 @@ describe('Cashier and VoucherKernel', () => {
       });
     });
 
-    describe('[NEGATIVE] Common voucher interactions after expiry', () => {
+    describe('Common voucher interactions after expiry', () => {
       const TEN_MINUTES = 10 * constants.ONE_MINUTE;
       const cancelPeriod = constants.ONE_MINUTE;
       const complainPeriod = constants.ONE_MINUTE;
@@ -3295,6 +3234,189 @@ describe('Cashier and VoucherKernel', () => {
         await expect(
           utils.complain(voucherID, users.buyer.signer)
         ).to.be.revertedWith(revertReasons.COMPLAIN_PERIOD_EXPIRED);
+      });
+
+      it('[COMMIT->EXPIRY TRIGGERED->CANCEL] Seller should be able to cancel within the cancel period after expiry triggered', async () => {
+        const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
+        await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
+        await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await advanceTimeSeconds(ONE_WEEK);
+
+        const expiryTx = await contractVoucherKernel.triggerExpiration(
+          voucherID
+        );
+        let txReceipt = await expiryTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          VoucherKernel_Factory,
+          eventNames.LOG_EXPIRATION_TRIGGERED,
+          (ev) => {
+            assert.equal(ev._triggeredBy, users.deployer.address);
+          }
+        );
+
+        const cancelTx = await utils.cancel(voucherID, users.seller.signer);
+        txReceipt = await cancelTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          VoucherKernel_Factory,
+          eventNames.LOG_VOUCHER_FAULT_CANCEL,
+          (ev) => {
+            assert.equal(ev._tokenIdVoucher.toString(), voucherID);
+          }
+        );
+      });
+
+      it('[COMMIT->EXPIRY TRIGGERED->COMPLAIN] Buyer should be able to complain within the complain period after expiry triggered', async () => {
+        const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
+        await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
+        await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
+
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await advanceTimeSeconds(ONE_WEEK);
+
+        const expiryTx = await contractVoucherKernel.triggerExpiration(
+          voucherID
+        );
+        let txReceipt = await expiryTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          VoucherKernel_Factory,
+          eventNames.LOG_EXPIRATION_TRIGGERED,
+          (ev) => {
+            assert.equal(ev._triggeredBy, users.deployer.address);
+          }
+        );
+
+        const complainTx = await utils.complain(voucherID, users.buyer.signer);
+        txReceipt = await complainTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          VoucherKernel_Factory,
+          eventNames.LOG_VOUCHER_COMPLAIN,
+          (ev) => {
+            assert.equal(ev._tokenIdVoucher.toString(), voucherID);
+          }
+        );
+      });
+
+      it('[COMMIT->EXPIRY TRIGGERED->CANCEL->COMPLAIN] Buyer should be able to complain within the complain period after expiry triggered and seller cancels', async () => {
+        const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
+        await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
+        await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
+
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await advanceTimeSeconds(ONE_WEEK);
+
+        const expiryTx = await contractVoucherKernel.triggerExpiration(
+          voucherID
+        );
+        let txReceipt = await expiryTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          VoucherKernel_Factory,
+          eventNames.LOG_EXPIRATION_TRIGGERED,
+          (ev) => {
+            assert.equal(ev._triggeredBy, users.deployer.address);
+          }
+        );
+
+        const cancelTx = await utils.cancel(voucherID, users.seller.signer);
+        txReceipt = await cancelTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          VoucherKernel_Factory,
+          eventNames.LOG_VOUCHER_FAULT_CANCEL,
+          (ev) => {
+            assert.equal(ev._tokenIdVoucher.toString(), voucherID);
+          }
+        );
+
+        const complainTx = await utils.complain(voucherID, users.buyer.signer);
+        txReceipt = await complainTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          VoucherKernel_Factory,
+          eventNames.LOG_VOUCHER_COMPLAIN,
+          (ev) => {
+            assert.equal(ev._tokenIdVoucher.toString(), voucherID);
+          }
+        );
+      });
+
+      it('[COMMIT->EXPIRY TRIGGERED->COMPLAIN->CANCEL] Seller should be able to cancel within the cancel period after expiry triggered and buyer complains', async () => {
+        const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
+        await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
+        await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
+
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID
+        );
+
+        await advanceTimeSeconds(ONE_WEEK);
+
+        const expiryTx = await contractVoucherKernel.triggerExpiration(
+          voucherID
+        );
+        let txReceipt = await expiryTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          VoucherKernel_Factory,
+          eventNames.LOG_EXPIRATION_TRIGGERED,
+          (ev) => {
+            assert.equal(ev._triggeredBy, users.deployer.address);
+          }
+        );
+
+        const complainTx = await utils.complain(voucherID, users.buyer.signer);
+        txReceipt = await complainTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          VoucherKernel_Factory,
+          eventNames.LOG_VOUCHER_COMPLAIN,
+          (ev) => {
+            assert.equal(ev._tokenIdVoucher.toString(), voucherID);
+          }
+        );
+
+        const cancelTx = await utils.cancel(voucherID, users.seller.signer);
+        txReceipt = await cancelTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          VoucherKernel_Factory,
+          eventNames.LOG_VOUCHER_FAULT_CANCEL,
+          (ev) => {
+            assert.equal(ev._tokenIdVoucher.toString(), voucherID);
+          }
+        );
       });
     });
   });
@@ -3611,8 +3733,9 @@ describe('Cashier and VoucherKernel', () => {
           constants.QTY_1,
           users.other1.signer
         ),
-          (actualOldOwnerBalanceFromEscrow =
-            await contractCashier.getEscrowAmount(users.other1.address));
+          (actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
+            users.other1.address
+          ));
         actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
           users.other2.address
         );
@@ -3796,14 +3919,15 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         async function getBalancesDepositToken() {
-          balanceBuyerFromDeposits =
-            await utils.contractBSNTokenDeposit.balanceOf(users.buyer.address);
-          balanceSellerFromDeposits =
-            await utils.contractBSNTokenDeposit.balanceOf(users.other2.address);
-          escrowBalanceFromDeposits =
-            await utils.contractBSNTokenDeposit.balanceOf(
-              users.deployer.address
-            );
+          balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+            users.buyer.address
+          );
+          balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+            users.other2.address
+          );
+          escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+            users.deployer.address
+          );
           cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(
             utils.contractCashier.address
           );
@@ -3843,16 +3967,14 @@ describe('Cashier and VoucherKernel', () => {
             BN(constants.QTY_1)
           );
 
-          actualOldOwnerBalanceFromEscrow =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenDeposit.address,
-              users.other1.address
-            );
-          actualNewOwnerBalanceFromEscrow =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenDeposit.address,
-              users.other2.address
-            );
+          actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other1.address
+          );
+          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other2.address
+          );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
@@ -3870,16 +3992,14 @@ describe('Cashier and VoucherKernel', () => {
             constants.QTY_1,
             users.other1.signer
           ),
-            (actualOldOwnerBalanceFromEscrow =
-              await contractCashier.getEscrowTokensAmount(
-                contractBSNTokenDeposit.address,
-                users.other1.address
-              ));
-          actualNewOwnerBalanceFromEscrow =
-            await contractCashier.getEscrowTokensAmount(
+            (actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
               contractBSNTokenDeposit.address,
-              users.other2.address
-            );
+              users.other1.address
+            ));
+          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other2.address
+          );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrow.eq(ZERO),
@@ -4063,20 +4183,23 @@ describe('Cashier and VoucherKernel', () => {
           balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
             users.buyer.address
           );
-          balanceBuyerFromDeposits =
-            await utils.contractBSNTokenDeposit.balanceOf(users.buyer.address);
+          balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+            users.buyer.address
+          );
 
-          balanceSellerFromPayment =
-            await utils.contractBSNTokenPrice.balanceOf(users.other2.address);
-          balanceSellerFromDeposits =
-            await utils.contractBSNTokenDeposit.balanceOf(users.other2.address);
+          balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
+            users.other2.address
+          );
+          balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+            users.other2.address
+          );
 
-          escrowBalanceFromPayment =
-            await utils.contractBSNTokenPrice.balanceOf(users.deployer.address);
-          escrowBalanceFromDeposits =
-            await utils.contractBSNTokenDeposit.balanceOf(
-              users.deployer.address
-            );
+          escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(
+            users.deployer.address
+          );
+          escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+            users.deployer.address
+          );
 
           cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(
             utils.contractCashier.address
@@ -4120,16 +4243,14 @@ describe('Cashier and VoucherKernel', () => {
             BN(constants.QTY_1)
           );
 
-          actualOldOwnerBalanceFromEscrow =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenDeposit.address,
-              users.other1.address
-            );
-          actualNewOwnerBalanceFromEscrow =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenDeposit.address,
-              users.other2.address
-            );
+          actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other1.address
+          );
+          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other2.address
+          );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
@@ -4147,16 +4268,14 @@ describe('Cashier and VoucherKernel', () => {
             constants.QTY_1,
             users.other1.signer
           ),
-            (actualOldOwnerBalanceFromEscrow =
-              await contractCashier.getEscrowTokensAmount(
-                contractBSNTokenDeposit.address,
-                users.other1.address
-              ));
-          actualNewOwnerBalanceFromEscrow =
-            await contractCashier.getEscrowTokensAmount(
+            (actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
               contractBSNTokenDeposit.address,
-              users.other2.address
-            );
+              users.other1.address
+            ));
+          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other2.address
+          );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrow.eq(ZERO),
@@ -4334,10 +4453,12 @@ describe('Cashier and VoucherKernel', () => {
           balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
             users.buyer.address
           );
-          balanceSellerFromPayment =
-            await utils.contractBSNTokenPrice.balanceOf(users.other2.address);
-          escrowBalanceFromPayment =
-            await utils.contractBSNTokenPrice.balanceOf(users.deployer.address);
+          balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
+            users.other2.address
+          );
+          escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(
+            users.deployer.address
+          );
           cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(
             utils.contractCashier.address
           );
@@ -4377,10 +4498,12 @@ describe('Cashier and VoucherKernel', () => {
             BN(constants.QTY_1)
           );
 
-          actualOldOwnerBalanceFromEscrow =
-            await contractCashier.getEscrowAmount(users.other1.address);
-          actualNewOwnerBalanceFromEscrow =
-            await contractCashier.getEscrowAmount(users.other2.address);
+          actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
+            users.other1.address
+          );
+          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
+            users.other2.address
+          );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
@@ -4399,10 +4522,12 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.signer
           );
 
-          actualOldOwnerBalanceFromEscrow =
-            await contractCashier.getEscrowAmount(users.other1.address);
-          actualNewOwnerBalanceFromEscrow =
-            await contractCashier.getEscrowAmount(users.other2.address);
+          actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
+            users.other1.address
+          );
+          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
+            users.other2.address
+          );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrow.eq(ZERO),
@@ -4738,10 +4863,12 @@ describe('Cashier and VoucherKernel', () => {
           tokenSupplyKey
         );
 
-        actualOldOwnerBalanceFromEscrowEth =
-          await contractCashier.getEscrowAmount(users.other1.address);
-        actualNewOwnerBalanceFromEscrowEth =
-          await contractCashier.getEscrowAmount(users.other2.address);
+        actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
+          users.other1.address
+        );
+        actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
+          users.other2.address
+        );
 
         assert.isTrue(
           actualOldOwnerBalanceFromEscrowEth.eq(expectedBalanceInEscrow),
@@ -4759,10 +4886,12 @@ describe('Cashier and VoucherKernel', () => {
           users.other1.signer
         );
 
-        actualOldOwnerBalanceFromEscrowEth =
-          await contractCashier.getEscrowAmount(users.other1.address);
-        actualNewOwnerBalanceFromEscrowEth =
-          await contractCashier.getEscrowAmount(users.other2.address);
+        actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
+          users.other1.address
+        );
+        actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
+          users.other2.address
+        );
 
         assert.isTrue(
           actualOldOwnerBalanceFromEscrowEth.eq(ZERO),
@@ -4910,14 +5039,15 @@ describe('Cashier and VoucherKernel', () => {
         let cashierDepositLeft = BN(0);
 
         async function getBalancesDepositToken() {
-          balanceBuyerFromDeposits =
-            await utils.contractBSNTokenDeposit.balanceOf(users.other2.address);
-          balanceSellerFromDeposits =
-            await utils.contractBSNTokenDeposit.balanceOf(users.seller.address);
-          escrowBalanceFromDeposits =
-            await utils.contractBSNTokenDeposit.balanceOf(
-              users.deployer.address
-            );
+          balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+            users.other2.address
+          );
+          balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+            users.seller.address
+          );
+          escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+            users.deployer.address
+          );
           cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(
             utils.contractCashier.address
           );
@@ -5025,23 +5155,23 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey
           );
 
-          actualOldOwnerBalanceFromEscrowEth =
-            await contractCashier.getEscrowAmount(users.other1.address);
+          actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
+            users.other1.address
+          );
 
-          actualOldOwnerBalanceFromEscrowTkn =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenDeposit.address,
-              users.other1.address
-            );
+          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other1.address
+          );
 
-          actualNewOwnerBalanceFromEscrowEth =
-            await contractCashier.getEscrowAmount(users.other2.address);
+          actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
+            users.other2.address
+          );
 
-          actualNewOwnerBalanceFromEscrowTkn =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenDeposit.address,
-              users.other2.address
-            );
+          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other2.address
+          );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrowEth.eq(expectedBalanceInEscrowEth),
@@ -5070,23 +5200,23 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.signer
           );
 
-          actualOldOwnerBalanceFromEscrowEth =
-            await contractCashier.getEscrowAmount(users.other1.address);
+          actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
+            users.other1.address
+          );
 
-          actualOldOwnerBalanceFromEscrowTkn =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenDeposit.address,
-              users.other1.address
-            );
+          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other1.address
+          );
 
-          actualNewOwnerBalanceFromEscrowEth =
-            await contractCashier.getEscrowAmount(users.other2.address);
+          actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
+            users.other2.address
+          );
 
-          actualNewOwnerBalanceFromEscrowTkn =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenDeposit.address,
-              users.other2.address
-            );
+          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other2.address
+          );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrowEth.eq(ZERO),
@@ -5263,20 +5393,23 @@ describe('Cashier and VoucherKernel', () => {
           balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
             users.other2.address
           );
-          balanceBuyerFromDeposits =
-            await utils.contractBSNTokenDeposit.balanceOf(users.other2.address);
+          balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+            users.other2.address
+          );
 
-          balanceSellerFromPayment =
-            await utils.contractBSNTokenPrice.balanceOf(users.seller.address);
-          balanceSellerFromDeposits =
-            await utils.contractBSNTokenDeposit.balanceOf(users.seller.address);
+          balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
+            users.seller.address
+          );
+          balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+            users.seller.address
+          );
 
-          escrowBalanceFromPayment =
-            await utils.contractBSNTokenPrice.balanceOf(users.deployer.address);
-          escrowBalanceFromDeposits =
-            await utils.contractBSNTokenDeposit.balanceOf(
-              users.deployer.address
-            );
+          escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(
+            users.deployer.address
+          );
+          escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+            users.deployer.address
+          );
 
           cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(
             utils.contractCashier.address
@@ -5372,29 +5505,25 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey
           );
 
-          let actualOldOwnerBalanceFromEscrowTknPrice =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenPrice.address,
-              users.other1.address
-            );
+          let actualOldOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.other1.address
+          );
 
-          let actualOldOwnerBalanceFromEscrowTknDeposit =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenDeposit.address,
-              users.other1.address
-            );
+          let actualOldOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other1.address
+          );
 
-          let actualNewOwnerBalanceFromEscrowTknPrice =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenPrice.address,
-              users.other2.address
-            );
+          let actualNewOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.other2.address
+          );
 
-          let actualNewOwnerBalanceFromEscrowTknDeposit =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenDeposit.address,
-              users.other2.address
-            );
+          let actualNewOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other2.address
+          );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrowTknPrice.eq(
@@ -5426,29 +5555,25 @@ describe('Cashier and VoucherKernel', () => {
             voucherID,
             users.other1.signer
           ),
-            (actualOldOwnerBalanceFromEscrowTknPrice =
-              await contractCashier.getEscrowTokensAmount(
-                contractBSNTokenPrice.address,
-                users.other1.address
-              ));
-
-          actualOldOwnerBalanceFromEscrowTknDeposit =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenDeposit.address,
-              users.other1.address
-            );
-
-          actualNewOwnerBalanceFromEscrowTknPrice =
-            await contractCashier.getEscrowTokensAmount(
+            (actualOldOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
               contractBSNTokenPrice.address,
-              users.other2.address
-            );
+              users.other1.address
+            ));
 
-          actualNewOwnerBalanceFromEscrowTknDeposit =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenDeposit.address,
-              users.other2.address
-            );
+          actualOldOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other1.address
+          );
+
+          actualNewOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.other2.address
+          );
+
+          actualNewOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.other2.address
+          );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrowTknPrice.eq(ZERO),
@@ -5656,10 +5781,12 @@ describe('Cashier and VoucherKernel', () => {
           balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
             users.other2.address
           );
-          balanceSellerFromPayment =
-            await utils.contractBSNTokenPrice.balanceOf(users.seller.address);
-          escrowBalanceFromPayment =
-            await utils.contractBSNTokenPrice.balanceOf(users.deployer.address);
+          balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
+            users.seller.address
+          );
+          escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(
+            users.deployer.address
+          );
           cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(
             utils.contractCashier.address
           );
@@ -5707,23 +5834,23 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey
           );
 
-          actualOldOwnerBalanceFromEscrowEth =
-            await contractCashier.getEscrowAmount(users.other1.address);
+          actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
+            users.other1.address
+          );
 
-          actualOldOwnerBalanceFromEscrowTkn =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenPrice.address,
-              users.other1.address
-            );
+          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.other1.address
+          );
 
-          actualNewOwnerBalanceFromEscrowEth =
-            await contractCashier.getEscrowAmount(users.other2.address);
+          actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
+            users.other2.address
+          );
 
-          actualNewOwnerBalanceFromEscrowTkn =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenPrice.address,
-              users.other2.address
-            );
+          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.other2.address
+          );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrowEth.eq(expectedBalanceInEscrowEth),
@@ -5751,23 +5878,23 @@ describe('Cashier and VoucherKernel', () => {
             voucherID,
             users.other1.signer
           ),
-            (actualOldOwnerBalanceFromEscrowEth =
-              await contractCashier.getEscrowAmount(users.other1.address));
-
-          actualOldOwnerBalanceFromEscrowTkn =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenPrice.address,
+            (actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
               users.other1.address
-            );
+            ));
 
-          actualNewOwnerBalanceFromEscrowEth =
-            await contractCashier.getEscrowAmount(users.other2.address);
+          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.other1.address
+          );
 
-          actualNewOwnerBalanceFromEscrowTkn =
-            await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenPrice.address,
-              users.other2.address
-            );
+          actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
+            users.other2.address
+          );
+
+          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.other2.address
+          );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrowEth.eq(ZERO),

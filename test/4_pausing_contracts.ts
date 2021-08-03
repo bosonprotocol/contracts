@@ -55,13 +55,13 @@ describe('Cashier && VK', () => {
     );
   });
 
-  let contractERC1155ERC721: Contract & ERC1155ERC721,
-    contractVoucherKernel: Contract & VoucherKernel,
-    contractCashier: Contract & Cashier,
-    contractBosonRouter: Contract & BosonRouter,
-    contractBSNTokenPrice: Contract & MockERC20Permit,
-    contractBSNTokenDeposit: Contract & MockERC20Permit,
-    contractFundLimitsOracle: Contract & FundLimitsOracle;
+  let contractERC1155ERC721: ERC1155ERC721,
+    contractVoucherKernel: VoucherKernel,
+    contractCashier: Cashier,
+    contractBosonRouter: BosonRouter,
+    contractBSNTokenPrice: MockERC20Permit,
+    contractBSNTokenDeposit: MockERC20Permit,
+    contractFundLimitsOracle: FundLimitsOracle;
 
   let tokensToMint;
   let timestamp;
@@ -69,8 +69,8 @@ describe('Cashier && VK', () => {
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle =
-      (await FundLimitsOracle_Factory.deploy()) as Contract & FundLimitsOracle;
+    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
+      FundLimitsOracle;
     contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
       ERC1155ERC721;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
@@ -177,7 +177,7 @@ describe('Cashier && VK', () => {
         it('[NEGATIVE] Attacker should not be able to pause the contract', async () => {
           const attackerInstance = contractBosonRouter.connect(
             users.attacker.signer
-          ) as BosonRouter;
+          );
           await expect(attackerInstance.pause()).to.be.revertedWith(
             revertReasons.ONLY_ROUTER_OWNER
           );
@@ -188,7 +188,7 @@ describe('Cashier && VK', () => {
 
           const attackerInstance = contractBosonRouter.connect(
             users.attacker.signer
-          ) as BosonRouter;
+          );
 
           await expect(attackerInstance.unpause()).to.be.revertedWith(
             revertReasons.ONLY_ROUTER_OWNER
