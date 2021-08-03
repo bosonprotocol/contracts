@@ -1,6 +1,3 @@
-// export default async function (): Promise<void> {
-// const hre = require('hardhat');
-// const fs = require('fs');
 import {isValidEnv} from './env-validator';
 import hre from 'hardhat';
 import fs from 'fs';
