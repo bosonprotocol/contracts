@@ -22,18 +22,27 @@ const loadPrivateKeys = (accountKeysFile) => {
 };
 
 class Users {
-  constructor(addresses) {
-    this.addresses = addresses;
+  constructor(signers) {
+    this.addresses = signers ? signers.map((e) => e.address) : null;
     this.privateKeys = loadPrivateKeys(
       process.env.ACCOUNT_KEYS_FILE || 'config/accounts.json'
     );
+    this.signers = signers
+      ? Object.fromEntries(
+          this.addresses.map((address) => [
+            address,
+            signers.find((signer) => signer.address == address),
+          ])
+        )
+      : null;
   }
 
   getAccountAtIndex(index) {
     const address = this.addresses[index];
-    const privateKey = this.privateKeys[address.toLowerCase()];
+    const privateKey = this.privateKeys[address];
+    const signer = this.signers[address];
 
-    return {address, privateKey};
+    return {address, privateKey, signer};
   }
 
   get deployer() {

@@ -1,19 +1,36 @@
-const {assert} = require('chai');
-const truffleAssert = require('truffle-assertions');
+const ethers = require('hardhat').ethers;
+
+const {assert, expect} = require('chai');
 
 const constants = require('../testHelpers/constants');
 const Users = require('../testHelpers/users');
 const Utils = require('../testHelpers/utils');
 
-const ERC1155ERC721 = artifacts.require('ERC1155ERC721');
-const VoucherKernel = artifacts.require('VoucherKernel');
-const Cashier = artifacts.require('Cashier');
-const BosonRouter = artifacts.require('BosonRouter');
-const MockERC20Permit = artifacts.require('MockERC20Permit');
-const FundLimitsOracle = artifacts.require('FundLimitsOracle');
+let ERC1155ERC721;
+let VoucherKernel;
+let Cashier;
+let BosonRouter;
+let MockERC20Permit;
+let FundLimitsOracle;
 
-contract('FundLimitsOracle', (addresses) => {
-  const users = new Users(addresses);
+const revertReasons = require('../testHelpers/revertReasons');
+const eventUtils = require('../testHelpers/events');
+const {eventNames} = require('../testHelpers/events');
+
+let users;
+
+describe('FundLimitsOracle', () => {
+  before(async () => {
+    const signers = await ethers.getSigners();
+    users = new Users(signers);
+
+    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherKernel = await ethers.getContractFactory('VoucherKernel');
+    Cashier = await ethers.getContractFactory('Cashier');
+    BosonRouter = await ethers.getContractFactory('BosonRouter');
+    FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
+    MockERC20Permit = await ethers.getContractFactory('MockERC20Permit');
+  });
 
   let contractERC1155ERC721,
     contractVoucherKernel,
@@ -32,23 +49,31 @@ contract('FundLimitsOracle', (addresses) => {
     constants.PROMISE_VALID_FROM = timestamp;
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
-    contractFundLimitsOracle = await FundLimitsOracle.new();
+    const sixtySeconds = 60;
 
-    contractERC1155ERC721 = await ERC1155ERC721.new();
-    contractVoucherKernel = await VoucherKernel.new(
+    contractFundLimitsOracle = await FundLimitsOracle.deploy();
+    contractERC1155ERC721 = await ERC1155ERC721.deploy();
+    contractVoucherKernel = await VoucherKernel.deploy(
       contractERC1155ERC721.address
     );
-    contractCashier = await Cashier.new(contractVoucherKernel.address);
-    contractBosonRouter = await BosonRouter.new(
+    contractCashier = await Cashier.deploy(contractVoucherKernel.address);
+    contractBosonRouter = await BosonRouter.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
     );
 
-    contractBSNTokenPrice = await MockERC20Permit.new(
+    contractBSNTokenPrice = await MockERC20Permit.deploy(
       'BosonTokenPrice',
       'BPRC'
     );
+
+    await contractFundLimitsOracle.deployed();
+    await contractERC1155ERC721.deployed();
+    await contractVoucherKernel.deployed();
+    await contractCashier.deployed();
+    await contractBosonRouter.deployed();
+    await contractBSNTokenPrice.deployed();
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
@@ -63,13 +88,15 @@ contract('FundLimitsOracle', (addresses) => {
     await contractVoucherKernel.setBosonRouterAddress(
       contractBosonRouter.address
     );
-
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
     await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
     await contractCashier.setTokenContractAddress(
       contractERC1155ERC721.address
     );
+
+    await contractVoucherKernel.setComplainPeriod(sixtySeconds);
+    await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
   }
 
   describe('FundLimitsOracle interaction', () => {
@@ -107,23 +134,25 @@ contract('FundLimitsOracle', (addresses) => {
           FIVE_ETHERS
         );
 
-        truffleAssert.eventEmitted(
-          setLimitTx,
-          'LogETHLimitChanged',
+        const receipt = await setLimitTx.wait();
+
+        eventUtils.assertEventEmitted(
+          receipt,
+          contractFundLimitsOracle,
+          eventNames.LOG_ETH_LIMIT_CHANGED,
           (ev) => {
-            return ev._triggeredBy === users.deployer.address;
-          },
-          'LogETHLimitChanged was not emitted'
+            assert.equal(ev._triggeredBy, users.deployer.address);
+          }
         );
       });
 
       it('[NEGATIVE] Should revert if attacker tries to change ETH Limit', async () => {
-        await truffleAssert.reverts(
-          contractFundLimitsOracle.setETHLimit(FIVE_ETHERS, {
-            from: users.attacker.address,
-          }),
-          truffleAssert.ErrorType.REVERT
+        const attackerInstance = contractFundLimitsOracle.connect(
+          users.attacker.signer
         );
+        await expect(
+          attackerInstance.setETHLimit(FIVE_ETHERS)
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
       });
     });
 
@@ -151,29 +180,30 @@ contract('FundLimitsOracle', (addresses) => {
           FIVE_TOKENS
         );
 
-        truffleAssert.eventEmitted(
-          setLimitTx,
-          'LogTokenLimitChanged',
+        const txReceipt = await setLimitTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          contractFundLimitsOracle,
+          eventNames.LOG_TOKEN_LIMIT_CHANGED,
           (ev) => {
-            return ev._triggeredBy === users.deployer.address;
-          },
-          'LogETHLimitChanged was not emitted'
+            assert.equal(ev._triggeredBy, users.deployer.address);
+          }
         );
       });
 
       it(
         '[NEGATIVE] Should revert if attacker tries to change ' + 'Token Limit',
         async () => {
-          await truffleAssert.reverts(
-            contractFundLimitsOracle.setTokenLimit(
-              contractBSNTokenPrice.address,
-              FIVE_TOKENS,
-              {
-                from: users.attacker.address,
-              }
-            ),
-            truffleAssert.ErrorType.REVERT
+          const attackerInstance = contractFundLimitsOracle.connect(
+            users.attacker.signer
           );
+          await expect(
+            attackerInstance.setTokenLimit(
+              contractBSNTokenPrice.address,
+              FIVE_TOKENS
+            )
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
         }
       );
     });
