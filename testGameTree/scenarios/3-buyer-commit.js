@@ -59,7 +59,7 @@ describe('TEST SCENARIO 003 :: SELLER CREATES & BUYER COMMITS', async function (
     aql(voucherSetDetails['transferValue'], helpers.ORDER_QUANTITY1);
   });
 
-  it('TEST SCENARIO 03 :: BUYER COMMITS :: 2.0 Buyer commits to purchase a voucher', async function () {
+  it('TEST SCENARIO 03 :: BUYER COMMITS :: 2.0 Buyer commits to purchasing a voucher', async function () {
     commitVoucherDetails = await commitVoucher(
       voucherSetDetails['createdVoucherSetID'],
       users
@@ -67,11 +67,11 @@ describe('TEST SCENARIO 003 :: SELLER CREATES & BUYER COMMITS', async function (
     await format(commitVoucherDetails);
   });
 
-  it('TEST SCENARIO 03 :: SELLER CREATE :: 2.1 VALIDATE ISSUER', async function () {
+  it('TEST SCENARIO 03 :: BUYER COMMITS :: 2.1 VALIDATE ISSUER', async function () {
     aql(commitVoucherDetails['issuer'], users.seller.address);
   });
 
-  it('TEST SCENARIO 03 :: SELLER CREATE :: 2.2 VALIDATE HOLDER', async function () {
+  it('TEST SCENARIO 03 :: BUYER COMMITS :: 2.2 VALIDATE HOLDER', async function () {
     aql(commitVoucherDetails['holder'], users.buyer.address);
   });
 

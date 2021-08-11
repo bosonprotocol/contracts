@@ -9,7 +9,7 @@ let assert = require('chai').assert;
 let Web3 = require('web3');
 let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 
-describe('TEST SCENARIO 001 :: SELLER CREATES A VOUCHER SET', async function () {
+describe('TEST SCENARIO 001 :: OFFER', async function () {
   let value, users;
   let aql = assert.equal;
 
@@ -20,33 +20,33 @@ describe('TEST SCENARIO 001 :: SELLER CREATES A VOUCHER SET', async function () 
     console.log(balances);
   });
 
-  it('TEST SCENARIO 01 :: SELLER CREATE :: 1.0 CREATION OF VOUCHER', async function () {
+  it('TEST SCENARIO 01 :: OFFER :: 1.0 SELLER CREATES VOUCHER SET', async function () {
     const timestamp = await Utils.getCurrTimestamp();
     value = await sellerCreate(timestamp, users);
     await format(value);
   });
 
-  it('TEST SCENARIO 01 :: SELLER CREATE :: 1.1 VALIDATE VALID FROM', async function () {
+  it('TEST SCENARIO 01 :: OFFER :: 1.1 VALIDATE VALID FROM', async function () {
     aql(value['ValidFrom'], helpers.PROMISE_VALID_FROM);
   });
 
-  it('TEST SCENARIO 01 :: SELLER CREATE :: 1.2 VALIDATE VALID TO', async function () {
+  it('TEST SCENARIO 01 :: OFFER :: 1.2 VALIDATE VALID TO', async function () {
     aql(value['ValidTo'], helpers.PROMISE_VALID_TO);
   });
 
-  it('TEST SCENARIO 01 :: SELLER CREATE :: 1.3 VALIDATE ORDER QUANTITY', async function () {
+  it('TEST SCENARIO 01 :: OFFER :: 1.3 VALIDATE ORDER QUANTITY', async function () {
     aql(value['nftSupply'], helpers.ORDER_QUANTITY1);
   });
 
-  it('TEST SCENARIO 01 :: SELLER CREATE :: 1.4 VALIDATE SELLER', async function () {
+  it('TEST SCENARIO 01 :: OFFER :: 1.4 VALIDATE SELLER', async function () {
     aql(value['nftSeller'], users.seller.address);
   });
 
-  it('TEST SCENARIO 01 :: SELLER CREATE :: 1.5 VALIDATE PAYMENT TYPE', async function () {
+  it('TEST SCENARIO 01 :: OFFER :: 1.5 VALIDATE PAYMENT TYPE', async function () {
     aql(value['paymentType'], 1);
   });
 
-  it('TEST SCENARIO 01 :: SELLER CREATE :: 1.6 VALIDATE ERC1155ERC721 DATA', async function () {
+  it('TEST SCENARIO 01 :: OFFER :: 1.6 VALIDATE ERC1155ERC721 DATA', async function () {
     aql(value['operator'], Utils.contractVoucherKernel.address);
     aql(value['transferFrom'], helpers.ZERO_ADDRESS);
     aql(value['transferTo'], users.seller.address);

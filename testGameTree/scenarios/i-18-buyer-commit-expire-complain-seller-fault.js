@@ -15,7 +15,7 @@ const timemachine = require('../helpers/timemachine');
 let Web3 = require('web3');
 let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 
-describe('TEST SCENARIO 018 :: SELLER CREATES & BUYER COMMITS', async function () {
+describe('TEST SCENARIO 018 :: OFFER, COMMIT, EXPIRE, COMPLAIN, COF', async function () {
   let commitVoucherDetails;
   let voucherSetDetails;
   let triggerExpireDetails;
@@ -32,40 +32,40 @@ describe('TEST SCENARIO 018 :: SELLER CREATES & BUYER COMMITS', async function (
     console.log(balances);
   });
 
-  it('TEST SCENARIO 18 :: SELLER CREATE :: 1.0 Seller creates a voucher set', async function () {
+  it('TEST SCENARIO 18 :: OFFER :: 1.0 SELLER CREATES VOUCHER SET', async function () {
     const timestamp = await Utils.getCurrTimestamp();
     voucherSetDetails = await sellerCreate(timestamp, users);
     await format(voucherSetDetails);
   });
 
-  it('TEST SCENARIO 18 :: SELLER CREATE :: 1.1 VALIDATE VALID FROM', async function () {
+  it('TEST SCENARIO 18 :: OFFER :: 1.1 VALIDATE VALID FROM', async function () {
     aql(voucherSetDetails['ValidFrom'], helpers.PROMISE_VALID_FROM);
   });
 
-  it('TEST SCENARIO 18 :: SELLER CREATE :: 1.2 VALIDATE VALID TO', async function () {
+  it('TEST SCENARIO 18 :: OFFER :: 1.2 VALIDATE VALID TO', async function () {
     aql(voucherSetDetails['ValidTo'], helpers.PROMISE_VALID_TO);
   });
 
-  it('TEST SCENARIO 18 :: SELLER CREATE :: 1.3 VALIDATE ORDER QUANTITY', async function () {
+  it('TEST SCENARIO 18 :: OFFER :: 1.3 VALIDATE ORDER QUANTITY', async function () {
     aql(voucherSetDetails['nftSupply'], helpers.ORDER_QUANTITY1);
   });
 
-  it('TEST SCENARIO 18 :: SELLER CREATE :: 1.4 VALIDATE SELLER', async function () {
+  it('TEST SCENARIO 18 :: OFFER :: 1.4 VALIDATE SELLER', async function () {
     aql(voucherSetDetails['nftSeller'], users.seller.address);
   });
 
-  it('TEST SCENARIO 18 :: SELLER CREATE :: 1.5 VALIDATE PAYMENT TYPE', async function () {
+  it('TEST SCENARIO 18 :: OFFER :: 1.5 VALIDATE PAYMENT TYPE', async function () {
     aql(voucherSetDetails['paymentType'], 1);
   });
 
-  it('TEST SCENARIO 18 :: SELLER CREATE :: 1.6 VALIDATE ERC1155ERC721 DATA', async function () {
+  it('TEST SCENARIO 18 :: OFFER :: 1.6 VALIDATE ERC1155ERC721 DATA', async function () {
     aql(voucherSetDetails['operator'], Utils.contractVoucherKernel.address);
     aql(voucherSetDetails['transferFrom'], helpers.ZERO_ADDRESS);
     aql(voucherSetDetails['transferTo'], users.seller.address);
     aql(voucherSetDetails['transferValue'], helpers.ORDER_QUANTITY1);
   });
 
-  it('TEST SCENARIO 18 :: BUYER COMMITS :: 2.0 Buyer commits to purchase a voucher', async function () {
+  it('TEST SCENARIO 18 :: COMMIT :: 2.0 BUYER COMMITS TO REDEEMING A VOUCHER', async function () {
     commitVoucherDetails = await commitVoucher(
       voucherSetDetails['createdVoucherSetID'],
       users
@@ -73,15 +73,15 @@ describe('TEST SCENARIO 018 :: SELLER CREATES & BUYER COMMITS', async function (
     await format(commitVoucherDetails);
   });
 
-  it('TEST SCENARIO 18 :: BUYER COMMITS :: 2.1 VALIDATE ISSUER', async function () {
+  it('TEST SCENARIO 18 :: COMMIT :: 2.1 VALIDATE ISSUER', async function () {
     aql(commitVoucherDetails['issuer'], users.seller.address);
   });
 
-  it('TEST SCENARIO 18 :: BUYER COMMITS :: 2.2 VALIDATE HOLDER', async function () {
+  it('TEST SCENARIO 18 :: COMMIT :: 2.2 VALIDATE HOLDER', async function () {
     aql(commitVoucherDetails['holder'], users.buyer.address);
   });
 
-  it('TEST SCENARIO 18 :: EXPIRE :: 3.0 Expire voucher', async function () {
+  it('TEST SCENARIO 18 :: EXPIRE :: 3.0 LET VOUCHER EXPIRE', async function () {
     // fast-forward time
     const numberOfSeconds = helpers.SECONDS_IN_DAY * 2 + 10;
     await timemachine.advanceTimeSeconds(numberOfSeconds);
@@ -93,7 +93,7 @@ describe('TEST SCENARIO 018 :: SELLER CREATES & BUYER COMMITS', async function (
     await format(triggerExpireDetails);
   });
 
-  it('TEST SCENARIO 18 :: CHECK EXPIRE :: 3.1 VALIDATE EXPIRY', async function () {
+  it('TEST SCENARIO 18 :: EXPIRE :: 3.1 VALIDATE EXPIRY', async function () {
     aql(
       triggerExpireDetails['ExpiredVoucherID'],
       commitVoucherDetails['MintedVoucherID']
@@ -109,7 +109,7 @@ describe('TEST SCENARIO 018 :: SELLER CREATES & BUYER COMMITS', async function (
     aql(checkExpireDetails['Status'], 144);
   });
 
-  it('TEST SCENARIO 18 :: BUYER COMPLAINS :: 5.0 Buyer complains about expired voucher', async function () {
+  it('TEST SCENARIO 18 :: COMPLAIN :: 5.0 BUYER COMPLAINS ABOUT EXPIRED VOUCHER', async function () {
     console.log(await checkBalance(users));
     complainedVoucher = await complainVoucher(
       commitVoucherDetails['MintedVoucherID'],
@@ -118,7 +118,7 @@ describe('TEST SCENARIO 018 :: SELLER CREATES & BUYER COMMITS', async function (
     await format(complainedVoucher);
   });
 
-  it('TEST SCENARIO 18 :: BUYER COMPLAINS :: 5.1 VALIDATE COMPLAINED VOUCHER', async function () {
+  it('TEST SCENARIO 18 :: COMPLAIN :: 5.1 VALIDATE COMPLAINED VOUCHER', async function () {
     aql(
       complainedVoucher['complainedVoucherID'],
       commitVoucherDetails['MintedVoucherID']
@@ -130,7 +130,7 @@ describe('TEST SCENARIO 018 :: SELLER CREATES & BUYER COMMITS', async function (
     );
   });
 
-  it('TEST SCENARIO 18 :: SELLER FAULTS :: 6.0 Seller accepts fault on a complained expired voucher', async function () {
+  it('TEST SCENARIO 18 :: COF :: 6.0 SELLER ACCEPTS FAULT ON A COMPLAINED VOUCHER', async function () {
     console.log(await checkBalance(users));
     faultedVoucher = await faultVoucher(
       commitVoucherDetails['MintedVoucherID'],
@@ -139,7 +139,7 @@ describe('TEST SCENARIO 018 :: SELLER CREATES & BUYER COMMITS', async function (
     await format(faultedVoucher);
   });
 
-  it('TEST SCENARIO 18 :: SELLER FAULTS :: 6.1 VALIDATE FAULTED VOUCHER', async function () {
+  it('TEST SCENARIO 18 :: COF :: 6.1 VALIDATE FAULTED VOUCHER', async function () {
     aql(
       faultedVoucher['FaultedVoucherID'],
       complainedVoucher['complainedVoucherID']
