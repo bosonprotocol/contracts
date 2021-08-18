@@ -1,8 +1,8 @@
-const hre = require('hardhat');
-const fs = require('fs');
-const {isValidEnv} = require('./env-validator');
+import {isValidEnv} from './env-validator';
+import hre from 'hardhat';
+import fs from 'fs';
 
-async function verifyContracts(env) {
+export async function verifyContracts(env: string): Promise<void> {
   const contracts = JSON.parse(
     fs.readFileSync(`./scripts/contracts-${env}.json`, 'utf-8')
   );
@@ -81,5 +81,3 @@ function logError(contractName, msg) {
 function resetConsoleColor() {
   console.log('\x1b[0m');
 }
-
-module.exports = verifyContracts;

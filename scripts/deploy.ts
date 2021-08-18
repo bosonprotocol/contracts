@@ -1,10 +1,10 @@
 //AssetRegistry not used in demo-app
 //const AssetRegistry = artifacts.require("AssetRegistry");
 
-const fs = require('fs');
-const hre = require('hardhat');
+import hre from 'hardhat';
+import fs from 'fs';
+import {isValidEnv} from './env-validator';
 const ethers = hre.ethers;
-const {isValidEnv} = require('./env-validator');
 
 /**
  * Abstract Class DeploymentExecutor.
@@ -12,6 +12,15 @@ const {isValidEnv} = require('./env-validator');
  * @class DeploymentExecutor
  */
 class DeploymentExecutor {
+  env;
+  flo;
+  erc1155erc721;
+  voucherKernel;
+  cashier;
+  br;
+  boson_token;
+  TOKEN_LIMIT;
+
   constructor() {
     if (this.constructor == DeploymentExecutor) {
       throw new Error("Abstract class - can't be instantiated!");
@@ -144,7 +153,7 @@ class DeploymentExecutor {
           cashier: this.cashier.address,
           br: this.br.address,
         },
-        0,
+        null,
         2
       ),
       'utf-8'
@@ -174,6 +183,8 @@ class ProdExecutor extends DeploymentExecutor {
  * @extends {DeploymentExecutor}
  */
 class NonProdExecutor extends DeploymentExecutor {
+  SIXTY_SECONDS: number;
+
   constructor(env) {
     super();
     this.env = env;
@@ -189,7 +200,7 @@ class NonProdExecutor extends DeploymentExecutor {
   }
 }
 
-module.exports = async function (_env) {
+export async function deploy(_env: string): Promise<void> {
   const env = _env.toLowerCase();
   if (!isValidEnv(env)) {
     throw new Error(`Env: ${env} is not recognized!`);
@@ -203,4 +214,4 @@ module.exports = async function (_env) {
 
   executor.logContracts();
   executor.writeContracts();
-};
+}

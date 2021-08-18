@@ -1,6 +1,6 @@
-const ethers = require('hardhat').ethers;
+import {ethers} from 'hardhat';
 
-const eventNames = {
+export const eventNames = {
   LOG_ORDER_CREATED: 'LogOrderCreated',
   LOG_PROMISE_CREATED: 'LogPromiseCreated',
   LOG_VOUCHER_DELIVERED: 'LogVoucherDelivered',
@@ -31,15 +31,26 @@ const eventNames = {
   LOG_CASHIER_SET: 'LogCashierSet',
 };
 
-function getEventArgsFromFactory(factory, eventName) {
-  let [eventFragment] = factory.interface.fragments.filter(
+import {ContractFactory, ContractReceipt} from 'ethers';
+import {DistributionEvent} from './types';
+
+type callBack = (eventArgs: DistributionEvent | any) => void;
+
+export function getEventArgsFromFactory(
+  factory: ContractFactory,
+  eventName: string
+): Array<string> {
+  const [eventFragment] = factory.interface.fragments.filter(
     (e) => e.name == eventName
   );
   return eventFragment.inputs.map((e) => e.name);
 }
 
-function getEventArgTypesFromFactory(factory, eventName) {
-  let [eventFragment] = factory.interface.fragments.filter(
+export function getEventArgTypesFromFactory(
+  factory: ContractFactory,
+  eventName: string
+): Array<string> {
+  const [eventFragment] = factory.interface.fragments.filter(
     (e) => e.name == eventName
   );
   return eventFragment.inputs
@@ -47,13 +58,18 @@ function getEventArgTypesFromFactory(factory, eventName) {
     .map((e) => e.type);
 }
 
-function assertEventEmitted(receipt, factory, eventName, callback) {
+export function assertEventEmitted(
+  receipt: ContractReceipt,
+  factory: ContractFactory,
+  eventName: string,
+  callback: callBack
+): void {
   let found = false;
 
-  let eventFragment = factory.interface.fragments.filter(
+  const eventFragment = factory.interface.fragments.filter(
     (e) => e.name == eventName
   );
-  const interface = new ethers.utils.Interface(eventFragment);
+  const iface = new ethers.utils.Interface(eventFragment);
 
   for (const log in receipt.logs) {
     const topics = receipt.logs[log].topics;
@@ -62,11 +78,11 @@ function assertEventEmitted(receipt, factory, eventName, callback) {
 
       try {
         // CHECK IF TOPIC CORRESPONDS TO THE EVENT GIVEN TO FN
-        let event = interface.getEvent(encodedTopic);
+        const event = iface.getEvent(encodedTopic);
 
         if (event.name == eventName) {
           found = true;
-          const eventArgs = interface.parseLog(receipt.logs[log]).args;
+          const eventArgs = iface.parseLog(receipt.logs[log]).args;
           callback(eventArgs);
         }
       } catch (e) {
@@ -80,10 +96,3 @@ function assertEventEmitted(receipt, factory, eventName, callback) {
     throw new Error(`Event with name ${eventName} was not emitted!`);
   }
 }
-
-module.exports = {
-  getEventArgsFromFactory,
-  getEventArgTypesFromFactory,
-  assertEventEmitted,
-  eventNames,
-};

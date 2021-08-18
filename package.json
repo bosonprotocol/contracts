@@ -19,10 +19,10 @@
     "contracts:verify:dev": "npx hardhat contracts-verify --network rinkeby --env dev",
     "contracts:verify:demo": "npx hardhat contracts-verify --network rinkeby --env demo",
     "contracts:verify:prod": "npx hardhat contracts-verify --network rinkeby --env prod",
-    "tests:lint": "eslint test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js",
-    "tests:lint-fix": "eslint --fix test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js scripts/**/*.js config/**/*.js",
-    "tests:format": "prettier --list-different test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js scripts/**/*.js config/**/*.js",
-    "tests:format-fix": "prettier --write test/**/*.js testHelpers/**/*.js testUserInteractions/**/*.js scripts/**/*.js config/**/*.js",
+    "tests:lint": "eslint test/**/*.ts testHelpers/**/*.ts",
+    "tests:lint-fix": "eslint --fix test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
+    "tests:format": "prettier --list-different test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
+    "tests:format-fix": "prettier --write test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
     "tests:unit": "hardhat test",
     "tests:coverage": "npx hardhat coverage",
     "contracts:size": "hardhat size-contracts"
@@ -43,7 +43,6 @@
     "@nomiclabs/hardhat-waffle": "2.0.1",
     "@openzeppelin/contracts": "3.4.0-solc-0.7",
     "axios": "^0.21.1",
-    "chai": "^4.3.4",
     "dotenv": "^8.2.0",
     "elliptic": "^6.5.4",
     "eslint": "^7.18.0",
@@ -59,5 +58,18 @@
     "prettier-plugin-solidity": "^1.0.0-beta.3",
     "solhint": "^3.3.2",
     "solidity-coverage": "^0.7.12"
+  },
+  "devDependencies": {
+    "@typechain/ethers-v5": "^7.0.0",
+    "@typechain/hardhat": "^2.0.1",
+    "@types/chai": "^4.2.18",
+    "@types/mocha": "^8.2.2",
+    "@types/node": "^15.9.0",
+    "@typescript-eslint/eslint-plugin": "^4.26.0",
+    "@typescript-eslint/parser": "^4.26.0",
+    "chai": "^4.3.4",
+    "ts-node": "^10.0.0",
+    "typechain": "^5.0.0",
+    "typescript": "^4.3.2"
   }
 }

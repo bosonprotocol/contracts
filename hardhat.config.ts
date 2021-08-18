@@ -1,9 +1,13 @@
-require('dotenv').config();
-require("solidity-coverage");
-require('hardhat-contract-sizer');
-require("@nomiclabs/hardhat-etherscan");
-require("@nomiclabs/hardhat-ethers");
-require("@nomiclabs/hardhat-waffle");
+import * as dotEnvConfig from 'dotenv'
+dotEnvConfig.config();
+
+import "solidity-coverage"
+import 'hardhat-contract-sizer'
+import "@nomiclabs/hardhat-etherscan"
+import "@nomiclabs/hardhat-ethers"
+import "@nomiclabs/hardhat-waffle"
+import '@typechain/hardhat'
+import { HardhatUserConfig } from "hardhat/config";
 
 const { task } = require("hardhat/config");
 const testMnemonic = 'inhale wood champion certain immense wash pepper enact enrich infant purse maid'
@@ -11,24 +15,24 @@ const INFURA_KEY = process.env.INFURA_API_KEY;
 const DEPLOYER_PRIVATE_KEY = process.env.PK;
 
 const lazyImport = async (module) => {
-	return await require(module);
+	return await import(module);
 }
 
 task("deploy", "Deploy contracts on a provided network")
 	.addOptionalParam("env", "Which environment is going to be used for contract deployment. Choose between prod, demo, dev or empty for local deployment", "hardhat")
 	.setAction( async ({env}) => {
-		const deploymentScript = await lazyImport('./scripts/deploy')
-		await deploymentScript(env);
+		const { deploy } = await lazyImport('./scripts/deploy')
+		await deploy(env);
 	})
 
 task("contracts-verify", "Verify already deployed contracts. Bear in mind that at least couple of blocks should be mined before execution!")
 	.addOptionalParam("env", "Which environment is going to be used for contract deployment. Choose between prod, demo & dev", "dev")
 	.setAction(async ({env}) => {
-		const verifyScript = await lazyImport('./scripts/verify')
-		await verifyScript(env);
+		const { verifyContracts } = await lazyImport('./scripts/verify')
+		await verifyContracts(env);
 	})
 
-module.exports = {
+const config: HardhatUserConfig = {
 	solidity: {
 		version: "0.7.1",
 		settings: {
@@ -59,3 +63,4 @@ module.exports = {
 	}
 };
 
+export default config;
