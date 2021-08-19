@@ -42,4 +42,5 @@ jobs:
           node-version: '12'
           cache: 'npm'
       - run: npm install
+      - run: npm run contracts:compile
       - run: npm run tests:unit
