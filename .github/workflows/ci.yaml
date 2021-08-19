@@ -21,9 +21,14 @@ jobs:
           node-version: '12'
           cache: 'npm'
       - run: npm install
-      - run: npm build
+      - run: npm contracts:compile
+      - run: npm contracts:lint
+      - run: npm contracts:format
+      - run: npm tests:lint
+      - run: npm tests:format
 
   test:
+    needs: build
     runs-on: ubuntu-latest
     env:
       PK: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
@@ -37,4 +42,4 @@ jobs:
           node-version: '12'
           cache: 'npm'
       - run: npm install
-      - run: npm test
+      - run: npm tests:unit
