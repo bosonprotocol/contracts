@@ -21,11 +21,11 @@ jobs:
           node-version: '12'
           cache: 'npm'
       - run: npm install
-      - run: npm contracts:compile
-      - run: npm contracts:lint
-      - run: npm contracts:format
-      - run: npm tests:lint
-      - run: npm tests:format
+      - run: npm run contracts:compile
+      - run: npm run contracts:lint
+      - run: npm run contracts:format
+      - run: npm run tests:lint
+      - run: npm run tests:format
 
   test:
     needs: build
@@ -42,4 +42,4 @@ jobs:
           node-version: '12'
           cache: 'npm'
       - run: npm install
-      - run: npm tests:unit
+      - run: npm run tests:unit
