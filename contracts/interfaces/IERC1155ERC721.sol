@@ -49,4 +49,22 @@ interface IERC1155ERC721 {
         address indexed _operator,
         bool _approved
     );
+
+    /**
+     * @notice Get the contract owner
+     * @return Address of the owner
+     */
+    function getOwner() external view returns (address);
+
+    /**
+     * @notice Get the address of Voucher Kernel contract
+     * @return Address of Voucher Kernel contract
+     */
+    function getVoucherKernelAddress() external view returns (address);
+
+    /**
+     * @notice Get the address of Cashier contract
+     * @return Address of Cashier address
+     */
+    function getCashierAddress() external view returns (address);
 }

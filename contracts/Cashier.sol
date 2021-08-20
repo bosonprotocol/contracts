@@ -22,16 +22,16 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     using Address for address payable;
     using SafeMath for uint256;
 
-    address public voucherKernel;
-    address public bosonRouterAddress;
-    address public tokensContractAddress;
-    bool public disasterState;
+    address private voucherKernel;
+    address private bosonRouterAddress;
+    address private tokensContractAddress;
+    bool private disasterState;
 
     enum PaymentType {PAYMENT, DEPOSIT_SELLER, DEPOSIT_BUYER}
 
-    mapping(address => uint256) public escrow; // both types of deposits AND payments >> can be released token-by-token if checks pass
+    mapping(address => uint256) private escrow; // both types of deposits AND payments >> can be released token-by-token if checks pass
     // slashedDepositPool can be obtained through getEscrowAmount(poolAddress)
-    mapping(address => mapping(address => uint256)) public escrowTokens; //token address => mgsSender => amount
+    mapping(address => mapping(address => uint256)) private escrowTokens; //token address => mgsSender => amount
 
     uint256 internal constant CANCELFAULT_SPLIT = 2; //for POC purposes, this is hardcoded; e.g. each party gets depositSe / 2
 
@@ -178,7 +178,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         (
             voucherDetails.currStatus.status,
             voucherDetails.currStatus.isPaymentReleased,
-            voucherDetails.currStatus.isDepositsReleased
+            voucherDetails.currStatus.isDepositsReleased,
+            ,
         ) = IVoucherKernel(voucherKernel).getVoucherStatus(
             voucherDetails.tokenIdVoucher
         );
@@ -292,7 +293,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == ETHETH ||
             voucherDetails.paymentMethod == ETHTKN
         ) {
-            escrow[voucherDetails.holder] = escrow[voucherDetails.holder].sub(voucherDetails.price);
+            escrow[voucherDetails.holder] = escrow[voucherDetails.holder].sub(
+                voucherDetails.price
+            );
         }
         if (
             voucherDetails.paymentMethod == TKNETH ||
@@ -305,12 +308,14 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
             escrowTokens[addressTokenPrice][
                 voucherDetails.holder
-            ] = escrowTokens[addressTokenPrice][
-                voucherDetails.holder
-            ].sub(voucherDetails.price);
+            ] = escrowTokens[addressTokenPrice][voucherDetails.holder].sub(
+                voucherDetails.price
+            );
         }
 
-        voucherDetails.price2issuer = voucherDetails.price2issuer.add(voucherDetails.price);
+        voucherDetails.price2issuer = voucherDetails.price2issuer.add(
+            voucherDetails.price
+        );
 
         IVoucherKernel(voucherKernel).setPaymentReleased(
             voucherDetails.tokenIdVoucher
@@ -335,7 +340,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == ETHETH ||
             voucherDetails.paymentMethod == ETHTKN
         ) {
-            escrow[voucherDetails.holder] = escrow[voucherDetails.holder].sub(voucherDetails.price);
+            escrow[voucherDetails.holder] = escrow[voucherDetails.holder].sub(
+                voucherDetails.price
+            );
         }
 
         if (
@@ -349,12 +356,14 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
             escrowTokens[addressTokenPrice][
                 voucherDetails.holder
-            ] = escrowTokens[addressTokenPrice][
-                voucherDetails.holder
-            ].sub(voucherDetails.price);
+            ] = escrowTokens[addressTokenPrice][voucherDetails.holder].sub(
+                voucherDetails.price
+            );
         }
 
-        voucherDetails.price2holder = voucherDetails.price2holder.add(voucherDetails.price);
+        voucherDetails.price2holder = voucherDetails.price2holder.add(
+            voucherDetails.price
+        );
 
         IVoucherKernel(voucherKernel).setPaymentReleased(
             voucherDetails.tokenIdVoucher
@@ -373,7 +382,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      * Based on the voucher status(e.g. complained, redeemed, refunded, etc), the voucher deposits will be sent to either buyer, seller, or pool owner.
      * Depending on the payment type (e.g ETH, or Token) escrow funds will be held in the `escrow` || escrowTokens mappings
      * @param voucherDetails keeps all required information of the voucher which the deposits should be released for.
-    */
+     */
     function releaseDeposits(VoucherDetails memory voucherDetails) internal {
         //first, depositSe
         if (isStatus(voucherDetails.currStatus.status, IDX_COMPLAIN)) {
@@ -410,19 +419,18 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @notice Following function `releaseDeposits` this function will be triggered if a voucher had been complained by the buyer.
      * Also checks if the voucher had been cancelled
      * @param voucherDetails keeps all required information of the voucher which the payment should be released for.
-    */
+     */
     function distributeIssuerDepositOnHolderComplain(
         VoucherDetails memory voucherDetails
     ) internal {
-        uint256 tFraction;
-
         if (isStatus(voucherDetails.currStatus.status, IDX_CANCEL_FAULT)) {
             //appease the conflict three-ways
             if (
                 voucherDetails.paymentMethod == ETHETH ||
                 voucherDetails.paymentMethod == TKNETH
             ) {
-                escrow[voucherDetails.issuer] = escrow[voucherDetails.issuer].sub(voucherDetails.depositSe);
+                escrow[voucherDetails.issuer] = escrow[voucherDetails.issuer]
+                    .sub(voucherDetails.depositSe);
             }
 
             if (
@@ -436,16 +444,21 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
                 escrowTokens[addressTokenDeposits][
                     voucherDetails.issuer
-                ] = escrowTokens[addressTokenDeposits][
-                    voucherDetails.issuer
-                ].sub(voucherDetails.depositSe);
+                ] = escrowTokens[addressTokenDeposits][voucherDetails.issuer]
+                    .sub(voucherDetails.depositSe);
             }
 
-            tFraction = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
-            voucherDetails.deposit2holder = voucherDetails.deposit2holder.add(tFraction); //Bu gets, say, a half
-            voucherDetails.deposit2issuer = voucherDetails.deposit2issuer.add(tFraction.div(CANCELFAULT_SPLIT)); //Se gets, say, a quarter
+            uint256 tFraction = voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+            voucherDetails.deposit2holder = voucherDetails.deposit2holder.add(
+                tFraction
+            ); //Bu gets, say, a half
+            voucherDetails.deposit2issuer = voucherDetails.deposit2issuer.add(
+                tFraction.div(CANCELFAULT_SPLIT)
+            ); //Se gets, say, a quarter
             voucherDetails.deposit2pool = voucherDetails.deposit2pool.add(
-                (voucherDetails.depositSe.sub(tFraction)).sub(tFraction.div(CANCELFAULT_SPLIT))
+                (voucherDetails.depositSe.sub(tFraction)).sub(
+                    tFraction.div(CANCELFAULT_SPLIT)
+                )
             ); //slashing the rest
 
             LogAmountDistribution(
@@ -463,7 +476,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             LogAmountDistribution(
                 voucherDetails.tokenIdVoucher,
                 owner(),
-                (voucherDetails.depositSe.sub(tFraction)).sub(tFraction.div(CANCELFAULT_SPLIT)),
+                (voucherDetails.depositSe.sub(tFraction)).sub(
+                    tFraction.div(CANCELFAULT_SPLIT)
+                ),
                 PaymentType.DEPOSIT_SELLER
             );
 
@@ -474,7 +489,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 voucherDetails.paymentMethod == ETHETH ||
                 voucherDetails.paymentMethod == TKNETH
             ) {
-                escrow[voucherDetails.issuer] = escrow[voucherDetails.issuer].sub(voucherDetails.depositSe);
+                escrow[voucherDetails.issuer] = escrow[voucherDetails.issuer]
+                    .sub(voucherDetails.depositSe);
             } else {
                 address addressTokenDeposits =
                     IVoucherKernel(voucherKernel).getVoucherDepositToken(
@@ -483,12 +499,13 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
                 escrowTokens[addressTokenDeposits][
                     voucherDetails.issuer
-                ] = escrowTokens[addressTokenDeposits][
-                    voucherDetails.issuer
-                ].sub(voucherDetails.depositSe);
+                ] = escrowTokens[addressTokenDeposits][voucherDetails.issuer]
+                    .sub(voucherDetails.depositSe);
             }
 
-            voucherDetails.deposit2pool = voucherDetails.deposit2pool.add(voucherDetails.depositSe);
+            voucherDetails.deposit2pool = voucherDetails.deposit2pool.add(
+                voucherDetails.depositSe
+            );
 
             LogAmountDistribution(
                 voucherDetails.tokenIdVoucher,
@@ -503,7 +520,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @notice Following function `releaseDeposits` this function will be triggered if a voucher had been cancelled by the seller.
      * Will be triggered if the voucher had not been complained.
      * @param voucherDetails keeps all required information of the voucher which the deposits should be released for.
-    */
+     */
     function distributeIssuerDepositOnIssuerCancel(
         VoucherDetails memory voucherDetails
     ) internal {
@@ -511,7 +528,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == ETHETH ||
             voucherDetails.paymentMethod == TKNETH
         ) {
-            escrow[voucherDetails.issuer] = escrow[voucherDetails.issuer].sub(voucherDetails.depositSe);
+            escrow[voucherDetails.issuer] = escrow[voucherDetails.issuer].sub(
+                voucherDetails.depositSe
+            );
         }
 
         if (
@@ -525,16 +544,20 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
             escrowTokens[addressTokenDeposits][
                 voucherDetails.issuer
-            ] = escrowTokens[addressTokenDeposits][
-                voucherDetails.issuer
-            ].sub(voucherDetails.depositSe);
+            ] = escrowTokens[addressTokenDeposits][voucherDetails.issuer].sub(
+                voucherDetails.depositSe
+            );
         }
 
-        voucherDetails.deposit2issuer = voucherDetails.deposit2issuer.add(voucherDetails.depositSe.div(
-            CANCELFAULT_SPLIT
-        ));
+        voucherDetails.deposit2issuer = voucherDetails.deposit2issuer.add(
+            voucherDetails.depositSe.div(CANCELFAULT_SPLIT)
+        );
 
-        voucherDetails.deposit2holder = voucherDetails.deposit2holder.add(voucherDetails.depositSe.sub(voucherDetails.depositSe.div(CANCELFAULT_SPLIT)));
+        voucherDetails.deposit2holder = voucherDetails.deposit2holder.add(
+            voucherDetails.depositSe.sub(
+                voucherDetails.depositSe.div(CANCELFAULT_SPLIT)
+            )
+        );
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher,
@@ -546,7 +569,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher,
             voucherDetails.holder,
-            voucherDetails.depositSe.sub(voucherDetails.depositSe.div(CANCELFAULT_SPLIT)),
+            voucherDetails.depositSe.sub(
+                voucherDetails.depositSe.div(CANCELFAULT_SPLIT)
+            ),
             PaymentType.DEPOSIT_SELLER
         );
     }
@@ -555,7 +580,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @notice Following function `releaseDeposits` this function will be triggered if no complain, nor cancel had been made.
      * All seller deposit is returned to seller.
      * @param voucherDetails keeps all required information of the voucher which the deposits should be released for.
-    */
+     */
     function distributeFullIssuerDeposit(VoucherDetails memory voucherDetails)
         internal
     {
@@ -563,7 +588,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == ETHETH ||
             voucherDetails.paymentMethod == TKNETH
         ) {
-            escrow[voucherDetails.issuer] = escrow[voucherDetails.issuer].sub(voucherDetails.depositSe);
+            escrow[voucherDetails.issuer] = escrow[voucherDetails.issuer].sub(
+                voucherDetails.depositSe
+            );
         }
 
         if (
@@ -577,12 +604,14 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
             escrowTokens[addressTokenDeposits][
                 voucherDetails.issuer
-            ] = escrowTokens[addressTokenDeposits][
-                voucherDetails.issuer
-            ].sub(voucherDetails.depositSe);
+            ] = escrowTokens[addressTokenDeposits][voucherDetails.issuer].sub(
+                voucherDetails.depositSe
+            );
         }
 
-        voucherDetails.deposit2issuer = voucherDetails.deposit2issuer.add(voucherDetails.depositSe);
+        voucherDetails.deposit2issuer = voucherDetails.deposit2issuer.add(
+            voucherDetails.depositSe
+        );
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher,
@@ -596,7 +625,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @notice Following function `releaseDeposits` this function will be triggered if voucher had been redeemed, or the seller had cancelled.
      * All buyer deposit is returned to buyer.
      * @param voucherDetails keeps all required information of the voucher which the deposits should be released for.
-    */
+     */
     function distributeFullHolderDeposit(VoucherDetails memory voucherDetails)
         internal
     {
@@ -604,7 +633,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == ETHETH ||
             voucherDetails.paymentMethod == TKNETH
         ) {
-            escrow[voucherDetails.holder] = escrow[voucherDetails.holder].sub(voucherDetails.depositBu);
+            escrow[voucherDetails.holder] = escrow[voucherDetails.holder].sub(
+                voucherDetails.depositBu
+            );
         }
 
         if (
@@ -618,12 +649,14 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
             escrowTokens[addressTokenDeposits][
                 voucherDetails.holder
-            ] = escrowTokens[addressTokenDeposits][
-                voucherDetails.holder
-            ].sub(voucherDetails.depositBu);
+            ] = escrowTokens[addressTokenDeposits][voucherDetails.holder].sub(
+                voucherDetails.depositBu
+            );
         }
 
-        voucherDetails.deposit2holder = voucherDetails.deposit2holder.add(voucherDetails.depositBu);
+        voucherDetails.deposit2holder = voucherDetails.deposit2holder.add(
+            voucherDetails.depositBu
+        );
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher,
@@ -637,7 +670,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @notice Following function `releaseDeposits` this function will be triggered if voucher had not been redeemed or cancelled after finalization.
      * @param voucherDetails keeps all required information of the voucher which the deposits should be released for.
      * All buyer deposit goes to Boson.
-    */
+     */
     function distributeHolderDepositOnNotRedeemedNotCancelled(
         VoucherDetails memory voucherDetails
     ) internal {
@@ -645,7 +678,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             voucherDetails.paymentMethod == ETHETH ||
             voucherDetails.paymentMethod == TKNETH
         ) {
-            escrow[voucherDetails.holder] = escrow[voucherDetails.holder].sub(voucherDetails.depositBu);
+            escrow[voucherDetails.holder] = escrow[voucherDetails.holder].sub(
+                voucherDetails.depositBu
+            );
         }
 
         if (
@@ -659,12 +694,14 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
             escrowTokens[addressTokenDeposits][
                 voucherDetails.holder
-            ] = escrowTokens[addressTokenDeposits][
-                voucherDetails.holder
-            ].sub(voucherDetails.depositBu);
+            ] = escrowTokens[addressTokenDeposits][voucherDetails.holder].sub(
+                voucherDetails.depositBu
+            );
         }
 
-        voucherDetails.deposit2pool = voucherDetails.deposit2pool.add(voucherDetails.depositBu);
+        voucherDetails.deposit2pool = voucherDetails.deposit2pool.add(
+            voucherDetails.depositBu
+        );
 
         LogAmountDistribution(
             voucherDetails.tokenIdVoucher,
@@ -675,7 +712,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice External function for withdrawing deposits. Caller must be the seller of the goods, otherwise reverts. 
+     * @notice External function for withdrawing deposits. Caller must be the seller of the goods, otherwise reverts.
      * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the voucher set is no longer in exchange.
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
      * @param _burnedQty burned quantity that the deposits should be withdrawn for
@@ -755,7 +792,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                     _tokenIdSupply
                 );
 
-            SafeERC20.safeTransfer(IERC20(addressTokenPrice), _recipient, _amount);
+            SafeERC20.safeTransfer(
+                IERC20(addressTokenPrice),
+                _recipient,
+                _amount
+            );
         }
     }
 
@@ -786,7 +827,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                     _tokenIdSupply
                 );
 
-            SafeERC20.safeTransfer(IERC20(addressTokenDeposits), _recipient, _amount);
+            SafeERC20.safeTransfer(
+                IERC20(addressTokenDeposits),
+                _recipient,
+                _amount
+            );
         }
     }
 
@@ -1004,6 +1049,53 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     // // // // // // // //
     // GETTERS
     // // // // // // // //
+
+    /**
+     * @notice Get the address of Voucher Kernel contract
+     * @return Address of Voucher Kernel contract
+     */
+    function getVoucherKernelAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return voucherKernel;
+    }
+
+    /**
+     * @notice Get the address of Boson Router contract
+     * @return Address of Boson Router contract
+     */
+    function getBosonRouterAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return bosonRouterAddress;
+    }
+
+    /**
+     * @notice Get the address of ERC1155ERC721 contract
+     * @return Address of ERC1155ERC721 contract
+     */
+    function getTokensContractAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return tokensContractAddress;
+    }
+
+    /**
+     * @notice Ensure whether or not contract has been set to disaster state 
+     * @return disasterState
+     */
+    function isDisasterStateSet() external view override returns(bool) {
+        return disasterState;
+    }
 
     /**
      * @notice Get the amount in escrow of an address

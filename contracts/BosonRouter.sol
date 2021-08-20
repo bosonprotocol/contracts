@@ -26,13 +26,11 @@ contract BosonRouter is
     using Address for address payable;
     using SafeMath for uint256;
 
-    mapping(address => uint256) public correlationIds; // whenever a seller or a buyer interacts with the smart contract, a personal txID is emitted from an event.
+    mapping(address => uint256) private correlationIds; // whenever a seller or a buyer interacts with the smart contract, a personal txID is emitted from an event.
 
-    using SafeMath for uint256;
-
-    address public cashierAddress;
-    address public voucherKernel;
-    address public fundLimitsOracle;
+    address private cashierAddress;
+    address private voucherKernel;
+    address private fundLimitsOracle;
 
     event LogOrderCreated(
         uint256 indexed _tokenIdSupply,
@@ -142,6 +140,7 @@ contract BosonRouter is
         external
         payable
         override
+        nonReentrant
         whenNotPaused
     {
         notAboveETHLimit(metadata[2].mul(metadata[5]));
@@ -319,7 +318,7 @@ contract BosonRouter is
     function requestCreateOrderTKNETH(
         address _tokenPriceAddress,
         uint256[] calldata metadata
-    ) external payable override whenNotPaused {
+    ) external payable override nonReentrant whenNotPaused {
         notZeroAddress(_tokenPriceAddress);
         notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
         notAboveETHLimit(metadata[3].mul(metadata[5]));
@@ -401,7 +400,6 @@ contract BosonRouter is
         bytes32 rDeposit,
         bytes32 sDeposit // tokenDeposits
     ) external override nonReentrant whenNotPaused {
-
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
         require(_tokensSent.sub(depositBu) == price, "IF"); //invalid funds
@@ -475,7 +473,6 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s
     ) external override nonReentrant whenNotPaused {
-
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
         require(_tokensSent.sub(depositBu) == price, "IF"); //invalid funds
@@ -532,7 +529,6 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s
     ) external payable override nonReentrant whenNotPaused {
-
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
         require(price == msg.value, "IP"); //invalid price
@@ -591,7 +587,6 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s
     ) external payable override nonReentrant whenNotPaused {
-
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
         require(price == _tokensPrice, "IP"); //invalid price
@@ -695,10 +690,6 @@ contract BosonRouter is
         );
     }
 
-    // // // // // // // //
-    // UTILS
-    // // // // // // // //
-
     /**
      * @notice Increment a seller or buyer's correlation Id
      * @param _party   The address of the seller or buyer
@@ -708,5 +699,58 @@ contract BosonRouter is
         override
     {
          correlationIds[_party]++;
+    }
+
+    /**
+     * @notice Return a seller or buyer's correlation Id
+     * @param _party   The address of the seller or buyer
+     * @return the specified party's correlation Id
+     */
+    function getCorrelationId(address _party) 
+        external
+        override
+        view
+        returns (uint256)
+    {
+        return correlationIds[_party];
+    }
+
+    /**
+     * @notice Get the address of Cashier contract
+     * @return Address of Cashier address
+     */
+    function getCashierAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return cashierAddress;
+    }
+
+     /**
+     * @notice Get the address of Voucher Kernel contract
+     * @return Address of Voucher Kernel contract
+     */
+    function getVoucherKernelAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return voucherKernel;
+    }
+
+    /**
+     * @notice Get the address of Fund Limits Oracle contract
+     * @return Address of Fund Limits Oracle contract
+     */
+    function getFundLimitOracleAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return fundLimitsOracle;
     }
 }

@@ -9,6 +9,9 @@ node_modules
 /localDeploy
 /run
 /vendor
+/artifacts
+/cache
+/typechain
 
 # Secrets
 .secret
@@ -28,3 +31,4 @@ coverage*
 
 # Personal Preferences
 .vscode
+*.txt
