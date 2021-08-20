@@ -1,24 +1,37 @@
-// @ts-nocheck
-const ethers = require('hardhat').ethers;
-const Utils = require('./utils');
+import {ethers} from 'hardhat';
+import Utils from './utils';
+
+import {
+  ERC1155ERC721,
+  VoucherKernel,
+  Cashier,
+  BosonRouter,
+  MockERC20Permit,
+} from '../typechain';
 
 class UtilsBuilder {
+  utils: Utils;
+  ETHTKN;
+  TKNTKN;
+  TKNETH;
+  TKNTKNSame;
+
   constructor() {
     this.utils = new Utils();
   }
 
-  static create() {
+  static create(): UtilsBuilder {
     return new UtilsBuilder();
   }
 
-  ETHETH() {
+  ETHETH(): UtilsBuilder {
     this.utils.createOrder = this.utils.requestCreateOrderETHETH;
     this.utils.commitToBuy = this.utils.commitToBuyETHETH;
 
     return this;
   }
 
-  ERC20withPermit() {
+  ERC20withPermit(): UtilsBuilder {
     this.ETHTKN = this.ETHTKNWithPermit;
     this.TKNTKN = this.TKNTKNWithPermit;
     this.TKNETH = this.TKNETHWithPermit;
@@ -27,7 +40,7 @@ class UtilsBuilder {
     return this;
   }
 
-  async setFactories() {
+  async setFactories(): Promise<UtilsBuilder> {
     this.utils.factories = {
       VoucherKernel: await ethers.getContractFactory('VoucherKernel'),
       Cashier: await ethers.getContractFactory('Cashier'),
@@ -41,13 +54,13 @@ class UtilsBuilder {
   }
 
   async buildAsync(
-    erc1155721,
-    voucherKernel,
-    cashier,
-    bsnRouter,
-    bsnTokenPrice,
-    bsnTokenDeposit
-  ) {
+    erc1155721: ERC1155ERC721,
+    voucherKernel: VoucherKernel,
+    cashier: Cashier,
+    bsnRouter: BosonRouter,
+    bsnTokenPrice?: MockERC20Permit,
+    bsnTokenDeposit?: MockERC20Permit
+  ): Promise<Utils> {
     this.utils.setContracts(
       erc1155721,
       voucherKernel,
@@ -62,28 +75,28 @@ class UtilsBuilder {
     return this.utils;
   }
 
-  ETHTKNWithPermit() {
+  ETHTKNWithPermit(): UtilsBuilder {
     this.utils.createOrder = this.utils.requestCreateOrderETHTKNWithPermit;
     this.utils.commitToBuy = this.utils.commitToBuyETHTKNWithPermit;
 
     return this;
   }
 
-  TKNTKNWithPermit() {
+  TKNTKNWithPermit(): UtilsBuilder {
     this.utils.createOrder = this.utils.requestCreateOrderTKNTKNWithPermit;
     this.utils.commitToBuy = this.utils.commitToBuyTKNTKNWithPermit;
 
     return this;
   }
 
-  TKNTKNSameWithPermit() {
+  TKNTKNSameWithPermit(): UtilsBuilder {
     this.utils.createOrder = this.utils.requestCreateOrderETHTKNSameWithPermit;
     this.utils.commitToBuy = this.utils.commitToBuyTKNTKNSameWithPermit;
 
     return this;
   }
 
-  TKNETHWithPermit() {
+  TKNETHWithPermit(): UtilsBuilder {
     this.utils.createOrder = this.utils.requestCreateOrderTKNETH;
     this.utils.commitToBuy = this.utils.commitToBuyTKNETHWithPermit;
 
@@ -91,4 +104,4 @@ class UtilsBuilder {
   }
 }
 
-module.exports = UtilsBuilder;
+export default UtilsBuilder;

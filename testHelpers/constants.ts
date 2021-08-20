@@ -1,4 +1,5 @@
-const ethers = require('hardhat').ethers;
+import {ethers} from 'hardhat';
+
 const BN = ethers.BigNumber.from;
 
 // common
@@ -25,8 +26,8 @@ const CATEGORY1 = 'entertainment.games.swag';
 const CATEGORY2 = 'entertainment.games.shield';
 
 // promise
-const PROMISE_VALID_FROM = ''; // evaluated based on the current block timestamp
-const PROMISE_VALID_TO = ''; // evaluated based on the PROMISE_VALID_FROM + 2 * SECONDS_IN_DAY
+let PROMISE_VALID_FROM: number; // evaluated based on the current block timestamp
+let PROMISE_VALID_TO: number; // evaluated based on the PROMISE_VALID_FROM + 2 * SECONDS_IN_DAY
 const PROMISE_PRICE1 = 10;
 const PROMISE_PRICE2 = 21;
 const PROMISE_DEPOSITSE1 = 1;
@@ -57,40 +58,40 @@ const ABOVE_ETH_LIMIT = (10 * 10 ** 18).toString();
 const TOKEN_LIMIT = (5 * 10 ** 18).toString();
 const ABOVE_TOKEN_LIMIT = (10 * 10 ** 18).toString();
 
-let PROMISE_DATA_FIELDS = {};
+const PROMISE_DATA_FIELDS = {} as any;
 {
   let index = 0;
-  let keys = ['promiseId', 'nonce', 'validFrom', 'validTo', 'idx'];
-  for (let key of keys) {
+  const keys = ['promiseId', 'nonce', 'validFrom', 'validTo', 'idx'];
+  for (const key of keys) {
     PROMISE_DATA_FIELDS[key] = index++;
   }
 }
 
-let VOUCHER_STATUS_FIELDS = {};
+const VOUCHER_STATUS_FIELDS = {} as any;
 {
   let index = 0;
-  let keys = [
+  const keys = [
     'status',
     'isPaymentReleased',
     'isDepositsReleased',
     'complainPeriodStart',
     'cancelFaultPeriodStart',
   ];
-  for (let key of keys) {
+  for (const key of keys) {
     VOUCHER_STATUS_FIELDS[key] = index++;
   }
 }
 
-let PROMISE_ORDER_FIELDS = {};
+const PROMISE_ORDER_FIELDS = {} as any;
 {
   let index = 0;
-  let keys = ['price', 'depositSe', 'depositBu'];
-  for (let key of keys) {
+  const keys = ['price', 'depositSe', 'depositBu'];
+  for (const key of keys) {
     PROMISE_ORDER_FIELDS[key] = index++;
   }
 }
 
-module.exports = {
+export default {
   ASSET_VERSION,
   ASSET_TITLE,
   ASSET_TITLE2,

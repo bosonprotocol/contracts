@@ -1,52 +1,68 @@
-const ethers = require('hardhat').ethers;
-const {assert, expect} = require('chai');
-const {ecsign} = require('ethereumjs-util');
+import {ethers} from 'hardhat';
+import {Signer, ContractFactory, Contract} from 'ethers';
 
-const constants = require('../testHelpers/constants');
-const timemachine = require('../testHelpers/timemachine');
-const Utils = require('../testHelpers/utils');
-const Users = require('../testHelpers/users');
-const UtilsBuilder = require('../testHelpers/utilsBuilder');
-const {toWei, getApprovalDigest} = require('../testHelpers/permitUtils');
+import {assert, expect} from 'chai';
+import {ecsign} from 'ethereumjs-util';
 
-let ERC1155ERC721;
-let VoucherKernel;
-let Cashier;
-let BosonRouter;
-let FundLimitsOracle;
-let MockERC20Permit;
+import constants from '../testHelpers/constants';
+import {advanceTimeSeconds} from '../testHelpers/timemachine';
 
-const hre = require('hardhat');
-const revertReasons = require('../testHelpers/revertReasons');
-const eventUtils = require('../testHelpers/events');
-const {eventNames} = require('../testHelpers/events');
-const fnSignatures = require('../testHelpers/functionSignatures');
+import Users from '../testHelpers/users';
+import Utils from '../testHelpers/utils';
+import UtilsBuilder from '../testHelpers/utilsBuilder';
+
+import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
+
+import {
+  BosonRouter,
+  ERC1155ERC721,
+  VoucherKernel,
+  Cashier,
+  FundLimitsOracle,
+  MockERC20Permit,
+} from '../typechain';
+
+let ERC1155ERC721_Factory: ContractFactory;
+let VoucherKernel_Factory: ContractFactory;
+let Cashier_Factory: ContractFactory;
+let BosonRouter_Factory: ContractFactory;
+let FundLimitsOracle_Factory: ContractFactory;
+let MockERC20Permit_Factory: ContractFactory;
+
+import revertReasons from '../testHelpers/revertReasons';
+import * as eventUtils from '../testHelpers/events';
+const eventNames = eventUtils.eventNames;
+import fnSignatures from '../testHelpers/functionSignatures';
 
 const BN = ethers.BigNumber.from;
 
-let utils;
+let utils: Utils;
 let users;
 
 describe('Cashier and VoucherKernel', () => {
   before(async () => {
-    const signers = await hre.ethers.getSigners();
+    const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
 
-    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
-    VoucherKernel = await ethers.getContractFactory('VoucherKernel');
-    Cashier = await ethers.getContractFactory('Cashier');
-    BosonRouter = await ethers.getContractFactory('BosonRouter');
-    FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
-    MockERC20Permit = await ethers.getContractFactory('MockERC20Permit');
+    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
+    Cashier_Factory = await ethers.getContractFactory('Cashier');
+    BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
+    FundLimitsOracle_Factory = await ethers.getContractFactory(
+      'FundLimitsOracle'
+    );
+    MockERC20Permit_Factory = await ethers.getContractFactory(
+      'MockERC20Permit'
+    );
   });
 
-  let contractERC1155ERC721,
-    contractVoucherKernel,
-    contractCashier,
-    contractBosonRouter,
-    contractBSNTokenPrice,
-    contractBSNTokenDeposit,
-    contractFundLimitsOracle;
+  let contractERC1155ERC721: ERC1155ERC721,
+    contractVoucherKernel: VoucherKernel,
+    contractCashier: Cashier,
+    contractBosonRouter: BosonRouter,
+    contractBSNTokenPrice: MockERC20Permit,
+    contractBSNTokenDeposit: MockERC20Permit,
+    contractFundLimitsOracle: FundLimitsOracle;
   let tokenSupplyKey, tokenVoucherKey, tokenVoucherKey1;
 
   const ZERO = BN(0);
@@ -72,27 +88,31 @@ describe('Cashier and VoucherKernel', () => {
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle = await FundLimitsOracle.deploy();
-    contractERC1155ERC721 = await ERC1155ERC721.deploy();
-    contractVoucherKernel = await VoucherKernel.deploy(
+    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
+      FundLimitsOracle;
+    contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
+      ERC1155ERC721;
+    contractVoucherKernel = (await VoucherKernel_Factory.deploy(
       contractERC1155ERC721.address
-    );
-    contractCashier = await Cashier.deploy(contractVoucherKernel.address);
-    contractBosonRouter = await BosonRouter.deploy(
+    )) as Contract & VoucherKernel;
+    contractCashier = (await Cashier_Factory.deploy(
+      contractVoucherKernel.address
+    )) as Contract & Cashier;
+    contractBosonRouter = (await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
-    );
+    )) as Contract & BosonRouter;
 
-    contractBSNTokenPrice = await MockERC20Permit.deploy(
+    contractBSNTokenPrice = (await MockERC20Permit_Factory.deploy(
       'BosonTokenPrice',
       'BPRC'
-    );
+    )) as Contract & MockERC20Permit;
 
-    contractBSNTokenDeposit = await MockERC20Permit.deploy(
+    contractBSNTokenDeposit = (await MockERC20Permit_Factory.deploy(
       'BosonTokenDeposit',
       'BDEP'
-    );
+    )) as Contract & MockERC20Permit;
 
     await contractFundLimitsOracle.deployed();
     await contractERC1155ERC721.deployed();
@@ -104,7 +124,7 @@ describe('Cashier and VoucherKernel', () => {
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
-      'true'
+      true
     );
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
@@ -137,8 +157,8 @@ describe('Cashier and VoucherKernel', () => {
   }
 
   describe('TOKEN SUPPLY CREATION (Voucher batch creation)', () => {
-    let remQty = constants.QTY_10;
-    let vouchersToBuy = 5;
+    let remQty = constants.QTY_10 as number | string;
+    const vouchersToBuy = 5;
 
     const paymentMethods = {
       ETHETH: 1,
@@ -173,7 +193,7 @@ describe('Cashier and VoucherKernel', () => {
         );
         assert.equal(
           correlationId.toString(),
-          0,
+          '0',
           'Seller correlationId is not as expected'
         );
 
@@ -205,7 +225,7 @@ describe('Cashier and VoucherKernel', () => {
 
         assert.equal(
           correlationId.toString(),
-          1,
+          '1',
           'Seller correlationId is not as expected'
         );
       });
@@ -241,8 +261,8 @@ describe('Cashier and VoucherKernel', () => {
         );
 
         assert.equal(
-          remainingQtyInContract,
-          remQty,
+          remainingQtyInContract.toString(),
+          remQty.toString(),
           'Remaining qty is not correct'
         );
 
@@ -253,9 +273,11 @@ describe('Cashier and VoucherKernel', () => {
             users.seller.address
           );
 
+          remQty = BN(remQty).sub(1).toString();
+
           assert.equal(
-            remainingQtyInContract,
-            --remQty,
+            remainingQtyInContract.toString(),
+            remQty,
             'Remaining qty is not correct'
           );
         }
@@ -263,7 +285,7 @@ describe('Cashier and VoucherKernel', () => {
 
       it('Should create payment method ETHETH', async () => {
         timestamp = await Utils.getCurrTimestamp();
-        let tokenSupplyKey = await utils.createOrder(
+        const tokenSupplyKey = await utils.createOrder(
           users.seller,
           timestamp,
           timestamp + constants.SECONDS_IN_DAY,
@@ -285,7 +307,7 @@ describe('Cashier and VoucherKernel', () => {
 
         assert.equal(
           paymentMethod.toString(),
-          paymentMethods.ETHETH,
+          paymentMethods.ETHETH.toString(),
           'Payment Method ETHETH not set correctly'
         );
         assert.equal(
@@ -298,28 +320,6 @@ describe('Cashier and VoucherKernel', () => {
           constants.ZERO_ADDRESS,
           'ETHETH Method Deposit Token Address mismatch'
         );
-      });
-
-      it('[NEGATIVE] Should fail if additional token address is provided', async () => {
-        const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
-        timestamp = await Utils.getCurrTimestamp();
-
-        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
-
-        await expect(
-          sellerInstance.requestCreateOrderETHETH(
-            contractBSNTokenDeposit.address,
-            [
-              timestamp,
-              timestamp + constants.SECONDS_IN_DAY,
-              constants.PROMISE_PRICE1,
-              constants.seller_deposit,
-              constants.PROMISE_DEPOSITBU1,
-              constants.ORDER_QUANTITY1,
-            ],
-            {value: txValue}
-          )
-        ).to.be.reverted;
       });
 
       it('[NEGATIVE] Should not create a supply if price is above the limit', async () => {
@@ -420,7 +420,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'Seller correlationId is not as expected'
           );
 
@@ -456,7 +456,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'Seller correlationId is not as expected'
           );
         });
@@ -496,8 +496,8 @@ describe('Cashier and VoucherKernel', () => {
             users.seller.address
           );
           assert.equal(
-            remainingQtyInContract,
-            remQty,
+            remainingQtyInContract.toString(),
+            remQty.toString(),
             'Remaining qty is not correct'
           );
 
@@ -508,9 +508,11 @@ describe('Cashier and VoucherKernel', () => {
               users.seller.address
             );
 
+            remQty = BN(remQty).sub(1).toString();
+
             assert.equal(
-              remainingQtyInContract,
-              --remQty,
+              remainingQtyInContract.toString(),
+              remQty,
               'Remaining qty is not correct'
             );
           }
@@ -539,7 +541,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             paymentMethod.toString(),
-            paymentMethods.ETHTKN,
+            paymentMethods.ETHTKN.toString(),
             'Payment Method ETHTKN not set correctly'
           );
           assert.equal(
@@ -799,7 +801,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'Seller correlationIds is not as expected'
           );
 
@@ -844,7 +846,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'Seller correlationId is not as expected'
           );
         });
@@ -880,8 +882,8 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           assert.equal(
-            remainingQtyInContract,
-            remQty,
+            remainingQtyInContract.toString(),
+            remQty.toString(),
             'Remaining qty is not correct'
           );
 
@@ -892,9 +894,11 @@ describe('Cashier and VoucherKernel', () => {
               users.seller.address
             );
 
+            remQty = BN(remQty).sub(1).toString();
+
             assert.equal(
-              remainingQtyInContract,
-              --remQty,
+              remainingQtyInContract.toString(),
+              remQty,
               'Remaining qty is not correct'
             );
           }
@@ -923,7 +927,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             paymentMethod.toString(),
-            paymentMethods.TKNETH,
+            paymentMethods.TKNETH.toString(),
             'Payment Method TKNETH not set correctly'
           );
           assert.equal(
@@ -1069,7 +1073,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'Seller correlationId is not as expected'
           );
 
@@ -1125,7 +1129,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'Seller correlationId is not as expected'
           );
         });
@@ -1164,8 +1168,8 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           assert.equal(
-            remainingQtyInContract,
-            remQty,
+            remainingQtyInContract.toString(),
+            remQty.toString(),
             'Remaining qty is not correct'
           );
 
@@ -1176,9 +1180,11 @@ describe('Cashier and VoucherKernel', () => {
               users.seller.address
             );
 
+            remQty = BN(remQty).sub(1).toString();
+
             assert.equal(
-              remainingQtyInContract,
-              --remQty,
+              remainingQtyInContract.toString(),
+              remQty,
               'Remaining qty is not correct'
             );
           }
@@ -1207,7 +1213,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             paymentMethod.toString(),
-            paymentMethods.TKNTKN,
+            paymentMethods.TKNTKN.toString(),
             'Payment Method TKNTKN not set correctly'
           );
           assert.equal(
@@ -1561,7 +1567,7 @@ describe('Cashier and VoucherKernel', () => {
       );
       assert.equal(
         correlationId.toString(),
-        0,
+        '0',
         'Seller correlationId is not as expected'
       );
 
@@ -1575,14 +1581,14 @@ describe('Cashier and VoucherKernel', () => {
     });
 
     it('Seller correlationId should be incremented after supply is cancelled', async () => {
-      let prevCorrId = await contractBosonRouter.getCorrelationId(
+      const prevCorrId = await contractBosonRouter.getCorrelationId(
         users.seller.address
       );
 
       const sellerInstance = contractBosonRouter.connect(users.seller.signer);
 
       await sellerInstance.requestCancelOrFaultVoucherSet(tokenSupplyKey);
-      let nextCorrId = await contractBosonRouter.getCorrelationId(
+      const nextCorrId = await contractBosonRouter.getCorrelationId(
         users.seller.address
       );
 
@@ -1630,7 +1636,7 @@ describe('Cashier and VoucherKernel', () => {
 
         assert.equal(
           correlationId.toString(),
-          0,
+          '0',
           'Buyer correlationId is not as expected'
         );
       });
@@ -1640,7 +1646,7 @@ describe('Cashier and VoucherKernel', () => {
           BN(constants.product_price)
         );
         const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
-        let txFillOrder = await buyerInstance.requestVoucherETHETH(
+        const txFillOrder = await buyerInstance.requestVoucherETHETH(
           TOKEN_SUPPLY_ID,
           users.seller.address,
           {
@@ -1652,7 +1658,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          VoucherKernel,
+          VoucherKernel_Factory,
           eventNames.LOG_VOUCHER_DELIVERED,
           (ev) => {
             assert.equal(ev._issuer, users.seller.address);
@@ -1662,7 +1668,7 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
-        let utilsTknEth = await UtilsBuilder.create()
+        const utilsTknEth = await UtilsBuilder.create()
           .ERC20withPermit()
           .TKNETH()
           .buildAsync(
@@ -1686,7 +1692,7 @@ describe('Cashier and VoucherKernel', () => {
 
         assert.equal(
           correlationId.toString(),
-          1,
+          '1',
           'Buyer correlationId is not as expected'
         );
       });
@@ -1826,7 +1832,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'Buyer correlationId is not as expected'
           );
         });
@@ -1866,7 +1872,7 @@ describe('Cashier and VoucherKernel', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            VoucherKernel,
+            VoucherKernel_Factory,
             eventNames.LOG_VOUCHER_DELIVERED,
             (ev) => {
               assert.equal(ev._issuer, users.seller.address);
@@ -1876,7 +1882,7 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
-          let utilsEthEth = await UtilsBuilder.create()
+          const utilsEthEth = await UtilsBuilder.create()
             .ERC20withPermit()
             .ETHETH()
             .buildAsync(
@@ -1900,7 +1906,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'Buyer correlationId is not as expected'
           );
         });
@@ -2093,7 +2099,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'Buyer correlationId is not as expected'
           );
         });
@@ -2115,14 +2121,14 @@ describe('Cashier and VoucherKernel', () => {
             deadline
           );
 
-          let VRS_DEPOSIT = ecsign(
+          const VRS_DEPOSIT = ecsign(
             Buffer.from(digestDeposit.slice(2), 'hex'),
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          let vDeposit = VRS_DEPOSIT.v;
-          let rDeposit = VRS_DEPOSIT.r;
-          let sDeposit = VRS_DEPOSIT.s;
+          const vDeposit = VRS_DEPOSIT.v;
+          const rDeposit = VRS_DEPOSIT.r;
+          const sDeposit = VRS_DEPOSIT.s;
 
           const nonce2 = await contractBSNTokenPrice.nonces(
             users.buyer.address
@@ -2137,18 +2143,18 @@ describe('Cashier and VoucherKernel', () => {
             deadline
           );
 
-          let VRS_PRICE = ecsign(
+          const VRS_PRICE = ecsign(
             Buffer.from(digestPrice.slice(2), 'hex'),
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          let vPrice = VRS_PRICE.v;
-          let rPrice = VRS_PRICE.r;
-          let sPrice = VRS_PRICE.s;
+          const vPrice = VRS_PRICE.v;
+          const rPrice = VRS_PRICE.r;
+          const sPrice = VRS_PRICE.s;
 
           const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
-          let txFillOrder = await buyerInstance.requestVoucherTKNTKNWithPermit(
+          const txFillOrder = await buyerInstance.requestVoucherTKNTKNWithPermit(
             TOKEN_SUPPLY_ID,
             users.seller.address,
             tokensToSend,
@@ -2165,7 +2171,7 @@ describe('Cashier and VoucherKernel', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            VoucherKernel,
+            VoucherKernel_Factory,
             eventNames.LOG_VOUCHER_DELIVERED,
             (ev) => {
               assert.equal(ev._issuer, users.seller.address);
@@ -2175,7 +2181,7 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
-          let utilsEthTkn = await UtilsBuilder.create()
+          const utilsEthTkn = await UtilsBuilder.create()
             .ERC20withPermit()
             .ETHTKN()
             .buildAsync(
@@ -2199,7 +2205,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'Buyer correlationId is not as expected'
           );
         });
@@ -2279,14 +2285,14 @@ describe('Cashier and VoucherKernel', () => {
             deadline
           );
 
-          let VRS_DEPOSIT = ecsign(
+          const VRS_DEPOSIT = ecsign(
             Buffer.from(digestDeposit.slice(2), 'hex'),
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          let vDeposit = VRS_DEPOSIT.v;
-          let rDeposit = VRS_DEPOSIT.r;
-          let sDeposit = VRS_DEPOSIT.s;
+          const vDeposit = VRS_DEPOSIT.v;
+          const rDeposit = VRS_DEPOSIT.r;
+          const sDeposit = VRS_DEPOSIT.s;
 
           const nonce2 = await contractBSNTokenPrice.nonces(
             users.buyer.address
@@ -2301,14 +2307,14 @@ describe('Cashier and VoucherKernel', () => {
             deadline
           );
 
-          let VRS_PRICE = ecsign(
+          const VRS_PRICE = ecsign(
             Buffer.from(digestPrice.slice(2), 'hex'),
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          let vPrice = VRS_PRICE.v;
-          let rPrice = VRS_PRICE.r;
-          let sPrice = VRS_PRICE.s;
+          const vPrice = VRS_PRICE.v;
+          const rPrice = VRS_PRICE.r;
+          const sPrice = VRS_PRICE.s;
 
           const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
@@ -2345,14 +2351,14 @@ describe('Cashier and VoucherKernel', () => {
             deadline
           );
 
-          let VRS_DEPOSIT = ecsign(
+          const VRS_DEPOSIT = ecsign(
             Buffer.from(digestDeposit.slice(2), 'hex'),
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          let vDeposit = VRS_DEPOSIT.v;
-          let rDeposit = VRS_DEPOSIT.r;
-          let sDeposit = VRS_DEPOSIT.s;
+          const vDeposit = VRS_DEPOSIT.v;
+          const rDeposit = VRS_DEPOSIT.r;
+          const sDeposit = VRS_DEPOSIT.s;
 
           const nonce2 = await contractBSNTokenPrice.nonces(
             users.buyer.address
@@ -2367,14 +2373,14 @@ describe('Cashier and VoucherKernel', () => {
             deadline
           );
 
-          let VRS_PRICE = ecsign(
+          const VRS_PRICE = ecsign(
             Buffer.from(digestPrice.slice(2), 'hex'),
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          let vPrice = VRS_PRICE.v;
-          let rPrice = VRS_PRICE.r;
-          let sPrice = VRS_PRICE.s;
+          const vPrice = VRS_PRICE.v;
+          const rPrice = VRS_PRICE.r;
+          const sPrice = VRS_PRICE.s;
 
           const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
@@ -2447,7 +2453,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'Buyer correlationId is not as expected'
           );
         });
@@ -2469,18 +2475,18 @@ describe('Cashier and VoucherKernel', () => {
             deadline
           );
 
-          let VRS_TOKENS = ecsign(
+          const VRS_TOKENS = ecsign(
             Buffer.from(digestTokens.slice(2), 'hex'),
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          let v = VRS_TOKENS.v;
-          let r = VRS_TOKENS.r;
-          let s = VRS_TOKENS.s;
+          const v = VRS_TOKENS.v;
+          const r = VRS_TOKENS.r;
+          const s = VRS_TOKENS.s;
 
           const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
-          let txFillOrder = await buyerInstance.requestVoucherTKNTKNSameWithPermit(
+          const txFillOrder = await buyerInstance.requestVoucherTKNTKNSameWithPermit(
             TOKEN_SUPPLY_ID,
             users.seller.address,
             tokensToSend,
@@ -2494,7 +2500,7 @@ describe('Cashier and VoucherKernel', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            VoucherKernel,
+            VoucherKernel_Factory,
             eventNames.LOG_VOUCHER_DELIVERED,
             (ev) => {
               assert.equal(ev._issuer, users.seller.address);
@@ -2506,7 +2512,7 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
-          let utilsEthEth = await UtilsBuilder.create()
+          const utilsEthEth = await UtilsBuilder.create()
             .ERC20withPermit()
             .ETHETH()
             .buildAsync(
@@ -2530,7 +2536,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'Buyer correlationId is not as expected'
           );
         });
@@ -2597,14 +2603,14 @@ describe('Cashier and VoucherKernel', () => {
             deadline
           );
 
-          let VRS_TOKENS = ecsign(
+          const VRS_TOKENS = ecsign(
             Buffer.from(digestTokens.slice(2), 'hex'),
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          let v = VRS_TOKENS.v;
-          let r = VRS_TOKENS.r;
-          let s = VRS_TOKENS.s;
+          const v = VRS_TOKENS.v;
+          const r = VRS_TOKENS.r;
+          const s = VRS_TOKENS.s;
 
           const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
@@ -2637,14 +2643,14 @@ describe('Cashier and VoucherKernel', () => {
             deadline
           );
 
-          let VRS_TOKENS = ecsign(
+          const VRS_TOKENS = ecsign(
             Buffer.from(digestTokens.slice(2), 'hex'),
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          let v = VRS_TOKENS.v;
-          let r = VRS_TOKENS.r;
-          let s = VRS_TOKENS.s;
+          const v = VRS_TOKENS.v;
+          const r = VRS_TOKENS.r;
+          const s = VRS_TOKENS.s;
 
           const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
@@ -2663,7 +2669,7 @@ describe('Cashier and VoucherKernel', () => {
 
         it('[NEGATIVE] Should revert if Price Token and Deposit Token are diff contracts', async () => {
           //get instance with different Price token and Deposit Token addresses
-          let utilsTKNTKN = await UtilsBuilder.create()
+          const utilsTKNTKN = await UtilsBuilder.create()
             .ERC20withPermit()
             .TKNTKN()
             .buildAsync(
@@ -2712,14 +2718,14 @@ describe('Cashier and VoucherKernel', () => {
             deadline
           );
 
-          let VRS_TOKENS = ecsign(
+          const VRS_TOKENS = ecsign(
             Buffer.from(digestTokens.slice(2), 'hex'),
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
-          let v = VRS_TOKENS.v;
-          let r = VRS_TOKENS.r;
-          let s = VRS_TOKENS.s;
+          const v = VRS_TOKENS.v;
+          const r = VRS_TOKENS.r;
+          const s = VRS_TOKENS.s;
 
           const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
@@ -2782,7 +2788,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'Buyer correlationId is not as expected'
           );
         });
@@ -2799,14 +2805,14 @@ describe('Cashier and VoucherKernel', () => {
             deadline
           );
 
-          let {v, r, s} = ecsign(
+          const {v, r, s} = ecsign(
             Buffer.from(digestDeposit.slice(2), 'hex'),
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
 
           const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
-          let txFillOrder = await buyerInstance.requestVoucherTKNETHWithPermit(
+          const txFillOrder = await buyerInstance.requestVoucherTKNETHWithPermit(
             TOKEN_SUPPLY_ID,
             users.seller.address,
             constants.product_price,
@@ -2821,7 +2827,7 @@ describe('Cashier and VoucherKernel', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            VoucherKernel,
+            VoucherKernel_Factory,
             eventNames.LOG_VOUCHER_DELIVERED,
             (ev) => {
               assert.equal(ev._issuer, users.seller.address);
@@ -2833,7 +2839,7 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
-          let utilsEthEth = await UtilsBuilder.create()
+          const utilsEthEth = await UtilsBuilder.create()
             .ERC20withPermit()
             .ETHETH()
             .buildAsync(
@@ -2857,7 +2863,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'Buyer correlationId is not as expected'
           );
         });
@@ -2934,7 +2940,7 @@ describe('Cashier and VoucherKernel', () => {
             deadline
           );
 
-          let {v, r, s} = ecsign(
+          const {v, r, s} = ecsign(
             Buffer.from(digestDeposit.slice(2), 'hex'),
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
@@ -2969,7 +2975,7 @@ describe('Cashier and VoucherKernel', () => {
             deadline
           );
 
-          let {v, r, s} = ecsign(
+          const {v, r, s} = ecsign(
             Buffer.from(digestDeposit.slice(2), 'hex'),
             Buffer.from(users.buyer.privateKey.slice(2), 'hex')
           );
@@ -3023,7 +3029,7 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('[!COMMIT] Buyer should not be able to commit after expiry date has passed', async () => {
-        await timemachine.advanceTimeSeconds(
+        await advanceTimeSeconds(
           constants.PROMISE_VALID_TO + constants.ONE_MINUTE
         );
 
@@ -3038,7 +3044,7 @@ describe('Cashier and VoucherKernel', () => {
           users.seller,
           TOKEN_SUPPLY_ID
         );
-        await timemachine.advanceTimeSeconds(
+        await advanceTimeSeconds(
           constants.PROMISE_VALID_TO + cancelPeriod + complainPeriod
         );
 
@@ -3056,9 +3062,7 @@ describe('Cashier and VoucherKernel', () => {
 
         await utils.cancel(voucherID, users.seller.signer);
 
-        await timemachine.advanceTimeSeconds(
-          complainPeriod + constants.ONE_MINUTE
-        );
+        await advanceTimeSeconds(complainPeriod + constants.ONE_MINUTE);
 
         await expect(
           utils.complain(voucherID, users.buyer.signer)
@@ -3072,7 +3076,7 @@ describe('Cashier and VoucherKernel', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await timemachine.advanceTimeSeconds(
+        await advanceTimeSeconds(
           constants.PROMISE_VALID_TO + constants.ONE_MINUTE
         );
 
@@ -3088,7 +3092,7 @@ describe('Cashier and VoucherKernel', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await timemachine.advanceTimeSeconds(
+        await advanceTimeSeconds(
           constants.PROMISE_VALID_TO + constants.ONE_MINUTE
         );
 
@@ -3105,7 +3109,7 @@ describe('Cashier and VoucherKernel', () => {
         );
         await utils.redeem(voucherID, users.buyer.signer);
 
-        await timemachine.advanceTimeSeconds(
+        await advanceTimeSeconds(
           complainPeriod + cancelPeriod + constants.ONE_MINUTE
         );
 
@@ -3122,7 +3126,7 @@ describe('Cashier and VoucherKernel', () => {
         );
         await utils.redeem(voucherID, users.buyer.signer);
 
-        await timemachine.advanceTimeSeconds(
+        await advanceTimeSeconds(
           complainPeriod + cancelPeriod + constants.ONE_MINUTE
         );
 
@@ -3139,9 +3143,7 @@ describe('Cashier and VoucherKernel', () => {
         );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer),
-          await timemachine.advanceTimeSeconds(
-            complainPeriod + constants.ONE_MINUTE
-          );
+          await advanceTimeSeconds(complainPeriod + constants.ONE_MINUTE);
 
         await expect(
           utils.complain(voucherID, users.buyer.signer)
@@ -3157,9 +3159,7 @@ describe('Cashier and VoucherKernel', () => {
 
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer),
-          await timemachine.advanceTimeSeconds(
-            cancelPeriod + constants.ONE_MINUTE
-          );
+          await advanceTimeSeconds(cancelPeriod + constants.ONE_MINUTE);
 
         await expect(
           utils.cancel(voucherID, users.seller.signer)
@@ -3175,7 +3175,7 @@ describe('Cashier and VoucherKernel', () => {
 
         await utils.refund(voucherID, users.buyer.signer);
 
-        await timemachine.advanceTimeSeconds(
+        await advanceTimeSeconds(
           complainPeriod + cancelPeriod + constants.ONE_MINUTE
         );
 
@@ -3193,7 +3193,7 @@ describe('Cashier and VoucherKernel', () => {
 
         await utils.refund(voucherID, users.buyer.signer);
 
-        await timemachine.advanceTimeSeconds(
+        await advanceTimeSeconds(
           complainPeriod + cancelPeriod + constants.ONE_MINUTE
         );
 
@@ -3212,9 +3212,7 @@ describe('Cashier and VoucherKernel', () => {
         await utils.refund(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
 
-        await timemachine.advanceTimeSeconds(
-          cancelPeriod + constants.ONE_MINUTE
-        );
+        await advanceTimeSeconds(cancelPeriod + constants.ONE_MINUTE);
 
         await expect(
           utils.cancel(voucherID, users.seller.signer)
@@ -3231,9 +3229,7 @@ describe('Cashier and VoucherKernel', () => {
         await utils.refund(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
 
-        await timemachine.advanceTimeSeconds(
-          complainPeriod + constants.ONE_MINUTE
-        );
+        await advanceTimeSeconds(complainPeriod + constants.ONE_MINUTE);
 
         await expect(
           utils.complain(voucherID, users.buyer.signer)
@@ -3250,26 +3246,28 @@ describe('Cashier and VoucherKernel', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await timemachine.advanceTimeSeconds(ONE_WEEK);
+        await advanceTimeSeconds(ONE_WEEK);
 
-        let expiryTx = await contractVoucherKernel.triggerExpiration(voucherID);
+        const expiryTx = await contractVoucherKernel.triggerExpiration(
+          voucherID
+        );
         let txReceipt = await expiryTx.wait();
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          VoucherKernel,
+          VoucherKernel_Factory,
           eventNames.LOG_EXPIRATION_TRIGGERED,
           (ev) => {
             assert.equal(ev._triggeredBy, users.deployer.address);
           }
         );
 
-        let cancelTx = await utils.cancel(voucherID, users.seller.signer);
+        const cancelTx = await utils.cancel(voucherID, users.seller.signer);
         txReceipt = await cancelTx.wait();
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          VoucherKernel,
+          VoucherKernel_Factory,
           eventNames.LOG_VOUCHER_FAULT_CANCEL,
           (ev) => {
             assert.equal(ev._tokenIdVoucher.toString(), voucherID);
@@ -3288,26 +3286,28 @@ describe('Cashier and VoucherKernel', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await timemachine.advanceTimeSeconds(ONE_WEEK);
+        await advanceTimeSeconds(ONE_WEEK);
 
-        let expiryTx = await contractVoucherKernel.triggerExpiration(voucherID);
+        const expiryTx = await contractVoucherKernel.triggerExpiration(
+          voucherID
+        );
         let txReceipt = await expiryTx.wait();
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          VoucherKernel,
+          VoucherKernel_Factory,
           eventNames.LOG_EXPIRATION_TRIGGERED,
           (ev) => {
             assert.equal(ev._triggeredBy, users.deployer.address);
           }
         );
 
-        let complainTx = await utils.complain(voucherID, users.buyer.signer);
+        const complainTx = await utils.complain(voucherID, users.buyer.signer);
         txReceipt = await complainTx.wait();
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          VoucherKernel,
+          VoucherKernel_Factory,
           eventNames.LOG_VOUCHER_COMPLAIN,
           (ev) => {
             assert.equal(ev._tokenIdVoucher.toString(), voucherID);
@@ -3326,38 +3326,40 @@ describe('Cashier and VoucherKernel', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await timemachine.advanceTimeSeconds(ONE_WEEK);
+        await advanceTimeSeconds(ONE_WEEK);
 
-        let expiryTx = await contractVoucherKernel.triggerExpiration(voucherID);
+        const expiryTx = await contractVoucherKernel.triggerExpiration(
+          voucherID
+        );
         let txReceipt = await expiryTx.wait();
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          VoucherKernel,
+          VoucherKernel_Factory,
           eventNames.LOG_EXPIRATION_TRIGGERED,
           (ev) => {
             assert.equal(ev._triggeredBy, users.deployer.address);
           }
         );
 
-        let cancelTx = await utils.cancel(voucherID, users.seller.signer);
+        const cancelTx = await utils.cancel(voucherID, users.seller.signer);
         txReceipt = await cancelTx.wait();
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          VoucherKernel,
+          VoucherKernel_Factory,
           eventNames.LOG_VOUCHER_FAULT_CANCEL,
           (ev) => {
             assert.equal(ev._tokenIdVoucher.toString(), voucherID);
           }
         );
 
-        let complainTx = await utils.complain(voucherID, users.buyer.signer);
+        const complainTx = await utils.complain(voucherID, users.buyer.signer);
         txReceipt = await complainTx.wait();
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          VoucherKernel,
+          VoucherKernel_Factory,
           eventNames.LOG_VOUCHER_COMPLAIN,
           (ev) => {
             assert.equal(ev._tokenIdVoucher.toString(), voucherID);
@@ -3376,38 +3378,40 @@ describe('Cashier and VoucherKernel', () => {
           TOKEN_SUPPLY_ID
         );
 
-        await timemachine.advanceTimeSeconds(ONE_WEEK);
+        await advanceTimeSeconds(ONE_WEEK);
 
-        let expiryTx = await contractVoucherKernel.triggerExpiration(voucherID);
+        const expiryTx = await contractVoucherKernel.triggerExpiration(
+          voucherID
+        );
         let txReceipt = await expiryTx.wait();
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          VoucherKernel,
+          VoucherKernel_Factory,
           eventNames.LOG_EXPIRATION_TRIGGERED,
           (ev) => {
             assert.equal(ev._triggeredBy, users.deployer.address);
           }
         );
 
-        let complainTx = await utils.complain(voucherID, users.buyer.signer);
+        const complainTx = await utils.complain(voucherID, users.buyer.signer);
         txReceipt = await complainTx.wait();
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          VoucherKernel,
+          VoucherKernel_Factory,
           eventNames.LOG_VOUCHER_COMPLAIN,
           (ev) => {
             assert.equal(ev._tokenIdVoucher.toString(), voucherID);
           }
         );
 
-        let cancelTx = await utils.cancel(voucherID, users.seller.signer);
+        const cancelTx = await utils.cancel(voucherID, users.seller.signer);
         txReceipt = await cancelTx.wait();
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          VoucherKernel,
+          VoucherKernel_Factory,
           eventNames.LOG_VOUCHER_FAULT_CANCEL,
           (ev) => {
             assert.equal(ev._tokenIdVoucher.toString(), voucherID);
@@ -3454,7 +3458,7 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Should transfer voucher supply', async () => {
-        let transferTx = await utils.safeTransfer1155(
+        const transferTx = await utils.safeTransfer1155(
           users.other1.address,
           users.other2.address,
           tokenSupplyKey,
@@ -3466,7 +3470,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          ERC1155ERC721,
+          ERC1155ERC721_Factory,
           eventNames.TRANSFER_SINGLE,
           (ev) => {
             assert.isTrue(ev._operator === users.other1.address);
@@ -3479,14 +3483,14 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Should transfer voucher supply to self and balance should be the same', async () => {
-        let balanceBeforeTransfer = (
+        const balanceBeforeTransfer = (
           await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
             users.other1.address,
             tokenSupplyKey
           )
         )[0];
 
-        let transferTx = await utils.safeTransfer1155(
+        const transferTx = await utils.safeTransfer1155(
           users.other1.address,
           users.other1.address,
           tokenSupplyKey,
@@ -3494,7 +3498,7 @@ describe('Cashier and VoucherKernel', () => {
           users.other1.signer
         );
 
-        let balanceAfterTransfer = (
+        const balanceAfterTransfer = (
           await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
             users.other1.address,
             tokenSupplyKey
@@ -3510,7 +3514,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          ERC1155ERC721,
+          ERC1155ERC721_Factory,
           eventNames.TRANSFER_SINGLE,
           (ev) => {
             assert.equal(ev._from, users.other1.address);
@@ -3546,7 +3550,7 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Should transfer batch voucher supply', async () => {
-        let transferTx = await utils.safeBatchTransfer1155(
+        const transferTx = await utils.safeBatchTransfer1155(
           users.other1.address,
           users.other2.address,
           [tokenSupplyKey],
@@ -3558,7 +3562,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          ERC1155ERC721,
+          ERC1155ERC721_Factory,
           eventNames.TRANSFER_BATCH,
           (ev) => {
             assert.equal(ev._from, users.other1.address);
@@ -3576,14 +3580,14 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Should transfer batch voucher supply to self and balance should be the same', async () => {
-        let balanceBeforeTransfer = (
+        const balanceBeforeTransfer = (
           await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
             users.other1.address,
             tokenSupplyKey
           )
         )[0];
 
-        let transferTx = await utils.safeBatchTransfer1155(
+        const transferTx = await utils.safeBatchTransfer1155(
           users.other1.address,
           users.other1.address,
           [tokenSupplyKey],
@@ -3591,7 +3595,7 @@ describe('Cashier and VoucherKernel', () => {
           users.other1.signer
         );
 
-        let balanceAfterTransfer = (
+        const balanceAfterTransfer = (
           await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
             users.other1.address,
             tokenSupplyKey
@@ -3607,7 +3611,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          ERC1155ERC721,
+          ERC1155ERC721_Factory,
           eventNames.TRANSFER_BATCH,
           (ev) => {
             assert.equal(ev._from, users.other1.address);
@@ -3678,7 +3682,7 @@ describe('Cashier and VoucherKernel', () => {
         );
         assert.equal(
           correlationId.toString(),
-          0,
+          '0',
           'New Supply Owner correlationId is not as expected'
         );
 
@@ -3696,7 +3700,7 @@ describe('Cashier and VoucherKernel', () => {
 
         assert.equal(
           correlationId.toString(),
-          1,
+          '1',
           'New Supply Owner correlationId is not as expected'
         );
       });
@@ -3769,16 +3773,19 @@ describe('Cashier and VoucherKernel', () => {
 
         await utils.redeem(voucherID, users.buyer.signer);
 
-        await timemachine.advanceTimeSeconds(60);
+        await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        let withdrawTx = await utils.withdraw(voucherID, users.deployer.signer);
+        const withdrawTx = await utils.withdraw(
+          voucherID,
+          users.deployer.signer
+        );
 
         const txReceipt = await withdrawTx.wait();
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -3827,7 +3834,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          contractVoucherKernel,
+          VoucherKernel_Factory,
           eventNames.LOG_VOUCHER_FAULT_CANCEL,
           (ev) => {
             assert.isTrue(ev._tokenIdVoucher.eq(voucherID));
@@ -3866,7 +3873,7 @@ describe('Cashier and VoucherKernel', () => {
 
         let escrowBalanceFromDeposits = BN(0);
 
-        let cashierPaymentLeft = BN(0);
+        const cashierPaymentLeft = BN(0);
         let cashierDepositLeft = BN(0);
 
         beforeEach(async () => {
@@ -3932,7 +3939,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'New Supply Owner correlationId is not as expected'
           );
 
@@ -3950,7 +3957,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'New Supply Owner correlationId is not as expected'
           );
         });
@@ -4026,20 +4033,20 @@ describe('Cashier and VoucherKernel', () => {
 
           await utils.redeem(voucherID, users.buyer.signer);
 
-          await timemachine.advanceTimeSeconds(60);
+          await advanceTimeSeconds(60);
           await utils.finalize(voucherID, users.deployer.signer);
 
-          let withdrawTx = await utils.withdraw(
+          const withdrawTx = await utils.withdraw(
             voucherID,
             users.deployer.signer
           );
 
           await getBalancesDepositToken();
 
-          let txReceipt = await withdrawTx.wait();
+          const txReceipt = await withdrawTx.wait();
           eventUtils.assertEventEmitted(
             txReceipt,
-            Cashier,
+            Cashier_Factory,
             eventNames.LOG_WITHDRAWAL,
             (ev) => {
               assert.equal(ev._payee, users.other2.address, 'Incorrect Payee');
@@ -4208,7 +4215,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'New Supply Owner correlationId is not as expected'
           );
 
@@ -4226,7 +4233,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'New Supply Owner correlationId is not as expected'
           );
         });
@@ -4304,7 +4311,7 @@ describe('Cashier and VoucherKernel', () => {
 
           await utils.redeem(voucherID, users.buyer.signer);
 
-          await timemachine.advanceTimeSeconds(60);
+          await advanceTimeSeconds(60);
           await utils.finalize(voucherID, users.deployer.signer);
 
           await utils.withdraw(voucherID, users.deployer.signer);
@@ -4372,7 +4379,7 @@ describe('Cashier and VoucherKernel', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            contractVoucherKernel,
+            VoucherKernel_Factory,
             eventNames.LOG_VOUCHER_FAULT_CANCEL,
             (ev) => {
               assert.isTrue(ev._tokenIdVoucher.eq(voucherID));
@@ -4409,7 +4416,7 @@ describe('Cashier and VoucherKernel', () => {
         let escrowBalanceFromPayment = BN(0);
 
         let cashierPaymentLeft = BN(0);
-        let cashierDepositLeft = BN(0);
+        const cashierDepositLeft = BN(0);
 
         beforeEach(async () => {
           await deployContracts();
@@ -4463,7 +4470,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'New Supply Owner correlationId is not as expected'
           );
 
@@ -4481,7 +4488,7 @@ describe('Cashier and VoucherKernel', () => {
 
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'New Supply Owner correlationId is not as expected'
           );
         });
@@ -4555,10 +4562,10 @@ describe('Cashier and VoucherKernel', () => {
           );
           await utils.redeem(voucherID, users.buyer.signer);
 
-          await timemachine.advanceTimeSeconds(60);
+          await advanceTimeSeconds(60);
           await utils.finalize(voucherID, users.deployer.signer);
 
-          let withdrawTx = await utils.withdraw(
+          const withdrawTx = await utils.withdraw(
             voucherID,
             users.deployer.signer
           );
@@ -4580,11 +4587,11 @@ describe('Cashier and VoucherKernel', () => {
             'Escrow did not get expected tokens from PaymentTokenContract'
           );
 
-          let txReceipt = await withdrawTx.wait();
+          const txReceipt = await withdrawTx.wait();
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            Cashier,
+            Cashier_Factory,
             eventNames.LOG_WITHDRAWAL,
             (ev) => {
               utils.calcTotalAmountToRecipients(
@@ -4644,7 +4651,7 @@ describe('Cashier and VoucherKernel', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            contractVoucherKernel,
+            VoucherKernel_Factory,
             eventNames.LOG_VOUCHER_FAULT_CANCEL,
             (ev) => {
               assert.isTrue(ev._tokenIdVoucher.eq(voucherID));
@@ -4726,18 +4733,18 @@ describe('Cashier and VoucherKernel', () => {
           tokenSupplyKey
         );
 
-        let transferTx = await utils.safeTransfer721(
+        const transferTx = await utils.safeTransfer721(
           users.other1.address,
           users.other2.address,
           voucherID,
           users.other1.signer
         );
 
-        let txReceipt = await transferTx.wait();
+        const txReceipt = await transferTx.wait();
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          contractERC1155ERC721,
+          ERC1155ERC721_Factory,
           eventNames.TRANSFER,
           (ev) => {
             assert.equal(ev._from, users.other1.address);
@@ -4757,27 +4764,29 @@ describe('Cashier and VoucherKernel', () => {
           tokenSupplyKey
         );
 
-        let balanceBeforeTransfer = (await balanceOf(users.other1.address))[0];
+        const balanceBeforeTransfer = (
+          await balanceOf(users.other1.address)
+        )[0];
 
-        let transferTx = await utils.safeTransfer721(
+        const transferTx = await utils.safeTransfer721(
           users.other1.address,
           users.other1.address,
           voucherID,
           users.other1.signer
         );
 
-        let balanceAfterTransfer = (await balanceOf(users.other1.address))[0];
+        const balanceAfterTransfer = (await balanceOf(users.other1.address))[0];
 
         assert.isTrue(
           balanceBeforeTransfer.eq(balanceAfterTransfer),
           'Balance mismatch!'
         );
 
-        let txReceipt = await transferTx.wait();
+        const txReceipt = await transferTx.wait();
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          contractERC1155ERC721,
+          ERC1155ERC721_Factory,
           eventNames.TRANSFER,
           (ev) => {
             assert.equal(ev._from, users.other1.address);
@@ -4823,7 +4832,7 @@ describe('Cashier and VoucherKernel', () => {
         );
         assert.equal(
           correlationId.toString(),
-          0,
+          '0',
           'New Voucher Owner correlationId is not as expected'
         );
 
@@ -4839,7 +4848,7 @@ describe('Cashier and VoucherKernel', () => {
         );
         assert.equal(
           correlationId.toString(),
-          1,
+          '1',
           'New Voucher Owner correlationId is not as expected'
         );
       });
@@ -4928,7 +4937,7 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          Cashier,
+          Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             utils.calcTotalAmountToRecipients(
@@ -5115,7 +5124,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'New Voucher Owner correlationId is not as expected'
           );
 
@@ -5131,7 +5140,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'New Voucher Owner correlationId is not as expected'
           );
         });
@@ -5269,7 +5278,7 @@ describe('Cashier and VoucherKernel', () => {
           const txReceipt = await withdrawTx.wait();
           eventUtils.assertEventEmitted(
             txReceipt,
-            Cashier,
+            Cashier_Factory,
             eventNames.LOG_WITHDRAWAL,
             (ev) => {
               assert.equal(ev._payee, users.other2.address, 'Incorrect Payee');
@@ -5466,7 +5475,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'New Voucher Owner correlationId is not as expected'
           );
 
@@ -5482,14 +5491,14 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'New Voucher Owner correlationId is not as expected'
           );
         });
 
         it('Should update escrow amounts after transfer', async () => {
-          let expectedBalanceInEscrowTknPrice = BN(constants.product_price);
-          let expectedBalanceInEscrowTknDeposit = BN(constants.buyer_deposit);
+          const expectedBalanceInEscrowTknPrice = BN(constants.product_price);
+          const expectedBalanceInEscrowTknDeposit = BN(constants.buyer_deposit);
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
@@ -5735,7 +5744,7 @@ describe('Cashier and VoucherKernel', () => {
         let escrowBalanceFromPayment = BN(0);
 
         let cashierPaymentLeft = BN(0);
-        let cashierDepositLeft = BN(0);
+        const cashierDepositLeft = BN(0);
 
         beforeEach(async () => {
           await deployContracts();
@@ -5795,7 +5804,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            0,
+            '0',
             'New Voucher Owner correlationId is not as expected'
           );
 
@@ -5811,7 +5820,7 @@ describe('Cashier and VoucherKernel', () => {
           );
           assert.equal(
             correlationId.toString(),
-            1,
+            '1',
             'New Voucher Owner correlationId is not as expected'
           );
         });
@@ -5963,7 +5972,7 @@ describe('Cashier and VoucherKernel', () => {
           //Deposits in ETH
           eventUtils.assertEventEmitted(
             txReceipt,
-            Cashier,
+            Cashier_Factory,
             eventNames.LOG_WITHDRAWAL,
             (ev) => {
               utils.calcTotalAmountToRecipients(

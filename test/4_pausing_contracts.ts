@@ -1,27 +1,37 @@
-const ethers = require('hardhat').ethers;
+import {ethers} from 'hardhat';
+import {Signer, ContractFactory, Contract} from 'ethers';
 
-const {assert, expect} = require('chai');
+import {assert, expect} from 'chai';
 
-const constants = require('../testHelpers/constants');
-const timemachine = require('../testHelpers/timemachine');
-const Users = require('../testHelpers/users');
-const UtilsBuilder = require('../testHelpers/utilsBuilder');
-const Utils = require('../testHelpers/utils');
+import constants from '../testHelpers/constants';
+import {advanceTimeSeconds} from '../testHelpers/timemachine';
+import Users from '../testHelpers/users';
+import Utils from '../testHelpers/utils';
+import UtilsBuilder from '../testHelpers/utilsBuilder';
 
-let ERC1155ERC721;
-let VoucherKernel;
-let Cashier;
-let BosonRouter;
-let MockERC20Permit;
-let FundLimitsOracle;
+import {
+  BosonRouter,
+  ERC1155ERC721,
+  VoucherKernel,
+  Cashier,
+  FundLimitsOracle,
+  MockERC20Permit,
+} from '../typechain';
 
-const revertReasons = require('../testHelpers/revertReasons');
-const eventUtils = require('../testHelpers/events');
-const {eventNames} = require('../testHelpers/events');
+let ERC1155ERC721_Factory: ContractFactory;
+let VoucherKernel_Factory: ContractFactory;
+let Cashier_Factory: ContractFactory;
+let BosonRouter_Factory: ContractFactory;
+let FundLimitsOracle_Factory: ContractFactory;
+let MockERC20Permit_Factory: ContractFactory;
+
+import revertReasons from '../testHelpers/revertReasons';
+import * as eventUtils from '../testHelpers/events';
+const eventNames = eventUtils.eventNames;
 
 const BN = ethers.BigNumber.from;
 
-let utils;
+let utils: Utils;
 
 let TOKEN_SUPPLY_ID;
 let VOUCHER_ID;
@@ -30,24 +40,28 @@ let users;
 
 describe('Cashier && VK', () => {
   before(async () => {
-    const signers = await ethers.getSigners();
+    const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
 
-    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
-    VoucherKernel = await ethers.getContractFactory('VoucherKernel');
-    Cashier = await ethers.getContractFactory('Cashier');
-    BosonRouter = await ethers.getContractFactory('BosonRouter');
-    FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
-    MockERC20Permit = await ethers.getContractFactory('MockERC20Permit');
+    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
+    Cashier_Factory = await ethers.getContractFactory('Cashier');
+    BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
+    FundLimitsOracle_Factory = await ethers.getContractFactory(
+      'FundLimitsOracle'
+    );
+    MockERC20Permit_Factory = await ethers.getContractFactory(
+      'MockERC20Permit'
+    );
   });
 
-  let contractERC1155ERC721,
-    contractVoucherKernel,
-    contractCashier,
-    contractBosonRouter,
-    contractBSNTokenPrice,
-    contractBSNTokenDeposit,
-    contractFundLimitsOracle;
+  let contractERC1155ERC721: ERC1155ERC721,
+    contractVoucherKernel: VoucherKernel,
+    contractCashier: Cashier,
+    contractBosonRouter: BosonRouter,
+    contractBSNTokenPrice: MockERC20Permit,
+    contractBSNTokenDeposit: MockERC20Permit,
+    contractFundLimitsOracle: FundLimitsOracle;
 
   let tokensToMint;
   let timestamp;
@@ -55,27 +69,31 @@ describe('Cashier && VK', () => {
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle = await FundLimitsOracle.deploy();
-    contractERC1155ERC721 = await ERC1155ERC721.deploy();
-    contractVoucherKernel = await VoucherKernel.deploy(
+    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
+      FundLimitsOracle;
+    contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
+      ERC1155ERC721;
+    contractVoucherKernel = (await VoucherKernel_Factory.deploy(
       contractERC1155ERC721.address
-    );
-    contractCashier = await Cashier.deploy(contractVoucherKernel.address);
-    contractBosonRouter = await BosonRouter.deploy(
+    )) as Contract & VoucherKernel;
+    contractCashier = (await Cashier_Factory.deploy(
+      contractVoucherKernel.address
+    )) as Contract & Cashier;
+    contractBosonRouter = (await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
-    );
+    )) as Contract & BosonRouter;
 
-    contractBSNTokenPrice = await MockERC20Permit.deploy(
+    contractBSNTokenPrice = (await MockERC20Permit_Factory.deploy(
       'BosonTokenPrice',
       'BPRC'
-    );
+    )) as Contract & MockERC20Permit;
 
-    contractBSNTokenDeposit = await MockERC20Permit.deploy(
+    contractBSNTokenDeposit = (await MockERC20Permit_Factory.deploy(
       'BosonTokenDeposit',
       'BDEP'
-    );
+    )) as Contract & MockERC20Permit;
 
     await contractFundLimitsOracle.deployed();
     await contractERC1155ERC721.deployed();
@@ -87,7 +105,7 @@ describe('Cashier && VK', () => {
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
-      'true'
+      true
     );
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
@@ -1048,7 +1066,7 @@ describe('Cashier && VK', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            Cashier,
+            Cashier_Factory,
             eventNames.LOG_DISASTER_STATE_SET,
             (ev) => {
               assert.equal(ev._triggeredBy, users.deployer.address);
@@ -1092,7 +1110,7 @@ describe('Cashier && VK', () => {
           );
           await utils.refund(voucherID, users.buyer.signer);
 
-          await timemachine.advanceTimeSeconds(60);
+          await advanceTimeSeconds(60);
           await utils.finalize(voucherID, users.deployer.signer);
 
           await contractBosonRouter.pause();
@@ -1152,7 +1170,7 @@ describe('Cashier && VK', () => {
             );
             await utils.refund(voucherID, users.buyer.signer);
 
-            await timemachine.advanceTimeSeconds(60);
+            await advanceTimeSeconds(60);
             await utils.finalize(voucherID, users.deployer.signer);
 
             await contractBosonRouter.pause();
@@ -1205,7 +1223,7 @@ describe('Cashier && VK', () => {
             );
             await utils.refund(voucherID, users.buyer.signer);
 
-            await timemachine.advanceTimeSeconds(60);
+            await advanceTimeSeconds(60);
             await utils.finalize(voucherID, users.deployer.signer);
 
             await contractBosonRouter.pause();
@@ -1271,7 +1289,7 @@ describe('Cashier && VK', () => {
             );
             await utils.refund(voucherID, users.buyer.signer);
 
-            await timemachine.advanceTimeSeconds(60);
+            await advanceTimeSeconds(60);
             await utils.finalize(voucherID, users.deployer.signer);
 
             await contractBosonRouter.pause();

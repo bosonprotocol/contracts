@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   UNAUTHORIZED_VK: 'UNAUTHORIZED_VK',
   UNAUTHORIZED_VOUCHER_OWNER: 'UNAUTHORIZED_V',
   INVALID_FUNDS: 'IF',

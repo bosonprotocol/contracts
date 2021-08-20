@@ -1,9 +1,5 @@
 const availableEnvironments = ['dev', 'demo', 'prod', 'hardhat'];
 
-const isValidEnv = (env) => {
+export const isValidEnv = (env: string): boolean => {
   return availableEnvironments.some((e) => e == env);
-};
-
-module.exports = {
-  isValidEnv,
 };

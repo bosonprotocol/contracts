@@ -29,6 +29,7 @@ task :build_fix => [
 ]
 
 task :test => [
+    :"contracts:compile",
     :"tests:unit",
     :"tests:gametree"
 ]

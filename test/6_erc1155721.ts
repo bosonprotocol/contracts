@@ -1,76 +1,95 @@
-const ethers = require('hardhat').ethers;
+import {ethers} from 'hardhat';
+import {Signer, ContractFactory, Contract} from 'ethers';
 
-const {assert, expect} = require('chai');
+import {assert, expect} from 'chai';
 
-const constants = require('../testHelpers/constants');
-const Users = require('../testHelpers/users');
-const UtilsBuilder = require('../testHelpers/utilsBuilder');
-const Utils = require('../testHelpers/utils');
+import constants from '../testHelpers/constants';
 
-let ERC1155ERC721;
-let VoucherKernel;
-let Cashier;
-let BosonRouter;
-let MockERC20Permit;
-let FundLimitsOracle;
+import Users from '../testHelpers/users';
+import Utils from '../testHelpers/utils';
+import UtilsBuilder from '../testHelpers/utilsBuilder';
 
-const revertReasons = require('../testHelpers/revertReasons');
-const eventUtils = require('../testHelpers/events');
-const {eventNames} = require('../testHelpers/events');
-const fnSignatures = require('../testHelpers/functionSignatures');
+import {
+  BosonRouter,
+  ERC1155ERC721,
+  VoucherKernel,
+  Cashier,
+  FundLimitsOracle,
+  MockERC20Permit,
+} from '../typechain';
 
-let utils;
+let ERC1155ERC721_Factory: ContractFactory;
+let VoucherKernel_Factory: ContractFactory;
+let Cashier_Factory: ContractFactory;
+let BosonRouter_Factory: ContractFactory;
+let FundLimitsOracle_Factory: ContractFactory;
+let MockERC20Permit_Factory: ContractFactory;
+
+import revertReasons from '../testHelpers/revertReasons';
+import * as eventUtils from '../testHelpers/events';
+const eventNames = eventUtils.eventNames;
+import fnSignatures from '../testHelpers/functionSignatures';
+
+let utils: Utils;
 
 let TOKEN_SUPPLY_ID;
 let users;
 
 describe('ERC1155ERC721', () => {
   before(async () => {
-    const signers = await ethers.getSigners();
+    const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
 
-    ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
-    VoucherKernel = await ethers.getContractFactory('VoucherKernel');
-    Cashier = await ethers.getContractFactory('Cashier');
-    BosonRouter = await ethers.getContractFactory('BosonRouter');
-    FundLimitsOracle = await ethers.getContractFactory('FundLimitsOracle');
-    MockERC20Permit = await ethers.getContractFactory('MockERC20Permit');
+    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
+    Cashier_Factory = await ethers.getContractFactory('Cashier');
+    BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
+    FundLimitsOracle_Factory = await ethers.getContractFactory(
+      'FundLimitsOracle'
+    );
+    MockERC20Permit_Factory = await ethers.getContractFactory(
+      'MockERC20Permit'
+    );
   });
 
-  let contractERC1155ERC721,
-    contractVoucherKernel,
-    contractCashier,
-    contractBosonRouter,
-    contractBSNTokenPrice,
-    contractBSNTokenDeposit,
-    contractFundLimitsOracle;
+  let contractERC1155ERC721: ERC1155ERC721,
+    contractVoucherKernel: VoucherKernel,
+    contractCashier: Cashier,
+    contractBosonRouter: BosonRouter,
+    contractBSNTokenPrice: MockERC20Permit,
+    contractBSNTokenDeposit: MockERC20Permit,
+    contractFundLimitsOracle: FundLimitsOracle;
 
   let timestamp;
 
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle = await FundLimitsOracle.deploy();
-    contractERC1155ERC721 = await ERC1155ERC721.deploy();
-    contractVoucherKernel = await VoucherKernel.deploy(
+    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
+      FundLimitsOracle;
+    contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
+      ERC1155ERC721;
+    contractVoucherKernel = (await VoucherKernel_Factory.deploy(
       contractERC1155ERC721.address
-    );
-    contractCashier = await Cashier.deploy(contractVoucherKernel.address);
-    contractBosonRouter = await BosonRouter.deploy(
+    )) as Contract & VoucherKernel;
+    contractCashier = (await Cashier_Factory.deploy(
+      contractVoucherKernel.address
+    )) as Contract & Cashier;
+    contractBosonRouter = (await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address
-    );
+    )) as Contract & BosonRouter;
 
-    contractBSNTokenPrice = await MockERC20Permit.deploy(
+    contractBSNTokenPrice = (await MockERC20Permit_Factory.deploy(
       'BosonTokenPrice',
       'BPRC'
-    );
+    )) as Contract & MockERC20Permit;
 
-    contractBSNTokenDeposit = await MockERC20Permit.deploy(
+    contractBSNTokenDeposit = (await MockERC20Permit_Factory.deploy(
       'BosonTokenDeposit',
       'BDEP'
-    );
+    )) as Contract & MockERC20Permit;
 
     await contractFundLimitsOracle.deployed();
     await contractERC1155ERC721.deployed();
@@ -82,7 +101,7 @@ describe('ERC1155ERC721', () => {
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
-      'true'
+      true
     );
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
@@ -148,24 +167,21 @@ describe('ERC1155ERC721', () => {
 
       it('[NEGATIVE][setApprovalForAll] Should revert if tries to set self as an operator', async () => {
         await expect(
-          contractERC1155ERC721.setApprovalForAll(
-            users.deployer.address,
-            'true'
-          )
+          contractERC1155ERC721.setApprovalForAll(users.deployer.address, true)
         ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
       });
 
       it('[setApprovalForAll] Should emit ApprovalForAll', async () => {
         const tx = await contractERC1155ERC721.setApprovalForAll(
           contractVoucherKernel.address,
-          'true'
+          true
         );
 
         const txReceipt = await tx.wait();
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          contractERC1155ERC721,
+          ERC1155ERC721_Factory,
           eventNames.APPROVAL_FOR_ALL,
           (ev) => {
             assert.equal(
@@ -184,7 +200,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('Should emit TransferSingle event', async () => {
-        let txFillOrder = await utils.createOrder(
+        const txFillOrder = await utils.createOrder(
           users.seller,
           timestamp,
           timestamp + constants.SECONDS_IN_DAY,
@@ -195,7 +211,7 @@ describe('ERC1155ERC721', () => {
 
         eventUtils.assertEventEmitted(
           txFillOrder,
-          contractERC1155ERC721,
+          ERC1155ERC721_Factory,
           eventNames.TRANSFER_SINGLE,
           (ev) => {
             assert.equal(
@@ -220,7 +236,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('Should emit TransferSingle (burn 1155) && Transfer(mint 721)', async () => {
-        let commitTx = await utils.commitToBuy(
+        const commitTx = await utils.commitToBuy(
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
@@ -229,7 +245,7 @@ describe('ERC1155ERC721', () => {
 
         eventUtils.assertEventEmitted(
           commitTx,
-          contractERC1155ERC721,
+          ERC1155ERC721_Factory,
           eventNames.TRANSFER_SINGLE,
           (ev) => {
             assert.equal(
@@ -250,7 +266,7 @@ describe('ERC1155ERC721', () => {
 
         eventUtils.assertEventEmitted(
           commitTx,
-          contractERC1155ERC721,
+          ERC1155ERC721_Factory,
           eventNames.TRANSFER,
           (ev) => {
             assert.equal(
@@ -282,7 +298,7 @@ describe('ERC1155ERC721', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          contractERC1155ERC721,
+          ERC1155ERC721_Factory,
           eventNames.APPROVAL,
           (ev) => {
             assert.equal(
@@ -498,7 +514,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('Should not be able to transfer to contract address', async () => {
-        let erc721 = await utils.commitToBuy(
+        const erc721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID
@@ -515,7 +531,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('Attacker should not be able to transfer erc721', async () => {
-        let erc721 = await utils.commitToBuy(
+        const erc721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID
@@ -532,7 +548,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('Should not be able to transfer erc721 to ZERO address', async () => {
-        let erc721 = await utils.commitToBuy(
+        const erc721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID
@@ -549,7 +565,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('Should not be able to transfer erc721 if address from is not authorized', async () => {
-        let erc721 = await utils.commitToBuy(
+        const erc721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID
@@ -608,12 +624,12 @@ describe('ERC1155ERC721', () => {
       });
 
       it('Should return correct url for erc1155', async () => {
-        let url = await contractERC1155ERC721.uri(TOKEN_SUPPLY_ID);
+        const url = await contractERC1155ERC721.uri(TOKEN_SUPPLY_ID);
         assert.equal(url, metadataBase + metadata1155Route + TOKEN_SUPPLY_ID);
       });
 
       it('Should return correct url for erc721', async () => {
-        let url = await contractERC1155ERC721.tokenURI(erc721);
+        const url = await contractERC1155ERC721.tokenURI(erc721);
 
         assert.equal(url, metadataBase + metadata721Route + erc721);
       });

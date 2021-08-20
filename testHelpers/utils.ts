@@ -1,35 +1,64 @@
-const ethers = require('hardhat').ethers;
-const constants = require('./constants');
+import {ethers} from 'hardhat';
+import {ecsign} from 'ethereumjs-util';
+import {BigNumber, Contract, ContractTransaction, Signer} from 'ethers';
+import {Account, DistributionAmounts, DistributionEvent} from './types';
+
+import constants from './constants';
+import * as events from './events';
+import fnSignatures from './functionSignatures';
+import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
+
 const BN = ethers.BigNumber.from;
-const events = require('./events');
-const fnSignatures = require('./functionSignatures');
 
-const {ecsign} = require('ethereumjs-util');
+import {
+  ERC1155ERC721__factory,
+  VoucherKernel__factory,
+  Cashier__factory,
+  BosonRouter__factory,
+  FundLimitsOracle__factory,
+  MockERC20Permit__factory,
+} from '../typechain';
 
-const {toWei, getApprovalDigest} = require('../testHelpers/permitUtils');
+import {
+  ERC1155ERC721,
+  VoucherKernel,
+  Cashier,
+  BosonRouter,
+  MockERC20Permit,
+} from '../typechain';
+
 class Utils {
+  createOrder: (seller, from, to, sellerDeposit, qty, returnTx?) => any;
+  commitToBuy: (buyer, seller, tokenSupplyId, returnTx?) => any;
+  factories?: {
+    ERC1155ERC721: ERC1155ERC721__factory | any;
+    VoucherKernel: VoucherKernel__factory | any;
+    Cashier: Cashier__factory | any;
+    BosonRouter: BosonRouter__factory | any;
+    FundLimitsOracle: FundLimitsOracle__factory | any;
+    MockERC20Permit: MockERC20Permit__factory | any;
+  };
+  deadline: any;
+  contractERC1155ERC721?: ERC1155ERC721;
+  contractVoucherKernel?: VoucherKernel;
+  contractCashier?: Cashier;
+  contractBSNRouter?: BosonRouter;
+  contractBSNTokenPrice?: MockERC20Permit;
+  contractBSNTokenDeposit?: MockERC20Permit;
+  contractBSNTokenSame?: MockERC20Permit;
+
   constructor() {
-    this.createOrder = '';
-    this.commitToBuy = '';
-    this.factories = {
-      ERC1155ERC721: '',
-      VoucherKernel: '',
-      Cashier: '',
-      BosonRouter: '',
-      FundLimitsOracle: '',
-      MockERC20Permit: '',
-    };
     this.deadline = toWei(1);
   }
 
   setContracts(
-    erc1155721,
-    voucherKernel,
-    cashier,
-    bsnRouter,
-    bsnTokenPrice,
-    bsnTokenDeposit
-  ) {
+    erc1155721: ERC1155ERC721,
+    voucherKernel: VoucherKernel,
+    cashier: Cashier,
+    bsnRouter: BosonRouter,
+    bsnTokenPrice?: MockERC20Permit,
+    bsnTokenDeposit?: MockERC20Permit
+  ): void {
     this.contractERC1155ERC721 = erc1155721;
     this.contractVoucherKernel = voucherKernel;
     this.contractCashier = cashier;
@@ -40,17 +69,19 @@ class Utils {
   }
 
   async requestCreateOrderETHETH(
-    seller,
-    from,
-    to,
-    sellerDeposit,
-    qty,
+    seller: Account,
+    from: number,
+    to: number,
+    sellerDeposit: number | string,
+    qty: number | string,
     returnTx = false
-  ) {
+  ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
-    const sellerInstance = this.contractBSNRouter.connect(seller.signer);
-    let txOrder = await sellerInstance.requestCreateOrderETHETH(
+    const sellerInstance = this.contractBSNRouter.connect(
+      seller.signer
+    ) as BosonRouter;
+    const txOrder = await sellerInstance.requestCreateOrderETHETH(
       [
         from,
         to,
@@ -78,13 +109,13 @@ class Utils {
   }
 
   async requestCreateOrderETHTKNSameWithPermit(
-    seller,
-    from,
-    to,
-    sellerDeposit,
-    qty,
+    seller: Account,
+    from: number,
+    to: number,
+    sellerDeposit: number | string,
+    qty: number | string,
     returnTx = false
-  ) {
+  ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
     const nonce = await this.contractBSNTokenSame.nonces(seller.address);
@@ -103,8 +134,11 @@ class Utils {
       Buffer.from(seller.privateKey.slice(2), 'hex')
     );
 
-    const sellerInstance = this.contractBSNRouter.connect(seller.signer);
-    let txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermit(
+    const sellerInstance = this.contractBSNRouter.connect(
+      seller.signer
+    ) as BosonRouter;
+
+    const txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermit(
       this.contractBSNTokenSame.address,
       this.contractBSNTokenSame.address,
       txValue,
@@ -139,12 +173,12 @@ class Utils {
   }
 
   async requestCreateOrderTKNTKNWithPermit(
-    seller,
-    from,
-    to,
-    sellerDeposit,
-    qty
-  ) {
+    seller: Account,
+    from: number,
+    to: number,
+    sellerDeposit: number | string,
+    qty: number | string
+  ): Promise<string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
     const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
@@ -163,8 +197,10 @@ class Utils {
       Buffer.from(seller.privateKey.slice(2), 'hex')
     );
 
-    const sellerInstance = this.contractBSNRouter.connect(seller.signer);
-    let txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermit(
+    const sellerInstance = this.contractBSNRouter.connect(
+      seller.signer
+    ) as BosonRouter;
+    const txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermit(
       this.contractBSNTokenPrice.address,
       this.contractBSNTokenDeposit.address,
       txValue,
@@ -199,13 +235,13 @@ class Utils {
   }
 
   async requestCreateOrderETHTKNWithPermit(
-    seller,
-    from,
-    to,
-    sellerDeposit,
-    qty,
+    seller: Account,
+    from: number,
+    to: number,
+    sellerDeposit: number | string,
+    qty: number | string,
     returnTx = false
-  ) {
+  ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
     const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
 
@@ -223,8 +259,10 @@ class Utils {
       Buffer.from(seller.privateKey.slice(2), 'hex')
     );
 
-    const sellerInstance = this.contractBSNRouter.connect(seller.signer);
-    let txOrder = await sellerInstance.requestCreateOrderETHTKNWithPermit(
+    const sellerInstance = this.contractBSNRouter.connect(
+      seller.signer
+    ) as BosonRouter;
+    const txOrder = await sellerInstance.requestCreateOrderETHTKNWithPermit(
       this.contractBSNTokenDeposit.address,
       txValue,
       this.deadline,
@@ -258,17 +296,19 @@ class Utils {
   }
 
   async requestCreateOrderTKNETH(
-    seller,
-    from,
-    to,
-    sellerDeposit,
-    qty,
+    seller: Account,
+    from: number,
+    to: number,
+    sellerDeposit: number | string,
+    qty: number | string,
     returnTx = false
-  ) {
+  ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
-    const sellerInstance = this.contractBSNRouter.connect(seller.signer);
-    let txOrder = await sellerInstance.requestCreateOrderTKNETH(
+    const sellerInstance = this.contractBSNRouter.connect(
+      seller.signer
+    ) as BosonRouter;
+    const txOrder = await sellerInstance.requestCreateOrderTKNETH(
       this.contractBSNTokenPrice.address,
       [
         from,
@@ -296,7 +336,11 @@ class Utils {
     return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
   }
 
-  async commitToBuyTKNTKNWithPermit(buyer, seller, tokenSupplyId) {
+  async commitToBuyTKNTKNWithPermit(
+    buyer: Account,
+    seller: Account,
+    tokenSupplyId: string
+  ): Promise<string> {
     const txValue = BN(constants.buyer_deposit).add(
       BN(constants.product_price)
     );
@@ -311,14 +355,14 @@ class Utils {
       this.deadline
     );
 
-    let VRS_DEPOSIT = ecsign(
+    const VRS_DEPOSIT = ecsign(
       Buffer.from(digestDeposit.slice(2), 'hex'),
       Buffer.from(buyer.privateKey.slice(2), 'hex')
     );
 
-    let vDeposit = VRS_DEPOSIT.v;
-    let rDeposit = VRS_DEPOSIT.r;
-    let sDeposit = VRS_DEPOSIT.s;
+    const vDeposit = VRS_DEPOSIT.v;
+    const rDeposit = VRS_DEPOSIT.r;
+    const sDeposit = VRS_DEPOSIT.s;
 
     const nonce2 = await this.contractBSNTokenPrice.nonces(buyer.address);
 
@@ -331,17 +375,19 @@ class Utils {
       this.deadline
     );
 
-    let VRS_PRICE = ecsign(
+    const VRS_PRICE = ecsign(
       Buffer.from(digestPrice.slice(2), 'hex'),
       Buffer.from(buyer.privateKey.slice(2), 'hex')
     );
 
-    let vPrice = VRS_PRICE.v;
-    let rPrice = VRS_PRICE.r;
-    let sPrice = VRS_PRICE.s;
+    const vPrice = VRS_PRICE.v;
+    const rPrice = VRS_PRICE.r;
+    const sPrice = VRS_PRICE.s;
 
-    const buyerInstance = this.contractBSNRouter.connect(buyer.signer);
-    let commitTx = await buyerInstance.requestVoucherTKNTKNWithPermit(
+    const buyerInstance = this.contractBSNRouter.connect(
+      buyer.signer
+    ) as BosonRouter;
+    const commitTx = await buyerInstance.requestVoucherTKNTKNWithPermit(
       tokenSupplyId,
       seller.address,
       txValue,
@@ -367,7 +413,11 @@ class Utils {
     return eventArgs._tokenIdVoucher;
   }
 
-  async commitToBuyTKNTKNSameWithPermit(buyer, seller, tokenSupplyId) {
+  async commitToBuyTKNTKNSameWithPermit(
+    buyer: Account,
+    seller: Account,
+    tokenSupplyId: string
+  ): Promise<string> {
     const txValue = BN(constants.buyer_deposit).add(
       BN(constants.product_price)
     );
@@ -382,17 +432,19 @@ class Utils {
       this.deadline
     );
 
-    let VRS_TX_VALUE = ecsign(
+    const VRS_TX_VALUE = ecsign(
       Buffer.from(digestTxValue.slice(2), 'hex'),
       Buffer.from(buyer.privateKey.slice(2), 'hex')
     );
 
-    let v = VRS_TX_VALUE.v;
-    let r = VRS_TX_VALUE.r;
-    let s = VRS_TX_VALUE.s;
+    const v = VRS_TX_VALUE.v;
+    const r = VRS_TX_VALUE.r;
+    const s = VRS_TX_VALUE.s;
 
-    const buyerInstance = this.contractBSNRouter.connect(buyer.signer);
-    let commitTx = await buyerInstance.requestVoucherTKNTKNSameWithPermit(
+    const buyerInstance = this.contractBSNRouter.connect(
+      buyer.signer
+    ) as BosonRouter;
+    const commitTx = await buyerInstance.requestVoucherTKNTKNSameWithPermit(
       tokenSupplyId,
       seller.address,
       txValue,
@@ -415,7 +467,11 @@ class Utils {
     return eventArgs._tokenIdVoucher;
   }
 
-  async commitToBuyETHTKNWithPermit(buyer, seller, tokenSupplyId) {
+  async commitToBuyETHTKNWithPermit(
+    buyer: Account,
+    seller: Account,
+    tokenSupplyId: string
+  ): Promise<string> {
     const nonce1 = await this.contractBSNTokenDeposit.nonces(buyer.address);
 
     const digestDeposit = await getApprovalDigest(
@@ -427,13 +483,15 @@ class Utils {
       this.deadline
     );
 
-    let {v, r, s} = ecsign(
+    const {v, r, s} = ecsign(
       Buffer.from(digestDeposit.slice(2), 'hex'),
       Buffer.from(buyer.privateKey.slice(2), 'hex')
     );
 
-    const buyerInstance = this.contractBSNRouter.connect(buyer.signer);
-    let txOrder = await buyerInstance.requestVoucherETHTKNWithPermit(
+    const buyerInstance = this.contractBSNRouter.connect(
+      buyer.signer
+    ) as BosonRouter;
+    const txOrder = await buyerInstance.requestVoucherETHTKNWithPermit(
       tokenSupplyId,
       seller.address,
       constants.buyer_deposit,
@@ -457,13 +515,20 @@ class Utils {
     return eventArgs._tokenIdVoucher;
   }
 
-  async commitToBuyETHETH(buyer, seller, tokenSupplyId, returnTx = false) {
+  async commitToBuyETHETH(
+    buyer: Account,
+    seller: Account,
+    tokenSupplyId: string,
+    returnTx = false
+  ): Promise<ContractTransaction | string> {
     const txValue = BN(constants.buyer_deposit).add(
       BN(constants.product_price)
     );
 
-    const buyerInstance = this.contractBSNRouter.connect(buyer.signer);
-    let commitTx = await buyerInstance.requestVoucherETHETH(
+    const buyerInstance = this.contractBSNRouter.connect(
+      buyer.signer
+    ) as BosonRouter;
+    const commitTx = await buyerInstance.requestVoucherETHETH(
       tokenSupplyId,
       seller.address,
       {
@@ -484,7 +549,11 @@ class Utils {
     return returnTx ? txReceipt : eventArgs._tokenIdVoucher;
   }
 
-  async commitToBuyTKNETHWithPermit(buyer, seller, tokenSupplyId) {
+  async commitToBuyTKNETHWithPermit(
+    buyer: Account,
+    seller: Account,
+    tokenSupplyId: string
+  ): Promise<string> {
     const nonce1 = await this.contractBSNTokenPrice.nonces(buyer.address);
 
     const digestDeposit = await getApprovalDigest(
@@ -496,13 +565,15 @@ class Utils {
       this.deadline
     );
 
-    let {v, r, s} = ecsign(
+    const {v, r, s} = ecsign(
       Buffer.from(digestDeposit.slice(2), 'hex'),
       Buffer.from(buyer.privateKey.slice(2), 'hex')
     );
 
-    const buyerInstance = this.contractBSNRouter.connect(buyer.signer);
-    let txOrder = await buyerInstance.requestVoucherTKNETHWithPermit(
+    const buyerInstance = this.contractBSNRouter.connect(
+      buyer.signer
+    ) as BosonRouter;
+    const txOrder = await buyerInstance.requestVoucherTKNETHWithPermit(
       tokenSupplyId,
       seller.address,
       constants.product_price,
@@ -526,33 +597,49 @@ class Utils {
     return eventArgs._tokenIdVoucher;
   }
 
-  async refund(voucherID, buyer) {
-    const buyerInstance = this.contractBSNRouter.connect(buyer);
+  async refund(voucherID: string, buyer: Signer): Promise<ContractTransaction> {
+    const buyerInstance = this.contractBSNRouter.connect(buyer) as BosonRouter;
     return await buyerInstance.refund(voucherID);
   }
 
-  async redeem(voucherID, buyer) {
-    const buyerInstance = this.contractBSNRouter.connect(buyer);
+  async redeem(voucherID: string, buyer: Signer): Promise<ContractTransaction> {
+    const buyerInstance = this.contractBSNRouter.connect(buyer) as BosonRouter;
     return await buyerInstance.redeem(voucherID);
   }
 
-  async complain(voucherID, buyer) {
-    const buyerInstance = this.contractBSNRouter.connect(buyer);
+  async complain(
+    voucherID: string,
+    buyer: Signer
+  ): Promise<ContractTransaction> {
+    const buyerInstance = this.contractBSNRouter.connect(buyer) as BosonRouter;
     return await buyerInstance.complain(voucherID);
   }
 
-  async cancel(voucherID, seller) {
-    const sellerInstance = this.contractBSNRouter.connect(seller);
+  async cancel(
+    voucherID: string,
+    seller: Signer
+  ): Promise<ContractTransaction> {
+    const sellerInstance = this.contractBSNRouter.connect(
+      seller
+    ) as BosonRouter;
     return await sellerInstance.cancelOrFault(voucherID);
   }
 
-  async finalize(voucherID, deployer) {
-    const deployerInstance = this.contractVoucherKernel.connect(deployer);
+  async finalize(
+    voucherID: string,
+    deployer: Signer
+  ): Promise<ContractTransaction> {
+    const deployerInstance = this.contractVoucherKernel.connect(
+      deployer
+    ) as VoucherKernel;
     return await deployerInstance.triggerFinalizeVoucher(voucherID);
   }
 
-  async withdraw(voucherID, deployer) {
-    const deployerInstance = this.contractCashier.connect(deployer);
+  async withdraw(
+    voucherID: string,
+    deployer: Signer
+  ): Promise<ContractTransaction> {
+    const deployerInstance = this.contractCashier.connect(deployer) as Cashier;
     const tx = await deployerInstance.withdraw(voucherID);
 
     const receipt = await tx.wait();
@@ -562,14 +649,23 @@ class Utils {
     return tx;
   }
 
-  async pause(deployer) {
-    const deployerInstance = this.contractVoucherKernel.connect(deployer);
+  async pause(deployer: Signer): Promise<void> {
+    const deployerInstance = this.contractVoucherKernel.connect(
+      deployer
+    ) as VoucherKernel;
     await deployerInstance.pause();
   }
 
-  async safeTransfer721(oldVoucherOwner, newVoucherOwner, voucherID, signer) {
+  async safeTransfer721(
+    oldVoucherOwner: string,
+    newVoucherOwner: string,
+    voucherID: string,
+    signer: Signer
+  ): Promise<ContractTransaction> {
     const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
-    const fromInstance = this.contractERC1155ERC721.connect(signer);
+    const fromInstance = this.contractERC1155ERC721.connect(
+      signer
+    ) as ERC1155ERC721;
 
     const method = fromInstance.functions[fnSignatures.safeTransfer721];
 
@@ -582,14 +678,16 @@ class Utils {
   }
 
   async safeTransfer1155(
-    oldSupplyOwner,
-    newSupplyOwner,
-    supplyID,
-    qty,
-    signer
-  ) {
+    oldSupplyOwner: string,
+    newSupplyOwner: string,
+    supplyID: string,
+    qty: string | number,
+    signer: Signer
+  ): Promise<ContractTransaction> {
     const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
-    const fromInstance = this.contractERC1155ERC721.connect(signer);
+    const fromInstance = this.contractERC1155ERC721.connect(
+      signer
+    ) as ERC1155ERC721;
 
     const method = fromInstance.functions[fnSignatures.safeTransfer1155];
 
@@ -603,14 +701,16 @@ class Utils {
   }
 
   async safeBatchTransfer1155(
-    oldSupplyOwner,
-    newSupplyOwner,
-    supplyIDs,
-    values,
-    signer
-  ) {
+    oldSupplyOwner: string,
+    newSupplyOwner: string,
+    supplyIDs: Array<string | number>,
+    values: Array<string | number>,
+    signer: Signer
+  ): Promise<ContractTransaction> {
     const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
-    const fromInstance = this.contractERC1155ERC721.connect(signer);
+    const fromInstance = this.contractERC1155ERC721.connect(
+      signer
+    ) as ERC1155ERC721;
 
     const method = fromInstance.functions[fnSignatures.safeBatchTransfer1155];
 
@@ -624,12 +724,12 @@ class Utils {
   }
 
   calcTotalAmountToRecipients(
-    event,
-    distributionAmounts,
-    recipient,
-    buyer,
-    seller
-  ) {
+    event: DistributionEvent,
+    distributionAmounts: DistributionAmounts,
+    recipient: string,
+    buyer: string,
+    seller: string
+  ): void {
     if (event[recipient] === buyer) {
       distributionAmounts.buyerAmount = BN(
         distributionAmounts.buyerAmount.toString()
@@ -645,16 +745,20 @@ class Utils {
     }
   }
 
-  async mintTokens(tokenContract, to, value) {
+  async mintTokens(
+    tokenContract: Contract | any,
+    to: string,
+    value: string | BigNumber
+  ): Promise<void> {
     await this[tokenContract].mint(to, value);
   }
 
-  static async getCurrTimestamp() {
-    let blockNumber = await ethers.provider.getBlockNumber();
-    let block = await ethers.provider.getBlock(blockNumber);
+  static async getCurrTimestamp(): Promise<number> {
+    const blockNumber = await ethers.provider.getBlockNumber();
+    const block = await ethers.provider.getBlock(blockNumber);
 
     return block.timestamp;
   }
 }
 
-module.exports = Utils;
+export default Utils;
