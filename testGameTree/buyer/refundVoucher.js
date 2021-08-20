@@ -1,11 +1,13 @@
-let Web3 = require('web3');
-let Contract = require('web3-eth-contract');
-const helpers = require('../helpers/constants');
-const Tx = require('ethereumjs-tx').Transaction;
-const Utils = require('../helpers/utils');
-const BosonRouter = require('../../artifacts/contracts/BosonRouter.sol/BosonRouter.json')
+/* eslint @typescript-eslint/no-var-requires: "off" */
+
+let Web3 = require("web3");
+let Contract = require("web3-eth-contract");
+const helpers = require("../helpers/constants");
+const Tx = require("ethereumjs-tx").Transaction;
+const Utils = require("../helpers/utils");
+const BosonRouter = require("../../artifacts/contracts/BosonRouter.sol/BosonRouter.json")
   .abi;
-const VoucherKernel = require('../../artifacts/contracts/VoucherKernel.sol/VoucherKernel.json')
+const VoucherKernel = require("../../artifacts/contracts/VoucherKernel.sol/VoucherKernel.json")
   .abi;
 let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 
@@ -23,14 +25,14 @@ function refundVoucher(_voucherID, users) {
       Utils.contractVoucherKernel.address
     );
 
-    let gasUsed = '0xF458F';
+    let gasUsed = "0xF458F";
     web3.eth.getTransactionCount(
       users.buyer.address,
       function (error, txCount) {
         const encoded = bosonRouter.methods.refund(_voucherID).encodeABI();
         let rawTransaction = {
           nonce: web3.utils.toHex(txCount),
-          gasPrice: '0x04e3b29200',
+          gasPrice: "0x04e3b29200",
           gasLimit: gasUsed,
           to: Utils.contractBSNRouter.address,
           value: 0x0,
@@ -38,27 +40,27 @@ function refundVoucher(_voucherID, users) {
         };
         let privKey = Buffer.from(
           users.privateKeys[users.buyer.address.toLowerCase()],
-          'hex'
+          "hex"
         );
-        let tx = new Tx(rawTransaction, {chain: 'rinkeby'});
+        let tx = new Tx(rawTransaction, { chain: "rinkeby" });
         tx.sign(privKey);
         let serializedTx = tx.serialize();
         web3.eth
           .sendSignedTransaction(
-            '0x' + serializedTx.toString('hex'),
+            "0x" + serializedTx.toString("hex"),
             (err, hash) => {
               if (err) {
                 reject(new Error(err.message));
               }
-              console.log('Transaction Hash : ' + hash);
+              console.log("Transaction Hash : " + hash);
             }
           )
-          .on('receipt', function (receipt) {
+          .on("receipt", function (receipt) {
             //Events array and args  not present in receipt, so retrieving explicitly
             voucherKernel
-              .getPastEvents('LogVoucherRefunded', {
-                fromBlock: 'latest',
-                toBlock: 'latest',
+              .getPastEvents("LogVoucherRefunded", {
+                fromBlock: "latest",
+                toBlock: "latest",
               })
               .then(function (logVoucherRefundedEvents) {
                 let gasUsed = receipt.gasUsed;
@@ -73,7 +75,7 @@ function refundVoucher(_voucherID, users) {
               })
               .catch(reject);
           })
-          .on('error', console.error);
+          .on("error", console.error);
       }
     );
   });

@@ -1,35 +1,35 @@
-let Web3 = require('web3');
-const truffleContract = require('truffle-contract');
-const helpers = require('../helpers/constants');
+/* eslint @typescript-eslint/no-var-requires: "off" */
+
+let Web3 = require("web3");
+const truffleContract = require("truffle-contract");
+const helpers = require("../helpers/constants");
 let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 const BosonRouter = truffleContract(
   require(__dirname +
-    '/../../artifacts/contracts/BosonRouter.sol/BosonRouter.json')
+    "/../../artifacts/contracts/BosonRouter.sol/BosonRouter.json")
 );
 BosonRouter.setProvider(web3.currentProvider);
 const VoucherKernel = truffleContract(
   require(__dirname +
-    '/../../artifacts/contracts/VoucherKernel.sol/VoucherKernel.json')
+    "/../../artifacts/contracts/VoucherKernel.sol/VoucherKernel.json")
 );
 VoucherKernel.setProvider(web3.currentProvider);
 const ERC1155ERC721 = truffleContract(
   require(__dirname +
-    '/../../artifacts/contracts/ERC1155ERC721.sol/ERC1155ERC721.json')
+    "/../../artifacts/contracts/ERC1155ERC721.sol/ERC1155ERC721.json")
 );
 ERC1155ERC721.setProvider(web3.currentProvider);
 const Cashier = truffleContract(
-  require(__dirname + '/../../artifacts/contracts/Cashier.sol/Cashier.json')
+  require(__dirname + "/../../artifacts/contracts/Cashier.sol/Cashier.json")
 );
 Cashier.setProvider(web3.currentProvider);
 const FundLimitsOracle = truffleContract(
   require(__dirname +
-    '/../../artifacts/contracts/FundLimitsOracle.sol/FundLimitsOracle.json')
+    "/../../artifacts/contracts/FundLimitsOracle.sol/FundLimitsOracle.json")
 );
 FundLimitsOracle.setProvider(web3.currentProvider);
 
 class Utils {
-  constructor() {}
-
   static async getCurrTimestamp() {
     let blockNumber = await web3.eth.getBlockNumber();
     let block = await web3.eth.getBlock(blockNumber);
@@ -68,7 +68,7 @@ class Utils {
 
     contractVoucherKernel = await VoucherKernel.new(
       contractERC1155ERC721.address,
-      {from: accounts[0], gas: 5000000}
+      { from: accounts[0], gas: 5000000 }
     );
 
     contractCashier = await Cashier.new(contractVoucherKernel.address, {
@@ -79,17 +79,17 @@ class Utils {
       contractVoucherKernel.address,
       contractFundLimitsOracle.address,
       contractCashier.address,
-      {from: accounts[0], gas: 5000000}
+      { from: accounts[0], gas: 5000000 }
     );
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
-      'true',
-      {from: accounts[0], gas: 3000000}
+      "true",
+      { from: accounts[0], gas: 3000000 }
     );
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address,
-      {from: accounts[0], gas: 3000000}
+      { from: accounts[0], gas: 3000000 }
     );
 
     await contractERC1155ERC721.setCashierAddress(contractCashier.address, {
@@ -99,7 +99,7 @@ class Utils {
 
     await contractVoucherKernel.setBosonRouterAddress(
       contractBosonRouter.address,
-      {from: accounts[0], gas: 3000000}
+      { from: accounts[0], gas: 3000000 }
     );
     await contractVoucherKernel.setCashierAddress(contractCashier.address, {
       from: accounts[0],
@@ -112,7 +112,7 @@ class Utils {
     });
     await contractCashier.setTokenContractAddress(
       contractERC1155ERC721.address,
-      {from: accounts[0], gas: 3000000}
+      { from: accounts[0], gas: 3000000 }
     );
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds, {

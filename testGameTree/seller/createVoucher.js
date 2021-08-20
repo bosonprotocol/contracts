@@ -1,15 +1,17 @@
-let Web3 = require('web3');
-const BN = require('bn.js');
-let Contract = require('web3-eth-contract');
-const helpers = require('../helpers/constants');
-const Tx = require('ethereumjs-tx').Transaction;
-const Utils = require('../helpers/utils');
-let converter = require('hex2dec');
-const BosonRouter = require('../../artifacts/contracts/BosonRouter.sol/BosonRouter.json')
+/* eslint @typescript-eslint/no-var-requires: "off" */
+
+let Web3 = require("web3");
+const BN = require("bn.js");
+let Contract = require("web3-eth-contract");
+const helpers = require("../helpers/constants");
+const Tx = require("ethereumjs-tx").Transaction;
+const Utils = require("../helpers/utils");
+let converter = require("hex2dec");
+const BosonRouter = require("../../artifacts/contracts/BosonRouter.sol/BosonRouter.json")
   .abi;
-const VoucherKernel = require('../../artifacts/contracts/VoucherKernel.sol/VoucherKernel.json')
+const VoucherKernel = require("../../artifacts/contracts/VoucherKernel.sol/VoucherKernel.json")
   .abi;
-const ERC1155ERC721 = require('../../artifacts/contracts/ERC1155ERC721.sol/ERC1155ERC721.json')
+const ERC1155ERC721 = require("../../artifacts/contracts/ERC1155ERC721.sol/ERC1155ERC721.json")
   .abi;
 let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 
@@ -31,7 +33,7 @@ function CreateOrderETHETH(timestamp, users) {
       Utils.contractERC1155ERC721.address
     );
 
-    let gasSent = '0xF458F';
+    let gasSent = "0xF458F";
 
     helpers.PROMISE_VALID_FROM = timestamp;
     helpers.PROMISE_VALID_TO = timestamp + 2 * helpers.SECONDS_IN_DAY;
@@ -53,7 +55,7 @@ function CreateOrderETHETH(timestamp, users) {
           .encodeABI();
         let rawTransaction = {
           nonce: web3.utils.toHex(txCount),
-          gasPrice: '0x04e3b29200',
+          gasPrice: "0x04e3b29200",
           gasLimit: gasSent,
           to: Utils.contractBSNRouter.address,
           value: txValue,
@@ -61,40 +63,40 @@ function CreateOrderETHETH(timestamp, users) {
         };
         let privKey = Buffer.from(
           users.privateKeys[users.seller.address.toLowerCase()],
-          'hex'
+          "hex"
         );
-        let tx = new Tx(rawTransaction, {chain: 'rinkeby'}); //need to specificy something, or it will defaut to mainnet
+        let tx = new Tx(rawTransaction, { chain: "rinkeby" }); //need to specificy something, or it will defaut to mainnet
         tx.sign(privKey);
         let serializedTx = tx.serialize();
         // executes the transaction
         web3.eth
           .sendSignedTransaction(
-            '0x' + serializedTx.toString('hex'),
+            "0x" + serializedTx.toString("hex"),
             (err, hash) => {
               if (err) {
                 reject(new Error(err.message));
               }
-              console.log('Transaction Hash : ', hash);
+              console.log("Transaction Hash : ", hash);
             }
           )
-          .on('receipt', function (receipt) {
+          .on("receipt", function (receipt) {
             //Events array and args  not present in receipt, so retrieving explicitly
             bosonRouter
-              .getPastEvents('LogOrderCreated', {
-                fromBlock: 'latest',
-                toBlock: 'latest',
+              .getPastEvents("LogOrderCreated", {
+                fromBlock: "latest",
+                toBlock: "latest",
               })
               .then(function (logOrderCreatedEvents) {
                 voucherKernel
-                  .getPastEvents('LogPromiseCreated', {
-                    fromBlock: 'latest',
-                    toBlock: 'latest',
+                  .getPastEvents("LogPromiseCreated", {
+                    fromBlock: "latest",
+                    toBlock: "latest",
                   })
                   .then(function (logPromiseCreatedEvents) {
                     erc1155erc721
-                      .getPastEvents('TransferSingle', {
-                        fromBlock: 'latest',
-                        toBlock: 'latest',
+                      .getPastEvents("TransferSingle", {
+                        fromBlock: "latest",
+                        toBlock: "latest",
                       })
                       .then(function (logTransferSingEvents) {
                         let txhash = receipt.transactionHash;
@@ -143,7 +145,7 @@ function CreateOrderETHETH(timestamp, users) {
               })
               .catch(reject);
           })
-          .on('error', console.error);
+          .on("error", console.error);
       }
     );
   });

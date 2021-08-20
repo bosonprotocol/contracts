@@ -1,4 +1,6 @@
-const fs = require('fs');
+/* eslint @typescript-eslint/no-var-requires: "off" */
+
+const fs = require("fs");
 
 const userIndices = {
   deployer: 0,
@@ -14,7 +16,7 @@ const loadPrivateKeys = (accountKeysFile) => {
   const accountKeysJs = JSON.parse(accountKeysRaw);
 
   return Object.fromEntries(
-    Object.entries(accountKeysJs['private_keys']).map((entry) => [
+    Object.entries(accountKeysJs["private_keys"]).map((entry) => [
       entry[0],
       `${entry[1]}`,
     ])
@@ -25,7 +27,7 @@ class Users {
   constructor(addresses) {
     this.addresses = addresses;
     this.privateKeys = loadPrivateKeys(
-      process.env.ACCOUNT_KEYS_FILE || 'config/accounts.json'
+      process.env.ACCOUNT_KEYS_FILE || "config/accounts.json"
     );
   }
 
@@ -33,7 +35,7 @@ class Users {
     const address = this.addresses[index];
     const privateKey = this.privateKeys[address.toLowerCase()];
 
-    return {address, privateKey};
+    return { address, privateKey };
   }
 
   get deployer() {

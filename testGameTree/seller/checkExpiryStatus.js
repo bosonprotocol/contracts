@@ -1,7 +1,9 @@
-let Contract = require('web3-eth-contract');
-const Utils = require('../helpers/utils');
-const helpers = require('../helpers/constants');
-const VoucherKernel = require('../../artifacts/contracts/VoucherKernel.sol/VoucherKernel.json')
+/* eslint @typescript-eslint/no-var-requires: "off" */
+
+let Contract = require("web3-eth-contract");
+const Utils = require("../helpers/utils");
+const helpers = require("../helpers/constants");
+const VoucherKernel = require("../../artifacts/contracts/VoucherKernel.sol/VoucherKernel.json")
   .abi;
 
 // set provider for all later instances to use

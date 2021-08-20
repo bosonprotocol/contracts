@@ -1,13 +1,15 @@
-let Web3 = require('web3');
-let Contract = require('web3-eth-contract');
-const Tx = require('ethereumjs-tx').Transaction;
-const Utils = require('../helpers/utils');
-let converter = require('hex2dec');
-const BosonRouter = require('../../artifacts/contracts/BosonRouter.sol/BosonRouter.json')
+/* eslint @typescript-eslint/no-var-requires: "off" */
+
+let Web3 = require("web3");
+let Contract = require("web3-eth-contract");
+const Tx = require("ethereumjs-tx").Transaction;
+const Utils = require("../helpers/utils");
+let converter = require("hex2dec");
+const BosonRouter = require("../../artifacts/contracts/BosonRouter.sol/BosonRouter.json")
   .abi;
-const VoucherKernel = require('../../artifacts/contracts/VoucherKernel.sol/VoucherKernel.json')
+const VoucherKernel = require("../../artifacts/contracts/VoucherKernel.sol/VoucherKernel.json")
   .abi;
-const helpers = require('../helpers/constants');
+const helpers = require("../helpers/constants");
 let web3 = new Web3(new Web3.providers.HttpProvider(helpers.PROVIDER));
 
 // set provider for all later instances to use
@@ -24,7 +26,7 @@ function faultVoucher(_voucherSetID, users) {
       Utils.contractVoucherKernel.address
     );
 
-    let gasPaid = '0xF458F';
+    let gasPaid = "0xF458F";
     // gets the current nounce of the sellers account and the proceeds to structure the transaction
     web3.eth.getTransactionCount(
       users.seller.address,
@@ -34,7 +36,7 @@ function faultVoucher(_voucherSetID, users) {
           .encodeABI();
         let rawTransaction = {
           nonce: web3.utils.toHex(txCount),
-          gasPrice: '0x04e3b29200',
+          gasPrice: "0x04e3b29200",
           gasLimit: gasPaid,
           to: Utils.contractBSNRouter.address,
           value: 0x0,
@@ -42,28 +44,28 @@ function faultVoucher(_voucherSetID, users) {
         };
         let privKey = Buffer.from(
           users.privateKeys[users.seller.address.toLowerCase()],
-          'hex'
+          "hex"
         );
-        let tx = new Tx(rawTransaction, {chain: 'rinkeby'});
+        let tx = new Tx(rawTransaction, { chain: "rinkeby" });
         tx.sign(privKey);
         let serializedTx = tx.serialize();
         // executes the transaction
         web3.eth
           .sendSignedTransaction(
-            '0x' + serializedTx.toString('hex'),
+            "0x" + serializedTx.toString("hex"),
             (err, hash) => {
               if (err) {
                 reject(new Error(err.message));
               }
-              console.log('Transaction Hash : ' + hash);
+              console.log("Transaction Hash : " + hash);
             }
           )
-          .on('receipt', function (receipt) {
+          .on("receipt", function (receipt) {
             //Events array and args  not present in receipt, so retrieving explicitly
             voucherKernel
-              .getPastEvents('LogVoucherFaultCancel', {
-                fromBlock: 'latest',
-                toBlock: 'latest',
+              .getPastEvents("LogVoucherFaultCancel", {
+                fromBlock: "latest",
+                toBlock: "latest",
               })
               .then(function (logVoucherFaultCancelEvents) {
                 let gasUsed = receipt.gasUsed;
@@ -82,7 +84,7 @@ function faultVoucher(_voucherSetID, users) {
               })
               .catch(reject);
           })
-          .on('error', console.error);
+          .on("error", console.error);
       }
     );
   });
