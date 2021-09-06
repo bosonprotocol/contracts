@@ -979,8 +979,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             escrowTokens[tokenAddress][_to] = escrowTokens[tokenAddress][_to].add(depositBu);
 
         }
-   
-        IBosonRouter(bosonRouterAddress).incrementCorrelationId(_to);
     }
 
     /**
@@ -1035,8 +1033,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             _tokenSupplyId,
             _to
         );
-
-        IBosonRouter(bosonRouterAddress).incrementCorrelationId(_to);
     }
 
     /**

@@ -36,8 +36,7 @@ contract BosonRouter is
         uint256 indexed _tokenIdSupply,
         address _seller,
         uint256 _quantity,
-        uint8 _paymentType,
-        uint256 _correlationId
+        uint8 _paymentType
     );
 
     /**
@@ -174,8 +173,7 @@ contract BosonRouter is
             tokenIdSupply,
             msg.sender,
             metadata[5],
-            ETHETH,
-            correlationIds[msg.sender]++
+            ETHETH
         );
     }
 
@@ -243,8 +241,7 @@ contract BosonRouter is
             tokenIdSupply,
             msg.sender,
             metadata[5],
-            TKNTKN,
-            correlationIds[msg.sender]++
+            TKNTKN
         );
     }
 
@@ -310,8 +307,7 @@ contract BosonRouter is
             tokenIdSupply,
             msg.sender,
             metadata[5],
-            ETHTKN,
-            correlationIds[msg.sender]++
+            ETHTKN
         );
     }
 
@@ -351,8 +347,7 @@ contract BosonRouter is
             tokenIdSupply,
             msg.sender,
             metadata[5],
-            TKNETH,
-            correlationIds[msg.sender]++
+            TKNETH
         );
     }
 
@@ -688,31 +683,6 @@ contract BosonRouter is
             _tokenIdVoucher,
             msg.sender
         );
-    }
-
-    /**
-     * @notice Increment a seller or buyer's correlation Id
-     * @param _party   The address of the seller or buyer
-     */
-    function incrementCorrelationId(address _party) 
-        external
-        override
-    {
-         correlationIds[_party]++;
-    }
-
-    /**
-     * @notice Return a seller or buyer's correlation Id
-     * @param _party   The address of the seller or buyer
-     * @return the specified party's correlation Id
-     */
-    function getCorrelationId(address _party) 
-        external
-        override
-        view
-        returns (uint256)
-    {
-        return correlationIds[_party];
     }
 
     /**

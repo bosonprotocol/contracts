@@ -689,28 +689,6 @@ contract MockBosonRouter is
     }
 
     /**
-     * @notice Increment a seller or buyer's correlation Id
-     * @param _party   The address of the seller or buyer
-     */
-    function incrementCorrelationId(address _party) external override {
-        correlationIds[_party]++;
-    }
-
-    /**
-     * @notice Return a seller or buyer's correlation Id
-     * @param _party   The address of the seller or buyer
-     * @return the specified party's correlcation Id
-     */
-    function getCorrelationId(address _party)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        return correlationIds[_party];
-    }
-
-    /**
      * @notice Get the address of Cashier contract
      * @return Address of Cashier address
      */

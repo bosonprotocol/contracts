@@ -105,8 +105,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         uint256 _tokenIdVoucher,
         address _issuer,
         address _holder,
-        bytes32 _promiseId,
-        uint256 _correlationId
+        bytes32 _promiseId
     );
 
     event LogVoucherRedeemed(
@@ -336,8 +335,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
             voucherTokenId,
             _issuer,
             _holder,
-            getPromiseIdFromVoucherId(voucherTokenId),
-            _correlationId
+            getPromiseIdFromVoucherId(voucherTokenId)
         );
     }
 

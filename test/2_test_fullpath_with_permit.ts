@@ -188,15 +188,6 @@ describe('Cashier and VoucherKernel', () => {
         constants.PROMISE_VALID_FROM = timestamp;
         constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
-        const correlationId = await contractBosonRouter.getCorrelationId(
-          users.seller.address
-        );
-        assert.equal(
-          correlationId.toString(),
-          '0',
-          'Seller correlationId is not as expected'
-        );
-
         tokenSupplyKey = await utils.createOrder(
           users.seller,
           timestamp,
@@ -218,17 +209,6 @@ describe('Cashier and VoucherKernel', () => {
         ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
       });
 
-      it('Seller correlationId should be incremented after order is created', async () => {
-        const correlationId = await contractBosonRouter.getCorrelationId(
-          users.seller.address
-        );
-
-        assert.equal(
-          correlationId.toString(),
-          '1',
-          'Seller correlationId is not as expected'
-        );
-      });
 
       it('ESCROW has correct initial balance', async () => {
         const expectedBalance = BN(constants.seller_deposit).mul(BN(remQty));
@@ -415,15 +395,6 @@ describe('Cashier and VoucherKernel', () => {
             tokensToMint
           );
 
-          const correlationId = await contractBosonRouter.getCorrelationId(
-            users.seller.address
-          );
-          assert.equal(
-            correlationId.toString(),
-            '0',
-            'Seller correlationId is not as expected'
-          );
-
           timestamp = await Utils.getCurrTimestamp();
           constants.PROMISE_VALID_FROM = timestamp;
           constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
@@ -447,18 +418,6 @@ describe('Cashier and VoucherKernel', () => {
               constants.QTY_10
             )
           ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
-        });
-
-        it('Seller correlationId should be incremented after order is created', async () => {
-          const correlationId = await contractBosonRouter.getCorrelationId(
-            users.seller.address
-          );
-
-          assert.equal(
-            correlationId.toString(),
-            '1',
-            'Seller correlationId is not as expected'
-          );
         });
 
         it('Cashier has correct balance in Deposit Contract', async () => {
@@ -796,15 +755,6 @@ describe('Cashier and VoucherKernel', () => {
               ''
             );
 
-          const correlationId = await contractBosonRouter.getCorrelationId(
-            users.seller.address
-          );
-          assert.equal(
-            correlationId.toString(),
-            '0',
-            'Seller correlationIds is not as expected'
-          );
-
           timestamp = await Utils.getCurrTimestamp();
           constants.PROMISE_VALID_FROM = timestamp;
           constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
@@ -837,18 +787,6 @@ describe('Cashier and VoucherKernel', () => {
               constants.QTY_10
             )
           ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
-        });
-
-        it('Seller correlationId should be incremented after order is created', async () => {
-          const correlationId = await contractBosonRouter.getCorrelationId(
-            users.seller.address
-          );
-
-          assert.equal(
-            correlationId.toString(),
-            '1',
-            'Seller correlationId is not as expected'
-          );
         });
 
         it('ESCROW has correct balance', async () => {
@@ -1068,14 +1006,6 @@ describe('Cashier and VoucherKernel', () => {
               contractBSNTokenDeposit
             );
 
-          const correlationId = await contractBosonRouter.getCorrelationId(
-            users.seller.address
-          );
-          assert.equal(
-            correlationId.toString(),
-            '0',
-            'Seller correlationId is not as expected'
-          );
 
           timestamp = await Utils.getCurrTimestamp();
           constants.PROMISE_VALID_FROM = timestamp;
@@ -1120,18 +1050,6 @@ describe('Cashier and VoucherKernel', () => {
               constants.QTY_10
             )
           ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
-        });
-
-        it('Seller correlationId should be incremented after order is created', async () => {
-          const correlationId = await contractBosonRouter.getCorrelationId(
-            users.seller.address
-          );
-
-          assert.equal(
-            correlationId.toString(),
-            '1',
-            'Seller correlationId is not as expected'
-          );
         });
 
         it('Cashier has correct balance in Deposit Contract', async () => {
@@ -1562,15 +1480,6 @@ describe('Cashier and VoucherKernel', () => {
 
       timestamp = await Utils.getCurrTimestamp();
 
-      const correlationId = await contractBosonRouter.getCorrelationId(
-        users.seller.address
-      );
-      assert.equal(
-        correlationId.toString(),
-        '0',
-        'Seller correlationId is not as expected'
-      );
-
       tokenSupplyKey = await utils.createOrder(
         users.seller,
         timestamp,
@@ -1579,7 +1488,7 @@ describe('Cashier and VoucherKernel', () => {
         constants.QTY_10
       );
     });
-
+/*
     it('Seller correlationId should be incremented after supply is cancelled', async () => {
       const prevCorrId = await contractBosonRouter.getCorrelationId(
         users.seller.address
@@ -1598,6 +1507,7 @@ describe('Cashier and VoucherKernel', () => {
         'correlationId not incremented!'
       );
     });
+    */
   });
 
   describe('VOUCHER CREATION (Commit to buy)', () => {
@@ -1629,17 +1539,6 @@ describe('Cashier and VoucherKernel', () => {
         );
       });
 
-      it('Buyer correlationId should be zero initially', async () => {
-        const correlationId = await contractBosonRouter.getCorrelationId(
-          users.buyer.address
-        );
-
-        assert.equal(
-          correlationId.toString(),
-          '0',
-          'Buyer correlationId is not as expected'
-        );
-      });
 
       it('Should create order', async () => {
         const txValue = BN(constants.buyer_deposit).add(
@@ -1683,18 +1582,6 @@ describe('Cashier and VoucherKernel', () => {
         await expect(
           utilsTknEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
         ).to.be.reverted;
-      });
-
-      it('Buyer correlationId should be incremented after requesting a voucher', async () => {
-        const correlationId = await contractBosonRouter.getCorrelationId(
-          users.buyer.address
-        );
-
-        assert.equal(
-          correlationId.toString(),
-          '1',
-          'Buyer correlationId is not as expected'
-        );
       });
 
       it('Cashier Contract has correct amount of funds', async () => {
@@ -1825,18 +1712,6 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it('Buyer correlationId should be zero initially', async () => {
-          const correlationId = await contractBosonRouter.getCorrelationId(
-            users.buyer.address
-          );
-
-          assert.equal(
-            correlationId.toString(),
-            '0',
-            'Buyer correlationId is not as expected'
-          );
-        });
-
         it('Should create order', async () => {
           const nonce = await contractBSNTokenDeposit.nonces(
             users.buyer.address
@@ -1897,18 +1772,6 @@ describe('Cashier and VoucherKernel', () => {
           await expect(
             utilsEthEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
           ).to.be.revertedWith(revertReasons.INCORRECT_PAYMENT_METHOD);
-        });
-
-        it('Buyer correlationId should be incremented after requesting a voucher', async () => {
-          const correlationId = await contractBosonRouter.getCorrelationId(
-            users.buyer.address
-          );
-
-          assert.equal(
-            correlationId.toString(),
-            '1',
-            'Buyer correlationId is not as expected'
-          );
         });
 
         it('Cashier Contract has correct amount of funds', async () => {
@@ -2092,18 +1955,6 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it('Buyer correlationId should be zero initially', async () => {
-          const correlationId = await contractBosonRouter.getCorrelationId(
-            users.buyer.address
-          );
-
-          assert.equal(
-            correlationId.toString(),
-            '0',
-            'Buyer correlationId is not as expected'
-          );
-        });
-
         it('Should create order', async () => {
           const nonce1 = await contractBSNTokenDeposit.nonces(
             users.buyer.address
@@ -2196,18 +2047,6 @@ describe('Cashier and VoucherKernel', () => {
           await expect(
             utilsEthTkn.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
           ).to.be.revertedWith(revertReasons.INCORRECT_PAYMENT_METHOD);
-        });
-
-        it('Buyer correlationId should be incremented after requesting a voucher', async () => {
-          const correlationId = await contractBosonRouter.getCorrelationId(
-            users.buyer.address
-          );
-
-          assert.equal(
-            correlationId.toString(),
-            '1',
-            'Buyer correlationId is not as expected'
-          );
         });
 
         it('Cashier Contract has correct amount of funds', async () => {
@@ -2446,18 +2285,6 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it('Buyer correlationId should be zero initially', async () => {
-          const correlationId = await contractBosonRouter.getCorrelationId(
-            users.buyer.address
-          );
-
-          assert.equal(
-            correlationId.toString(),
-            '0',
-            'Buyer correlationId is not as expected'
-          );
-        });
-
         it('Should create voucher', async () => {
           const nonce = await utils.contractBSNTokenSame.nonces(
             users.buyer.address
@@ -2527,18 +2354,6 @@ describe('Cashier and VoucherKernel', () => {
           await expect(
             utilsEthEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
           ).to.be.revertedWith(revertReasons.INCORRECT_PAYMENT_METHOD);
-        });
-
-        it('Buyer correlationId should be incremented after requesting a voucher', async () => {
-          const correlationId = await contractBosonRouter.getCorrelationId(
-            users.buyer.address
-          );
-
-          assert.equal(
-            correlationId.toString(),
-            '1',
-            'Buyer correlationId is not as expected'
-          );
         });
 
         it('Cashier Contract has correct amount of funds', async () => {
@@ -2781,18 +2596,6 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it('Buyer correlationId should be zero initially', async () => {
-          const correlationId = await contractBosonRouter.getCorrelationId(
-            users.buyer.address
-          );
-
-          assert.equal(
-            correlationId.toString(),
-            '0',
-            'Buyer correlationId is not as expected'
-          );
-        });
-
         it('Should create order', async () => {
           const nonce = await contractBSNTokenPrice.nonces(users.buyer.address);
 
@@ -2854,18 +2657,6 @@ describe('Cashier and VoucherKernel', () => {
           await expect(
             utilsEthEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
           ).to.be.revertedWith(revertReasons.INCORRECT_PAYMENT_METHOD);
-        });
-
-        it('Buyer correlationId should be incremented after requesting a voucher', async () => {
-          const correlationId = await contractBosonRouter.getCorrelationId(
-            users.buyer.address
-          );
-
-          assert.equal(
-            correlationId.toString(),
-            '1',
-            'Buyer correlationId is not as expected'
-          );
         });
 
         it('Cashier Contract has correct amount of funds', async () => {
@@ -3676,35 +3467,6 @@ describe('Cashier and VoucherKernel', () => {
         );
       });
 
-      it('New Supply Owner correlationId should be incremented properly', async () => {
-        let correlationId = await contractBosonRouter.getCorrelationId(
-          users.other2.address
-        );
-        assert.equal(
-          correlationId.toString(),
-          '0',
-          'New Supply Owner correlationId is not as expected'
-        );
-
-        await utils.safeTransfer1155(
-          users.other1.address,
-          users.other2.address,
-          tokenSupplyKey,
-          constants.QTY_1,
-          users.other1.signer
-        );
-
-        correlationId = await contractBosonRouter.getCorrelationId(
-          users.other2.address
-        );
-
-        assert.equal(
-          correlationId.toString(),
-          '1',
-          'New Supply Owner correlationId is not as expected'
-        );
-      });
-
       it('Should update escrow amounts after transfer', async () => {
         expectedBalanceInEscrow = BN(constants.seller_deposit).mul(
           BN(constants.QTY_1)
@@ -3932,35 +3694,6 @@ describe('Cashier and VoucherKernel', () => {
             utils.contractCashier.address
           );
         }
-
-        it('New Supply Owner correlationId should be incremented properly', async () => {
-          let correlationId = await contractBosonRouter.getCorrelationId(
-            users.other2.address
-          );
-          assert.equal(
-            correlationId.toString(),
-            '0',
-            'New Supply Owner correlationId is not as expected'
-          );
-
-          await utils.safeTransfer1155(
-            users.other1.address,
-            users.other2.address,
-            tokenSupplyKey,
-            constants.QTY_1,
-            users.other1.signer
-          );
-
-          correlationId = await contractBosonRouter.getCorrelationId(
-            users.other2.address
-          );
-
-          assert.equal(
-            correlationId.toString(),
-            '1',
-            'New Supply Owner correlationId is not as expected'
-          );
-        });
 
         it('Should update escrow amounts after transfer', async () => {
           expectedBalanceInEscrow = BN(constants.seller_deposit).mul(
@@ -4209,35 +3942,6 @@ describe('Cashier and VoucherKernel', () => {
           );
         }
 
-        it('New Supply Owner correlationId should be incremented properly', async () => {
-          let correlationId = await contractBosonRouter.getCorrelationId(
-            users.other2.address
-          );
-          assert.equal(
-            correlationId.toString(),
-            '0',
-            'New Supply Owner correlationId is not as expected'
-          );
-
-          await utils.safeTransfer1155(
-            users.other1.address,
-            users.other2.address,
-            tokenSupplyKey,
-            constants.QTY_1,
-            users.other1.signer
-          );
-
-          correlationId = await contractBosonRouter.getCorrelationId(
-            users.other2.address
-          );
-
-          assert.equal(
-            correlationId.toString(),
-            '1',
-            'New Supply Owner correlationId is not as expected'
-          );
-        });
-
         it('Should update escrow amounts after transfer', async () => {
           expectedBalanceInEscrow = BN(constants.seller_deposit).mul(
             BN(constants.QTY_1)
@@ -4463,35 +4167,6 @@ describe('Cashier and VoucherKernel', () => {
             utils.contractCashier.address
           );
         }
-
-        it('New Supply Owner correlationId should be incremented properly', async () => {
-          let correlationId = await contractBosonRouter.getCorrelationId(
-            users.other2.address
-          );
-          assert.equal(
-            correlationId.toString(),
-            '0',
-            'New Supply Owner correlationId is not as expected'
-          );
-
-          await utils.safeTransfer1155(
-            users.other1.address,
-            users.other2.address,
-            tokenSupplyKey,
-            constants.QTY_1,
-            users.other1.signer
-          );
-
-          correlationId = await contractBosonRouter.getCorrelationId(
-            users.other2.address
-          );
-
-          assert.equal(
-            correlationId.toString(),
-            '1',
-            'New Supply Owner correlationId is not as expected'
-          );
-        });
 
         it('Should update escrow amounts after transfer', async () => {
           expectedBalanceInEscrow = BN(constants.seller_deposit).mul(
@@ -4820,39 +4495,6 @@ describe('Cashier and VoucherKernel', () => {
         );
       });
 
-      it('New Voucher Owner correlationId should be incremented properly', async () => {
-        const voucherID = await utils.commitToBuy(
-          users.other1,
-          users.seller,
-          tokenSupplyKey
-        );
-
-        let correlationId = await contractBosonRouter.getCorrelationId(
-          users.other2.address
-        );
-        assert.equal(
-          correlationId.toString(),
-          '0',
-          'New Voucher Owner correlationId is not as expected'
-        );
-
-        await utils.safeTransfer721(
-          users.other1.address,
-          users.other2.address,
-          voucherID,
-          users.other1.signer
-        );
-
-        correlationId = await contractBosonRouter.getCorrelationId(
-          users.other2.address
-        );
-        assert.equal(
-          correlationId.toString(),
-          '1',
-          'New Voucher Owner correlationId is not as expected'
-        );
-      });
-
       it('Should update escrow amounts after transfer', async () => {
         const expectedBalanceInEscrow = BN(constants.product_price).add(
           BN(constants.buyer_deposit)
@@ -5110,39 +4752,6 @@ describe('Cashier and VoucherKernel', () => {
           if (isPaused) {
             await contractCashier.unpause();
           }
-        });
-
-        it('New Voucher Owner correlationId should be incremented properly', async () => {
-          const voucherID = await utils.commitToBuy(
-            users.other1,
-            users.seller,
-            tokenSupplyKey
-          );
-
-          let correlationId = await contractBosonRouter.getCorrelationId(
-            users.other2.address
-          );
-          assert.equal(
-            correlationId.toString(),
-            '0',
-            'New Voucher Owner correlationId is not as expected'
-          );
-
-          await utils.safeTransfer721(
-            users.other1.address,
-            users.other2.address,
-            voucherID,
-            users.other1.signer
-          );
-
-          correlationId = await contractBosonRouter.getCorrelationId(
-            users.other2.address
-          );
-          assert.equal(
-            correlationId.toString(),
-            '1',
-            'New Voucher Owner correlationId is not as expected'
-          );
         });
 
         it('Should update escrow amounts after transfer', async () => {
@@ -5463,39 +5072,6 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it('New Voucher Owner correlationId should be incremented properly', async () => {
-          const voucherID = await utils.commitToBuy(
-            users.other1,
-            users.seller,
-            tokenSupplyKey
-          );
-
-          let correlationId = await contractBosonRouter.getCorrelationId(
-            users.other2.address
-          );
-          assert.equal(
-            correlationId.toString(),
-            '0',
-            'New Voucher Owner correlationId is not as expected'
-          );
-
-          await utils.safeTransfer721(
-            users.other1.address,
-            users.other2.address,
-            voucherID,
-            users.other1.signer
-          );
-
-          correlationId = await contractBosonRouter.getCorrelationId(
-            users.other2.address
-          );
-          assert.equal(
-            correlationId.toString(),
-            '1',
-            'New Voucher Owner correlationId is not as expected'
-          );
-        });
-
         it('Should update escrow amounts after transfer', async () => {
           const expectedBalanceInEscrowTknPrice = BN(constants.product_price);
           const expectedBalanceInEscrowTknDeposit = BN(constants.buyer_deposit);
@@ -5791,39 +5367,6 @@ describe('Cashier and VoucherKernel', () => {
             utils.contractCashier.address
           );
         }
-
-        it('New Voucher Owner correlationId should be incremented properly', async () => {
-          const voucherID = await utils.commitToBuy(
-            users.other1,
-            users.seller,
-            tokenSupplyKey
-          );
-
-          let correlationId = await contractBosonRouter.getCorrelationId(
-            users.other2.address
-          );
-          assert.equal(
-            correlationId.toString(),
-            '0',
-            'New Voucher Owner correlationId is not as expected'
-          );
-
-          await utils.safeTransfer721(
-            users.other1.address,
-            users.other2.address,
-            voucherID,
-            users.other1.signer
-          );
-
-          correlationId = await contractBosonRouter.getCorrelationId(
-            users.other2.address
-          );
-          assert.equal(
-            correlationId.toString(),
-            '1',
-            'New Voucher Owner correlationId is not as expected'
-          );
-        });
 
         it('Should update escrow amounts after transfer', async () => {
           const expectedBalanceInEscrowEth = BN(constants.buyer_deposit);
