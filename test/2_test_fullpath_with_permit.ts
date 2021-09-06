@@ -1488,26 +1488,72 @@ describe('Cashier and VoucherKernel', () => {
         constants.QTY_10
       );
     });
-/*
-    it('Seller correlationId should be incremented after supply is cancelled', async () => {
-      const prevCorrId = await contractBosonRouter.getCorrelationId(
+
+    it('Should process suppy/voucher set cancellation properly', async () => {
+      const sellerBalanceBefore = await users.seller.signer.getBalance("latest");
+
+      const quantityBefore = await contractVoucherKernel.getRemQtyForSupply(
+        tokenSupplyKey,
         users.seller.address
       );
 
+      assert.isTrue(quantityBefore.eq(constants.QTY_10));
+    
       const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+      const tx = await sellerInstance.requestCancelOrFaultVoucherSet(tokenSupplyKey);
+      const txReceipt = await tx.wait();
 
-      await sellerInstance.requestCancelOrFaultVoucherSet(tokenSupplyKey);
-      const nextCorrId = await contractBosonRouter.getCorrelationId(
-        users.seller.address
+      eventUtils.assertEventEmitted(
+        txReceipt,
+        ERC1155ERC721_Factory,
+        eventNames.TRANSFER_SINGLE,
+        (ev) => {
+          assert.isTrue(ev._operator == contractVoucherKernel.address);
+          assert.isTrue(ev._from === users.seller.address);
+          assert.isTrue(ev._to === constants.ZERO_ADDRESS);
+          assert.isTrue(ev._id == tokenSupplyKey);
+          assert.isTrue(ev._value == constants.QTY_10);
+        }
       );
 
-      assert.equal(
-        BN(prevCorrId).add(BN(1)).toString(),
-        nextCorrId.toString(),
-        'correlationId not incremented!'
+      eventUtils.assertEventEmitted(
+        txReceipt,
+        VoucherKernel_Factory,
+        eventNames.LOG_CANCEL_VOUCHER_SET,
+        (ev) => {
+          assert.isTrue(ev._tokenIdSupply.eq(tokenSupplyKey));
+          assert.isTrue(ev._issuer === users.seller.address);
+        }
       );
+
+      const sellerDeposit = BN(constants.seller_deposit).mul(BN(constants.QTY_10));
+
+      console.log("sellerDeposit ", sellerDeposit.toString());
+
+
+      eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
+            assert.isTrue(
+              ev._payment.eq(sellerDeposit),
+              'Payment incorrect'
+            );
+          }
+        );
+      
+      const txCost = tx.gasPrice.mul(txReceipt.gasUsed);
+      const expectedSellerBalance = sellerBalanceBefore.add(sellerDeposit).sub(txCost);
+      const sellerBalanceAfter = await users.seller.signer.getBalance("latest");
+
+      assert.isTrue(
+        expectedSellerBalance.eq(sellerBalanceAfter),
+        'Seller balance incorrect'
+      );
+
     });
-    */
   });
 
   describe('VOUCHER CREATION (Commit to buy)', () => {

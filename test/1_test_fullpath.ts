@@ -639,15 +639,6 @@ describe('Voucher tests', () => {
         }
       );
 
-      //Check BosonRouter state
-      assert.equal(
-        (
-          await contractBosonRouter.getCorrelationId(users.buyer.address)
-        ).toString(),
-        '1',
-        'Correlation Id incorrect'
-      );
-
       //Check Voucher Kernel state
       const voucherStatus = await contractVoucherKernel.getVoucherStatus(
         tokenVoucherKey
@@ -737,15 +728,6 @@ describe('Voucher tests', () => {
           assert.isTrue(ev._to === users.buyer.address);
           assert.isTrue(ev._tokenId.eq(tokenVoucherKey));
         }
-      );
-
-      //Check BosonRouter state
-      assert.equal(
-        (
-          await contractBosonRouter.getCorrelationId(users.buyer.address)
-        ).toString(),
-        '1',
-        'Correlation Id incorrect'
       );
 
       //Check Voucher Kernel state
