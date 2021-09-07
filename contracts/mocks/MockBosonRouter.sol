@@ -168,12 +168,7 @@ contract MockBosonRouter is
         //record funds in escrow ...
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
 
-        emit LogOrderCreated(
-            tokenIdSupply,
-            msg.sender,
-            metadata[5],
-            ETHETH
-        );
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHETH);
     }
 
     function requestCreateOrderTKNTKNWithPermit(
@@ -236,12 +231,7 @@ contract MockBosonRouter is
             _tokensSent
         );
 
-        emit LogOrderCreated(
-            tokenIdSupply,
-            msg.sender,
-            metadata[5],
-            TKNTKN
-        );
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNTKN);
     }
 
     function requestCreateOrderETHTKNWithPermit(
@@ -302,12 +292,7 @@ contract MockBosonRouter is
             _tokensSent
         );
 
-        emit LogOrderCreated(
-            tokenIdSupply,
-            msg.sender,
-            metadata[5],
-            ETHTKN
-        );
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHTKN);
     }
 
     function requestCreateOrderTKNETH(
@@ -342,12 +327,7 @@ contract MockBosonRouter is
         //record funds in escrow ...
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
 
-        emit LogOrderCreated(
-            tokenIdSupply,
-            msg.sender,
-            metadata[5],
-            TKNETH
-        );
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNETH);
     }
 
     /**
@@ -562,10 +542,7 @@ contract MockBosonRouter is
         );
 
         //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(
-            msg.sender
-        );
-
+        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
 
     function requestVoucherTKNETHWithPermit(
@@ -617,7 +594,7 @@ contract MockBosonRouter is
         );
 
         //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value:msg.value}(msg.sender);
+        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
 
     /**
@@ -681,22 +658,17 @@ contract MockBosonRouter is
      * @notice Get the address of Cashier contract
      * @return Address of Cashier address
      */
-    function getCashierAddress() 
-        external 
-        view 
-        override
-        returns (address)
-    {
+    function getCashierAddress() external view override returns (address) {
         return cashierAddress;
     }
 
-     /**
+    /**
      * @notice Get the address of Voucher Kernel contract
      * @return Address of Voucher Kernel contract
      */
-    function getVoucherKernelAddress() 
-        external 
-        view 
+    function getVoucherKernelAddress()
+        external
+        view
         override
         returns (address)
     {
@@ -707,9 +679,9 @@ contract MockBosonRouter is
      * @notice Get the address of Fund Limits Oracle contract
      * @return Address of Fund Limits Oracle contract
      */
-    function getFundLimitOracleAddress() 
-        external 
-        view 
+    function getFundLimitOracleAddress()
+        external
+        view
         override
         returns (address)
     {

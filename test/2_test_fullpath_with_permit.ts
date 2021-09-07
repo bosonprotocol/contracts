@@ -209,7 +209,6 @@ describe('Cashier and VoucherKernel', () => {
         ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
       });
 
-
       it('ESCROW has correct initial balance', async () => {
         const expectedBalance = BN(constants.seller_deposit).mul(BN(remQty));
         const escrowAmount = await contractCashier.getEscrowAmount(
@@ -1006,7 +1005,6 @@ describe('Cashier and VoucherKernel', () => {
               contractBSNTokenDeposit
             );
 
-
           timestamp = await Utils.getCurrTimestamp();
           constants.PROMISE_VALID_FROM = timestamp;
           constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
@@ -1490,7 +1488,9 @@ describe('Cashier and VoucherKernel', () => {
     });
 
     it('Should process suppy/voucher set cancellation properly', async () => {
-      const sellerBalanceBefore = await users.seller.signer.getBalance("latest");
+      const sellerBalanceBefore = await users.seller.signer.getBalance(
+        'latest'
+      );
 
       const quantityBefore = await contractVoucherKernel.getRemQtyForSupply(
         tokenSupplyKey,
@@ -1498,9 +1498,11 @@ describe('Cashier and VoucherKernel', () => {
       );
 
       assert.isTrue(quantityBefore.eq(constants.QTY_10));
-    
+
       const sellerInstance = contractBosonRouter.connect(users.seller.signer);
-      const tx = await sellerInstance.requestCancelOrFaultVoucherSet(tokenSupplyKey);
+      const tx = await sellerInstance.requestCancelOrFaultVoucherSet(
+        tokenSupplyKey
+      );
       const txReceipt = await tx.wait();
 
       eventUtils.assertEventEmitted(
@@ -1526,33 +1528,32 @@ describe('Cashier and VoucherKernel', () => {
         }
       );
 
-      const sellerDeposit = BN(constants.seller_deposit).mul(BN(constants.QTY_10));
+      const sellerDeposit = BN(constants.seller_deposit).mul(
+        BN(constants.QTY_10)
+      );
 
-      console.log("sellerDeposit ", sellerDeposit.toString());
-
+      console.log('sellerDeposit ', sellerDeposit.toString());
 
       eventUtils.assertEventEmitted(
-          txReceipt,
-          Cashier_Factory,
-          eventNames.LOG_WITHDRAWAL,
-          (ev) => {
-            assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
-            assert.isTrue(
-              ev._payment.eq(sellerDeposit),
-              'Payment incorrect'
-            );
-          }
-        );
-      
+        txReceipt,
+        Cashier_Factory,
+        eventNames.LOG_WITHDRAWAL,
+        (ev) => {
+          assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
+          assert.isTrue(ev._payment.eq(sellerDeposit), 'Payment incorrect');
+        }
+      );
+
       const txCost = tx.gasPrice.mul(txReceipt.gasUsed);
-      const expectedSellerBalance = sellerBalanceBefore.add(sellerDeposit).sub(txCost);
-      const sellerBalanceAfter = await users.seller.signer.getBalance("latest");
+      const expectedSellerBalance = sellerBalanceBefore
+        .add(sellerDeposit)
+        .sub(txCost);
+      const sellerBalanceAfter = await users.seller.signer.getBalance('latest');
 
       assert.isTrue(
         expectedSellerBalance.eq(sellerBalanceAfter),
         'Seller balance incorrect'
       );
-
     });
   });
 
@@ -1584,7 +1585,6 @@ describe('Cashier and VoucherKernel', () => {
           constants.QTY_10
         );
       });
-
 
       it('Should create order', async () => {
         const txValue = BN(constants.buyer_deposit).add(
