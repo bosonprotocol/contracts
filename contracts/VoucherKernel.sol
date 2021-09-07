@@ -312,14 +312,12 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @param _issuer          Address of the token's issuer
      * @param _holder          Address of the recipient of the voucher (ERC-721)
      * @param _paymentMethod   method being used for that particular order that needs to be fulfilled
-     * @param _correlationId           ID of the current interaction with the smart contract for a specific user
      */
     function fillOrder(
         uint256 _tokenIdSupply,
         address _issuer,
         address _holder,
-        uint8 _paymentMethod,
-        uint256 _correlationId
+        uint8 _paymentMethod
     ) external override onlyFromRouter {
         uint8 paymentMethod = getVoucherPaymentMethod(_tokenIdSupply);
 

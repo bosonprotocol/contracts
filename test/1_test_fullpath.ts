@@ -805,7 +805,7 @@ describe('Voucher tests', () => {
     });
 
     it('must fail: adding new order with incorrect payment method', async () => {
-      //Set mock so that passing wrong payment type can be tested
+      //Set mock so that passing wrong payment type from requestCreateOrderETHETH to createPaymentMethod can be tested
       await contractVoucherKernel.setBosonRouterAddress(
         contractMockBosonRouter.address
       );

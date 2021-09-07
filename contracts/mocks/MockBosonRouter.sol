@@ -15,7 +15,7 @@ import "../UsingHelpers.sol";
 
 /**
  * @title Mock Contract for testing purposes.
- * @notice This mock passes in invalid values for the purpose of testing calls to VoucherKernel.createPaymentMethod and possibly other functions
+ * @notice This mock passes an invalide value to createPaymentMethod from  requestCreateOrderETHETH for the purpose of testing calls to VoucherKernel.createPaymentMethod and possibly other functions
  */
 contract MockBosonRouter is
     IBosonRouter,
@@ -27,18 +27,15 @@ contract MockBosonRouter is
     using Address for address payable;
     using SafeMath for uint256;
 
-    mapping(address => uint256) private correlationIds; // whenever a seller or a buyer interacts with the smart contract, a personal txID is emitted from an event.
-
-    address public cashierAddress;
-    address public voucherKernel;
-    address public fundLimitsOracle;
+    address private cashierAddress;
+    address private voucherKernel;
+    address private fundLimitsOracle;
 
     event LogOrderCreated(
         uint256 indexed _tokenIdSupply,
         address _seller,
         uint256 _quantity,
-        uint8 _paymentType,
-        uint256 _correlationId
+        uint8 _paymentType
     );
 
     /**
@@ -175,8 +172,7 @@ contract MockBosonRouter is
             tokenIdSupply,
             msg.sender,
             metadata[5],
-            ETHETH,
-            correlationIds[msg.sender]++
+            ETHETH
         );
     }
 
@@ -244,8 +240,7 @@ contract MockBosonRouter is
             tokenIdSupply,
             msg.sender,
             metadata[5],
-            TKNTKN,
-            correlationIds[msg.sender]++
+            TKNTKN
         );
     }
 
@@ -311,8 +306,7 @@ contract MockBosonRouter is
             tokenIdSupply,
             msg.sender,
             metadata[5],
-            ETHTKN,
-            correlationIds[msg.sender]++
+            ETHTKN
         );
     }
 
@@ -352,8 +346,7 @@ contract MockBosonRouter is
             tokenIdSupply,
             msg.sender,
             metadata[5],
-            TKNETH,
-            correlationIds[msg.sender]++
+            TKNETH
         );
     }
 
@@ -381,8 +374,7 @@ contract MockBosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            ETHETH,
-            correlationIds[msg.sender]++
+            ETHETH
         );
 
         //record funds in escrow ...
@@ -435,8 +427,7 @@ contract MockBosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            TKNTKN,
-            correlationIds[msg.sender]++
+            TKNTKN
         );
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(
@@ -503,8 +494,7 @@ contract MockBosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            TKNTKN,
-            correlationIds[msg.sender]++
+            TKNTKN
         );
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(
@@ -555,8 +545,7 @@ contract MockBosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            ETHTKN,
-            correlationIds[msg.sender]++
+            ETHTKN
         );
 
         IERC20WithPermit(tokenDepositAddress).transferFrom(
@@ -573,7 +562,10 @@ contract MockBosonRouter is
         );
 
         //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
+        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(
+            msg.sender
+        );
+
     }
 
     function requestVoucherTKNETHWithPermit(
@@ -608,8 +600,7 @@ contract MockBosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            TKNETH,
-            correlationIds[msg.sender]++
+            TKNETH
         );
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(
@@ -626,7 +617,7 @@ contract MockBosonRouter is
         );
 
         //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
+        ICashier(cashierAddress).addEscrowAmount{value:msg.value}(msg.sender);
     }
 
     /**
@@ -649,8 +640,6 @@ contract MockBosonRouter is
             _burnedSupplyQty,
             msg.sender
         );
-
-        correlationIds[msg.sender]++;
     }
 
     /**
@@ -692,17 +681,22 @@ contract MockBosonRouter is
      * @notice Get the address of Cashier contract
      * @return Address of Cashier address
      */
-    function getCashierAddress() external view override returns (address) {
+    function getCashierAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
         return cashierAddress;
     }
 
-    /**
+     /**
      * @notice Get the address of Voucher Kernel contract
      * @return Address of Voucher Kernel contract
      */
-    function getVoucherKernelAddress()
-        external
-        view
+    function getVoucherKernelAddress() 
+        external 
+        view 
         override
         returns (address)
     {
@@ -713,9 +707,9 @@ contract MockBosonRouter is
      * @notice Get the address of Fund Limits Oracle contract
      * @return Address of Fund Limits Oracle contract
      */
-    function getFundLimitOracleAddress()
-        external
-        view
+    function getFundLimitOracleAddress() 
+        external 
+        view 
         override
         returns (address)
     {

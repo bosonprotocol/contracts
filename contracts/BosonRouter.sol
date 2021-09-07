@@ -26,8 +26,6 @@ contract BosonRouter is
     using Address for address payable;
     using SafeMath for uint256;
 
-    mapping(address => uint256) private correlationIds; // whenever a seller or a buyer interacts with the smart contract, a personal txID is emitted from an event.
-
     address private cashierAddress;
     address private voucherKernel;
     address private fundLimitsOracle;
@@ -375,8 +373,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            ETHETH,
-            correlationIds[msg.sender]++
+            ETHETH
         );
 
         //record funds in escrow ...
@@ -429,8 +426,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            TKNTKN,
-            correlationIds[msg.sender]++
+            TKNTKN
         );
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(
@@ -497,8 +493,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            TKNTKN,
-            correlationIds[msg.sender]++
+            TKNTKN
         );
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(
@@ -549,8 +544,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            ETHTKN,
-            correlationIds[msg.sender]++
+            ETHTKN
         );
 
         IERC20WithPermit(tokenDepositAddress).transferFrom(
@@ -605,8 +599,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            TKNETH,
-            correlationIds[msg.sender]++
+            TKNETH
         );
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(
@@ -646,8 +639,6 @@ contract BosonRouter is
             _burnedSupplyQty,
             msg.sender
         );
-
-        correlationIds[msg.sender]++;
     }
 
     /**
