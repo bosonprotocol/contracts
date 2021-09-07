@@ -15,7 +15,7 @@ import "../UsingHelpers.sol";
 
 /**
  * @title Mock Contract for testing purposes.
- * @notice This mock passes in invalid values for the purpose of testing calls to VoucherKernel.createPaymentMethod and possibly other functions
+ * @notice This mock passes an invalide value to createPaymentMethod from  requestCreateOrderETHETH for the purpose of testing calls to VoucherKernel.createPaymentMethod and possibly other functions
  */
 contract MockBosonRouter is
     IBosonRouter,
@@ -27,18 +27,15 @@ contract MockBosonRouter is
     using Address for address payable;
     using SafeMath for uint256;
 
-    mapping(address => uint256) private correlationIds; // whenever a seller or a buyer interacts with the smart contract, a personal txID is emitted from an event.
-
-    address public cashierAddress;
-    address public voucherKernel;
-    address public fundLimitsOracle;
+    address private cashierAddress;
+    address private voucherKernel;
+    address private fundLimitsOracle;
 
     event LogOrderCreated(
         uint256 indexed _tokenIdSupply,
         address _seller,
         uint256 _quantity,
-        uint8 _paymentType,
-        uint256 _correlationId
+        uint8 _paymentType
     );
 
     /**
@@ -171,13 +168,7 @@ contract MockBosonRouter is
         //record funds in escrow ...
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
 
-        emit LogOrderCreated(
-            tokenIdSupply,
-            msg.sender,
-            metadata[5],
-            ETHETH,
-            correlationIds[msg.sender]++
-        );
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHETH);
     }
 
     function requestCreateOrderTKNTKNWithPermit(
@@ -240,13 +231,7 @@ contract MockBosonRouter is
             _tokensSent
         );
 
-        emit LogOrderCreated(
-            tokenIdSupply,
-            msg.sender,
-            metadata[5],
-            TKNTKN,
-            correlationIds[msg.sender]++
-        );
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNTKN);
     }
 
     function requestCreateOrderETHTKNWithPermit(
@@ -307,13 +292,7 @@ contract MockBosonRouter is
             _tokensSent
         );
 
-        emit LogOrderCreated(
-            tokenIdSupply,
-            msg.sender,
-            metadata[5],
-            ETHTKN,
-            correlationIds[msg.sender]++
-        );
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHTKN);
     }
 
     function requestCreateOrderTKNETH(
@@ -348,13 +327,7 @@ contract MockBosonRouter is
         //record funds in escrow ...
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
 
-        emit LogOrderCreated(
-            tokenIdSupply,
-            msg.sender,
-            metadata[5],
-            TKNETH,
-            correlationIds[msg.sender]++
-        );
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNETH);
     }
 
     /**
@@ -381,8 +354,7 @@ contract MockBosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            ETHETH,
-            correlationIds[msg.sender]++
+            ETHETH
         );
 
         //record funds in escrow ...
@@ -435,8 +407,7 @@ contract MockBosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            TKNTKN,
-            correlationIds[msg.sender]++
+            TKNTKN
         );
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(
@@ -503,8 +474,7 @@ contract MockBosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            TKNTKN,
-            correlationIds[msg.sender]++
+            TKNTKN
         );
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(
@@ -555,8 +525,7 @@ contract MockBosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            ETHTKN,
-            correlationIds[msg.sender]++
+            ETHTKN
         );
 
         IERC20WithPermit(tokenDepositAddress).transferFrom(
@@ -608,8 +577,7 @@ contract MockBosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            TKNETH,
-            correlationIds[msg.sender]++
+            TKNETH
         );
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(
@@ -649,8 +617,6 @@ contract MockBosonRouter is
             _burnedSupplyQty,
             msg.sender
         );
-
-        correlationIds[msg.sender]++;
     }
 
     /**
@@ -686,28 +652,6 @@ contract MockBosonRouter is
             _tokenIdVoucher,
             msg.sender
         );
-    }
-
-    /**
-     * @notice Increment a seller or buyer's correlation Id
-     * @param _party   The address of the seller or buyer
-     */
-    function incrementCorrelationId(address _party) external override {
-        correlationIds[_party]++;
-    }
-
-    /**
-     * @notice Return a seller or buyer's correlation Id
-     * @param _party   The address of the seller or buyer
-     * @return the specified party's correlcation Id
-     */
-    function getCorrelationId(address _party)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        return correlationIds[_party];
     }
 
     /**

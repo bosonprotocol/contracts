@@ -220,8 +220,6 @@ describe('Voucher tests', () => {
           assert.isTrue(ev._seller === users.seller.address);
           assert.isTrue(ev._quantity.eq(constants.ONE));
           assert.isTrue(BN(ev._paymentType).eq(constants.ONE));
-          assert.isTrue(ev._correlationId.eq(constants.ZERO));
-
           tokenSupplyKey1 = BN(ev._tokenIdSupply);
         }
       );
@@ -255,15 +253,6 @@ describe('Voucher tests', () => {
           assert.isTrue(ev._id.eq(tokenSupplyKey1));
           assert.isTrue(ev._value.eq(constants.ORDER_QUANTITY1));
         }
-      );
-
-      //Check BosonRouter state
-      assert.equal(
-        (
-          await contractBosonRouter.getCorrelationId(users.seller.address)
-        ).toString(),
-        '1',
-        'Correlation Id incorrect'
       );
 
       //Check VocherKernel State
@@ -374,7 +363,6 @@ describe('Voucher tests', () => {
           assert.isTrue(ev._seller === users.seller.address);
           assert.isTrue(ev._quantity.eq(constants.ORDER_QUANTITY1));
           assert.isTrue(BN(ev._paymentType).eq(constants.ONE));
-          assert.isTrue(ev._correlationId.eq(constants.ZERO));
           tokenSupplyKey1 = ev._tokenIdSupply;
         }
       );
@@ -405,7 +393,6 @@ describe('Voucher tests', () => {
           assert.isTrue(ev._seller === users.seller.address);
           assert.isTrue(ev._quantity.eq(constants.ORDER_QUANTITY2));
           assert.isTrue(BN(ev._paymentType).eq(constants.ONE));
-          assert.isTrue(ev._correlationId.eq(constants.ONE));
           tokenSupplyKey2 = ev._tokenIdSupply;
         }
       );
@@ -438,14 +425,6 @@ describe('Voucher tests', () => {
           assert.isTrue(ev._id.eq(tokenSupplyKey2));
           assert.isTrue(ev._value.eq(constants.ORDER_QUANTITY2));
         }
-      );
-
-      //Check BosonRouter state
-      assert.isTrue(
-        (await contractBosonRouter.getCorrelationId(users.seller.address)).eq(
-          constants.TWO
-        ),
-        'Correlation Id incorrect'
       );
 
       //Check VocherKernel State
@@ -632,8 +611,6 @@ describe('Voucher tests', () => {
           assert.isTrue(ev._issuer === users.seller.address);
           assert.isTrue(ev._holder === users.buyer.address);
           assert.isTrue(ev._promiseId === promiseId1);
-          assert.isTrue(ev._correlationId.eq(constants.ZERO));
-
           tokenVoucherKey = ev._tokenIdVoucher;
         }
       );
@@ -660,15 +637,6 @@ describe('Voucher tests', () => {
           assert.isTrue(ev._to === users.buyer.address);
           assert.isTrue(ev._tokenId.eq(tokenVoucherKey));
         }
-      );
-
-      //Check BosonRouter state
-      assert.equal(
-        (
-          await contractBosonRouter.getCorrelationId(users.buyer.address)
-        ).toString(),
-        '1',
-        'Correlation Id incorrect'
       );
 
       //Check Voucher Kernel state
@@ -734,8 +702,6 @@ describe('Voucher tests', () => {
           assert.isTrue(ev._issuer === users.seller.address);
           assert.isTrue(ev._holder === users.buyer.address);
           assert.isTrue(ev._promiseId === promiseId2);
-          assert.isTrue(ev._correlationId.eq(constants.ZERO));
-
           tokenVoucherKey = ev._tokenIdVoucher;
         }
       );
@@ -762,15 +728,6 @@ describe('Voucher tests', () => {
           assert.isTrue(ev._to === users.buyer.address);
           assert.isTrue(ev._tokenId.eq(tokenVoucherKey));
         }
-      );
-
-      //Check BosonRouter state
-      assert.equal(
-        (
-          await contractBosonRouter.getCorrelationId(users.buyer.address)
-        ).toString(),
-        '1',
-        'Correlation Id incorrect'
       );
 
       //Check Voucher Kernel state
@@ -848,7 +805,7 @@ describe('Voucher tests', () => {
     });
 
     it('must fail: adding new order with incorrect payment method', async () => {
-      //Set mock so that passing wrong payment type can be tested
+      //Set mock so that passing wrong payment type from requestCreateOrderETHETH to createPaymentMethod can be tested
       await contractVoucherKernel.setBosonRouterAddress(
         contractMockBosonRouter.address
       );

@@ -29,6 +29,7 @@ export const eventNames = {
   LOG_ERC1155_ERC721_SET: 'LogTokenContractSet',
   LOG_VK_SET: 'LogVoucherKernelSet',
   LOG_CASHIER_SET: 'LogCashierSet',
+  LOG_CANCEL_VOUCHER_SET: 'LogVoucherSetFaultCancel',
 };
 
 import {ContractFactory, ContractReceipt} from 'ethers';

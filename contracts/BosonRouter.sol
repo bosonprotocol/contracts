@@ -26,8 +26,6 @@ contract BosonRouter is
     using Address for address payable;
     using SafeMath for uint256;
 
-    mapping(address => uint256) private correlationIds; // whenever a seller or a buyer interacts with the smart contract, a personal txID is emitted from an event.
-
     address private cashierAddress;
     address private voucherKernel;
     address private fundLimitsOracle;
@@ -36,8 +34,7 @@ contract BosonRouter is
         uint256 indexed _tokenIdSupply,
         address _seller,
         uint256 _quantity,
-        uint8 _paymentType,
-        uint256 _correlationId
+        uint8 _paymentType
     );
 
     /**
@@ -174,8 +171,7 @@ contract BosonRouter is
             tokenIdSupply,
             msg.sender,
             metadata[5],
-            ETHETH,
-            correlationIds[msg.sender]++
+            ETHETH
         );
     }
 
@@ -243,8 +239,7 @@ contract BosonRouter is
             tokenIdSupply,
             msg.sender,
             metadata[5],
-            TKNTKN,
-            correlationIds[msg.sender]++
+            TKNTKN
         );
     }
 
@@ -310,8 +305,7 @@ contract BosonRouter is
             tokenIdSupply,
             msg.sender,
             metadata[5],
-            ETHTKN,
-            correlationIds[msg.sender]++
+            ETHTKN
         );
     }
 
@@ -351,8 +345,7 @@ contract BosonRouter is
             tokenIdSupply,
             msg.sender,
             metadata[5],
-            TKNETH,
-            correlationIds[msg.sender]++
+            TKNETH
         );
     }
 
@@ -380,8 +373,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            ETHETH,
-            correlationIds[msg.sender]++
+            ETHETH
         );
 
         //record funds in escrow ...
@@ -434,8 +426,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            TKNTKN,
-            correlationIds[msg.sender]++
+            TKNTKN
         );
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(
@@ -502,8 +493,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            TKNTKN,
-            correlationIds[msg.sender]++
+            TKNTKN
         );
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(
@@ -554,8 +544,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            ETHTKN,
-            correlationIds[msg.sender]++
+            ETHTKN
         );
 
         IERC20WithPermit(tokenDepositAddress).transferFrom(
@@ -610,8 +599,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            TKNETH,
-            correlationIds[msg.sender]++
+            TKNETH
         );
 
         IERC20WithPermit(tokenPriceAddress).transferFrom(
@@ -651,8 +639,6 @@ contract BosonRouter is
             _burnedSupplyQty,
             msg.sender
         );
-
-        correlationIds[msg.sender]++;
     }
 
     /**
@@ -688,31 +674,6 @@ contract BosonRouter is
             _tokenIdVoucher,
             msg.sender
         );
-    }
-
-    /**
-     * @notice Increment a seller or buyer's correlation Id
-     * @param _party   The address of the seller or buyer
-     */
-    function incrementCorrelationId(address _party) 
-        external
-        override
-    {
-         correlationIds[_party]++;
-    }
-
-    /**
-     * @notice Return a seller or buyer's correlation Id
-     * @param _party   The address of the seller or buyer
-     * @return the specified party's correlation Id
-     */
-    function getCorrelationId(address _party) 
-        external
-        override
-        view
-        returns (uint256)
-    {
-        return correlationIds[_party];
     }
 
     /**
