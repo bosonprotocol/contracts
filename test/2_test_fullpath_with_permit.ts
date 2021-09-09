@@ -1,16 +1,14 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
-
+import {deployMockContract} from '@ethereum-waffle/mock-contract';
+import {MockProvider} from '@ethereum-waffle/provider';
 import {assert, expect} from 'chai';
 import {ecsign} from 'ethereumjs-util';
-
 import constants from '../testHelpers/constants';
 import {advanceTimeSeconds} from '../testHelpers/timemachine';
-
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
 import UtilsBuilder from '../testHelpers/utilsBuilder';
-
 import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
 
 import {
@@ -18,7 +16,7 @@ import {
   ERC1155ERC721,
   VoucherKernel,
   Cashier,
-  FundLimitsOracle,
+  TokenRegistry,
   MockERC20Permit,
 } from '../typechain';
 
@@ -26,7 +24,7 @@ let ERC1155ERC721_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
-let FundLimitsOracle_Factory: ContractFactory;
+let TokenRegistry_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
 
 import revertReasons from '../testHelpers/revertReasons';
@@ -38,6 +36,9 @@ const BN = ethers.BigNumber.from;
 
 let utils: Utils;
 let users;
+let mockDAI;
+
+import DAIToken from './ABIs/DAIToken.json';
 
 describe('Cashier and VoucherKernel', () => {
   before(async () => {
@@ -48,9 +49,7 @@ describe('Cashier and VoucherKernel', () => {
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
-    FundLimitsOracle_Factory = await ethers.getContractFactory(
-      'FundLimitsOracle'
-    );
+    TokenRegistry_Factory = await ethers.getContractFactory('TokenRegistry');
     MockERC20Permit_Factory = await ethers.getContractFactory(
       'MockERC20Permit'
     );
@@ -62,7 +61,7 @@ describe('Cashier and VoucherKernel', () => {
     contractBosonRouter: BosonRouter,
     contractBSNTokenPrice: MockERC20Permit,
     contractBSNTokenDeposit: MockERC20Permit,
-    contractFundLimitsOracle: FundLimitsOracle;
+    contractTokenRegistry: TokenRegistry;
   let tokenSupplyKey, tokenVoucherKey, tokenVoucherKey1;
 
   const ZERO = BN(0);
@@ -88,8 +87,8 @@ describe('Cashier and VoucherKernel', () => {
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
-      FundLimitsOracle;
+    contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
+      TokenRegistry;
     contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
       ERC1155ERC721;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
@@ -98,9 +97,10 @@ describe('Cashier and VoucherKernel', () => {
     contractCashier = (await Cashier_Factory.deploy(
       contractVoucherKernel.address
     )) as Contract & Cashier;
+
     contractBosonRouter = (await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
-      contractFundLimitsOracle.address,
+      contractTokenRegistry.address,
       contractCashier.address
     )) as Contract & BosonRouter;
 
@@ -114,7 +114,7 @@ describe('Cashier and VoucherKernel', () => {
       'BDEP'
     )) as Contract & MockERC20Permit;
 
-    await contractFundLimitsOracle.deployed();
+    await contractTokenRegistry.deployed();
     await contractERC1155ERC721.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
@@ -145,16 +145,88 @@ describe('Cashier and VoucherKernel', () => {
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
 
-    await contractFundLimitsOracle.setTokenLimit(
+    await contractTokenRegistry.setTokenLimit(
       contractBSNTokenPrice.address,
       constants.TOKEN_LIMIT
     );
-    await contractFundLimitsOracle.setTokenLimit(
+    await contractTokenRegistry.setTokenLimit(
       contractBSNTokenDeposit.address,
       constants.TOKEN_LIMIT
     );
-    await contractFundLimitsOracle.setETHLimit(constants.ETHER_LIMIT);
+    await contractTokenRegistry.setETHLimit(constants.ETHER_LIMIT);
   }
+
+  describe('TEST DAI MOCK', () => {
+    before(async () => {
+      await deployContracts();
+    });
+    it.skip('test mock DAI', async () => {
+      const [sender] = new MockProvider().getWallets();
+      mockDAI = await deployMockContract(sender, DAIToken.abi);
+      console.log('mockDAI.address ', mockDAI.address);
+
+      //console.log('mockDAI ', mockDAI);
+
+      console.log('0');
+
+      await mockDAI.mock.transferFrom.returns(false);
+
+      console.log('1');
+
+      const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
+
+      console.log('2');
+
+      //const nonce = await mockDAI.mock.nonces(users.seller.address);
+
+      console.log('users.seller.address ', users.seller.address);
+      console.log('contractCashier.address ', contractCashier.address);
+
+      const digest = await getApprovalDigest(
+        mockDAI,
+        users.seller.address,
+        contractCashier.address,
+        txValue,
+        0,
+        deadline
+      );
+
+      console.log('3');
+
+      const {v, r, s} = ecsign(
+        Buffer.from(digest.slice(2), 'hex'),
+        Buffer.from(users.seller.privateKey.slice(2), 'hex')
+      );
+
+      console.log('4');
+
+      const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+
+      console.log('5');
+
+      expect(
+        await sellerInstance.requestCreateOrderTKNTKNWithPermit(
+          '',
+          contractBSNTokenDeposit.address,
+          txValue,
+          deadline,
+          v,
+          r,
+          s,
+          [
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_PRICE1,
+            constants.seller_deposit,
+            constants.PROMISE_DEPOSITBU1,
+            constants.ORDER_QUANTITY1,
+          ]
+        )
+      ).to.be.equal(false);
+
+      console.log('6');
+    });
+  });
 
   describe('TOKEN SUPPLY CREATION (Voucher batch creation)', () => {
     let remQty = constants.QTY_10 as number | string;

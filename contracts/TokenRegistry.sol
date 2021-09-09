@@ -2,14 +2,14 @@
 pragma solidity 0.7.1;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./interfaces/IFundLimitsOracle.sol";
+import "./interfaces/ITokenRegistry.sol";
 
 /**
  * @title Contract for managing maximum allowed funds to be escrowed.
  * The purpose is to limit the total funds locked in escrow in the initial stages of the protocol.
  */
 
-contract FundLimitsOracle is Ownable, IFundLimitsOracle {
+contract TokenRegistry is Ownable, ITokenRegistry {
     uint256 private ethLimit;
     mapping(address => uint256) private tokenLimits;
 

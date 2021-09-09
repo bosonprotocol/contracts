@@ -2,7 +2,7 @@
 
 pragma solidity 0.7.1;
 
-interface IFundLimitsOracle {
+interface ITokenRegistry {
     /**
      * @notice Set new limit for a token. It's used while seller tries to create a voucher. The limit is determined by a voucher set. Voucher price * quantity, seller deposit * quantity, buyer deposit * qty must be below the limit.
      * @param _tokenAddress Address of the token which will be updated.

@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../interfaces/IVoucherKernel.sol";
 import "../interfaces/IERC20WithPermit.sol";
-import "../interfaces/IFundLimitsOracle.sol";
+import "../interfaces/ITokenRegistry.sol";
 import "../interfaces/IBosonRouter.sol";
 import "../interfaces/ICashier.sol";
 import "../UsingHelpers.sol";
@@ -29,7 +29,7 @@ contract MockBosonRouter is
 
     address private cashierAddress;
     address private voucherKernel;
-    address private fundLimitsOracle;
+    address private tokenRegistry;
 
     event LogOrderCreated(
         uint256 indexed _tokenIdSupply,
@@ -53,45 +53,42 @@ contract MockBosonRouter is
     }
 
     /**
-     * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the FundLimitsOracle.
-     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the FundLimitsOracle (ETH).
+     * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the TokenRegistry.
+     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the TokenRegistry (ETH).
      */
     function notAboveETHLimit(uint256 value) internal view {
         require(
-            value <= IFundLimitsOracle(fundLimitsOracle).getETHLimit(),
+            value <= ITokenRegistry(tokenRegistry).getETHLimit(),
             "AL" // above limit
         );
     }
 
     /**
-     * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the FundLimitsOracle.
+     * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the TokenRegistry.
      * @param _tokenAddress the token address which, we are getting the limits for.
-     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the FundLimitsOracle (ETH).
+     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the TokenRegistry (ETH).
      */
     function notAboveTokenLimit(address _tokenAddress, uint256 value)
         internal
         view
     {
         require(
-            value <=
-                IFundLimitsOracle(fundLimitsOracle).getTokenLimit(
-                    _tokenAddress
-                ),
+            value <= ITokenRegistry(tokenRegistry).getTokenLimit(_tokenAddress),
             "AL" //above limit
         );
     }
 
     constructor(
         address _voucherKernel,
-        address _fundLimitsOracle,
+        address _tokenRegistry,
         address _cashierAddress
     ) {
         notZeroAddress(_voucherKernel);
-        notZeroAddress(_fundLimitsOracle);
+        notZeroAddress(_tokenRegistry);
         notZeroAddress(_cashierAddress);
 
         voucherKernel = _voucherKernel;
-        fundLimitsOracle = _fundLimitsOracle;
+        tokenRegistry = _tokenRegistry;
         cashierAddress = _cashierAddress;
     }
 
@@ -676,15 +673,15 @@ contract MockBosonRouter is
     }
 
     /**
-     * @notice Get the address of Fund Limits Oracle contract
-     * @return Address of Fund Limits Oracle contract
+     * @notice Get the address of Token Registry contract
+     * @return Address of Token Registrycontract
      */
-    function getFundLimitOracleAddress()
+    function getTokenRegistryAddress()
         external
         view
         override
         returns (address)
     {
-        return fundLimitsOracle;
+        return tokenRegistry;
     }
 }
