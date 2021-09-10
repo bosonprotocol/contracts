@@ -1,12 +1,11 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
-
 import {assert, expect} from 'chai';
-
 import constants from '../testHelpers/constants';
-
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
+import revertReasons from '../testHelpers/revertReasons';
+import * as eventUtils from '../testHelpers/events';
 
 import {
   BosonRouter,
@@ -24,8 +23,6 @@ let BosonRouter_Factory: ContractFactory;
 let TokenRegistry_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
 
-import revertReasons from '../testHelpers/revertReasons';
-import * as eventUtils from '../testHelpers/events';
 const eventNames = eventUtils.eventNames;
 
 let users;
@@ -59,9 +56,6 @@ describe('TokenRegistry', () => {
 
   async function deployContracts() {
     const timestamp = await Utils.getCurrTimestamp();
-
-    constants.PROMISE_VALID_FROM = timestamp;
-    constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
     const sixtySeconds = 60;
 
@@ -117,7 +111,7 @@ describe('TokenRegistry', () => {
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
   }
 
-  describe('TokenRegistry interaction', () => {
+  describe('TokenRegistry get and set limits', () => {
     before(async () => {
       await deployContracts();
     });
@@ -222,6 +216,78 @@ describe('TokenRegistry', () => {
           ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
         }
       );
+    });
+  });
+
+  describe('TokenRegistry get and set token wrappers', () => {
+    beforeEach(async () => {
+      await deployContracts();
+    });
+
+    it('Should allow owner to set a new token wrapper for a token', async () => {
+      const deployerInstance = contractTokenRegistry.connect(
+        users.deployer.signer
+      );
+
+      const setWrapperTx = await deployerInstance.setTokenWrapper(
+        users.other1.address,
+        users.other2.address
+      );
+
+      const txReceipt = await setWrapperTx.wait();
+
+      eventUtils.assertEventEmitted(
+        txReceipt,
+        TokenRegistry_Factory,
+        eventNames.LOG_TOKEN_WRAPPER_CHANGED,
+        (ev) => {
+          assert.equal(ev._newWrapperAddress, users.other2.address);
+          assert.equal(ev._triggeredBy, users.deployer.address);
+        }
+      );
+
+      //check contract state
+      const newWrapperAddress = await deployerInstance.getTokenWrapper(
+        users.other1.address
+      ); //get the token wrapper for other1
+      assert.equal(newWrapperAddress, users.other2.address);
+    });
+
+    it('[NEGATIVE] Should revert if attacker tries to change token wrapper', async () => {
+      const attackerInstance = contractTokenRegistry.connect(
+        users.attacker.signer
+      );
+      await expect(
+        attackerInstance.setTokenWrapper(
+          users.other1.address,
+          users.other2.address
+        )
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+
+    it('Should get the correct wrapper token address for a given token address', async () => {
+      const deployerInstance = contractTokenRegistry.connect(
+        users.deployer.signer
+      );
+
+      await deployerInstance.setTokenWrapper(
+        users.other1.address,
+        users.other2.address
+      );
+
+      //check contract state
+      const newWrapperAddress = await deployerInstance.getTokenWrapper(
+        users.other1.address
+      ); //get the token wrapper for other1
+      assert.equal(newWrapperAddress, users.other2.address);
+    });
+
+    it('Should return the zero address for a token that is not mapped to a wrapper', async () => {
+      const newWrapperAddress = await contractTokenRegistry.getTokenWrapper(
+        users.other1.address
+      ); //get the token wrapper for other1
+
+      assert.equal(newWrapperAddress, constants.ZERO_ADDRESS);
     });
   });
 });
