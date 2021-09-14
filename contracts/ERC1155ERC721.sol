@@ -854,19 +854,6 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721, Ownable {
     }
 
     /**
-     * @notice Get the contract owner
-     * @return Address of the owner
-     */
-    function getOwner()
-        external 
-        view 
-        override
-        returns (address)
-    {
-        return owner();
-    }
-
-    /**
      * @notice Get the address of Voucher Kernel contract
      * @return Address of Voucher Kernel contract
      */
