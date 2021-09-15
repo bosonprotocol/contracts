@@ -40,12 +40,6 @@ contract DAITokenWrapper is
         _;
     }
 
-    modifier onlyFromRouter() {
-        require(bosonRouterAddress != address(0), "UNSPECIFIED_BR"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
-        _;
-    }
-
     /**
      * @notice Conforms to ERC2612. Calls permit on token, which may or may not have a permit function that conforms to ERC2612
      * @param owner Address of the token owner who is approving tokens to be transferred by spender
@@ -67,12 +61,12 @@ contract DAITokenWrapper is
     ) 
         external
         override
-        onlyFromRouter
         notZeroAddress(owner)
         notZeroAddress(spender)
         whenNotPaused
     {
-        require(deadline == 0 || block.timestamp <= deadline, "Permit expired");
+        require(deadline == 0 || block.timestamp <= deadline, "PERMIT_EXPIRED");
+        require(v >= 0 && r != bytes32(0) && s != bytes32(0), "INVALID_SIGNATURE_COMPONENTS");
         uint nonce =  IDAI(daiTokenAddress).nonces(owner);
         IDAI(daiTokenAddress).permit(owner, spender, nonce, deadline, true, v, r, s);
         emit LogPermitCalledOnToken(daiTokenAddress);
@@ -104,36 +98,6 @@ contract DAITokenWrapper is
         returns (address)
     {
         return daiTokenAddress;
-    }
-
-    /**
-     * @notice Set the address of the Boson Router contract
-     * @param _bosonRouterAddress   The address of the BR contract
-     */
-    function setBosonRouterAddress(address _bosonRouterAddress)
-        external
-        override
-        onlyOwner
-        whenNotPaused
-    {
-        require(_bosonRouterAddress != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-
-        bosonRouterAddress = _bosonRouterAddress;
-
-        emit LogBosonRouterSet(_bosonRouterAddress, msg.sender);
-    }
-
-    /**
-     * @notice Get address of the Boson Router to which this contract points
-     * @return Address of the Boson Router contract
-     */
-    function getBosonRouterAddress()
-        external
-        view
-        override
-        returns (address) 
-    {
-        return bosonRouterAddress;
     }
 
     /**

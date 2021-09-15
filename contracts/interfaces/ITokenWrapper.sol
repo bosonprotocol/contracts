@@ -42,18 +42,6 @@ interface ITokenWrapper {
     function getTokenAddress() external view returns (address);
 
     /**
-     * @notice Set the address of the Boson Router contract
-     * @param _bosonRouterAddress   The address of the Boson Router contract
-     */
-    function setBosonRouterAddress(address _bosonRouterAddress) external;
-
-    /**
-     * @notice Get address of the Boson Router contract to which this contract points
-     * @return Address of the Boson Router contract
-     */
-    function getBosonRouterAddress() external view returns (address);
-
-    /**
      * @dev Triggers stopped state.
      *
      * Requirements:

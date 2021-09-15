@@ -1,129 +1,65 @@
 import {ethers} from 'hardhat';
-import {ContractFactory, Contract, Wallet} from 'ethers';
+import {ContractFactory, Contract, Wallet, BigNumber} from 'ethers';
 import {waffle} from 'hardhat';
 import {expect} from 'chai';
 import {ecsign} from 'ethereumjs-util';
 import constants from '../testHelpers/constants';
-import Users from '../testHelpers/users';
+import {advanceTimeSeconds} from '../testHelpers/timemachine';
 import Utils from '../testHelpers/utils';
-import UtilsBuilder from '../testHelpers/utilsBuilder';
 import {toWei, getApprovalDigestNoToken} from '../testHelpers/permitUtils';
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
-import fnSignatures from '../testHelpers/functionSignatures';
 import IDAI from '../artifacts/contracts/DAITokenWrapper.sol/IDAI.json';
 import DATTokenWrapper from '../artifacts/contracts/DAITokenWrapper.sol/DAITokenWrapper.json'; //only used by deployContract
-import {DAITokenWrapper, BosonRouter} from '../typechain';
-//import { Provider } from '@ethersproject/providers';
+import {DAITokenWrapper} from '../typechain';
 
 const provider = waffle.provider;
 const {deployContract, deployMockContract} = waffle;
-
 const eventNames = eventUtils.eventNames;
 const BN = ethers.BigNumber.from;
-let utils: Utils;
-let users;
+const deadline = toWei(1);
+const ONE_VOUCHER = 1;
 
 let mockDAI: Contract;
-let owner,
-  otherToken,
-  user1,
-  attacker,
-  contractVoucherKernel,
-  contractTokenRegistry,
-  contractCashier: Wallet;
-
+let owner, otherToken, user1, attacker: Wallet;
 let DAITokenWrapper_Factory: ContractFactory;
-let BosonRouter_Factory: ContractFactory;
+let txValue: BigNumber;
+let digest: any;
+let contractDAITokenWrapper: DAITokenWrapper;
+let timestamp: number;
 
 describe('Token Wrappers', () => {
   before(async () => {
-    [
-      owner,
-      otherToken,
-      user1,
-      attacker,
-      contractVoucherKernel,
-      contractTokenRegistry,
-      contractCashier,
-    ] = provider.getWallets();
+    [owner, otherToken, user1, attacker] = provider.getWallets();
 
     DAITokenWrapper_Factory = await ethers.getContractFactory(
       'DAITokenWrapper'
     );
-    BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
+
+    txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
   });
-
-  let contractDAITokenWrapperWithMock: Contract;
-  let contractDAITokenWrapper: DAITokenWrapper;
-  let contractBosonRouter: BosonRouter;
-
-  const ZERO = BN(0);
-  const ONE_VOUCHER = 1;
-
-  const deadline = toWei(1);
-
-  let timestamp;
 
   async function deployContracts() {
     mockDAI = await deployMockContract(owner, IDAI.abi); //deploys mock
 
-    console.log('mockDAI.address ', mockDAI.address);
-
-    contractDAITokenWrapperWithMock = await deployContract(
-      owner,
-      DATTokenWrapper,
-      [mockDAI.address]
-    );
-
-    console.log(
-      'contractDAITokenWrapperWithMock.address ',
-      contractDAITokenWrapperWithMock.address
-    );
-
     contractDAITokenWrapper = (await DAITokenWrapper_Factory.deploy(
       mockDAI.address
     )) as Contract & DAITokenWrapper;
-    contractBosonRouter = (await BosonRouter_Factory.deploy(
-      contractVoucherKernel.address,
-      contractTokenRegistry.address,
-      contractCashier.address
-    )) as Contract & BosonRouter;
-
-    console.log(
-      'contractDAITokenWrapper.address ',
-      contractDAITokenWrapper.address
-    );
-    console.log('contractBosonRouter.address ', contractBosonRouter.address);
-    console.log(
-      'contractBosonRouter.signer.address ',
-      await contractBosonRouter.signer.getAddress()
-    );
-
-    await contractDAITokenWrapper.deployed();
-    await contractBosonRouter.deployed();
-
-    contractDAITokenWrapper.setBosonRouterAddress(contractBosonRouter.address);
   }
 
   describe('DAI Token Wrapper', () => {
     beforeEach(async () => {
       await deployContracts();
-    });
 
-    it('test mock DAI', async () => {
-      await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
-      //const nonce = await contractDAITokenWrapperWithMock.nonces(user1.address);
-
-      const nonce = await contractDAITokenWrapper.nonces(user1.address);
-
-      console.log('nonce ', nonce.toString());
-
-      expect(nonce).to.be.equal(0);
-
-      const daiTokenAddress = await contractDAITokenWrapperWithMock.getTokenAddress();
-
-      console.log('daiTokenAddress ', daiTokenAddress);
+      digest = await getApprovalDigestNoToken(
+        'MockDAI',
+        user1.address,
+        contractDAITokenWrapper.address,
+        txValue,
+        0,
+        deadline,
+        mockDAI.address
+      );
     });
 
     it('Should allow owner to set the token address', async () => {
@@ -153,19 +89,69 @@ describe('Token Wrappers', () => {
       expect(await contractDAITokenWrapper.paused()).to.be.false;
     });
 
-    ////////////////////
+    it('Should call permit on the DAI token', async () => {
+      await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
+      await mockDAI.mock.permit.returns();
+
+      const {v, r, s} = ecsign(
+        Buffer.from(digest.slice(2), 'hex'),
+        Buffer.from(user1.privateKey.slice(2), 'hex')
+      );
+
+      //permit
+      await expect(
+        contractDAITokenWrapper.permit(
+          user1.address,
+          contractDAITokenWrapper.address,
+          txValue,
+          deadline,
+          v,
+          r,
+          s
+        )
+      )
+        .to.emit(contractDAITokenWrapper, eventNames.LOG_PERMIT_CALLED)
+        .withArgs(mockDAI.address);
+    });
+
+    it('Should call permit on the DAI token if deadline is zero', async () => {
+      await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
+      await mockDAI.mock.permit.returns();
+
+      const {v, r, s} = ecsign(
+        Buffer.from(digest.slice(2), 'hex'),
+        Buffer.from(user1.privateKey.slice(2), 'hex')
+      );
+
+      //permit
+      await expect(
+        contractDAITokenWrapper.permit(
+          user1.address,
+          contractDAITokenWrapper.address,
+          txValue,
+          ethers.constants.Zero,
+          v,
+          r,
+          s
+        )
+      )
+        .to.emit(contractDAITokenWrapper, eventNames.LOG_PERMIT_CALLED)
+        .withArgs(mockDAI.address);
+    });
+
+    /////////////////////
     // Error Test Cases //
     /////////////////////
 
-    it('Should revert if token address is zero when contract is constructed', async () => {
+    it('Should revert if token address is zero when contract is deployed', async () => {
       await expect(
-        deployContract(owner, DATTokenWrapper, [constants.ZERO_ADDRESS])
+        deployContract(owner, DATTokenWrapper, [ethers.constants.AddressZero])
       ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
 
     it('Should revert if owner sets token address to zero address', async () => {
       await expect(
-        contractDAITokenWrapper.setTokenAddress(constants.ZERO_ADDRESS)
+        contractDAITokenWrapper.setTokenAddress(ethers.constants.AddressZero)
       ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
 
@@ -195,42 +181,139 @@ describe('Token Wrappers', () => {
         contractDAITokenWrapper.setTokenAddress(otherToken.address)
       ).to.be.revertedWith(revertReasons.PAUSED);
 
-      //setBosonRouterAddress
+      //permit
+      const {v, r, s} = ecsign(
+        Buffer.from(digest.slice(2), 'hex'),
+        Buffer.from(user1.privateKey.slice(2), 'hex')
+      );
+
+      //permit
       await expect(
-        contractDAITokenWrapper.setBosonRouterAddress(
-          contractBosonRouter.address
+        contractDAITokenWrapper.permit(
+          user1.address,
+          contractDAITokenWrapper.address,
+          txValue,
+          deadline,
+          v,
+          r,
+          s
         )
       ).to.be.revertedWith(revertReasons.PAUSED);
     });
 
-    //set and get boson router address
-    //permit onlyfromRouter, zero address for owner, spender, wrong deadline, . . . .
-    //
-
-    /*
-    const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
-
-      console.log("mockDAI.address ", mockDAI.address);
-      await mockDAI.mock.name.returns('MockDAI');
-
-      const digest = await getApprovalDigestNoToken(
-        "MockDAI",
-        user1.address,
-        contractDAITokenWrapper.address,
-        txValue,
-        0,
-        deadline,
-        mockDAI.address
-      );
+    it('Should revert when token owner address is zero address', async () => {
+      await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
+      await mockDAI.mock.permit.returns();
 
       const {v, r, s} = ecsign(
         Buffer.from(digest.slice(2), 'hex'),
         Buffer.from(user1.privateKey.slice(2), 'hex')
       );
-   
-      //permit
-      await expect(contractDAITokenWrapper.permit(user1.address, contractDAITokenWrapper.address, txValue, deadline, v, r, s))
-        .to.be.revertedWith('Pausable: paused');
-  */
+
+      await expect(
+        contractDAITokenWrapper.permit(
+          ethers.constants.AddressZero,
+          contractDAITokenWrapper.address,
+          txValue,
+          deadline,
+          v,
+          r,
+          s
+        )
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+    });
+
+    it('Should revert when token spender address is zero address', async () => {
+      await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
+      await mockDAI.mock.permit.returns();
+
+      const {v, r, s} = ecsign(
+        Buffer.from(digest.slice(2), 'hex'),
+        Buffer.from(user1.privateKey.slice(2), 'hex')
+      );
+
+      await expect(
+        contractDAITokenWrapper.permit(
+          user1.address,
+          ethers.constants.AddressZero,
+          txValue,
+          deadline,
+          v,
+          r,
+          s
+        )
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+    });
+
+    it('Should revert if deadline has expired', async () => {
+      await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
+      await mockDAI.mock.permit.returns();
+
+      timestamp = await Utils.getCurrTimestamp();
+      const newDeadline: number = timestamp + 2 * constants.ONE_MINUTE;
+
+      await advanceTimeSeconds(newDeadline * 2);
+
+      const {v, r, s} = ecsign(
+        Buffer.from(digest.slice(2), 'hex'),
+        Buffer.from(user1.privateKey.slice(2), 'hex')
+      );
+
+      await expect(
+        contractDAITokenWrapper.permit(
+          user1.address,
+          contractDAITokenWrapper.address,
+          txValue,
+          newDeadline,
+          v,
+          r,
+          s
+        )
+      ).to.be.revertedWith(revertReasons.PERMIT_EXPIRED);
+    });
+
+    it('Should revert if signatue portion r is invalid', async () => {
+      await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
+      await mockDAI.mock.permit.returns();
+
+      const {v, s} = ecsign(
+        Buffer.from(digest.slice(2), 'hex'),
+        Buffer.from(user1.privateKey.slice(2), 'hex')
+      );
+
+      await expect(
+        contractDAITokenWrapper.permit(
+          user1.address,
+          contractDAITokenWrapper.address,
+          txValue,
+          deadline,
+          v,
+          ethers.constants.HashZero,
+          s
+        )
+      ).to.be.revertedWith(revertReasons.INVALID_SIGNATURE_COMPONENTS);
+    });
+
+    it('Should revert if signatue portion s is invalid', async () => {
+      await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
+      await mockDAI.mock.permit.returns();
+
+      const {v, r} = ecsign(
+        Buffer.from(digest.slice(2), 'hex'),
+        Buffer.from(user1.privateKey.slice(2), 'hex')
+      );
+
+      await expect(
+        contractDAITokenWrapper.permit(
+          user1.address,
+          contractDAITokenWrapper.address,
+          txValue,
+          deadline,
+          v,
+          r,
+          ethers.constants.HashZero
+        )
+      ).to.be.revertedWith(revertReasons.INVALID_SIGNATURE_COMPONENTS);
+    });
   });
 });
