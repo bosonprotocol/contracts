@@ -8,7 +8,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 /**
  * @title Non transferable token contract, implementing ERC-1155, but preventing transfers
  */
-abstract contract ERC1155NonTransferable is ERC1155Pausable, Ownable {
+contract ERC1155NonTransferable is ERC1155Pausable, Ownable {
+    constructor (string memory uri_) ERC1155(uri_) Ownable() {}
+    
     /**
      * @dev See {ERC1155-_beforeTokenTransfer}.
      *
@@ -43,5 +45,21 @@ abstract contract ERC1155NonTransferable is ERC1155Pausable, Ownable {
         }
 
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
+    }
+
+
+
+    /**
+     * @notice Override _pause() so only owner can call it
+     */
+    function _pause() internal virtual override onlyOwner {
+        super._pause();
+    }
+
+    /**
+     * @notice Override _unpause() so only owner can call it
+     */
+    function _unpause() internal virtual override onlyOwner{
+        super._unpause();
     }
 }
