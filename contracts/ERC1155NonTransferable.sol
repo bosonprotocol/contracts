@@ -50,16 +50,16 @@ contract ERC1155NonTransferable is ERC1155Pausable, Ownable {
 
 
     /**
-     * @notice Override _pause() so only owner can call it
+     * @notice Pause all token mint, transfer, burn
      */
-    function _pause() internal virtual override onlyOwner {
-        super._pause();
+    function pause() external virtual override onlyOwner {
+       _pause();
     }
 
     /**
-     * @notice Override _unpause() so only owner can call it
+     * @notice Unpause the contract and allows mint, transfer, burn
      */
-    function _unpause() internal virtual override onlyOwner{
-        super._unpause();
+    function unpause() external virtual override onlyOwner{
+        _unpause();
     }
 }
