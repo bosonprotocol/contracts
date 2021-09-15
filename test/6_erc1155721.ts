@@ -647,7 +647,7 @@ describe('ERC1155ERC721', () => {
 
         await expect(
           attackerInstance._setMetadataBase(metadataBase)
-        ).to.be.revertedWith(revertReasons.NOT_OWNER);
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
       });
 
       it('[NEGATIVE] Should revert if attacker tries to set metadata1155Route', async () => {
@@ -656,7 +656,7 @@ describe('ERC1155ERC721', () => {
         );
         await expect(
           attackerInstance._set1155Route(metadata1155Route)
-        ).to.be.revertedWith(revertReasons.NOT_OWNER);
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
       });
 
       it('[NEGATIVE] Should revert if attacker tries to set metadata721Route', async () => {
@@ -666,7 +666,7 @@ describe('ERC1155ERC721', () => {
 
         await expect(
           attackerInstance._set721Route(metadata721Route)
-        ).to.be.revertedWith(revertReasons.NOT_OWNER);
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
       });
     });
   });

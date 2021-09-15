@@ -174,7 +174,7 @@ describe('Admin functionality', async () => {
 
     it('Owner should be the deployer', async () => {
       const expectedOwner = users.deployer.address;
-      const owner = await contractERC1155ERC721.getOwner();
+      const owner = await contractERC1155ERC721.owner();
 
       assert.equal(owner, expectedOwner, 'Owner is not as expected');
     });
@@ -211,7 +211,7 @@ describe('Admin functionality', async () => {
       );
       await expect(
         attackerInstance.setVoucherKernelAddress(contractVoucherKernel.address)
-      ).to.be.revertedWith(revertReasons.NOT_OWNER);
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
     });
 
     it('[NEGATIVE][setVoucherKernelAddress] Should revert if ZERO address is provided', async () => {
@@ -252,7 +252,7 @@ describe('Admin functionality', async () => {
 
       await expect(
         attackerInstance.setCashierAddress(contractCashier.address)
-      ).to.be.revertedWith(revertReasons.NOT_OWNER);
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
     });
 
     it('[NEGATIVE][setCashierAddress] Owner should not be able to set ZERO Cashier address', async () => {
