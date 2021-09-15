@@ -17,15 +17,34 @@ contract Gate is IGate, Ownable, Pausable {
     // assuming that gate calls only 1 ERC1155 contract (not dynamic)
 
     mapping(uint256 => uint256) private voucherToToken;
+    mapping(address => mapping(uint256 => bool)) private isRevoked; // mapping user => voucherSet => bool
+    // alternative mapping(bytes32 => bool) private isRevoked; // where byte32 is keccak256(abi.encodePacked(_user,_tokenIdSupply))
 
     IERC1155 private nonTrasferableTokenContract;
+    address private bosonRouter;
 
     /**
-     * @notice Sets the address, where gate contract checks if quest NFT token exists
+     * @notice Sets the contract, where gate contract checks if quest NFT token exists
      * @param _nonTrasferableTokenContractAddress address of a non-transferable token contract
      */
-    function setNonTrasferableTokenContract(address _nonTrasferableTokenContractAddress) external onlyOwner {
-        nonTrasferableTokenContract = IERC1155(_nonTrasferableTokenContractAddress);
+    function setNonTrasferableTokenContract(
+        address _nonTrasferableTokenContractAddress
+    ) external override onlyOwner {
+        nonTrasferableTokenContract = IERC1155(
+            _nonTrasferableTokenContractAddress
+        );
+    }
+
+    /**
+     * @notice Sets the Boson router contract address, from which revoke is accepted
+     * @param _bosonRouter address of a non-transferable token contract
+     */
+    function setBosonRouterAddress(address _bosonRouter)
+        external
+        override
+        onlyOwner
+    {
+        bosonRouter = _bosonRouter;
     }
 
     /**
@@ -36,6 +55,7 @@ contract Gate is IGate, Ownable, Pausable {
     function registerVoucherSetID(uint256 _tokenIdSupply, uint256 _nftTokenID)
         external
         override
+        whenNotPaused
     {
         // should be limited who calls it. Otherwise attacker can "register" wrong mappings
         // Maybe this can be called from boson router?
@@ -51,14 +71,32 @@ contract Gate is IGate, Ownable, Pausable {
      * @return true if user posesses quest NFT token, and the token is not revoked
      */
     function check(address _user, uint256 _tokenIdSupply)
-        external
+        public
         view
+        override
         returns (bool)
     {
-        // TODO check token is not revoked
-        return nonTrasferableTokenContract.balanceOf(_user, _tokenIdSupply) > 0;
+        return
+            !isRevoked[_user][_tokenIdSupply] &&
+            nonTrasferableTokenContract.balanceOf(_user, _tokenIdSupply) > 0;
     }
 
+    /**
+     * @notice Stores information that certain user already claimed
+     * @param _user user address
+     * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
+     */
+    function revoke(address _user, uint256 _tokenIdSupply)
+        external
+        override
+        whenNotPaused
+    {
+        require(msg.sender == bosonRouter, "NOT_A_ROUTER");
+        require(check(_user, _tokenIdSupply), "NOTHING_TO_REVOKE"); // not necessary under assumption that router is written correctly
+        isRevoked[_user][_tokenIdSupply] = true;
+
+        // alternative revoked[keccak256(abi.encodePacked(_user,_tokenIdSupply))] = true
+    }
 
     /**
      * @notice Pause register and revoke
