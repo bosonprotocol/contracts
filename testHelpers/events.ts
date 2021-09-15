@@ -31,6 +31,9 @@ export const eventNames = {
   LOG_CASHIER_SET: 'LogCashierSet',
   LOG_CANCEL_VOUCHER_SET: 'LogVoucherSetFaultCancel',
   LOG_TOKEN_WRAPPER_CHANGED: 'LogTokenWrapperChanged',
+  LOG_TOKEN_ADDRESS_CHANGED: 'LogTokenAddressChanged',
+  PAUSED: 'Paused',
+  UNPAUSED: 'Unpaused',
 };
 
 import {ContractFactory, ContractReceipt} from 'ethers';

@@ -3,7 +3,6 @@ import {Signer, ContractFactory, Contract} from 'ethers';
 import {assert, expect} from 'chai';
 import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
-import Utils from '../testHelpers/utils';
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
 
@@ -55,8 +54,6 @@ describe('TokenRegistry', () => {
   const FIVE_TOKENS = (5 * 10 ** 16).toString();
 
   async function deployContracts() {
-    const timestamp = await Utils.getCurrTimestamp();
-
     const sixtySeconds = 60;
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
@@ -219,7 +216,7 @@ describe('TokenRegistry', () => {
     });
   });
 
-  describe('TokenRegistry get and set token wrappers', () => {
+  describe('TokenRegistry get and set token wrapper addresses', () => {
     beforeEach(async () => {
       await deployContracts();
     });
@@ -229,7 +226,7 @@ describe('TokenRegistry', () => {
         users.deployer.signer
       );
 
-      const setWrapperTx = await deployerInstance.setTokenWrapper(
+      const setWrapperTx = await deployerInstance.setTokenWrapperAddress(
         users.other1.address,
         users.other2.address
       );
@@ -247,7 +244,7 @@ describe('TokenRegistry', () => {
       );
 
       //check contract state
-      const newWrapperAddress = await deployerInstance.getTokenWrapper(
+      const newWrapperAddress = await deployerInstance.getTokenWrapperAddress(
         users.other1.address
       ); //get the token wrapper for other1
       assert.equal(newWrapperAddress, users.other2.address);
@@ -258,7 +255,7 @@ describe('TokenRegistry', () => {
         users.attacker.signer
       );
       await expect(
-        attackerInstance.setTokenWrapper(
+        attackerInstance.setTokenWrapperAddress(
           users.other1.address,
           users.other2.address
         )
@@ -270,20 +267,20 @@ describe('TokenRegistry', () => {
         users.deployer.signer
       );
 
-      await deployerInstance.setTokenWrapper(
+      await deployerInstance.setTokenWrapperAddress(
         users.other1.address,
         users.other2.address
       );
 
       //check contract state
-      const newWrapperAddress = await deployerInstance.getTokenWrapper(
+      const newWrapperAddress = await deployerInstance.getTokenWrapperAddress(
         users.other1.address
       ); //get the token wrapper for other1
       assert.equal(newWrapperAddress, users.other2.address);
     });
 
     it('Should return the zero address for a token that is not mapped to a wrapper', async () => {
-      const newWrapperAddress = await contractTokenRegistry.getTokenWrapper(
+      const newWrapperAddress = await contractTokenRegistry.getTokenWrapperAddress(
         users.other1.address
       ); //get the token wrapper for other1
 

@@ -80,7 +80,7 @@ contract TokenRegistry is Ownable, ITokenRegistry {
      * @param _tokenAddress Address of the token for which the wrapper is being set
      * @param _wrapperAddress Address of the token wrapper contract
      */
-    function setTokenWrapper(address _tokenAddress, address _wrapperAddress) 
+    function setTokenWrapperAddress(address _tokenAddress, address _wrapperAddress) 
         external
         override
         onlyOwner
@@ -95,7 +95,7 @@ contract TokenRegistry is Ownable, ITokenRegistry {
      * @param _tokenAddress Address of the token which will be updated.
      * @return Address of the token wrapper contract
      */
-    function getTokenWrapper(address _tokenAddress) 
+    function getTokenWrapperAddress(address _tokenAddress) 
         external
         view 
         override
