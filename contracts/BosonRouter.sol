@@ -263,7 +263,10 @@ contract BosonRouter is
 
         voucherSetToGateContract[tokenIdSupply] = _gateAddress;
         if (_nftTokenID > 0) {
-            IGate(_gateAddress).registerVoucherSetID(tokenIdSupply, _nftTokenID);
+            IGate(_gateAddress).registerVoucherSetID(
+                tokenIdSupply,
+                _nftTokenID
+            );
         }
     }
 
@@ -394,6 +397,15 @@ contract BosonRouter is
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
 
+    function revokeConditionalCommit(uint _tokenIdSupply) internal {
+        if (voucherSetToGateContract[_tokenIdSupply] != address(0)) {
+            IGate(voucherSetToGateContract[_tokenIdSupply]).revoke(
+                msg.sender,
+                _tokenIdSupply
+            );
+        }
+    }
+
     function requestVoucherTKNTKNWithPermit(
         uint256 _tokenIdSupply,
         address _issuer,
@@ -406,6 +418,8 @@ contract BosonRouter is
         bytes32 rDeposit,
         bytes32 sDeposit // tokenDeposits
     ) external override nonReentrant whenNotPaused {
+        revokeConditionalCommit(_tokenIdSupply);
+
         (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
             .getBuyerOrderCosts(_tokenIdSupply);
         require(_tokensSent.sub(depositBu) == price, "IF"); //invalid funds
@@ -476,6 +490,8 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s
     ) external override nonReentrant whenNotPaused {
+        revokeConditionalCommit(_tokenIdSupply);
+
         (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
             .getBuyerOrderCosts(_tokenIdSupply);
         require(_tokensSent.sub(depositBu) == price, "IF"); //invalid funds
