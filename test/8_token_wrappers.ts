@@ -315,5 +315,28 @@ describe('Token Wrappers', () => {
         )
       ).to.be.revertedWith(revertReasons.INVALID_SIGNATURE_COMPONENTS);
     });
+
+    it('Should revert if the DAI token reverts', async () => {
+      await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
+      await mockDAI.mock.permit.revertsWithReason("Dai/invalid-permit");
+
+      const {v,r,s} = ecsign(
+        Buffer.from(digest.slice(2), 'hex'),
+        Buffer.from(user1.privateKey.slice(2), 'hex')
+      );
+
+      await expect(
+        contractDAITokenWrapper.permit(
+          user1.address,
+          contractDAITokenWrapper.address,
+          txValue,
+          deadline,
+          v,
+          r,
+          s
+        )
+      ).to.be.revertedWith(revertReasons.DAI_INVALID_PERMIT);
+
+    });
   });
 });
