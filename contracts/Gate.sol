@@ -56,6 +56,7 @@ contract Gate is IGate, Ownable, Pausable {
         external
         override
         whenNotPaused
+        onlyOwner
     {
         // should be limited who calls it. Otherwise attacker can "register" wrong mappings
         // Maybe this can be called from boson router?

@@ -5,10 +5,12 @@ pragma solidity 0.7.1;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "./interfaces/IERC1155NonTransferable.sol";
+
 /**
  * @title Non transferable token contract, implementing ERC-1155, but preventing transfers
  */
-contract ERC1155NonTransferable is ERC1155Pausable, Ownable {
+contract ERC1155NonTransferable is IERC1155NonTransferable, ERC1155Pausable, Ownable {
     constructor (string memory uri_) ERC1155(uri_) Ownable() {}
     
     /**
@@ -52,14 +54,14 @@ contract ERC1155NonTransferable is ERC1155Pausable, Ownable {
     /**
      * @notice Pause all token mint, transfer, burn
      */
-    function pause() external virtual override onlyOwner {
+    function pause() external override onlyOwner {
        _pause();
     }
 
     /**
      * @notice Unpause the contract and allows mint, transfer, burn
      */
-    function unpause() external virtual override onlyOwner{
+    function unpause() external override onlyOwner{
         _unpause();
     }
 }
