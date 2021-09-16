@@ -31,6 +31,8 @@ contract MockBosonRouter is
     address private voucherKernel;
     address private fundLimitsOracle;
 
+    mapping(uint256 => address) private voucherSetToGateContract;
+
     event LogOrderCreated(
         uint256 indexed _tokenIdSupply,
         address _seller,
@@ -147,8 +149,8 @@ contract MockBosonRouter is
         require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        uint256 tokenIdSupply =
-            IVoucherKernel(voucherKernel).createTokenSupplyID(
+        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
+            .createTokenSupplyID(
                 msg.sender,
                 metadata[0],
                 metadata[1],
@@ -180,7 +182,7 @@ contract MockBosonRouter is
         bytes32 r,
         bytes32 s,
         uint256[] calldata metadata
-    ) external override whenNotPaused {
+    ) external override whenNotPaused returns (uint256) {
         notZeroAddress(_tokenPriceAddress);
         notZeroAddress(_tokenDepositAddress);
         notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
@@ -200,8 +202,8 @@ contract MockBosonRouter is
             s
         );
 
-        uint256 tokenIdSupply =
-            IVoucherKernel(voucherKernel).createTokenSupplyID(
+        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
+            .createTokenSupplyID(
                 msg.sender,
                 metadata[0],
                 metadata[1],
@@ -232,6 +234,33 @@ contract MockBosonRouter is
         );
 
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNTKN);
+
+        return tokenIdSupply;
+    }
+
+    function requestCreateOrderTKNTKNWithPermitConditional(
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256[] calldata metadata,
+        address gateContract
+    ) external override {
+        uint256 tokenIdSupply = this.requestCreateOrderTKNTKNWithPermit(
+            _tokenPriceAddress,
+            _tokenDepositAddress,
+            _tokensSent,
+            deadline,
+            v,
+            r,
+            s,
+            metadata
+        );
+
+        voucherSetToGateContract[tokenIdSupply] = gateContract;
     }
 
     function requestCreateOrderETHTKNWithPermit(
@@ -261,8 +290,8 @@ contract MockBosonRouter is
             s
         );
 
-        uint256 tokenIdSupply =
-            IVoucherKernel(voucherKernel).createTokenSupplyID(
+        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
+            .createTokenSupplyID(
                 msg.sender,
                 metadata[0],
                 metadata[1],
@@ -307,8 +336,8 @@ contract MockBosonRouter is
         require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        uint256 tokenIdSupply =
-            IVoucherKernel(voucherKernel).createTokenSupplyID(
+        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
+            .createTokenSupplyID(
                 msg.sender,
                 metadata[0],
                 metadata[1],
@@ -345,8 +374,8 @@ contract MockBosonRouter is
         uint256 weiReceived = msg.value;
 
         //checks
-        (uint256 price, , uint256 depositBu) =
-            IVoucherKernel(voucherKernel).getOrderCosts(_tokenIdSupply);
+        (uint256 price, , uint256 depositBu) = IVoucherKernel(voucherKernel)
+            .getOrderCosts(_tokenIdSupply);
         require(price.add(depositBu) == weiReceived, "IF"); //invalid funds
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
@@ -373,16 +402,14 @@ contract MockBosonRouter is
         bytes32 rDeposit,
         bytes32 sDeposit // tokenDeposits
     ) external override nonReentrant whenNotPaused {
-        (uint256 price, uint256 depositBu) =
-            IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
+        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
+            .getBuyerOrderCosts(_tokenIdSupply);
         require(_tokensSent.sub(depositBu) == price, "IF"); //invalid funds
 
-        address tokenPriceAddress =
-            IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
-        address tokenDepositAddress =
-            IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                _tokenIdSupply
-            );
+        address tokenPriceAddress = IVoucherKernel(voucherKernel)
+            .getVoucherPriceToken(_tokenIdSupply);
+        address tokenDepositAddress = IVoucherKernel(voucherKernel)
+            .getVoucherDepositToken(_tokenIdSupply);
 
         IERC20WithPermit(tokenPriceAddress).permit(
             msg.sender,
@@ -445,16 +472,14 @@ contract MockBosonRouter is
         bytes32 r,
         bytes32 s
     ) external override nonReentrant whenNotPaused {
-        (uint256 price, uint256 depositBu) =
-            IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
+        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
+            .getBuyerOrderCosts(_tokenIdSupply);
         require(_tokensSent.sub(depositBu) == price, "IF"); //invalid funds
 
-        address tokenPriceAddress =
-            IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
-        address tokenDepositAddress =
-            IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                _tokenIdSupply
-            );
+        address tokenPriceAddress = IVoucherKernel(voucherKernel)
+            .getVoucherPriceToken(_tokenIdSupply);
+        address tokenDepositAddress = IVoucherKernel(voucherKernel)
+            .getVoucherDepositToken(_tokenIdSupply);
 
         require(tokenPriceAddress == tokenDepositAddress, "IC"); //invalid caller
 
@@ -500,17 +525,15 @@ contract MockBosonRouter is
         bytes32 r,
         bytes32 s
     ) external payable override nonReentrant whenNotPaused {
-        (uint256 price, uint256 depositBu) =
-            IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
+        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
+            .getBuyerOrderCosts(_tokenIdSupply);
         require(price == msg.value, "IP"); //invalid price
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         require(depositBu == _tokensDeposit, "ID"); // invalid deposit
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        address tokenDepositAddress =
-            IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                _tokenIdSupply
-            );
+        address tokenDepositAddress = IVoucherKernel(voucherKernel)
+            .getVoucherDepositToken(_tokenIdSupply);
         IERC20WithPermit(tokenDepositAddress).permit(
             msg.sender,
             address(this),
@@ -554,15 +577,15 @@ contract MockBosonRouter is
         bytes32 r,
         bytes32 s
     ) external payable override nonReentrant whenNotPaused {
-        (uint256 price, uint256 depositBu) =
-            IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
+        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
+            .getBuyerOrderCosts(_tokenIdSupply);
         require(price == _tokensPrice, "IP"); //invalid price
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         require(depositBu == msg.value, "ID"); // invalid deposit
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        address tokenPriceAddress =
-            IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
+        address tokenPriceAddress = IVoucherKernel(voucherKernel)
+            .getVoucherPriceToken(_tokenIdSupply);
         IERC20WithPermit(tokenPriceAddress).permit(
             msg.sender,
             address(this),
@@ -607,11 +630,8 @@ contract MockBosonRouter is
         nonReentrant
         whenNotPaused
     {
-        uint256 _burnedSupplyQty =
-            IVoucherKernel(voucherKernel).cancelOrFaultVoucherSet(
-                _tokenIdSupply,
-                msg.sender
-            );
+        uint256 _burnedSupplyQty = IVoucherKernel(voucherKernel)
+            .cancelOrFaultVoucherSet(_tokenIdSupply, msg.sender);
         ICashier(cashierAddress).withdrawDepositsSe(
             _tokenIdSupply,
             _burnedSupplyQty,
