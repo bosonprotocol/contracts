@@ -61,6 +61,7 @@ contract Gate is IGate, Ownable, Pausable {
         // should be limited who calls it. Otherwise attacker can "register" wrong mappings
         // Maybe this can be called from boson router?
 
+        require(_nftTokenID != 0, "TOKEN_ID_0_NOT_ALLOWED");
         require(voucherToToken[_tokenIdSupply] == 0, "ALREADY_REGISTERED");
         voucherToToken[_tokenIdSupply] = _nftTokenID;
     }

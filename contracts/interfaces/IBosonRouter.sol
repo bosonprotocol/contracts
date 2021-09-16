@@ -45,7 +45,8 @@ interface IBosonRouter {
         bytes32 r,
         bytes32 s,
         uint256[] calldata metadata,
-        address gateContract
+        address _gateAddress,
+        uint256 _nftTokenID
     ) external;
 
     function requestCreateOrderETHTKNWithPermit(

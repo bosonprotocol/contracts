@@ -11,6 +11,7 @@ import "./interfaces/IERC20WithPermit.sol";
 import "./interfaces/IFundLimitsOracle.sol";
 import "./interfaces/IBosonRouter.sol";
 import "./interfaces/ICashier.sol";
+import "./interfaces/IGate.sol";
 import "./UsingHelpers.sol";
 
 /**
@@ -246,7 +247,8 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s,
         uint256[] calldata metadata,
-        address gateContract
+        address _gateAddress,
+        uint256 _nftTokenID
     ) external override {
         uint256 tokenIdSupply = this.requestCreateOrderTKNTKNWithPermit(
             _tokenPriceAddress,
@@ -259,7 +261,10 @@ contract BosonRouter is
             metadata
         );
 
-        voucherSetToGateContract[tokenIdSupply] = gateContract;
+        voucherSetToGateContract[tokenIdSupply] = _gateAddress;
+        if (_nftTokenID > 0) {
+            IGate(_gateAddress).registerVoucherSetID(tokenIdSupply, _nftTokenID);
+        }
     }
 
     function requestCreateOrderETHTKNWithPermit(
