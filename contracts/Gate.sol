@@ -17,18 +17,18 @@ contract Gate is IGate, Ownable, Pausable {
     mapping(uint256 => uint256) private voucherToToken;
     mapping(address => mapping(uint256 => bool)) private isRevoked; // mapping user => voucherSet => bool
     
-    IERC1155 private nonTrasferableTokenContract;
+    IERC1155 private nonTransferableTokenContract;
     address private bosonRouter;
 
     /**
      * @notice Sets the contract, where gate contract checks if quest NFT token exists
-     * @param _nonTrasferableTokenContractAddress address of a non-transferable token contract
+     * @param _nonTransferableTokenContractAddress address of a non-transferable token contract
      */
-    function setNonTrasferableTokenContract(
-        address _nonTrasferableTokenContractAddress
+    function setNonTransferableTokenContract(
+        address _nonTransferableTokenContractAddress
     ) external override onlyOwner {
-        nonTrasferableTokenContract = IERC1155(
-            _nonTrasferableTokenContractAddress
+        nonTransferableTokenContract = IERC1155(
+            _nonTransferableTokenContractAddress
         );
 
         // TODO emit event
@@ -79,7 +79,7 @@ contract Gate is IGate, Ownable, Pausable {
     {
         return
             !isRevoked[_user][_tokenIdSupply] &&
-            nonTrasferableTokenContract.balanceOf(_user, voucherToToken[_tokenIdSupply]) > 0;
+            nonTransferableTokenContract.balanceOf(_user, voucherToToken[_tokenIdSupply]) > 0;
     }
 
     /**
