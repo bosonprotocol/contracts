@@ -103,21 +103,6 @@ contract ERC1155NonTransferable is
             "ERC1155NonTransferable: Tokens are non transferable"
         ); // _beforeTokenTransfer is called in mint/burn to too, we must allow it to pass
 
-        // check at the minting that user does not have token yet, and that at most 1 token is minted per call
-        // although this check is currently not sufficient -> nothing prevents that two ids are the same, effectivelly meaning more of the same tokens are minted.
-        if (from == address(0)) {
-            for (uint256 i = 0; i < ids.length; i++) {
-                require(
-                    balanceOf(to, ids[i]) == 0,
-                    "ERC1155NonTransferable: User already has the token"
-                );
-                require(
-                    amounts[i] == 1,
-                    "ERC1155NonTransferable: User can have at most 1 NFT per tokenID"
-                ); // alternatively we could force it to be 1
-            }
-        }
-
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
     }
 

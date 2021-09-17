@@ -14,12 +14,9 @@ import "./interfaces/IERC1155.sol";
  */
 
 contract Gate is IGate, Ownable, Pausable {
-    // assuming that gate calls only 1 ERC1155 contract (not dynamic)
-
     mapping(uint256 => uint256) private voucherToToken;
     mapping(address => mapping(uint256 => bool)) private isRevoked; // mapping user => voucherSet => bool
-    // alternative mapping(bytes32 => bool) private isRevoked; // where byte32 is keccak256(abi.encodePacked(_user,_tokenIdSupply))
-
+    
     IERC1155 private nonTrasferableTokenContract;
     address private bosonRouter;
 
@@ -33,6 +30,8 @@ contract Gate is IGate, Ownable, Pausable {
         nonTrasferableTokenContract = IERC1155(
             _nonTrasferableTokenContractAddress
         );
+
+        // TODO emit event
     }
 
     /**
@@ -45,6 +44,8 @@ contract Gate is IGate, Ownable, Pausable {
         onlyOwner
     {
         bosonRouter = _bosonRouter;
+
+        // TODO emit event
     }
 
     /**
@@ -58,12 +59,10 @@ contract Gate is IGate, Ownable, Pausable {
         whenNotPaused
         onlyOwner
     {
-        // should be limited who calls it. Otherwise attacker can "register" wrong mappings
-        // Maybe this can be called from boson router?
-
         require(_nftTokenID != 0, "TOKEN_ID_0_NOT_ALLOWED");
-        require(voucherToToken[_tokenIdSupply] == 0, "ALREADY_REGISTERED");
         voucherToToken[_tokenIdSupply] = _nftTokenID;
+
+        // TODO emit event
     }
 
     /**
@@ -73,14 +72,14 @@ contract Gate is IGate, Ownable, Pausable {
      * @return true if user posesses quest NFT token, and the token is not revoked
      */
     function check(address _user, uint256 _tokenIdSupply)
-        public
+        external
         view
         override
         returns (bool)
     {
         return
             !isRevoked[_user][_tokenIdSupply] &&
-            nonTrasferableTokenContract.balanceOf(_user, _tokenIdSupply) > 0;
+            nonTrasferableTokenContract.balanceOf(_user, voucherToToken[_tokenIdSupply]) > 0;
     }
 
     /**
@@ -94,10 +93,9 @@ contract Gate is IGate, Ownable, Pausable {
         whenNotPaused
     {
         require(msg.sender == bosonRouter, "NOT_A_ROUTER");
-        require(check(_user, _tokenIdSupply), "NOTHING_TO_REVOKE"); // not necessary under assumption that router is written correctly
+         
         isRevoked[_user][_tokenIdSupply] = true;
 
-        // alternative revoked[keccak256(abi.encodePacked(_user,_tokenIdSupply))] = true
     }
 
     /**

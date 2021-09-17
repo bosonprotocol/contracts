@@ -250,6 +250,9 @@ contract BosonRouter is
         address _gateAddress,
         uint256 _nftTokenID
     ) external override {
+        notZeroAddress(_gateAddress);
+        // should we check if gateAddress implements correct interface?
+
         uint256 tokenIdSupply = this.requestCreateOrderTKNTKNWithPermit(
             _tokenPriceAddress,
             _tokenDepositAddress,
@@ -397,12 +400,13 @@ contract BosonRouter is
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
 
-    function revokeConditionalCommit(uint _tokenIdSupply) internal {
+    function revokeConditionalCommit(uint256 _tokenIdSupply) internal {
         if (voucherSetToGateContract[_tokenIdSupply] != address(0)) {
-            IGate(voucherSetToGateContract[_tokenIdSupply]).revoke(
-                msg.sender,
-                _tokenIdSupply
+            IGate gateContract = IGate(
+                voucherSetToGateContract[_tokenIdSupply]
             );
+            gateContract.check(msg.sender, _tokenIdSupply);
+            gateContract.revoke(msg.sender, _tokenIdSupply);
         }
     }
 
