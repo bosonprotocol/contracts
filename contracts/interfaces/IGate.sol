@@ -5,10 +5,10 @@ pragma solidity 0.7.1;
 interface IGate {
     /**
      * @notice Sets the contract, where gate contract checks if quest NFT token exists
-     * @param _nonTrasferableTokenContractAddress address of a non-transferable token contract
+     * @param _nonTransferableTokenContractAddress address of a non-transferable token contract
      */
-    function setNonTrasferableTokenContract(
-        address _nonTrasferableTokenContractAddress
+    function setNonTransferableTokenContract(
+        address _nonTransferableTokenContractAddress
     ) external;
 
     /**
