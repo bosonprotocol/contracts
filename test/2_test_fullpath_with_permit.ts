@@ -1,7 +1,5 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
-import {deployMockContract} from '@ethereum-waffle/mock-contract';
-import {MockProvider} from '@ethereum-waffle/provider';
 import {assert, expect} from 'chai';
 import {ecsign} from 'ethereumjs-util';
 import constants from '../testHelpers/constants';
@@ -10,7 +8,6 @@ import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
 import UtilsBuilder from '../testHelpers/utilsBuilder';
 import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
-
 import {
   BosonRouter,
   ERC1155ERC721,
@@ -36,9 +33,6 @@ const BN = ethers.BigNumber.from;
 
 let utils: Utils;
 let users;
-let mockDAI;
-
-import DAIToken from './ABIs/DAIToken.json';
 
 describe('Cashier and VoucherKernel', () => {
   before(async () => {
@@ -62,6 +56,7 @@ describe('Cashier and VoucherKernel', () => {
     contractBSNTokenPrice: MockERC20Permit,
     contractBSNTokenDeposit: MockERC20Permit,
     contractTokenRegistry: TokenRegistry;
+
   let tokenSupplyKey, tokenVoucherKey, tokenVoucherKey1;
 
   const ZERO = BN(0);
@@ -154,79 +149,18 @@ describe('Cashier and VoucherKernel', () => {
       constants.TOKEN_LIMIT
     );
     await contractTokenRegistry.setETHLimit(constants.ETHER_LIMIT);
+
+    //Set Boson Token as it's own wrapper so that the same interface can be called in the code
+    await contractTokenRegistry.setTokenWrapperAddress(
+      contractBSNTokenPrice.address,
+      contractBSNTokenPrice.address
+    );
+
+    await contractTokenRegistry.setTokenWrapperAddress(
+      contractBSNTokenDeposit.address,
+      contractBSNTokenDeposit.address
+    );
   }
-
-  describe('TEST DAI MOCK', () => {
-    before(async () => {
-      await deployContracts();
-    });
-    it.skip('test mock DAI', async () => {
-      const [sender] = new MockProvider().getWallets();
-      mockDAI = await deployMockContract(sender, DAIToken.abi);
-      console.log('mockDAI.address ', mockDAI.address);
-
-      //console.log('mockDAI ', mockDAI);
-
-      console.log('0');
-
-      await mockDAI.mock.transferFrom.returns(false);
-
-      console.log('1');
-
-      const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
-
-      console.log('2');
-
-      //const nonce = await mockDAI.mock.nonces(users.seller.address);
-
-      console.log('users.seller.address ', users.seller.address);
-      console.log('contractCashier.address ', contractCashier.address);
-
-      const digest = await getApprovalDigest(
-        mockDAI,
-        users.seller.address,
-        contractCashier.address,
-        txValue,
-        0,
-        deadline
-      );
-
-      console.log('3');
-
-      const {v, r, s} = ecsign(
-        Buffer.from(digest.slice(2), 'hex'),
-        Buffer.from(users.seller.privateKey.slice(2), 'hex')
-      );
-
-      console.log('4');
-
-      const sellerInstance = contractBosonRouter.connect(users.seller.signer);
-
-      console.log('5');
-
-      expect(
-        await sellerInstance.requestCreateOrderTKNTKNWithPermit(
-          '',
-          contractBSNTokenDeposit.address,
-          txValue,
-          deadline,
-          v,
-          r,
-          s,
-          [
-            constants.PROMISE_VALID_FROM,
-            constants.PROMISE_VALID_TO,
-            constants.PROMISE_PRICE1,
-            constants.seller_deposit,
-            constants.PROMISE_DEPOSITBU1,
-            constants.ORDER_QUANTITY1,
-          ]
-        )
-      ).to.be.equal(false);
-
-      console.log('6');
-    });
-  });
 
   describe('TOKEN SUPPLY CREATION (Voucher batch creation)', () => {
     let remQty = constants.QTY_10 as number | string;
@@ -1603,8 +1537,6 @@ describe('Cashier and VoucherKernel', () => {
       const sellerDeposit = BN(constants.seller_deposit).mul(
         BN(constants.QTY_10)
       );
-
-      console.log('sellerDeposit ', sellerDeposit.toString());
 
       eventUtils.assertEventEmitted(
         txReceipt,

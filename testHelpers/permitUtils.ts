@@ -56,42 +56,6 @@ export async function getApprovalDigest(
   );
 }
 
-export async function getApprovalDigestNoToken(
-  tokenName: string,
-  owner: string,
-  spender: string,
-  value: string | number | BigNumber,
-  nonce: string | number | BigNumber,
-  deadline: string | number | BigNumber,
-  tokenAddress: string
-): Promise<any> {
-  const DOMAIN_SEPARATOR = getDomainSeparator(tokenName, tokenAddress);
-
-  return keccak256(
-    solidityPack(
-      ['bytes1', 'bytes1', 'bytes32', 'bytes32'],
-      [
-        '0x19',
-        '0x01',
-        DOMAIN_SEPARATOR,
-        keccak256(
-          defaultAbiCoder.encode(
-            ['bytes32', 'address', 'address', 'uint256', 'uint256', 'uint256'],
-            [
-              PERMIT_TYPEHASH,
-              owner,
-              spender,
-              value.toString(),
-              nonce.toString(),
-              deadline,
-            ]
-          )
-        ),
-      ]
-    )
-  );
-}
-
 export function getDomainSeparator(name: string, tokenAddress: string): string {
   return keccak256(
     defaultAbiCoder.encode(

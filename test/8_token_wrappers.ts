@@ -1,12 +1,12 @@
 import {ethers} from 'hardhat';
 import {ContractFactory, Contract, Wallet, BigNumber} from 'ethers';
 import {waffle} from 'hardhat';
-import {expect} from 'chai';
+import {assert, expect} from 'chai';
 import {ecsign} from 'ethereumjs-util';
 import constants from '../testHelpers/constants';
 import {advanceTimeSeconds} from '../testHelpers/timemachine';
 import Utils from '../testHelpers/utils';
-import {toWei, getApprovalDigestNoToken} from '../testHelpers/permitUtils';
+import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
 import IDAI from '../artifacts/contracts/DAITokenWrapper.sol/IDAI.json';
@@ -45,20 +45,23 @@ describe('Token Wrappers', () => {
     contractDAITokenWrapper = (await DAITokenWrapper_Factory.deploy(
       mockDAI.address
     )) as Contract & DAITokenWrapper;
+
+    await contractDAITokenWrapper.deployed();
   }
 
   describe('DAI Token Wrapper', () => {
     beforeEach(async () => {
       await deployContracts();
 
-      digest = await getApprovalDigestNoToken(
-        'MockDAI',
+      await mockDAI.mock.name.returns('MockDAI');
+
+      digest = await getApprovalDigest(
+        mockDAI,
         user1.address,
         contractDAITokenWrapper.address,
         txValue,
         0,
-        deadline,
-        mockDAI.address
+        deadline
       );
     });
 
@@ -98,6 +101,12 @@ describe('Token Wrappers', () => {
         Buffer.from(user1.privateKey.slice(2), 'hex')
       );
 
+      assert.isDefined(user1.address.toString());
+      assert.isDefined(mockDAI.address.toString());
+      assert.isDefined(contractDAITokenWrapper.address.toString());
+      assert.isDefined(txValue.toString());
+
+      //permit
       //permit
       await expect(
         contractDAITokenWrapper.permit(
@@ -110,8 +119,13 @@ describe('Token Wrappers', () => {
           s
         )
       )
-        .to.emit(contractDAITokenWrapper, eventNames.LOG_PERMIT_CALLED)
-        .withArgs(mockDAI.address);
+        .to.emit(contractDAITokenWrapper, eventNames.LOG_PERMT_CALLED_ON_TOKEN)
+        .withArgs(
+          mockDAI.address,
+          user1.address,
+          contractDAITokenWrapper.address,
+          ethers.constants.Zero
+        );
     });
 
     it('Should call permit on the DAI token if deadline is zero', async () => {
@@ -135,8 +149,13 @@ describe('Token Wrappers', () => {
           s
         )
       )
-        .to.emit(contractDAITokenWrapper, eventNames.LOG_PERMIT_CALLED)
-        .withArgs(mockDAI.address);
+        .to.emit(contractDAITokenWrapper, eventNames.LOG_PERMT_CALLED_ON_TOKEN)
+        .withArgs(
+          mockDAI.address,
+          user1.address,
+          contractDAITokenWrapper.address,
+          ethers.constants.Zero
+        );
     });
 
     /////////////////////
@@ -318,9 +337,9 @@ describe('Token Wrappers', () => {
 
     it('Should revert if the DAI token reverts', async () => {
       await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
-      await mockDAI.mock.permit.revertsWithReason("Dai/invalid-permit");
+      await mockDAI.mock.permit.revertsWithReason('Dai/invalid-permit');
 
-      const {v,r,s} = ecsign(
+      const {v, r, s} = ecsign(
         Buffer.from(digest.slice(2), 'hex'),
         Buffer.from(user1.privateKey.slice(2), 'hex')
       );
@@ -336,7 +355,6 @@ describe('Token Wrappers', () => {
           s
         )
       ).to.be.revertedWith(revertReasons.DAI_INVALID_PERMIT);
-
     });
   });
 });

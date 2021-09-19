@@ -69,7 +69,7 @@ contract DAITokenWrapper is
         require(v >= 0 && r != bytes32(0) && s != bytes32(0), "INVALID_SIGNATURE_COMPONENTS");
         uint nonce =  IDAI(daiTokenAddress).nonces(owner);
         IDAI(daiTokenAddress).permit(owner, spender, nonce, deadline, true, v, r, s);
-        emit LogPermitCalledOnToken(daiTokenAddress);
+        emit LogPermitCalledOnToken(daiTokenAddress, owner, spender, 0);    
     }
 
     /**
@@ -142,6 +142,12 @@ interface IDAI {
     
     function permit(address holder, address spender, uint256 nonce, uint256 expiry,
                     bool allowed, uint8 v, bytes32 r, bytes32 s) external;
+
+    function transferFrom(
+        address from,
+        address to,
+        uint256 value
+    ) external returns (bool);
 
     function nonces(address owner) external view returns (uint256);
 }

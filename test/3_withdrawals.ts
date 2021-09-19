@@ -136,6 +136,17 @@ describe('Cashier withdrawals ', () => {
       constants.TOKEN_LIMIT
     );
     await contractTokenRegistry.setETHLimit(constants.ETHER_LIMIT);
+
+    //Set Boson Token as it's own wrapper so that the same interface can be called in the code
+    await contractTokenRegistry.setTokenWrapperAddress(
+      contractBSNTokenPrice.address,
+      contractBSNTokenPrice.address
+    );
+
+    await contractTokenRegistry.setTokenWrapperAddress(
+      contractBSNTokenDeposit.address,
+      contractBSNTokenDeposit.address
+    );
   }
 
   async function setPeriods() {

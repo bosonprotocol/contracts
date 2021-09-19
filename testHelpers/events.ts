@@ -32,7 +32,7 @@ export const eventNames = {
   LOG_CANCEL_VOUCHER_SET: 'LogVoucherSetFaultCancel',
   LOG_TOKEN_WRAPPER_CHANGED: 'LogTokenWrapperChanged',
   LOG_TOKEN_ADDRESS_CHANGED: 'LogTokenAddressChanged',
-  LOG_PERMIT_CALLED: 'LogPermitCalledOnToken',
+  LOG_PERMT_CALLED_ON_TOKEN: 'LogPermitCalledOnToken',
   PAUSED: 'Paused',
   UNPAUSED: 'Unpaused',
 };
@@ -77,22 +77,43 @@ export function assertEventEmitted(
   );
   const iface = new ethers.utils.Interface(eventFragment);
 
+  //console.log("receipt.logs in assertEventEmitted ", receipt.logs);
+
   for (const log in receipt.logs) {
     const topics = receipt.logs[log].topics;
+
+    //console.group("topics in assertEventEmitted ", topics);
+
     for (const index in topics) {
       const encodedTopic = topics[index];
+
+      //console.group("encodedTopic in assertEventEmitted ", encodedTopic);
 
       try {
         // CHECK IF TOPIC CORRESPONDS TO THE EVENT GIVEN TO FN
         const event = iface.getEvent(encodedTopic);
 
+        //console.log("event.name in assertEventEmitted ", event.name);
+
         if (event.name == eventName) {
+          /*
+          console.group("event.name == eventName ");
+          console.group("event.name iface.getEvent(encodedTopic) ", event.name);
+          console.group("eventName parameter  ", eventName);
+          console.log("log ", log);
+          console.log("receipt.logs[log] ", receipt.logs[log])
+          console.log("iface.parseLog(receipt.logs[log]) ", iface.parseLog(receipt.logs[log]).args);
+        */
           found = true;
           const eventArgs = iface.parseLog(receipt.logs[log]).args;
+
+          //console.log("eventArgs  ", eventArgs);
+
           callback(eventArgs);
         }
       } catch (e) {
         if (e.message.includes('no matching event')) continue;
+        console.log('event error: ', e);
         throw new Error(e);
       }
     }

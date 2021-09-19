@@ -6,8 +6,13 @@ interface ITokenWrapper {
         address indexed _newWrapperAddress,
         address indexed _triggeredBy
     );
-    event LogBosonRouterSet(address _newBosonRouter, address _triggeredBy);
-    event LogPermitCalledOnToken(address indexed tokenAddress);
+
+    event LogPermitCalledOnToken(
+        address indexed _tokenAddress,
+        address indexed _owner,
+        address indexed _spender,
+        uint256 _value
+    );
 
     /**
      * @notice Provides a way to make calls to the permit function of tokens in a uniform way
