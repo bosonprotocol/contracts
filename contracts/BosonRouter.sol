@@ -40,6 +40,11 @@ contract BosonRouter is
         uint8 _paymentType
     );
 
+    event LogConditionalOrderCreated(
+        uint256 indexed tokenIdSupply,
+        address indexed _gateAddress
+    );
+
     /**
      * @notice Acts as a modifier, but it's cheaper. Checking if a non-zero address is provided, otherwise reverts.
      */
@@ -265,6 +270,9 @@ contract BosonRouter is
         );
 
         voucherSetToGateContract[tokenIdSupply] = _gateAddress;
+
+        emit LogConditionalOrderCreated(tokenIdSupply, _gateAddress);
+
         if (_nftTokenID > 0) {
             IGate(_gateAddress).registerVoucherSetID(
                 tokenIdSupply,
