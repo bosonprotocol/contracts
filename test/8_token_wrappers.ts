@@ -21,16 +21,22 @@ const deadline = toWei(1);
 const ONE_VOUCHER = 1;
 
 let mockDAI: Contract;
-let owner, otherToken, user1, attacker: Wallet;
-let DAITokenWrapper_Factory: ContractFactory;
+let owner, otherToken, user1, attacker, contractBosonRouter: Wallet;
 let txValue: BigNumber;
 let digest: any;
-let contractDAITokenWrapper: DAITokenWrapper;
 let timestamp: number;
+let DAITokenWrapper_Factory: ContractFactory;
+let contractDAITokenWrapper: DAITokenWrapper;
 
 describe('Token Wrappers', () => {
   before(async () => {
-    [owner, otherToken, user1, attacker] = provider.getWallets();
+    [
+      owner,
+      otherToken,
+      user1,
+      attacker,
+      contractBosonRouter,
+    ] = provider.getWallets();
 
     DAITokenWrapper_Factory = await ethers.getContractFactory(
       'DAITokenWrapper'
@@ -111,7 +117,7 @@ describe('Token Wrappers', () => {
       await expect(
         contractDAITokenWrapper.permit(
           user1.address,
-          contractDAITokenWrapper.address,
+          contractBosonRouter.address,
           txValue,
           deadline,
           v,
@@ -123,7 +129,7 @@ describe('Token Wrappers', () => {
         .withArgs(
           mockDAI.address,
           user1.address,
-          contractDAITokenWrapper.address,
+          contractBosonRouter.address,
           ethers.constants.Zero
         );
     });
@@ -141,7 +147,7 @@ describe('Token Wrappers', () => {
       await expect(
         contractDAITokenWrapper.permit(
           user1.address,
-          contractDAITokenWrapper.address,
+          contractBosonRouter.address,
           txValue,
           ethers.constants.Zero,
           v,
@@ -153,7 +159,7 @@ describe('Token Wrappers', () => {
         .withArgs(
           mockDAI.address,
           user1.address,
-          contractDAITokenWrapper.address,
+          contractBosonRouter.address,
           ethers.constants.Zero
         );
     });
@@ -210,7 +216,7 @@ describe('Token Wrappers', () => {
       await expect(
         contractDAITokenWrapper.permit(
           user1.address,
-          contractDAITokenWrapper.address,
+          contractBosonRouter.address,
           txValue,
           deadline,
           v,
@@ -232,7 +238,7 @@ describe('Token Wrappers', () => {
       await expect(
         contractDAITokenWrapper.permit(
           ethers.constants.AddressZero,
-          contractDAITokenWrapper.address,
+          contractBosonRouter.address,
           txValue,
           deadline,
           v,
@@ -281,7 +287,7 @@ describe('Token Wrappers', () => {
       await expect(
         contractDAITokenWrapper.permit(
           user1.address,
-          contractDAITokenWrapper.address,
+          contractBosonRouter.address,
           txValue,
           newDeadline,
           v,
@@ -303,7 +309,7 @@ describe('Token Wrappers', () => {
       await expect(
         contractDAITokenWrapper.permit(
           user1.address,
-          contractDAITokenWrapper.address,
+          contractBosonRouter.address,
           txValue,
           deadline,
           v,
@@ -325,7 +331,7 @@ describe('Token Wrappers', () => {
       await expect(
         contractDAITokenWrapper.permit(
           user1.address,
-          contractDAITokenWrapper.address,
+          contractBosonRouter.address,
           txValue,
           deadline,
           v,
@@ -347,7 +353,7 @@ describe('Token Wrappers', () => {
       await expect(
         contractDAITokenWrapper.permit(
           user1.address,
-          contractDAITokenWrapper.address,
+          contractBosonRouter.address,
           txValue,
           deadline,
           v,
