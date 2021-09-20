@@ -1,7 +1,7 @@
-import {ethers} from 'hardhat';
-import {Signer, ContractFactory, Contract} from 'ethers';
+import { ethers } from 'hardhat';
+import { Signer, ContractFactory, Contract } from 'ethers';
 
-import {assert, expect} from 'chai';
+import { assert, expect } from 'chai';
 import constants from '../testHelpers/constants';
 
 import Users from '../testHelpers/users';
@@ -9,13 +9,13 @@ import Utils from '../testHelpers/utils';
 
 const BN = ethers.BigNumber.from;
 
-import {ERC1155NonTransferable} from '../typechain';
+import { ERC1155NonTransferable } from '../typechain';
 
 let ERC1155NonTransferable_Factory: ContractFactory;
 
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
-import {eventNames} from '../testHelpers/events';
+import { eventNames } from '../testHelpers/events';
 
 let users;
 
@@ -32,11 +32,6 @@ describe('ERC1155 non transferable functionality', async () => {
   let contractERC1155NonTransferable: ERC1155NonTransferable;
 
   async function deployContracts() {
-    const timestamp = await Utils.getCurrTimestamp();
-
-    constants.PROMISE_VALID_FROM = timestamp;
-    constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
-
     contractERC1155NonTransferable = (await ERC1155NonTransferable_Factory.deploy(
       '/non/transferable/uri'
     )) as Contract & ERC1155NonTransferable;
@@ -51,23 +46,20 @@ describe('ERC1155 non transferable functionality', async () => {
 
     it('Owner should be able to mint', async () => {
       const nftTokenID = BN('2');
-      await contractERC1155NonTransferable.mint(
+      expect(await contractERC1155NonTransferable.mint(
         users.other1.address,
         nftTokenID,
         constants.ONE,
         constants.ZERO_BYTES
-      );
+      ))
+        .to.emit(contractERC1155NonTransferable, eventNames.TRANSFER_SINGLE)
+        .withArgs(users.deployer.address, constants.ZERO_ADDRESS, users.other1.address, nftTokenID, constants.ONE);
 
-      const balance = await contractERC1155NonTransferable.balanceOf(
+      expect(await contractERC1155NonTransferable.balanceOf(
         users.other1.address,
         nftTokenID
-      );
+      )).to.equal(constants.ONE)
 
-      assert.equal(
-        balance.toString(),
-        constants.ONE.toString(),
-        'Balance mismatch'
-      );
     });
 
     it('Owner should be able to mint batch', async () => {
@@ -78,14 +70,17 @@ describe('ERC1155 non transferable functionality', async () => {
         constants.ONE,
         constants.ONE,
       ];
-      await contractERC1155NonTransferable.mintBatch(
+
+      expect(await contractERC1155NonTransferable.mintBatch(
         users.other1.address,
         nftTokenIDs,
         balances,
         constants.ZERO_BYTES
-      );
+      ))
+        .to.emit(contractERC1155NonTransferable, eventNames.TRANSFER_BATCH)
+        .withArgs(users.deployer.address, constants.ZERO_ADDRESS, users.other1.address, nftTokenIDs, balances);
 
-      const balance = await contractERC1155NonTransferable.balanceOfBatch(
+      expect((await contractERC1155NonTransferable.balanceOfBatch(
         [
           users.other1.address,
           users.other1.address,
@@ -93,13 +88,8 @@ describe('ERC1155 non transferable functionality', async () => {
           users.other1.address,
         ],
         nftTokenIDs
-      );
+      )).map((balance) => balance.toString())).to.include.members(balances.map((balance) => balance.toString()))
 
-      assert.equal(
-        JSON.stringify(balance.map((balance) => balance.toString())),
-        JSON.stringify(balances.map((balance) => balance.toString())),
-        'Balance mismatch'
-      );
     });
 
     it('Owner should be able to burn', async () => {
@@ -109,24 +99,22 @@ describe('ERC1155 non transferable functionality', async () => {
         nftTokenID,
         constants.ONE,
         constants.ZERO_BYTES
-      );
+      )
 
-      await contractERC1155NonTransferable.burn(
+      expect(await contractERC1155NonTransferable.burn(
         users.other1.address,
         nftTokenID,
         constants.ONE
-      );
+      ))
+        .to.emit(contractERC1155NonTransferable, eventNames.TRANSFER_SINGLE)
+        .withArgs(users.deployer.address, users.other1.address, constants.ZERO_ADDRESS, nftTokenID, constants.ONE);
 
-      const balance = await contractERC1155NonTransferable.balanceOf(
+
+      expect(await contractERC1155NonTransferable.balanceOf(
         users.other1.address,
         nftTokenID
-      );
+      )).to.equal(constants.ZERO)
 
-      assert.equal(
-        balance.toString(),
-        constants.ZERO.toString(),
-        'Balance mismatch'
-      );
     });
 
     it('Owner should be able to mint batch', async () => {
@@ -151,13 +139,16 @@ describe('ERC1155 non transferable functionality', async () => {
         constants.ZERO_BYTES
       );
 
-      await contractERC1155NonTransferable.burnBatch(
+      expect(await contractERC1155NonTransferable.burnBatch(
         users.other1.address,
         nftTokenIDs,
         balances
-      );
+      ))
+        .to.emit(contractERC1155NonTransferable, eventNames.TRANSFER_BATCH)
+        .withArgs(users.deployer.address, users.other1.address, constants.ZERO_ADDRESS, nftTokenIDs, balances);
 
-      const balance = await contractERC1155NonTransferable.balanceOfBatch(
+
+      expect((await contractERC1155NonTransferable.balanceOfBatch(
         [
           users.other1.address,
           users.other1.address,
@@ -165,13 +156,8 @@ describe('ERC1155 non transferable functionality', async () => {
           users.other1.address,
         ],
         nftTokenIDs
-      );
+      )).map((balance) => balance.toString())).to.include.members(zeroBalances.map((balance) => balance.toString()))
 
-      assert.equal(
-        JSON.stringify(balance.map((balance) => balance.toString())),
-        JSON.stringify(zeroBalances.map((balance) => balance.toString())),
-        'Balance mismatch'
-      );
     });
 
     it('Tokens are non-transferable', async () => {
@@ -197,27 +183,16 @@ describe('ERC1155 non transferable functionality', async () => {
         )
       ).to.be.revertedWith(revertReasons.NON_TRANSFERABLE);
 
-      const balance1 = await contractERC1155NonTransferable.balanceOf(
+      expect(await contractERC1155NonTransferable.balanceOf(
         users.other1.address,
         nftTokenID
-      );
+      )).to.equal(constants.ONE);
 
-      const balance2 = await contractERC1155NonTransferable.balanceOf(
+      expect(await contractERC1155NonTransferable.balanceOf(
         users.other2.address,
         nftTokenID
-      );
+      )).to.equal(constants.ZERO);
 
-      assert.equal(
-        balance1.toString(),
-        constants.ONE.toString(),
-        'Balance of user 1mismatch'
-      );
-
-      assert.equal(
-        balance2.toString(),
-        constants.ZERO.toString(),
-        'Balance of user 2 mismatch'
-      );
     });
 
     it('[NEGATIVE][mint] Should revert if executed by attacker', async () => {
@@ -290,43 +265,26 @@ describe('ERC1155 non transferable functionality', async () => {
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
     });
 
-    it('Owner should be able to mint', async () => {
-      const nftTokenID = BN('2');
-      await contractERC1155NonTransferable.mint(
-        users.other1.address,
-        nftTokenID,
-        constants.ONE,
-        constants.ZERO_BYTES
-      );
 
-      const balance = await contractERC1155NonTransferable.balanceOf(
-        users.other1.address,
-        nftTokenID
-      );
-
-      assert.equal(
-        balance.toString(),
-        constants.ONE.toString(),
-        'Balance mismatch'
-      );
-    });
 
     it('Owner should be able to pause', async () => {
-      await contractERC1155NonTransferable.pause();
+      expect(await contractERC1155NonTransferable.pause())
+        .to.emit(contractERC1155NonTransferable, eventNames.PAUSED)
+        .withArgs(users.deployer.address);
 
-      const status = await contractERC1155NonTransferable.paused();
+      expect(await contractERC1155NonTransferable.paused()).to.be.true;
 
-      assert.equal(status, true, 'Should be paused');
     });
 
     it('Owner should be able to unpause', async () => {
       await contractERC1155NonTransferable.pause();
 
-      await contractERC1155NonTransferable.unpause();
+      expect(await contractERC1155NonTransferable.unpause())
+        .to.emit(contractERC1155NonTransferable, eventNames.UNPAUSED)
+        .withArgs(users.deployer.address);
 
-      const status = await contractERC1155NonTransferable.paused();
+      expect(await contractERC1155NonTransferable.paused()).to.be.false;
 
-      assert.equal(status, false, 'Should be unpaused');
     });
 
     it('[NEGATIVE] During the pause mint and burn does not work', async () => {
