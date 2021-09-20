@@ -58,8 +58,6 @@ contract BosonRouter is
      * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the TokenRegistry (ETH).
      */
     function notAboveETHLimit(uint256 value) internal view {
-        console.log("value in notAboveETHLimit ", value);
-        console.log("ETHLImit ", ITokenRegistry(tokenRegistry).getETHLimit());
         require(
             value <= ITokenRegistry(tokenRegistry).getETHLimit(),
             "AL" // above limit
@@ -258,7 +256,6 @@ contract BosonRouter is
         bytes32 s,
         uint256[] calldata metadata
     ) external override whenNotPaused {
-        console.log("inside requestCreateOrderETHTKNWithPermit");
         notZeroAddress(_tokenDepositAddress);
         notAboveETHLimit(metadata[2].mul(metadata[5]));
         notAboveTokenLimit(_tokenDepositAddress, metadata[3].mul(metadata[5]));
