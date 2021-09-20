@@ -16,9 +16,22 @@ import "./interfaces/IERC1155.sol";
 contract Gate is IGate, Ownable, Pausable {
     mapping(uint256 => uint256) private voucherToToken;
     mapping(address => mapping(uint256 => bool)) private isRevoked; // mapping user => voucherSet => bool
-    
+
     IERC1155 private nonTransferableTokenContract;
     address private bosonRouter;
+
+    event NonTransferableContractSet(
+        address _nonTransferableTokenContractAddress
+    );
+    event BosonRouterSet(address _bosonRouter);
+    event VoucherSetRegistered(
+        uint256 indexed _tokenIdSupply,
+        uint256 _nftTokenID
+    );
+    event UserVoucherRevoked(
+        address indexed _user,
+        uint256 indexed _tokenIdSupply
+    );
 
     /**
      * @notice Sets the contract, where gate contract checks if quest NFT token exists
@@ -31,7 +44,7 @@ contract Gate is IGate, Ownable, Pausable {
             _nonTransferableTokenContractAddress
         );
 
-        // TODO emit event
+        emit NonTransferableContractSet(_nonTransferableTokenContractAddress);
     }
 
     /**
@@ -45,7 +58,7 @@ contract Gate is IGate, Ownable, Pausable {
     {
         bosonRouter = _bosonRouter;
 
-        // TODO emit event
+        emit BosonRouterSet(_bosonRouter);
     }
 
     /**
@@ -62,7 +75,7 @@ contract Gate is IGate, Ownable, Pausable {
         require(_nftTokenID != 0, "TOKEN_ID_0_NOT_ALLOWED");
         voucherToToken[_tokenIdSupply] = _nftTokenID;
 
-        // TODO emit event
+        emit VoucherSetRegistered(_tokenIdSupply, _nftTokenID);
     }
 
     /**
@@ -79,7 +92,11 @@ contract Gate is IGate, Ownable, Pausable {
     {
         return
             !isRevoked[_user][_tokenIdSupply] &&
-            nonTransferableTokenContract.balanceOf(_user, voucherToToken[_tokenIdSupply]) > 0;
+            nonTransferableTokenContract.balanceOf(
+                _user,
+                voucherToToken[_tokenIdSupply]
+            ) >
+            0;
     }
 
     /**
@@ -93,9 +110,10 @@ contract Gate is IGate, Ownable, Pausable {
         whenNotPaused
     {
         require(msg.sender == bosonRouter, "NOT_A_ROUTER");
-         
+
         isRevoked[_user][_tokenIdSupply] = true;
 
+        emit UserVoucherRevoked(_user, _tokenIdSupply);
     }
 
     /**
