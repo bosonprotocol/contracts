@@ -25,6 +25,7 @@ export default {
   ESCROW_EMPTY: 'ESCROW_EMPTY',
   PAUSED: 'Pausable: paused',
   NOT_PAUSED: 'Pausable: not paused',
+  PAUSED_ERC1155: 'ERC1155Pausable: token transfer while paused',
   MANUAL_WITHDRAW_NOT_ALLOWED: 'Owner did not allow manual withdraw',
   ONLY_ROUTER_OWNER: 'NO',
   ONLY_FROM_ROUTER: 'UNAUTHORIZED_BR',
