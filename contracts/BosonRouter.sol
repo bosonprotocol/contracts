@@ -187,7 +187,7 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s,
         uint256[] calldata metadata
-    ) external override whenNotPaused returns (uint256) {
+    ) public override whenNotPaused returns (uint256) {
         notZeroAddress(_tokenPriceAddress);
         notZeroAddress(_tokenDepositAddress);
         notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
@@ -258,7 +258,7 @@ contract BosonRouter is
         notZeroAddress(_gateAddress);
         // should we check if gateAddress implements correct interface?
 
-        uint256 tokenIdSupply = this.requestCreateOrderTKNTKNWithPermit(
+        uint256 tokenIdSupply = requestCreateOrderTKNTKNWithPermit(
             _tokenPriceAddress,
             _tokenDepositAddress,
             _tokensSent,

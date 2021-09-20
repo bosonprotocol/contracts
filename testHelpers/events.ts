@@ -2,6 +2,7 @@ import {ethers} from 'hardhat';
 
 export const eventNames = {
   LOG_ORDER_CREATED: 'LogOrderCreated',
+  LOG_CONDITIONAL_ORDER_CREATED: 'LogConditionalOrderCreated',
   LOG_PROMISE_CREATED: 'LogPromiseCreated',
   LOG_VOUCHER_DELIVERED: 'LogVoucherDelivered',
   LOG_VOUCHER_REDEEMED: 'LogVoucherRedeemed',

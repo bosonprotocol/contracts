@@ -6,6 +6,9 @@ import constants from '../testHelpers/constants';
 
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
+import UtilsBuilder from '../testHelpers/utilsBuilder';
+
+let utils: Utils;
 
 const BN = ethers.BigNumber.from;
 
@@ -18,6 +21,7 @@ import {
   Cashier,
   FundLimitsOracle,
   MockBosonRouter,
+  MockERC20Permit,
 } from '../typechain';
 
 let ERC1155NonTransferable_Factory: ContractFactory;
@@ -27,6 +31,7 @@ let ERC1155ERC721_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let FundLimitsOracle_Factory: ContractFactory;
+let MockERC20Permit_Factory: ContractFactory;
 
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
@@ -52,6 +57,9 @@ describe('Gate contract', async () => {
     FundLimitsOracle_Factory = await ethers.getContractFactory(
       'FundLimitsOracle'
     );
+    MockERC20Permit_Factory = await ethers.getContractFactory(
+      'MockERC20Permit'
+    );
   });
 
   let contractERC1155NonTransferable: ERC1155NonTransferable,
@@ -60,7 +68,9 @@ describe('Gate contract', async () => {
     contractVoucherKernel: VoucherKernel,
     contractCashier: Cashier,
     contractBosonRouter: BosonRouter,
-    contractFundLimitsOracle: FundLimitsOracle;
+    contractFundLimitsOracle: FundLimitsOracle,
+    contractBSNTokenPrice: MockERC20Permit,
+    contractBSNTokenDeposit: MockERC20Permit;
 
   async function deployContracts() {
     // const timestamp = await Utils.getCurrTimestamp();
@@ -95,35 +105,56 @@ describe('Gate contract', async () => {
       contractFundLimitsOracle.address,
       contractCashier.address
     )) as Contract & BosonRouter;
+    contractBSNTokenPrice = (await MockERC20Permit_Factory.deploy(
+      'BosonTokenPrice',
+      'BPRC'
+    )) as Contract & MockERC20Permit;
+
+    contractBSNTokenDeposit = (await MockERC20Permit_Factory.deploy(
+      'BosonTokenDeposit',
+      'BDEP'
+    )) as Contract & MockERC20Permit;
 
     await contractFundLimitsOracle.deployed();
     await contractERC1155ERC721.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
     await contractBosonRouter.deployed();
+    await contractBSNTokenPrice.deployed();
+    await contractBSNTokenDeposit.deployed();
 
-    // await contractERC1155ERC721.setApprovalForAll(
-    //   contractVoucherKernel.address,
-    //   true
-    // );
-    // await contractERC1155ERC721.setVoucherKernelAddress(
-    //   contractVoucherKernel.address
-    // );
+    await contractERC1155ERC721.setApprovalForAll(
+      contractVoucherKernel.address,
+      true
+    );
+    await contractERC1155ERC721.setVoucherKernelAddress(
+      contractVoucherKernel.address
+    );
 
-    // await contractERC1155ERC721.setCashierAddress(contractCashier.address);
+    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 
-    // await contractVoucherKernel.setBosonRouterAddress(
-    //   contractBosonRouter.address
-    // );
-    // await contractVoucherKernel.setCashierAddress(contractCashier.address);
+    await contractVoucherKernel.setBosonRouterAddress(
+      contractBosonRouter.address
+    );
+    await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
-    // await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-    // await contractCashier.setTokenContractAddress(
-    //   contractERC1155ERC721.address
-    // );
+    await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
+    await contractCashier.setTokenContractAddress(
+      contractERC1155ERC721.address
+    );
 
-    // await contractVoucherKernel.setComplainPeriod(sixtySeconds);
-    // await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
+    await contractVoucherKernel.setComplainPeriod(sixtySeconds);
+    await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
+
+    await contractFundLimitsOracle.setTokenLimit(
+      contractBSNTokenPrice.address,
+      constants.TOKEN_LIMIT
+    );
+    await contractFundLimitsOracle.setTokenLimit(
+      contractBSNTokenDeposit.address,
+      constants.TOKEN_LIMIT
+    );
+    await contractFundLimitsOracle.setETHLimit(constants.ETHER_LIMIT);
   }
 
   describe('Basic operations', () => {
@@ -159,16 +190,14 @@ describe('Gate contract', async () => {
         .withArgs(voucherSetId, nftTokenID);
     });
 
-    it('Boson router should be able to revoke voucher set id', async () => {
-      deployBosonRouterContracts();
+    it.only('Boson router should be able to revoke voucher set id', async () => {
+      await deployBosonRouterContracts();
 
-      const voucherSetId = BN('12345');
+      // const voucherSetId = BN('12345');
       const nftTokenID = BN('2');
 
-      await contractGate.registerVoucherSetID(voucherSetId, nftTokenID);
-
       await contractERC1155NonTransferable.mint(
-        users.other1.address,
+        users.buyer.address,
         nftTokenID,
         constants.ONE,
         constants.ZERO_BYTES
@@ -179,7 +208,74 @@ describe('Gate contract', async () => {
       );
       await contractGate.setBosonRouterAddress(contractBosonRouter.address);
 
-      // TODO first write tests for boson router
+      utils = await UtilsBuilder.create()
+        .ERC20withPermit()
+        .TKNTKN()
+        .buildAsync(
+          contractERC1155ERC721,
+          contractVoucherKernel,
+          contractCashier,
+          contractBosonRouter,
+          contractBSNTokenPrice,
+          contractBSNTokenDeposit
+        );
+
+      let timestamp;
+      timestamp = await Utils.getCurrTimestamp();
+      constants.PROMISE_VALID_FROM = timestamp;
+      constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
+
+      const tokensToMint = BN(constants.product_price).mul(
+        BN(constants.QTY_20)
+      );
+
+      await utils.mintTokens(
+        'contractBSNTokenDeposit',
+        users.seller.address,
+        tokensToMint
+      );
+      await utils.mintTokens(
+        'contractBSNTokenPrice',
+        users.buyer.address,
+        tokensToMint
+      );
+      await utils.mintTokens(
+        'contractBSNTokenDeposit',
+        users.buyer.address,
+        tokensToMint
+      );
+
+      let txOrder = await utils.createOrderConditional(
+        users.seller,
+        timestamp,
+        timestamp + constants.SECONDS_IN_DAY,
+        constants.seller_deposit,
+        constants.QTY_10,
+        contractGate,
+        0
+      );
+
+      const txReceipt = await txOrder.wait();
+
+      let eventArgs;
+
+      eventUtils.assertEventEmitted(
+        txReceipt,
+        BosonRouter_Factory,
+        eventNames.LOG_ORDER_CREATED,
+        (e) => (eventArgs = e)
+      );
+
+      let tokenId = eventArgs._tokenIdSupply;
+
+      await contractGate.registerVoucherSetID(tokenId, nftTokenID);
+
+      expect(await contractGate.check(users.buyer.address, tokenId)).to.be.true;
+
+      await utils.commitToBuy(users.buyer, users.seller, tokenId);
+
+      expect(await contractGate.check(users.buyer.address, tokenId)).to.be
+        .false;
     });
 
     it('check function works correctly', async () => {
