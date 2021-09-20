@@ -6,8 +6,8 @@ import {ecsign} from 'ethereumjs-util';
 import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
-import UtilsBuilder from '../testHelpers/utilsBuilder';
 import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
+import {advanceTimeSeconds} from '../testHelpers/timemachine';
 import {
   BosonRouter,
   ERC1155ERC721,
@@ -18,9 +18,14 @@ import {
   DAITokenWrapper,
 } from '../typechain';
 import IDAI from '../artifacts/contracts/DAITokenWrapper.sol/IDAI.json';
+import IERC20WithPermit from '../artifacts/contracts/interfaces/IERC20WithPermit.sol/IERC20WithPermit.json';
+import revertReasons from '../testHelpers/revertReasons';
+import * as eventUtils from '../testHelpers/events';
+import fnSignatures from '../testHelpers/functionSignatures';
 
 const provider = waffle.provider;
 const {deployMockContract} = waffle;
+const BN = ethers.BigNumber.from;
 
 let ERC1155ERC721_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
@@ -30,17 +35,11 @@ let TokenRegistry_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
 let DAITokenWrapper_Factory: ContractFactory;
 
-import revertReasons from '../testHelpers/revertReasons';
-import * as eventUtils from '../testHelpers/events';
 const eventNames = eventUtils.eventNames;
-import fnSignatures from '../testHelpers/functionSignatures';
-
-const BN = ethers.BigNumber.from;
-
-let utils: Utils;
 let users;
 let mockDAI: Contract;
-let daiOwner: Wallet;
+let mockUnsupportedToken: Contract;
+let daiOwner, unsupportedTokenOwner: Wallet;
 
 describe('Create Voucher sets and commit to vouchers with token wrapper', () => {
   before(async () => {
@@ -105,8 +104,12 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
       'BDEP'
     )) as Contract & MockERC20Permit;
 
-    [daiOwner] = provider.getWallets();
+    [daiOwner, unsupportedTokenOwner] = provider.getWallets();
     mockDAI = await deployMockContract(daiOwner, IDAI.abi); //deploys mock
+    mockUnsupportedToken = await deployMockContract(
+      unsupportedTokenOwner,
+      IERC20WithPermit.abi
+    ); //deploys mock unsupported token.
 
     contractDAITokenWrapper = (await DAITokenWrapper_Factory.deploy(
       mockDAI.address
@@ -155,6 +158,10 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
       mockDAI.address,
       constants.TOKEN_LIMIT
     );
+    await contractTokenRegistry.setTokenLimit(
+      mockUnsupportedToken.address,
+      constants.TOKEN_LIMIT
+    );
     await contractTokenRegistry.setETHLimit(constants.ETHER_LIMIT);
     await contractTokenRegistry.setTokenWrapperAddress(
       mockDAI.address,
@@ -186,18 +193,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           timestamp = await Utils.getCurrTimestamp();
           constants.PROMISE_VALID_FROM = timestamp;
           constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
-
-          utils = await UtilsBuilder.create()
-            .ERC20withPermit()
-            .ETHTKN()
-            .buildAsync(
-              contractERC1155ERC721,
-              contractVoucherKernel,
-              contractCashier,
-              contractBosonRouter,
-              contractBSNTokenPrice,
-              contractBSNTokenDeposit
-            );
 
           const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
             BN(constants.QTY_10)
@@ -441,6 +436,165 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             'ETHTKN Method Deposit Token Address mismatch'
           );
         });
+
+        it('[NEGATIVE] Should revert if token doesn not have a registered token wrapper', async () => {
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(constants.QTY_10)
+          );
+
+          await mockUnsupportedToken.mock.nonces
+            .withArgs(users.seller.address)
+            .returns(0);
+          await mockUnsupportedToken.mock.permit.returns();
+          await mockUnsupportedToken.mock.name.returns(
+            'Mock Unsupported Token'
+          );
+
+          const digest = await getApprovalDigest(
+            mockUnsupportedToken,
+            users.seller.address,
+            contractBosonRouter.address,
+            txValue,
+            0,
+            deadline
+          );
+
+          const {v, r, s} = ecsign(
+            Buffer.from(digest.slice(2), 'hex'),
+            Buffer.from(users.seller.privateKey.slice(2), 'hex')
+          );
+
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          ) as BosonRouter;
+
+          await expect(
+            sellerInstance.requestCreateOrderETHTKNWithPermit(
+              mockUnsupportedToken.address,
+              txValue,
+              deadline,
+              v,
+              r,
+              s,
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              {
+                from: users.seller.address,
+              }
+            )
+          ).to.be.revertedWith(revertReasons.UNSUPPORTED_TOKEN);
+        });
+
+        it('[NEGATIVE] Should revert if token wrapper reverts because of invalid deadline', async () => {
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(constants.QTY_10)
+          );
+
+          await mockDAI.mock.nonces.withArgs(users.seller.address).returns(0);
+          await mockDAI.mock.permit.returns();
+          await mockDAI.mock.name.returns('MockDAI');
+
+          const digest = await getApprovalDigest(
+            mockDAI,
+            users.seller.address,
+            contractBosonRouter.address,
+            txValue,
+            0,
+            deadline
+          );
+
+          const {v, r, s} = ecsign(
+            Buffer.from(digest.slice(2), 'hex'),
+            Buffer.from(users.seller.privateKey.slice(2), 'hex')
+          );
+
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          ) as BosonRouter;
+
+          timestamp = await Utils.getCurrTimestamp();
+          const newDeadline: number = timestamp + 2 * constants.ONE_MINUTE;
+
+          await advanceTimeSeconds(newDeadline * 2);
+
+          await expect(
+            sellerInstance.requestCreateOrderETHTKNWithPermit(
+              mockDAI.address,
+              txValue,
+              newDeadline,
+              v,
+              r,
+              s,
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              {
+                from: users.seller.address,
+              }
+            )
+          ).to.be.revertedWith(revertReasons.PERMIT_EXPIRED);
+        });
+
+        it('[NEGATIVE] Should revert if token wrapper reverts because of invalid signature', async () => {
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(constants.QTY_10)
+          );
+
+          await mockDAI.mock.nonces.withArgs(users.seller.address).returns(0);
+          await mockDAI.mock.permit.returns();
+          await mockDAI.mock.name.returns('MockDAI');
+
+          const digest = await getApprovalDigest(
+            mockDAI,
+            users.seller.address,
+            contractBosonRouter.address,
+            txValue,
+            0,
+            deadline
+          );
+
+          const {v, s} = ecsign(
+            Buffer.from(digest.slice(2), 'hex'),
+            Buffer.from(users.seller.privateKey.slice(2), 'hex')
+          );
+
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          ) as BosonRouter;
+
+          await expect(
+            sellerInstance.requestCreateOrderETHTKNWithPermit(
+              mockDAI.address,
+              txValue,
+              deadline,
+              v,
+              ethers.constants.HashZero,
+              s,
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              {
+                from: users.seller.address,
+              }
+            )
+          ).to.be.revertedWith(revertReasons.INVALID_SIGNATURE_COMPONENTS);
+        });
       });
 
       describe('TKNTKN', () => {
@@ -450,18 +604,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           timestamp = await Utils.getCurrTimestamp();
           constants.PROMISE_VALID_FROM = timestamp;
           constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
-
-          utils = await UtilsBuilder.create()
-            .ERC20withPermit()
-            .TKNTKN()
-            .buildAsync(
-              contractERC1155ERC721,
-              contractVoucherKernel,
-              contractCashier,
-              contractBosonRouter,
-              contractBSNTokenPrice,
-              contractBSNTokenDeposit
-            );
 
           const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
             BN(constants.QTY_10)
@@ -721,18 +863,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
         beforeEach(async () => {
           await deployContracts();
 
-          utils = await UtilsBuilder.create()
-            .ERC20withPermit()
-            .ETHTKN()
-            .buildAsync(
-              contractERC1155ERC721,
-              contractVoucherKernel,
-              contractCashier,
-              contractBosonRouter,
-              contractBSNTokenPrice,
-              contractBSNTokenDeposit
-            );
-
           //Create Voucher Set
           const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
             BN(constants.QTY_10)
@@ -990,18 +1120,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
       describe('TKNTKN', () => {
         beforeEach(async () => {
           await deployContracts();
-
-          utils = await UtilsBuilder.create()
-            .ERC20withPermit()
-            .TKNTKN()
-            .buildAsync(
-              contractERC1155ERC721,
-              contractVoucherKernel,
-              contractCashier,
-              contractBosonRouter,
-              contractBSNTokenPrice,
-              contractBSNTokenDeposit
-            );
 
           //create voucher set
           const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
@@ -1309,18 +1427,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
       describe('TKNTKN Same', () => {
         beforeEach(async () => {
           await deployContracts();
-
-          utils = await UtilsBuilder.create()
-            .ERC20withPermit()
-            .TKNTKNSame()
-            .buildAsync(
-              contractERC1155ERC721,
-              contractVoucherKernel,
-              contractCashier,
-              contractBosonRouter,
-              contractBSNTokenPrice,
-              contractBSNTokenDeposit
-            );
 
           //create Voucher Set
           const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
