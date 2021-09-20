@@ -32,10 +32,10 @@ export const eventNames = {
   LOG_CANCEL_VOUCHER_SET: 'LogVoucherSetFaultCancel',
   PAUSED: 'Paused',
   UNPAUSED: 'Unpaused',
-  NON_TRANSFERABLE_CONTRACT:'NonTransferableContractSet',
-  BOSON_ROUTER_SET:'BosonRouterSet',
-  VOUCHER_SET_REGISTERED:'VoucherSetRegistered',
-  USER_VOUCHER_REVOKED:'UserVoucherRevoked',
+  NON_TRANSFERABLE_CONTRACT: 'NonTransferableContractSet',
+  BOSON_ROUTER_SET: 'BosonRouterSet',
+  VOUCHER_SET_REGISTERED: 'VoucherSetRegistered',
+  USER_VOUCHER_REVOKED: 'UserVoucherRevoked',
 };
 
 import {ContractFactory, ContractReceipt} from 'ethers';

@@ -1,0 +1,291 @@
+import {ethers} from 'hardhat';
+import {Signer, ContractFactory, Contract} from 'ethers';
+
+import {assert, expect} from 'chai';
+import constants from '../testHelpers/constants';
+
+import Users from '../testHelpers/users';
+import Utils from '../testHelpers/utils';
+
+const BN = ethers.BigNumber.from;
+
+import {
+  ERC1155NonTransferable,
+  Gate,
+  BosonRouter,
+  ERC1155ERC721,
+  VoucherKernel,
+  Cashier,
+  FundLimitsOracle,
+  MockBosonRouter,
+} from '../typechain';
+
+let ERC1155NonTransferable_Factory: ContractFactory;
+let Gate_Factory: ContractFactory;
+let BosonRouter_Factory: ContractFactory;
+let ERC1155ERC721_Factory: ContractFactory;
+let VoucherKernel_Factory: ContractFactory;
+let Cashier_Factory: ContractFactory;
+let FundLimitsOracle_Factory: ContractFactory;
+
+import revertReasons from '../testHelpers/revertReasons';
+import * as eventUtils from '../testHelpers/events';
+import {eventNames} from '../testHelpers/events';
+
+let users;
+
+describe('Gate contract', async () => {
+  before(async () => {
+    const signers: Signer[] = await ethers.getSigners();
+    users = new Users(signers);
+
+    ERC1155NonTransferable_Factory = await ethers.getContractFactory(
+      'ERC1155NonTransferable'
+    );
+
+    Gate_Factory = await ethers.getContractFactory('Gate');
+
+    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
+    Cashier_Factory = await ethers.getContractFactory('Cashier');
+    BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
+    FundLimitsOracle_Factory = await ethers.getContractFactory(
+      'FundLimitsOracle'
+    );
+  });
+
+  let contractERC1155NonTransferable: ERC1155NonTransferable,
+    contractGate: Gate,
+    contractERC1155ERC721: ERC1155ERC721,
+    contractVoucherKernel: VoucherKernel,
+    contractCashier: Cashier,
+    contractBosonRouter: BosonRouter,
+    contractFundLimitsOracle: FundLimitsOracle;
+
+  async function deployContracts() {
+    // const timestamp = await Utils.getCurrTimestamp();
+
+    // constants.PROMISE_VALID_FROM = timestamp;
+    // constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
+
+    contractERC1155NonTransferable = (await ERC1155NonTransferable_Factory.deploy(
+      '/non/transferable/uri'
+    )) as Contract & ERC1155NonTransferable;
+    contractGate = (await Gate_Factory.deploy()) as Contract & Gate;
+
+    await contractERC1155NonTransferable.deployed();
+    await contractGate.deployed();
+  }
+
+  async function deployBosonRouterContracts() {
+    const sixtySeconds = 60;
+
+    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
+      FundLimitsOracle;
+    contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
+      ERC1155ERC721;
+    contractVoucherKernel = (await VoucherKernel_Factory.deploy(
+      contractERC1155ERC721.address
+    )) as Contract & VoucherKernel;
+    contractCashier = (await Cashier_Factory.deploy(
+      contractVoucherKernel.address
+    )) as Contract & Cashier;
+    contractBosonRouter = (await BosonRouter_Factory.deploy(
+      contractVoucherKernel.address,
+      contractFundLimitsOracle.address,
+      contractCashier.address
+    )) as Contract & BosonRouter;
+
+    await contractFundLimitsOracle.deployed();
+    await contractERC1155ERC721.deployed();
+    await contractVoucherKernel.deployed();
+    await contractCashier.deployed();
+    await contractBosonRouter.deployed();
+
+    // await contractERC1155ERC721.setApprovalForAll(
+    //   contractVoucherKernel.address,
+    //   true
+    // );
+    // await contractERC1155ERC721.setVoucherKernelAddress(
+    //   contractVoucherKernel.address
+    // );
+
+    // await contractERC1155ERC721.setCashierAddress(contractCashier.address);
+
+    // await contractVoucherKernel.setBosonRouterAddress(
+    //   contractBosonRouter.address
+    // );
+    // await contractVoucherKernel.setCashierAddress(contractCashier.address);
+
+    // await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
+    // await contractCashier.setTokenContractAddress(
+    //   contractERC1155ERC721.address
+    // );
+
+    // await contractVoucherKernel.setComplainPeriod(sixtySeconds);
+    // await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
+  }
+
+  describe('Basic operations', () => {
+    beforeEach(async () => {
+      await deployContracts();
+    });
+
+    it('Owner should be able set ERC1155 contract address', async () => {
+      expect(
+        await contractGate.setNonTransferableTokenContract(
+          contractERC1155NonTransferable.address
+        )
+      )
+        .to.emit(contractGate, eventNames.NON_TRANSFERABLE_CONTRACT)
+        .withArgs(contractERC1155NonTransferable.address);
+    });
+
+    it('Owner should be able set boson router address', async () => {
+      await deployBosonRouterContracts();
+
+      expect(
+        await contractGate.setBosonRouterAddress(contractBosonRouter.address)
+      )
+        .to.emit(contractGate, eventNames.BOSON_ROUTER_SET)
+        .withArgs(contractBosonRouter.address);
+    });
+
+    it('Owner should be able to register voucher set id', async () => {
+      const voucherSetId = BN('12345');
+      const nftTokenID = BN('2');
+      expect(await contractGate.registerVoucherSetID(voucherSetId, nftTokenID))
+        .to.emit(contractGate, eventNames.VOUCHER_SET_REGISTERED)
+        .withArgs(voucherSetId, nftTokenID);
+    });
+
+    it('Boson router should be able to revoke voucher set id', async () => {
+      deployBosonRouterContracts();
+
+      const voucherSetId = BN('12345');
+      const nftTokenID = BN('2');
+
+      await contractGate.registerVoucherSetID(voucherSetId, nftTokenID);
+
+      await contractERC1155NonTransferable.mint(
+        users.other1.address,
+        nftTokenID,
+        constants.ONE,
+        constants.ZERO_BYTES
+      );
+
+      await contractGate.setNonTransferableTokenContract(
+        contractERC1155NonTransferable.address
+      );
+      await contractGate.setBosonRouterAddress(contractBosonRouter.address);
+
+      // TODO first write tests for boson router
+    });
+
+    it('check function works correctly', async () => {
+      const voucherSetId = BN('12345');
+      const nftTokenID = BN('2');
+
+      await contractGate.registerVoucherSetID(voucherSetId, nftTokenID);
+
+      await contractGate.setNonTransferableTokenContract(
+        contractERC1155NonTransferable.address
+      );
+
+      expect(await contractGate.check(users.other1.address, voucherSetId)).to.be
+        .false;
+
+      await contractERC1155NonTransferable.mint(
+        users.other1.address,
+        nftTokenID,
+        constants.ONE,
+        constants.ZERO_BYTES
+      );
+
+      expect(await contractGate.check(users.other1.address, voucherSetId)).to.be
+        .true;
+      expect(await contractGate.check(users.other2.address, voucherSetId)).to.be
+        .false;
+
+      // user without token
+      // user with token, non revoked
+      // user with token, revoked
+    });
+
+    it('Owner should be able to pause', async () => {
+      expect(await contractGate.pause())
+        .to.emit(contractGate, eventNames.PAUSED)
+        .withArgs(users.deployer.address);
+
+      expect(await contractGate.paused()).to.be.true;
+    });
+
+    it('Owner should be able to unpause', async () => {
+      await contractGate.pause();
+
+      expect(await contractGate.unpause())
+        .to.emit(contractGate, eventNames.UNPAUSED)
+        .withArgs(users.deployer.address);
+
+      expect(await contractGate.paused()).to.be.false;
+    });
+
+    it('During the pause, register and revoke does not work', async () => {
+      const voucherSetId = BN('12345');
+      const nftTokenID = BN('2');
+      await contractGate.pause();
+
+      await expect(
+        contractGate
+          .connect(users.attacker.signer)
+          .registerVoucherSetID(voucherSetId, nftTokenID)
+      ).to.be.revertedWith(revertReasons.PAUSED);
+
+      // TODO revoke
+    });
+
+    it('[NEGATIVE][setNonTransferableTokenContract] Should revert if executed by attacker', async () => {
+      await expect(
+        contractGate
+          .connect(users.attacker.signer)
+          .setNonTransferableTokenContract(
+            contractERC1155NonTransferable.address
+          )
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+
+    it('[NEGATIVE][setBosonRouterAddress] Should revert if executed by attacker', async () => {
+      await deployBosonRouterContracts();
+
+      await expect(
+        contractGate
+          .connect(users.attacker.signer)
+          .setBosonRouterAddress(contractBosonRouter.address)
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+
+    it('[NEGATIVE][registerVoucherSetID] Should revert if executed by attacker', async () => {
+      const voucherSetId = BN('12345');
+      const nftTokenID = BN('2');
+      await expect(
+        contractGate
+          .connect(users.attacker.signer)
+          .registerVoucherSetID(voucherSetId, nftTokenID)
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+
+    it('[NEGATIVE][pause] Should revert if executed by attacker', async () => {
+      await expect(
+        contractGate.connect(users.attacker.signer).pause()
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+
+    it('[NEGATIVE][unpause] Should revert if executed by attacker', async () => {
+      await contractGate.pause();
+
+      await expect(
+        contractERC1155NonTransferable.connect(users.attacker.signer).unpause()
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+  });
+});
