@@ -3,7 +3,7 @@ import {ethers} from 'hardhat';
 export const eventNames = {
   LOG_ORDER_CREATED: 'LogOrderCreated',
   LOG_PROMISE_CREATED: 'LogPromiseCreated',
-  LOG_VOUCHER_DELIVERED: 'LogVoucherDelivered',
+  LOG_VOUCHER_DELIVERED: 'LogVoucherCommitted',
   LOG_VOUCHER_REDEEMED: 'LogVoucherRedeemed',
   LOG_VOUCHER_REFUNDED: 'LogVoucherRefunded',
   LOG_VOUCHER_COMPLAIN: 'LogVoucherComplain',
