@@ -1,7 +1,7 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
 
-import {assert, expect} from 'chai';
+import {expect} from 'chai';
 import constants from '../testHelpers/constants';
 
 import Users from '../testHelpers/users';
@@ -20,7 +20,6 @@ import {
   VoucherKernel,
   Cashier,
   FundLimitsOracle,
-  MockBosonRouter,
   MockERC20Permit,
 } from '../typechain';
 
@@ -168,7 +167,7 @@ describe('Gate contract', async () => {
           contractERC1155NonTransferable.address
         )
       )
-        .to.emit(contractGate, eventNames.NON_TRANSFERABLE_CONTRACT)
+        .to.emit(contractGate, eventNames.LOG_NON_TRANSFERABLE_CONTRACT)
         .withArgs(contractERC1155NonTransferable.address);
     });
 
@@ -178,7 +177,7 @@ describe('Gate contract', async () => {
       expect(
         await contractGate.setBosonRouterAddress(contractBosonRouter.address)
       )
-        .to.emit(contractGate, eventNames.BOSON_ROUTER_SET)
+        .to.emit(contractGate, eventNames.LOG_BOSON_ROUTER_SET)
         .withArgs(contractBosonRouter.address);
     });
 
@@ -186,11 +185,11 @@ describe('Gate contract', async () => {
       const voucherSetId = BN('12345');
       const nftTokenID = BN('2');
       expect(await contractGate.registerVoucherSetID(voucherSetId, nftTokenID))
-        .to.emit(contractGate, eventNames.VOUCHER_SET_REGISTERED)
+        .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
         .withArgs(voucherSetId, nftTokenID);
     });
 
-    it.only('Boson router should be able to revoke voucher set id', async () => {
+    it('Boson router should be able to revoke voucher set id', async () => {
       await deployBosonRouterContracts();
 
       // const voucherSetId = BN('12345');
@@ -220,8 +219,8 @@ describe('Gate contract', async () => {
           contractBSNTokenDeposit
         );
 
-      let timestamp;
-      timestamp = await Utils.getCurrTimestamp();
+      const timestamp = await Utils.getCurrTimestamp();
+      // timestamp
       constants.PROMISE_VALID_FROM = timestamp;
       constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
@@ -245,7 +244,7 @@ describe('Gate contract', async () => {
         tokensToMint
       );
 
-      let txOrder = await utils.createOrderConditional(
+      const txOrder = await utils.createOrderConditional(
         users.seller,
         timestamp,
         timestamp + constants.SECONDS_IN_DAY,
@@ -266,7 +265,7 @@ describe('Gate contract', async () => {
         (e) => (eventArgs = e)
       );
 
-      let tokenId = eventArgs._tokenIdSupply;
+      const tokenId = eventArgs._tokenIdSupply;
 
       await contractGate.registerVoucherSetID(tokenId, nftTokenID);
 

@@ -3,6 +3,19 @@
 pragma solidity 0.7.1;
 
 interface IGate {
+    event LogNonTransferableContractSet(
+        address indexed _nonTransferableTokenContractAddress
+    );
+    event LogBosonRouterSet(address indexed _bosonRouter);
+    event LogVoucherSetRegistered(
+        uint256 indexed _tokenIdSupply,
+        uint256 indexed _nftTokenID
+    );
+    event LogUserVoucherRevoked(
+        address indexed _user,
+        uint256 indexed _tokenIdSupply
+    );
+
     /**
      * @notice Sets the contract, where gate contract checks if quest NFT token exists
      * @param _nonTransferableTokenContractAddress address of a non-transferable token contract

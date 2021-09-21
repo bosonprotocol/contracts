@@ -18,20 +18,13 @@ contract Gate is IGate, Ownable, Pausable {
     mapping(address => mapping(uint256 => bool)) private isRevoked; // mapping user => voucherSet => bool
 
     IERC1155 private nonTransferableTokenContract;
-    address private bosonRouter;
-
-    event NonTransferableContractSet(
-        address _nonTransferableTokenContractAddress
-    );
-    event BosonRouterSet(address _bosonRouter);
-    event VoucherSetRegistered(
-        uint256 indexed _tokenIdSupply,
-        uint256 _nftTokenID
-    );
-    event UserVoucherRevoked(
-        address indexed _user,
-        uint256 indexed _tokenIdSupply
-    );
+    address private bosonRouterAddress;
+  
+    modifier onlyFromRouter() {
+        require(bosonRouterAddress != address(0), "UNSPECIFIED_BR"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        _;
+    }
 
     /**
      * @notice Sets the contract, where gate contract checks if quest NFT token exists
@@ -44,21 +37,21 @@ contract Gate is IGate, Ownable, Pausable {
             _nonTransferableTokenContractAddress
         );
 
-        emit NonTransferableContractSet(_nonTransferableTokenContractAddress);
+        emit LogNonTransferableContractSet(_nonTransferableTokenContractAddress);
     }
 
     /**
      * @notice Sets the Boson router contract address, from which revoke is accepted
-     * @param _bosonRouter address of a non-transferable token contract
+     * @param _bosonRouterAddress address of a non-transferable token contract
      */
-    function setBosonRouterAddress(address _bosonRouter)
+    function setBosonRouterAddress(address _bosonRouterAddress)
         external
         override
         onlyOwner
     {
-        bosonRouter = _bosonRouter;
+        bosonRouterAddress = _bosonRouterAddress;
 
-        emit BosonRouterSet(_bosonRouter);
+        emit LogBosonRouterSet(_bosonRouterAddress);
     }
 
     /**
@@ -73,9 +66,11 @@ contract Gate is IGate, Ownable, Pausable {
         onlyOwner
     {
         require(_nftTokenID != 0, "TOKEN_ID_0_NOT_ALLOWED");
+        require(_tokenIdSupply != 0, "INVALID_TOKEN_SUPPLY");
+
         voucherToToken[_tokenIdSupply] = _nftTokenID;
 
-        emit VoucherSetRegistered(_tokenIdSupply, _nftTokenID);
+        emit LogVoucherSetRegistered(_tokenIdSupply, _nftTokenID);
     }
 
     /**
@@ -108,12 +103,11 @@ contract Gate is IGate, Ownable, Pausable {
         external
         override
         whenNotPaused
+        onlyFromRouter
     {
-        require(msg.sender == bosonRouter, "NOT_A_ROUTER");
-
         isRevoked[_user][_tokenIdSupply] = true;
 
-        emit UserVoucherRevoked(_user, _tokenIdSupply);
+        emit LogUserVoucherRevoked(_user, _tokenIdSupply);
     }
 
     /**
@@ -129,4 +123,5 @@ contract Gate is IGate, Ownable, Pausable {
     function unpause() external override onlyOwner {
         _unpause();
     }
+
 }

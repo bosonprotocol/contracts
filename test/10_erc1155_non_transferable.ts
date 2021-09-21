@@ -1,11 +1,10 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
 
-import {assert, expect} from 'chai';
+import {expect} from 'chai';
 import constants from '../testHelpers/constants';
 
 import Users from '../testHelpers/users';
-import Utils from '../testHelpers/utils';
 
 const BN = ethers.BigNumber.from;
 
@@ -14,7 +13,6 @@ import {ERC1155NonTransferable} from '../typechain';
 let ERC1155NonTransferable_Factory: ContractFactory;
 
 import revertReasons from '../testHelpers/revertReasons';
-import * as eventUtils from '../testHelpers/events';
 import {eventNames} from '../testHelpers/events';
 
 let users;
