@@ -45,6 +45,4 @@ interface ITokenWrapper {
      * @return Address of the token wrapper contract
      */
     function getTokenAddress() external view returns (address);
-
-    //function nonces(address) external view returns (uint256);
 }
