@@ -4,7 +4,6 @@ pragma solidity 0.7.1;
 
 import "./interfaces/ITokenWrapper.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title DAITokenWrapper
@@ -12,7 +11,6 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
  */
 contract DAITokenWrapper is 
     ITokenWrapper,
-    Pausable,
     Ownable
 {
 
@@ -60,7 +58,6 @@ contract DAITokenWrapper is
         override
         notZeroAddress(owner)
         notZeroAddress(spender)
-        whenNotPaused
     {
         require(deadline == 0 || block.timestamp <= deadline, "PERMIT_EXPIRED");
         require(r != bytes32(0) && s != bytes32(0), "INVALID_SIGNATURE_COMPONENTS");
@@ -77,7 +74,6 @@ contract DAITokenWrapper is
         external
         override
         onlyOwner
-        whenNotPaused
         notZeroAddress(_tokenAddress)
     {
         daiTokenAddress = _tokenAddress;
@@ -95,37 +91,6 @@ contract DAITokenWrapper is
         returns (address)
     {
         return daiTokenAddress;
-    }
-
-    /**
-     * @notice Pause the Cashier && the Voucher Kernel contracts in case of emergency.
-     * All functions related to creating new batch, requestVoucher or withdraw will be paused, hence cannot be executed.
-     * There is special function for withdrawing funds if contract is paused.
-     */
-    function pause() 
-        external 
-        override
-        onlyOwner
-    {
-        
-        _pause();
-    }
-
-    /**
-     * @notice Unpause the Cashier && the Voucher Kernel contracts.
-     * All functions related to creating new batch, requestVoucher or withdraw will be unpaused.
-     */
-    function unpause() 
-        external 
-        override
-        onlyOwner
-    {
-        _unpause();
-    }
-
-    function nonces(address owner) external override view returns (uint256)
-    {
-        return IDAI(daiTokenAddress).nonces(owner);
     }
 }
 

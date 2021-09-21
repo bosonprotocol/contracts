@@ -81,23 +81,6 @@ describe('Token Wrappers', () => {
       );
     });
 
-    it('Should allow owner to pause contract', async () => {
-      await expect(contractDAITokenWrapper.pause())
-        .to.emit(contractDAITokenWrapper, eventNames.PAUSED)
-        .withArgs(owner.address);
-
-      expect(await contractDAITokenWrapper.paused()).to.be.true;
-    });
-
-    it('Should allow owner to unpause contract', async () => {
-      contractDAITokenWrapper.pause();
-      await expect(contractDAITokenWrapper.unpause())
-        .to.emit(contractDAITokenWrapper, eventNames.UNPAUSED)
-        .withArgs(owner.address);
-
-      expect(await contractDAITokenWrapper.paused()).to.be.false;
-    });
-
     it('Should call permit on the DAI token', async () => {
       await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
       await mockDAI.mock.permit.returns();
@@ -185,45 +168,6 @@ describe('Token Wrappers', () => {
       await expect(
         newInstance.setTokenAddress(otherToken.address)
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
-    });
-
-    it('Should revert if attacker tries to pause or unpause contract', async () => {
-      const newInstance = contractDAITokenWrapper.connect(attacker);
-      await expect(newInstance.pause()).to.be.revertedWith(
-        revertReasons.UNAUTHORIZED_OWNER
-      );
-
-      await expect(newInstance.unpause()).to.be.revertedWith(
-        revertReasons.UNAUTHORIZED_OWNER
-      );
-    });
-
-    it('Should revert when certain functions are called on paused contract', async () => {
-      contractDAITokenWrapper.pause();
-
-      //setTokenAddress
-      await expect(
-        contractDAITokenWrapper.setTokenAddress(otherToken.address)
-      ).to.be.revertedWith(revertReasons.PAUSED);
-
-      //permit
-      const {v, r, s} = ecsign(
-        Buffer.from(digest.slice(2), 'hex'),
-        Buffer.from(user1.privateKey.slice(2), 'hex')
-      );
-
-      //permit
-      await expect(
-        contractDAITokenWrapper.permit(
-          user1.address,
-          contractBosonRouter.address,
-          txValue,
-          deadline,
-          v,
-          r,
-          s
-        )
-      ).to.be.revertedWith(revertReasons.PAUSED);
     });
 
     it('Should revert when token owner address is zero address', async () => {

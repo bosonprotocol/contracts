@@ -46,23 +46,5 @@ interface ITokenWrapper {
      */
     function getTokenAddress() external view returns (address);
 
-    /**
-     * @dev Triggers stopped state.
-     *
-     * Requirements:
-     *
-     * - The contract must not be paused.
-     */
-    function pause() external;
-
-    /**
-     * @dev Returns to normal state.
-     *
-     * Requirements:
-     *
-     * - The contract must be paused.
-     */
-    function unpause() external;
-
-    function nonces(address) external view returns (uint256);
+    //function nonces(address) external view returns (uint256);
 }
