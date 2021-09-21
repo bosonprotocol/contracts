@@ -303,7 +303,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           eventUtils.assertEventEmitted(
             txReceipt,
             DAITokenWrapper_Factory,
-            eventNames.LOG_PERMT_CALLED_ON_TOKEN,
+            eventNames.LOG_PERMIT_CALLED_ON_TOKEN,
             (ev) => {
               assert.isTrue(ev._tokenAddress === mockDAI.address);
               assert.isTrue(ev._owner === users.seller.address);
@@ -715,7 +715,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           eventUtils.assertEventEmitted(
             txReceipt,
             DAITokenWrapper_Factory,
-            eventNames.LOG_PERMT_CALLED_ON_TOKEN,
+            eventNames.LOG_PERMIT_CALLED_ON_TOKEN,
             (ev) => {
               assert.isTrue(ev._tokenAddress === mockDAI.address);
               assert.isTrue(ev._owner === users.seller.address);
@@ -1032,7 +1032,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           eventUtils.assertEventEmitted(
             txReceiptFillOrder,
             DAITokenWrapper_Factory,
-            eventNames.LOG_PERMT_CALLED_ON_TOKEN,
+            eventNames.LOG_PERMIT_CALLED_ON_TOKEN,
             (ev) => {
               assert.isTrue(ev._tokenAddress === mockDAI.address);
               assert.isTrue(ev._owner === users.buyer.address);
@@ -1318,7 +1318,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           eventUtils.assertEventEmitted(
             txReceiptFillOrder,
             DAITokenWrapper_Factory,
-            eventNames.LOG_PERMT_CALLED_ON_TOKEN,
+            eventNames.LOG_PERMIT_CALLED_ON_TOKEN,
             (ev) => {
               assert.isTrue(ev._tokenAddress === mockDAI.address);
               assert.isTrue(ev._owner === users.buyer.address);
@@ -1596,7 +1596,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           eventUtils.assertEventEmitted(
             txReceiptFillOrder,
             DAITokenWrapper_Factory,
-            eventNames.LOG_PERMT_CALLED_ON_TOKEN,
+            eventNames.LOG_PERMIT_CALLED_ON_TOKEN,
             (ev) => {
               assert.isTrue(ev._tokenAddress === mockDAI.address);
               assert.isTrue(ev._owner === users.buyer.address);
@@ -1958,7 +1958,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           eventUtils.assertEventEmitted(
             txReceiptFillOrder,
             DAITokenWrapper_Factory,
-            eventNames.LOG_PERMT_CALLED_ON_TOKEN,
+            eventNames.LOG_PERMIT_CALLED_ON_TOKEN,
             (ev) => {
               assert.isTrue(ev._tokenAddress === mockDAI.address);
               assert.isTrue(ev._owner === users.buyer.address);

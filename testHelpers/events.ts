@@ -32,7 +32,7 @@ export const eventNames = {
   LOG_CANCEL_VOUCHER_SET: 'LogVoucherSetFaultCancel',
   LOG_TOKEN_WRAPPER_CHANGED: 'LogTokenWrapperChanged',
   LOG_TOKEN_ADDRESS_CHANGED: 'LogTokenAddressChanged',
-  LOG_PERMT_CALLED_ON_TOKEN: 'LogPermitCalledOnToken',
+  LOG_PERMIT_CALLED_ON_TOKEN: 'LogPermitCalledOnToken',
   PAUSED: 'Paused',
   UNPAUSED: 'Unpaused',
 };

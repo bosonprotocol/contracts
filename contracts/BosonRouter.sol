@@ -13,7 +13,6 @@ import "./interfaces/IBosonRouter.sol";
 import "./interfaces/ICashier.sol";
 import "./interfaces/ITokenWrapper.sol";
 import "./UsingHelpers.sol";
-import "hardhat/console.sol";
 
 /**
  * @title Contract for interacting with Boson Protocol from the user's perspective.

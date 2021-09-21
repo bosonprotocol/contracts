@@ -125,7 +125,7 @@ describe('Token Wrappers', () => {
           s
         )
       )
-        .to.emit(contractDAITokenWrapper, eventNames.LOG_PERMT_CALLED_ON_TOKEN)
+        .to.emit(contractDAITokenWrapper, eventNames.LOG_PERMIT_CALLED_ON_TOKEN)
         .withArgs(
           mockDAI.address,
           user1.address,
@@ -155,7 +155,7 @@ describe('Token Wrappers', () => {
           s
         )
       )
-        .to.emit(contractDAITokenWrapper, eventNames.LOG_PERMT_CALLED_ON_TOKEN)
+        .to.emit(contractDAITokenWrapper, eventNames.LOG_PERMIT_CALLED_ON_TOKEN)
         .withArgs(
           mockDAI.address,
           user1.address,

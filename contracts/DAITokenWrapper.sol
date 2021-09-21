@@ -5,8 +5,6 @@ pragma solidity 0.7.1;
 import "./interfaces/ITokenWrapper.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "hardhat/console.sol";
 
 /**
  * @title DAITokenWrapper
@@ -15,7 +13,6 @@ import "hardhat/console.sol";
 contract DAITokenWrapper is 
     ITokenWrapper,
     Pausable,
-    ReentrancyGuard,
     Ownable
 {
 
@@ -66,7 +63,7 @@ contract DAITokenWrapper is
         whenNotPaused
     {
         require(deadline == 0 || block.timestamp <= deadline, "PERMIT_EXPIRED");
-        require(v >= 0 && r != bytes32(0) && s != bytes32(0), "INVALID_SIGNATURE_COMPONENTS");
+        require(r != bytes32(0) && s != bytes32(0), "INVALID_SIGNATURE_COMPONENTS");
         uint nonce =  IDAI(daiTokenAddress).nonces(owner);
         IDAI(daiTokenAddress).permit(owner, spender, nonce, deadline, true, v, r, s);
         emit LogPermitCalledOnToken(daiTokenAddress, owner, spender, 0);    
