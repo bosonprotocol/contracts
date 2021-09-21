@@ -413,7 +413,7 @@ contract BosonRouter is
             IGate gateContract = IGate(
                 voucherSetToGateContract[_tokenIdSupply]
             );
-            gateContract.check(msg.sender, _tokenIdSupply);
+            require(gateContract.check(msg.sender, _tokenIdSupply),"NE"); // not eligible
             gateContract.revoke(msg.sender, _tokenIdSupply);
         }
     }
