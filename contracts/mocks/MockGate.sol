@@ -15,7 +15,7 @@ import "../interfaces/IERC1155.sol";
 
 contract MockGate is IGate, Ownable, Pausable {
     mapping(uint256 => uint256) private voucherToToken;
-    mapping(address => mapping(uint256 => bool)) private isRevoked; // mapping user => voucherSet => bool
+    mapping(address => mapping(uint256 => bool)) private isDeactivated; // mapping user => voucherSet => bool
 
     IERC1155 private nonTransferableTokenContract;
     address private bosonRouterAddress;
@@ -41,7 +41,7 @@ contract MockGate is IGate, Ownable, Pausable {
     }
 
     /**
-     * @notice Sets the Boson router contract address, from which revoke is accepted
+     * @notice Sets the Boson router contract address, from which deactivate is accepted
      * @param _bosonRouterAddress address of a non-transferable token contract
      */
     function setBosonRouterAddress(address _bosonRouterAddress)
@@ -77,7 +77,7 @@ contract MockGate is IGate, Ownable, Pausable {
      * @notice Checks if user posesses the required quest NFT token for given voucher set
      * @param _user user address
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
-     * @return true if user posesses quest NFT token, and the token is not revoked
+     * @return true if user posesses quest NFT token, and the token is not deactivated
      */
     function check(address _user, uint256 _tokenIdSupply)
         external
@@ -86,7 +86,7 @@ contract MockGate is IGate, Ownable, Pausable {
         returns (bool)
     {
         return
-            !isRevoked[_user][_tokenIdSupply] &&
+            !isDeactivated[_user][_tokenIdSupply] &&
             nonTransferableTokenContract.balanceOf(
                 _user,
                 voucherToToken[_tokenIdSupply]
@@ -99,26 +99,26 @@ contract MockGate is IGate, Ownable, Pausable {
      * @param _user user address
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
      */
-    function revoke(address _user, uint256 _tokenIdSupply)
+    function deactivate(address _user, uint256 _tokenIdSupply)
         external
         override
         whenNotPaused
         onlyFromRouter
     {
-        isRevoked[_user][_tokenIdSupply] = true;
+        isDeactivated[_user][_tokenIdSupply] = true;
 
-        emit LogUserVoucherRevoked(_user, _tokenIdSupply);
+        emit LogUserVoucherDeactivated(_user, _tokenIdSupply);
     }
 
     /**
-     * @notice Pause register and revoke
+     * @notice Pause register and deactivate
      */
     function pause() external override onlyOwner {
         _pause();
     }
 
     /**
-     * @notice Unpause the contract and allows register and revoke
+     * @notice Unpause the contract and allows register and deactivate
      */
     function unpause() external override onlyOwner {
         _unpause();
