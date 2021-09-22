@@ -472,7 +472,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             sDeposit
           )
         )
-          .to.emit(contractGate, eventNames.LOG_USER_VOUCHER_REVOKED)
+          .to.emit(contractGate, eventNames.LOG_USER_VOUCHER_DEACTIVATED)
           .withArgs(users.buyer.address, tokenSupplyKey);
       });
 
@@ -796,7 +796,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             s
           )
         )
-          .to.emit(contractGate, eventNames.LOG_USER_VOUCHER_REVOKED)
+          .to.emit(contractGate, eventNames.LOG_USER_VOUCHER_DEACTIVATED)
           .withArgs(users.buyer.address, tokenSupplyKey);
       });
 

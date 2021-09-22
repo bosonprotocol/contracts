@@ -408,13 +408,13 @@ contract BosonRouter is
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
 
-    function revokeConditionalCommit(uint256 _tokenIdSupply) internal {
+    function deactivateConditionalCommit(uint256 _tokenIdSupply) internal {
         if (voucherSetToGateContract[_tokenIdSupply] != address(0)) {
             IGate gateContract = IGate(
                 voucherSetToGateContract[_tokenIdSupply]
             );
             require(gateContract.check(msg.sender, _tokenIdSupply),"NE"); // not eligible
-            gateContract.revoke(msg.sender, _tokenIdSupply);
+            gateContract.deactivate(msg.sender, _tokenIdSupply);
         }
     }
 
@@ -430,7 +430,7 @@ contract BosonRouter is
         bytes32 rDeposit,
         bytes32 sDeposit // tokenDeposits
     ) external override nonReentrant whenNotPaused {
-        revokeConditionalCommit(_tokenIdSupply);
+        deactivateConditionalCommit(_tokenIdSupply);
 
         (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
             .getBuyerOrderCosts(_tokenIdSupply);
@@ -502,7 +502,7 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s
     ) external override nonReentrant whenNotPaused {
-        revokeConditionalCommit(_tokenIdSupply);
+        deactivateConditionalCommit(_tokenIdSupply);
 
         (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
             .getBuyerOrderCosts(_tokenIdSupply);

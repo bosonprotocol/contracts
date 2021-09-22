@@ -189,7 +189,7 @@ describe('Gate contract', async () => {
         .withArgs(voucherSetId, nftTokenID);
     });
 
-    it('Boson router should be able to revoke voucher set id', async () => {
+    it('Boson router should be able to deactivate voucher set id', async () => {
       await deployBosonRouterContracts();
 
       // const voucherSetId = BN('12345');
@@ -303,8 +303,8 @@ describe('Gate contract', async () => {
         .false;
 
       // user without token
-      // user with token, non revoked
-      // user with token, revoked
+      // user with token, non deactivated
+      // user with token, deactivated
     });
 
     it('Owner should be able to pause', async () => {
@@ -325,7 +325,7 @@ describe('Gate contract', async () => {
       expect(await contractGate.paused()).to.be.false;
     });
 
-    it('During the pause, register and revoke does not work', async () => {
+    it('During the pause, register and deactivate does not work', async () => {
       const voucherSetId = BN('12345');
       const nftTokenID = BN('2');
       await contractGate.pause();
@@ -336,7 +336,7 @@ describe('Gate contract', async () => {
           .registerVoucherSetID(voucherSetId, nftTokenID)
       ).to.be.revertedWith(revertReasons.PAUSED);
 
-      // TODO revoke
+      // TODO deactivate
     });
 
     it('[NEGATIVE][setNonTransferableTokenContract] Should revert if executed by attacker', async () => {

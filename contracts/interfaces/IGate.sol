@@ -11,7 +11,7 @@ interface IGate {
         uint256 indexed _tokenIdSupply,
         uint256 indexed _nftTokenID
     );
-    event LogUserVoucherRevoked(
+    event LogUserVoucherDeactivated(
         address indexed _user,
         uint256 indexed _tokenIdSupply
     );
@@ -25,7 +25,7 @@ interface IGate {
     ) external;
 
     /**
-     * @notice Sets the Boson router contract address, from which revoke is accepted
+     * @notice Sets the Boson router contract address, from which deactivate is accepted
      * @param _bosonRouter address of a non-transferable token contract
      */
     function setBosonRouterAddress(address _bosonRouter) external;
@@ -42,7 +42,7 @@ interface IGate {
      * @notice Checks if user posesses the required quest NFT token for given voucher set
      * @param _user user address
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
-     * @return true if user posesses quest NFT token, and the token is not revoked
+     * @return true if user posesses quest NFT token, and the token is not deactivated
      */
     function check(address _user, uint256 _tokenIdSupply)
         external
@@ -54,15 +54,15 @@ interface IGate {
      * @param _user user address
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
      */
-    function revoke(address _user, uint256 _tokenIdSupply) external;
+    function deactivate(address _user, uint256 _tokenIdSupply) external;
 
     /**
-     * @notice Pause register and revoke
+     * @notice Pause register and deactivate
      */
     function pause() external;
 
     /**
-     * @notice Unpause the contract and allows register and revoke
+     * @notice Unpause the contract and allows register and deactivate
      */
     function unpause() external;
 }

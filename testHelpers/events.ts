@@ -36,7 +36,7 @@ export const eventNames = {
   LOG_NON_TRANSFERABLE_CONTRACT: 'LogNonTransferableContractSet',
   LOG_BOSON_ROUTER_SET: 'LogBosonRouterSet',
   LOG_VOUCHER_SET_REGISTERED: 'LogVoucherSetRegistered',
-  LOG_USER_VOUCHER_REVOKED: 'LogUserVoucherRevoked',
+  LOG_USER_VOUCHER_DEACTIVATED: 'LogUserVoucherDeactivated',
 };
 
 import {ContractFactory, ContractReceipt} from 'ethers';
