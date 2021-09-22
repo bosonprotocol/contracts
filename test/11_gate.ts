@@ -360,7 +360,10 @@ describe('Gate contract', async () => {
           .registerVoucherSetID(voucherSetId, nftTokenID)
       ).to.be.revertedWith(revertReasons.PAUSED);
 
-      // TODO deactivate
+      await expect(
+        contractGate
+          .deactivate(users.attacker.address, voucherSetId)
+      ).to.be.revertedWith(revertReasons.PAUSED);
     });
 
     it('[NEGATIVE][setNonTransferableTokenContract] Should revert if executed by attacker', async () => {
