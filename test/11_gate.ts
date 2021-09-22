@@ -61,9 +61,7 @@ describe('Gate contract', async () => {
     MockERC20Permit_Factory = await ethers.getContractFactory(
       'MockERC20Permit'
     );
-    MockGate_Factory = await ethers.getContractFactory(
-      'MockGate'
-    );
+    MockGate_Factory = await ethers.getContractFactory('MockGate');
   });
 
   let contractERC1155NonTransferable: ERC1155NonTransferable,
@@ -164,7 +162,10 @@ describe('Gate contract', async () => {
     await contractFundLimitsOracle.setETHLimit(constants.ETHER_LIMIT);
   }
 
-  async function registerVoucherSetIdFromBosonProtocol(gate, conditionalOrderNftTokenID) {
+  async function registerVoucherSetIdFromBosonProtocol(
+    gate,
+    conditionalOrderNftTokenID
+  ) {
     const nftTokenID = BN('2');
 
     await contractERC1155NonTransferable.mint(
@@ -196,9 +197,7 @@ describe('Gate contract', async () => {
     constants.PROMISE_VALID_FROM = timestamp;
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
-    const tokensToMint = BN(constants.product_price).mul(
-      BN(constants.QTY_20)
-    );
+    const tokensToMint = BN(constants.product_price).mul(BN(constants.QTY_20));
 
     await utils.mintTokens(
       'contractBSNTokenDeposit',
@@ -238,7 +237,7 @@ describe('Gate contract', async () => {
     );
 
     const tokenId = eventArgs._tokenIdSupply;
-    return { tokenId, nftTokenID }
+    return {tokenId, nftTokenID};
   }
 
   describe('Basic operations', () => {
@@ -277,7 +276,10 @@ describe('Gate contract', async () => {
     it('Boson protocol should be able to register voucher set id', async () => {
       await deployBosonRouterContracts();
       const conditionalOrderNftTokenID = BN('2');
-      const { tokenId, nftTokenID } = await registerVoucherSetIdFromBosonProtocol(contractMockGate, conditionalOrderNftTokenID);
+      const {tokenId, nftTokenID} = await registerVoucherSetIdFromBosonProtocol(
+        contractMockGate,
+        conditionalOrderNftTokenID
+      );
 
       await expect(
         contractMockGate
@@ -289,7 +291,10 @@ describe('Gate contract', async () => {
     it('Boson router should be able to deactivate voucher set id', async () => {
       await deployBosonRouterContracts();
 
-      const { tokenId, nftTokenID } = await registerVoucherSetIdFromBosonProtocol(contractGate, 0);
+      const {tokenId, nftTokenID} = await registerVoucherSetIdFromBosonProtocol(
+        contractGate,
+        0
+      );
 
       await contractGate.registerVoucherSetID(tokenId, nftTokenID);
 
@@ -361,8 +366,7 @@ describe('Gate contract', async () => {
       ).to.be.revertedWith(revertReasons.PAUSED);
 
       await expect(
-        contractGate
-          .deactivate(users.attacker.address, voucherSetId)
+        contractGate.deactivate(users.attacker.address, voucherSetId)
       ).to.be.revertedWith(revertReasons.PAUSED);
     });
 

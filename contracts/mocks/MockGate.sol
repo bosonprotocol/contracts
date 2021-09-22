@@ -37,7 +37,9 @@ contract MockGate is IGate, Ownable, Pausable {
             _nonTransferableTokenContractAddress
         );
 
-        emit LogNonTransferableContractSet(_nonTransferableTokenContractAddress);
+        emit LogNonTransferableContractSet(
+            _nonTransferableTokenContractAddress
+        );
     }
 
     /**
@@ -123,5 +125,4 @@ contract MockGate is IGate, Ownable, Pausable {
     function unpause() external override onlyOwner {
         _unpause();
     }
-
 }
