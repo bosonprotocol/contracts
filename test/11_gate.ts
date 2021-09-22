@@ -21,6 +21,7 @@ import {
   Cashier,
   FundLimitsOracle,
   MockERC20Permit,
+  MockGate,
 } from '../typechain';
 
 let ERC1155NonTransferable_Factory: ContractFactory;
@@ -31,6 +32,7 @@ let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let FundLimitsOracle_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
+let MockGate_Factory: ContractFactory;
 
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
@@ -59,6 +61,9 @@ describe('Gate contract', async () => {
     MockERC20Permit_Factory = await ethers.getContractFactory(
       'MockERC20Permit'
     );
+    MockGate_Factory = await ethers.getContractFactory(
+      'MockGate'
+    );
   });
 
   let contractERC1155NonTransferable: ERC1155NonTransferable,
@@ -69,7 +74,8 @@ describe('Gate contract', async () => {
     contractBosonRouter: BosonRouter,
     contractFundLimitsOracle: FundLimitsOracle,
     contractBSNTokenPrice: MockERC20Permit,
-    contractBSNTokenDeposit: MockERC20Permit;
+    contractBSNTokenDeposit: MockERC20Permit,
+    contractMockGate: MockGate;
 
   async function deployContracts() {
     // const timestamp = await Utils.getCurrTimestamp();
@@ -81,9 +87,11 @@ describe('Gate contract', async () => {
       '/non/transferable/uri'
     )) as Contract & ERC1155NonTransferable;
     contractGate = (await Gate_Factory.deploy()) as Contract & Gate;
+    contractMockGate = (await MockGate_Factory.deploy()) as Contract & MockGate;
 
     await contractERC1155NonTransferable.deployed();
     await contractGate.deployed();
+    await contractMockGate.deployed();
   }
 
   async function deployBosonRouterContracts() {
