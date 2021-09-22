@@ -19,6 +19,7 @@ import {
 } from '../typechain';
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
+import {Account} from '../testHelpers/types';
 
 let utils: Utils;
 
@@ -211,16 +212,18 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
         );
       });
 
-      it('Should be able to create Voucher with gate address', async () => {
-        const txValue = BN(constants.seller_deposit).mul(BN(constants.QTY_10));
+      async function generateInputs(
+        account: Account,
+        deposit: number | string,
+        qty: number | string
+      ) {
+        const txValue = BN(deposit).mul(BN(qty));
 
-        const nonce = await contractBSNTokenDeposit.nonces(
-          users.seller.address
-        );
+        const nonce = await contractBSNTokenDeposit.nonces(account.address);
 
         const digest = await getApprovalDigest(
           contractBSNTokenDeposit,
-          users.seller.address,
+          account.address,
           contractBosonRouter.address,
           txValue,
           nonce,
@@ -229,8 +232,19 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
 
         const {v, r, s} = ecsign(
           Buffer.from(digest.slice(2), 'hex'),
-          Buffer.from(users.seller.privateKey.slice(2), 'hex')
+          Buffer.from(account.privateKey.slice(2), 'hex')
         );
+
+        return {txValue, v, r, s};
+      }
+
+      it('Should be able to create Voucher with gate address', async () => {
+        const {txValue, v, r, s} = await generateInputs(
+          users.seller,
+          constants.seller_deposit,
+          constants.QTY_10
+        );
+
         expect(
           await contractBosonRouter
             .connect(users.seller.signer)
@@ -261,25 +275,12 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
       });
 
       it('[NEGATIVE]Supplying invalid gate address should revert', async () => {
-        const txValue = BN(constants.seller_deposit).mul(BN(constants.QTY_10));
-
-        const nonce = await contractBSNTokenDeposit.nonces(
-          users.seller.address
+        const {txValue, v, r, s} = await generateInputs(
+          users.seller,
+          constants.seller_deposit,
+          constants.QTY_10
         );
 
-        const digest = await getApprovalDigest(
-          contractBSNTokenDeposit,
-          users.seller.address,
-          contractBosonRouter.address,
-          txValue,
-          nonce,
-          deadline
-        );
-
-        const {v, r, s} = ecsign(
-          Buffer.from(digest.slice(2), 'hex'),
-          Buffer.from(users.seller.privateKey.slice(2), 'hex')
-        );
         await expect(
           contractBosonRouter
             .connect(users.seller.signer)
@@ -316,7 +317,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
         await deployContracts();
 
         timestamp = await Utils.getCurrTimestamp();
-        // timestamp
         constants.PROMISE_VALID_FROM = timestamp;
         constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
@@ -388,51 +388,75 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
         );
       });
 
-      it('Should be able to request voucher', async () => {
-        const txValue = BN(constants.buyer_deposit).add(
-          BN(constants.product_price)
-        );
-        const nonce1 = await contractBSNTokenDeposit.nonces(
-          users.buyer.address
-        );
+      async function generateInputs(
+        account: Account,
+        deposit: number | string,
+        product_price: number | string
+      ) {
+        const txValue = BN(deposit).add(BN(product_price));
+        const DEPOSIT = await generateDepositInputs(account, deposit);
+        const PRICE = await generatePriceInputs(account, product_price);
+        return {txValue, DEPOSIT, PRICE};
+      }
 
-        const digestDeposit = await getApprovalDigest(
+      async function generateDepositInputs(
+        account: Account,
+        deposit: number | string
+      ) {
+        const nonce = await contractBSNTokenDeposit.nonces(account.address);
+
+        const digest = await getApprovalDigest(
           contractBSNTokenDeposit,
-          users.buyer.address,
+          account.address,
           contractBosonRouter.address,
-          constants.buyer_deposit,
-          nonce1,
+          deposit,
+          nonce,
           deadline
         );
 
-        const VRS_DEPOSIT = ecsign(
-          Buffer.from(digestDeposit.slice(2), 'hex'),
-          Buffer.from(users.buyer.privateKey.slice(2), 'hex')
+        const {v, r, s} = ecsign(
+          Buffer.from(digest.slice(2), 'hex'),
+          Buffer.from(account.privateKey.slice(2), 'hex')
         );
 
-        const vDeposit = VRS_DEPOSIT.v;
-        const rDeposit = VRS_DEPOSIT.r;
-        const sDeposit = VRS_DEPOSIT.s;
+        return {v, r, s};
+      }
 
-        const nonce2 = await contractBSNTokenPrice.nonces(users.buyer.address);
+      async function generatePriceInputs(
+        account: Account,
+        product_price: number | string
+      ) {
+        const nonce = await contractBSNTokenDeposit.nonces(account.address);
 
-        const digestPrice = await getApprovalDigest(
+        const digest = await getApprovalDigest(
           contractBSNTokenPrice,
-          users.buyer.address,
+          account.address,
           contractBosonRouter.address,
-          constants.product_price,
-          nonce2,
+          product_price,
+          nonce,
           deadline
         );
 
-        const VRS_PRICE = ecsign(
-          Buffer.from(digestPrice.slice(2), 'hex'),
-          Buffer.from(users.buyer.privateKey.slice(2), 'hex')
+        const {v, r, s} = ecsign(
+          Buffer.from(digest.slice(2), 'hex'),
+          Buffer.from(account.privateKey.slice(2), 'hex')
         );
 
-        const vPrice = VRS_PRICE.v;
-        const rPrice = VRS_PRICE.r;
-        const sPrice = VRS_PRICE.s;
+        return {v, r, s};
+      }
+
+      it('Should be able to request voucher', async () => {
+        const {txValue, DEPOSIT, PRICE} = await generateInputs(
+          users.buyer,
+          constants.buyer_deposit,
+          constants.product_price
+        );
+        const vDeposit = DEPOSIT.v;
+        const rDeposit = DEPOSIT.r;
+        const sDeposit = DEPOSIT.s;
+        const vPrice = PRICE.v;
+        const rPrice = PRICE.r;
+        const sPrice = PRICE.s;
 
         const buyerInstance = contractBosonRouter.connect(
           users.buyer.signer
@@ -456,50 +480,17 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
       it('[NEGATIVE] Should not be able to request voucher twice', async () => {
         await utils.commitToBuy(users.buyer, users.seller, tokenSupplyKey);
 
-        const txValue = BN(constants.buyer_deposit).add(
-          BN(constants.product_price)
-        );
-        const nonce1 = await contractBSNTokenDeposit.nonces(
-          users.buyer.address
-        );
-
-        const digestDeposit = await getApprovalDigest(
-          contractBSNTokenDeposit,
-          users.buyer.address,
-          contractBosonRouter.address,
+        const {txValue, DEPOSIT, PRICE} = await generateInputs(
+          users.buyer,
           constants.buyer_deposit,
-          nonce1,
-          deadline
+          constants.product_price
         );
-
-        const VRS_DEPOSIT = ecsign(
-          Buffer.from(digestDeposit.slice(2), 'hex'),
-          Buffer.from(users.buyer.privateKey.slice(2), 'hex')
-        );
-
-        const vDeposit = VRS_DEPOSIT.v;
-        const rDeposit = VRS_DEPOSIT.r;
-        const sDeposit = VRS_DEPOSIT.s;
-
-        const nonce2 = await contractBSNTokenPrice.nonces(users.buyer.address);
-
-        const digestPrice = await getApprovalDigest(
-          contractBSNTokenPrice,
-          users.buyer.address,
-          contractBosonRouter.address,
-          constants.product_price,
-          nonce2,
-          deadline
-        );
-
-        const VRS_PRICE = ecsign(
-          Buffer.from(digestPrice.slice(2), 'hex'),
-          Buffer.from(users.buyer.privateKey.slice(2), 'hex')
-        );
-
-        const vPrice = VRS_PRICE.v;
-        const rPrice = VRS_PRICE.r;
-        const sPrice = VRS_PRICE.s;
+        const vDeposit = DEPOSIT.v;
+        const rDeposit = DEPOSIT.r;
+        const sDeposit = DEPOSIT.s;
+        const vPrice = PRICE.v;
+        const rPrice = PRICE.r;
+        const sPrice = PRICE.s;
 
         const buyerInstance = contractBosonRouter.connect(
           users.buyer.signer
@@ -521,50 +512,18 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
       });
 
       it('[NEGATIVE] Should not be able to request voucher without NFT token', async () => {
-        const txValue = BN(constants.buyer_deposit).add(
-          BN(constants.product_price)
-        );
-        const nonce1 = await contractBSNTokenDeposit.nonces(
-          users.other1.address
-        );
-
-        const digestDeposit = await getApprovalDigest(
-          contractBSNTokenDeposit,
-          users.other1.address,
-          contractBosonRouter.address,
+        const {txValue, DEPOSIT, PRICE} = await generateInputs(
+          users.buyer,
           constants.buyer_deposit,
-          nonce1,
-          deadline
+          constants.product_price
         );
 
-        const VRS_DEPOSIT = ecsign(
-          Buffer.from(digestDeposit.slice(2), 'hex'),
-          Buffer.from(users.other1.privateKey.slice(2), 'hex')
-        );
-
-        const vDeposit = VRS_DEPOSIT.v;
-        const rDeposit = VRS_DEPOSIT.r;
-        const sDeposit = VRS_DEPOSIT.s;
-
-        const nonce2 = await contractBSNTokenPrice.nonces(users.other1.address);
-
-        const digestPrice = await getApprovalDigest(
-          contractBSNTokenPrice,
-          users.other1.address,
-          contractBosonRouter.address,
-          constants.product_price,
-          nonce2,
-          deadline
-        );
-
-        const VRS_PRICE = ecsign(
-          Buffer.from(digestPrice.slice(2), 'hex'),
-          Buffer.from(users.other1.privateKey.slice(2), 'hex')
-        );
-
-        const vPrice = VRS_PRICE.v;
-        const rPrice = VRS_PRICE.r;
-        const sPrice = VRS_PRICE.s;
+        const vDeposit = DEPOSIT.v;
+        const rDeposit = DEPOSIT.r;
+        const sDeposit = DEPOSIT.s;
+        const vPrice = PRICE.v;
+        const rPrice = PRICE.r;
+        const sPrice = PRICE.s;
 
         const buyerInstance = contractBosonRouter.connect(
           users.other1.signer
@@ -609,50 +568,18 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
 
         const tokenSupplyKey = eventArgs._tokenIdSupply;
 
-        const txValue = BN(constants.buyer_deposit).add(
-          BN(constants.product_price)
-        );
-        const nonce1 = await contractBSNTokenDeposit.nonces(
-          users.other1.address
-        );
-
-        const digestDeposit = await getApprovalDigest(
-          contractBSNTokenDeposit,
-          users.other1.address,
-          contractBosonRouter.address,
+        const {txValue, DEPOSIT, PRICE} = await generateInputs(
+          users.buyer,
           constants.buyer_deposit,
-          nonce1,
-          deadline
+          constants.product_price
         );
 
-        const VRS_DEPOSIT = ecsign(
-          Buffer.from(digestDeposit.slice(2), 'hex'),
-          Buffer.from(users.other1.privateKey.slice(2), 'hex')
-        );
-
-        const vDeposit = VRS_DEPOSIT.v;
-        const rDeposit = VRS_DEPOSIT.r;
-        const sDeposit = VRS_DEPOSIT.s;
-
-        const nonce2 = await contractBSNTokenPrice.nonces(users.other1.address);
-
-        const digestPrice = await getApprovalDigest(
-          contractBSNTokenPrice,
-          users.other1.address,
-          contractBosonRouter.address,
-          constants.product_price,
-          nonce2,
-          deadline
-        );
-
-        const VRS_PRICE = ecsign(
-          Buffer.from(digestPrice.slice(2), 'hex'),
-          Buffer.from(users.other1.privateKey.slice(2), 'hex')
-        );
-
-        const vPrice = VRS_PRICE.v;
-        const rPrice = VRS_PRICE.r;
-        const sPrice = VRS_PRICE.s;
+        const vDeposit = DEPOSIT.v;
+        const rDeposit = DEPOSIT.r;
+        const sDeposit = DEPOSIT.s;
+        const vPrice = PRICE.v;
+        const rPrice = PRICE.r;
+        const sPrice = PRICE.s;
 
         const buyerInstance = contractBosonRouter.connect(
           users.other1.signer
@@ -697,50 +624,18 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
 
         const tokenSupplyKey = eventArgs._tokenIdSupply;
 
-        const txValue = BN(constants.buyer_deposit).add(
-          BN(constants.product_price)
-        );
-        const nonce1 = await contractBSNTokenDeposit.nonces(
-          users.other1.address
-        );
-
-        const digestDeposit = await getApprovalDigest(
-          contractBSNTokenDeposit,
-          users.other1.address,
-          contractBosonRouter.address,
+        const {txValue, DEPOSIT, PRICE} = await generateInputs(
+          users.buyer,
           constants.buyer_deposit,
-          nonce1,
-          deadline
+          constants.product_price
         );
 
-        const VRS_DEPOSIT = ecsign(
-          Buffer.from(digestDeposit.slice(2), 'hex'),
-          Buffer.from(users.other1.privateKey.slice(2), 'hex')
-        );
-
-        const vDeposit = VRS_DEPOSIT.v;
-        const rDeposit = VRS_DEPOSIT.r;
-        const sDeposit = VRS_DEPOSIT.s;
-
-        const nonce2 = await contractBSNTokenPrice.nonces(users.other1.address);
-
-        const digestPrice = await getApprovalDigest(
-          contractBSNTokenPrice,
-          users.other1.address,
-          contractBosonRouter.address,
-          constants.product_price,
-          nonce2,
-          deadline
-        );
-
-        const VRS_PRICE = ecsign(
-          Buffer.from(digestPrice.slice(2), 'hex'),
-          Buffer.from(users.other1.privateKey.slice(2), 'hex')
-        );
-
-        const vPrice = VRS_PRICE.v;
-        const rPrice = VRS_PRICE.r;
-        const sPrice = VRS_PRICE.s;
+        const vDeposit = DEPOSIT.v;
+        const rDeposit = DEPOSIT.r;
+        const sDeposit = DEPOSIT.s;
+        const vPrice = PRICE.v;
+        const rPrice = PRICE.r;
+        const sPrice = PRICE.s;
 
         const buyerInstance = contractBosonRouter.connect(
           users.other1.signer
