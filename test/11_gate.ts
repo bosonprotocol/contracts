@@ -164,6 +164,83 @@ describe('Gate contract', async () => {
     await contractFundLimitsOracle.setETHLimit(constants.ETHER_LIMIT);
   }
 
+  async function registerVoucherSetIdFromBosonProtocol(gate, conditionalOrderNftTokenID) {
+    const nftTokenID = BN('2');
+
+    await contractERC1155NonTransferable.mint(
+      users.buyer.address,
+      nftTokenID,
+      constants.ONE,
+      constants.ZERO_BYTES
+    );
+
+    await gate.setNonTransferableTokenContract(
+      contractERC1155NonTransferable.address
+    );
+    await gate.setBosonRouterAddress(contractBosonRouter.address);
+
+    utils = await UtilsBuilder.create()
+      .ERC20withPermit()
+      .TKNTKN()
+      .buildAsync(
+        contractERC1155ERC721,
+        contractVoucherKernel,
+        contractCashier,
+        contractBosonRouter,
+        contractBSNTokenPrice,
+        contractBSNTokenDeposit
+      );
+
+    const timestamp = await Utils.getCurrTimestamp();
+    // timestamp
+    constants.PROMISE_VALID_FROM = timestamp;
+    constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
+
+    const tokensToMint = BN(constants.product_price).mul(
+      BN(constants.QTY_20)
+    );
+
+    await utils.mintTokens(
+      'contractBSNTokenDeposit',
+      users.seller.address,
+      tokensToMint
+    );
+    await utils.mintTokens(
+      'contractBSNTokenPrice',
+      users.buyer.address,
+      tokensToMint
+    );
+    await utils.mintTokens(
+      'contractBSNTokenDeposit',
+      users.buyer.address,
+      tokensToMint
+    );
+
+    const txOrder = await utils.createOrderConditional(
+      users.seller,
+      timestamp,
+      timestamp + constants.SECONDS_IN_DAY,
+      constants.seller_deposit,
+      constants.QTY_10,
+      gate,
+      conditionalOrderNftTokenID
+    );
+
+    const txReceipt = await txOrder.wait();
+
+    let eventArgs;
+
+    eventUtils.assertEventEmitted(
+      txReceipt,
+      BosonRouter_Factory,
+      eventNames.LOG_ORDER_CREATED,
+      (e) => (eventArgs = e)
+    );
+
+    const tokenId = eventArgs._tokenIdSupply;
+    return { tokenId, nftTokenID }
+  }
+
   describe('Basic operations', () => {
     beforeEach(async () => {
       await deployContracts();
@@ -197,83 +274,22 @@ describe('Gate contract', async () => {
         .withArgs(voucherSetId, nftTokenID);
     });
 
+    it('Boson protocol should be able to register voucher set id', async () => {
+      await deployBosonRouterContracts();
+      const conditionalOrderNftTokenID = BN('2');
+      const { tokenId, nftTokenID } = await registerVoucherSetIdFromBosonProtocol(contractMockGate, conditionalOrderNftTokenID);
+
+      await expect(
+        contractMockGate
+          .connect(users.attacker.signer)
+          .registerVoucherSetID(tokenId, nftTokenID)
+      ).to.be.revertedWith('UNAUTHORIZED_BR');
+    });
+
     it('Boson router should be able to deactivate voucher set id', async () => {
       await deployBosonRouterContracts();
 
-      // const voucherSetId = BN('12345');
-      const nftTokenID = BN('2');
-
-      await contractERC1155NonTransferable.mint(
-        users.buyer.address,
-        nftTokenID,
-        constants.ONE,
-        constants.ZERO_BYTES
-      );
-
-      await contractGate.setNonTransferableTokenContract(
-        contractERC1155NonTransferable.address
-      );
-      await contractGate.setBosonRouterAddress(contractBosonRouter.address);
-
-      utils = await UtilsBuilder.create()
-        .ERC20withPermit()
-        .TKNTKN()
-        .buildAsync(
-          contractERC1155ERC721,
-          contractVoucherKernel,
-          contractCashier,
-          contractBosonRouter,
-          contractBSNTokenPrice,
-          contractBSNTokenDeposit
-        );
-
-      const timestamp = await Utils.getCurrTimestamp();
-      // timestamp
-      constants.PROMISE_VALID_FROM = timestamp;
-      constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
-
-      const tokensToMint = BN(constants.product_price).mul(
-        BN(constants.QTY_20)
-      );
-
-      await utils.mintTokens(
-        'contractBSNTokenDeposit',
-        users.seller.address,
-        tokensToMint
-      );
-      await utils.mintTokens(
-        'contractBSNTokenPrice',
-        users.buyer.address,
-        tokensToMint
-      );
-      await utils.mintTokens(
-        'contractBSNTokenDeposit',
-        users.buyer.address,
-        tokensToMint
-      );
-
-      const txOrder = await utils.createOrderConditional(
-        users.seller,
-        timestamp,
-        timestamp + constants.SECONDS_IN_DAY,
-        constants.seller_deposit,
-        constants.QTY_10,
-        contractGate,
-        0
-      );
-
-      const txReceipt = await txOrder.wait();
-
-      let eventArgs;
-
-      eventUtils.assertEventEmitted(
-        txReceipt,
-        BosonRouter_Factory,
-        eventNames.LOG_ORDER_CREATED,
-        (e) => (eventArgs = e)
-      );
-
-      const tokenId = eventArgs._tokenIdSupply;
+      const { tokenId, nftTokenID } = await registerVoucherSetIdFromBosonProtocol(contractGate, 0);
 
       await contractGate.registerVoucherSetID(tokenId, nftTokenID);
 
