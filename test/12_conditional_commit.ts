@@ -474,7 +474,9 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             rDeposit,
             sDeposit
           )
-        ).to.emit(contractGate, eventNames.LOG_USER_VOUCHER_REVOKED);
+        )
+          .to.emit(contractGate, eventNames.LOG_USER_VOUCHER_REVOKED)
+          .withArgs(users.buyer.address, tokenSupplyKey);
       });
 
       it('[NEGATIVE] Should not be able to request voucher twice', async () => {
@@ -652,6 +654,328 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             vDeposit,
             rDeposit,
             sDeposit
+          )
+        ).to.be.revertedWith(revertReasons.NOT_ELIGIBLE);
+      });
+    }); // end TKNTKN
+
+    describe('TKNTKN same', () => {
+      beforeEach(async () => {
+        await deployContracts();
+
+        timestamp = await Utils.getCurrTimestamp();
+        constants.PROMISE_VALID_FROM = timestamp;
+        constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
+
+        const tokensToMint = BN(constants.product_price).mul(
+          BN(constants.QTY_20)
+        );
+
+        utils = await UtilsBuilder.create()
+          .ERC20withPermit()
+          .TKNTKN()
+          .buildAsync(
+            contractERC1155ERC721,
+            contractVoucherKernel,
+            contractCashier,
+            contractBosonRouter,
+            contractBSNTokenDeposit,
+            contractBSNTokenDeposit
+          );
+
+        await utils.mintTokens(
+          'contractBSNTokenDeposit',
+          users.seller.address,
+          tokensToMint
+        );
+        // await utils.mintTokens(
+        //   'contractBSNTokenPrice',
+        //   users.buyer.address,
+        //   tokensToMint
+        // );
+        await utils.mintTokens(
+          'contractBSNTokenDeposit',
+          users.buyer.address,
+          tokensToMint
+        );
+
+        await contractERC1155NonTransferable.mint(
+          users.buyer.address,
+          constants.NFT_TOKEN_ID,
+          constants.ONE,
+          constants.ZERO_BYTES
+        );
+
+        const txOrder = await utils.createOrderConditional(
+          users.seller,
+          timestamp,
+          timestamp + constants.SECONDS_IN_DAY,
+          constants.seller_deposit,
+          constants.QTY_10,
+          contractGate,
+          0
+        );
+
+        const txReceipt = await txOrder.wait();
+
+        let eventArgs;
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          BosonRouter_Factory,
+          eventNames.LOG_ORDER_CREATED,
+          (e) => (eventArgs = e)
+        );
+
+        tokenSupplyKey = eventArgs._tokenIdSupply;
+
+        await contractGate.registerVoucherSetID(
+          tokenSupplyKey,
+          constants.NFT_TOKEN_ID
+        );
+      });
+
+      // async function generateInputs(
+      //   account: Account,
+      //   deposit: number | string,
+      //   product_price: number | string
+      // ) {
+      //   const txValue = BN(deposit).add(BN(product_price));
+      //   const DEPOSIT = await generateDepositInputs(account, deposit);
+      //   const PRICE = await generatePriceInputs(account, product_price);
+      //   return {txValue, DEPOSIT, PRICE};
+      // }
+
+      async function generateInputs(
+        account: Account,
+        deposit: number | string,
+        product_price: number | string
+      ) {
+        const nonce = await contractBSNTokenDeposit.nonces(account.address);
+        const txValue = BN(deposit).add(BN(product_price));
+
+        const digest = await getApprovalDigest(
+          contractBSNTokenDeposit,
+          account.address,
+          contractBosonRouter.address,
+          txValue,
+          nonce,
+          deadline
+        );
+
+        const {v, r, s} = ecsign(
+          Buffer.from(digest.slice(2), 'hex'),
+          Buffer.from(account.privateKey.slice(2), 'hex')
+        );
+        // return {txValue, DEPOSIT, PRICE};
+        return {txValue, v, r, s};
+      }
+
+      async function generatePriceInputs(
+        account: Account,
+        product_price: number | string
+      ) {
+        const nonce = await contractBSNTokenDeposit.nonces(account.address);
+
+        const digest = await getApprovalDigest(
+          contractBSNTokenPrice,
+          account.address,
+          contractBosonRouter.address,
+          product_price,
+          nonce,
+          deadline
+        );
+
+        const {v, r, s} = ecsign(
+          Buffer.from(digest.slice(2), 'hex'),
+          Buffer.from(account.privateKey.slice(2), 'hex')
+        );
+
+        return {v, r, s};
+      }
+
+      it('Should be able to request voucher', async () => {
+        const {txValue, v, r, s} = await generateInputs(
+          users.buyer,
+          constants.buyer_deposit,
+          constants.product_price
+        );
+        // const vDeposit = DEPOSIT.v;
+        // const rDeposit = DEPOSIT.r;
+        // const sDeposit = DEPOSIT.s;
+        // const vPrice = PRICE.v;
+        // const rPrice = PRICE.r;
+        // const sPrice = PRICE.s;
+
+        const buyerInstance = contractBosonRouter.connect(
+          users.buyer.signer
+        ) as BosonRouter;
+        expect(
+          buyerInstance.requestVoucherTKNTKNSameWithPermit(
+            tokenSupplyKey,
+            users.seller.address,
+            txValue,
+            deadline,
+            v,
+            r,
+            s
+          )
+        )
+          .to.emit(contractGate, eventNames.LOG_USER_VOUCHER_REVOKED)
+          .withArgs(users.buyer.address, tokenSupplyKey);
+      });
+
+      it('[NEGATIVE] Should not be able to request voucher twice', async () => {
+        let {txValue, v, r, s} = await generateInputs(
+          users.buyer,
+          constants.buyer_deposit,
+          constants.product_price
+        );
+
+        const buyerInstance = contractBosonRouter.connect(
+          users.buyer.signer
+        ) as BosonRouter;
+
+        await buyerInstance.requestVoucherTKNTKNSameWithPermit(
+          tokenSupplyKey,
+          users.seller.address,
+          txValue,
+          deadline,
+          v,
+          r,
+          s
+        );
+
+        ({txValue, v, r, s} = await generateInputs(
+          users.buyer,
+          constants.buyer_deposit,
+          constants.product_price
+        ));
+
+        await expect(
+          buyerInstance.requestVoucherTKNTKNSameWithPermit(
+            tokenSupplyKey,
+            users.seller.address,
+            txValue,
+            deadline,
+            v,
+            r,
+            s
+          )
+        ).to.be.revertedWith(revertReasons.NOT_ELIGIBLE);
+      });
+
+      it('[NEGATIVE] Should not be able to request voucher without NFT token', async () => {
+        const {txValue, v, r, s} = await generateInputs(
+          users.buyer,
+          constants.buyer_deposit,
+          constants.product_price
+        );
+
+        const buyerInstance = contractBosonRouter.connect(
+          users.other1.signer
+        ) as BosonRouter;
+        await expect(
+          buyerInstance.requestVoucherTKNTKNSameWithPermit(
+            tokenSupplyKey,
+            users.seller.address,
+            txValue,
+            deadline,
+            v,
+            r,
+            s
+          )
+        ).to.be.revertedWith(revertReasons.NOT_ELIGIBLE);
+      });
+
+      it('[NEGATIVE] Should revert if specified gate contract does not exist', async () => {
+        const txOrder = await utils.createOrderConditional(
+          users.seller,
+          timestamp,
+          timestamp + constants.SECONDS_IN_DAY,
+          constants.seller_deposit,
+          constants.QTY_10,
+          contractBSNTokenDeposit,
+          0
+        );
+
+        const txReceipt = await txOrder.wait();
+
+        let eventArgs;
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          BosonRouter_Factory,
+          eventNames.LOG_ORDER_CREATED,
+          (e) => (eventArgs = e)
+        );
+
+        const tokenSupplyKey = eventArgs._tokenIdSupply;
+
+        const {txValue, v, r, s} = await generateInputs(
+          users.buyer,
+          constants.buyer_deposit,
+          constants.product_price
+        );
+
+        const buyerInstance = contractBosonRouter.connect(
+          users.other1.signer
+        ) as BosonRouter;
+        await expect(
+          buyerInstance.requestVoucherTKNTKNSameWithPermit(
+            tokenSupplyKey,
+            users.seller.address,
+            txValue,
+            deadline,
+            v,
+            r,
+            s
+          )
+        ).to.be.reverted;
+      });
+
+      it('[NEGATIVE] Should revert if mapping between voucherset and nfttoken not exist', async () => {
+        const txOrder = await utils.createOrderConditional(
+          users.seller,
+          timestamp,
+          timestamp + constants.SECONDS_IN_DAY,
+          constants.seller_deposit,
+          constants.QTY_10,
+          contractGate,
+          0
+        );
+
+        const txReceipt = await txOrder.wait();
+
+        let eventArgs;
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          BosonRouter_Factory,
+          eventNames.LOG_ORDER_CREATED,
+          (e) => (eventArgs = e)
+        );
+
+        const tokenSupplyKey = eventArgs._tokenIdSupply;
+
+        const {txValue, v, r, s} = await generateInputs(
+          users.buyer,
+          constants.buyer_deposit,
+          constants.product_price
+        );
+
+        const buyerInstance = contractBosonRouter.connect(
+          users.other1.signer
+        ) as BosonRouter;
+        await expect(
+          buyerInstance.requestVoucherTKNTKNSameWithPermit(
+            tokenSupplyKey,
+            users.seller.address,
+            txValue,
+            deadline,
+            v,
+            r,
+            s
           )
         ).to.be.revertedWith(revertReasons.NOT_ELIGIBLE);
       });
