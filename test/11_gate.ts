@@ -369,6 +369,22 @@ describe('Gate contract', async () => {
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
     });
 
+    it('[NEGATIVE][registerVoucherSetID] Should revert if nftTokenID id is zero', async () => {
+      const voucherSetId = BN('12345');
+      const nftTokenID = 0;
+      await expect(
+        contractGate.registerVoucherSetID(voucherSetId, nftTokenID)
+      ).to.be.revertedWith(revertReasons.TOKEN_ID_0_NOT_ALLOWED);
+    });
+
+    it('[NEGATIVE][registerVoucherSetID] Should revert if voucherSetId id is zero', async () => {
+      const voucherSetId = 0;
+      const nftTokenID = BN('2');
+      await expect(
+        contractGate.registerVoucherSetID(voucherSetId, nftTokenID)
+      ).to.be.revertedWith(revertReasons.INVALID_TOKEN_SUPPLY);
+    });
+
     it('[NEGATIVE][pause] Should revert if executed by attacker', async () => {
       await expect(
         contractGate.connect(users.attacker.signer).pause()
