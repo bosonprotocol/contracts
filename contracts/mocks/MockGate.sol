@@ -63,7 +63,7 @@ contract MockGate is IGate, Ownable, Pausable {
         external
         override
         whenNotPaused
-        onlyRouter
+        onlyFromRouter
     {
         require(_nftTokenID != 0, "TOKEN_ID_0_NOT_ALLOWED");
         require(_tokenIdSupply != 0, "INVALID_TOKEN_SUPPLY");
