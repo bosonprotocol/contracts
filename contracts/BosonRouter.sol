@@ -41,7 +41,7 @@ contract BosonRouter is
     );
 
     event LogConditionalOrderCreated(
-        uint256 indexed tokenIdSupply,
+        uint256 indexed _tokenIdSupply,
         address indexed _gateAddress
     );
 

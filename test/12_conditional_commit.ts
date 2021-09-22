@@ -1,6 +1,6 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract, Wallet} from 'ethers';
-import {expect} from 'chai';
+import {assert, expect} from 'chai';
 import {ecsign} from 'ethereumjs-util';
 import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
@@ -20,6 +20,9 @@ import {
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
 import {Account} from '../testHelpers/types';
+import fnSignatures from '../testHelpers/functionSignatures';
+
+const {keccak256, solidityPack} = ethers.utils;
 
 let utils: Utils;
 
@@ -244,6 +247,24 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           constants.QTY_10
         );
 
+        // calculate expected tokenSupplyID
+        const tokenIndex = constants.ONE;
+        const TYPE_NF_BIT = constants.ONE.shl(255);
+        const tokenSupplyKey = TYPE_NF_BIT.or(tokenIndex.shl(128));
+
+        // calculate expected promiseID
+        const promiseId = keccak256(
+          solidityPack(
+            ['address', 'uint256', 'uint256', 'uint256'],
+            [
+              users.seller.address,
+              constants.ZERO,
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+            ]
+          )
+        );
+
         expect(
           await contractBosonRouter
             .connect(users.seller.signer)
@@ -266,10 +287,109 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
               contractGate.address,
               '0'
             )
-        ).to.emit(
-          contractBosonRouter,
-          eventNames.LOG_CONDITIONAL_ORDER_CREATED
+        )
+          .to.emit(
+            contractBosonRouter,
+            eventNames.LOG_CONDITIONAL_ORDER_CREATED
+          )
+          .withArgs(tokenSupplyKey, contractGate.address)
+          .to.emit(contractBosonRouter, eventNames.LOG_ORDER_CREATED)
+          .withArgs(tokenSupplyKey, users.seller.address, constants.QTY_10, 4)
+          .to.emit(contractVoucherKernel, eventNames.LOG_PROMISE_CREATED)
+          .withArgs(
+            promiseId,
+            constants.ONE,
+            users.seller.address,
+            timestamp,
+            timestamp + constants.SECONDS_IN_DAY,
+            constants.ZERO
+          )
+          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .withArgs(
+            contractVoucherKernel.address,
+            constants.ZERO_ADDRESS,
+            users.seller.address,
+            tokenSupplyKey,
+            constants.QTY_10
+          );
+
+        //Check VocherKernel State
+        const promiseData = await contractVoucherKernel.getPromiseData(
+          promiseId
         );
+        assert.equal(
+          promiseData[constants.PROMISE_DATA_FIELDS.promiseId],
+          promiseId,
+          'Promise Id incorrect'
+        );
+
+        assert.equal(
+          promiseData[constants.PROMISE_DATA_FIELDS.nonce].toString(),
+          constants.ONE.toString(),
+          'Nonce is incorrect'
+        );
+        assert.equal(
+          promiseData[constants.PROMISE_DATA_FIELDS.validFrom].toString(),
+          timestamp.toString()
+        );
+
+        assert.equal(
+          promiseData[constants.PROMISE_DATA_FIELDS.validTo].toString(),
+          (timestamp + constants.SECONDS_IN_DAY).toString()
+        );
+        assert.equal(
+          promiseData[constants.PROMISE_DATA_FIELDS.idx].toString(),
+          constants.ZERO.toString()
+        );
+
+        const promiseSeller = await contractVoucherKernel.getSupplyHolder(
+          tokenSupplyKey
+        );
+
+        assert.strictEqual(
+          promiseSeller,
+          users.seller.address,
+          'Seller incorrect'
+        );
+
+        const promiseOrderData = await contractVoucherKernel.getOrderCosts(
+          tokenSupplyKey
+        );
+        assert.isTrue(
+          promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
+            BN(constants.product_price)
+          )
+        );
+        assert.isTrue(
+          promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositSe].eq(
+            BN(constants.seller_deposit)
+          )
+        );
+        assert.isTrue(
+          promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositBu].eq(
+            BN(constants.buyer_deposit)
+          )
+        );
+
+        const tokenNonce = await contractVoucherKernel.getTokenNonce(
+          users.seller.address
+        );
+        assert.isTrue(tokenNonce.eq(constants.ONE));
+
+        assert.equal(
+          promiseId,
+          await contractVoucherKernel.getPromiseIdFromSupplyId(tokenSupplyKey)
+        );
+
+        // Check ERC1155ERC721 state
+        const sellerERC1155ERC721Balance = (
+          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            users.seller.address,
+            tokenSupplyKey
+          )
+        )[0];
+
+        assert.isTrue(sellerERC1155ERC721Balance.eq(constants.QTY_10));
       });
 
       it('[NEGATIVE]Supplying invalid gate address should revert', async () => {
@@ -750,29 +870,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           Buffer.from(account.privateKey.slice(2), 'hex')
         );
         return {txValue, v, r, s};
-      }
-
-      async function generatePriceInputs(
-        account: Account,
-        product_price: number | string
-      ) {
-        const nonce = await contractBSNTokenDeposit.nonces(account.address);
-
-        const digest = await getApprovalDigest(
-          contractBSNTokenPrice,
-          account.address,
-          contractBosonRouter.address,
-          product_price,
-          nonce,
-          deadline
-        );
-
-        const {v, r, s} = ecsign(
-          Buffer.from(digest.slice(2), 'hex'),
-          Buffer.from(account.privateKey.slice(2), 'hex')
-        );
-
-        return {v, r, s};
       }
 
       it('Should be able to request voucher', async () => {
