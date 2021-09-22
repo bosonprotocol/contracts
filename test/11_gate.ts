@@ -409,6 +409,25 @@ describe('Gate contract', async () => {
       ).to.be.revertedWith(revertReasons.INVALID_TOKEN_SUPPLY);
     });
 
+    it('[NEGATIVE][check] Should return false if voucherSetId is not registered', async () => {
+      const voucherSetId = BN('12345');
+      const nftTokenID = BN('2');
+
+      await contractGate.setNonTransferableTokenContract(
+        contractERC1155NonTransferable.address
+      );
+
+      await contractERC1155NonTransferable.mint(
+        users.other1.address,
+        nftTokenID,
+        constants.ONE,
+        constants.ZERO_BYTES
+      );
+
+      expect(await contractGate.check(users.other1.address, voucherSetId)).to.be
+        .false;
+    });
+
     it('[NEGATIVE][pause] Should revert if executed by attacker', async () => {
       await expect(
         contractGate.connect(users.attacker.signer).pause()
