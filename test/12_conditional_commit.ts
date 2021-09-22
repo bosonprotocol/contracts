@@ -168,7 +168,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
         await deployContracts();
 
         timestamp = await Utils.getCurrTimestamp();
-        // timestamp
         constants.PROMISE_VALID_FROM = timestamp;
         constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
@@ -249,7 +248,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           await contractBosonRouter
             .connect(users.seller.signer)
             .requestCreateOrderTKNTKNWithPermitConditional(
-              // const txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermitConditional(
               contractBSNTokenPrice.address,
               contractBSNTokenDeposit.address,
               txValue,
@@ -285,7 +283,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           contractBosonRouter
             .connect(users.seller.signer)
             .requestCreateOrderTKNTKNWithPermitConditional(
-              // const txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermitConditional(
               contractBSNTokenPrice.address,
               contractBSNTokenDeposit.address,
               txValue,
@@ -688,11 +685,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           users.seller.address,
           tokensToMint
         );
-        // await utils.mintTokens(
-        //   'contractBSNTokenPrice',
-        //   users.buyer.address,
-        //   tokensToMint
-        // );
+
         await utils.mintTokens(
           'contractBSNTokenDeposit',
           users.buyer.address,
@@ -735,17 +728,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
         );
       });
 
-      // async function generateInputs(
-      //   account: Account,
-      //   deposit: number | string,
-      //   product_price: number | string
-      // ) {
-      //   const txValue = BN(deposit).add(BN(product_price));
-      //   const DEPOSIT = await generateDepositInputs(account, deposit);
-      //   const PRICE = await generatePriceInputs(account, product_price);
-      //   return {txValue, DEPOSIT, PRICE};
-      // }
-
       async function generateInputs(
         account: Account,
         deposit: number | string,
@@ -767,7 +749,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           Buffer.from(digest.slice(2), 'hex'),
           Buffer.from(account.privateKey.slice(2), 'hex')
         );
-        // return {txValue, DEPOSIT, PRICE};
         return {txValue, v, r, s};
       }
 
@@ -800,12 +781,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           constants.buyer_deposit,
           constants.product_price
         );
-        // const vDeposit = DEPOSIT.v;
-        // const rDeposit = DEPOSIT.r;
-        // const sDeposit = DEPOSIT.s;
-        // const vPrice = PRICE.v;
-        // const rPrice = PRICE.r;
-        // const sPrice = PRICE.s;
 
         const buyerInstance = contractBosonRouter.connect(
           users.buyer.signer
