@@ -6,7 +6,7 @@ import {ecsign} from 'ethereumjs-util';
 import constants from '../testHelpers/constants';
 import {advanceTimeSeconds} from '../testHelpers/timemachine';
 import Utils from '../testHelpers/utils';
-import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
+import {toWei, getApprovalDigestDAI} from '../testHelpers/permitUtilsDAI';
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
 import IDAI from '../artifacts/contracts/DAITokenWrapper.sol/IDAI.json';
@@ -60,15 +60,6 @@ describe('Token Wrappers', () => {
       await deployContracts();
 
       await mockDAI.mock.name.returns('MockDAI');
-
-      digest = await getApprovalDigest(
-        mockDAI,
-        user1.address,
-        contractDAITokenWrapper.address,
-        txValue,
-        0,
-        deadline
-      );
     });
 
     it('Should allow owner to set the token address', async () => {
@@ -85,17 +76,20 @@ describe('Token Wrappers', () => {
       await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
       await mockDAI.mock.permit.returns();
 
+      digest = await getApprovalDigestDAI(
+        mockDAI,
+        user1.address,
+        contractBosonRouter.address,
+        txValue,
+        0,
+        deadline
+      );
+
       const {v, r, s} = ecsign(
         Buffer.from(digest.slice(2), 'hex'),
         Buffer.from(user1.privateKey.slice(2), 'hex')
       );
 
-      assert.isDefined(user1.address.toString());
-      assert.isDefined(mockDAI.address.toString());
-      assert.isDefined(contractDAITokenWrapper.address.toString());
-      assert.isDefined(txValue.toString());
-
-      //permit
       //permit
       await expect(
         contractDAITokenWrapper.permit(
@@ -120,6 +114,15 @@ describe('Token Wrappers', () => {
     it('Should call permit on the DAI token if deadline is zero', async () => {
       await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
       await mockDAI.mock.permit.returns();
+
+      digest = await getApprovalDigestDAI(
+        mockDAI,
+        user1.address,
+        contractBosonRouter.address,
+        txValue,
+        0,
+        ethers.constants.Zero
+      );
 
       const {v, r, s} = ecsign(
         Buffer.from(digest.slice(2), 'hex'),
@@ -174,6 +177,15 @@ describe('Token Wrappers', () => {
       await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
       await mockDAI.mock.permit.returns();
 
+      digest = await getApprovalDigestDAI(
+        mockDAI,
+        user1.address,
+        contractBosonRouter.address,
+        txValue,
+        0,
+        deadline
+      );
+
       const {v, r, s} = ecsign(
         Buffer.from(digest.slice(2), 'hex'),
         Buffer.from(user1.privateKey.slice(2), 'hex')
@@ -195,6 +207,15 @@ describe('Token Wrappers', () => {
     it('Should revert when token spender address is zero address', async () => {
       await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
       await mockDAI.mock.permit.returns();
+
+      digest = await getApprovalDigestDAI(
+        mockDAI,
+        user1.address,
+        contractBosonRouter.address,
+        txValue,
+        0,
+        deadline
+      );
 
       const {v, r, s} = ecsign(
         Buffer.from(digest.slice(2), 'hex'),
@@ -223,6 +244,15 @@ describe('Token Wrappers', () => {
 
       await advanceTimeSeconds(newDeadline * 2);
 
+      digest = await getApprovalDigestDAI(
+        mockDAI,
+        user1.address,
+        contractBosonRouter.address,
+        txValue,
+        0,
+        newDeadline
+      );
+
       const {v, r, s} = ecsign(
         Buffer.from(digest.slice(2), 'hex'),
         Buffer.from(user1.privateKey.slice(2), 'hex')
@@ -244,6 +274,15 @@ describe('Token Wrappers', () => {
     it('Should revert if signatue portion r is invalid', async () => {
       await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
       await mockDAI.mock.permit.returns();
+
+      digest = await getApprovalDigestDAI(
+        mockDAI,
+        user1.address,
+        contractBosonRouter.address,
+        txValue,
+        0,
+        deadline
+      );
 
       const {v, s} = ecsign(
         Buffer.from(digest.slice(2), 'hex'),
@@ -267,6 +306,15 @@ describe('Token Wrappers', () => {
       await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
       await mockDAI.mock.permit.returns();
 
+      digest = await getApprovalDigestDAI(
+        mockDAI,
+        user1.address,
+        contractBosonRouter.address,
+        txValue,
+        0,
+        deadline
+      );
+
       const {v, r} = ecsign(
         Buffer.from(digest.slice(2), 'hex'),
         Buffer.from(user1.privateKey.slice(2), 'hex')
@@ -288,6 +336,15 @@ describe('Token Wrappers', () => {
     it('Should revert if the DAI token reverts', async () => {
       await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
       await mockDAI.mock.permit.revertsWithReason('Dai/invalid-permit');
+
+      digest = await getApprovalDigestDAI(
+        mockDAI,
+        user1.address,
+        contractBosonRouter.address,
+        txValue,
+        0,
+        deadline
+      );
 
       const {v, r, s} = ecsign(
         Buffer.from(digest.slice(2), 'hex'),

@@ -7,6 +7,7 @@ import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
 import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
+import {getApprovalDigestDAI} from '../testHelpers/permitUtilsDAI';
 import {advanceTimeSeconds} from '../testHelpers/timemachine';
 import {
   BosonRouter,
@@ -205,7 +206,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             .withArgs(users.seller.address, contractCashier.address, txValue)
             .returns(true);
 
-          const digest = await getApprovalDigest(
+          const digest = await getApprovalDigestDAI(
             mockDAI,
             users.seller.address,
             contractBosonRouter.address,
@@ -500,7 +501,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           await mockDAI.mock.permit.returns();
           await mockDAI.mock.name.returns('MockDAI');
 
-          const digest = await getApprovalDigest(
+          const digest = await getApprovalDigestDAI(
             mockDAI,
             users.seller.address,
             contractBosonRouter.address,
@@ -555,7 +556,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           await mockDAI.mock.permit.returns();
           await mockDAI.mock.name.returns('MockDAI');
 
-          const digest = await getApprovalDigest(
+          const digest = await getApprovalDigestDAI(
             mockDAI,
             users.seller.address,
             contractBosonRouter.address,
@@ -616,7 +617,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             .withArgs(users.seller.address, contractCashier.address, txValue)
             .returns(true);
 
-          const digest = await getApprovalDigest(
+          const digest = await getApprovalDigestDAI(
             mockDAI,
             users.seller.address,
             contractBosonRouter.address,
@@ -875,7 +876,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             .withArgs(users.seller.address, contractCashier.address, txValue)
             .returns(true);
 
-          const digest = await getApprovalDigest(
+          const digest = await getApprovalDigestDAI(
             mockDAI,
             users.seller.address,
             contractBosonRouter.address,
@@ -947,7 +948,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             )
             .returns(true);
 
-          const digestDeposit = await getApprovalDigest(
+          const digestDeposit = await getApprovalDigestDAI(
             mockDAI,
             users.buyer.address,
             contractBosonRouter.address,
@@ -1133,7 +1134,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             .withArgs(users.seller.address, contractCashier.address, txValue)
             .returns(true);
 
-          const digest = await getApprovalDigest(
+          const digest = await getApprovalDigestDAI(
             mockDAI,
             users.seller.address,
             contractBosonRouter.address,
@@ -1242,7 +1243,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           const rPrice = VRS_PRICE.r;
           const sPrice = VRS_PRICE.s;
 
-          const digestDeposit = await getApprovalDigest(
+          const digestDeposit = await getApprovalDigestDAI(
             mockDAI,
             users.buyer.address,
             contractBosonRouter.address,
@@ -1440,7 +1441,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             .withArgs(users.seller.address, contractCashier.address, txValue)
             .returns(true);
 
-          const digest = await getApprovalDigest(
+          const digest = await getApprovalDigestDAI(
             mockDAI,
             users.seller.address,
             contractBosonRouter.address,
@@ -1522,7 +1523,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             )
             .returns(true);
 
-          const digestTokens = await getApprovalDigest(
+          const digestTokens = await getApprovalDigestDAI(
             mockDAI,
             users.buyer.address,
             contractBosonRouter.address,
@@ -1712,7 +1713,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             .withArgs(users.seller.address, contractCashier.address, txValue)
             .returns(true);
 
-          const digest = await getApprovalDigest(
+          const digest = await getApprovalDigestDAI(
             mockDAI,
             users.seller.address,
             contractBosonRouter.address,
@@ -1887,7 +1888,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             )
             .returns(true);
 
-          const digestDeposit = await getApprovalDigest(
+          const digestDeposit = await getApprovalDigestDAI(
             mockDAI,
             users.buyer.address,
             contractBosonRouter.address,
