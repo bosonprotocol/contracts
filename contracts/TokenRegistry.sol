@@ -2,20 +2,21 @@
 pragma solidity 0.7.1;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./interfaces/IFundLimitsOracle.sol";
+import "./interfaces/ITokenRegistry.sol";
 
 /**
  * @title Contract for managing maximum allowed funds to be escrowed.
  * The purpose is to limit the total funds locked in escrow in the initial stages of the protocol.
  */
 
-contract FundLimitsOracle is Ownable, IFundLimitsOracle {
+contract TokenRegistry is Ownable, ITokenRegistry {
     uint256 private ethLimit;
     mapping(address => uint256) private tokenLimits;
+    mapping(address => address) private tokenWrappers;
 
-    event LogETHLimitChanged(uint256 _newLimit, address _triggeredBy);
-
-    event LogTokenLimitChanged(uint256 _newLimit, address _triggeredBy);
+    event LogETHLimitChanged(uint256 _newLimit, address indexed _triggeredBy);
+    event LogTokenLimitChanged(uint256 _newLimit, address indexed _triggeredBy);
+    event LogTokenWrapperChanged(address indexed _newWrapperAddress, address indexed _triggeredBy);
 
     modifier notZeroAddress(address tokenAddress) {
         require(tokenAddress != address(0), "INVALID_TOKEN_ADDRESS");
@@ -72,5 +73,34 @@ contract FundLimitsOracle is Ownable, IFundLimitsOracle {
         returns (uint256)
     {
         return tokenLimits[_tokenAddress];
+    }
+
+     /**
+     * @notice Set the address of the wrapper contract for the token. The wrapper is used to, for instance, allow the Boson Protocol functions that use permit functionality to work in a uniform way.
+     * @param _tokenAddress Address of the token for which the wrapper is being set
+     * @param _wrapperAddress Address of the token wrapper contract
+     */
+    function setTokenWrapperAddress(address _tokenAddress, address _wrapperAddress) 
+        external
+        override
+        onlyOwner
+        notZeroAddress(_tokenAddress)
+    {
+        tokenWrappers[_tokenAddress] = _wrapperAddress;
+        emit LogTokenWrapperChanged(_wrapperAddress, owner());
+    }
+
+    /**
+     * @notice Get the address of the token wrapper contract for the specified token
+     * @param _tokenAddress Address of the token which will be updated.
+     * @return Address of the token wrapper contract
+     */
+    function getTokenWrapperAddress(address _tokenAddress) 
+        external
+        view 
+        override
+        returns (address)
+    {
+        return tokenWrappers[_tokenAddress];
     }
 }

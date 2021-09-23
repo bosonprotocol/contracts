@@ -21,7 +21,7 @@ import {
   ERC1155ERC721,
   VoucherKernel,
   Cashier,
-  FundLimitsOracle,
+  TokenRegistry,
   MockBosonRouter,
 } from '../typechain';
 
@@ -29,7 +29,7 @@ let ERC1155ERC721_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
-let FundLimitsOracle_Factory: ContractFactory;
+let TokenRegistry_Factory: ContractFactory;
 let MockBosonRouter_Factory: ContractFactory;
 
 const BN = ethers.BigNumber.from;
@@ -41,7 +41,7 @@ describe('Voucher tests', () => {
     contractVoucherKernel: VoucherKernel,
     contractCashier: Cashier,
     contractBosonRouter: BosonRouter,
-    contractFundLimitsOracle: FundLimitsOracle,
+    contractTokenRegistry: TokenRegistry,
     contractMockBosonRouter: MockBosonRouter;
 
   let tokenSupplyKey1,
@@ -59,9 +59,7 @@ describe('Voucher tests', () => {
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
-    FundLimitsOracle_Factory = await ethers.getContractFactory(
-      'FundLimitsOracle'
-    );
+    TokenRegistry_Factory = await ethers.getContractFactory('TokenRegistry');
     MockBosonRouter_Factory = await ethers.getContractFactory(
       'MockBosonRouter'
     );
@@ -70,8 +68,8 @@ describe('Voucher tests', () => {
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
-      FundLimitsOracle;
+    contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
+      TokenRegistry;
     contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
       ERC1155ERC721;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
@@ -82,17 +80,17 @@ describe('Voucher tests', () => {
     )) as Contract & Cashier;
     contractBosonRouter = (await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
-      contractFundLimitsOracle.address,
+      contractTokenRegistry.address,
       contractCashier.address
     )) as Contract & BosonRouter;
 
     contractMockBosonRouter = (await MockBosonRouter_Factory.deploy(
       contractVoucherKernel.address,
-      contractFundLimitsOracle.address,
+      contractTokenRegistry.address,
       contractCashier.address
     )) as Contract & MockBosonRouter;
 
-    await contractFundLimitsOracle.deployed();
+    await contractTokenRegistry.deployed();
     await contractERC1155ERC721.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
@@ -133,11 +131,11 @@ describe('Voucher tests', () => {
 
   describe('Contract Addresses Getters', function () {
     it('Should have set contract addresses properly for Boson Router', async () => {
-      const flo = await contractBosonRouter.getFundLimitOracleAddress();
+      const registry = await contractBosonRouter.getTokenRegistryAddress();
       const cashier = await contractBosonRouter.getCashierAddress();
       const voucherKernel = await contractBosonRouter.getVoucherKernelAddress();
 
-      assert.equal(flo, contractFundLimitsOracle.address);
+      assert.equal(registry, contractTokenRegistry.address);
       assert.equal(cashier, contractCashier.address);
       assert.equal(voucherKernel, contractVoucherKernel.address);
     });
@@ -1216,7 +1214,7 @@ describe('Voucher tests - UNHAPPY PATH', () => {
     contractVoucherKernel: VoucherKernel,
     contractCashier: Cashier,
     contractBosonRouter: BosonRouter,
-    contractFundLimitsOracle: FundLimitsOracle;
+    contractTokenRegistry: TokenRegistry;
   let tokenSupplyKey1, tokenVoucherKey1;
 
   before(async () => {
@@ -1228,17 +1226,15 @@ describe('Voucher tests - UNHAPPY PATH', () => {
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
     ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
-    FundLimitsOracle_Factory = await ethers.getContractFactory(
-      'FundLimitsOracle'
-    );
+    TokenRegistry_Factory = await ethers.getContractFactory('TokenRegistry');
     MockBosonRouter_Factory = await ethers.getContractFactory(
       'MockBosonRouter'
     );
   });
 
   async function deployContracts() {
-    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
-      FundLimitsOracle;
+    contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
+      TokenRegistry;
     contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
       ERC1155ERC721;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
@@ -1249,11 +1245,11 @@ describe('Voucher tests - UNHAPPY PATH', () => {
     )) as Contract & Cashier;
     contractBosonRouter = (await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
-      contractFundLimitsOracle.address,
+      contractTokenRegistry.address,
       contractCashier.address
     )) as Contract & BosonRouter;
 
-    await contractFundLimitsOracle.deployed();
+    await contractTokenRegistry.deployed();
     await contractERC1155ERC721.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();

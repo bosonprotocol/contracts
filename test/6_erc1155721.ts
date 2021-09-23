@@ -14,7 +14,7 @@ import {
   ERC1155ERC721,
   VoucherKernel,
   Cashier,
-  FundLimitsOracle,
+  TokenRegistry,
   MockERC20Permit,
 } from '../typechain';
 
@@ -22,7 +22,7 @@ let ERC1155ERC721_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
-let FundLimitsOracle_Factory: ContractFactory;
+let TokenRegistry_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
 
 import revertReasons from '../testHelpers/revertReasons';
@@ -44,9 +44,7 @@ describe('ERC1155ERC721', () => {
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
-    FundLimitsOracle_Factory = await ethers.getContractFactory(
-      'FundLimitsOracle'
-    );
+    TokenRegistry_Factory = await ethers.getContractFactory('TokenRegistry');
     MockERC20Permit_Factory = await ethers.getContractFactory(
       'MockERC20Permit'
     );
@@ -58,15 +56,15 @@ describe('ERC1155ERC721', () => {
     contractBosonRouter: BosonRouter,
     contractBSNTokenPrice: MockERC20Permit,
     contractBSNTokenDeposit: MockERC20Permit,
-    contractFundLimitsOracle: FundLimitsOracle;
+    contractTokenRegistry: TokenRegistry;
 
   let timestamp;
 
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
-      FundLimitsOracle;
+    contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
+      TokenRegistry;
     contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
       ERC1155ERC721;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
@@ -77,7 +75,7 @@ describe('ERC1155ERC721', () => {
     )) as Contract & Cashier;
     contractBosonRouter = (await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
-      contractFundLimitsOracle.address,
+      contractTokenRegistry.address,
       contractCashier.address
     )) as Contract & BosonRouter;
 
@@ -91,7 +89,7 @@ describe('ERC1155ERC721', () => {
       'BDEP'
     )) as Contract & MockERC20Permit;
 
-    await contractFundLimitsOracle.deployed();
+    await contractTokenRegistry.deployed();
     await contractERC1155ERC721.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
@@ -122,15 +120,26 @@ describe('ERC1155ERC721', () => {
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
 
-    await contractFundLimitsOracle.setTokenLimit(
+    await contractTokenRegistry.setTokenLimit(
       contractBSNTokenPrice.address,
       constants.TOKEN_LIMIT
     );
-    await contractFundLimitsOracle.setTokenLimit(
+    await contractTokenRegistry.setTokenLimit(
       contractBSNTokenDeposit.address,
       constants.TOKEN_LIMIT
     );
-    await contractFundLimitsOracle.setETHLimit(constants.ETHER_LIMIT);
+    await contractTokenRegistry.setETHLimit(constants.ETHER_LIMIT);
+
+    //Set Boson Token as it's own wrapper so that the same interface can be called in the code
+    await contractTokenRegistry.setTokenWrapperAddress(
+      contractBSNTokenPrice.address,
+      contractBSNTokenPrice.address
+    );
+
+    await contractTokenRegistry.setTokenWrapperAddress(
+      contractBSNTokenDeposit.address,
+      contractBSNTokenDeposit.address
+    );
   }
 
   describe('Multi-token contract', function () {

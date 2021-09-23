@@ -13,7 +13,7 @@ const ethers = hre.ethers;
  */
 class DeploymentExecutor {
   env;
-  flo;
+  tokenRegistry;
   erc1155erc721;
   voucherKernel;
   cashier;
@@ -28,7 +28,7 @@ class DeploymentExecutor {
 
     this.env;
 
-    this.flo;
+    this.tokenRegistry;
     this.erc1155erc721;
     this.voucherKernel;
     this.cashier;
@@ -112,21 +112,19 @@ class DeploymentExecutor {
     const VoucherKernel = await ethers.getContractFactory('VoucherKernel');
     const Cashier = await ethers.getContractFactory('Cashier');
     const BosonRouter = await ethers.getContractFactory('BosonRouter');
-    const FundLimitsOracle = await ethers.getContractFactory(
-      'FundLimitsOracle'
-    );
+    const TokenRegistry = await ethers.getContractFactory('TokenRegistry');
 
-    this.flo = await FundLimitsOracle.deploy();
+    this.tokenRegistry = await TokenRegistry.deploy();
     this.erc1155erc721 = await ERC1155ERC721.deploy();
     this.voucherKernel = await VoucherKernel.deploy(this.erc1155erc721.address);
     this.cashier = await Cashier.deploy(this.voucherKernel.address);
     this.br = await BosonRouter.deploy(
       this.voucherKernel.address,
-      this.flo.address,
+      this.tokenRegistry.address,
       this.cashier.address
     );
 
-    await this.flo.deployed();
+    await this.tokenRegistry.deployed();
     await this.erc1155erc721.deployed();
     await this.voucherKernel.deployed();
     await this.cashier.deployed();
@@ -134,7 +132,10 @@ class DeploymentExecutor {
   }
 
   logContracts() {
-    console.log('\nFundLimitsOracle Contract Address: ', this.flo.address);
+    console.log(
+      '\nToken Registry Contract Address: ',
+      this.tokenRegistry.address
+    );
     console.log('ERC1155ERC721 Contract Address: ', this.erc1155erc721.address);
     console.log('VoucherKernel Contract Address: ', this.voucherKernel.address);
     console.log('Cashier Contract Address: ', this.cashier.address);
@@ -147,7 +148,7 @@ class DeploymentExecutor {
       JSON.stringify(
         {
           network: hre.network.name,
-          flo: this.flo.address,
+          tokenRegistry: this.tokenRegistry.address,
           erc1155erc721: this.erc1155erc721.address,
           voucherKernel: this.voucherKernel.address,
           cashier: this.cashier.address,
@@ -174,7 +175,7 @@ class ProdExecutor extends DeploymentExecutor {
 
   async setDefaults() {
     await super.setDefaults();
-    await this.flo.setTokenLimit(this.boson_token, this.TOKEN_LIMIT);
+    await this.tokenRegistry.setTokenLimit(this.boson_token, this.TOKEN_LIMIT);
   }
 }
 
@@ -196,7 +197,7 @@ class NonProdExecutor extends DeploymentExecutor {
 
     await this.voucherKernel.setComplainPeriod(2 * this.SIXTY_SECONDS);
     await this.voucherKernel.setCancelFaultPeriod(2 * this.SIXTY_SECONDS);
-    await this.flo.setTokenLimit(this.boson_token, this.TOKEN_LIMIT);
+    await this.tokenRegistry.setTokenLimit(this.boson_token, this.TOKEN_LIMIT);
   }
 }
 

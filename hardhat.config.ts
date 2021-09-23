@@ -4,7 +4,6 @@ dotEnvConfig.config();
 import "solidity-coverage"
 import 'hardhat-contract-sizer'
 import "@nomiclabs/hardhat-etherscan"
-import "@nomiclabs/hardhat-ethers"
 import "@nomiclabs/hardhat-waffle"
 import '@typechain/hardhat'
 import { HardhatUserConfig } from "hardhat/config";

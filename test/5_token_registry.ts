@@ -1,19 +1,17 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
-
 import {assert, expect} from 'chai';
-
 import constants from '../testHelpers/constants';
-
 import Users from '../testHelpers/users';
-import Utils from '../testHelpers/utils';
+import revertReasons from '../testHelpers/revertReasons';
+import * as eventUtils from '../testHelpers/events';
 
 import {
   BosonRouter,
   ERC1155ERC721,
   VoucherKernel,
   Cashier,
-  FundLimitsOracle,
+  TokenRegistry,
   MockERC20Permit,
 } from '../typechain';
 
@@ -21,16 +19,14 @@ let ERC1155ERC721_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
-let FundLimitsOracle_Factory: ContractFactory;
+let TokenRegistry_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
 
-import revertReasons from '../testHelpers/revertReasons';
-import * as eventUtils from '../testHelpers/events';
 const eventNames = eventUtils.eventNames;
 
 let users;
 
-describe('FundLimitsOracle', () => {
+describe('TokenRegistry', () => {
   before(async () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
@@ -39,9 +35,7 @@ describe('FundLimitsOracle', () => {
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
-    FundLimitsOracle_Factory = await ethers.getContractFactory(
-      'FundLimitsOracle'
-    );
+    TokenRegistry_Factory = await ethers.getContractFactory('TokenRegistry');
     MockERC20Permit_Factory = await ethers.getContractFactory(
       'MockERC20Permit'
     );
@@ -52,7 +46,7 @@ describe('FundLimitsOracle', () => {
     contractCashier: Cashier,
     contractBosonRouter: BosonRouter,
     contractBSNTokenPrice: MockERC20Permit,
-    contractFundLimitsOracle: FundLimitsOracle;
+    contractTokenRegistry: TokenRegistry;
 
   let expectedLimit;
 
@@ -60,15 +54,10 @@ describe('FundLimitsOracle', () => {
   const FIVE_TOKENS = (5 * 10 ** 16).toString();
 
   async function deployContracts() {
-    const timestamp = await Utils.getCurrTimestamp();
-
-    constants.PROMISE_VALID_FROM = timestamp;
-    constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
-
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
-      FundLimitsOracle;
+    contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
+      TokenRegistry;
     contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
       ERC1155ERC721;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
@@ -79,7 +68,7 @@ describe('FundLimitsOracle', () => {
     )) as Contract & Cashier;
     contractBosonRouter = (await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
-      contractFundLimitsOracle.address,
+      contractTokenRegistry.address,
       contractCashier.address
     )) as Contract & BosonRouter;
 
@@ -88,7 +77,7 @@ describe('FundLimitsOracle', () => {
       'BPRC'
     )) as Contract & MockERC20Permit;
 
-    await contractFundLimitsOracle.deployed();
+    await contractTokenRegistry.deployed();
     await contractERC1155ERC721.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
@@ -119,7 +108,7 @@ describe('FundLimitsOracle', () => {
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
   }
 
-  describe('FundLimitsOracle interaction', () => {
+  describe('TokenRegistry get and set limits', () => {
     before(async () => {
       await deployContracts();
     });
@@ -128,7 +117,7 @@ describe('FundLimitsOracle', () => {
       it('Should have set ETH Limit initially to 1 ETH', async () => {
         const ONE_ETH = (10 ** 18).toString();
 
-        const ethLimit = await contractFundLimitsOracle.getETHLimit();
+        const ethLimit = await contractTokenRegistry.getETHLimit();
 
         assert.equal(
           ethLimit.toString(),
@@ -138,9 +127,9 @@ describe('FundLimitsOracle', () => {
       });
 
       it('Owner should change ETH Limit', async () => {
-        await contractFundLimitsOracle.setETHLimit(FIVE_ETHERS);
+        await contractTokenRegistry.setETHLimit(FIVE_ETHERS);
 
-        expectedLimit = await contractFundLimitsOracle.getETHLimit();
+        expectedLimit = await contractTokenRegistry.getETHLimit();
 
         assert.equal(
           expectedLimit.toString(),
@@ -150,15 +139,13 @@ describe('FundLimitsOracle', () => {
       });
 
       it('Should emit LogETHLimitChanged', async () => {
-        const setLimitTx = await contractFundLimitsOracle.setETHLimit(
-          FIVE_ETHERS
-        );
+        const setLimitTx = await contractTokenRegistry.setETHLimit(FIVE_ETHERS);
 
         const receipt = await setLimitTx.wait();
 
         eventUtils.assertEventEmitted(
           receipt,
-          FundLimitsOracle_Factory,
+          TokenRegistry_Factory,
           eventNames.LOG_ETH_LIMIT_CHANGED,
           (ev) => {
             assert.equal(ev._triggeredBy, users.deployer.address);
@@ -167,7 +154,7 @@ describe('FundLimitsOracle', () => {
       });
 
       it('[NEGATIVE] Should revert if attacker tries to change ETH Limit', async () => {
-        const attackerInstance = contractFundLimitsOracle.connect(
+        const attackerInstance = contractTokenRegistry.connect(
           users.attacker.signer
         );
         await expect(
@@ -178,12 +165,12 @@ describe('FundLimitsOracle', () => {
 
     describe('Token', () => {
       it('Owner should set Token Limit', async () => {
-        await contractFundLimitsOracle.setTokenLimit(
+        await contractTokenRegistry.setTokenLimit(
           contractBSNTokenPrice.address,
           FIVE_TOKENS
         );
 
-        expectedLimit = await contractFundLimitsOracle.getTokenLimit(
+        expectedLimit = await contractTokenRegistry.getTokenLimit(
           contractBSNTokenPrice.address
         );
 
@@ -195,7 +182,7 @@ describe('FundLimitsOracle', () => {
       });
 
       it('Should emit LogTokenLimitChanged', async () => {
-        const setLimitTx = await contractFundLimitsOracle.setTokenLimit(
+        const setLimitTx = await contractTokenRegistry.setTokenLimit(
           contractBSNTokenPrice.address,
           FIVE_TOKENS
         );
@@ -204,7 +191,7 @@ describe('FundLimitsOracle', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          FundLimitsOracle_Factory,
+          TokenRegistry_Factory,
           eventNames.LOG_TOKEN_LIMIT_CHANGED,
           (ev) => {
             assert.equal(ev._triggeredBy, users.deployer.address);
@@ -215,7 +202,7 @@ describe('FundLimitsOracle', () => {
       it(
         '[NEGATIVE] Should revert if attacker tries to change ' + 'Token Limit',
         async () => {
-          const attackerInstance = contractFundLimitsOracle.connect(
+          const attackerInstance = contractTokenRegistry.connect(
             users.attacker.signer
           );
           await expect(
@@ -226,6 +213,78 @@ describe('FundLimitsOracle', () => {
           ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
         }
       );
+    });
+  });
+
+  describe('TokenRegistry get and set token wrapper addresses', () => {
+    beforeEach(async () => {
+      await deployContracts();
+    });
+
+    it('Should allow owner to set a new token wrapper for a token', async () => {
+      const deployerInstance = contractTokenRegistry.connect(
+        users.deployer.signer
+      );
+
+      const setWrapperTx = await deployerInstance.setTokenWrapperAddress(
+        users.other1.address,
+        users.other2.address
+      );
+
+      const txReceipt = await setWrapperTx.wait();
+
+      eventUtils.assertEventEmitted(
+        txReceipt,
+        TokenRegistry_Factory,
+        eventNames.LOG_TOKEN_WRAPPER_CHANGED,
+        (ev) => {
+          assert.equal(ev._newWrapperAddress, users.other2.address);
+          assert.equal(ev._triggeredBy, users.deployer.address);
+        }
+      );
+
+      //check contract state
+      const newWrapperAddress = await deployerInstance.getTokenWrapperAddress(
+        users.other1.address
+      ); //get the token wrapper for other1
+      assert.equal(newWrapperAddress, users.other2.address);
+    });
+
+    it('[NEGATIVE] Should revert if attacker tries to change token wrapper', async () => {
+      const attackerInstance = contractTokenRegistry.connect(
+        users.attacker.signer
+      );
+      await expect(
+        attackerInstance.setTokenWrapperAddress(
+          users.other1.address,
+          users.other2.address
+        )
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+
+    it('Should get the correct wrapper token address for a given token address', async () => {
+      const deployerInstance = contractTokenRegistry.connect(
+        users.deployer.signer
+      );
+
+      await deployerInstance.setTokenWrapperAddress(
+        users.other1.address,
+        users.other2.address
+      );
+
+      //check contract state
+      const newWrapperAddress = await deployerInstance.getTokenWrapperAddress(
+        users.other1.address
+      ); //get the token wrapper for other1
+      assert.equal(newWrapperAddress, users.other2.address);
+    });
+
+    it('Should return the zero address for a token that is not mapped to a wrapper', async () => {
+      const newWrapperAddress = await contractTokenRegistry.getTokenWrapperAddress(
+        users.other1.address
+      ); //get the token wrapper for other1
+
+      assert.equal(newWrapperAddress, constants.ZERO_ADDRESS);
     });
   });
 });

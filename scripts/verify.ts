@@ -17,13 +17,13 @@ export async function verifyContracts(env: string): Promise<void> {
     throw new Error(`Env: ${env} is not recognized!`);
   }
 
-  //verify Fund Limits Oracle
+  //verify TokenRegistry
   try {
     await hre.run('verify:verify', {
-      address: contracts.flo,
+      address: contracts.tokenRegistry,
     });
   } catch (error) {
-    logError('Fund Limits Oracle', error.message);
+    logError('Token Registry', error.message);
   }
 
   //verify ERC1155ERC721
@@ -61,7 +61,7 @@ export async function verifyContracts(env: string): Promise<void> {
       address: contracts.br,
       constructorArguments: [
         contracts.voucherKernel,
-        contracts.flo,
+        contracts.tokenRegistry,
         contracts.cashier,
       ],
     });
