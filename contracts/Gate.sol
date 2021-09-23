@@ -27,6 +27,15 @@ contract Gate is IGate, Ownable, Pausable {
     }
 
     /**
+     * @notice For a given _tokenIdSupply, it tells on which NFT it depends
+     * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
+     * @return quest NFT token ID
+     */
+    function getNftTokenId(uint256 _tokenIdSupply) external view returns (uint256) {
+        return voucherToToken[_tokenIdSupply];
+    }
+
+    /**
      * @notice Sets the contract, where gate contract checks if quest NFT token exists
      * @param _nonTransferableTokenContractAddress address of a non-transferable token contract
      */

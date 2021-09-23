@@ -166,11 +166,9 @@ describe('Gate contract', async () => {
     gate,
     conditionalOrderNftTokenID
   ) {
-    const nftTokenID = BN('2');
-
     await contractERC1155NonTransferable.mint(
       users.buyer.address,
-      nftTokenID,
+      constants.NFT_TOKEN_ID,
       constants.ONE,
       constants.ZERO_BYTES
     );
@@ -237,7 +235,7 @@ describe('Gate contract', async () => {
     );
 
     const tokenId = eventArgs._tokenIdSupply;
-    return {tokenId, nftTokenID};
+    return {tokenId, nftTokenID: constants.NFT_TOKEN_ID};
   }
 
   describe('Basic operations', () => {
@@ -266,11 +264,26 @@ describe('Gate contract', async () => {
     });
 
     it('Owner should be able to register voucher set id', async () => {
-      const voucherSetId = BN('12345');
-      const nftTokenID = BN('2');
-      expect(await contractGate.registerVoucherSetID(voucherSetId, nftTokenID))
+      expect(
+        await contractGate.registerVoucherSetID(
+          constants.VOUCHER_SET_ID,
+          constants.NFT_TOKEN_ID
+        )
+      )
         .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
-        .withArgs(voucherSetId, nftTokenID);
+        .withArgs(constants.VOUCHER_SET_ID, constants.NFT_TOKEN_ID);
+    });
+
+    it('One should be able to look up on which NFT depends voucher set', async () => {
+      constants.VOUCHER_SET_ID;
+
+      await contractGate.registerVoucherSetID(
+        constants.VOUCHER_SET_ID,
+        constants.NFT_TOKEN_ID
+      );
+      expect(
+        await contractGate.getNftTokenId(constants.VOUCHER_SET_ID)
+      ).to.equal(constants.NFT_TOKEN_ID);
     });
 
     it('Boson protocol should be able to register voucher set id', async () => {
@@ -307,29 +320,32 @@ describe('Gate contract', async () => {
     });
 
     it('check function works correctly', async () => {
-      const voucherSetId = BN('12345');
-      const nftTokenID = BN('2');
-
-      await contractGate.registerVoucherSetID(voucherSetId, nftTokenID);
+      await contractGate.registerVoucherSetID(
+        constants.VOUCHER_SET_ID,
+        constants.NFT_TOKEN_ID
+      );
 
       await contractGate.setNonTransferableTokenContract(
         contractERC1155NonTransferable.address
       );
 
-      expect(await contractGate.check(users.other1.address, voucherSetId)).to.be
-        .false;
+      expect(
+        await contractGate.check(users.other1.address, constants.VOUCHER_SET_ID)
+      ).to.be.false;
 
       await contractERC1155NonTransferable.mint(
         users.other1.address,
-        nftTokenID,
+        constants.NFT_TOKEN_ID,
         constants.ONE,
         constants.ZERO_BYTES
       );
 
-      expect(await contractGate.check(users.other1.address, voucherSetId)).to.be
-        .true;
-      expect(await contractGate.check(users.other2.address, voucherSetId)).to.be
-        .false;
+      expect(
+        await contractGate.check(users.other1.address, constants.VOUCHER_SET_ID)
+      ).to.be.true;
+      expect(
+        await contractGate.check(users.other2.address, constants.VOUCHER_SET_ID)
+      ).to.be.false;
 
       // user without token
       // user with token, non deactivated
@@ -355,18 +371,19 @@ describe('Gate contract', async () => {
     });
 
     it('During the pause, register and deactivate does not work', async () => {
-      const voucherSetId = BN('12345');
-      const nftTokenID = BN('2');
       await contractGate.pause();
 
       await expect(
         contractGate
           .connect(users.attacker.signer)
-          .registerVoucherSetID(voucherSetId, nftTokenID)
+          .registerVoucherSetID(
+            constants.VOUCHER_SET_ID,
+            constants.NFT_TOKEN_ID
+          )
       ).to.be.revertedWith(revertReasons.PAUSED);
 
       await expect(
-        contractGate.deactivate(users.attacker.address, voucherSetId)
+        contractGate.deactivate(users.other1.address, constants.VOUCHER_SET_ID)
       ).to.be.revertedWith(revertReasons.PAUSED);
     });
 
@@ -391,48 +408,46 @@ describe('Gate contract', async () => {
     });
 
     it('[NEGATIVE][registerVoucherSetID] Should revert if executed by attacker', async () => {
-      const voucherSetId = BN('12345');
-      const nftTokenID = BN('2');
       await expect(
         contractGate
           .connect(users.attacker.signer)
-          .registerVoucherSetID(voucherSetId, nftTokenID)
+          .registerVoucherSetID(
+            constants.VOUCHER_SET_ID,
+            constants.NFT_TOKEN_ID
+          )
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
     });
 
     it('[NEGATIVE][registerVoucherSetID] Should revert if nftTokenID id is zero', async () => {
-      const voucherSetId = BN('12345');
       const nftTokenID = 0;
       await expect(
-        contractGate.registerVoucherSetID(voucherSetId, nftTokenID)
+        contractGate.registerVoucherSetID(constants.VOUCHER_SET_ID, nftTokenID)
       ).to.be.revertedWith(revertReasons.TOKEN_ID_0_NOT_ALLOWED);
     });
 
-    it('[NEGATIVE][registerVoucherSetID] Should revert if voucherSetId id is zero', async () => {
+    it('[NEGATIVE][registerVoucherSetID] Should revert if constants.VOUCHER_SET_ID id is zero', async () => {
       const voucherSetId = 0;
-      const nftTokenID = BN('2');
+
       await expect(
-        contractGate.registerVoucherSetID(voucherSetId, nftTokenID)
+        contractGate.registerVoucherSetID(voucherSetId, constants.NFT_TOKEN_ID)
       ).to.be.revertedWith(revertReasons.INVALID_TOKEN_SUPPLY);
     });
 
-    it('[NEGATIVE][check] Should return false if voucherSetId is not registered', async () => {
-      const voucherSetId = BN('12345');
-      const nftTokenID = BN('2');
-
+    it('[NEGATIVE][check] Should return false if constants.VOUCHER_SET_ID is not registered', async () => {
       await contractGate.setNonTransferableTokenContract(
         contractERC1155NonTransferable.address
       );
 
       await contractERC1155NonTransferable.mint(
         users.other1.address,
-        nftTokenID,
+        constants.NFT_TOKEN_ID,
         constants.ONE,
         constants.ZERO_BYTES
       );
 
-      expect(await contractGate.check(users.other1.address, voucherSetId)).to.be
-        .false;
+      expect(
+        await contractGate.check(users.other1.address, constants.VOUCHER_SET_ID)
+      ).to.be.false;
     });
 
     it('[NEGATIVE][pause] Should revert if executed by attacker', async () => {
