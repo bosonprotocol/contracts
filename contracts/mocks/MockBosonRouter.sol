@@ -41,6 +41,11 @@ contract MockBosonRouter is
         uint8 _paymentType
     );
 
+    event LogConditionalOrderCreated(
+        uint256 indexed _tokenIdSupply,
+        address indexed _gateAddress
+    );
+
     /**
      * @notice Acts as a modifier, but it's cheaper. Checking if a non-zero address is provided, otherwise reverts.
      */
@@ -174,7 +179,7 @@ contract MockBosonRouter is
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHETH);
     }
 
-    function requestCreateOrderTKNTKNWithPermit(
+    function requestCreateOrderTKNTKNWithPermitInternal(
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent,
@@ -183,7 +188,7 @@ contract MockBosonRouter is
         bytes32 r,
         bytes32 s,
         uint256[] calldata metadata
-    ) external override whenNotPaused returns (uint256) {
+    ) internal whenNotPaused returns (uint256) {
         notZeroAddress(_tokenPriceAddress);
         notZeroAddress(_tokenDepositAddress);
         notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
@@ -239,6 +244,28 @@ contract MockBosonRouter is
         return tokenIdSupply;
     }
 
+    function requestCreateOrderTKNTKNWithPermit(
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256[] calldata metadata
+    ) external override {
+        requestCreateOrderTKNTKNWithPermitInternal(
+            _tokenPriceAddress,
+            _tokenDepositAddress,
+            _tokensSent,
+            deadline,
+            v,
+            r,
+            s,
+            metadata
+        );
+    }
+
     function requestCreateOrderTKNTKNWithPermitConditional(
         address _tokenPriceAddress,
         address _tokenDepositAddress,
@@ -251,8 +278,11 @@ contract MockBosonRouter is
         address _gateAddress,
         uint256 _nftTokenID
     ) external override {
+        notZeroAddress(_gateAddress);
+        // should we check if gateAddress implements correct interface?
+
         uint256 tokenIdSupply =
-            this.requestCreateOrderTKNTKNWithPermit(
+            requestCreateOrderTKNTKNWithPermitInternal(
                 _tokenPriceAddress,
                 _tokenDepositAddress,
                 _tokensSent,
@@ -264,6 +294,9 @@ contract MockBosonRouter is
             );
 
         voucherSetToGateContract[tokenIdSupply] = _gateAddress;
+
+        emit LogConditionalOrderCreated(tokenIdSupply, _gateAddress);
+
         if (_nftTokenID > 0) {
             IGate(_gateAddress).registerVoucherSetID(
                 tokenIdSupply,

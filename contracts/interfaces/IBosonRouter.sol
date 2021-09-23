@@ -34,7 +34,7 @@ interface IBosonRouter {
         bytes32 r,
         bytes32 s,
         uint256[] calldata metadata
-    ) external returns (uint256);
+    ) external;
 
     function requestCreateOrderTKNTKNWithPermitConditional(
         address _tokenPriceAddress,

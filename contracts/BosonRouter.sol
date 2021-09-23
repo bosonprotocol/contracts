@@ -178,7 +178,8 @@ contract BosonRouter is
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHETH);
     }
 
-    function requestCreateOrderTKNTKNWithPermit(
+
+    function requestCreateOrderTKNTKNWithPermitInternal(
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent,
@@ -187,7 +188,7 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s,
         uint256[] calldata metadata
-    ) public override whenNotPaused returns (uint256) {
+    ) internal whenNotPaused returns (uint256) {
         notZeroAddress(_tokenPriceAddress);
         notZeroAddress(_tokenDepositAddress);
         notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
@@ -243,6 +244,28 @@ contract BosonRouter is
         return tokenIdSupply;
     }
 
+    function requestCreateOrderTKNTKNWithPermit(
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256[] calldata metadata
+    ) external override  {
+        requestCreateOrderTKNTKNWithPermitInternal(
+            _tokenPriceAddress,
+            _tokenDepositAddress,
+            _tokensSent,
+            deadline,
+            v,
+            r,
+            s,
+            metadata
+        );
+    }
+
     function requestCreateOrderTKNTKNWithPermitConditional(
         address _tokenPriceAddress,
         address _tokenDepositAddress,
@@ -258,7 +281,7 @@ contract BosonRouter is
         notZeroAddress(_gateAddress);
         // should we check if gateAddress implements correct interface?
 
-        uint256 tokenIdSupply = requestCreateOrderTKNTKNWithPermit(
+        uint256 tokenIdSupply = requestCreateOrderTKNTKNWithPermitInternal(
             _tokenPriceAddress,
             _tokenDepositAddress,
             _tokensSent,
@@ -280,6 +303,11 @@ contract BosonRouter is
             );
         }
     }
+
+    
+
+
+
 
     function requestCreateOrderETHTKNWithPermit(
         address _tokenDepositAddress,
