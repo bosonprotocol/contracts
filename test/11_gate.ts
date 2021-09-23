@@ -253,6 +253,16 @@ describe('Gate contract', async () => {
         .withArgs(contractERC1155NonTransferable.address);
     });
 
+    it('One should be able get ERC1155 contract address', async () => {
+      await contractGate.setNonTransferableTokenContract(
+        contractERC1155NonTransferable.address
+      );
+
+      expect(await contractGate.getNonTransferableTokenContract()).to.equal(
+        contractERC1155NonTransferable.address
+      );
+    });
+
     it('Owner should be able set boson router address', async () => {
       await deployBosonRouterContracts();
 

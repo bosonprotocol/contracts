@@ -392,6 +392,86 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
         assert.isTrue(sellerERC1155ERC721Balance.eq(constants.QTY_10));
       });
 
+      it('One should get the gate address that handles conditional commit', async () => {
+        const {txValue, v, r, s} = await generateInputs(
+          users.seller,
+          constants.seller_deposit,
+          constants.QTY_10
+        );
+
+        await contractBosonRouter
+          .connect(users.seller.signer)
+          .requestCreateOrderTKNTKNWithPermitConditional(
+            contractBSNTokenPrice.address,
+            contractBSNTokenDeposit.address,
+            txValue,
+            deadline,
+            v,
+            r,
+            s,
+            [
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.product_price,
+              constants.seller_deposit,
+              constants.buyer_deposit,
+              constants.QTY_10,
+            ],
+            contractGate.address,
+            '0'
+          );
+
+        // calculate expected tokenSupplyID
+        const tokenIndex = constants.ONE;
+        const TYPE_NF_BIT = constants.ONE.shl(255);
+        const tokenSupplyKey = TYPE_NF_BIT.or(tokenIndex.shl(128));
+
+        expect(
+          await contractBosonRouter
+            .connect(users.seller.signer)
+            .getVoucherSetToGateContract(tokenSupplyKey)
+        ).to.equal(contractGate.address);
+      });
+
+      it('Non conditional voucher set should have zero address gate contract', async () => {
+        const {txValue, v, r, s} = await generateInputs(
+          users.seller,
+          constants.seller_deposit,
+          constants.QTY_10
+        );
+
+        await contractBosonRouter
+          .connect(users.seller.signer)
+          .requestCreateOrderTKNTKNWithPermit(
+            contractBSNTokenPrice.address,
+            contractBSNTokenDeposit.address,
+            txValue,
+            deadline,
+            v,
+            r,
+            s,
+            [
+              timestamp,
+              timestamp + constants.SECONDS_IN_DAY,
+              constants.product_price,
+              constants.seller_deposit,
+              constants.buyer_deposit,
+              constants.QTY_10,
+            ]
+          );
+
+        // calculate expected tokenSupplyID
+        const tokenIndex = constants.ONE;
+        const TYPE_NF_BIT = constants.ONE.shl(255);
+        const tokenSupplyKey = TYPE_NF_BIT.or(tokenIndex.shl(128));
+
+        expect(
+          await contractBosonRouter
+            .connect(users.seller.signer)
+            .getVoucherSetToGateContract(tokenSupplyKey)
+        ).to.equal(constants.ZERO_ADDRESS);
+      });
+
       it('[NEGATIVE]Supplying invalid gate address should revert', async () => {
         const {txValue, v, r, s} = await generateInputs(
           users.seller,

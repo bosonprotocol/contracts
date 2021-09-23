@@ -163,4 +163,14 @@ interface IBosonRouter {
      * @return Address of Fund Limits Oracle contract
      */
     function getFundLimitOracleAddress() external view returns (address);
+
+    /**
+     * @notice Get the address gate contract that handles conditional commit of certain voucher set
+     * @param _tokenIdSupply    ID of the supply token
+     * @return Address of the gate contract or zero address if there is no conditional commit
+     */
+    function getVoucherSetToGateContract(uint256 _tokenIdSupply)
+        external
+        view
+        returns (address);
 }

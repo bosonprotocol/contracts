@@ -45,6 +45,13 @@ interface IGate {
      * @param _tokenIdSupply an ID of a supply token (ERC-1155)
      * @param _nftTokenID an ID of a quest token
      */
+
+    /**
+     * @notice Gets the contract address, where gate contract checks if quest NFT token exists
+     * @return Address of contract that hold non transferable NFTs (quest NFTs)
+     */
+    function getNonTransferableTokenContract() external view returns (address);
+
     function registerVoucherSetID(uint256 _tokenIdSupply, uint256 _nftTokenID)
         external;
 

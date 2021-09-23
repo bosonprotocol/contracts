@@ -758,4 +758,18 @@ contract MockBosonRouter is
     {
         return fundLimitsOracle;
     }
+
+    /**
+     * @notice Get the address gate contract that handles conditional commit of certain voucher set
+     * @param _tokenIdSupply    ID of the supply token
+     * @return Address of the gate contract or zero address if there is no conditional commit
+     */
+    function getVoucherSetToGateContract(uint256 _tokenIdSupply)
+        external
+        view
+        override
+        returns (address)
+    {
+        return voucherSetToGateContract[_tokenIdSupply];
+    }
 }

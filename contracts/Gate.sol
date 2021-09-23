@@ -49,6 +49,15 @@ contract Gate is IGate, Ownable, Pausable {
         emit LogNonTransferableContractSet(_nonTransferableTokenContractAddress);
     }
 
+      /**
+     * @notice Gets the contract address, where gate contract checks if quest NFT token exists
+     * @return Address of contract that hold non transferable NFTs (quest NFTs)
+     */
+    function getNonTransferableTokenContract(
+    ) external view override returns (address) {
+        return address(nonTransferableTokenContract);
+    }
+
     /**
      * @notice Sets the Boson router contract address, from which deactivate is accepted
      * @param _bosonRouterAddress address of a non-transferable token contract
