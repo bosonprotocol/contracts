@@ -84,6 +84,7 @@ class UtilsBuilder {
 
   TKNTKNWithPermit(): UtilsBuilder {
     this.utils.createOrder = this.utils.requestCreateOrderTKNTKNWithPermit;
+    this.utils.createOrderConditional = this.utils.requestCreateOrderTKNTKNWithPermitConditional;
     this.utils.commitToBuy = this.utils.commitToBuyTKNTKNWithPermit;
 
     return this;

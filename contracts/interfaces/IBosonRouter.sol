@@ -36,6 +36,19 @@ interface IBosonRouter {
         uint256[] calldata metadata
     ) external;
 
+    function requestCreateOrderTKNTKNWithPermitConditional(
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256[] calldata metadata,
+        address _gateAddress,
+        uint256 _nftTokenID
+    ) external;
+
     function requestCreateOrderETHTKNWithPermit(
         address _tokenDepositAddress,
         uint256 _tokensSent,
@@ -150,4 +163,14 @@ interface IBosonRouter {
      * @return Address of Fund Limits Oracle contract
      */
     function getFundLimitOracleAddress() external view returns (address);
+
+    /**
+     * @notice Get the address gate contract that handles conditional commit of certain voucher set
+     * @param _tokenIdSupply    ID of the supply token
+     * @return Address of the gate contract or zero address if there is no conditional commit
+     */
+    function getVoucherSetToGateContract(uint256 _tokenIdSupply)
+        external
+        view
+        returns (address);
 }

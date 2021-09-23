@@ -2,6 +2,7 @@ import {ethers} from 'hardhat';
 
 export const eventNames = {
   LOG_ORDER_CREATED: 'LogOrderCreated',
+  LOG_CONDITIONAL_ORDER_CREATED: 'LogConditionalOrderCreated',
   LOG_PROMISE_CREATED: 'LogPromiseCreated',
   LOG_VOUCHER_DELIVERED: 'LogVoucherDelivered',
   LOG_VOUCHER_REDEEMED: 'LogVoucherRedeemed',
@@ -30,6 +31,12 @@ export const eventNames = {
   LOG_VK_SET: 'LogVoucherKernelSet',
   LOG_CASHIER_SET: 'LogCashierSet',
   LOG_CANCEL_VOUCHER_SET: 'LogVoucherSetFaultCancel',
+  PAUSED: 'Paused',
+  UNPAUSED: 'Unpaused',
+  LOG_NON_TRANSFERABLE_CONTRACT: 'LogNonTransferableContractSet',
+  LOG_BOSON_ROUTER_SET: 'LogBosonRouterSet',
+  LOG_VOUCHER_SET_REGISTERED: 'LogVoucherSetRegistered',
+  LOG_USER_VOUCHER_DEACTIVATED: 'LogUserVoucherDeactivated',
 };
 
 import {ContractFactory, ContractReceipt} from 'ethers';
