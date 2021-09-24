@@ -151,7 +151,7 @@ contract BosonRouter is
      * Metadata array is used for consistency across the permutations of similar functions.
      * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
-     *   
+     *
      * uint256 _validFrom = metadata[0];
      * uint256 _validTo = metadata[1];
      * uint256 _price = metadata[2];
@@ -341,9 +341,9 @@ contract BosonRouter is
      * permit or transferFrom on the token at this time. The address of the price token is only recorded.
      * @param _tokenPriceAddress address of the token to be used for the deposits
      * @param metadata metadata which is required for creation of a voucher set
-     * Metadata array is used for consistency across the permutations of similar functions.
-     * Some functions require other parameters, and the number of parameters causes stack too deep error.
-     * The use of the matadata array mitigates the stack too deep error.
+     *  Metadata array is used for consistency across the permutations of similar functions.
+     *  Some functions require other parameters, and the number of parameters causes stack too deep error.
+     *  The use of the matadata array mitigates the stack too deep error.
      *   
      * uint256 _validFrom = metadata[0];
      * uint256 _validTo = metadata[1];
@@ -804,17 +804,17 @@ contract BosonRouter is
 
     /**
      * @notice Checks if supplied values are within set limits
-        @param metadata metadata which is required for creation of a voucher
-        Metadata array is used as in some scenarios we need several more params, as we need to recover 
-        owner address in order to permit the contract to transfer funds on his behalf. 
-        Since the params get too many, we end up in situation that the stack is too deep.
-        
-        uint256 _validFrom = metadata[0];
-        uint256 _validTo = metadata[1];
-        uint256 _price = metadata[2];
-        uint256 _depositSe = metadata[3];
-        uint256 _depositBu = metadata[4];
-        uint256 _quantity = metadata[5];
+     *  @param metadata metadata which is required for creation of a voucher
+     *  Metadata array is used as in some scenarios we need several more params, as we need to recover
+     *  owner address in order to permit the contract to transfer funds on his behalf.
+     *  Since the params get too many, we end up in situation that the stack is too deep.
+     *
+     *  uint256 _validFrom = metadata[0];
+     *  uint256 _validTo = metadata[1];
+     *  uint256 _price = metadata[2];
+     *  uint256 _depositSe = metadata[3];
+     *  uint256 _depositBu = metadata[4];
+     *  uint256 _quantity = metadata[5];
      * @param _tokenPriceAddress     token address which will hold the funds for the price of the voucher
      * @param _tokenDepositAddress  token address which will hold the funds for the deposits of the voucher
      * @param _tokensSent     tokens sent to cashier contract
@@ -867,7 +867,7 @@ contract BosonRouter is
      * Metadata array is used for consistency across the permutations of similar functions.
      * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
-     *   
+     *
      * uint256 _validFrom = metadata[0];
      * uint256 _validTo = metadata[1];
      * uint256 _price = metadata[2];
@@ -921,17 +921,17 @@ contract BosonRouter is
      * - creates payment method
      * - adds escrow ammount
      * - transfers tokens (if needed)
-        @param metadata metadata which is required for creation of a voucher
-        Metadata array is used as in some scenarios we need several more params, as we need to recover 
-        owner address in order to permit the contract to transfer funds on his behalf. 
-        Since the params get too many, we end up in situation that the stack is too deep.
-        
-        uint256 _validFrom = metadata[0];
-        uint256 _validTo = metadata[1];
-        uint256 _price = metadata[2];
-        uint256 _depositSe = metadata[3];
-        uint256 _depositBu = metadata[4];
-        uint256 _quantity = metadata[5];
+     * @param metadata metadata which is required for creation of a voucher
+     *  Metadata array is used as in some scenarios we need several more params, as we need to recover
+     *  owner address in order to permit the contract to transfer funds on his behalf.
+     *  Since the params get too many, we end up in situation that the stack is too deep.
+     *
+     *  uint256 _validFrom = metadata[0];
+     *  uint256 _validTo = metadata[1];
+     *  uint256 _price = metadata[2];
+     *  uint256 _depositSe = metadata[3];
+     *  uint256 _depositBu = metadata[4];
+     *  uint256 _quantity = metadata[5];
      * @param _paymentMethod  might be ETHETH, ETHTKN, TKNETH or TKNTKN
      * @param _tokenPriceAddress     token address which will hold the funds for the price of the voucher
      * @param _tokenDepositAddress  token address which will hold the funds for the deposits of the voucher
