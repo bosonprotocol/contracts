@@ -11,6 +11,7 @@ import "../interfaces/IERC20WithPermit.sol";
 import "../interfaces/ITokenRegistry.sol";
 import "../interfaces/IBosonRouter.sol";
 import "../interfaces/ICashier.sol";
+import "../interfaces/IGate.sol";
 import "../interfaces/ITokenWrapper.sol";
 import "../UsingHelpers.sol";
 
@@ -32,11 +33,18 @@ contract MockBosonRouter is
     address private voucherKernel;
     address private tokenRegistry;
 
+    mapping(uint256 => address) private voucherSetToGateContract;
+
     event LogOrderCreated(
         uint256 indexed _tokenIdSupply,
         address _seller,
         uint256 _quantity,
         uint8 _paymentType
+    );
+
+    event LogConditionalOrderCreated(
+        uint256 indexed _tokenIdSupply,
+        address indexed _gateAddress
     );
 
     /**
@@ -169,7 +177,7 @@ contract MockBosonRouter is
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHETH);
     }
 
-    function requestCreateOrderTKNTKNWithPermit(
+    function requestCreateOrderTKNTKNWithPermitInternal(
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent,
@@ -178,7 +186,7 @@ contract MockBosonRouter is
         bytes32 r,
         bytes32 s,
         uint256[] calldata metadata
-    ) external override whenNotPaused {
+    ) internal whenNotPaused returns (uint256) {
         notZeroAddress(_tokenPriceAddress);
         notZeroAddress(_tokenDepositAddress);
         notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
@@ -231,6 +239,68 @@ contract MockBosonRouter is
         );
 
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNTKN);
+
+        return tokenIdSupply;
+    }
+
+    function requestCreateOrderTKNTKNWithPermit(
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256[] calldata metadata
+    ) external override {
+        requestCreateOrderTKNTKNWithPermitInternal(
+            _tokenPriceAddress,
+            _tokenDepositAddress,
+            _tokensSent,
+            deadline,
+            v,
+            r,
+            s,
+            metadata
+        );
+    }
+
+    function requestCreateOrderTKNTKNWithPermitConditional(
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256[] calldata metadata,
+        address _gateAddress,
+        uint256 _nftTokenId
+    ) external override {
+        notZeroAddress(_gateAddress);
+
+        uint256 tokenIdSupply =
+            requestCreateOrderTKNTKNWithPermitInternal(
+                _tokenPriceAddress,
+                _tokenDepositAddress,
+                _tokensSent,
+                deadline,
+                v,
+                r,
+                s,
+                metadata
+            );
+
+        voucherSetToGateContract[tokenIdSupply] = _gateAddress;
+
+        emit LogConditionalOrderCreated(tokenIdSupply, _gateAddress);
+
+        if (_nftTokenId > 0) {
+            IGate(_gateAddress).registerVoucherSetId(
+                tokenIdSupply,
+                _nftTokenId
+            );
+        }
     }
 
     function requestCreateOrderETHTKNWithPermit(
@@ -733,5 +803,19 @@ contract MockBosonRouter is
             r,
             s
         );
+    }
+
+    /**
+     * @notice Get the address gate contract that handles conditional commit of certain voucher set
+     * @param _tokenIdSupply    ID of the supply token
+     * @return Address of the gate contract or zero address if there is no conditional commit
+     */
+    function getVoucherSetToGateContract(uint256 _tokenIdSupply)
+        external
+        view
+        override
+        returns (address)
+    {
+        return voucherSetToGateContract[_tokenIdSupply];
     }
 }

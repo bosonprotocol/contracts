@@ -29,6 +29,16 @@ import {
 
 class Utils {
   createOrder: (seller, from, to, sellerDeposit, qty, returnTx?) => any;
+  createOrderConditional: (
+    seller,
+    from,
+    to,
+    sellerDeposit,
+    qty,
+    gateContract,
+    nftTokenID,
+    returnTx?
+  ) => any;
   commitToBuy: (buyer, seller, tokenSupplyId, returnTx?) => any;
   factories?: {
     ERC1155ERC721: ERC1155ERC721__factory | any;
@@ -232,6 +242,73 @@ class Utils {
     );
 
     return eventArgs._tokenIdSupply.toString();
+  }
+
+  async requestCreateOrderTKNTKNWithPermitConditional(
+    seller: Account,
+    from: number,
+    to: number,
+    sellerDeposit: number | string,
+    qty: number | string,
+    gateContract: Account,
+    nftTokenId: number | string | null
+  ): Promise<ContractTransaction> {
+    const txValue = BN(sellerDeposit).mul(BN(qty));
+
+    const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
+
+    const digest = await getApprovalDigest(
+      this.contractBSNTokenDeposit,
+      seller.address,
+      this.contractBSNRouter.address,
+      txValue,
+      nonce,
+      this.deadline
+    );
+
+    const {v, r, s} = ecsign(
+      Buffer.from(digest.slice(2), 'hex'),
+      Buffer.from(seller.privateKey.slice(2), 'hex')
+    );
+
+    const sellerInstance = this.contractBSNRouter.connect(
+      seller.signer
+    ) as BosonRouter;
+    return sellerInstance.requestCreateOrderTKNTKNWithPermitConditional(
+      // const txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermitConditional(
+      this.contractBSNTokenPrice.address,
+      this.contractBSNTokenDeposit.address,
+      txValue,
+      this.deadline,
+      v,
+      r,
+      s,
+      [
+        from,
+        to,
+        constants.product_price,
+        sellerDeposit,
+        constants.buyer_deposit,
+        qty,
+      ],
+      gateContract.address,
+      nftTokenId || '0',
+      {
+        from: seller.address,
+      }
+    );
+
+    // const txReceipt = await txOrder.wait();
+    // let eventArgs;
+
+    // events.assertEventEmitted(
+    //   txReceipt,
+    //   this.factories.BosonRouter,
+    //   events.eventNames.LOG_ORDER_CREATED,
+    //   (e) => (eventArgs = e)
+    // );
+
+    // return eventArgs._tokenIdSupply.toString();
   }
 
   async requestCreateOrderETHTKNWithPermit(

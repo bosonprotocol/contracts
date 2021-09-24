@@ -1110,6 +1110,26 @@ describe('Cashier and VoucherKernel', () => {
               'Remaining qty is not correct'
             );
           }
+
+          it('Create Conditional Commit', async () => {
+            expect(
+              await utils.createOrderConditional(
+                users.seller,
+                timestamp,
+                timestamp + constants.SECONDS_IN_DAY,
+                constants.seller_deposit,
+                constants.QTY_10,
+                users.seller,
+                0
+              )
+            ).to.emit(
+              contractBosonRouter,
+              eventNames.LOG_CONDITIONAL_ORDER_CREATED
+            );
+
+            // .withArgs(); should calculate token supply id and compare it it
+            // console.log(tokenSupplyID)
+          });
         });
 
         it('Should create payment method TKNTKN', async () => {
