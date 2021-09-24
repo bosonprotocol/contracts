@@ -263,16 +263,6 @@ describe('Gate contract', async () => {
       );
     });
 
-    it.only('Owner should be able set boson router address', async () => {
-      await deployBosonRouterContracts();
-
-      expect(
-        await contractGate.setBosonRouterAddress(contractBosonRouter.address)
-      )
-        .to.emit(contractGate, eventNames.LOG_BOSON_ROUTER_SET)
-        .withArgs(contractBosonRouter.address, users.deployer.address);
-    });
-
     it('Owner should be able to register voucher set id', async () => {
       expect(
         await contractGate.registerVoucherSetID(
@@ -285,8 +275,6 @@ describe('Gate contract', async () => {
     });
 
     it('One should be able to look up on which NFT depends voucher set', async () => {
-      constants.VOUCHER_SET_ID;
-
       await contractGate.registerVoucherSetID(
         constants.VOUCHER_SET_ID,
         constants.NFT_TOKEN_ID
@@ -294,39 +282,6 @@ describe('Gate contract', async () => {
       expect(
         await contractGate.getNftTokenId(constants.VOUCHER_SET_ID)
       ).to.equal(constants.NFT_TOKEN_ID);
-    });
-
-    it('Boson protocol should be able to register voucher set id', async () => {
-      await deployBosonRouterContracts();
-      const conditionalOrderNftTokenID = BN('2');
-      const {tokenId, nftTokenID} = await registerVoucherSetIdFromBosonProtocol(
-        contractMockGate,
-        conditionalOrderNftTokenID
-      );
-
-      await expect(
-        contractMockGate
-          .connect(users.attacker.signer)
-          .registerVoucherSetID(tokenId, nftTokenID)
-      ).to.be.revertedWith('UNAUTHORIZED_BR');
-    });
-
-    it('Boson router should be able to deactivate voucher set id', async () => {
-      await deployBosonRouterContracts();
-
-      const {tokenId, nftTokenID} = await registerVoucherSetIdFromBosonProtocol(
-        contractGate,
-        0
-      );
-
-      await contractGate.registerVoucherSetID(tokenId, nftTokenID);
-
-      expect(await contractGate.check(users.buyer.address, tokenId)).to.be.true;
-
-      await utils.commitToBuy(users.buyer, users.seller, tokenId);
-
-      expect(await contractGate.check(users.buyer.address, tokenId)).to.be
-        .false;
     });
 
     it('check function works correctly', async () => {
@@ -407,16 +362,6 @@ describe('Gate contract', async () => {
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
     });
 
-    it('[NEGATIVE][setBosonRouterAddress] Should revert if executed by attacker', async () => {
-      await deployBosonRouterContracts();
-
-      await expect(
-        contractGate
-          .connect(users.attacker.signer)
-          .setBosonRouterAddress(contractBosonRouter.address)
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
-    });
-
     it('[NEGATIVE][registerVoucherSetID] Should revert if executed by attacker', async () => {
       await expect(
         contractGate
@@ -472,6 +417,67 @@ describe('Gate contract', async () => {
       await expect(
         contractERC1155NonTransferable.connect(users.attacker.signer).unpause()
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+  });
+
+  describe('Boson router operations', () => {
+    beforeEach(async () => {
+      await deployContracts();
+      await deployBosonRouterContracts();
+    });
+
+    describe('Setting a boson router address', () => {
+      it('Owner should be able set boson router address', async () => {
+        expect(
+          await contractGate.setBosonRouterAddress(contractBosonRouter.address)
+        )
+          .to.emit(contractGate, eventNames.LOG_BOSON_ROUTER_SET)
+          .withArgs(contractBosonRouter.address, users.deployer.address);
+      });
+
+      it('[NEGATIVE][setBosonRouterAddress] Should revert if executed by attacker', async () => {
+        await expect(
+          contractGate
+            .connect(users.attacker.signer)
+            .setBosonRouterAddress(contractBosonRouter.address)
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+      });
+    });
+
+    describe('Voucher set registered by Boson protocol', () => {
+      it('Boson router should be able to deactivate voucher set id', async () => {
+        const {
+          tokenId,
+          nftTokenID,
+        } = await registerVoucherSetIdFromBosonProtocol(contractGate, 0);
+
+        await contractGate.registerVoucherSetID(tokenId, nftTokenID);
+
+        expect(await contractGate.check(users.buyer.address, tokenId)).to.be
+          .true;
+
+        await utils.commitToBuy(users.buyer, users.seller, tokenId);
+
+        expect(await contractGate.check(users.buyer.address, tokenId)).to.be
+          .false;
+      });
+
+      it('[NEGATIVE][registerVoucherSetID] Should revert if executed by attacker', async () => {
+        const conditionalOrderNftTokenID = BN('2');
+        const {
+          tokenId,
+          nftTokenID,
+        } = await registerVoucherSetIdFromBosonProtocol(
+          contractMockGate,
+          conditionalOrderNftTokenID
+        );
+
+        await expect(
+          contractMockGate
+            .connect(users.attacker.signer)
+            .registerVoucherSetID(tokenId, nftTokenID)
+        ).to.be.revertedWith('UNAUTHORIZED_BR');
+      });
     });
   });
 });
