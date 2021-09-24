@@ -112,7 +112,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     contractERC1155NonTransferable = (await ERC1155NonTransferable_Factory.deploy(
       '/non/transferable/uri'
     )) as Contract & ERC1155NonTransferable;
-    contractGate = (await Gate_Factory.deploy()) as Contract & Gate;
+    contractGate = (await Gate_Factory.deploy(
+      contractBosonRouter.address
+    )) as Contract & Gate;
 
     await contractFundLimitsOracle.deployed();
     await contractERC1155ERC721.deployed();

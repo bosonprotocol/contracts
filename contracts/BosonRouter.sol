@@ -436,6 +436,11 @@ contract BosonRouter is
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
 
+    /**
+     * @notice check if _tokenIdSupply mapped to gate contract, 
+     * if it does, deactivate (user,_tokenIdSupply) to prevent double spending
+     * @param _tokenIdSupply    ID of the supply token
+     */
     function deactivateConditionalCommit(uint256 _tokenIdSupply) internal {
         if (voucherSetToGateContract[_tokenIdSupply] != address(0)) {
             IGate gateContract = IGate(
@@ -458,6 +463,8 @@ contract BosonRouter is
         bytes32 rDeposit,
         bytes32 sDeposit // tokenDeposits
     ) external override nonReentrant whenNotPaused {
+        // check if _tokenIdSupply mapped to gate contract
+        // if yes, deactivate (user,_tokenIdSupply) to prevent double spending
         deactivateConditionalCommit(_tokenIdSupply);
 
         (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
@@ -530,7 +537,9 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s
     ) external override nonReentrant whenNotPaused {
-        deactivateConditionalCommit(_tokenIdSupply);
+        // check if _tokenIdSupply mapped to gate contract
+        // if yes, deactivate (user,_tokenIdSupply) to prevent double spending
+        deactivateConditionalCommit(_tokenIdSupply); 
 
         (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
             .getBuyerOrderCosts(_tokenIdSupply);

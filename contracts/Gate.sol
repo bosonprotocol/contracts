@@ -20,9 +20,23 @@ contract Gate is IGate, Ownable, Pausable {
     IERC1155 private nonTransferableTokenContract;
     address private bosonRouterAddress;
   
+    constructor(address _bosonRouterAddress) {
+        require(_bosonRouterAddress != address(0), "0A"); //zero address
+        bosonRouterAddress = _bosonRouterAddress;
+
+        emit LogBosonRouterSet(_bosonRouterAddress, owner());
+    }
+
     modifier onlyFromRouter() {
-        require(bosonRouterAddress != address(0), "UNSPECIFIED_BR"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR"); 
+        _;
+    }
+
+    /**
+     * @notice  Checking if a non-zero address is provided, otherwise reverts.
+     */
+    modifier notZeroAddress(address tokenAddress) {
+        require(tokenAddress != address(0), "0A"); //zero address
         _;
     }
 
@@ -41,7 +55,7 @@ contract Gate is IGate, Ownable, Pausable {
      */
     function setNonTransferableTokenContract(
         address _nonTransferableTokenContractAddress
-    ) external override onlyOwner {
+    ) external override onlyOwner notZeroAddress(_nonTransferableTokenContractAddress) {
         nonTransferableTokenContract = IERC1155(
             _nonTransferableTokenContractAddress
         );
@@ -66,6 +80,7 @@ contract Gate is IGate, Ownable, Pausable {
         external
         override
         onlyOwner
+        notZeroAddress(_bosonRouterAddress)
     {
         bosonRouterAddress = _bosonRouterAddress;
 
@@ -108,8 +123,7 @@ contract Gate is IGate, Ownable, Pausable {
             nonTransferableTokenContract.balanceOf(
                 _user,
                 voucherToToken[_tokenIdSupply]
-            ) >
-            0;
+            ) > 0;
     }
 
     /**

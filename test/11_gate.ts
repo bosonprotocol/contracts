@@ -84,7 +84,11 @@ describe('Gate contract', async () => {
     contractERC1155NonTransferable = (await ERC1155NonTransferable_Factory.deploy(
       '/non/transferable/uri'
     )) as Contract & ERC1155NonTransferable;
-    contractGate = (await Gate_Factory.deploy()) as Contract & Gate;
+    const routerAddress =
+      (contractBosonRouter && contractBosonRouter.address) ||
+      users.other1.address; // if router is not initalized use mock address
+    contractGate = (await Gate_Factory.deploy(routerAddress)) as Contract &
+      Gate;
     contractMockGate = (await MockGate_Factory.deploy()) as Contract & MockGate;
 
     await contractERC1155NonTransferable.deployed();
@@ -314,10 +318,6 @@ describe('Gate contract', async () => {
       expect(
         await contractGate.check(users.other2.address, constants.VOUCHER_SET_ID)
       ).to.be.false;
-
-      // user without token
-      // user with token, non deactivated
-      // user with token, deactivated
     });
 
     it('Owner should be able to pause', async () => {
@@ -353,6 +353,12 @@ describe('Gate contract', async () => {
       await expect(
         contractGate.deactivate(users.other1.address, constants.VOUCHER_SET_ID)
       ).to.be.revertedWith(revertReasons.PAUSED);
+    });
+
+    it('[NEGATIVE][setNonTransferableTokenContract] Should revert if supplied wrong boson router address', async () => {
+      await expect(
+        contractGate.setNonTransferableTokenContract(constants.ZERO_ADDRESS)
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
 
     it('[NEGATIVE][setNonTransferableTokenContract] Should revert if executed by attacker', async () => {
@@ -425,8 +431,8 @@ describe('Gate contract', async () => {
 
   describe('Boson router operations', () => {
     beforeEach(async () => {
-      await deployContracts();
       await deployBosonRouterContracts();
+      await deployContracts();
     });
 
     describe('Setting a boson router address', () => {
@@ -436,6 +442,18 @@ describe('Gate contract', async () => {
         )
           .to.emit(contractGate, eventNames.LOG_BOSON_ROUTER_SET)
           .withArgs(contractBosonRouter.address, users.deployer.address);
+      });
+
+      it('[NEGATIVE][constructor] Should revert if supplied wrong boson router address', async () => {
+        await expect(
+          Gate_Factory.deploy(constants.ZERO_ADDRESS)
+        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+      });
+
+      it('[NEGATIVE][setBosonRouterAddress] Should revert if supplied wrong boson router address', async () => {
+        await expect(
+          contractGate.setBosonRouterAddress(constants.ZERO_ADDRESS)
+        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
       });
 
       it('[NEGATIVE][setBosonRouterAddress] Should revert if executed by attacker', async () => {

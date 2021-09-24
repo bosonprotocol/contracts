@@ -91,19 +91,19 @@ contract ERC1155NonTransferable is
      * - at most
      */
     function _beforeTokenTransfer(
-        address operator,
-        address from,
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
+        address _operator,
+        address _from,
+        address _to,
+        uint256[] memory _ids,
+        uint256[] memory _amounts,
+        bytes memory _data
     ) internal virtual override {
         require(
-            from == address(0) || to == address(0),
+            _from == address(0) || _to == address(0),
             "ERC1155NonTransferable: Tokens are non transferable"
         ); // _beforeTokenTransfer is called in mint/burn to too, we must allow it to pass
 
-        super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
+        super._beforeTokenTransfer(_operator, _from, _to, _ids, _amounts, _data);
     }
 
     /**
