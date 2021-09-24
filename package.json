@@ -1,75 +1,75 @@
 {
-  "name": "y",
-  "version": "1.0.0",
-  "description": "Repo for Boson Protocol prototype of the core exchange mechanism",
-  "main": "hardhat.config.js",
-  "directories": {
-    "test": "test"
-  },
-  "scripts": {
-    "contracts:run": "hardhat compile && hardhat deploy",
-    "contracts:compile": "hardhat compile --force",
-    "contracts:lint": "solhint contracts/**/*.sol -w 0",
-    "contracts:lint-fix": "solhint contracts/**/*.sol -w 0 --fix",
-    "contracts:format": "prettier --list-different contracts/**/*.sol",
-    "contracts:format-fix": "prettier --write contracts/**/*.sol",
-    "contracts:migrate:dev": "npx hardhat deploy --network rinkeby --env dev",
-    "contracts:migrate:demo": "npx hardhat deploy --network rinkeby --env demo",
-    "contracts:migrate:prod": "npx hardhat deploy --network rinkeby --env prod",
-    "contracts:verify:dev": "npx hardhat contracts-verify --network rinkeby --env dev",
-    "contracts:verify:demo": "npx hardhat contracts-verify --network rinkeby --env demo",
-    "contracts:verify:prod": "npx hardhat contracts-verify --network rinkeby --env prod",
-    "tests:lint": "eslint test/**/*.ts testHelpers/**/*.ts",
-    "tests:lint-fix": "eslint --fix test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
-    "tests:format": "prettier --list-different test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
-    "tests:format-fix": "prettier --write test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
-    "tests:unit": "hardhat test",
-    "tests:coverage": "npx hardhat coverage",
-    "contracts:size": "hardhat size-contracts"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/bosonprotocol/bsn-core-prototype.git"
-  },
-  "author": "Boson Protocol Maintainers",
-  "license": "LGPL-3.0-or-later",
-  "bugs": {
-    "url": "https://github.com/bosonprotocol/contracts/issues"
-  },
-  "homepage": "https://github.com/bosonprotocol/contracts#readme",
-  "dependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.0.2",
-    "@nomiclabs/hardhat-etherscan": "^2.1.1",
-    "@nomiclabs/hardhat-waffle": "2.0.1",
-    "@openzeppelin/contracts": "3.4.0-solc-0.7",
-    "axios": "^0.21.1",
-    "dotenv": "^8.2.0",
-    "elliptic": "^6.5.4",
-    "eslint": "^7.18.0",
-    "eslint-config-prettier": "^7.2.0",
-    "ethereum-waffle": "^3.3.0",
-    "ethereumjs-util": "^7.0.7",
-    "ethers": "^5.4.3",
-    "hardhat": "^2.1.2",
-    "hardhat-contract-sizer": "^2.0.3",
-    "mocha": "^8.2.1",
-    "node-fetch": "^2.6.1",
-    "prettier": "^2.2.1",
-    "prettier-plugin-solidity": "^1.0.0-beta.3",
-    "solhint": "^3.3.2",
-    "solidity-coverage": "^0.7.12"
-  },
-  "devDependencies": {
-    "@typechain/ethers-v5": "^7.0.0",
-    "@typechain/hardhat": "^2.0.1",
-    "@types/chai": "^4.2.18",
-    "@types/mocha": "^8.2.2",
-    "@types/node": "^15.9.0",
-    "@typescript-eslint/eslint-plugin": "^4.26.0",
-    "@typescript-eslint/parser": "^4.26.0",
-    "chai": "^4.3.4",
-    "ts-node": "^10.0.0",
-    "typechain": "^5.0.0",
-    "typescript": "^4.3.2"
-  }
+    "name": "y",
+    "version": "1.0.0",
+    "description": "Repo for Boson Protocol prototype of the core exchange mechanism",
+    "main": "hardhat.config.js",
+    "directories": {
+        "test": "test"
+    },
+    "scripts": {
+        "contracts:run": "hardhat compile && hardhat deploy",
+        "contracts:compile": "hardhat compile --force",
+        "contracts:lint": "solhint contracts/**/*.sol -w 0",
+        "contracts:lint-fix": "solhint contracts/**/*.sol -w 0 --fix",
+        "contracts:format": "prettier --list-different contracts/**/*.sol",
+        "contracts:format-fix": "prettier --write contracts/**/*.sol",
+        "contracts:migrate:dev": "npx hardhat deploy --network rinkeby --env dev",
+        "contracts:migrate:demo": "npx hardhat deploy --network rinkeby --env demo",
+        "contracts:migrate:prod": "npx hardhat deploy --network rinkeby --env prod",
+        "contracts:verify:dev": "npx hardhat contracts-verify --network rinkeby --env dev",
+        "contracts:verify:demo": "npx hardhat contracts-verify --network rinkeby --env demo",
+        "contracts:verify:prod": "npx hardhat contracts-verify --network rinkeby --env prod",
+        "tests:lint": "eslint test/**/*.ts testHelpers/**/*.ts",
+        "tests:lint-fix": "eslint --fix test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
+        "tests:format": "prettier --list-different test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
+        "tests:format-fix": "prettier --write test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
+        "tests:unit": "hardhat test",
+        "tests:coverage": "npx hardhat coverage",
+        "contracts:size": "hardhat size-contracts"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/bosonprotocol/bsn-core-prototype.git"
+    },
+    "author": "Boson Protocol Maintainers",
+    "license": "LGPL-3.0-or-later",
+    "bugs": {
+        "url": "https://github.com/bosonprotocol/contracts/issues"
+    },
+    "homepage": "https://github.com/bosonprotocol/contracts#readme",
+    "dependencies": {
+        "@nomiclabs/hardhat-ethers": "^2.0.2",
+        "@nomiclabs/hardhat-etherscan": "^2.1.1",
+        "@nomiclabs/hardhat-waffle": "2.0.1",
+        "@openzeppelin/contracts": "3.4.2-solc-0.7",
+        "axios": "^0.21.1",
+        "dotenv": "^8.2.0",
+        "elliptic": "^6.5.4",
+        "eslint": "^7.18.0",
+        "eslint-config-prettier": "^7.2.0",
+        "ethereum-waffle": "^3.3.0",
+        "ethereumjs-util": "^7.0.7",
+        "ethers": "^5.4.3",
+        "hardhat": "^2.1.2",
+        "hardhat-contract-sizer": "^2.0.3",
+        "mocha": "^8.2.1",
+        "node-fetch": "^2.6.1",
+        "prettier": "^2.2.1",
+        "prettier-plugin-solidity": "^1.0.0-beta.3",
+        "solhint": "^3.3.2",
+        "solidity-coverage": "^0.7.12"
+    },
+    "devDependencies": {
+        "@typechain/ethers-v5": "^7.0.0",
+        "@typechain/hardhat": "^2.0.1",
+        "@types/chai": "^4.2.18",
+        "@types/mocha": "^8.2.2",
+        "@types/node": "^15.9.0",
+        "@typescript-eslint/eslint-plugin": "^4.26.0",
+        "@typescript-eslint/parser": "^4.26.0",
+        "chai": "^4.3.4",
+        "ts-node": "^10.0.0",
+        "typechain": "^5.0.0",
+        "typescript": "^4.3.2"
+    }
 }
