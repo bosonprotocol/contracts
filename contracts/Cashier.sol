@@ -75,6 +75,10 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         _;
     }
 
+    /**
+     * @notice Construct and initialze the contract. Iniialises associated contract addresses. Iniialises disaster state to false.    
+     * @param _voucherKernel address of the associated VocherKernal contract instance
+     */
     constructor(address _voucherKernel) {
         voucherKernel = _voucherKernel;
         disasterState = false;
