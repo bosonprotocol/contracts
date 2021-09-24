@@ -12,7 +12,7 @@ import {
   ERC1155ERC721,
   VoucherKernel,
   Cashier,
-  FundLimitsOracle,
+  TokenRegistry,
   MockERC20Permit,
   ERC1155NonTransferable,
   Gate,
@@ -32,7 +32,7 @@ let ERC1155ERC721_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
-let FundLimitsOracle_Factory: ContractFactory;
+let TokenRegistry_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
 let ERC1155NonTransferable_Factory: ContractFactory;
 let Gate_Factory: ContractFactory;
@@ -49,9 +49,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
-    FundLimitsOracle_Factory = await ethers.getContractFactory(
-      'FundLimitsOracle'
-    );
+    TokenRegistry_Factory = await ethers.getContractFactory('TokenRegistry');
     MockERC20Permit_Factory = await ethers.getContractFactory(
       'MockERC20Permit'
     );
@@ -59,9 +57,6 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       'ERC1155NonTransferable'
     );
     Gate_Factory = await ethers.getContractFactory('Gate');
-    FundLimitsOracle_Factory = await ethers.getContractFactory(
-      'FundLimitsOracle'
-    );
     MockERC20Permit_Factory = await ethers.getContractFactory(
       'MockERC20Permit'
     );
@@ -73,7 +68,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     contractBosonRouter: BosonRouter,
     contractBSNTokenPrice: MockERC20Permit,
     contractBSNTokenDeposit: MockERC20Permit,
-    contractFundLimitsOracle: FundLimitsOracle,
+    contractTokenRegistry: TokenRegistry,
     contractERC1155NonTransferable: ERC1155NonTransferable,
     contractGate: Gate;
 
@@ -83,8 +78,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
-      FundLimitsOracle;
+    contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
+      TokenRegistry;
     contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
       ERC1155ERC721;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
@@ -96,7 +91,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
     contractBosonRouter = (await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
-      contractFundLimitsOracle.address,
+      contractTokenRegistry.address,
       contractCashier.address
     )) as Contract & BosonRouter;
 
@@ -116,7 +111,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       contractBosonRouter.address
     )) as Contract & Gate;
 
-    await contractFundLimitsOracle.deployed();
+    await contractTokenRegistry.deployed();
     await contractERC1155ERC721.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
@@ -149,16 +144,27 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
 
-    await contractFundLimitsOracle.setTokenLimit(
+    await contractTokenRegistry.setTokenLimit(
       contractBSNTokenPrice.address,
       constants.TOKEN_LIMIT
     );
-    await contractFundLimitsOracle.setTokenLimit(
+    await contractTokenRegistry.setTokenLimit(
       contractBSNTokenDeposit.address,
       constants.TOKEN_LIMIT
     );
 
-    await contractFundLimitsOracle.setETHLimit(constants.ETHER_LIMIT);
+    await contractTokenRegistry.setETHLimit(constants.ETHER_LIMIT);
+
+    //Map $BOSON token to itself so that the token address can be called by casting to the wrapper interface in the Boson Router
+    await contractTokenRegistry.setTokenWrapperAddress(
+      contractBSNTokenPrice.address,
+      contractBSNTokenPrice.address
+    );
+
+    await contractTokenRegistry.setTokenWrapperAddress(
+      contractBSNTokenDeposit.address,
+      contractBSNTokenDeposit.address
+    );
 
     await contractGate.setNonTransferableTokenContract(
       contractERC1155NonTransferable.address
