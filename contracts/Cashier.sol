@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
-pragma solidity 0.7.1;
+pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -75,6 +75,10 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         _;
     }
 
+    /**
+     * @notice Construct and initialze the contract. Iniialises associated contract addresses. Iniialises disaster state to false.    
+     * @param _voucherKernel address of the associated VocherKernal contract instance
+     */
     constructor(address _voucherKernel) {
         voucherKernel = _voucherKernel;
         disasterState = false;

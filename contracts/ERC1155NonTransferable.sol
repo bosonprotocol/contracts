@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-pragma solidity 0.7.1;
+pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -15,6 +15,10 @@ contract ERC1155NonTransferable is
     ERC1155Pausable,
     Ownable
 {
+    /**
+     * @notice Construct and initialze the contract. 
+     * @param uri_ metadata uri
+     */
     constructor(string memory uri_) ERC1155(uri_) Ownable() {}
 
     /*

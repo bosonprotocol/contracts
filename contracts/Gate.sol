@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-pragma solidity 0.7.1;
+pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
@@ -20,6 +20,10 @@ contract Gate is IGate, Ownable, Pausable {
     IERC1155 private nonTransferableTokenContract;
     address private bosonRouterAddress;
   
+    /**
+     * @notice Construct and initialze the contract. Inizializes associated contract address. 
+     * @param _bosonRouterAddress address of the associated BosonRouter contract instance
+     */
     constructor(address _bosonRouterAddress) {
         require(_bosonRouterAddress != address(0), "0A"); //zero address
         bosonRouterAddress = _bosonRouterAddress;
