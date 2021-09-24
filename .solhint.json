@@ -1,21 +1,21 @@
 {
-  "extends": "solhint:recommended",
-  "rules": {
-    "compiler-version": [
-      "error",
-      "^0.7.1"
-    ],
-    "func-visibility": [
-      "warn",
-      {
-        "ignoreConstructors": true
-      }
-    ],
-    "reason-string": [
-      "warn",
-      {
-        "maxLength": 64
-      }
-    ]
-  }
+    "extends": "solhint:recommended",
+    "rules": {
+        "compiler-version": [
+            "error",
+            "^0.7.6"
+        ],
+        "func-visibility": [
+            "warn",
+            {
+                "ignoreConstructors": true
+            }
+        ],
+        "reason-string": [
+            "warn",
+            {
+                "maxLength": 64
+            }
+        ]
+    }
 }
