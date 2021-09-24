@@ -7,8 +7,10 @@ interface IGate {
         address indexed _nonTransferableTokenContractAddress,
         address indexed _triggeredBy
     );
-    event LogBosonRouterSet(address indexed _bosonRouter,
-    address indexed _triggeredBy);
+    event LogBosonRouterSet(
+        address indexed _bosonRouter,
+        address indexed _triggeredBy
+    );
     event LogVoucherSetRegistered(
         uint256 indexed _tokenIdSupply,
         uint256 indexed _nftTokenID

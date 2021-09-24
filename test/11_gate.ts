@@ -250,7 +250,10 @@ describe('Gate contract', async () => {
         )
       )
         .to.emit(contractGate, eventNames.LOG_NON_TRANSFERABLE_CONTRACT)
-        .withArgs(contractERC1155NonTransferable.address, users.deployer.address);
+        .withArgs(
+          contractERC1155NonTransferable.address,
+          users.deployer.address
+        );
     });
 
     it('One should be able get ERC1155 contract address', async () => {

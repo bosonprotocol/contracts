@@ -40,7 +40,7 @@ let Gate_Factory: ContractFactory;
 const eventNames = eventUtils.eventNames;
 let users;
 
-describe('Create Voucher sets and commit to vouchers with token wrapper', () => {
+describe('Create Voucher sets and commit to vouchers with token conditional commit', () => {
   before(async () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
@@ -164,9 +164,35 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
     await contractGate.setBosonRouterAddress(contractBosonRouter.address);
   }
 
-  describe('TOKEN SUPPLY CREATION WITH TOKEN WRAPPER (Create Voucher Set)', () => {
+  describe('TOKEN SUPPLY CREATION WITH TOKEN CONDITIONAL COMMIT (Create Voucher Set)', () => {
     let timestamp;
     describe('TKNTKN', () => {
+      async function generateInputs(
+        account: Account,
+        deposit: number | string,
+        qty: number | string
+      ) {
+        const txValue = BN(deposit).mul(BN(qty));
+
+        const nonce = await contractBSNTokenDeposit.nonces(account.address);
+
+        const digest = await getApprovalDigest(
+          contractBSNTokenDeposit,
+          account.address,
+          contractBosonRouter.address,
+          txValue,
+          nonce,
+          deadline
+        );
+
+        const {v, r, s} = ecsign(
+          Buffer.from(digest.slice(2), 'hex'),
+          Buffer.from(account.privateKey.slice(2), 'hex')
+        );
+
+        return {txValue, v, r, s};
+      }
+
       beforeEach(async () => {
         await deployContracts();
 
@@ -213,32 +239,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           constants.ZERO_BYTES
         );
       });
-
-      async function generateInputs(
-        account: Account,
-        deposit: number | string,
-        qty: number | string
-      ) {
-        const txValue = BN(deposit).mul(BN(qty));
-
-        const nonce = await contractBSNTokenDeposit.nonces(account.address);
-
-        const digest = await getApprovalDigest(
-          contractBSNTokenDeposit,
-          account.address,
-          contractBosonRouter.address,
-          txValue,
-          nonce,
-          deadline
-        );
-
-        const {v, r, s} = ecsign(
-          Buffer.from(digest.slice(2), 'hex'),
-          Buffer.from(account.privateKey.slice(2), 'hex')
-        );
-
-        return {txValue, v, r, s};
-      }
 
       it('Should be able to create Voucher with gate address', async () => {
         const {txValue, v, r, s} = await generateInputs(
@@ -510,6 +510,63 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
     let tokenSupplyKey;
 
     describe('TKNTKN', () => {
+      async function generateInputs(
+        account: Account,
+        deposit: number | string,
+        product_price: number | string
+      ) {
+        const txValue = BN(deposit).add(BN(product_price));
+        const DEPOSIT = await generateDepositInputs(account, deposit);
+        const PRICE = await generatePriceInputs(account, product_price);
+        return {txValue, DEPOSIT, PRICE};
+      }
+
+      async function generateDepositInputs(
+        account: Account,
+        deposit: number | string
+      ) {
+        const nonce = await contractBSNTokenDeposit.nonces(account.address);
+
+        const digest = await getApprovalDigest(
+          contractBSNTokenDeposit,
+          account.address,
+          contractBosonRouter.address,
+          deposit,
+          nonce,
+          deadline
+        );
+
+        const {v, r, s} = ecsign(
+          Buffer.from(digest.slice(2), 'hex'),
+          Buffer.from(account.privateKey.slice(2), 'hex')
+        );
+
+        return {v, r, s};
+      }
+
+      async function generatePriceInputs(
+        account: Account,
+        product_price: number | string
+      ) {
+        const nonce = await contractBSNTokenDeposit.nonces(account.address);
+
+        const digest = await getApprovalDigest(
+          contractBSNTokenPrice,
+          account.address,
+          contractBosonRouter.address,
+          product_price,
+          nonce,
+          deadline
+        );
+
+        const {v, r, s} = ecsign(
+          Buffer.from(digest.slice(2), 'hex'),
+          Buffer.from(account.privateKey.slice(2), 'hex')
+        );
+
+        return {v, r, s};
+      }
+
       beforeEach(async () => {
         await deployContracts();
 
@@ -584,63 +641,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           constants.NFT_TOKEN_ID
         );
       });
-
-      async function generateInputs(
-        account: Account,
-        deposit: number | string,
-        product_price: number | string
-      ) {
-        const txValue = BN(deposit).add(BN(product_price));
-        const DEPOSIT = await generateDepositInputs(account, deposit);
-        const PRICE = await generatePriceInputs(account, product_price);
-        return {txValue, DEPOSIT, PRICE};
-      }
-
-      async function generateDepositInputs(
-        account: Account,
-        deposit: number | string
-      ) {
-        const nonce = await contractBSNTokenDeposit.nonces(account.address);
-
-        const digest = await getApprovalDigest(
-          contractBSNTokenDeposit,
-          account.address,
-          contractBosonRouter.address,
-          deposit,
-          nonce,
-          deadline
-        );
-
-        const {v, r, s} = ecsign(
-          Buffer.from(digest.slice(2), 'hex'),
-          Buffer.from(account.privateKey.slice(2), 'hex')
-        );
-
-        return {v, r, s};
-      }
-
-      async function generatePriceInputs(
-        account: Account,
-        product_price: number | string
-      ) {
-        const nonce = await contractBSNTokenDeposit.nonces(account.address);
-
-        const digest = await getApprovalDigest(
-          contractBSNTokenPrice,
-          account.address,
-          contractBosonRouter.address,
-          product_price,
-          nonce,
-          deadline
-        );
-
-        const {v, r, s} = ecsign(
-          Buffer.from(digest.slice(2), 'hex'),
-          Buffer.from(account.privateKey.slice(2), 'hex')
-        );
-
-        return {v, r, s};
-      }
 
       it('Should be able to request voucher', async () => {
         const {txValue, DEPOSIT, PRICE} = await generateInputs(
@@ -857,6 +857,30 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
     }); // end TKNTKN
 
     describe('TKNTKN same', () => {
+      async function generateInputs(
+        account: Account,
+        deposit: number | string,
+        product_price: number | string
+      ) {
+        const nonce = await contractBSNTokenDeposit.nonces(account.address);
+        const txValue = BN(deposit).add(BN(product_price));
+
+        const digest = await getApprovalDigest(
+          contractBSNTokenDeposit,
+          account.address,
+          contractBosonRouter.address,
+          txValue,
+          nonce,
+          deadline
+        );
+
+        const {v, r, s} = ecsign(
+          Buffer.from(digest.slice(2), 'hex'),
+          Buffer.from(account.privateKey.slice(2), 'hex')
+        );
+        return {txValue, v, r, s};
+      }
+
       beforeEach(async () => {
         await deployContracts();
 
@@ -927,30 +951,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           constants.NFT_TOKEN_ID
         );
       });
-
-      async function generateInputs(
-        account: Account,
-        deposit: number | string,
-        product_price: number | string
-      ) {
-        const nonce = await contractBSNTokenDeposit.nonces(account.address);
-        const txValue = BN(deposit).add(BN(product_price));
-
-        const digest = await getApprovalDigest(
-          contractBSNTokenDeposit,
-          account.address,
-          contractBosonRouter.address,
-          txValue,
-          nonce,
-          deadline
-        );
-
-        const {v, r, s} = ecsign(
-          Buffer.from(digest.slice(2), 'hex'),
-          Buffer.from(account.privateKey.slice(2), 'hex')
-        );
-        return {txValue, v, r, s};
-      }
 
       it('Should be able to request voucher', async () => {
         const {txValue, v, r, s} = await generateInputs(

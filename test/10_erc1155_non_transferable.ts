@@ -143,7 +143,7 @@ describe('ERC1155 non transferable functionality', async () => {
       ).to.equal(constants.ZERO);
     });
 
-    it('Owner should be able to mint batch', async () => {
+    it('Owner should be able to burn batch', async () => {
       const nftTokenIDs = [BN('2'), BN('5'), BN('7'), BN('9')];
       const balances = [
         constants.ONE,
