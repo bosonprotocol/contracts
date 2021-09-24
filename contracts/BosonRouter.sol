@@ -8,9 +8,11 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./interfaces/IVoucherKernel.sol";
 import "./interfaces/IERC20WithPermit.sol";
-import "./interfaces/IFundLimitsOracle.sol";
+import "./interfaces/ITokenRegistry.sol";
 import "./interfaces/IBosonRouter.sol";
 import "./interfaces/ICashier.sol";
+import "./interfaces/IGate.sol";
+import "./interfaces/ITokenWrapper.sol";
 import "./UsingHelpers.sol";
 
 /**
@@ -28,13 +30,20 @@ contract BosonRouter is
 
     address private cashierAddress;
     address private voucherKernel;
-    address private fundLimitsOracle;
+    address private tokenRegistry;
+
+    mapping(uint256 => address) private voucherSetToGateContract;
 
     event LogOrderCreated(
         uint256 indexed _tokenIdSupply,
         address _seller,
         uint256 _quantity,
         uint8 _paymentType
+    );
+
+    event LogConditionalOrderCreated(
+        uint256 indexed _tokenIdSupply,
+        address indexed _gateAddress
     );
 
     /**
@@ -52,20 +61,20 @@ contract BosonRouter is
     }
 
     /**
-     * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the FundLimitsOracle.
-     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the FundLimitsOracle (ETH).
+     * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the TokenRegistry.
+     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the TokenRegistry (ETH).
      */
     function notAboveETHLimit(uint256 value) internal view {
         require(
-            value <= IFundLimitsOracle(fundLimitsOracle).getETHLimit(),
+            value <= ITokenRegistry(tokenRegistry).getETHLimit(),
             "AL" // above limit
         );
     }
 
     /**
-     * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the FundLimitsOracle.
+     * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the TokenRegistry.
      * @param _tokenAddress the token address which, we are getting the limits for.
-     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the FundLimitsOracle (ETH).
+     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the TokenRegistry (ETH).
      */
     function notAboveTokenLimit(address _tokenAddress, uint256 value)
         internal
@@ -73,7 +82,7 @@ contract BosonRouter is
     {
         require(
             value <=
-                IFundLimitsOracle(fundLimitsOracle).getTokenLimit(
+                ITokenRegistry(tokenRegistry).getTokenLimit(
                     _tokenAddress
                 ),
             "AL" //above limit
@@ -82,15 +91,15 @@ contract BosonRouter is
 
     constructor(
         address _voucherKernel,
-        address _fundLimitsOracle,
+        address _tokenRegistry,
         address _cashierAddress
     ) {
         notZeroAddress(_voucherKernel);
-        notZeroAddress(_fundLimitsOracle);
+        notZeroAddress(_tokenRegistry);
         notZeroAddress(_cashierAddress);
 
         voucherKernel = _voucherKernel;
-        fundLimitsOracle = _fundLimitsOracle;
+        tokenRegistry = _tokenRegistry;
         cashierAddress = _cashierAddress;
     }
 
@@ -146,8 +155,8 @@ contract BosonRouter is
         require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        uint256 tokenIdSupply =
-            IVoucherKernel(voucherKernel).createTokenSupplyID(
+        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
+            .createTokenSupplyID(
                 msg.sender,
                 metadata[0],
                 metadata[1],
@@ -167,15 +176,11 @@ contract BosonRouter is
         //record funds in escrow ...
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
 
-        emit LogOrderCreated(
-            tokenIdSupply,
-            msg.sender,
-            metadata[5],
-            ETHETH
-        );
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHETH);
     }
 
-    function requestCreateOrderTKNTKNWithPermit(
+
+    function requestCreateOrderTKNTKNWithPermitInternal(
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent,
@@ -184,7 +189,7 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s,
         uint256[] calldata metadata
-    ) external override whenNotPaused {
+    ) internal whenNotPaused returns (uint256) {
         notZeroAddress(_tokenPriceAddress);
         notZeroAddress(_tokenDepositAddress);
         notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
@@ -194,7 +199,8 @@ contract BosonRouter is
         require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        IERC20WithPermit(_tokenDepositAddress).permit(
+        _permit(
+            _tokenDepositAddress,
             msg.sender,
             address(this),
             _tokensSent,
@@ -204,8 +210,8 @@ contract BosonRouter is
             s
         );
 
-        uint256 tokenIdSupply =
-            IVoucherKernel(voucherKernel).createTokenSupplyID(
+        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
+            .createTokenSupplyID(
                 msg.sender,
                 metadata[0],
                 metadata[1],
@@ -235,12 +241,69 @@ contract BosonRouter is
             _tokensSent
         );
 
-        emit LogOrderCreated(
-            tokenIdSupply,
-            msg.sender,
-            metadata[5],
-            TKNTKN
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNTKN);
+
+        return tokenIdSupply;
+    }
+
+    function requestCreateOrderTKNTKNWithPermit(
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256[] calldata metadata
+    ) external override  {
+        requestCreateOrderTKNTKNWithPermitInternal(
+            _tokenPriceAddress,
+            _tokenDepositAddress,
+            _tokensSent,
+            deadline,
+            v,
+            r,
+            s,
+            metadata
         );
+
+    }
+
+    function requestCreateOrderTKNTKNWithPermitConditional(
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256[] calldata metadata,
+        address _gateAddress,
+        uint256 _nftTokenId
+    ) external override {
+        notZeroAddress(_gateAddress);
+
+        uint256 tokenIdSupply = requestCreateOrderTKNTKNWithPermitInternal(
+            _tokenPriceAddress,
+            _tokenDepositAddress,
+            _tokensSent,
+            deadline,
+            v,
+            r,
+            s,
+            metadata
+        );
+
+        voucherSetToGateContract[tokenIdSupply] = _gateAddress;
+
+        emit LogConditionalOrderCreated(tokenIdSupply, _gateAddress);
+
+        if (_nftTokenId > 0) {
+            IGate(_gateAddress).registerVoucherSetId(
+                tokenIdSupply,
+                _nftTokenId
+            );
+        }
     }
 
     function requestCreateOrderETHTKNWithPermit(
@@ -260,7 +323,8 @@ contract BosonRouter is
         require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        IERC20WithPermit(_tokenDepositAddress).permit(
+        _permit(
+            _tokenDepositAddress,
             msg.sender,
             address(this),
             _tokensSent,
@@ -270,8 +334,8 @@ contract BosonRouter is
             s
         );
 
-        uint256 tokenIdSupply =
-            IVoucherKernel(voucherKernel).createTokenSupplyID(
+        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
+            .createTokenSupplyID(
                 msg.sender,
                 metadata[0],
                 metadata[1],
@@ -301,12 +365,7 @@ contract BosonRouter is
             _tokensSent
         );
 
-        emit LogOrderCreated(
-            tokenIdSupply,
-            msg.sender,
-            metadata[5],
-            ETHTKN
-        );
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHTKN);
     }
 
     function requestCreateOrderTKNETH(
@@ -321,8 +380,8 @@ contract BosonRouter is
         require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        uint256 tokenIdSupply =
-            IVoucherKernel(voucherKernel).createTokenSupplyID(
+        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
+            .createTokenSupplyID(
                 msg.sender,
                 metadata[0],
                 metadata[1],
@@ -341,12 +400,7 @@ contract BosonRouter is
         //record funds in escrow ...
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
 
-        emit LogOrderCreated(
-            tokenIdSupply,
-            msg.sender,
-            metadata[5],
-            TKNETH
-        );
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNETH);
     }
 
     /**
@@ -364,8 +418,8 @@ contract BosonRouter is
         uint256 weiReceived = msg.value;
 
         //checks
-        (uint256 price, , uint256 depositBu) =
-            IVoucherKernel(voucherKernel).getOrderCosts(_tokenIdSupply);
+        (uint256 price, , uint256 depositBu) = IVoucherKernel(voucherKernel)
+            .getOrderCosts(_tokenIdSupply);
         require(price.add(depositBu) == weiReceived, "IF"); //invalid funds
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
@@ -380,6 +434,21 @@ contract BosonRouter is
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
 
+    /**
+     * @notice check if _tokenIdSupply mapped to gate contract, 
+     * if it does, deactivate (user,_tokenIdSupply) to prevent double spending
+     * @param _tokenIdSupply    ID of the supply token
+     */
+    function deactivateConditionalCommit(uint256 _tokenIdSupply) internal {
+        if (voucherSetToGateContract[_tokenIdSupply] != address(0)) {
+            IGate gateContract = IGate(
+                voucherSetToGateContract[_tokenIdSupply]
+            );
+            require(gateContract.check(msg.sender, _tokenIdSupply),"NE"); // not eligible
+            gateContract.deactivate(msg.sender, _tokenIdSupply);
+        }
+    }
+
     function requestVoucherTKNTKNWithPermit(
         uint256 _tokenIdSupply,
         address _issuer,
@@ -392,27 +461,33 @@ contract BosonRouter is
         bytes32 rDeposit,
         bytes32 sDeposit // tokenDeposits
     ) external override nonReentrant whenNotPaused {
-        (uint256 price, uint256 depositBu) =
-            IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
+        // check if _tokenIdSupply mapped to gate contract
+        // if yes, deactivate (user,_tokenIdSupply) to prevent double spending
+        deactivateConditionalCommit(_tokenIdSupply);
+
+        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
+            .getBuyerOrderCosts(_tokenIdSupply);
         require(_tokensSent.sub(depositBu) == price, "IF"); //invalid funds
 
-        address tokenPriceAddress =
-            IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
-        address tokenDepositAddress =
-            IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                _tokenIdSupply
-            );
+        address tokenPriceAddress = IVoucherKernel(voucherKernel)
+            .getVoucherPriceToken(_tokenIdSupply);
+        address tokenDepositAddress = IVoucherKernel(voucherKernel)
+            .getVoucherDepositToken(_tokenIdSupply);
 
-        IERC20WithPermit(tokenPriceAddress).permit(
-            msg.sender,
-            address(this),
-            price,
-            deadline,
-            vPrice,
-            rPrice,
-            sPrice
+        _permit(
+                tokenPriceAddress,
+                msg.sender,
+                address(this),
+                price,
+                deadline,
+                vPrice,
+                rPrice,
+                sPrice
         );
-        IERC20WithPermit(tokenDepositAddress).permit(
+
+
+        _permit(
+            tokenDepositAddress,
             msg.sender,
             address(this),
             depositBu,
@@ -421,6 +496,7 @@ contract BosonRouter is
             rDeposit,
             sDeposit
         );
+
 
         IVoucherKernel(voucherKernel).fillOrder(
             _tokenIdSupply,
@@ -464,22 +540,25 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s
     ) external override nonReentrant whenNotPaused {
-        (uint256 price, uint256 depositBu) =
-            IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
+        // check if _tokenIdSupply mapped to gate contract
+        // if yes, deactivate (user,_tokenIdSupply) to prevent double spending
+        deactivateConditionalCommit(_tokenIdSupply); 
+
+        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
+            .getBuyerOrderCosts(_tokenIdSupply);
         require(_tokensSent.sub(depositBu) == price, "IF"); //invalid funds
 
-        address tokenPriceAddress =
-            IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
-        address tokenDepositAddress =
-            IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                _tokenIdSupply
-            );
+        address tokenPriceAddress = IVoucherKernel(voucherKernel)
+            .getVoucherPriceToken(_tokenIdSupply);
+        address tokenDepositAddress = IVoucherKernel(voucherKernel)
+            .getVoucherDepositToken(_tokenIdSupply);
 
         require(tokenPriceAddress == tokenDepositAddress, "IC"); //invalid caller
 
         // If tokenPriceAddress && tokenPriceAddress are the same
         // practically it's not of importance to each we are sending the funds
-        IERC20WithPermit(tokenPriceAddress).permit(
+        _permit(
+            tokenPriceAddress,
             msg.sender,
             address(this),
             _tokensSent,
@@ -519,8 +598,8 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s
     ) external payable override nonReentrant whenNotPaused {
-        (uint256 price, uint256 depositBu) =
-            IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
+        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
+            .getBuyerOrderCosts(_tokenIdSupply);
         require(price == msg.value, "IP"); //invalid price
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         require(depositBu == _tokensDeposit, "ID"); // invalid deposit
@@ -530,7 +609,9 @@ contract BosonRouter is
             IVoucherKernel(voucherKernel).getVoucherDepositToken(
                 _tokenIdSupply
             );
-        IERC20WithPermit(tokenDepositAddress).permit(
+
+        _permit(
+            tokenDepositAddress,
             msg.sender,
             address(this),
             _tokensDeposit,
@@ -561,10 +642,7 @@ contract BosonRouter is
         );
 
         //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(
-            msg.sender
-        );
-
+        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
 
     function requestVoucherTKNETHWithPermit(
@@ -576,8 +654,8 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s
     ) external payable override nonReentrant whenNotPaused {
-        (uint256 price, uint256 depositBu) =
-            IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
+        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
+            .getBuyerOrderCosts(_tokenIdSupply);
         require(price == _tokensPrice, "IP"); //invalid price
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         require(depositBu == msg.value, "ID"); // invalid deposit
@@ -585,7 +663,9 @@ contract BosonRouter is
 
         address tokenPriceAddress =
             IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
-        IERC20WithPermit(tokenPriceAddress).permit(
+
+        _permit(
+            tokenPriceAddress,
             msg.sender,
             address(this),
             price,
@@ -616,7 +696,7 @@ contract BosonRouter is
         );
 
         //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value:msg.value}(msg.sender);
+        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
 
     /**
@@ -629,11 +709,8 @@ contract BosonRouter is
         nonReentrant
         whenNotPaused
     {
-        uint256 _burnedSupplyQty =
-            IVoucherKernel(voucherKernel).cancelOrFaultVoucherSet(
-                _tokenIdSupply,
-                msg.sender
-            );
+        uint256 _burnedSupplyQty = IVoucherKernel(voucherKernel)
+            .cancelOrFaultVoucherSet(_tokenIdSupply, msg.sender);
         ICashier(cashierAddress).withdrawDepositsSe(
             _tokenIdSupply,
             _burnedSupplyQty,
@@ -680,22 +757,17 @@ contract BosonRouter is
      * @notice Get the address of Cashier contract
      * @return Address of Cashier address
      */
-    function getCashierAddress() 
-        external 
-        view 
-        override
-        returns (address)
-    {
+    function getCashierAddress() external view override returns (address) {
         return cashierAddress;
     }
 
-     /**
+    /**
      * @notice Get the address of Voucher Kernel contract
      * @return Address of Voucher Kernel contract
      */
-    function getVoucherKernelAddress() 
-        external 
-        view 
+    function getVoucherKernelAddress()
+        external
+        view
         override
         returns (address)
     {
@@ -703,15 +775,68 @@ contract BosonRouter is
     }
 
     /**
-     * @notice Get the address of Fund Limits Oracle contract
-     * @return Address of Fund Limits Oracle contract
+     * @notice Get the address of Token Registry contract
+     * @return Address of Token Registrycontract
      */
-    function getFundLimitOracleAddress() 
+    function getTokenRegistryAddress() 
         external 
         view 
         override
         returns (address)
     {
-        return fundLimitsOracle;
+        return tokenRegistry;
+    }
+
+    /**
+     * @notice Call permit on either a token directly or on a token wrapper
+     * @param token Address of the token owner who is approving tokens to be transferred by spender
+     * @param owner Address of the token owner who is approving tokens to be transferred by spender
+     * @param owner Address of the token owner who is approving tokens to be transferred by spender
+     * @param spender Address of the party who is transferring tokens on owner's behalf
+     * @param value Number of tokens to be transferred
+     * @param deadline Time after which this permission to transfer is no longer valid
+     * @param v Part of the owner's signatue
+     * @param r Part of the owner's signatue
+     * @param s Part of the owner's signatue
+     */
+    function _permit(
+        address token,
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) internal {
+        address tokenWrapper = ITokenRegistry(tokenRegistry).getTokenWrapperAddress(token);
+        require(tokenWrapper != address(0), "UNSUPPORTED_TOKEN");
+
+        //The BosonToken contract conforms to this spec, so it will be callable this way
+        //if it's address is mapped to itself in the TokenRegistry
+        ITokenWrapper(tokenWrapper).permit(
+            owner,
+            spender,
+            value,
+            deadline,
+            v,
+            r,
+            s
+        );
+    }
+
+
+    /**
+     * @notice Get the address gate contract that handles conditional commit of certain voucher set
+     * @param _tokenIdSupply    ID of the supply token
+     * @return Address of the gate contract or zero address if there is no conditional commit
+     */
+    function getVoucherSetToGateContract(uint256 _tokenIdSupply)
+            external
+        view
+        override
+        returns (address)
+    {
+        return voucherSetToGateContract[_tokenIdSupply];
     }
 }

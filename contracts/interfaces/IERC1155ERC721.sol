@@ -51,12 +51,6 @@ interface IERC1155ERC721 {
     );
 
     /**
-     * @notice Get the contract owner
-     * @return Address of the owner
-     */
-    function getOwner() external view returns (address);
-
-    /**
      * @notice Get the address of Voucher Kernel contract
      * @return Address of Voucher Kernel contract
      */

@@ -100,7 +100,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         uint256 _idx
     );
 
-    event LogVoucherDelivered(
+    event LogVoucherCommitted(
         uint256 indexed _tokenIdSupply,
         uint256 _tokenIdVoucher,
         address _issuer,
@@ -328,7 +328,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         //close order
         uint256 voucherTokenId = extract721(_issuer, _holder, _tokenIdSupply);
 
-        emit LogVoucherDelivered(
+        emit LogVoucherCommitted(
             _tokenIdSupply,
             voucherTokenId,
             _issuer,

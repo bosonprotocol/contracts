@@ -46,7 +46,7 @@ class UtilsBuilder {
       Cashier: await ethers.getContractFactory('Cashier'),
       BosonRouter: await ethers.getContractFactory('BosonRouter'),
       ERC1155ERC721: await ethers.getContractFactory('ERC1155ERC721'),
-      FundLimitsOracle: await ethers.getContractFactory('FundLimitsOracle'),
+      TokenRegistry: await ethers.getContractFactory('TokenRegistry'),
       MockERC20Permit: await ethers.getContractFactory('MockERC20Permit'),
     };
 
@@ -84,6 +84,7 @@ class UtilsBuilder {
 
   TKNTKNWithPermit(): UtilsBuilder {
     this.utils.createOrder = this.utils.requestCreateOrderTKNTKNWithPermit;
+    this.utils.createOrderConditional = this.utils.requestCreateOrderTKNTKNWithPermitConditional;
     this.utils.commitToBuy = this.utils.commitToBuyTKNTKNWithPermit;
 
     return this;

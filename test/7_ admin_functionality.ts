@@ -12,14 +12,14 @@ import {
   ERC1155ERC721,
   VoucherKernel,
   Cashier,
-  FundLimitsOracle,
+  TokenRegistry,
 } from '../typechain';
 
 let ERC1155ERC721_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
-let FundLimitsOracle_Factory: ContractFactory;
+let TokenRegistry_Factory: ContractFactory;
 
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
@@ -36,16 +36,14 @@ describe('Admin functionality', async () => {
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
-    FundLimitsOracle_Factory = await ethers.getContractFactory(
-      'FundLimitsOracle'
-    );
+    TokenRegistry_Factory = await ethers.getContractFactory('TokenRegistry');
   });
 
   let contractERC1155ERC721: ERC1155ERC721,
     contractVoucherKernel: VoucherKernel,
     contractCashier: Cashier,
     contractBosonRouter: BosonRouter,
-    contractFundLimitsOracle: FundLimitsOracle;
+    contractTokenRegistry: TokenRegistry;
 
   async function deployContracts() {
     const timestamp = await Utils.getCurrTimestamp();
@@ -53,8 +51,8 @@ describe('Admin functionality', async () => {
     constants.PROMISE_VALID_FROM = timestamp;
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
-    contractFundLimitsOracle = (await FundLimitsOracle_Factory.deploy()) as Contract &
-      FundLimitsOracle;
+    contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
+      TokenRegistry;
     contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
       ERC1155ERC721;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
@@ -65,11 +63,11 @@ describe('Admin functionality', async () => {
     )) as Contract & Cashier;
     contractBosonRouter = (await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
-      contractFundLimitsOracle.address,
+      contractTokenRegistry.address,
       contractCashier.address
     )) as Contract & BosonRouter;
 
-    await contractFundLimitsOracle.deployed();
+    await contractTokenRegistry.deployed();
     await contractERC1155ERC721.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
@@ -174,7 +172,7 @@ describe('Admin functionality', async () => {
 
     it('Owner should be the deployer', async () => {
       const expectedOwner = users.deployer.address;
-      const owner = await contractERC1155ERC721.getOwner();
+      const owner = await contractERC1155ERC721.owner();
 
       assert.equal(owner, expectedOwner, 'Owner is not as expected');
     });
@@ -211,7 +209,7 @@ describe('Admin functionality', async () => {
       );
       await expect(
         attackerInstance.setVoucherKernelAddress(contractVoucherKernel.address)
-      ).to.be.revertedWith(revertReasons.NOT_OWNER);
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
     });
 
     it('[NEGATIVE][setVoucherKernelAddress] Should revert if ZERO address is provided', async () => {
@@ -252,7 +250,7 @@ describe('Admin functionality', async () => {
 
       await expect(
         attackerInstance.setCashierAddress(contractCashier.address)
-      ).to.be.revertedWith(revertReasons.NOT_OWNER);
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
     });
 
     it('[NEGATIVE][setCashierAddress] Owner should not be able to set ZERO Cashier address', async () => {
