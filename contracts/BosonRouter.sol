@@ -276,7 +276,7 @@ contract BosonRouter is
         bytes32 s,
         uint256[] calldata metadata,
         address _gateAddress,
-        uint256 _nftTokenID
+        uint256 _nftTokenId
     ) external override {
         notZeroAddress(_gateAddress);
         // should we check if gateAddress implements correct interface?
@@ -296,10 +296,10 @@ contract BosonRouter is
 
         emit LogConditionalOrderCreated(tokenIdSupply, _gateAddress);
 
-        if (_nftTokenID > 0) {
+        if (_nftTokenId > 0) {
             IGate(_gateAddress).registerVoucherSetId(
                 tokenIdSupply,
-                _nftTokenID
+                _nftTokenId
             );
         }
     }
