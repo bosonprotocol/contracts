@@ -21,7 +21,7 @@ import "./UsingHelpers.sol";
  * Each function name is suffixed with a payment type that denotes the currency type of the 
  * payment and deposits. The options are:
  * 
- * ETHTH  - Price and deposits are specified in ETH
+ * ETHETH  - Price and deposits are specified in ETH
  * ETHTKN - Price is specified in ETH and deposits are specified in tokens
  * TKNTKN - Price and deposits are specified in tokens
  * TKNETH - Price is specified in tokens and the deposits are specified in ETH
@@ -101,7 +101,7 @@ contract BosonRouter is
     }
 
     /**
-     * @notice Construct and initialze the contract. Inizializes associated contract addresses
+     * @notice Construct and initialze the contract. Iniialises associated contract addresses
      * @param _voucherKernel address of the associated VocherKernal contract instance
      * @param _tokenRegistry address of the associated TokenRegistry contract instance
      * @param _cashierAddress address of the associated Cashier contract instance
@@ -124,7 +124,7 @@ contract BosonRouter is
      * @notice Pause the Cashier && the Voucher Kernel contracts in case of emergency.
      * All functions related to creating requestCreateOrder, requestVoucher, redeem, refund, complain, cancelOrFault, 
      * cancelOrFaultVoucherSet, or withdraw will be paused and cannot be executed.
-     * There is a special function for withdrawing funds if contract is paused.
+     * The withdrawEthOnDisaster function is a special function in the Cashier contract for withdrawing funds if contract is paused.
      */
     function pause() external override {
         onlyRouterOwner();
@@ -152,7 +152,7 @@ contract BosonRouter is
      * also known as a voucher set. Payment and deposits are specified in ETH.
      * @param metadata metadata which is required for creation of a voucher set
      * Metadata array is used for consistency across the permutations of similar functions.
-     * Some functions require other parameters, and the number of parameters causes sa tack too deep error.
+     * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
      *   
      * uint256 _validFrom = metadata[0];
@@ -205,13 +205,13 @@ contract BosonRouter is
      * @param _tokenPriceAddress address of the token to be used for the price
      * @param _tokenDepositAddress address of the token to be used for the deposits
      * @param _tokensSent total number of tokens sent. Must be equal to seller deposit * quantity
-     * @param deadline deadline after which permit signature is no longer valide. See EIP-2612
+     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
      * @param v signature component used to verify the permit. See EIP-2612
      * @param r signature component used to verify the permit. See EIP-2612
      * @param s signature component used to verify the permit. See EIP-2612
      * @param metadata metadata which is required for creation of a voucher set
      * Metadata array is used for consistency across the permutations of similar functions.
-     * Some functions require other parameters, and the number of parameters causes sa tack too deep error.
+     * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
      *   
      * uint256 _validFrom = metadata[0];
@@ -294,13 +294,13 @@ contract BosonRouter is
      * @param _tokenPriceAddress address of the token to be used for the price
      * @param _tokenDepositAddress address of the token to be used for the deposits
      * @param _tokensSent total number of tokens sent. Must be equal to seller deposit * quantity
-     * @param deadline deadline after which permit signature is no longer valide. See EIP-2612
+     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
      * @param v signature component used to verify the permit. See EIP-2612
      * @param r signature component used to verify the permit. See EIP-2612
      * @param s signature component used to verify the permit. See EIP-2612
      * @param metadata metadata which is required for creation of a voucher set
      * Metadata array is used for consistency across the permutations of similar functions.
-     * Some functions require other parameters, and the number of parameters causes sa tack too deep error.
+     * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
      *   
      * uint256 _validFrom = metadata[0];
@@ -341,13 +341,13 @@ contract BosonRouter is
      * @param _tokenPriceAddress address of the token to be used for the price
      * @param _tokenDepositAddress address of the token to be used for the deposits
      * @param _tokensSent total number of tokens sent. Must be equal to seller deposit * quantity
-     * @param deadline deadline after which permit signature is no longer valide. See EIP-2612
+     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
      * @param v signature component used to verify the permit. See EIP-2612
      * @param r signature component used to verify the permit. See EIP-2612
      * @param s signature component used to verify the permit. See EIP-2612
      * @param metadata metadata which is required for creation of a voucher set
      * Metadata array is used for consistency across the permutations of similar functions.
-     * Some functions require other parameters, and the number of parameters causes sa tack too deep error.
+     * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
      *   
      * uint256 _validFrom = metadata[0];
@@ -404,13 +404,13 @@ contract BosonRouter is
      * also known as a voucher set. Price is specified in ETH and deposits are specified in tokens.
      * @param _tokenDepositAddress address of the token to be used for the deposits
      * @param _tokensSent total number of tokens sent. Must be equal to seller deposit * quantity
-     * @param deadline deadline after which permit signature is no longer valide. See EIP-2612
+     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
      * @param v signature component used to verify the permit. See EIP-2612
      * @param r signature component used to verify the permit. See EIP-2612
      * @param s signature component used to verify the permit. See EIP-2612
      * @param metadata metadata which is required for creation of a voucher set
      * Metadata array is used for consistency across the permutations of similar functions.
-     * Some functions require other parameters, and the number of parameters causes sa tack too deep error.
+     * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
      *   
      * uint256 _validFrom = metadata[0];
@@ -490,7 +490,7 @@ contract BosonRouter is
      * @param _tokenPriceAddress address of the token to be used for the deposits
      * @param metadata metadata which is required for creation of a voucher set
      * Metadata array is used for consistency across the permutations of similar functions.
-     * Some functions require other parameters, and the number of parameters causes sa tack too deep error.
+     * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
      *   
      * uint256 _validFrom = metadata[0];
@@ -574,13 +574,13 @@ contract BosonRouter is
      * @param _tokenIdSupply ID of the supply token
      * @param _issuer Address of the issuer of the supply token
      * @param _tokensSent total number of tokens sent. Must be equal to buyer deposit plus price
-     * @param deadline deadline after which permit signature is no longer valide. See EIP-2612
-     * @param vPrice signature component  used to verify the permit on the price token. See EIP-2612
-     * @param rPrice signature component used to verify the permit on the price token. See EIP-2612
-     * @param sPrice signature component used to verify the permit on the price token. See EIP-2612
-     * @param vDeposit signature component  used to verify the permit on the deposit token. See EIP-2612
-     * @param rDeposit signature component used to verify the permit on the deposit token. See EIP-2612
-     * @param sDeposit signature component used to verify the permit on the deposit token. See EIP-2612
+     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
+     * @param vPrice v signature component  used to verify the permit on the price token. See EIP-2612
+     * @param rPrice r signature component used to verify the permit on the price token. See EIP-2612
+     * @param sPrice s signature component used to verify the permit on the price token. See EIP-2612
+     * @param vDeposit v signature component  used to verify the permit on the deposit token. See EIP-2612
+     * @param rDeposit r signature component used to verify the permit on the deposit token. See EIP-2612
+     * @param sDeposit s signature component used to verify the permit on the deposit token. See EIP-2612
      */
     function requestVoucherTKNTKNWithPermit(
         uint256 _tokenIdSupply,
@@ -670,7 +670,7 @@ contract BosonRouter is
      * @param _tokenIdSupply ID of the supply token
      * @param _issuer address of the issuer of the supply token
      * @param _tokensSent total number of tokens sent. Must be equal to buyer deposit plus price
-     * @param deadline deadline after which permit signature is no longer valide. See EIP-2612
+     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
      * @param v signature component used to verify the permit. See EIP-2612
      * @param r signature component used to verify the permit. See EIP-2612
      * @param s signature component used to verify the permit. See EIP-2612
@@ -739,7 +739,7 @@ contract BosonRouter is
      * @param _tokenIdSupply ID of the supply token
      * @param _issuer address of the issuer of the supply token
      * @param _tokensDeposit number of tokens sent to cover buyer deposit
-     * @param deadline deadline after which permit signature is no longer valide. See EIP-2612
+     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
      * @param v signature component used to verify the permit. See EIP-2612
      * @param r signature component used to verify the permit. See EIP-2612
      * @param s signature component used to verify the permit. See EIP-2612
@@ -806,7 +806,7 @@ contract BosonRouter is
      * @param _tokenIdSupply ID of the supply token
      * @param _issuer address of the issuer of the supply token
      * @param _tokensPrice number of tokens sent to cover price
-     * @param deadline deadline after which permit signature is no longer valide. See EIP-2612
+     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
      * @param v signature component used to verify the permit. See EIP-2612
      * @param r signature component used to verify the permit. See EIP-2612
      * @param s signature component used to verify the permit. See EIP-2612

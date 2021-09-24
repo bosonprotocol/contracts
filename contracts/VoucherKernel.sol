@@ -174,7 +174,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     }
 
     /**
-     * @notice Construct and initialze the contract. Inizializes associated contract addresses, the complain period, and the cancel or fault period
+     * @notice Construct and initialze the contract. Iniialises associated contract addresses, the complain period, and the cancel or fault period
      * @param _tokensContract address of the associated ERC1155ERC721 contract instance
      */
     constructor(address _tokensContract) {
