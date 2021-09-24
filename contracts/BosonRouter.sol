@@ -335,68 +335,6 @@ contract BosonRouter is
     }
 
     /**
-     * @notice Internal function called by other TKNTKN requestCreateOrder functions to decrease code duplication. 
-     * Price and deposits are specified in tokens.
-     * @param _tokenPriceAddress address of the token to be used for the price
-     * @param _tokenDepositAddress address of the token to be used for the deposits
-     * @param _tokensSent total number of tokens sent. Must be equal to seller deposit * quantity
-     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
-     * @param v signature component used to verify the permit. See EIP-2612
-     * @param r signature component used to verify the permit. See EIP-2612
-     * @param s signature component used to verify the permit. See EIP-2612
-     * @param metadata metadata which is required for creation of a voucher set
-     * Metadata array is used for consistency across the permutations of similar functions.
-     * Some functions require other parameters, and the number of parameters causes stack too deep error.
-     * The use of the matadata array mitigates the stack too deep error.
-     *   
-     * uint256 _validFrom = metadata[0];
-     * uint256 _validTo = metadata[1];
-     * uint256 _price = metadata[2];
-     * uint256 _depositSe = metadata[3];
-     * uint256 _depositBu = metadata[4];
-     * uint256 _quantity = metadata[5];
-     */
-    function requestCreateOrderTKNTKNWithPermitInternal(
-        address _tokenPriceAddress,
-        address _tokenDepositAddress,
-        uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint256[] calldata metadata
-    ) internal whenNotPaused returns (uint256) {
-        notZeroAddress(_tokenPriceAddress);
-        notZeroAddress(_tokenDepositAddress);
-        checkLimits(
-            metadata,
-            _tokenPriceAddress,
-            _tokenDepositAddress,
-            _tokensSent
-        );
-
-        _permit(
-            _tokenDepositAddress,
-            msg.sender,
-            address(this),
-            _tokensSent,
-            deadline,
-            v,
-            r,
-            s
-        );
-
-        return
-            requestCreateOrder(
-                metadata,
-                TKNTKN,
-                _tokenPriceAddress,
-                _tokenDepositAddress,
-                _tokensSent
-            );
-    }
-
-    /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is
      * also known as a voucher set. Price is specified in tokens and the deposits are specified in ETH.
      * Since the price, which is specified in tokens, is not collected when a voucher set is created, there is no need to call
@@ -913,6 +851,68 @@ contract BosonRouter is
             );
             require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
         }
+    }
+
+    /**
+     * @notice Internal function called by other TKNTKN requestCreateOrder functions to decrease code duplication. 
+     * Price and deposits are specified in tokens.
+     * @param _tokenPriceAddress address of the token to be used for the price
+     * @param _tokenDepositAddress address of the token to be used for the deposits
+     * @param _tokensSent total number of tokens sent. Must be equal to seller deposit * quantity
+     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
+     * @param v signature component used to verify the permit. See EIP-2612
+     * @param r signature component used to verify the permit. See EIP-2612
+     * @param s signature component used to verify the permit. See EIP-2612
+     * @param metadata metadata which is required for creation of a voucher set
+     * Metadata array is used for consistency across the permutations of similar functions.
+     * Some functions require other parameters, and the number of parameters causes stack too deep error.
+     * The use of the matadata array mitigates the stack too deep error.
+     *   
+     * uint256 _validFrom = metadata[0];
+     * uint256 _validTo = metadata[1];
+     * uint256 _price = metadata[2];
+     * uint256 _depositSe = metadata[3];
+     * uint256 _depositBu = metadata[4];
+     * uint256 _quantity = metadata[5];
+     */
+    function requestCreateOrderTKNTKNWithPermitInternal(
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256[] calldata metadata
+    ) internal whenNotPaused returns (uint256) {
+        notZeroAddress(_tokenPriceAddress);
+        notZeroAddress(_tokenDepositAddress);
+        checkLimits(
+            metadata,
+            _tokenPriceAddress,
+            _tokenDepositAddress,
+            _tokensSent
+        );
+
+        _permit(
+            _tokenDepositAddress,
+            msg.sender,
+            address(this),
+            _tokensSent,
+            deadline,
+            v,
+            r,
+            s
+        );
+
+        return
+            requestCreateOrder(
+                metadata,
+                TKNTKN,
+                _tokenPriceAddress,
+                _tokenDepositAddress,
+                _tokensSent
+            );
     }
 
     /**
