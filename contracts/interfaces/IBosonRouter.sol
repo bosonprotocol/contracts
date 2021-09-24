@@ -159,10 +159,9 @@ interface IBosonRouter {
     function getVoucherKernelAddress() external view returns (address);
 
     /**
-     * @notice Get the address of Fund Limits Oracle contract
+     * @notice Get the address of Token Registry contract
      * @return Address of Fund Limits Oracle contract
      */
-    function getFundLimitOracleAddress() external view returns (address);
 
     /**
      * @notice Get the address gate contract that handles conditional commit of certain voucher set
@@ -173,4 +172,7 @@ interface IBosonRouter {
         external
         view
         returns (address);
+
+    function getTokenRegistryAddress() external view returns (address);
+
 }
