@@ -131,7 +131,7 @@ contract BosonRouter is
     //// GENERAL HELPERS
 
     /**
-     * @notice Transfer tokens from there to cashier and adds it to escrow
+     * @notice Transfer tokens to cashier and adds it to escrow
      * @param _tokenAddress tokens that are transfered
      * @param _amount       amount of tokens to transfer (expected permit)
      */
@@ -447,7 +447,6 @@ contract BosonRouter is
         (uint256 price, , uint256 depositBu) = IVoucherKernel(voucherKernel)
             .getOrderCosts(_tokenIdSupply);
         require(price.add(depositBu) == weiReceived, "IF"); //invalid funds
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         IVoucherKernel(voucherKernel).fillOrder(
             _tokenIdSupply,
@@ -573,9 +572,7 @@ contract BosonRouter is
         (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
             .getBuyerOrderCosts(_tokenIdSupply);
         require(price == msg.value, "IP"); //invalid price
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         require(depositBu == _tokensDeposit, "ID"); // invalid deposit
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         address tokenDepositAddress =
             IVoucherKernel(voucherKernel).getVoucherDepositToken(
@@ -611,9 +608,7 @@ contract BosonRouter is
         (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
             .getBuyerOrderCosts(_tokenIdSupply);
         require(price == _tokensPrice, "IP"); //invalid price
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         require(depositBu == msg.value, "ID"); // invalid deposit
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         address tokenPriceAddress =
             IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
