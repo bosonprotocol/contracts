@@ -81,10 +81,7 @@ contract BosonRouter is
         view
     {
         require(
-            value <=
-                ITokenRegistry(tokenRegistry).getTokenLimit(
-                    _tokenAddress
-                ),
+            value <= ITokenRegistry(tokenRegistry).getTokenLimit(_tokenAddress),
             "AL" //above limit
         );
     }
@@ -135,7 +132,9 @@ contract BosonRouter is
      * @param _tokenAddress tokens that are transfered
      * @param _amount       amount of tokens to transfer (expected permit)
      */
-    function transferFromAndAddEscrow(address _tokenAddress, uint256 _amount) internal {        
+    function transferFromAndAddEscrow(address _tokenAddress, uint256 _amount)
+        internal
+    {
         IERC20WithPermit(_tokenAddress).transferFrom(
             msg.sender,
             address(cashierAddress),
@@ -158,26 +157,30 @@ contract BosonRouter is
      * @param _r Part of the owner's signatue
      * @param _s Part of the owner's signatue
      */
-    function permitTransferFromAndAddEscrow(address _tokenAddress, uint256 _amount, uint256 _deadline,
+    function permitTransferFromAndAddEscrow(
+        address _tokenAddress,
+        uint256 _amount,
+        uint256 _deadline,
         uint8 _v,
         bytes32 _r,
-        bytes32 _s) internal {
+        bytes32 _s
+    ) internal {
         _permit(
-                _tokenAddress,
-                msg.sender,
-                address(this),
-                _amount,
-                _deadline,
-                _v,
-                _r,
-                _s
+            _tokenAddress,
+            msg.sender,
+            address(this),
+            _amount,
+            _deadline,
+            _v,
+            _r,
+            _s
         );
-        
+
         transferFromAndAddEscrow(_tokenAddress, _amount);
     }
 
     //// REQUEST CREATE ORDER
-    
+
     /**
      * @notice Checks if supplied values are within set limits
         @param metadata metadata which is required for creation of a voucher
@@ -195,16 +198,20 @@ contract BosonRouter is
      * @param _tokenDepositAddress  token address which will hold the funds for the deposits of the voucher
      * @param _tokensSent     tokens sent to cashier contract
      */
-    function checkLimits(uint256[] memory metadata, address _tokenPriceAddress,
+    function checkLimits(
+        uint256[] memory metadata,
+        address _tokenPriceAddress,
         address _tokenDepositAddress,
-        uint256 _tokensSent) internal view returns (bool) 
-        {
-
+        uint256 _tokensSent
+    ) internal view returns (bool) {
         // check price limits. If price address == 0 -> prices in ETH
         if (_tokenPriceAddress == address(0)) {
             notAboveETHLimit(metadata[2].mul(metadata[5]));
         } else {
-            notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
+            notAboveTokenLimit(
+                _tokenPriceAddress,
+                metadata[2].mul(metadata[5])
+            );
         }
 
         // check deposit limits. If deposit address == 0 -> deposits in ETH
@@ -212,13 +219,17 @@ contract BosonRouter is
             notAboveETHLimit(metadata[3].mul(metadata[5]));
             notAboveETHLimit(metadata[4].mul(metadata[5]));
             require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
-
         } else {
-            notAboveTokenLimit(_tokenDepositAddress, metadata[3].mul(metadata[5]));
-            notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
+            notAboveTokenLimit(
+                _tokenDepositAddress,
+                metadata[3].mul(metadata[5])
+            );
+            notAboveTokenLimit(
+                _tokenDepositAddress,
+                metadata[4].mul(metadata[5])
+            );
             require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
-        }      
-        
+        }
     }
 
     /**
@@ -243,11 +254,13 @@ contract BosonRouter is
      * @param _tokenDepositAddress  token address which will hold the funds for the deposits of the voucher
      * @param _tokensSent     tokens sent to cashier contract
      */
-    function requestCreateOrder(uint256[] memory metadata,
+    function requestCreateOrder(
+        uint256[] memory metadata,
         uint8 _paymentMethod,
         address _tokenPriceAddress,
         address _tokenDepositAddress,
-        uint256 _tokensSent) internal returns (uint256) {
+        uint256 _tokensSent
+    ) internal returns (uint256) {
         uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
             .createTokenSupplyID(
                 msg.sender,
@@ -266,18 +279,25 @@ contract BosonRouter is
             _tokenDepositAddress
         );
 
-        //record funds in escrow ...         
-        if (_tokenDepositAddress == address(0)) { 
-            ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
+        //record funds in escrow ...
+        if (_tokenDepositAddress == address(0)) {
+            ICashier(cashierAddress).addEscrowAmount{value: msg.value}(
+                msg.sender
+            );
         } else {
             transferFromAndAddEscrow(_tokenDepositAddress, _tokensSent);
         }
 
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], _paymentMethod);
-        
+        emit LogOrderCreated(
+            tokenIdSupply,
+            msg.sender,
+            metadata[5],
+            _paymentMethod
+        );
+
         return tokenIdSupply;
     }
-    
+
     /**
      * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
         @param metadata metadata which is required for creation of a voucher
@@ -299,7 +319,7 @@ contract BosonRouter is
         nonReentrant
         whenNotPaused
     {
-        checkLimits(metadata, address(0), address(0),0);
+        checkLimits(metadata, address(0), address(0), 0);
         requestCreateOrder(metadata, ETHETH, address(0), address(0), 0);
     }
 
@@ -314,8 +334,13 @@ contract BosonRouter is
         uint256[] calldata metadata
     ) internal whenNotPaused returns (uint256) {
         notZeroAddress(_tokenPriceAddress);
-        notZeroAddress(_tokenDepositAddress);     
-        checkLimits(metadata, _tokenPriceAddress, _tokenDepositAddress, _tokensSent);
+        notZeroAddress(_tokenDepositAddress);
+        checkLimits(
+            metadata,
+            _tokenPriceAddress,
+            _tokenDepositAddress,
+            _tokensSent
+        );
 
         _permit(
             _tokenDepositAddress,
@@ -328,7 +353,14 @@ contract BosonRouter is
             s
         );
 
-        return requestCreateOrder(metadata, TKNTKN, _tokenPriceAddress, _tokenDepositAddress, _tokensSent);
+        return
+            requestCreateOrder(
+                metadata,
+                TKNTKN,
+                _tokenPriceAddress,
+                _tokenDepositAddress,
+                _tokensSent
+            );
     }
 
     function requestCreateOrderTKNTKNWithPermit(
@@ -340,7 +372,7 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s,
         uint256[] calldata metadata
-    ) external override  {
+    ) external override {
         requestCreateOrderTKNTKNWithPermitInternal(
             _tokenPriceAddress,
             _tokenDepositAddress,
@@ -351,7 +383,6 @@ contract BosonRouter is
             s,
             metadata
         );
-
     }
 
     function requestCreateOrderTKNTKNWithPermitConditional(
@@ -400,9 +431,9 @@ contract BosonRouter is
         bytes32 s,
         uint256[] calldata metadata
     ) external override whenNotPaused {
-        notZeroAddress(_tokenDepositAddress);       
+        notZeroAddress(_tokenDepositAddress);
         checkLimits(metadata, address(0), _tokenDepositAddress, _tokensSent);
-             
+
         _permit(
             _tokenDepositAddress,
             msg.sender,
@@ -414,17 +445,23 @@ contract BosonRouter is
             s
         );
 
-        requestCreateOrder(metadata, ETHTKN, address(0), _tokenDepositAddress, _tokensSent);
+        requestCreateOrder(
+            metadata,
+            ETHTKN,
+            address(0),
+            _tokenDepositAddress,
+            _tokensSent
+        );
     }
 
     function requestCreateOrderTKNETH(
         address _tokenPriceAddress,
         uint256[] calldata metadata
     ) external payable override nonReentrant whenNotPaused {
-       notZeroAddress(_tokenPriceAddress);       
-       checkLimits(metadata, _tokenPriceAddress, address(0),0);
+        notZeroAddress(_tokenPriceAddress);
+        checkLimits(metadata, _tokenPriceAddress, address(0), 0);
 
-       requestCreateOrder(metadata, TKNETH, _tokenPriceAddress, address(0), 0);
+        requestCreateOrder(metadata, TKNETH, _tokenPriceAddress, address(0), 0);
     }
 
     //// REQUEST VOUCHER
@@ -460,7 +497,7 @@ contract BosonRouter is
     }
 
     /**
-     * @notice check if _tokenIdSupply mapped to gate contract, 
+     * @notice check if _tokenIdSupply mapped to gate contract,
      * if it does, deactivate (user,_tokenIdSupply) to prevent double spending
      * @param _tokenIdSupply    ID of the supply token
      */
@@ -469,7 +506,7 @@ contract BosonRouter is
             IGate gateContract = IGate(
                 voucherSetToGateContract[_tokenIdSupply]
             );
-            require(gateContract.check(msg.sender, _tokenIdSupply),"NE"); // not eligible
+            require(gateContract.check(msg.sender, _tokenIdSupply), "NE"); // not eligible
             gateContract.deactivate(msg.sender, _tokenIdSupply);
         }
     }
@@ -499,17 +536,23 @@ contract BosonRouter is
         address tokenDepositAddress = IVoucherKernel(voucherKernel)
             .getVoucherDepositToken(_tokenIdSupply);
 
-        permitTransferFromAndAddEscrow(tokenPriceAddress, price,
-                deadline,
-                vPrice,
-                rPrice,
-                sPrice);
+        permitTransferFromAndAddEscrow(
+            tokenPriceAddress,
+            price,
+            deadline,
+            vPrice,
+            rPrice,
+            sPrice
+        );
 
-        permitTransferFromAndAddEscrow(tokenDepositAddress, depositBu,
-                    deadline,
-                    vDeposit,
-                    rDeposit,
-                    sDeposit);
+        permitTransferFromAndAddEscrow(
+            tokenDepositAddress,
+            depositBu,
+            deadline,
+            vDeposit,
+            rDeposit,
+            sDeposit
+        );
 
         IVoucherKernel(voucherKernel).fillOrder(
             _tokenIdSupply,
@@ -517,7 +560,6 @@ contract BosonRouter is
             msg.sender,
             TKNTKN
         );
-        
     }
 
     function requestVoucherTKNTKNSameWithPermit(
@@ -531,7 +573,7 @@ contract BosonRouter is
     ) external override nonReentrant whenNotPaused {
         // check if _tokenIdSupply mapped to gate contract
         // if yes, deactivate (user,_tokenIdSupply) to prevent double spending
-        deactivateConditionalCommit(_tokenIdSupply); 
+        deactivateConditionalCommit(_tokenIdSupply);
 
         (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
             .getBuyerOrderCosts(_tokenIdSupply);
@@ -546,10 +588,14 @@ contract BosonRouter is
 
         // If tokenPriceAddress && tokenPriceAddress are the same
         // practically it's not of importance to each we are sending the funds
-        permitTransferFromAndAddEscrow(tokenPriceAddress, _tokensSent, deadline,
+        permitTransferFromAndAddEscrow(
+            tokenPriceAddress,
+            _tokensSent,
+            deadline,
             v,
             r,
-            s);       
+            s
+        );
 
         IVoucherKernel(voucherKernel).fillOrder(
             _tokenIdSupply,
@@ -557,7 +603,6 @@ contract BosonRouter is
             msg.sender,
             TKNTKN
         );
-
     }
 
     function requestVoucherETHTKNWithPermit(
@@ -574,16 +619,17 @@ contract BosonRouter is
         require(price == msg.value, "IP"); //invalid price
         require(depositBu == _tokensDeposit, "ID"); // invalid deposit
 
-        address tokenDepositAddress =
-            IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                _tokenIdSupply
-            );
+        address tokenDepositAddress = IVoucherKernel(voucherKernel)
+            .getVoucherDepositToken(_tokenIdSupply);
 
-        permitTransferFromAndAddEscrow(tokenDepositAddress, _tokensDeposit,
+        permitTransferFromAndAddEscrow(
+            tokenDepositAddress,
+            _tokensDeposit,
             deadline,
             v,
             r,
-            s);
+            s
+        );
 
         IVoucherKernel(voucherKernel).fillOrder(
             _tokenIdSupply,
@@ -610,13 +656,17 @@ contract BosonRouter is
         require(price == _tokensPrice, "IP"); //invalid price
         require(depositBu == msg.value, "ID"); // invalid deposit
 
-        address tokenPriceAddress =
-            IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
+        address tokenPriceAddress = IVoucherKernel(voucherKernel)
+            .getVoucherPriceToken(_tokenIdSupply);
 
-        permitTransferFromAndAddEscrow(tokenPriceAddress, price, deadline,
+        permitTransferFromAndAddEscrow(
+            tokenPriceAddress,
+            price,
+            deadline,
             v,
             r,
-            s);
+            s
+        );
 
         IVoucherKernel(voucherKernel).fillOrder(
             _tokenIdSupply,
@@ -708,9 +758,9 @@ contract BosonRouter is
      * @notice Get the address of Token Registry contract
      * @return Address of Token Registrycontract
      */
-    function getTokenRegistryAddress() 
-        external 
-        view 
+    function getTokenRegistryAddress()
+        external
+        view
         override
         returns (address)
     {
@@ -739,7 +789,8 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s
     ) internal {
-        address tokenWrapper = ITokenRegistry(tokenRegistry).getTokenWrapperAddress(token);
+        address tokenWrapper = ITokenRegistry(tokenRegistry)
+            .getTokenWrapperAddress(token);
         require(tokenWrapper != address(0), "UNSUPPORTED_TOKEN");
 
         //The BosonToken contract conforms to this spec, so it will be callable this way
@@ -755,14 +806,13 @@ contract BosonRouter is
         );
     }
 
-
     /**
      * @notice Get the address gate contract that handles conditional commit of certain voucher set
      * @param _tokenIdSupply    ID of the supply token
      * @return Address of the gate contract or zero address if there is no conditional commit
      */
     function getVoucherSetToGateContract(uint256 _tokenIdSupply)
-            external
+        external
         view
         override
         returns (address)
