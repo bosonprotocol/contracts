@@ -33,7 +33,7 @@ task("contracts-verify", "Verify already deployed contracts. Bear in mind that a
 
 const config: HardhatUserConfig = {
 	solidity: {
-		version: "0.7.1",
+		version: "0.7.6",
 		settings: {
 			optimizer: {
 				enabled: true,
