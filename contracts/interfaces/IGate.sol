@@ -60,10 +60,10 @@ interface IGate {
         external;
 
     /**
-     * @notice Checks if user posesses the required quest NFT token for given voucher set
+     * @notice Checks if user possesses the required quest NFT token for given voucher set
      * @param _user user address
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
-     * @return true if user posesses quest NFT token, and the token is not deactivated
+     * @return true if user possesses quest NFT token, and the token is not deactivated
      */
     function check(address _user, uint256 _tokenIdSupply)
         external
