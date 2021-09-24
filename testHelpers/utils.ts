@@ -15,7 +15,7 @@ import {
   VoucherKernel__factory,
   Cashier__factory,
   BosonRouter__factory,
-  FundLimitsOracle__factory,
+  TokenRegistry__factory,
   MockERC20Permit__factory,
 } from '../typechain';
 
@@ -45,7 +45,7 @@ class Utils {
     VoucherKernel: VoucherKernel__factory | any;
     Cashier: Cashier__factory | any;
     BosonRouter: BosonRouter__factory | any;
-    FundLimitsOracle: FundLimitsOracle__factory | any;
+    TokenRegistry: TokenRegistry__factory | any;
     MockERC20Permit: MockERC20Permit__factory | any;
   };
   deadline: any;

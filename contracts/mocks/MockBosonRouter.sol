@@ -8,10 +8,11 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../interfaces/IVoucherKernel.sol";
 import "../interfaces/IERC20WithPermit.sol";
-import "../interfaces/IFundLimitsOracle.sol";
+import "../interfaces/ITokenRegistry.sol";
 import "../interfaces/IBosonRouter.sol";
 import "../interfaces/ICashier.sol";
 import "../interfaces/IGate.sol";
+import "../interfaces/ITokenWrapper.sol";
 import "../UsingHelpers.sol";
 
 /**
@@ -30,7 +31,7 @@ contract MockBosonRouter is
 
     address private cashierAddress;
     address private voucherKernel;
-    address private fundLimitsOracle;
+    address private tokenRegistry;
 
     mapping(uint256 => address) private voucherSetToGateContract;
 
@@ -61,45 +62,42 @@ contract MockBosonRouter is
     }
 
     /**
-     * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the FundLimitsOracle.
-     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the FundLimitsOracle (ETH).
+     * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the TokenRegistry.
+     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the TokenRegistry (ETH).
      */
     function notAboveETHLimit(uint256 value) internal view {
         require(
-            value <= IFundLimitsOracle(fundLimitsOracle).getETHLimit(),
+            value <= ITokenRegistry(tokenRegistry).getETHLimit(),
             "AL" // above limit
         );
     }
 
     /**
-     * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the FundLimitsOracle.
+     * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the TokenRegistry.
      * @param _tokenAddress the token address which, we are getting the limits for.
-     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the FundLimitsOracle (ETH).
+     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the TokenRegistry (ETH).
      */
     function notAboveTokenLimit(address _tokenAddress, uint256 value)
         internal
         view
     {
         require(
-            value <=
-                IFundLimitsOracle(fundLimitsOracle).getTokenLimit(
-                    _tokenAddress
-                ),
+            value <= ITokenRegistry(tokenRegistry).getTokenLimit(_tokenAddress),
             "AL" //above limit
         );
     }
 
     constructor(
         address _voucherKernel,
-        address _fundLimitsOracle,
+        address _tokenRegistry,
         address _cashierAddress
     ) {
         notZeroAddress(_voucherKernel);
-        notZeroAddress(_fundLimitsOracle);
+        notZeroAddress(_tokenRegistry);
         notZeroAddress(_cashierAddress);
 
         voucherKernel = _voucherKernel;
-        fundLimitsOracle = _fundLimitsOracle;
+        tokenRegistry = _tokenRegistry;
         cashierAddress = _cashierAddress;
     }
 
@@ -198,7 +196,8 @@ contract MockBosonRouter is
         require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        IERC20WithPermit(_tokenDepositAddress).permit(
+        _permit(
+            _tokenDepositAddress,
             msg.sender,
             address(this),
             _tokensSent,
@@ -279,7 +278,6 @@ contract MockBosonRouter is
         uint256 _nftTokenId
     ) external override {
         notZeroAddress(_gateAddress);
-        // should we check if gateAddress implements correct interface?
 
         uint256 tokenIdSupply =
             requestCreateOrderTKNTKNWithPermitInternal(
@@ -322,7 +320,8 @@ contract MockBosonRouter is
         require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        IERC20WithPermit(_tokenDepositAddress).permit(
+        _permit(
+            _tokenDepositAddress,
             msg.sender,
             address(this),
             _tokensSent,
@@ -455,7 +454,8 @@ contract MockBosonRouter is
                 _tokenIdSupply
             );
 
-        IERC20WithPermit(tokenPriceAddress).permit(
+        _permit(
+            tokenPriceAddress,
             msg.sender,
             address(this),
             price,
@@ -464,7 +464,9 @@ contract MockBosonRouter is
             rPrice,
             sPrice
         );
-        IERC20WithPermit(tokenDepositAddress).permit(
+
+        _permit(
+            tokenDepositAddress,
             msg.sender,
             address(this),
             depositBu,
@@ -531,7 +533,8 @@ contract MockBosonRouter is
 
         // If tokenPriceAddress && tokenPriceAddress are the same
         // practically it's not of importance to each we are sending the funds
-        IERC20WithPermit(tokenPriceAddress).permit(
+        _permit(
+            tokenPriceAddress,
             msg.sender,
             address(this),
             _tokensSent,
@@ -582,7 +585,9 @@ contract MockBosonRouter is
             IVoucherKernel(voucherKernel).getVoucherDepositToken(
                 _tokenIdSupply
             );
-        IERC20WithPermit(tokenDepositAddress).permit(
+
+        _permit(
+            tokenDepositAddress,
             msg.sender,
             address(this),
             _tokensDeposit,
@@ -634,7 +639,9 @@ contract MockBosonRouter is
 
         address tokenPriceAddress =
             IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
-        IERC20WithPermit(tokenPriceAddress).permit(
+
+        _permit(
+            tokenPriceAddress,
             msg.sender,
             address(this),
             price,
@@ -747,16 +754,55 @@ contract MockBosonRouter is
     }
 
     /**
-     * @notice Get the address of Fund Limits Oracle contract
-     * @return Address of Fund Limits Oracle contract
+     * @notice Get the address of Token Registry contract
+     * @return Address of Token Registrycontract
      */
-    function getFundLimitOracleAddress()
+    function getTokenRegistryAddress()
         external
         view
         override
         returns (address)
     {
-        return fundLimitsOracle;
+        return tokenRegistry;
+    }
+
+    /**
+     * @notice Call permit on either a token directly or on a token wrapper
+     * @param token Address of the token owner who is approving tokens to be transferred by spender
+     * @param owner Address of the token owner who is approving tokens to be transferred by spender
+     * @param owner Address of the token owner who is approving tokens to be transferred by spender
+     * @param spender Address of the party who is transferring tokens on owner's behalf
+     * @param value Number of tokens to be transferred
+     * @param deadline Time after which this permission to transfer is no longer valid
+     * @param v Part of the owner's signatue
+     * @param r Part of the owner's signatue
+     * @param s Part of the owner's signatue
+     */
+    function _permit(
+        address token,
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) internal {
+        address tokenWrapper =
+            ITokenRegistry(tokenRegistry).getTokenWrapperAddress(token);
+        require(tokenWrapper != address(0), "UNSUPPORTED_TOKEN");
+
+        //The BosonToken contract conforms to this spec, so it will be callable this way
+        //if it's address is mapped to itself in the TokenRegistry
+        ITokenWrapper(tokenWrapper).permit(
+            owner,
+            spender,
+            value,
+            deadline,
+            v,
+            r,
+            s
+        );
     }
 
     /**
