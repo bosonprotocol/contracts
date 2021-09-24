@@ -272,7 +272,7 @@ describe('Gate contract', async () => {
 
     it('Owner should be able to register voucher set id', async () => {
       expect(
-        await contractGate.registerVoucherSetID(
+        await contractGate.registerVoucherSetId(
           constants.VOUCHER_SET_ID,
           constants.NFT_TOKEN_ID
         )
@@ -282,7 +282,7 @@ describe('Gate contract', async () => {
     });
 
     it('One should be able to look up on which NFT depends voucher set', async () => {
-      await contractGate.registerVoucherSetID(
+      await contractGate.registerVoucherSetId(
         constants.VOUCHER_SET_ID,
         constants.NFT_TOKEN_ID
       );
@@ -292,7 +292,7 @@ describe('Gate contract', async () => {
     });
 
     it('check function works correctly', async () => {
-      await contractGate.registerVoucherSetID(
+      await contractGate.registerVoucherSetId(
         constants.VOUCHER_SET_ID,
         constants.NFT_TOKEN_ID
       );
@@ -344,7 +344,7 @@ describe('Gate contract', async () => {
       await expect(
         contractGate
           .connect(users.attacker.signer)
-          .registerVoucherSetID(
+          .registerVoucherSetId(
             constants.VOUCHER_SET_ID,
             constants.NFT_TOKEN_ID
           )
@@ -371,29 +371,29 @@ describe('Gate contract', async () => {
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
     });
 
-    it('[NEGATIVE][registerVoucherSetID] Should revert if executed by attacker', async () => {
+    it('[NEGATIVE][registerVoucherSetId] Should revert if executed by attacker', async () => {
       await expect(
         contractGate
           .connect(users.attacker.signer)
-          .registerVoucherSetID(
+          .registerVoucherSetId(
             constants.VOUCHER_SET_ID,
             constants.NFT_TOKEN_ID
           )
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
     });
 
-    it('[NEGATIVE][registerVoucherSetID] Should revert if nftTokenID id is zero', async () => {
+    it('[NEGATIVE][registerVoucherSetId] Should revert if nftTokenID id is zero', async () => {
       const nftTokenID = 0;
       await expect(
-        contractGate.registerVoucherSetID(constants.VOUCHER_SET_ID, nftTokenID)
+        contractGate.registerVoucherSetId(constants.VOUCHER_SET_ID, nftTokenID)
       ).to.be.revertedWith(revertReasons.TOKEN_ID_0_NOT_ALLOWED);
     });
 
-    it('[NEGATIVE][registerVoucherSetID] Should revert if constants.VOUCHER_SET_ID id is zero', async () => {
+    it('[NEGATIVE][registerVoucherSetId] Should revert if constants.VOUCHER_SET_ID id is zero', async () => {
       const voucherSetId = 0;
 
       await expect(
-        contractGate.registerVoucherSetID(voucherSetId, constants.NFT_TOKEN_ID)
+        contractGate.registerVoucherSetId(voucherSetId, constants.NFT_TOKEN_ID)
       ).to.be.revertedWith(revertReasons.INVALID_TOKEN_SUPPLY);
     });
 
@@ -472,7 +472,7 @@ describe('Gate contract', async () => {
           nftTokenID,
         } = await registerVoucherSetIdFromBosonProtocol(contractGate, 0);
 
-        await contractGate.registerVoucherSetID(tokenId, nftTokenID);
+        await contractGate.registerVoucherSetId(tokenId, nftTokenID);
 
         expect(await contractGate.check(users.buyer.address, tokenId)).to.be
           .true;
@@ -483,7 +483,7 @@ describe('Gate contract', async () => {
           .false;
       });
 
-      it('[NEGATIVE][registerVoucherSetID] Should revert if executed by attacker', async () => {
+      it('[NEGATIVE][registerVoucherSetId] Should revert if executed by attacker', async () => {
         const conditionalOrderNftTokenID = BN('2');
         const {
           tokenId,
@@ -496,7 +496,7 @@ describe('Gate contract', async () => {
         await expect(
           contractMockGate
             .connect(users.attacker.signer)
-            .registerVoucherSetID(tokenId, nftTokenID)
+            .registerVoucherSetId(tokenId, nftTokenID)
         ).to.be.revertedWith('UNAUTHORIZED_BR');
       });
     });
