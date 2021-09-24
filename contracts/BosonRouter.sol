@@ -125,179 +125,6 @@ contract BosonRouter is
         ICashier(cashierAddress).unpause();
     }
 
-    //// GENERAL HELPERS
-
-    /**
-     * @notice Transfer tokens to cashier and adds it to escrow
-     * @param _tokenAddress tokens that are transfered
-     * @param _amount       amount of tokens to transfer (expected permit)
-     */
-    function transferFromAndAddEscrow(address _tokenAddress, uint256 _amount)
-        internal
-    {
-        IERC20WithPermit(_tokenAddress).transferFrom(
-            msg.sender,
-            address(cashierAddress),
-            _amount
-        );
-
-        ICashier(cashierAddress).addEscrowTokensAmount(
-            _tokenAddress,
-            msg.sender,
-            _amount
-        );
-    }
-
-    /**
-     * @notice Calls token that implements permits, transfer tokens from there to cashier and adds it to escrow
-     * @param _tokenAddress tokens that are transfered
-     * @param _amount       amount of tokens to transfer
-     * @param _deadline Time after which this permission to transfer is no longer valid
-     * @param _v Part of the owner's signatue
-     * @param _r Part of the owner's signatue
-     * @param _s Part of the owner's signatue
-     */
-    function permitTransferFromAndAddEscrow(
-        address _tokenAddress,
-        uint256 _amount,
-        uint256 _deadline,
-        uint8 _v,
-        bytes32 _r,
-        bytes32 _s
-    ) internal {
-        _permit(
-            _tokenAddress,
-            msg.sender,
-            address(this),
-            _amount,
-            _deadline,
-            _v,
-            _r,
-            _s
-        );
-
-        transferFromAndAddEscrow(_tokenAddress, _amount);
-    }
-
-    //// REQUEST CREATE ORDER
-
-    /**
-     * @notice Checks if supplied values are within set limits
-        @param metadata metadata which is required for creation of a voucher
-        Metadata array is used as in some scenarios we need several more params, as we need to recover 
-        owner address in order to permit the contract to transfer funds on his behalf. 
-        Since the params get too many, we end up in situation that the stack is too deep.
-        
-        uint256 _validFrom = metadata[0];
-        uint256 _validTo = metadata[1];
-        uint256 _price = metadata[2];
-        uint256 _depositSe = metadata[3];
-        uint256 _depositBu = metadata[4];
-        uint256 _quantity = metadata[5];
-     * @param _tokenPriceAddress     token address which will hold the funds for the price of the voucher
-     * @param _tokenDepositAddress  token address which will hold the funds for the deposits of the voucher
-     * @param _tokensSent     tokens sent to cashier contract
-     */
-    function checkLimits(
-        uint256[] memory metadata,
-        address _tokenPriceAddress,
-        address _tokenDepositAddress,
-        uint256 _tokensSent
-    ) internal view returns (bool) {
-        // check price limits. If price address == 0 -> prices in ETH
-        if (_tokenPriceAddress == address(0)) {
-            notAboveETHLimit(metadata[2].mul(metadata[5]));
-        } else {
-            notAboveTokenLimit(
-                _tokenPriceAddress,
-                metadata[2].mul(metadata[5])
-            );
-        }
-
-        // check deposit limits. If deposit address == 0 -> deposits in ETH
-        if (_tokenDepositAddress == address(0)) {
-            notAboveETHLimit(metadata[3].mul(metadata[5]));
-            notAboveETHLimit(metadata[4].mul(metadata[5]));
-            require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
-        } else {
-            notAboveTokenLimit(
-                _tokenDepositAddress,
-                metadata[3].mul(metadata[5])
-            );
-            notAboveTokenLimit(
-                _tokenDepositAddress,
-                metadata[4].mul(metadata[5])
-            );
-            require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
-        }
-    }
-
-    /**
-     * @notice Internal helper that
-     * - creates Token Supply Id
-     * - creates payment method
-     * - adds escrow ammount
-     * - transfers tokens (if needed)
-        @param metadata metadata which is required for creation of a voucher
-        Metadata array is used as in some scenarios we need several more params, as we need to recover 
-        owner address in order to permit the contract to transfer funds on his behalf. 
-        Since the params get too many, we end up in situation that the stack is too deep.
-        
-        uint256 _validFrom = metadata[0];
-        uint256 _validTo = metadata[1];
-        uint256 _price = metadata[2];
-        uint256 _depositSe = metadata[3];
-        uint256 _depositBu = metadata[4];
-        uint256 _quantity = metadata[5];
-     * @param _paymentMethod  might be ETHETH, ETHTKN, TKNETH or TKNTKN
-     * @param _tokenPriceAddress     token address which will hold the funds for the price of the voucher
-     * @param _tokenDepositAddress  token address which will hold the funds for the deposits of the voucher
-     * @param _tokensSent     tokens sent to cashier contract
-     */
-    function requestCreateOrder(
-        uint256[] memory metadata,
-        uint8 _paymentMethod,
-        address _tokenPriceAddress,
-        address _tokenDepositAddress,
-        uint256 _tokensSent
-    ) internal returns (uint256) {
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
-            .createTokenSupplyID(
-                msg.sender,
-                metadata[0],
-                metadata[1],
-                metadata[2],
-                metadata[3],
-                metadata[4],
-                metadata[5]
-            );
-
-        IVoucherKernel(voucherKernel).createPaymentMethod(
-            tokenIdSupply,
-            _paymentMethod,
-            _tokenPriceAddress,
-            _tokenDepositAddress
-        );
-
-        //record funds in escrow ...
-        if (_tokenDepositAddress == address(0)) {
-            ICashier(cashierAddress).addEscrowAmount{value: msg.value}(
-                msg.sender
-            );
-        } else {
-            transferFromAndAddEscrow(_tokenDepositAddress, _tokensSent);
-        }
-
-        emit LogOrderCreated(
-            tokenIdSupply,
-            msg.sender,
-            metadata[5],
-            _paymentMethod
-        );
-
-        return tokenIdSupply;
-    }
-
     /**
      * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
         @param metadata metadata which is required for creation of a voucher
@@ -323,45 +150,7 @@ contract BosonRouter is
         requestCreateOrder(metadata, ETHETH, address(0), address(0), 0);
     }
 
-    function requestCreateOrderTKNTKNWithPermitInternal(
-        address _tokenPriceAddress,
-        address _tokenDepositAddress,
-        uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint256[] calldata metadata
-    ) internal whenNotPaused returns (uint256) {
-        notZeroAddress(_tokenPriceAddress);
-        notZeroAddress(_tokenDepositAddress);
-        checkLimits(
-            metadata,
-            _tokenPriceAddress,
-            _tokenDepositAddress,
-            _tokensSent
-        );
-
-        _permit(
-            _tokenDepositAddress,
-            msg.sender,
-            address(this),
-            _tokensSent,
-            deadline,
-            v,
-            r,
-            s
-        );
-
-        return
-            requestCreateOrder(
-                metadata,
-                TKNTKN,
-                _tokenPriceAddress,
-                _tokenDepositAddress,
-                _tokensSent
-            );
-    }
+    
 
     function requestCreateOrderTKNTKNWithPermit(
         address _tokenPriceAddress,
@@ -454,6 +243,46 @@ contract BosonRouter is
         );
     }
 
+    function requestCreateOrderTKNTKNWithPermitInternal(
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256[] calldata metadata
+    ) internal whenNotPaused returns (uint256) {
+        notZeroAddress(_tokenPriceAddress);
+        notZeroAddress(_tokenDepositAddress);
+        checkLimits(
+            metadata,
+            _tokenPriceAddress,
+            _tokenDepositAddress,
+            _tokensSent
+        );
+
+        _permit(
+            _tokenDepositAddress,
+            msg.sender,
+            address(this),
+            _tokensSent,
+            deadline,
+            v,
+            r,
+            s
+        );
+
+        return
+            requestCreateOrder(
+                metadata,
+                TKNTKN,
+                _tokenPriceAddress,
+                _tokenDepositAddress,
+                _tokensSent
+            );
+    }
+
     function requestCreateOrderTKNETH(
         address _tokenPriceAddress,
         uint256[] calldata metadata
@@ -463,8 +292,6 @@ contract BosonRouter is
 
         requestCreateOrder(metadata, TKNETH, _tokenPriceAddress, address(0), 0);
     }
-
-    //// REQUEST VOUCHER
 
     /**
      * @notice Consumer requests/buys a voucher by filling an order and receiving a Voucher Token in return
@@ -494,21 +321,6 @@ contract BosonRouter is
 
         //record funds in escrow ...
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
-    }
-
-    /**
-     * @notice check if _tokenIdSupply mapped to gate contract,
-     * if it does, deactivate (user,_tokenIdSupply) to prevent double spending
-     * @param _tokenIdSupply    ID of the supply token
-     */
-    function deactivateConditionalCommit(uint256 _tokenIdSupply) internal {
-        if (voucherSetToGateContract[_tokenIdSupply] != address(0)) {
-            IGate gateContract = IGate(
-                voucherSetToGateContract[_tokenIdSupply]
-            );
-            require(gateContract.check(msg.sender, _tokenIdSupply), "NE"); // not eligible
-            gateContract.deactivate(msg.sender, _tokenIdSupply);
-        }
     }
 
     function requestVoucherTKNTKNWithPermit(
@@ -603,6 +415,21 @@ contract BosonRouter is
             msg.sender,
             TKNTKN
         );
+    }
+
+    /**
+     * @notice check if _tokenIdSupply mapped to gate contract,
+     * if it does, deactivate (user,_tokenIdSupply) to prevent double spending
+     * @param _tokenIdSupply    ID of the supply token
+     */
+    function deactivateConditionalCommit(uint256 _tokenIdSupply) internal {
+        if (voucherSetToGateContract[_tokenIdSupply] != address(0)) {
+            IGate gateContract = IGate(
+                voucherSetToGateContract[_tokenIdSupply]
+            );
+            require(gateContract.check(msg.sender, _tokenIdSupply), "NE"); // not eligible
+            gateContract.deactivate(msg.sender, _tokenIdSupply);
+        }
     }
 
     function requestVoucherETHTKNWithPermit(
@@ -768,6 +595,20 @@ contract BosonRouter is
     }
 
     /**
+     * @notice Get the address gate contract that handles conditional commit of certain voucher set
+     * @param _tokenIdSupply    ID of the supply token
+     * @return Address of the gate contract or zero address if there is no conditional commit
+     */
+    function getVoucherSetToGateContract(uint256 _tokenIdSupply)
+        external
+        view
+        override
+        returns (address)
+    {
+        return voucherSetToGateContract[_tokenIdSupply];
+    }
+
+    /**
      * @notice Call permit on either a token directly or on a token wrapper
      * @param token Address of the token owner who is approving tokens to be transferred by spender
      * @param owner Address of the token owner who is approving tokens to be transferred by spender
@@ -804,19 +645,174 @@ contract BosonRouter is
             r,
             s
         );
+    }    
+
+    /**
+     * @notice Transfer tokens to cashier and adds it to escrow
+     * @param _tokenAddress tokens that are transfered
+     * @param _amount       amount of tokens to transfer (expected permit)
+     */
+    function transferFromAndAddEscrow(address _tokenAddress, uint256 _amount)
+        internal
+    {
+        IERC20WithPermit(_tokenAddress).transferFrom(
+            msg.sender,
+            address(cashierAddress),
+            _amount
+        );
+
+        ICashier(cashierAddress).addEscrowTokensAmount(
+            _tokenAddress,
+            msg.sender,
+            _amount
+        );
     }
 
     /**
-     * @notice Get the address gate contract that handles conditional commit of certain voucher set
-     * @param _tokenIdSupply    ID of the supply token
-     * @return Address of the gate contract or zero address if there is no conditional commit
+     * @notice Calls token that implements permits, transfer tokens from there to cashier and adds it to escrow
+     * @param _tokenAddress tokens that are transfered
+     * @param _amount       amount of tokens to transfer
+     * @param _deadline Time after which this permission to transfer is no longer valid
+     * @param _v Part of the owner's signatue
+     * @param _r Part of the owner's signatue
+     * @param _s Part of the owner's signatue
      */
-    function getVoucherSetToGateContract(uint256 _tokenIdSupply)
-        external
-        view
-        override
-        returns (address)
-    {
-        return voucherSetToGateContract[_tokenIdSupply];
+    function permitTransferFromAndAddEscrow(
+        address _tokenAddress,
+        uint256 _amount,
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
+    ) internal {
+        _permit(
+            _tokenAddress,
+            msg.sender,
+            address(this),
+            _amount,
+            _deadline,
+            _v,
+            _r,
+            _s
+        );
+
+        transferFromAndAddEscrow(_tokenAddress, _amount);
+    }
+
+    /**
+     * @notice Checks if supplied values are within set limits
+        @param metadata metadata which is required for creation of a voucher
+        Metadata array is used as in some scenarios we need several more params, as we need to recover 
+        owner address in order to permit the contract to transfer funds on his behalf. 
+        Since the params get too many, we end up in situation that the stack is too deep.
+        
+        uint256 _validFrom = metadata[0];
+        uint256 _validTo = metadata[1];
+        uint256 _price = metadata[2];
+        uint256 _depositSe = metadata[3];
+        uint256 _depositBu = metadata[4];
+        uint256 _quantity = metadata[5];
+     * @param _tokenPriceAddress     token address which will hold the funds for the price of the voucher
+     * @param _tokenDepositAddress  token address which will hold the funds for the deposits of the voucher
+     * @param _tokensSent     tokens sent to cashier contract
+     */
+    function checkLimits(
+        uint256[] memory metadata,
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent
+    ) internal view returns (bool) {
+        // check price limits. If price address == 0 -> prices in ETH
+        if (_tokenPriceAddress == address(0)) {
+            notAboveETHLimit(metadata[2].mul(metadata[5]));
+        } else {
+            notAboveTokenLimit(
+                _tokenPriceAddress,
+                metadata[2].mul(metadata[5])
+            );
+        }
+
+        // check deposit limits. If deposit address == 0 -> deposits in ETH
+        if (_tokenDepositAddress == address(0)) {
+            notAboveETHLimit(metadata[3].mul(metadata[5]));
+            notAboveETHLimit(metadata[4].mul(metadata[5]));
+            require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
+        } else {
+            notAboveTokenLimit(
+                _tokenDepositAddress,
+                metadata[3].mul(metadata[5])
+            );
+            notAboveTokenLimit(
+                _tokenDepositAddress,
+                metadata[4].mul(metadata[5])
+            );
+            require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
+        }
+    }
+
+    /**
+     * @notice Internal helper that
+     * - creates Token Supply Id
+     * - creates payment method
+     * - adds escrow ammount
+     * - transfers tokens (if needed)
+        @param metadata metadata which is required for creation of a voucher
+        Metadata array is used as in some scenarios we need several more params, as we need to recover 
+        owner address in order to permit the contract to transfer funds on his behalf. 
+        Since the params get too many, we end up in situation that the stack is too deep.
+        
+        uint256 _validFrom = metadata[0];
+        uint256 _validTo = metadata[1];
+        uint256 _price = metadata[2];
+        uint256 _depositSe = metadata[3];
+        uint256 _depositBu = metadata[4];
+        uint256 _quantity = metadata[5];
+     * @param _paymentMethod  might be ETHETH, ETHTKN, TKNETH or TKNTKN
+     * @param _tokenPriceAddress     token address which will hold the funds for the price of the voucher
+     * @param _tokenDepositAddress  token address which will hold the funds for the deposits of the voucher
+     * @param _tokensSent     tokens sent to cashier contract
+     */
+    function requestCreateOrder(
+        uint256[] memory metadata,
+        uint8 _paymentMethod,
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent
+    ) internal returns (uint256) {
+        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
+            .createTokenSupplyID(
+                msg.sender,
+                metadata[0],
+                metadata[1],
+                metadata[2],
+                metadata[3],
+                metadata[4],
+                metadata[5]
+            );
+
+        IVoucherKernel(voucherKernel).createPaymentMethod(
+            tokenIdSupply,
+            _paymentMethod,
+            _tokenPriceAddress,
+            _tokenDepositAddress
+        );
+
+        //record funds in escrow ...
+        if (_tokenDepositAddress == address(0)) {
+            ICashier(cashierAddress).addEscrowAmount{value: msg.value}(
+                msg.sender
+            );
+        } else {
+            transferFromAndAddEscrow(_tokenDepositAddress, _tokensSent);
+        }
+
+        emit LogOrderCreated(
+            tokenIdSupply,
+            msg.sender,
+            metadata[5],
+            _paymentMethod
+        );
+
+        return tokenIdSupply;
     }
 }
