@@ -31,7 +31,7 @@ describe('ERC1155 non transferable functionality', async () => {
 
   async function deployContracts() {
     contractERC1155NonTransferable = (await ERC1155NonTransferable_Factory.deploy(
-      '/non/transferable/uri'
+      'https://token-cdn-domain/{id}.json'
     )) as Contract & ERC1155NonTransferable;
 
     await contractERC1155NonTransferable.deployed();
