@@ -129,6 +129,75 @@ contract BosonRouter is
     }
 
     /**
+     * @notice Internal helper thay
+     * - creates Token Supply Id
+     * - creates payment method
+     * - adds escrow ammount
+     * - transfers tokens (if needed)
+        @param metadata metadata which is required for creation of a voucher
+        Metadata array is used as in some scenarios we need several more params, as we need to recover 
+        owner address in order to permit the contract to transfer funds on his behalf. 
+        Since the params get too many, we end up in situation that the stack is too deep.
+        
+        uint256 _validFrom = metadata[0];
+        uint256 _validTo = metadata[1];
+        uint256 _price = metadata[2];
+        uint256 _depositSe = metadata[3];
+        uint256 _depositBu = metadata[4];
+        uint256 _quantity = metadata[5];
+     * @param _paymentMethod  might be ETHETH, ETHTKN, TKNETH or TKNTKN
+     * @param _tokenPrice     token address which will hold the funds for the price of the voucher
+     * @param _tokenDeposits  token address which will hold the funds for the deposits of the voucher
+     * @param _tokensSent     tokens sent to cashier contract
+     */
+
+    function requestCreateOrder(uint256[] memory metadata,
+        uint8 _paymentMethod,
+        address _tokenPrice,
+        address _tokenDeposits,
+        uint256 _tokensSent) internal returns (uint256) {
+        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
+            .createTokenSupplyID(
+                msg.sender,
+                metadata[0],
+                metadata[1],
+                metadata[2],
+                metadata[3],
+                metadata[4],
+                metadata[5]
+            );
+
+        IVoucherKernel(voucherKernel).createPaymentMethod(
+            tokenIdSupply,
+            _paymentMethod,
+            _tokenPrice,
+            _tokenDeposits
+        );
+
+        //record funds in escrow ...         
+        if (_tokenDeposits == address(0)) { 
+            ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
+        } else {
+            IERC20WithPermit(_tokenDeposits).transferFrom(
+            msg.sender,
+            address(cashierAddress),
+            _tokensSent
+        );
+
+            ICashier(cashierAddress).addEscrowTokensAmount(
+            _tokenDeposits,
+            msg.sender,
+            _tokensSent
+        );
+
+        }
+
+        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], _paymentMethod);
+        
+        return tokenIdSupply;
+        }
+
+    /**
      * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
         @param metadata metadata which is required for creation of a voucher
         Metadata array is used as in some scenarios we need several more params, as we need to recover 
@@ -153,30 +222,9 @@ contract BosonRouter is
         notAboveETHLimit(metadata[3].mul(metadata[5]));
         notAboveETHLimit(metadata[4].mul(metadata[5]));
         require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
-            .createTokenSupplyID(
-                msg.sender,
-                metadata[0],
-                metadata[1],
-                metadata[2],
-                metadata[3],
-                metadata[4],
-                metadata[5]
-            );
+        requestCreateOrder(metadata, ETHETH, address(0), address(0), 0);
 
-        IVoucherKernel(voucherKernel).createPaymentMethod(
-            tokenIdSupply,
-            ETHETH,
-            address(0),
-            address(0)
-        );
-
-        //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
-
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHETH);
     }
 
 
@@ -210,40 +258,7 @@ contract BosonRouter is
             s
         );
 
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
-            .createTokenSupplyID(
-                msg.sender,
-                metadata[0],
-                metadata[1],
-                metadata[2],
-                metadata[3],
-                metadata[4],
-                metadata[5]
-            );
-
-        IVoucherKernel(voucherKernel).createPaymentMethod(
-            tokenIdSupply,
-            TKNTKN,
-            _tokenPriceAddress,
-            _tokenDepositAddress
-        );
-
-        IERC20WithPermit(_tokenDepositAddress).transferFrom(
-            msg.sender,
-            address(cashierAddress),
-            _tokensSent
-        );
-
-        //record funds in escrowTokens ...
-        ICashier(cashierAddress).addEscrowTokensAmount(
-            _tokenDepositAddress,
-            msg.sender,
-            _tokensSent
-        );
-
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNTKN);
-
-        return tokenIdSupply;
+        return requestCreateOrder(metadata, TKNTKN, _tokenPriceAddress, _tokenDepositAddress, _tokensSent);
     }
 
     function requestCreateOrderTKNTKNWithPermit(
@@ -321,7 +336,6 @@ contract BosonRouter is
         notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
 
         require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         _permit(
             _tokenDepositAddress,
@@ -334,38 +348,7 @@ contract BosonRouter is
             s
         );
 
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
-            .createTokenSupplyID(
-                msg.sender,
-                metadata[0],
-                metadata[1],
-                metadata[2],
-                metadata[3],
-                metadata[4],
-                metadata[5]
-            );
-
-        IVoucherKernel(voucherKernel).createPaymentMethod(
-            tokenIdSupply,
-            ETHTKN,
-            address(0),
-            _tokenDepositAddress
-        );
-
-        IERC20WithPermit(_tokenDepositAddress).transferFrom(
-            msg.sender,
-            address(cashierAddress),
-            _tokensSent
-        );
-
-        //record funds in escrowTokens ...
-        ICashier(cashierAddress).addEscrowTokensAmount(
-            _tokenDepositAddress,
-            msg.sender,
-            _tokensSent
-        );
-
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHTKN);
+        requestCreateOrder(metadata, ETHTKN, address(0), _tokenDepositAddress, _tokensSent);
     }
 
     function requestCreateOrderTKNETH(
@@ -378,29 +361,8 @@ contract BosonRouter is
         notAboveETHLimit(metadata[4].mul(metadata[5]));
 
         require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
-            .createTokenSupplyID(
-                msg.sender,
-                metadata[0],
-                metadata[1],
-                metadata[2],
-                metadata[3],
-                metadata[4],
-                metadata[5]
-            );
-        IVoucherKernel(voucherKernel).createPaymentMethod(
-            tokenIdSupply,
-            TKNETH,
-            _tokenPriceAddress,
-            address(0)
-        );
-
-        //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
-
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNETH);
+        requestCreateOrder(metadata, TKNETH, _tokenPriceAddress, address(0), 0);
     }
 
     /**
