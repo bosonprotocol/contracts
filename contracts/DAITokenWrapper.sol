@@ -36,7 +36,7 @@ contract DAITokenWrapper is
     }
 
     /**
-     * @notice Conforms to ERC2612. Calls permit on token, which may or may not have a permit function that conforms to ERC2612
+     * @notice Conforms to EIP-2612. Calls permit on token, which may or may not have a permit function that conforms to EIP-2612
      * @param owner Address of the token owner who is approving tokens to be transferred by spender
      * @param spender Address of the party who is transferring tokens on owner's behalf
      * @param value Number of tokens to be transferred

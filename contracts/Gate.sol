@@ -20,6 +20,10 @@ contract Gate is IGate, Ownable, Pausable {
     IERC1155 private nonTransferableTokenContract;
     address private bosonRouterAddress;
   
+    /**
+     * @notice Construct and initialze the contract. Inizializes associated contract address. 
+     * @param _bosonRouterAddress address of the associated BosonRouter contract instance
+     */
     constructor(address _bosonRouterAddress) {
         require(_bosonRouterAddress != address(0), "0A"); //zero address
         bosonRouterAddress = _bosonRouterAddress;

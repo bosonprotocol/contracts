@@ -17,10 +17,8 @@ import "./UsingHelpers.sol";
 //preparing for ERC-1066, ERC-1444, EIP-838
 
 /**
- * @title VoucherKernel contract is controlling the core business logic
+ * @title VoucherKernel contract controls the core business logic
  * @dev Notes:
- *  - Since this is a reference app, it is not yet optimized.
- *      In the next phase, the bulk raw data will be packed into a single bytes32 field and/or pushed off-chain.
  *  - The usage of block.timestamp is honored since vouchers are defined currently with day-precision.
  *      See: https://ethereum.stackexchange.com/questions/5924/how-do-ethereum-mining-nodes-maintain-a-time-consistent-with-the-network/5931#5931
  */
@@ -145,18 +143,27 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         uint8 _type //0 .. payment, 1 .. deposits
     );
 
+    /**
+     * @notice Checks that only the BosonRouter contract can call a function
+    */
     modifier onlyFromRouter() {
         require(bosonRouterAddress != address(0), "UNSPECIFIED_BR"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         _;
     }
 
+    /**
+     * @notice Checks that only the Cashier contract can call a function
+    */
     modifier onlyFromCashier() {
         require(cashierAddress != address(0), "UNSPECIFIED_BR"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         require(msg.sender == cashierAddress, "UNAUTHORIZED_C"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         _;
     }
 
+    /**
+     * @notice Checks that only the owver of the specified voucher can call a function
+    */
     modifier onlyVoucherOwner(uint256 _tokenIdVoucher, address _sender) {
         //check authorization
         require(
@@ -166,6 +173,10 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         _;
     }
 
+    /**
+     * @notice Construct and initialze the contract. Inizializes associated contract addresses, the complain period, and the cancel or fault period
+     * @param _tokensContract address of the associated ERC1155ERC721 contract instance
+     */
     constructor(address _tokensContract) {
         tokensContract = _tokensContract;
 
@@ -526,7 +537,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     }
 
     /**
-     * @notice Issue a complain for a voucher
+     * @notice Issue a complaint for a voucher
      * @param _tokenIdVoucher   ID of the voucher
      * @param _msgSender   account called the fn from the BR contract
      */
