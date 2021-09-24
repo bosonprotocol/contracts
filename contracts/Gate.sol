@@ -46,7 +46,7 @@ contract Gate is IGate, Ownable, Pausable {
             _nonTransferableTokenContractAddress
         );
 
-        emit LogNonTransferableContractSet(_nonTransferableTokenContractAddress);
+        emit LogNonTransferableContractSet(_nonTransferableTokenContractAddress, owner());
     }
 
       /**
@@ -69,7 +69,7 @@ contract Gate is IGate, Ownable, Pausable {
     {
         bosonRouterAddress = _bosonRouterAddress;
 
-        emit LogBosonRouterSet(_bosonRouterAddress);
+        emit LogBosonRouterSet(_bosonRouterAddress, owner());
     }
 
     /**

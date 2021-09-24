@@ -250,7 +250,7 @@ describe('Gate contract', async () => {
         )
       )
         .to.emit(contractGate, eventNames.LOG_NON_TRANSFERABLE_CONTRACT)
-        .withArgs(contractERC1155NonTransferable.address);
+        .withArgs(contractERC1155NonTransferable.address, users.deployer.address);
     });
 
     it('One should be able get ERC1155 contract address', async () => {
@@ -263,14 +263,14 @@ describe('Gate contract', async () => {
       );
     });
 
-    it('Owner should be able set boson router address', async () => {
+    it.only('Owner should be able set boson router address', async () => {
       await deployBosonRouterContracts();
 
       expect(
         await contractGate.setBosonRouterAddress(contractBosonRouter.address)
       )
         .to.emit(contractGate, eventNames.LOG_BOSON_ROUTER_SET)
-        .withArgs(contractBosonRouter.address);
+        .withArgs(contractBosonRouter.address, users.deployer.address);
     });
 
     it('Owner should be able to register voucher set id', async () => {

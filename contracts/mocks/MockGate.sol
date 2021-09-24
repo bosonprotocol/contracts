@@ -52,7 +52,8 @@ contract MockGate is IGate, Ownable, Pausable {
         );
 
         emit LogNonTransferableContractSet(
-            _nonTransferableTokenContractAddress
+            _nonTransferableTokenContractAddress,
+            owner()
         );
     }
 
@@ -80,7 +81,7 @@ contract MockGate is IGate, Ownable, Pausable {
     {
         bosonRouterAddress = _bosonRouterAddress;
 
-        emit LogBosonRouterSet(_bosonRouterAddress);
+        emit LogBosonRouterSet(_bosonRouterAddress, owner());
     }
 
     /**
