@@ -778,10 +778,6 @@ contract BosonRouter is
      * @notice Get the address of Token Registry contract
      * @return Address of Token Registrycontract
      */
-<<<<<<< HEAD
-=======
-
->>>>>>> 96e09772ef0685e63ddd915c125e25e662f4eebf
     function getTokenRegistryAddress() 
         external 
         view 
