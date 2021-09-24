@@ -56,7 +56,7 @@ interface IGate {
      */
     function getNonTransferableTokenContract() external view returns (address);
 
-    function registerVoucherSetID(uint256 _tokenIdSupply, uint256 _nftTokenID)
+    function registerVoucherSetId(uint256 _tokenIdSupply, uint256 _nftTokenID)
         external;
 
     /**

@@ -298,7 +298,7 @@ contract MockBosonRouter is
         emit LogConditionalOrderCreated(tokenIdSupply, _gateAddress);
 
         if (_nftTokenID > 0) {
-            IGate(_gateAddress).registerVoucherSetID(
+            IGate(_gateAddress).registerVoucherSetId(
                 tokenIdSupply,
                 _nftTokenID
             );

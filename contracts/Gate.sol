@@ -77,7 +77,7 @@ contract Gate is IGate, Ownable, Pausable {
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
      * @param _nftTokenID an ID of a quest token
      */
-    function registerVoucherSetID(uint256 _tokenIdSupply, uint256 _nftTokenID)
+    function registerVoucherSetId(uint256 _tokenIdSupply, uint256 _nftTokenID)
         external
         override
         whenNotPaused
