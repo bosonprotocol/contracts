@@ -129,7 +129,48 @@ contract BosonRouter is
     }
 
     /**
-     * @notice Internal helper thay
+     * @notice Checks if supplied values are within set limits
+        @param metadata metadata which is required for creation of a voucher
+        Metadata array is used as in some scenarios we need several more params, as we need to recover 
+        owner address in order to permit the contract to transfer funds on his behalf. 
+        Since the params get too many, we end up in situation that the stack is too deep.
+        
+        uint256 _validFrom = metadata[0];
+        uint256 _validTo = metadata[1];
+        uint256 _price = metadata[2];
+        uint256 _depositSe = metadata[3];
+        uint256 _depositBu = metadata[4];
+        uint256 _quantity = metadata[5];
+     * @param _tokenPriceAddress     token address which will hold the funds for the price of the voucher
+     * @param _tokenDepositAddress  token address which will hold the funds for the deposits of the voucher
+     * @param _tokensSent     tokens sent to cashier contract
+     */
+    function checkLimits(uint256[] memory metadata, address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent) internal view returns (bool) 
+        {
+
+        if (_tokenPriceAddress == address(0)) {
+            notAboveETHLimit(metadata[2].mul(metadata[5]));
+        } else {
+            notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
+        }
+
+        if (_tokenDepositAddress == address(0)) {
+            notAboveETHLimit(metadata[3].mul(metadata[5]));
+            notAboveETHLimit(metadata[4].mul(metadata[5]));
+            require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
+
+        } else {
+            notAboveTokenLimit(_tokenDepositAddress, metadata[3].mul(metadata[5]));
+            notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
+            require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
+        }      
+        
+    }
+
+    /**
+     * @notice Internal helper that
      * - creates Token Supply Id
      * - creates payment method
      * - adds escrow ammount
@@ -146,15 +187,14 @@ contract BosonRouter is
         uint256 _depositBu = metadata[4];
         uint256 _quantity = metadata[5];
      * @param _paymentMethod  might be ETHETH, ETHTKN, TKNETH or TKNTKN
-     * @param _tokenPrice     token address which will hold the funds for the price of the voucher
-     * @param _tokenDeposits  token address which will hold the funds for the deposits of the voucher
+     * @param _tokenPriceAddress     token address which will hold the funds for the price of the voucher
+     * @param _tokenDepositAddress  token address which will hold the funds for the deposits of the voucher
      * @param _tokensSent     tokens sent to cashier contract
      */
-
     function requestCreateOrder(uint256[] memory metadata,
         uint8 _paymentMethod,
-        address _tokenPrice,
-        address _tokenDeposits,
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
         uint256 _tokensSent) internal returns (uint256) {
         uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
             .createTokenSupplyID(
@@ -170,22 +210,22 @@ contract BosonRouter is
         IVoucherKernel(voucherKernel).createPaymentMethod(
             tokenIdSupply,
             _paymentMethod,
-            _tokenPrice,
-            _tokenDeposits
+            _tokenPriceAddress,
+            _tokenDepositAddress
         );
 
         //record funds in escrow ...         
-        if (_tokenDeposits == address(0)) { 
+        if (_tokenDepositAddress == address(0)) { 
             ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
         } else {
-            IERC20WithPermit(_tokenDeposits).transferFrom(
+            IERC20WithPermit(_tokenDepositAddress).transferFrom(
             msg.sender,
             address(cashierAddress),
             _tokensSent
         );
 
             ICashier(cashierAddress).addEscrowTokensAmount(
-            _tokenDeposits,
+            _tokenDepositAddress,
             msg.sender,
             _tokensSent
         );
@@ -195,8 +235,9 @@ contract BosonRouter is
         emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], _paymentMethod);
         
         return tokenIdSupply;
-        }
+    }
 
+    
     /**
      * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
         @param metadata metadata which is required for creation of a voucher
@@ -218,11 +259,7 @@ contract BosonRouter is
         nonReentrant
         whenNotPaused
     {
-        notAboveETHLimit(metadata[2].mul(metadata[5]));
-        notAboveETHLimit(metadata[3].mul(metadata[5]));
-        notAboveETHLimit(metadata[4].mul(metadata[5]));
-        require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
-
+        checkLimits(metadata, address(0), address(0),0);
         requestCreateOrder(metadata, ETHETH, address(0), address(0), 0);
 
     }
@@ -239,13 +276,8 @@ contract BosonRouter is
         uint256[] calldata metadata
     ) internal whenNotPaused returns (uint256) {
         notZeroAddress(_tokenPriceAddress);
-        notZeroAddress(_tokenDepositAddress);
-        notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
-        notAboveTokenLimit(_tokenDepositAddress, metadata[3].mul(metadata[5]));
-        notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
-
-        require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        notZeroAddress(_tokenDepositAddress);     
+        checkLimits(metadata, _tokenPriceAddress, _tokenDepositAddress, _tokensSent);
 
         _permit(
             _tokenDepositAddress,
@@ -330,13 +362,9 @@ contract BosonRouter is
         bytes32 s,
         uint256[] calldata metadata
     ) external override whenNotPaused {
-        notZeroAddress(_tokenDepositAddress);
-        notAboveETHLimit(metadata[2].mul(metadata[5]));
-        notAboveTokenLimit(_tokenDepositAddress, metadata[3].mul(metadata[5]));
-        notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
-
-        require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
-
+        notZeroAddress(_tokenDepositAddress);       
+        checkLimits(metadata, address(0), _tokenDepositAddress, _tokensSent);
+             
         _permit(
             _tokenDepositAddress,
             msg.sender,
@@ -355,14 +383,10 @@ contract BosonRouter is
         address _tokenPriceAddress,
         uint256[] calldata metadata
     ) external payable override nonReentrant whenNotPaused {
-        notZeroAddress(_tokenPriceAddress);
-        notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
-        notAboveETHLimit(metadata[3].mul(metadata[5]));
-        notAboveETHLimit(metadata[4].mul(metadata[5]));
+       notZeroAddress(_tokenPriceAddress);       
+       checkLimits(metadata, _tokenPriceAddress, address(0),0);
 
-        require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
-
-        requestCreateOrder(metadata, TKNETH, _tokenPriceAddress, address(0), 0);
+       requestCreateOrder(metadata, TKNETH, _tokenPriceAddress, address(0), 0);
     }
 
     /**
