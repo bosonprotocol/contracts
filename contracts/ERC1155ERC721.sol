@@ -4,6 +4,7 @@ pragma solidity 0.7.1;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/IERC1155.sol";
 import "./interfaces/IERC1155TokenReceiver.sol";
@@ -19,12 +20,11 @@ import "./interfaces/ICashier.sol";
  * @title Multi-token contract, implementing ERC-1155 and ERC-721 hybrid
  *  Inspired by: https://github.com/pixowl/sandbox-smart-contracts
  */
-contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
+contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
     //min security
-    address private owner; //contract owner
     address private voucherKernelAddress; //address of the VoucherKernel contract
     address private cashierAddress; //address of the Cashier contract
 
@@ -51,11 +51,6 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
     event LogVoucherKernelSet(address _newVoucherKernel, address _triggeredBy);
     event LogCashierSet(address _newCashier, address _triggeredBy);
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "UNAUTHORIZED_O"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
-        _;
-    }
-
     modifier onlyFromVoucherKernel() {
         require(
             voucherKernelAddress != address(0),
@@ -68,10 +63,6 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
     modifier notZeroAddress(address _address) {
         require(_address != address(0), "ZERO_ADDRESS");
         _;
-    }
-
-    constructor() {
-        owner = msg.sender;
     }
 
     /**
@@ -860,19 +851,6 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721 {
             _i /= 10;
         }
         return string(bstr);
-    }
-
-    /**
-     * @notice Get the contract owner
-     * @return Address of the owner
-     */
-    function getOwner() 
-        external 
-        view 
-        override
-        returns (address)
-    {
-        return owner;
     }
 
     /**
