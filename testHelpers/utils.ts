@@ -251,7 +251,7 @@ class Utils {
     sellerDeposit: number | string,
     qty: number | string,
     gateContract: Account,
-    nftTokenID: number | string | null
+    nftTokenId: number | string | null
   ): Promise<ContractTransaction> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
@@ -292,7 +292,7 @@ class Utils {
         qty,
       ],
       gateContract.address,
-      nftTokenID || '0',
+      nftTokenId || '0',
       {
         from: seller.address,
       }

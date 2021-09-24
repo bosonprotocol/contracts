@@ -636,7 +636,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
         tokenSupplyKey = eventArgs._tokenIdSupply;
 
-        await contractGate.registerVoucherSetID(
+        await contractGate.registerVoucherSetId(
           tokenSupplyKey,
           constants.NFT_TOKEN_ID
         );
@@ -946,7 +946,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
         tokenSupplyKey = eventArgs._tokenIdSupply;
 
-        await contractGate.registerVoucherSetID(
+        await contractGate.registerVoucherSetId(
           tokenSupplyKey,
           constants.NFT_TOKEN_ID
         );
