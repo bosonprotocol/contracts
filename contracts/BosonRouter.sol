@@ -128,6 +128,8 @@ contract BosonRouter is
         ICashier(cashierAddress).unpause();
     }
 
+    //// REQUEST CREATE ORDER
+
     /**
      * @notice Checks if supplied values are within set limits
         @param metadata metadata which is required for creation of a voucher
@@ -264,7 +266,6 @@ contract BosonRouter is
 
     }
 
-
     function requestCreateOrderTKNTKNWithPermitInternal(
         address _tokenPriceAddress,
         address _tokenDepositAddress,
@@ -389,6 +390,69 @@ contract BosonRouter is
        requestCreateOrder(metadata, TKNETH, _tokenPriceAddress, address(0), 0);
     }
 
+    //// REQUEST VOUCHER
+
+    function transferFromAndAddEscrow(address _tokenAddress, uint256 _amount, uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s) internal {
+        _permit(
+                _tokenAddress,
+                msg.sender,
+                address(this),
+                _amount,
+                _deadline,
+                _v,
+                _r,
+                _s
+        );
+        
+        
+        IERC20WithPermit(_tokenAddress).transferFrom(
+            msg.sender,
+            address(cashierAddress),
+            _amount
+        );
+
+        ICashier(cashierAddress).addEscrowTokensAmount(
+            _tokenAddress,
+            msg.sender,
+            _amount
+        );
+    }
+
+
+
+    // function requestVoucherWithPermit(
+    //     uint8 _paymentMethod
+    //     uint256 _tokenIdSupply,
+    //     address _issuer,
+    //     uint256 _tokensSent,
+    //     uint256 deadline,
+    //     uint8 vPrice,
+    //     bytes32 rPrice,
+    //     bytes32 sPrice, // tokenPrice
+    //     uint8 vDeposit,
+    //     bytes32 rDeposit,
+    //     bytes32 sDeposit // tokenDeposits
+    // ) internal {
+
+        
+    //     address tokenPriceAddress = rPrice == 0 ? address(0) : IVoucherKernel(voucherKernel)
+    //         .getVoucherPriceToken(_tokenIdSupply);
+    //     address tokenDepositAddress = rDeposit == 0 ? address(0) :IVoucherKernel(voucherKernel)
+    //         .getVoucherDepositToken(_tokenIdSupply);
+
+    //     if (tokenPriceAddress != address(0)){
+    //         transferFromAddEscrow(tokenPriceAddress, price);
+    //     }
+
+    //     if (tokenDepositAddress != address(0)){
+    //         transferFromAddEscrow(tokenDepositAddress, depositBu);
+    //     }
+
+    // }
+
     /**
      * @notice Consumer requests/buys a voucher by filling an order and receiving a Voucher Token in return
      * @param _tokenIdSupply    ID of the supply token
@@ -460,28 +524,40 @@ contract BosonRouter is
         address tokenDepositAddress = IVoucherKernel(voucherKernel)
             .getVoucherDepositToken(_tokenIdSupply);
 
-        _permit(
-                tokenPriceAddress,
-                msg.sender,
-                address(this),
-                price,
+        transferFromAndAddEscrow(tokenPriceAddress, price,
                 deadline,
                 vPrice,
                 rPrice,
-                sPrice
-        );
+                sPrice);
 
-
-        _permit(
-            tokenDepositAddress,
-            msg.sender,
-            address(this),
-            depositBu,
+transferFromAndAddEscrow(tokenDepositAddress, depositBu,
             deadline,
             vDeposit,
             rDeposit,
-            sDeposit
-        );
+            sDeposit);
+
+        // _permit(
+        //         tokenPriceAddress,
+        //         msg.sender,
+        //         address(this),
+        //         price,
+        //         deadline,
+        //         vPrice,
+        //         rPrice,
+        //         sPrice
+        // );
+
+
+        // _permit(
+        //     tokenDepositAddress,
+        //     msg.sender,
+        //     address(this),
+        //     depositBu,
+        //     deadline,
+        //     vDeposit,
+        //     rDeposit,
+        //     sDeposit
+        // );
 
 
         IVoucherKernel(voucherKernel).fillOrder(
@@ -491,30 +567,30 @@ contract BosonRouter is
             TKNTKN
         );
 
-        IERC20WithPermit(tokenPriceAddress).transferFrom(
-            msg.sender,
-            address(cashierAddress),
-            price
-        );
-        IERC20WithPermit(tokenDepositAddress).transferFrom(
-            msg.sender,
-            address(cashierAddress),
-            depositBu
-        );
+        // IERC20WithPermit(tokenPriceAddress).transferFrom(
+        //     msg.sender,
+        //     address(cashierAddress),
+        //     price
+        // );
+        // IERC20WithPermit(tokenDepositAddress).transferFrom(
+        //     msg.sender,
+        //     address(cashierAddress),
+        //     depositBu
+        // );
 
         //record funds in escrowTokens for the Price token...
-        ICashier(cashierAddress).addEscrowTokensAmount(
-            tokenPriceAddress,
-            msg.sender,
-            price
-        );
+        // ICashier(cashierAddress).addEscrowTokensAmount(
+        //     tokenPriceAddress,
+        //     msg.sender,
+        //     price
+        // );
 
-        //record funds in escrowTokens for the Deposit token...
-        ICashier(cashierAddress).addEscrowTokensAmount(
-            tokenDepositAddress,
-            msg.sender,
-            depositBu
-        );
+        // //record funds in escrowTokens for the Deposit token...
+        // ICashier(cashierAddress).addEscrowTokensAmount(
+        //     tokenDepositAddress,
+        //     msg.sender,
+        //     depositBu
+        // );
     }
 
     function requestVoucherTKNTKNSameWithPermit(
@@ -543,16 +619,21 @@ contract BosonRouter is
 
         // If tokenPriceAddress && tokenPriceAddress are the same
         // practically it's not of importance to each we are sending the funds
-        _permit(
-            tokenPriceAddress,
-            msg.sender,
-            address(this),
-            _tokensSent,
-            deadline,
+        transferFromAndAddEscrow(tokenPriceAddress, _tokensSent, deadline,
             v,
             r,
-            s
-        );
+            s);
+        
+        // _permit(
+        //     tokenPriceAddress,
+        //     msg.sender,
+        //     address(this),
+        //     _tokensSent,
+        //     deadline,
+        //     v,
+        //     r,
+        //     s
+        // );
 
         IVoucherKernel(voucherKernel).fillOrder(
             _tokenIdSupply,
@@ -561,18 +642,18 @@ contract BosonRouter is
             TKNTKN
         );
 
-        IERC20WithPermit(tokenPriceAddress).transferFrom(
-            msg.sender,
-            address(cashierAddress),
-            _tokensSent
-        );
+        // IERC20WithPermit(tokenPriceAddress).transferFrom(
+        //     msg.sender,
+        //     address(cashierAddress),
+        //     _tokensSent
+        // );
 
-        //record funds in escrowTokens ...
-        ICashier(cashierAddress).addEscrowTokensAmount(
-            tokenPriceAddress,
-            msg.sender,
-            _tokensSent
-        );
+        // //record funds in escrowTokens ...
+        // ICashier(cashierAddress).addEscrowTokensAmount(
+        //     tokenPriceAddress,
+        //     msg.sender,
+        //     _tokensSent
+        // );
     }
 
     function requestVoucherETHTKNWithPermit(
@@ -596,16 +677,22 @@ contract BosonRouter is
                 _tokenIdSupply
             );
 
-        _permit(
-            tokenDepositAddress,
-            msg.sender,
-            address(this),
-            _tokensDeposit,
+        transferFromAndAddEscrow(tokenDepositAddress, _tokensDeposit,
             deadline,
             v,
             r,
-            s
-        );
+            s);
+
+        // _permit(
+        //     tokenDepositAddress,
+        //     msg.sender,
+        //     address(this),
+        //     _tokensDeposit,
+        //     deadline,
+        //     v,
+        //     r,
+        //     s
+        // );
 
         IVoucherKernel(voucherKernel).fillOrder(
             _tokenIdSupply,
@@ -614,18 +701,18 @@ contract BosonRouter is
             ETHTKN
         );
 
-        IERC20WithPermit(tokenDepositAddress).transferFrom(
-            msg.sender,
-            address(cashierAddress),
-            _tokensDeposit
-        );
+        // IERC20WithPermit(tokenDepositAddress).transferFrom(
+        //     msg.sender,
+        //     address(cashierAddress),
+        //     _tokensDeposit
+        // );
 
         //record funds in escrowTokens ...
-        ICashier(cashierAddress).addEscrowTokensAmount(
-            tokenDepositAddress,
-            msg.sender,
-            _tokensDeposit
-        );
+        // ICashier(cashierAddress).addEscrowTokensAmount(
+        //     tokenDepositAddress,
+        //     msg.sender,
+        //     _tokensDeposit
+        // );
 
         //record funds in escrow ...
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
@@ -650,16 +737,21 @@ contract BosonRouter is
         address tokenPriceAddress =
             IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
 
-        _permit(
-            tokenPriceAddress,
-            msg.sender,
-            address(this),
-            price,
-            deadline,
+        transferFromAndAddEscrow(tokenPriceAddress, price, deadline,
             v,
             r,
-            s
-        );
+            s);
+
+        // _permit(
+        //     tokenPriceAddress,
+        //     msg.sender,
+        //     address(this),
+        //     price,
+        //     deadline,
+        //     v,
+        //     r,
+        //     s
+        // );
 
         IVoucherKernel(voucherKernel).fillOrder(
             _tokenIdSupply,
@@ -668,18 +760,18 @@ contract BosonRouter is
             TKNETH
         );
 
-        IERC20WithPermit(tokenPriceAddress).transferFrom(
-            msg.sender,
-            address(cashierAddress),
-            price
-        );
+        // IERC20WithPermit(tokenPriceAddress).transferFrom(
+        //     msg.sender,
+        //     address(cashierAddress),
+        //     price
+        // );
 
         //record funds in escrowTokens ...
-        ICashier(cashierAddress).addEscrowTokensAmount(
-            tokenPriceAddress,
-            msg.sender,
-            price
-        );
+        // ICashier(cashierAddress).addEscrowTokensAmount(
+        //     tokenPriceAddress,
+        //     msg.sender,
+        //     price
+        // );
 
         //record funds in escrow ...
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
