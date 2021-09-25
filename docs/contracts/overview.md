@@ -13,12 +13,15 @@ are based on two NFT standards,
 ## Contracts description
 
 Main contracts:  
-* `BosonRouter`: user interface of Boson Protocol  
-* `Cashier`: escrow and funds management  
-* `ERC1155ERC721`: token factory  
-* `FundLimitsOracle`: restrictions on the allowed escrowed amounts  
-* `VoucherKernel`: main business logic  
-* `UsingHelpers`: common utilities  
+* `BosonRouter`: User interface of Boson Protocol  
+* `Cashier`: Escrow and funds management  
+* `ERC1155ERC721`: Token factory  
+* `TokenRegistry`: Restrictions on the allowed escrowed amounts and registry of token wrappers
+* `VoucherKernel`: Main business logic  
+* `UsingHelpers`: Common utilities
+* `DAITokenWrapper`: Provides a uniform interface for calling the `permit `function on the DAI token
+* `ERC1155NonTransferable`: Non-transferrable token, the possession of which allows a buyer to commit to redeem an item following a special quest or campaign.
+* `Gate`: Handles the interaction between Boson router and ERC1155NonTransferable
 
 ![Boson Protocol inheritance tree](../assets/bosonprotocol-inheritance.png)  
 A control graph of the contracts is 
@@ -30,8 +33,8 @@ two for security deposits:
 * The Seller's deposit  
 * The Buyer's deposit  
 
-Supported **currencies** are currently: ETH and $BOSON tokens.
-> Note: Functions dealing with funds have suffices such as ETHETH or ETHTKN to 
+Supported **currencies** are currently: ETH, $BOSON tokens and DAI.
+> Note: Functions dealing with funds have suffixes such as ETHETH or ETHTKN to 
 > denote the currencies used in that particular function. Two examples are given 
 > below.  
 
@@ -73,14 +76,28 @@ transaction independently of any Buyer action.
    the quantity of available things that all bear similar properties, we say 
    such an offer is a Voucher Set.  
 
+```solidity
+BosonRouter.requestCreateOrderETHETH()  
+```
+   
+   Alternatively, the Seller can make an offer with an associated gate contract and
+   non-transferrable NFT Id. In this case, the Seller is making the item(s) on offer
+   only available to Buyers who execut a conditional commit. The "condition" of
+   the commit is possession of a non-transferrable NFT with the given Id. A Buyer
+   can obtain the NFT by, for instance, completing a quest. The Seller might make items
+   obtained via conditional commit available for a discount as a reward to Buyers for
+   completing the quest. This option is only available with the TKNTKN payment type.
+
+```solidity
+BosonRouter.requestCreateOrderTKNTKNWithPermitConditional(()  
+```
+
 > Note: the contracts currently refer to this Voucher Set using a few different
 > terms such as offer, listing, supply. We are in the process of consolidating
 > these terms so for the sake of clarity, making an offer is equivalent to 
 > creating a Voucher Set which is in turn equivalent to minting an ERC-1155 NFT.
 
-```solidity
-BosonRouter.requestCreateOrderETHETH()  
-```
+
 
 2. The Buyer discovers the offer and decides to purchase a single Voucher. 
    In doing so, she commits to redeem that voucher in the future by putting the 
@@ -92,6 +109,21 @@ BosonRouter.requestCreateOrderETHETH()
   
 ```solidity
 BosonRouter.requestVoucherETHETH()  
+```
+
+   Alternatively, if the Buyer is in possession of a specific non-transferrable NFT
+   (specified by Seller when offer is made), she would be eligible for a special 
+   price or other offer when she commits to redeem the voucher. The Buyer could obtain
+   the NFT by, for instance, completing a quest. The protocol checks to see if the user
+   owns the NFT (and is therefore eligible for the special offer) at commitment time.
+   This option is ony available with the TKNTKN payment type.
+
+```solidity
+BosonRouter.requestVoucherTKNTKNWithPermit()  
+```
+
+```solidity
+BosonRouter.requestVoucherTKNTKNSameWithPermit()  
 ```
 
 3. The Buyer can then choose to `redeem` the voucher and exchange the payment 
