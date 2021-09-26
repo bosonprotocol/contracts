@@ -92,10 +92,7 @@ contract BosonRouter is
         view
     {
         require(
-            value <=
-                ITokenRegistry(tokenRegistry).getTokenLimit(
-                    _tokenAddress
-                ),
+            value <= ITokenRegistry(tokenRegistry).getTokenLimit(_tokenAddress),
             "AL" //above limit
         );
     }
@@ -154,7 +151,7 @@ contract BosonRouter is
      * Metadata array is used for consistency across the permutations of similar functions.
      * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
-     *   
+     *
      * uint256 _validFrom = metadata[0];
      * uint256 _validTo = metadata[1];
      * uint256 _price = metadata[2];
@@ -169,125 +166,11 @@ contract BosonRouter is
         nonReentrant
         whenNotPaused
     {
-        notAboveETHLimit(metadata[2].mul(metadata[5]));
-        notAboveETHLimit(metadata[3].mul(metadata[5]));
-        notAboveETHLimit(metadata[4].mul(metadata[5]));
-        require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
-            .createTokenSupplyID(
-                msg.sender,
-                metadata[0],
-                metadata[1],
-                metadata[2],
-                metadata[3],
-                metadata[4],
-                metadata[5]
-            );
-
-        IVoucherKernel(voucherKernel).createPaymentMethod(
-            tokenIdSupply,
-            ETHETH,
-            address(0),
-            address(0)
-        );
-
-        //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
-
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHETH);
+        checkLimits(metadata, address(0), address(0), 0);
+        requestCreateOrder(metadata, ETHETH, address(0), address(0), 0);
     }
 
-     /**
-     * @notice Internal function called by other TKNTKN requestCreateOrder functions to decrease code duplication. 
-     * Price and deposits are specified in tokens.
-     * @param _tokenPriceAddress address of the token to be used for the price
-     * @param _tokenDepositAddress address of the token to be used for the deposits
-     * @param _tokensSent total number of tokens sent. Must be equal to seller deposit * quantity
-     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
-     * @param v signature component used to verify the permit. See EIP-2612
-     * @param r signature component used to verify the permit. See EIP-2612
-     * @param s signature component used to verify the permit. See EIP-2612
-     * @param metadata metadata which is required for creation of a voucher set
-     * Metadata array is used for consistency across the permutations of similar functions.
-     * Some functions require other parameters, and the number of parameters causes stack too deep error.
-     * The use of the matadata array mitigates the stack too deep error.
-     *   
-     * uint256 _validFrom = metadata[0];
-     * uint256 _validTo = metadata[1];
-     * uint256 _price = metadata[2];
-     * uint256 _depositSe = metadata[3];
-     * uint256 _depositBu = metadata[4];
-     * uint256 _quantity = metadata[5];
-     */
-
-    function requestCreateOrderTKNTKNWithPermitInternal(
-        address _tokenPriceAddress,
-        address _tokenDepositAddress,
-        uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint256[] calldata metadata
-    ) internal whenNotPaused returns (uint256) {
-        notZeroAddress(_tokenPriceAddress);
-        notZeroAddress(_tokenDepositAddress);
-        notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
-        notAboveTokenLimit(_tokenDepositAddress, metadata[3].mul(metadata[5]));
-        notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
-
-        require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-
-        _permit(
-            _tokenDepositAddress,
-            msg.sender,
-            address(this),
-            _tokensSent,
-            deadline,
-            v,
-            r,
-            s
-        );
-
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
-            .createTokenSupplyID(
-                msg.sender,
-                metadata[0],
-                metadata[1],
-                metadata[2],
-                metadata[3],
-                metadata[4],
-                metadata[5]
-            );
-
-        IVoucherKernel(voucherKernel).createPaymentMethod(
-            tokenIdSupply,
-            TKNTKN,
-            _tokenPriceAddress,
-            _tokenDepositAddress
-        );
-
-        IERC20WithPermit(_tokenDepositAddress).transferFrom(
-            msg.sender,
-            address(cashierAddress),
-            _tokensSent
-        );
-
-        //record funds in escrowTokens ...
-        ICashier(cashierAddress).addEscrowTokensAmount(
-            _tokenDepositAddress,
-            msg.sender,
-            _tokensSent
-        );
-
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNTKN);
-
-        return tokenIdSupply;
-    }
-
+   
     /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is
      * also known as a voucher set. Price and deposits are specified in tokens.
@@ -319,7 +202,7 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s,
         uint256[] calldata metadata
-    ) external override  {
+    ) external override {
         requestCreateOrderTKNTKNWithPermitInternal(
             _tokenPriceAddress,
             _tokenDepositAddress,
@@ -330,7 +213,6 @@ contract BosonRouter is
             s,
             metadata
         );
-
     }
 
      /**
@@ -430,12 +312,7 @@ contract BosonRouter is
         uint256[] calldata metadata
     ) external override whenNotPaused {
         notZeroAddress(_tokenDepositAddress);
-        notAboveETHLimit(metadata[2].mul(metadata[5]));
-        notAboveTokenLimit(_tokenDepositAddress, metadata[3].mul(metadata[5]));
-        notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
-
-        require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
+        checkLimits(metadata, address(0), _tokenDepositAddress, _tokensSent);
 
         _permit(
             _tokenDepositAddress,
@@ -448,38 +325,13 @@ contract BosonRouter is
             s
         );
 
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
-            .createTokenSupplyID(
-                msg.sender,
-                metadata[0],
-                metadata[1],
-                metadata[2],
-                metadata[3],
-                metadata[4],
-                metadata[5]
-            );
-
-        IVoucherKernel(voucherKernel).createPaymentMethod(
-            tokenIdSupply,
+        requestCreateOrder(
+            metadata,
             ETHTKN,
             address(0),
-            _tokenDepositAddress
-        );
-
-        IERC20WithPermit(_tokenDepositAddress).transferFrom(
-            msg.sender,
-            address(cashierAddress),
-            _tokensSent
-        );
-
-        //record funds in escrowTokens ...
-        ICashier(cashierAddress).addEscrowTokensAmount(
             _tokenDepositAddress,
-            msg.sender,
             _tokensSent
         );
-
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHTKN);
     }
 
     /**
@@ -489,9 +341,9 @@ contract BosonRouter is
      * permit or transferFrom on the token at this time. The address of the price token is only recorded.
      * @param _tokenPriceAddress address of the token to be used for the deposits
      * @param metadata metadata which is required for creation of a voucher set
-     * Metadata array is used for consistency across the permutations of similar functions.
-     * Some functions require other parameters, and the number of parameters causes stack too deep error.
-     * The use of the matadata array mitigates the stack too deep error.
+     *  Metadata array is used for consistency across the permutations of similar functions.
+     *  Some functions require other parameters, and the number of parameters causes stack too deep error.
+     *  The use of the matadata array mitigates the stack too deep error.
      *   
      * uint256 _validFrom = metadata[0];
      * uint256 _validTo = metadata[1];
@@ -505,34 +357,9 @@ contract BosonRouter is
         uint256[] calldata metadata
     ) external payable override nonReentrant whenNotPaused {
         notZeroAddress(_tokenPriceAddress);
-        notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
-        notAboveETHLimit(metadata[3].mul(metadata[5]));
-        notAboveETHLimit(metadata[4].mul(metadata[5]));
+        checkLimits(metadata, _tokenPriceAddress, address(0), 0);
 
-        require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
-
-        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
-            .createTokenSupplyID(
-                msg.sender,
-                metadata[0],
-                metadata[1],
-                metadata[2],
-                metadata[3],
-                metadata[4],
-                metadata[5]
-            );
-        IVoucherKernel(voucherKernel).createPaymentMethod(
-            tokenIdSupply,
-            TKNETH,
-            _tokenPriceAddress,
-            address(0)
-        );
-
-        //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
-
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNETH);
+        requestCreateOrder(metadata, TKNETH, _tokenPriceAddress, address(0), 0);
     }
 
     /**
@@ -554,7 +381,6 @@ contract BosonRouter is
         (uint256 price, , uint256 depositBu) = IVoucherKernel(voucherKernel)
             .getOrderCosts(_tokenIdSupply);
         require(price.add(depositBu) == weiReceived, "IF"); //invalid funds
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         IVoucherKernel(voucherKernel).fillOrder(
             _tokenIdSupply,
@@ -566,7 +392,6 @@ contract BosonRouter is
         //record funds in escrow ...
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
-
    
     /**
      * @notice Buyer requests/commits to redeem a voucher and receives Voucher Token in return.
@@ -607,22 +432,17 @@ contract BosonRouter is
         address tokenDepositAddress = IVoucherKernel(voucherKernel)
             .getVoucherDepositToken(_tokenIdSupply);
 
-        _permit(
-                tokenPriceAddress,
-                msg.sender,
-                address(this),
-                price,
-                deadline,
-                vPrice,
-                rPrice,
-                sPrice
+        permitTransferFromAndAddEscrow(
+            tokenPriceAddress,
+            price,
+            deadline,
+            vPrice,
+            rPrice,
+            sPrice
         );
 
-
-        _permit(
+        permitTransferFromAndAddEscrow(
             tokenDepositAddress,
-            msg.sender,
-            address(this),
             depositBu,
             deadline,
             vDeposit,
@@ -630,37 +450,11 @@ contract BosonRouter is
             sDeposit
         );
 
-
         IVoucherKernel(voucherKernel).fillOrder(
             _tokenIdSupply,
             _issuer,
             msg.sender,
             TKNTKN
-        );
-
-        IERC20WithPermit(tokenPriceAddress).transferFrom(
-            msg.sender,
-            address(cashierAddress),
-            price
-        );
-        IERC20WithPermit(tokenDepositAddress).transferFrom(
-            msg.sender,
-            address(cashierAddress),
-            depositBu
-        );
-
-        //record funds in escrowTokens for the Price token...
-        ICashier(cashierAddress).addEscrowTokensAmount(
-            tokenPriceAddress,
-            msg.sender,
-            price
-        );
-
-        //record funds in escrowTokens for the Deposit token...
-        ICashier(cashierAddress).addEscrowTokensAmount(
-            tokenDepositAddress,
-            msg.sender,
-            depositBu
         );
     }
 
@@ -686,7 +480,7 @@ contract BosonRouter is
     ) external override nonReentrant whenNotPaused {
         // check if _tokenIdSupply mapped to gate contract
         // if yes, deactivate (user,_tokenIdSupply) to prevent double spending
-        deactivateConditionalCommit(_tokenIdSupply); 
+        deactivateConditionalCommit(_tokenIdSupply);
 
         (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
             .getBuyerOrderCosts(_tokenIdSupply);
@@ -701,10 +495,8 @@ contract BosonRouter is
 
         // If tokenPriceAddress && tokenPriceAddress are the same
         // practically it's not of importance to each we are sending the funds
-        _permit(
+        permitTransferFromAndAddEscrow(
             tokenPriceAddress,
-            msg.sender,
-            address(this),
             _tokensSent,
             deadline,
             v,
@@ -717,19 +509,6 @@ contract BosonRouter is
             _issuer,
             msg.sender,
             TKNTKN
-        );
-
-        IERC20WithPermit(tokenPriceAddress).transferFrom(
-            msg.sender,
-            address(cashierAddress),
-            _tokensSent
-        );
-
-        //record funds in escrowTokens ...
-        ICashier(cashierAddress).addEscrowTokensAmount(
-            tokenPriceAddress,
-            msg.sender,
-            _tokensSent
         );
     }
 
@@ -756,19 +535,13 @@ contract BosonRouter is
         (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
             .getBuyerOrderCosts(_tokenIdSupply);
         require(price == msg.value, "IP"); //invalid price
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         require(depositBu == _tokensDeposit, "ID"); // invalid deposit
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        address tokenDepositAddress =
-            IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                _tokenIdSupply
-            );
+        address tokenDepositAddress = IVoucherKernel(voucherKernel)
+            .getVoucherDepositToken(_tokenIdSupply);
 
-        _permit(
+        permitTransferFromAndAddEscrow(
             tokenDepositAddress,
-            msg.sender,
-            address(this),
             _tokensDeposit,
             deadline,
             v,
@@ -781,19 +554,6 @@ contract BosonRouter is
             _issuer,
             msg.sender,
             ETHTKN
-        );
-
-        IERC20WithPermit(tokenDepositAddress).transferFrom(
-            msg.sender,
-            address(cashierAddress),
-            _tokensDeposit
-        );
-
-        //record funds in escrowTokens ...
-        ICashier(cashierAddress).addEscrowTokensAmount(
-            tokenDepositAddress,
-            msg.sender,
-            _tokensDeposit
         );
 
         //record funds in escrow ...
@@ -823,17 +583,13 @@ contract BosonRouter is
         (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
             .getBuyerOrderCosts(_tokenIdSupply);
         require(price == _tokensPrice, "IP"); //invalid price
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         require(depositBu == msg.value, "ID"); // invalid deposit
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
-        address tokenPriceAddress =
-            IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
+        address tokenPriceAddress = IVoucherKernel(voucherKernel)
+            .getVoucherPriceToken(_tokenIdSupply);
 
-        _permit(
+        permitTransferFromAndAddEscrow(
             tokenPriceAddress,
-            msg.sender,
-            address(this),
             price,
             deadline,
             v,
@@ -846,19 +602,6 @@ contract BosonRouter is
             _issuer,
             msg.sender,
             TKNETH
-        );
-
-        IERC20WithPermit(tokenPriceAddress).transferFrom(
-            msg.sender,
-            address(cashierAddress),
-            price
-        );
-
-        //record funds in escrowTokens ...
-        ICashier(cashierAddress).addEscrowTokensAmount(
-            tokenPriceAddress,
-            msg.sender,
-            price
         );
 
         //record funds in escrow ...
@@ -945,13 +688,27 @@ contract BosonRouter is
      * @notice Get the address of Token Registry contract
      * @return Address of Token Registrycontract
      */
-    function getTokenRegistryAddress() 
-        external 
-        view 
+    function getTokenRegistryAddress()
+        external
+        view
         override
         returns (address)
     {
         return tokenRegistry;
+    }
+
+    /**
+     * @notice Get the address of the gate contract that handles conditional commit of certain voucher set
+     * @param _tokenIdSupply    ID of the supply token
+     * @return Address of the gate contract or zero address if there is no conditional commit
+     */
+    function getVoucherSetToGateContract(uint256 _tokenIdSupply)
+        external
+        view
+        override
+        returns (address)
+    {
+        return voucherSetToGateContract[_tokenIdSupply];
     }
 
     /**
@@ -976,7 +733,8 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s
     ) internal {
-        address tokenWrapper = ITokenRegistry(tokenRegistry).getTokenWrapperAddress(token);
+        address tokenWrapper = ITokenRegistry(tokenRegistry)
+            .getTokenWrapperAddress(token);
         require(tokenWrapper != address(0), "UNSUPPORTED_TOKEN");
 
         //The BosonToken contract conforms to this spec, so it will be callable this way
@@ -990,20 +748,237 @@ contract BosonRouter is
             r,
             s
         );
+    }    
+
+    /**
+     * @notice Transfer tokens to cashier and adds it to escrow
+     * @param _tokenAddress tokens that are transfered
+     * @param _amount       amount of tokens to transfer (expected permit)
+     */
+    function transferFromAndAddEscrow(address _tokenAddress, uint256 _amount)
+        internal
+    {
+        IERC20WithPermit(_tokenAddress).transferFrom(
+            msg.sender,
+            address(cashierAddress),
+            _amount
+        );
+
+        ICashier(cashierAddress).addEscrowTokensAmount(
+            _tokenAddress,
+            msg.sender,
+            _amount
+        );
     }
 
     /**
-     * @notice Get the address of the gate contract that handles conditional commit of certain voucher set
-     * @param _tokenIdSupply    ID of the supply token
-     * @return Address of the gate contract or zero address if there is no conditional commit
+     * @notice Calls token that implements permits, transfer tokens from there to cashier and adds it to escrow
+     * @param _tokenAddress tokens that are transfered
+     * @param _amount       amount of tokens to transfer
+     * @param _deadline Time after which this permission to transfer is no longer valid
+     * @param _v Part of the owner's signatue
+     * @param _r Part of the owner's signatue
+     * @param _s Part of the owner's signatue
      */
-    function getVoucherSetToGateContract(uint256 _tokenIdSupply)
-            external
-        view
-        override
-        returns (address)
-    {
-        return voucherSetToGateContract[_tokenIdSupply];
+    function permitTransferFromAndAddEscrow(
+        address _tokenAddress,
+        uint256 _amount,
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
+    ) internal {
+        _permit(
+            _tokenAddress,
+            msg.sender,
+            address(this),
+            _amount,
+            _deadline,
+            _v,
+            _r,
+            _s
+        );
+
+        transferFromAndAddEscrow(_tokenAddress, _amount);
+    }
+
+    /**
+     * @notice Checks if supplied values are within set limits
+     *  @param metadata metadata which is required for creation of a voucher
+     *  Metadata array is used as in some scenarios we need several more params, as we need to recover
+     *  owner address in order to permit the contract to transfer funds on his behalf.
+     *  Since the params get too many, we end up in situation that the stack is too deep.
+     *
+     *  uint256 _validFrom = metadata[0];
+     *  uint256 _validTo = metadata[1];
+     *  uint256 _price = metadata[2];
+     *  uint256 _depositSe = metadata[3];
+     *  uint256 _depositBu = metadata[4];
+     *  uint256 _quantity = metadata[5];
+     * @param _tokenPriceAddress     token address which will hold the funds for the price of the voucher
+     * @param _tokenDepositAddress  token address which will hold the funds for the deposits of the voucher
+     * @param _tokensSent     tokens sent to cashier contract
+     */
+    function checkLimits(
+        uint256[] memory metadata,
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent
+    ) internal view returns (bool) {
+        // check price limits. If price address == 0 -> prices in ETH
+        if (_tokenPriceAddress == address(0)) {
+            notAboveETHLimit(metadata[2].mul(metadata[5]));
+        } else {
+            notAboveTokenLimit(
+                _tokenPriceAddress,
+                metadata[2].mul(metadata[5])
+            );
+        }
+
+        // check deposit limits. If deposit address == 0 -> deposits in ETH
+        if (_tokenDepositAddress == address(0)) {
+            notAboveETHLimit(metadata[3].mul(metadata[5]));
+            notAboveETHLimit(metadata[4].mul(metadata[5]));
+            require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
+        } else {
+            notAboveTokenLimit(
+                _tokenDepositAddress,
+                metadata[3].mul(metadata[5])
+            );
+            notAboveTokenLimit(
+                _tokenDepositAddress,
+                metadata[4].mul(metadata[5])
+            );
+            require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
+        }
+    }
+
+    /**
+     * @notice Internal function called by other TKNTKN requestCreateOrder functions to decrease code duplication. 
+     * Price and deposits are specified in tokens.
+     * @param _tokenPriceAddress address of the token to be used for the price
+     * @param _tokenDepositAddress address of the token to be used for the deposits
+     * @param _tokensSent total number of tokens sent. Must be equal to seller deposit * quantity
+     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
+     * @param v signature component used to verify the permit. See EIP-2612
+     * @param r signature component used to verify the permit. See EIP-2612
+     * @param s signature component used to verify the permit. See EIP-2612
+     * @param metadata metadata which is required for creation of a voucher set
+     * Metadata array is used for consistency across the permutations of similar functions.
+     * Some functions require other parameters, and the number of parameters causes stack too deep error.
+     * The use of the matadata array mitigates the stack too deep error.
+     *
+     * uint256 _validFrom = metadata[0];
+     * uint256 _validTo = metadata[1];
+     * uint256 _price = metadata[2];
+     * uint256 _depositSe = metadata[3];
+     * uint256 _depositBu = metadata[4];
+     * uint256 _quantity = metadata[5];
+     */
+    function requestCreateOrderTKNTKNWithPermitInternal(
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256[] calldata metadata
+    ) internal whenNotPaused returns (uint256) {
+        notZeroAddress(_tokenPriceAddress);
+        notZeroAddress(_tokenDepositAddress);
+        checkLimits(
+            metadata,
+            _tokenPriceAddress,
+            _tokenDepositAddress,
+            _tokensSent
+        );
+
+        _permit(
+            _tokenDepositAddress,
+            msg.sender,
+            address(this),
+            _tokensSent,
+            deadline,
+            v,
+            r,
+            s
+        );
+
+        return
+            requestCreateOrder(
+                metadata,
+                TKNTKN,
+                _tokenPriceAddress,
+                _tokenDepositAddress,
+                _tokensSent
+            );
+    }
+
+    /**
+     * @notice Internal helper that
+     * - creates Token Supply Id
+     * - creates payment method
+     * - adds escrow ammount
+     * - transfers tokens (if needed)
+     * @param metadata metadata which is required for creation of a voucher
+     *  Metadata array is used as in some scenarios we need several more params, as we need to recover
+     *  owner address in order to permit the contract to transfer funds on his behalf.
+     *  Since the params get too many, we end up in situation that the stack is too deep.
+     *
+     *  uint256 _validFrom = metadata[0];
+     *  uint256 _validTo = metadata[1];
+     *  uint256 _price = metadata[2];
+     *  uint256 _depositSe = metadata[3];
+     *  uint256 _depositBu = metadata[4];
+     *  uint256 _quantity = metadata[5];
+     * @param _paymentMethod  might be ETHETH, ETHTKN, TKNETH or TKNTKN
+     * @param _tokenPriceAddress     token address which will hold the funds for the price of the voucher
+     * @param _tokenDepositAddress  token address which will hold the funds for the deposits of the voucher
+     * @param _tokensSent     tokens sent to cashier contract
+     */
+    function requestCreateOrder(
+        uint256[] memory metadata,
+        uint8 _paymentMethod,
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent
+    ) internal returns (uint256) {
+        uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
+            .createTokenSupplyID(
+                msg.sender,
+                metadata[0],
+                metadata[1],
+                metadata[2],
+                metadata[3],
+                metadata[4],
+                metadata[5]
+            );
+
+        IVoucherKernel(voucherKernel).createPaymentMethod(
+            tokenIdSupply,
+            _paymentMethod,
+            _tokenPriceAddress,
+            _tokenDepositAddress
+        );
+
+        //record funds in escrow ...
+        if (_tokenDepositAddress == address(0)) {
+            ICashier(cashierAddress).addEscrowAmount{value: msg.value}(
+                msg.sender
+            );
+        } else {
+            transferFromAndAddEscrow(_tokenDepositAddress, _tokensSent);
+        }
+
+        emit LogOrderCreated(
+            tokenIdSupply,
+            msg.sender,
+            metadata[5],
+            _paymentMethod
+        );
+
+        return tokenIdSupply;
     }
 
      /**
