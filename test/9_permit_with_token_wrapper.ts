@@ -18,7 +18,7 @@ import {
   MockERC20Permit,
   DAITokenWrapper,
 } from '../typechain';
-import IDAI from '../artifacts/contracts/DAITokenWrapper.sol/IDAI.json';
+import IDAI from '../artifacts/contracts/interfaces/IDAI.sol/IDAI.json';
 import IERC20WithPermit from '../artifacts/contracts/interfaces/IERC20WithPermit.sol/IERC20WithPermit.json';
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
