@@ -78,12 +78,13 @@ To compile the contracts:
 
 ---
 ### Run
-To deploy instances of the contracts for local development without prior knowledge to Hardhat, run the following command:
+To deploy instances of the contracts for local development without prior knowledge to Hardhat, first copy .env.example to .env and run the following command:
 ```shell
 ./go contracts:run
 ```
 
-This command starts up built-in Hardhat Network and migrates all contracts to the Hardhat Network instance.
+This command starts up built-in Hardhat Network and migrates all contracts to the Hardhat Network instance. The .env file has a hard-coded value for the BOSON_TOKEN address, which points to account #9 of the local hardhat network. This isn't an actual
+BOSON token address but just a valid address that will allow the deployment scripts to work. It's not necessary to deploy a BOSON token to run the unit tests locally (see Unit Tests section), as the unit tests deploy their own contract instances.
 
 If preferred by those who are familiar with Hardhat, the standard Hardhat commands can be used. Ganache can be started up manually by configuring a local network to be run against or using the `hardhat-ganache` plugin or you could start a Hardhat Network using `npx hardhat node`. For more information on how this can be achieved refer to the [official Hardhat documentation](https://hardhat.org/guides/ganache-tests.html#running-tests-with-ganache)
 
@@ -91,7 +92,7 @@ In a separate terminal, contracts can be deployed using
 ```shell
   npx hardhat --network [customNetworkName] deploy
 ```
-One of the contracts that gets deployed locally is a mock contract that represents the $BOSON token. The mock exists for unit testing purposes and so that those who want to develop against the protocol locally don't have to point to a testnet deployment of the $BOSON token.
+
 
 ---
 ### Test
@@ -133,12 +134,6 @@ To check the test coverage:
 
 `solidity-coverage` runs its own instance of Ganache internally, as well as
 instrumenting contracts before running.
-
-#### Interaction Tests
-
-To run the interaction tests, follow the instructions in the
-[interaction tests README.md](testUserInteractions/README.md).
-
 ---
 ### Code Linting & Formatting
 
@@ -200,7 +195,7 @@ The whitepaper is available through the project's [website](https://www.bosonpro
 
 We welcome contributions! Until now, Boson Protocol has been largely worked on by a small dedicated team. However, the ultimate goal is for all of the Boson Protocol repositories to be fully owned by the community and contributors. Issues, pull requests, suggestions, and any sort of involvement are more than welcome.
 
-If you have noticed a bug, [file an issue](/issues). If you have a large pull request, we recommend filing an issue first; small PRs are always welcome.
+If you have noticed a bug, please follow the [bug bounty procedure](https://github.com/bosonprotocol/community/blob/52725b04d1d3013dfc936d3d27ddc34019c6d02d/BugBountyProgram.md).
 
 Questions are also welcome, as long as they are tech related. We can use them to improve our documentation.
 
