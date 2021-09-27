@@ -38,33 +38,33 @@ contract DAITokenWrapper is
 
     /**
      * @notice Conforms to EIP-2612. Calls permit on token, which may or may not have a permit function that conforms to EIP-2612
-     * @param owner Address of the token owner who is approving tokens to be transferred by spender
-     * @param spender Address of the party who is transferring tokens on owner's behalf
-     * @param value Number of tokens to be transferred
-     * @param deadline Time after which this permission to transfer is no longer valid
-     * @param v Part of the owner's signatue
-     * @param r Part of the owner's signatue
-     * @param s Part of the owner's signatue
+     * @param _owner Address of the token owner who is approving tokens to be transferred by spender
+     * @param _spender Address of the party who is transferring tokens on owner's behalf
+     * @param _value Number of tokens to be transferred
+     * @param _deadline Time after which this permission to transfer is no longer valid
+     * @param _v Part of the owner's signatue
+     * @param _r Part of the owner's signatue
+     * @param _s Part of the owner's signatue
      */
     function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        address _owner,
+        address _spender,
+        uint256 _value,
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
     ) 
         external
         override
-        notZeroAddress(owner)
-        notZeroAddress(spender)
+        notZeroAddress(_owner)
+        notZeroAddress(_spender)
     {
-        require(deadline == 0 || block.timestamp <= deadline, "PERMIT_EXPIRED");
-        require(r != bytes32(0) && s != bytes32(0), "INVALID_SIGNATURE_COMPONENTS");
-        uint nonce =  IDAI(daiTokenAddress).nonces(owner);
-        IDAI(daiTokenAddress).permit(owner, spender, nonce, deadline, true, v, r, s);
-        emit LogPermitCalledOnToken(daiTokenAddress, owner, spender, 0);    
+        require(_deadline == 0 || block.timestamp <= _deadline, "PERMIT_EXPIRED");
+        require(_r != bytes32(0) && _s != bytes32(0), "INVALID_SIGNATURE_COMPONENTS");
+        uint nonce =  IDAI(daiTokenAddress).nonces(_owner);
+        IDAI(daiTokenAddress).permit(_owner, _spender, nonce, _deadline, true, _v, _r, _s);
+        emit LogPermitCalledOnToken(daiTokenAddress, _owner, _spender, 0);
     }
 
     /**
