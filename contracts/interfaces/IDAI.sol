@@ -9,21 +9,21 @@ interface IDAI {
     function name() external pure returns (string memory);
 
     function permit(
-        address holder,
-        address spender,
-        uint256 nonce,
-        uint256 expiry,
-        bool allowed,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        address _holder,
+        address _spender,
+        uint256 _nonce,
+        uint256 _expiry,
+        bool _allowed,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
     ) external;
 
     function transferFrom(
-        address from,
-        address to,
-        uint256 value
+        address _from,
+        address _to,
+        uint256 _value
     ) external returns (bool);
 
-    function nonces(address owner) external view returns (uint256);
+    function nonces(address _owner) external view returns (uint256);
 }
