@@ -73,25 +73,21 @@ export async function verifyContracts(env: string): Promise<void> {
   try {
     await hre.run('verify:verify', {
       address: contracts.gate,
-      constructorArguments: [
-        contracts.br
-      ],
+      constructorArguments: [contracts.br],
     });
   } catch (error) {
     logError('Gate', error.message);
   }
 
-    //verify ERC1155NonTransferable
-    try {
-      await hre.run('verify:verify', {
-        address: contracts.erc1155NonTransferable,
-        constructorArguments: [
-          "http://dummyuri"
-        ],
-      });
-    } catch (error) {
-      logError('ERC1155NonTransferable', error.message);
-    }
+  //verify ERC1155NonTransferable
+  try {
+    await hre.run('verify:verify', {
+      address: contracts.erc1155NonTransferable,
+      constructorArguments: ['http://dummyuri'],
+    });
+  } catch (error) {
+    logError('ERC1155NonTransferable', error.message);
+  }
 }
 
 function logError(contractName, msg) {
