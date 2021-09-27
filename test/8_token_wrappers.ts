@@ -9,7 +9,7 @@ import Utils from '../testHelpers/utils';
 import {toWei, getApprovalDigestDAI} from '../testHelpers/permitUtilsDAI';
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
-import IDAI from '../artifacts/contracts/DAITokenWrapper.sol/IDAI.json';
+import IDAI from '../artifacts/contracts/interfaces/IDAI.sol/IDAI.json';
 import DATTokenWrapper from '../artifacts/contracts/DAITokenWrapper.sol/DAITokenWrapper.json'; //only used by deployContract
 import {DAITokenWrapper} from '../typechain';
 
