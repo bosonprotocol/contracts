@@ -20,8 +20,8 @@ Main contracts:
 * `VoucherKernel`: Main business logic  
 * `UsingHelpers`: Common utilities
 * `DAITokenWrapper`: Provides a uniform interface for calling the `permit `function on the DAI token
-* `ERC1155NonTransferable`: Non-transferrable token, the possession of which allows a buyer to commit to redeem an item following a special quest or campaign.
-* `Gate`: Handles the interaction between Boson router and ERC1155NonTransferable
+* `ERC1155NonTransferable`: Non-transferrable token, the possession of which allows a buyer to commit to an item following a special quest or campaign.
+* `Gate`: Allows users of the protocol to gate access to a given VoucherSet by requiring that any address attempting to commit to an item in the given VoucherSet have a given ERC1155 before they access.
 
 ![Boson Protocol inheritance tree](../assets/bosonprotocol-inheritance.png)  
 A control graph of the contracts is 
@@ -33,7 +33,7 @@ two for security deposits:
 * The Seller's deposit  
 * The Buyer's deposit  
 
-Supported **currencies** are currently: ETH, $BOSON tokens and DAI.
+Supported **currencies** are currently: ETH, $BOSON token and DAI.
 > Note: Functions dealing with funds have suffixes such as ETHETH or ETHTKN to 
 > denote the currencies used in that particular function. Two examples are given 
 > below.  
@@ -82,7 +82,7 @@ BosonRouter.requestCreateOrderETHETH()
    
    Alternatively, the Seller can make an offer with an associated gate contract and
    non-transferrable NFT Id. In this case, the Seller is making the item(s) on offer
-   only available to Buyers who execut a conditional commit. The "condition" of
+   only available to Buyers who execute a conditional commit. The "condition" of
    the commit is possession of a non-transferrable NFT with the given Id. A Buyer
    can obtain the NFT by, for instance, completing a quest. The Seller might make items
    obtained via conditional commit available for a discount as a reward to Buyers for

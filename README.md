@@ -84,7 +84,7 @@ To deploy instances of the contracts for local development without prior knowled
 ```
 
 This command starts up built-in Hardhat Network and migrates all contracts to the Hardhat Network instance. The .env file has a hard-coded value for the BOSON_TOKEN address, which points to account #9 of the local hardhat network. This isn't an actual
-BOSON token address but just a valid address that will allow the deployment scripts to work. It's not necessary to deploy a BOSON token to run the uni tests locally (see Unit Tests section), as the unit tests deploy their own contract instances.
+BOSON token address but just a valid address that will allow the deployment scripts to work. It's not necessary to deploy a BOSON token to run the unit tests locally (see Unit Tests section), as the unit tests deploy their own contract instances.
 
 If preferred by those who are familiar with Hardhat, the standard Hardhat commands can be used. Ganache can be started up manually by configuring a local network to be run against or using the `hardhat-ganache` plugin or you could start a Hardhat Network using `npx hardhat node`. For more information on how this can be achieved refer to the [official Hardhat documentation](https://hardhat.org/guides/ganache-tests.html#running-tests-with-ganache)
 
@@ -196,8 +196,6 @@ The whitepaper is available through the project's [website](https://www.bosonpro
 We welcome contributions! Until now, Boson Protocol has been largely worked on by a small dedicated team. However, the ultimate goal is for all of the Boson Protocol repositories to be fully owned by the community and contributors. Issues, pull requests, suggestions, and any sort of involvement are more than welcome.
 
 If you have noticed a bug, please follow the [bug bounty procedure](https://github.com/bosonprotocol/community/blob/52725b04d1d3013dfc936d3d27ddc34019c6d02d/BugBountyProgram.md).
-
-If you do not want to be eligible for a bug bounty, you can [file an issue](https://github.com/bosonprotocol/contracts/issues).  If you have a large pull request, we recommend filing an issue first; small PRs are always welcome.
 
 Questions are also welcome, as long as they are tech related. We can use them to improve our documentation.
 
