@@ -87,7 +87,7 @@ contract MockGate is IGate, Ownable, Pausable {
     /**
      * @notice Registers connection between setID and tokenID
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
-     * @param _nftTokenID an ID of a quest token
+     * @param _nftTokenId an ID of a quest token
      */
     function registerVoucherSetId(uint256 _tokenIdSupply, uint256 _nftTokenId)
         external

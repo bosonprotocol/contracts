@@ -945,7 +945,7 @@ contract BosonRouter is
         uint256 _tokensSent
     ) internal returns (uint256) {
         uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
-            .createTokenSupplyID(
+            .createTokenSupplyId(
                 msg.sender,
                 metadata[0],
                 metadata[1],
