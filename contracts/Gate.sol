@@ -94,20 +94,20 @@ contract Gate is IGate, Ownable, Pausable {
     /**
      * @notice Registers connection between setID and tokenID
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
-     * @param _nftTokenID an ID of a quest token
+     * @param _nftTokenId an ID of a quest token
      */
-    function registerVoucherSetId(uint256 _tokenIdSupply, uint256 _nftTokenID)
+    function registerVoucherSetId(uint256 _tokenIdSupply, uint256 _nftTokenId)
         external
         override
         whenNotPaused
         onlyOwner
     {
-        require(_nftTokenID != 0, "TOKEN_ID_0_NOT_ALLOWED");
+        require(_nftTokenId != 0, "TOKEN_ID_0_NOT_ALLOWED");
         require(_tokenIdSupply != 0, "INVALID_TOKEN_SUPPLY");
 
-        voucherToToken[_tokenIdSupply] = _nftTokenID;
+        voucherToToken[_tokenIdSupply] = _nftTokenId;
 
-        emit LogVoucherSetRegistered(_tokenIdSupply, _nftTokenID);
+        emit LogVoucherSetRegistered(_tokenIdSupply, _nftTokenId);
     }
 
     /**

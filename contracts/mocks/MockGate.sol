@@ -89,18 +89,18 @@ contract MockGate is IGate, Ownable, Pausable {
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
      * @param _nftTokenID an ID of a quest token
      */
-    function registerVoucherSetId(uint256 _tokenIdSupply, uint256 _nftTokenID)
+    function registerVoucherSetId(uint256 _tokenIdSupply, uint256 _nftTokenId)
         external
         override
         whenNotPaused
         onlyFromRouter
     {
-        require(_nftTokenID != 0, "TOKEN_ID_0_NOT_ALLOWED");
+        require(_nftTokenId != 0, "TOKEN_ID_0_NOT_ALLOWED");
         require(_tokenIdSupply != 0, "INVALID_TOKEN_SUPPLY");
 
-        voucherToToken[_tokenIdSupply] = _nftTokenID;
+        voucherToToken[_tokenIdSupply] = _nftTokenId;
 
-        emit LogVoucherSetRegistered(_tokenIdSupply, _nftTokenID);
+        emit LogVoucherSetRegistered(_tokenIdSupply, _nftTokenId);
     }
 
     /**
