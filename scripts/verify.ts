@@ -17,6 +17,7 @@ export async function verifyContracts(env: string): Promise<void> {
     throw new Error(`Env: ${env} is not recognized!`);
   }
 
+
   //verify TokenRegistry
   try {
     await hre.run('verify:verify', {
@@ -87,6 +88,16 @@ export async function verifyContracts(env: string): Promise<void> {
     });
   } catch (error) {
     logError('ERC1155NonTransferable', error.message);
+  }
+
+  //DAITokenWrapper
+  try {
+    await hre.run('verify:verify', {
+      address: contracts.daiTokenWrapper,
+      constructorArguments: [contracts.daiToken],
+    });
+  } catch (error) {
+    logError('Gate', error.message);
   }
 }
 

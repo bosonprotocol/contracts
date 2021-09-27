@@ -190,6 +190,10 @@ class DeploymentExecutor {
       'ERC1155NonTransferable Contract Address: ',
       this.erc1155NonTransferable.address
     );
+    console.log(
+      'DAI Token Address Used: ',
+      this.dai_token
+    );
   }
 
   writeContracts() {
@@ -206,6 +210,7 @@ class DeploymentExecutor {
           daiTokenWrapper: this.daiTokenWrapper.address,
           gate: this.gate.address,
           erc1155NonTransferable: this.erc1155NonTransferable.address,
+          daiTokenUsed: this.dai_token
         },
         null,
         2
