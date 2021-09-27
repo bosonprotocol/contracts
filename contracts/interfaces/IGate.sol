@@ -13,7 +13,7 @@ interface IGate {
     );
     event LogVoucherSetRegistered(
         uint256 indexed _tokenIdSupply,
-        uint256 indexed _nftTokenID
+        uint256 indexed _nftTokenId
     );
     event LogUserVoucherDeactivated(
         address indexed _user,
@@ -47,17 +47,16 @@ interface IGate {
     /**
      * @notice Registers connection between setID and tokenID
      * @param _tokenIdSupply an ID of a supply token (ERC-1155)
-     * @param _nftTokenID an ID of a quest token
+     * @param _nftTokenId an ID of a quest token
      */
+    function registerVoucherSetId(uint256 _tokenIdSupply, uint256 _nftTokenId)
+        external;
 
     /**
      * @notice Gets the contract address, where gate contract checks if quest NFT token exists
      * @return Address of contract that hold non transferable NFTs (quest NFTs)
      */
     function getNonTransferableTokenContract() external view returns (address);
-
-    function registerVoucherSetId(uint256 _tokenIdSupply, uint256 _nftTokenID)
-        external;
 
     /**
      * @notice Checks if user possesses the required quest NFT token for given voucher set

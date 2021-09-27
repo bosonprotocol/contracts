@@ -25,7 +25,7 @@ interface IVoucherKernel {
      * @param _depositSe   Seller's deposit
      * @param _depositBu   Buyer's deposit
      */
-    function createTokenSupplyID(
+    function createTokenSupplyId(
         address _seller,
         uint256 _validFrom,
         uint256 _validTo,

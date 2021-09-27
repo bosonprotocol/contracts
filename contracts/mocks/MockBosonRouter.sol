@@ -154,7 +154,7 @@ contract MockBosonRouter is
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         uint256 tokenIdSupply =
-            IVoucherKernel(voucherKernel).createTokenSupplyID(
+            IVoucherKernel(voucherKernel).createTokenSupplyId(
                 msg.sender,
                 metadata[0],
                 metadata[1],
@@ -208,7 +208,7 @@ contract MockBosonRouter is
         );
 
         uint256 tokenIdSupply =
-            IVoucherKernel(voucherKernel).createTokenSupplyID(
+            IVoucherKernel(voucherKernel).createTokenSupplyId(
                 msg.sender,
                 metadata[0],
                 metadata[1],
@@ -332,7 +332,7 @@ contract MockBosonRouter is
         );
 
         uint256 tokenIdSupply =
-            IVoucherKernel(voucherKernel).createTokenSupplyID(
+            IVoucherKernel(voucherKernel).createTokenSupplyId(
                 msg.sender,
                 metadata[0],
                 metadata[1],
@@ -378,7 +378,7 @@ contract MockBosonRouter is
         //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         uint256 tokenIdSupply =
-            IVoucherKernel(voucherKernel).createTokenSupplyID(
+            IVoucherKernel(voucherKernel).createTokenSupplyId(
                 msg.sender,
                 metadata[0],
                 metadata[1],
