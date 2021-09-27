@@ -68,6 +68,26 @@ export async function verifyContracts(env: string): Promise<void> {
   } catch (error) {
     logError('BosonRouter', error.message);
   }
+
+  //verify Gate
+  try {
+    await hre.run('verify:verify', {
+      address: contracts.gate,
+      constructorArguments: [contracts.br],
+    });
+  } catch (error) {
+    logError('Gate', error.message);
+  }
+
+  //verify ERC1155NonTransferable
+  try {
+    await hre.run('verify:verify', {
+      address: contracts.erc1155NonTransferable,
+      constructorArguments: ['http://dummyuri'],
+    });
+  } catch (error) {
+    logError('ERC1155NonTransferable', error.message);
+  }
 }
 
 function logError(contractName, msg) {
