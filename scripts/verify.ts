@@ -17,7 +17,6 @@ export async function verifyContracts(env: string): Promise<void> {
     throw new Error(`Env: ${env} is not recognized!`);
   }
 
-
   //verify TokenRegistry
   try {
     await hre.run('verify:verify', {
