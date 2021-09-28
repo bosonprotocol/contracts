@@ -25,6 +25,12 @@ interface IBosonRouter {
         external
         payable;
 
+    function requestCreateOrderETHETHConditional(
+        uint256[] calldata metadata,
+        address _gateAddress,
+        uint256 _nftTokenId
+    ) external payable;
+
     function requestCreateOrderTKNTKNWithPermit(
         address _tokenPriceAddress,
         address _tokenDepositAddress,
@@ -59,9 +65,28 @@ interface IBosonRouter {
         uint256[] calldata metadata
     ) external;
 
+    function requestCreateOrderETHTKNWithPermitConditional(
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256[] calldata metadata,
+        address _gateAddress,
+        uint256 _nftTokenId
+    ) external;
+
     function requestCreateOrderTKNETH(
         address _tokenPriceAddress,
         uint256[] calldata metadata
+    ) external payable;
+
+    function requestCreateOrderTKNETHConditional(
+        address _tokenPriceAddress,
+        uint256[] calldata metadata,
+        address _gateAddress,
+        uint256 _nftTokenId
     ) external payable;
 
     /**
