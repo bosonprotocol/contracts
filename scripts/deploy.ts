@@ -119,6 +119,8 @@ class DeploymentExecutor {
       this.daiTokenWrapper.address
     );
 
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
     console.log(
       '$ TokenRegistry',
       event.event,
@@ -128,6 +130,15 @@ class DeploymentExecutor {
 
     tx = await this.gate.setNonTransferableTokenContract(
       this.erc1155NonTransferable.address
+    );
+
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log(
+      '$ Gate',
+      event.event,
+      'at:',
+      event.args._nonTransferableTokenContractAddress
     );
   }
 
