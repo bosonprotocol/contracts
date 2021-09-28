@@ -10,7 +10,6 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IVoucherKernel.sol";
 import "./interfaces/ICashier.sol";
-import "./interfaces/IBosonRouter.sol";
 import "./UsingHelpers.sol";
 
 /**

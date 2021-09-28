@@ -41,14 +41,14 @@ interface IERC1155ERC721 {
      */
     function mint(address to, uint256 tokenId) external returns (bool);
 
-    /**
-        @dev MUST emit when approval for a second party/operator address to manage all tokens for an owner address is enabled or disabled (absence of an event assumes disabled).        
-    */
-    event ApprovalForAll(
-        address indexed _owner,
-        address indexed _operator,
-        bool _approved
-    );
+    // /**
+    //     @dev MUST emit when approval for a second party/operator address to manage all tokens for an owner address is enabled or disabled (absence of an event assumes disabled).        
+    // */
+    // event ApprovalForAll(
+    //     address indexed _owner,
+    //     address indexed _operator,
+    //     bool _approved
+    // );
 
     /**
      * @notice Get the address of Voucher Kernel contract

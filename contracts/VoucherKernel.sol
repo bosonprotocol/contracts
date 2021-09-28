@@ -6,11 +6,11 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./interfaces/IERC1155.sol";
-import "./interfaces/IERC165.sol";
-import "./interfaces/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+
 import "./interfaces/IERC1155ERC721.sol";
-import "./interfaces/IERC721TokenReceiver.sol";
 import "./interfaces/IVoucherKernel.sol";
 import "./UsingHelpers.sol";
 
@@ -399,12 +399,12 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     ) internal returns (uint256) {
         if (_to.isContract()) {
             require(
-                ERC721TokenReceiver(_to).onERC721Received(
+                IERC721Receiver(_to).onERC721Received(
                     _issuer,
                     msg.sender,
                     _tokenIdSupply,
                     ""
-                ) == ERC721TokenReceiver(_to).onERC721Received.selector,
+                ) == IERC721Receiver(_to).onERC721Received.selector,
                 "UNSUPPORTED_ERC721_RECEIVED"
             ); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
             //bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))
