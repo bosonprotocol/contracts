@@ -5,14 +5,8 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-// import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-
-
-import "./interfaces/IERC1155.sol";
 import "./interfaces/IERC1155ERC721.sol";
 import "./interfaces/IVoucherKernel.sol";
 import "./interfaces/ICashier.sol";
@@ -23,7 +17,7 @@ import "./interfaces/ICashier.sol";
  * @title Multi-token contract, implementing ERC-1155 and ERC-721 hybrid
  *  Inspired by: https://github.com/pixowl/sandbox-smart-contracts
  */
-contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721, Ownable {
+contract ERC1155ERC721 is IERC1155ERC721, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
@@ -461,7 +455,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721, Ownable {
      */
     function setApprovalForAll(address _operator, bool _approve)
         external
-        override(IERC1155, IERC721)
+        override
     {
         require(msg.sender != _operator, "REDUNDANT_CALL"); //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicatableToCurrentState)
         operatorApprovals[msg.sender][_operator] = _approve;
@@ -478,7 +472,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721, Ownable {
     function isApprovedForAll(address _account, address _operator)
         public
         view
-        override(IERC1155, IERC721)
+        override
         returns (bool)
     {
         return operatorApprovals[_account][_operator];

@@ -4,7 +4,6 @@ pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
 import "./interfaces/IERC1155NonTransferable.sol";
 
 /**

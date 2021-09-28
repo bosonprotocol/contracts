@@ -10,7 +10,7 @@ interface IERC20WithPermit is IERC20 {
 
     function decimals() external pure returns (uint8);
 
-      // solhint-disable-next-line func-name-mixedcase
+    // solhint-disable-next-line func-name-mixedcase
     function DOMAIN_SEPARATOR() external view returns (bytes32);
 
     // solhint-disable-next-line func-name-mixedcase
