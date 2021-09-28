@@ -62,8 +62,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         _;
     }
 
-    modifier notZeroAddress(address tokenAddress) {
-        require(tokenAddress != address(0), "INVALID_TOKEN_ADDRESS");
+    modifier notZeroAddress(address _tokenAddress) {
+        require(_tokenAddress != address(0), "INVALID_TOKEN_ADDRESS");
         _;
     }
 

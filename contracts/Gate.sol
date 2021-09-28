@@ -39,8 +39,8 @@ contract Gate is IGate, Ownable, Pausable {
     /**
      * @notice  Checking if a non-zero address is provided, otherwise reverts.
      */
-    modifier notZeroAddress(address tokenAddress) {
-        require(tokenAddress != address(0), "0A"); //zero address
+    modifier notZeroAddress(address _tokenAddress) {
+        require(_tokenAddress != address(0), "0A"); //zero address
         _;
     }
 

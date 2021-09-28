@@ -18,8 +18,8 @@ contract TokenRegistry is Ownable, ITokenRegistry {
     event LogTokenLimitChanged(uint256 _newLimit, address indexed _triggeredBy);
     event LogTokenWrapperChanged(address indexed _newWrapperAddress, address indexed _triggeredBy);
 
-    modifier notZeroAddress(address tokenAddress) {
-        require(tokenAddress != address(0), "INVALID_TOKEN_ADDRESS");
+    modifier notZeroAddress(address _tokenAddress) {
+        require(_tokenAddress != address(0), "INVALID_TOKEN_ADDRESS");
         _;
     }
 
