@@ -553,17 +553,17 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721, Ownable {
     /**
      * @notice Function to mint tokens.
      * @dev ERC-721
-     * @param to The address that will receive the minted tokens.
-     * @param tokenId The token id to mint.
+     * @param _to The address that will receive the minted tokens.
+     * @param _tokenId The token id to mint.
      * @return A boolean that indicates if the operation was successful.
      */
-    function mint(address to, uint256 tokenId)
+    function mint(address _to, uint256 _tokenId)
         public
         override
         onlyFromVoucherKernel
         returns (bool)
     {
-        _mint(to, tokenId);
+        _mint(_to, _tokenId);
         return true;
     }
 

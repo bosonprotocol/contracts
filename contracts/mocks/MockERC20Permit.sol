@@ -8,20 +8,20 @@ contract MockERC20Permit is ERC20WithPermit, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
-    constructor(string memory name, string memory symbol)
-        ERC20WithPermit(name, symbol)
+    constructor(string memory _name, string memory _symbol)
+        ERC20WithPermit(_name, _symbol)
     {
         _setupRole(MINTER_ROLE, _msgSender());
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setupRole(PAUSER_ROLE, _msgSender());
     }
 
-    function mint(address to, uint256 amount) public {
+    function mint(address _to, uint256 _amount) public {
         require(
             hasRole(MINTER_ROLE, _msgSender()),
             "ERC20PresetMinterPauser: must have minter role to mint"
         );
-        _mint(to, amount);
+        _mint(_to, _amount);
     }
 
     function pause() public {
