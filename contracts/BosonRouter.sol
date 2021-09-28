@@ -269,17 +269,8 @@ contract BosonRouter is
             metadata
         );
 
-        voucherSetToGateContract[tokenIdSupply] = _gateAddress;
-
-        emit LogConditionalOrderCreated(tokenIdSupply, _gateAddress);
-
-        if (_nftTokenId > 0) {
-            IGate(_gateAddress).registerVoucherSetId(
-                tokenIdSupply,
-                _nftTokenId
-            );
-        }
-    }
+        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _nftTokenId);
+    }  
 
     /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is
@@ -979,6 +970,27 @@ contract BosonRouter is
         );
 
         return tokenIdSupply;
+    }
+
+     /**
+     * @notice finalizes creating of conditional order
+     * @param _tokenIdSupply    ID of the supply token
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT, 
+     * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
+     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher 
+     * in the voucher set created by this function.
+     */
+    function finalizeConditionalOrder(uint256 _tokenIdSupply, address _gateAddress, uint256 _nftTokenId) internal {
+        voucherSetToGateContract[_tokenIdSupply] = _gateAddress;
+
+        emit LogConditionalOrderCreated(_tokenIdSupply, _gateAddress);
+
+        if (_nftTokenId > 0) {
+            IGate(_gateAddress).registerVoucherSetId(
+                _tokenIdSupply,
+                _nftTokenId
+            );
+        }
     }
 
      /**
