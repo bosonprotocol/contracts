@@ -956,7 +956,7 @@ contract BosonRouter is
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent
-    ) internal view returns (bool) {
+    ) internal view {
         // check price limits. If price address == 0 -> prices in ETH
         if (_tokenPriceAddress == address(0)) {
             notAboveETHLimit(metadata[2].mul(metadata[5]));
