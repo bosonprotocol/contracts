@@ -14,6 +14,7 @@ import "./interfaces/ICashier.sol";
 import "./interfaces/IGate.sol";
 import "./interfaces/ITokenWrapper.sol";
 import "./UsingHelpers.sol";
+import "./utils/SafeERC20WithPermit.sol";
 
 /**
  * @title Contract for interacting with Boson Protocol from the user's perspective.
@@ -38,6 +39,7 @@ contract BosonRouter is
 {
     using Address for address payable;
     using SafeMath for uint256;
+    using SafeERC20WithPermit for IERC20WithPermit;
 
     address private cashierAddress;
     address private voucherKernel;
@@ -757,21 +759,18 @@ contract BosonRouter is
     function transferFromAndAddEscrow(address _tokenAddress, uint256 _amount)
         internal
     {
-        bool transfered = false;
-        transfered = IERC20WithPermit(_tokenAddress).transferFrom(
+        SafeERC20WithPermit.safeTransferFrom(
+            IERC20WithPermit(_tokenAddress),
             msg.sender,
             address(cashierAddress),
             _amount
         );
-        require(transfered, "TFF"); //Transfer from failed
 
-        if (transfered) {
-            ICashier(cashierAddress).addEscrowTokensAmount(
-                _tokenAddress,
-                msg.sender,
-                _amount
-            );
-        }
+        ICashier(cashierAddress).addEscrowTokensAmount(
+            _tokenAddress,
+            msg.sender,
+            _amount
+        );
     }
 
     /**
