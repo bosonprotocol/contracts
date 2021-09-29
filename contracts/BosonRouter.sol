@@ -14,7 +14,7 @@ import "./interfaces/ICashier.sol";
 import "./interfaces/IGate.sol";
 import "./interfaces/ITokenWrapper.sol";
 import "./UsingHelpers.sol";
-import "./utils/SafeERC20WithPermit.sol";
+import "./libs/SafeERC20WithPermit.sol";
 
 /**
  * @title Contract for interacting with Boson Protocol from the user's perspective.
