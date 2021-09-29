@@ -3,7 +3,6 @@
 pragma solidity 0.7.6;
 
 import "../interfaces/IERC20WithPermit.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 /**
@@ -16,7 +15,6 @@ import "@openzeppelin/contracts/utils/Address.sol";
  * which allows you to call the safe operations as `token.safeTransfer(...)`, etc.
  */
 library SafeERC20WithPermit {
-    using SafeMath for uint256;
     using Address for address;
 
     function safeTransferFrom(
