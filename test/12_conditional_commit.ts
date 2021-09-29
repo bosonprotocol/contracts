@@ -105,7 +105,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       'BDEP'
     )) as Contract & MockERC20Permit;
     contractERC1155NonTransferable = (await ERC1155NonTransferable_Factory.deploy(
-      '/non/transferable/uri'
+      'https://token-cdn-domain/{id}.json'
     )) as Contract & ERC1155NonTransferable;
     contractGate = (await Gate_Factory.deploy(
       contractBosonRouter.address
@@ -173,7 +173,269 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
   }
 
   describe('TOKEN SUPPLY CREATION WITH TOKEN CONDITIONAL COMMIT (Create Voucher Set)', () => {
+    const paymentMethods = {
+      ETHETH: 1,
+      ETHTKN: 2,
+      TKNETH: 3,
+      TKNTKN: 4,
+    };
     let timestamp;
+    describe('ETHETH', () => {
+      beforeEach(async () => {
+        await deployContracts();
+
+        timestamp = await Utils.getCurrTimestamp();
+        constants.PROMISE_VALID_FROM = timestamp;
+        constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
+      });
+
+      it('Should be able to create Voucher with gate address', async () => {
+        // calculate expected tokenSupplyID
+        const tokenIndex = constants.ONE;
+        const TYPE_NF_BIT = constants.ONE.shl(255);
+        const tokenSupplyKey = TYPE_NF_BIT.or(tokenIndex.shl(128));
+
+        // calculate expected promiseID
+        const promiseId = keccak256(
+          solidityPack(
+            ['address', 'uint256', 'uint256', 'uint256'],
+            [
+              users.seller.address,
+              constants.ZERO,
+              constants.PROMISE_VALID_FROM,
+              constants.PROMISE_VALID_TO,
+            ]
+          )
+        );
+
+        const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+          BN(constants.QTY_10)
+        );
+        expect(
+          await contractBosonRouter
+            .connect(users.seller.signer)
+            .requestCreateOrderETHETHConditional(
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              contractGate.address,
+              '0',
+              {value: txValue}
+            )
+        )
+          .to.emit(
+            contractBosonRouter,
+            eventNames.LOG_CONDITIONAL_ORDER_CREATED
+          )
+          .withArgs(tokenSupplyKey, contractGate.address)
+          .to.emit(contractBosonRouter, eventNames.LOG_ORDER_CREATED)
+          .withArgs(
+            tokenSupplyKey,
+            users.seller.address,
+            constants.QTY_10,
+            paymentMethods.ETHETH
+          )
+          .to.emit(contractVoucherKernel, eventNames.LOG_PROMISE_CREATED)
+          .withArgs(
+            promiseId,
+            constants.ONE,
+            users.seller.address,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.ZERO
+          )
+          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .withArgs(
+            contractVoucherKernel.address,
+            constants.ZERO_ADDRESS,
+            users.seller.address,
+            tokenSupplyKey,
+            constants.QTY_10
+          );
+
+        //Check VocherKernel State
+        const promiseData = await contractVoucherKernel.getPromiseData(
+          promiseId
+        );
+        assert.equal(
+          promiseData[constants.PROMISE_DATA_FIELDS.promiseId],
+          promiseId,
+          'Promise Id incorrect'
+        );
+
+        assert.equal(
+          promiseData[constants.PROMISE_DATA_FIELDS.nonce].toString(),
+          constants.ONE.toString(),
+          "Promise data field -> nonce is incorrect"
+        );
+        assert.equal(
+          promiseData[constants.PROMISE_DATA_FIELDS.validFrom].toString(),
+          constants.PROMISE_VALID_FROM.toString(),
+          'Promise data field -> validFrom is incorrect'
+        );
+
+        assert.equal(
+          promiseData[constants.PROMISE_DATA_FIELDS.validTo].toString(),
+          constants.PROMISE_VALID_TO.toString(),
+          'Promise data field -> validTo is incorrect'
+        );
+        assert.equal(
+          promiseData[constants.PROMISE_DATA_FIELDS.idx].toString(),
+          constants.ZERO.toString(),
+          'Promise data field -> idx is incorrect'
+        );
+
+        const promiseSeller = await contractVoucherKernel.getSupplyHolder(
+          tokenSupplyKey
+        );
+
+        assert.strictEqual(
+          promiseSeller,
+          users.seller.address,
+          'Seller incorrect'
+        );
+
+        const promiseOrderData = await contractVoucherKernel.getOrderCosts(
+          tokenSupplyKey
+        );
+        assert.isTrue(
+          promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
+            BN(constants.PROMISE_PRICE1)
+          ),
+          'Promise produt price mismatch'
+        );
+        assert.isTrue(
+          promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositSe].eq(
+            BN(constants.PROMISE_DEPOSITSE1)
+          ),
+          'Promise seller deposit mismatch'
+        );
+        assert.isTrue(
+          promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositBu].eq(
+            BN(constants.PROMISE_DEPOSITBU1)
+          ),
+          'Promise buyer deposit mismatch'
+        );
+
+        const tokenNonce = await contractVoucherKernel.getTokenNonce(
+          users.seller.address
+        );
+        assert.isTrue(
+          tokenNonce.eq(constants.ONE),
+          'Voucher kernel nonce mismatch'
+        );
+
+        assert.equal(
+          promiseId,
+          await contractVoucherKernel.getPromiseIdFromSupplyId(tokenSupplyKey),
+          "PromisId mismatch"
+        );
+
+        // Check ERC1155ERC721 state
+        const sellerERC1155ERC721Balance = (
+          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            users.seller.address,
+            tokenSupplyKey
+          )
+        )[0];
+
+        assert.isTrue(
+          sellerERC1155ERC721Balance.eq(constants.QTY_10),
+          'ERC1155ERC721 seller balance mismatch'
+        );
+      });
+
+      it('One should get the gate address that handles conditional commit', async () => {
+        const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+          BN(constants.QTY_10)
+        );
+        await contractBosonRouter
+          .connect(users.seller.signer)
+          .requestCreateOrderETHETHConditional(
+            [
+              constants.PROMISE_VALID_FROM,
+              constants.PROMISE_VALID_TO,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITSE1,
+              constants.PROMISE_DEPOSITBU1,
+              constants.QTY_10,
+            ],
+            contractGate.address,
+            '0',
+            {value: txValue}
+          );
+
+        // calculate expected tokenSupplyID
+        const tokenIndex = constants.ONE;
+        const TYPE_NF_BIT = constants.ONE.shl(255);
+        const tokenSupplyKey = TYPE_NF_BIT.or(tokenIndex.shl(128));
+
+        expect(
+          await contractBosonRouter
+            .connect(users.seller.signer)
+            .getVoucherSetToGateContract(tokenSupplyKey)
+        ).to.equal(contractGate.address);
+      });
+
+      it('Non conditional voucher set should have zero address gate contract', async () => {
+        const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+          BN(constants.QTY_10)
+        );
+        await contractBosonRouter
+          .connect(users.seller.signer)
+          .requestCreateOrderETHETH(
+            [
+              constants.PROMISE_VALID_FROM,
+              constants.PROMISE_VALID_TO,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITSE1,
+              constants.PROMISE_DEPOSITBU1,
+              constants.QTY_10,
+            ],
+            {value: txValue}
+          );
+
+        // calculate expected tokenSupplyID
+        const tokenIndex = constants.ONE;
+        const TYPE_NF_BIT = constants.ONE.shl(255);
+        const tokenSupplyKey = TYPE_NF_BIT.or(tokenIndex.shl(128));
+
+        expect(
+          await contractBosonRouter
+            .connect(users.seller.signer)
+            .getVoucherSetToGateContract(tokenSupplyKey)
+        ).to.equal(constants.ZERO_ADDRESS);
+      });
+
+      it('[NEGATIVE]Supplying invalid gate address should revert', async () => {
+        const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+          BN(constants.QTY_10)
+        );
+        await expect(
+          contractBosonRouter
+            .connect(users.seller.signer)
+            .requestCreateOrderETHETHConditional(
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              constants.ZERO_ADDRESS,
+              '0',
+              {value: txValue}
+            )
+        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+      });
+    });
+
     describe('TKNTKN', () => {
       async function generateInputs(
         account: Account,
@@ -229,29 +491,12 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           users.seller.address,
           tokensToMint
         );
-        await utils.mintTokens(
-          'contractBSNTokenPrice',
-          users.buyer.address,
-          tokensToMint
-        );
-        await utils.mintTokens(
-          'contractBSNTokenDeposit',
-          users.buyer.address,
-          tokensToMint
-        );
-
-        await contractERC1155NonTransferable.mint(
-          users.buyer.address,
-          constants.NFT_TOKEN_ID,
-          constants.ONE,
-          constants.ZERO_BYTES
-        );
       });
 
       it('Should be able to create Voucher with gate address', async () => {
         const {txValue, v, r, s} = await generateInputs(
           users.seller,
-          constants.seller_deposit,
+          constants.PROMISE_DEPOSITSE1,
           constants.QTY_10
         );
 
@@ -267,8 +512,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             [
               users.seller.address,
               constants.ZERO,
-              timestamp,
-              timestamp + constants.SECONDS_IN_DAY,
+              constants.PROMISE_VALID_FROM,
+              constants.PROMISE_VALID_TO,
             ]
           )
         );
@@ -285,11 +530,11 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               r,
               s,
               [
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.product_price,
-                constants.seller_deposit,
-                constants.buyer_deposit,
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
               contractGate.address,
@@ -308,8 +553,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             promiseId,
             constants.ONE,
             users.seller.address,
-            timestamp,
-            timestamp + constants.SECONDS_IN_DAY,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
             constants.ZERO
           )
           .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
@@ -322,7 +567,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           );
 
         //Check VocherKernel State
-        const promiseData = await contractVoucherKernel.getPromiseData(
+         const promiseData = await contractVoucherKernel.getPromiseData(
           promiseId
         );
         assert.equal(
@@ -334,20 +579,23 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         assert.equal(
           promiseData[constants.PROMISE_DATA_FIELDS.nonce].toString(),
           constants.ONE.toString(),
-          'Nonce is incorrect'
+          "Promise data field -> nonce is incorrect"
         );
         assert.equal(
           promiseData[constants.PROMISE_DATA_FIELDS.validFrom].toString(),
-          timestamp.toString()
+          constants.PROMISE_VALID_FROM.toString(),
+          'Promise data field -> validFrom is incorrect'
         );
 
         assert.equal(
           promiseData[constants.PROMISE_DATA_FIELDS.validTo].toString(),
-          (timestamp + constants.SECONDS_IN_DAY).toString()
+          constants.PROMISE_VALID_TO.toString(),
+          'Promise data field -> validTo is incorrect'
         );
         assert.equal(
           promiseData[constants.PROMISE_DATA_FIELDS.idx].toString(),
-          constants.ZERO.toString()
+          constants.ZERO.toString(),
+          'Promise data field -> idx is incorrect'
         );
 
         const promiseSeller = await contractVoucherKernel.getSupplyHolder(
@@ -365,28 +613,35 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         );
         assert.isTrue(
           promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
-            BN(constants.product_price)
-          )
+            BN(constants.PROMISE_PRICE1)
+          ),
+          'Promise produt price mismatch'
         );
         assert.isTrue(
           promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositSe].eq(
-            BN(constants.seller_deposit)
-          )
+            BN(constants.PROMISE_DEPOSITSE1)
+          ),
+          'Promise seller deposit mismatch'
         );
         assert.isTrue(
           promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositBu].eq(
-            BN(constants.buyer_deposit)
-          )
+            BN(constants.PROMISE_DEPOSITBU1)
+          ),
+          'Promise buyer deposit mismatch'
         );
 
         const tokenNonce = await contractVoucherKernel.getTokenNonce(
           users.seller.address
         );
-        assert.isTrue(tokenNonce.eq(constants.ONE));
+        assert.isTrue(
+          tokenNonce.eq(constants.ONE),
+          'Voucher kernel nonce mismatch'
+        );
 
         assert.equal(
           promiseId,
-          await contractVoucherKernel.getPromiseIdFromSupplyId(tokenSupplyKey)
+          await contractVoucherKernel.getPromiseIdFromSupplyId(tokenSupplyKey),
+          "PromisId mismatch"
         );
 
         // Check ERC1155ERC721 state
@@ -397,7 +652,10 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           )
         )[0];
 
-        assert.isTrue(sellerERC1155ERC721Balance.eq(constants.QTY_10));
+        assert.isTrue(
+          sellerERC1155ERC721Balance.eq(constants.QTY_10),
+          'ERC1155ERC721 seller balance mismatch'
+        );
       });
 
       it('One should get the gate address that handles conditional commit', async () => {
