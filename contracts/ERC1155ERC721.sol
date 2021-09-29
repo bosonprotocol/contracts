@@ -5,11 +5,8 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-import "./interfaces/IERC1155.sol";
-import "./interfaces/IERC1155TokenReceiver.sol";
-import "./interfaces/IERC721.sol";
-import "./interfaces/IERC721TokenReceiver.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./interfaces/IERC1155ERC721.sol";
 import "./interfaces/IVoucherKernel.sol";
 import "./interfaces/ICashier.sol";
@@ -20,14 +17,14 @@ import "./interfaces/ICashier.sol";
  * @title Multi-token contract, implementing ERC-1155 and ERC-721 hybrid
  *  Inspired by: https://github.com/pixowl/sandbox-smart-contracts
  */
-contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721, Ownable {
+contract ERC1155ERC721 is IERC1155ERC721, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
     //min security
     address private voucherKernelAddress; //address of the VoucherKernel contract
     address private cashierAddress; //address of the Cashier contract
-
+    
     //standard reqs
     //ERC-1155
     mapping(uint256 => mapping(address => uint256)) private balances; //balance of token ids of an account
@@ -154,12 +151,12 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721, Ownable {
 
         if (_to.isContract()) {
             require(
-                ERC721TokenReceiver(_to).onERC721Received(
+                IERC721Receiver(_to).onERC721Received(
                     _from,
                     _to,
                     _tokenId,
                     _data
-                ) == ERC721TokenReceiver(_to).onERC721Received.selector,
+                ) == IERC721Receiver(_to).onERC721Received.selector,
                 "UNSUPPORTED_ERC721_RECEIVED"
             ); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         }
@@ -342,13 +339,13 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721, Ownable {
     ) internal {
         if (_to.isContract()) {
             require(
-                ERC1155TokenReceiver(_to).onERC1155Received(
+                IERC1155Receiver(_to).onERC1155Received(
                     _operator,
                     _from,
                     _tokenId,
                     _value,
                     _data
-                ) == ERC1155TokenReceiver(_to).onERC1155Received.selector,
+                ) == IERC1155Receiver(_to).onERC1155Received.selector,
                 "NOT_SUPPORTED"
             ); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         }
@@ -374,13 +371,13 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721, Ownable {
     ) internal {
         if (_to.isContract()) {
             require(
-                ERC1155TokenReceiver(_to).onERC1155BatchReceived(
+                IERC1155Receiver(_to).onERC1155BatchReceived(
                     _operator,
                     _from,
                     _tokenIds,
                     _values,
                     _data
-                ) == ERC1155TokenReceiver(_to).onERC1155BatchReceived.selector,
+                ) == IERC1155Receiver(_to).onERC1155BatchReceived.selector,
                 "NOT_SUPPORTED"
             ); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
         }
@@ -458,7 +455,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721, Ownable {
      */
     function setApprovalForAll(address _operator, bool _approve)
         external
-        override(IERC1155, IERC721)
+        override
     {
         require(msg.sender != _operator, "REDUNDANT_CALL"); //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicatableToCurrentState)
         operatorApprovals[msg.sender][_operator] = _approve;
@@ -475,7 +472,7 @@ contract ERC1155ERC721 is IERC1155, IERC721, IERC1155ERC721, Ownable {
     function isApprovedForAll(address _account, address _operator)
         public
         view
-        override(IERC1155, IERC721)
+        override
         returns (bool)
     {
         return operatorApprovals[_account][_operator];
