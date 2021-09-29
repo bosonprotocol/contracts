@@ -485,6 +485,10 @@ contract BosonRouter is
         nonReentrant
         whenNotPaused
     {
+        // check if _tokenIdSupply mapped to gate contract
+        // if yes, deactivate (user,_tokenIdSupply) to prevent double spending
+        deactivateConditionalCommit(_tokenIdSupply);
+
         uint256 weiReceived = msg.value;
 
         //checks
@@ -642,6 +646,10 @@ contract BosonRouter is
         bytes32 _r,
         bytes32 _s
     ) external payable override nonReentrant whenNotPaused {
+        // check if _tokenIdSupply mapped to gate contract
+        // if yes, deactivate (user,_tokenIdSupply) to prevent double spending
+        deactivateConditionalCommit(_tokenIdSupply);
+
         (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
             .getBuyerOrderCosts(_tokenIdSupply);
         require(price == msg.value, "IP"); //invalid price
@@ -690,6 +698,10 @@ contract BosonRouter is
         bytes32 _r,
         bytes32 _s
     ) external payable override nonReentrant whenNotPaused {
+        // check if _tokenIdSupply mapped to gate contract
+        // if yes, deactivate (user,_tokenIdSupply) to prevent double spending
+        deactivateConditionalCommit(_tokenIdSupply);
+
         (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
             .getBuyerOrderCosts(_tokenIdSupply);
         require(price == _tokensPrice, "IP"); //invalid price
