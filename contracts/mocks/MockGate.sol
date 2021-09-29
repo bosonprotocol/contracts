@@ -4,9 +4,9 @@ pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
-import "../interfaces/IGate.sol";
-import "../interfaces/IERC1155.sol";
+import "./../interfaces/IGate.sol";
 
 /**
  * @title Mock Gate contract between Boson router and ERC1155NonTransferable

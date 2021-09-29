@@ -16,22 +16,22 @@ interface ITokenWrapper {
 
     /**
      * @notice Provides a way to make calls to the permit function of tokens in a uniform way
-     * @param owner Address of the token owner who is approving tokens to be transferred by spender
-     * @param spender Address of the party who is transferring tokens on owner's behalf
-     * @param value Number of tokens to be transferred
-     * @param deadline Time after which this permission to transfer is no longer valid
-     * @param v Part of the owner's signatue
-     * @param r Part of the owner's signatue
-     * @param s Part of the owner's signatue
+     * @param _owner Address of the token owner who is approving tokens to be transferred by spender
+     * @param _spender Address of the party who is transferring tokens on owner's behalf
+     * @param _value Number of tokens to be transferred
+     * @param _deadline Time after which this permission to transfer is no longer valid
+     * @param _v Part of the owner's signatue
+     * @param _r Part of the owner's signatue
+     * @param _s Part of the owner's signatue
      */
     function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        address _owner,
+        address _spender,
+        uint256 _value,
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
     ) external;
 
     /**
