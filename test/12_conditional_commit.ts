@@ -1,5 +1,5 @@
 import {ethers} from 'hardhat';
-import {Signer, ContractFactory, Contract, Wallet} from 'ethers';
+import {Signer, ContractFactory, Contract, Wallet, BigNumber} from 'ethers';
 import {assert, expect} from 'chai';
 import {ecsign} from 'ethereumjs-util';
 import constants from '../testHelpers/constants';
@@ -40,7 +40,13 @@ let Gate_Factory: ContractFactory;
 const eventNames = eventUtils.eventNames;
 let users;
 
+
 describe('Create Voucher sets and commit to vouchers with token conditional commit', () => {
+  function calculateTokenSupplyKey(tokenIndex: BigNumber) {
+    const TYPE_NF_BIT = constants.ONE.shl(255);
+    return TYPE_NF_BIT.or(tokenIndex.shl(128));
+  }
+
   before(async () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
@@ -179,35 +185,36 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       TKNETH: 3,
       TKNTKN: 4,
     };
-    let timestamp;
-    describe('ETHETH', () => {
+    let timestamp, 
+    tokenSupplyKey: BigNumber,
+    promiseId: string;
+    before(async () => {   
+      timestamp = await Utils.getCurrTimestamp();
+      constants.PROMISE_VALID_FROM = timestamp;
+      constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
+           
+      tokenSupplyKey = calculateTokenSupplyKey(constants.ONE);
+      promiseId = keccak256(
+        solidityPack(
+          ['address', 'uint256', 'uint256', 'uint256'],
+          [
+            users.seller.address,
+            constants.ZERO,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+          ]
+        )
+      );
+    }) 
+    
+
+    describe('ETHETH', () => {    
+
       beforeEach(async () => {
         await deployContracts();
-
-        timestamp = await Utils.getCurrTimestamp();
-        constants.PROMISE_VALID_FROM = timestamp;
-        constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
       });
 
       it('Should be able to create Voucher with gate address', async () => {
-        // calculate expected tokenSupplyID
-        const tokenIndex = constants.ONE;
-        const TYPE_NF_BIT = constants.ONE.shl(255);
-        const tokenSupplyKey = TYPE_NF_BIT.or(tokenIndex.shl(128));
-
-        // calculate expected promiseID
-        const promiseId = keccak256(
-          solidityPack(
-            ['address', 'uint256', 'uint256', 'uint256'],
-            [
-              users.seller.address,
-              constants.ZERO,
-              constants.PROMISE_VALID_FROM,
-              constants.PROMISE_VALID_TO,
-            ]
-          )
-        );
-
         const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
           BN(constants.QTY_10)
         );
@@ -370,11 +377,6 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             {value: txValue}
           );
 
-        // calculate expected tokenSupplyID
-        const tokenIndex = constants.ONE;
-        const TYPE_NF_BIT = constants.ONE.shl(255);
-        const tokenSupplyKey = TYPE_NF_BIT.or(tokenIndex.shl(128));
-
         expect(
           await contractBosonRouter
             .connect(users.seller.signer)
@@ -399,11 +401,6 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             ],
             {value: txValue}
           );
-
-        // calculate expected tokenSupplyID
-        const tokenIndex = constants.ONE;
-        const TYPE_NF_BIT = constants.ONE.shl(255);
-        const tokenSupplyKey = TYPE_NF_BIT.or(tokenIndex.shl(128));
 
         expect(
           await contractBosonRouter
@@ -466,10 +463,6 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       beforeEach(async () => {
         await deployContracts();
 
-        timestamp = await Utils.getCurrTimestamp();
-        constants.PROMISE_VALID_FROM = timestamp;
-        constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
-
         const tokensToMint = BN(constants.product_price).mul(
           BN(constants.QTY_20)
         );
@@ -498,26 +491,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           users.seller,
           constants.PROMISE_DEPOSITSE1,
           constants.QTY_10
-        );
-
-        // calculate expected tokenSupplyID
-        const tokenIndex = constants.ONE;
-        const TYPE_NF_BIT = constants.ONE.shl(255);
-        const tokenSupplyKey = TYPE_NF_BIT.or(tokenIndex.shl(128));
-
-        // calculate expected promiseID
-        const promiseId = keccak256(
-          solidityPack(
-            ['address', 'uint256', 'uint256', 'uint256'],
-            [
-              users.seller.address,
-              constants.ZERO,
-              constants.PROMISE_VALID_FROM,
-              constants.PROMISE_VALID_TO,
-            ]
-          )
-        );
-
+        );       
+    
         expect(
           await contractBosonRouter
             .connect(users.seller.signer)
@@ -661,7 +636,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       it('One should get the gate address that handles conditional commit', async () => {
         const {txValue, v, r, s} = await generateInputs(
           users.seller,
-          constants.seller_deposit,
+          constants.PROMISE_DEPOSITSE1,
           constants.QTY_10
         );
 
@@ -676,21 +651,16 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             r,
             s,
             [
-              timestamp,
-              timestamp + constants.SECONDS_IN_DAY,
-              constants.product_price,
-              constants.seller_deposit,
-              constants.buyer_deposit,
+              constants.PROMISE_VALID_FROM,
+              constants.PROMISE_VALID_TO,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITSE1,
+              constants.PROMISE_DEPOSITBU1,
               constants.QTY_10,
             ],
             contractGate.address,
             '0'
           );
-
-        // calculate expected tokenSupplyID
-        const tokenIndex = constants.ONE;
-        const TYPE_NF_BIT = constants.ONE.shl(255);
-        const tokenSupplyKey = TYPE_NF_BIT.or(tokenIndex.shl(128));
 
         expect(
           await contractBosonRouter
@@ -702,7 +672,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       it('Non conditional voucher set should have zero address gate contract', async () => {
         const {txValue, v, r, s} = await generateInputs(
           users.seller,
-          constants.seller_deposit,
+          constants.PROMISE_DEPOSITSE1,
           constants.QTY_10
         );
 
@@ -717,19 +687,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             r,
             s,
             [
-              timestamp,
-              timestamp + constants.SECONDS_IN_DAY,
-              constants.product_price,
-              constants.seller_deposit,
-              constants.buyer_deposit,
+              constants.PROMISE_VALID_FROM,
+              constants.PROMISE_VALID_TO,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITSE1,
+              constants.PROMISE_DEPOSITBU1,
               constants.QTY_10,
             ]
           );
-
-        // calculate expected tokenSupplyID
-        const tokenIndex = constants.ONE;
-        const TYPE_NF_BIT = constants.ONE.shl(255);
-        const tokenSupplyKey = TYPE_NF_BIT.or(tokenIndex.shl(128));
 
         expect(
           await contractBosonRouter
@@ -741,7 +706,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       it('[NEGATIVE]Supplying invalid gate address should revert', async () => {
         const {txValue, v, r, s} = await generateInputs(
           users.seller,
-          constants.seller_deposit,
+          constants.PROMISE_DEPOSITSE1,
           constants.QTY_10
         );
 
@@ -757,11 +722,11 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               r,
               s,
               [
-                timestamp,
-                timestamp + constants.SECONDS_IN_DAY,
-                constants.product_price,
-                constants.seller_deposit,
-                constants.buyer_deposit,
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
               constants.ZERO_ADDRESS,
