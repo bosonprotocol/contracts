@@ -16,9 +16,9 @@ contract ERC1155NonTransferable is
 {
     /**
      * @notice Construct and initialze the contract. 
-     * @param uri_ metadata uri
+     * @param _uri metadata uri
      */
-    constructor(string memory uri_) ERC1155(uri_) Ownable() {}
+    constructor(string memory _uri) ERC1155(_uri) Ownable() {}
 
     /*
      * @notice Mint an amount of a desired token

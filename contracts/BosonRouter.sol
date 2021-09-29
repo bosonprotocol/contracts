@@ -60,8 +60,8 @@ contract BosonRouter is
     /**
      * @notice Acts as a modifier, but it's cheaper. Checking if a non-zero address is provided, otherwise reverts.
      */
-    function notZeroAddress(address tokenAddress) private pure {
-        require(tokenAddress != address(0), "0A"); //zero address
+    function notZeroAddress(address _tokenAddress) private pure {
+        require(_tokenAddress != address(0), "0A"); //zero address
     }
 
     /**
@@ -73,11 +73,11 @@ contract BosonRouter is
 
     /**
      * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the TokenRegistry.
-     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the TokenRegistry (ETH).
+     * @param _value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the TokenRegistry (ETH).
      */
-    function notAboveETHLimit(uint256 value) internal view {
+    function notAboveETHLimit(uint256 _value) internal view {
         require(
-            value <= ITokenRegistry(tokenRegistry).getETHLimit(),
+            _value <= ITokenRegistry(tokenRegistry).getETHLimit(),
             "AL" // above limit
         );
     }
@@ -85,14 +85,14 @@ contract BosonRouter is
     /**
      * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the TokenRegistry.
      * @param _tokenAddress the token address which, we are getting the limits for.
-     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the TokenRegistry (ETH).
+     * @param _value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the TokenRegistry (ETH).
      */
-    function notAboveTokenLimit(address _tokenAddress, uint256 value)
+    function notAboveTokenLimit(address _tokenAddress, uint256 _value)
         internal
         view
     {
         require(
-            value <= ITokenRegistry(tokenRegistry).getTokenLimit(_tokenAddress),
+            _value <= ITokenRegistry(tokenRegistry).getTokenLimit(_tokenAddress),
             "AL" //above limit
         );
     }
@@ -147,27 +147,27 @@ contract BosonRouter is
     /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is
      * also known as a voucher set. Payment and deposits are specified in ETH.
-     * @param metadata metadata which is required for creation of a voucher set
+     * @param _metadata metadata which is required for creation of a voucher set
      * Metadata array is used for consistency across the permutations of similar functions.
      * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
      *
-     * uint256 _validFrom = metadata[0];
-     * uint256 _validTo = metadata[1];
-     * uint256 _price = metadata[2];
-     * uint256 _depositSe = metadata[3];
-     * uint256 _depositBu = metadata[4];
-     * uint256 _quantity = metadata[5];
+     * uint256 _validFrom = _metadata[0];
+     * uint256 _validTo = _metadata[1];
+     * uint256 _price = _metadata[2];
+     * uint256 _depositSe = _metadata[3];
+     * uint256 _depositBu = _metadata[4];
+     * uint256 _quantity = _metadata[5];
      */
-    function requestCreateOrderETHETH(uint256[] calldata metadata)
+    function requestCreateOrderETHETH(uint256[] calldata _metadata)
         external
         payable
         override
         nonReentrant
         whenNotPaused
     {
-        checkLimits(metadata, address(0), address(0), 0);
-        requestCreateOrder(metadata, ETHETH, address(0), address(0), 0);
+        checkLimits(_metadata, address(0), address(0), 0);
+        requestCreateOrder(_metadata, ETHETH, address(0), address(0), 0);
     }
 
    
@@ -177,41 +177,41 @@ contract BosonRouter is
      * @param _tokenPriceAddress address of the token to be used for the price
      * @param _tokenDepositAddress address of the token to be used for the deposits
      * @param _tokensSent total number of tokens sent. Must be equal to seller deposit * quantity
-     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
-     * @param v signature component used to verify the permit. See EIP-2612
-     * @param r signature component used to verify the permit. See EIP-2612
-     * @param s signature component used to verify the permit. See EIP-2612
-     * @param metadata metadata which is required for creation of a voucher set
+     * @param _deadline deadline after which permit signature is no longer valid. See EIP-2612
+     * @param _v signature component used to verify the permit. See EIP-2612
+     * @param _r signature component used to verify the permit. See EIP-2612
+     * @param _s signature component used to verify the permit. See EIP-2612
+     * @param _metadata metadata which is required for creation of a voucher set
      * Metadata array is used for consistency across the permutations of similar functions.
      * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
      *   
-     * uint256 _validFrom = metadata[0];
-     * uint256 _validTo = metadata[1];
-     * uint256 _price = metadata[2];
-     * uint256 _depositSe = metadata[3];
-     * uint256 _depositBu = metadata[4];
-     * uint256 _quantity = metadata[5];
+     * uint256 _validFrom = _metadata[0];
+     * uint256 _validTo = _metadata[1];
+     * uint256 _price = _metadata[2];
+     * uint256 _depositSe = _metadata[3];
+     * uint256 _depositBu = _metadata[4];
+     * uint256 _quantity = _metadata[5];
      */
     function requestCreateOrderTKNTKNWithPermit(
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint256[] calldata metadata
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s,
+        uint256[] calldata _metadata
     ) external override {
         requestCreateOrderTKNTKNWithPermitInternal(
             _tokenPriceAddress,
             _tokenDepositAddress,
             _tokensSent,
-            deadline,
-            v,
-            r,
-            s,
-            metadata
+            _deadline,
+            _v,
+            _r,
+            _s,
+            _metadata
         );
     }
 
@@ -223,21 +223,21 @@ contract BosonRouter is
      * @param _tokenPriceAddress address of the token to be used for the price
      * @param _tokenDepositAddress address of the token to be used for the deposits
      * @param _tokensSent total number of tokens sent. Must be equal to seller deposit * quantity
-     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
-     * @param v signature component used to verify the permit. See EIP-2612
-     * @param r signature component used to verify the permit. See EIP-2612
-     * @param s signature component used to verify the permit. See EIP-2612
-     * @param metadata metadata which is required for creation of a voucher set
+     * @param _deadline deadline after which permit signature is no longer valid. See EIP-2612
+     * @param _v signature component used to verify the permit. See EIP-2612
+     * @param _r signature component used to verify the permit. See EIP-2612
+     * @param _s signature component used to verify the permit. See EIP-2612
+     * @param _metadata metadata which is required for creation of a voucher set
      * Metadata array is used for consistency across the permutations of similar functions.
      * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
      *   
-     * uint256 _validFrom = metadata[0];
-     * uint256 _validTo = metadata[1];
-     * uint256 _price = metadata[2];
-     * uint256 _depositSe = metadata[3];
-     * uint256 _depositBu = metadata[4];
-     * uint256 _quantity = metadata[5];
+     * uint256 _validFrom = _metadata[0];
+     * uint256 _validTo = _metadata[1];
+     * uint256 _price = _metadata[2];
+     * uint256 _depositSe = _metadata[3];
+     * uint256 _depositBu = _metadata[4];
+     * uint256 _quantity = _metadata[5];
      *
      * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT, 
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
@@ -248,11 +248,11 @@ contract BosonRouter is
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint256[] calldata metadata,
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s,
+        uint256[] calldata _metadata,
         address _gateAddress,
         uint256 _nftTokenId
     ) external override {
@@ -262,11 +262,11 @@ contract BosonRouter is
             _tokenPriceAddress,
             _tokenDepositAddress,
             _tokensSent,
-            deadline,
-            v,
-            r,
-            s,
-            metadata
+            _deadline,
+            _v,
+            _r,
+            _s,
+            _metadata
         );
 
         voucherSetToGateContract[tokenIdSupply] = _gateAddress;
@@ -286,47 +286,47 @@ contract BosonRouter is
      * also known as a voucher set. Price is specified in ETH and deposits are specified in tokens.
      * @param _tokenDepositAddress address of the token to be used for the deposits
      * @param _tokensSent total number of tokens sent. Must be equal to seller deposit * quantity
-     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
-     * @param v signature component used to verify the permit. See EIP-2612
-     * @param r signature component used to verify the permit. See EIP-2612
-     * @param s signature component used to verify the permit. See EIP-2612
-     * @param metadata metadata which is required for creation of a voucher set
+     * @param _deadline deadline after which permit signature is no longer valid. See EIP-2612
+     * @param _v signature component used to verify the permit. See EIP-2612
+     * @param _r signature component used to verify the permit. See EIP-2612
+     * @param _s signature component used to verify the permit. See EIP-2612
+     * @param _metadata metadata which is required for creation of a voucher set
      * Metadata array is used for consistency across the permutations of similar functions.
      * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
      *   
-     * uint256 _validFrom = metadata[0];
-     * uint256 _validTo = metadata[1];
-     * uint256 _price = metadata[2];
-     * uint256 _depositSe = metadata[3];
-     * uint256 _depositBu = metadata[4];
-     * uint256 _quantity = metadata[5];
+     * uint256 _validFrom = _metadata[0];
+     * uint256 _validTo = _metadata[1];
+     * uint256 _price = _metadata[2];
+     * uint256 _depositSe = _metadata[3];
+     * uint256 _depositBu = _metadata[4];
+     * uint256 _quantity = _metadata[5];
      */
     function requestCreateOrderETHTKNWithPermit(
         address _tokenDepositAddress,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint256[] calldata metadata
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s,
+        uint256[] calldata _metadata
     ) external override whenNotPaused {
         notZeroAddress(_tokenDepositAddress);
-        checkLimits(metadata, address(0), _tokenDepositAddress, _tokensSent);
+        checkLimits(_metadata, address(0), _tokenDepositAddress, _tokensSent);
 
         _permit(
             _tokenDepositAddress,
             msg.sender,
             address(this),
             _tokensSent,
-            deadline,
-            v,
-            r,
-            s
+            _deadline,
+            _v,
+            _r,
+            _s
         );
 
         requestCreateOrder(
-            metadata,
+            _metadata,
             ETHTKN,
             address(0),
             _tokenDepositAddress,
@@ -340,26 +340,26 @@ contract BosonRouter is
      * Since the price, which is specified in tokens, is not collected when a voucher set is created, there is no need to call
      * permit or transferFrom on the token at this time. The address of the price token is only recorded.
      * @param _tokenPriceAddress address of the token to be used for the deposits
-     * @param metadata metadata which is required for creation of a voucher set
+     * @param _metadata metadata which is required for creation of a voucher set
      *  Metadata array is used for consistency across the permutations of similar functions.
      *  Some functions require other parameters, and the number of parameters causes stack too deep error.
      *  The use of the matadata array mitigates the stack too deep error.
      *   
-     * uint256 _validFrom = metadata[0];
-     * uint256 _validTo = metadata[1];
-     * uint256 _price = metadata[2];
-     * uint256 _depositSe = metadata[3];
-     * uint256 _depositBu = metadata[4];
-     * uint256 _quantity = metadata[5];
+     * uint256 _validFrom = _metadata[0];
+     * uint256 _validTo = _metadata[1];
+     * uint256 _price = _metadata[2];
+     * uint256 _depositSe = _metadata[3];
+     * uint256 _depositBu = _metadata[4];
+     * uint256 _quantity = _metadata[5];
      */
     function requestCreateOrderTKNETH(
         address _tokenPriceAddress,
-        uint256[] calldata metadata
+        uint256[] calldata _metadata
     ) external payable override nonReentrant whenNotPaused {
         notZeroAddress(_tokenPriceAddress);
-        checkLimits(metadata, _tokenPriceAddress, address(0), 0);
+        checkLimits(_metadata, _tokenPriceAddress, address(0), 0);
 
-        requestCreateOrder(metadata, TKNETH, _tokenPriceAddress, address(0), 0);
+        requestCreateOrder(_metadata, TKNETH, _tokenPriceAddress, address(0), 0);
     }
 
     /**
@@ -399,25 +399,25 @@ contract BosonRouter is
      * @param _tokenIdSupply ID of the supply token
      * @param _issuer Address of the issuer of the supply token
      * @param _tokensSent total number of tokens sent. Must be equal to buyer deposit plus price
-     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
-     * @param vPrice v signature component  used to verify the permit on the price token. See EIP-2612
-     * @param rPrice r signature component used to verify the permit on the price token. See EIP-2612
-     * @param sPrice s signature component used to verify the permit on the price token. See EIP-2612
-     * @param vDeposit v signature component  used to verify the permit on the deposit token. See EIP-2612
-     * @param rDeposit r signature component used to verify the permit on the deposit token. See EIP-2612
-     * @param sDeposit s signature component used to verify the permit on the deposit token. See EIP-2612
+     * @param _deadline deadline after which permit signature is no longer valid. See EIP-2612
+     * @param _vPrice v signature component  used to verify the permit on the price token. See EIP-2612
+     * @param _rPrice r signature component used to verify the permit on the price token. See EIP-2612
+     * @param _sPrice s signature component used to verify the permit on the price token. See EIP-2612
+     * @param _vDeposit v signature component  used to verify the permit on the deposit token. See EIP-2612
+     * @param _rDeposit r signature component used to verify the permit on the deposit token. See EIP-2612
+     * @param _sDeposit s signature component used to verify the permit on the deposit token. See EIP-2612
      */
     function requestVoucherTKNTKNWithPermit(
         uint256 _tokenIdSupply,
         address _issuer,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 vPrice,
-        bytes32 rPrice,
-        bytes32 sPrice, // tokenPrice
-        uint8 vDeposit,
-        bytes32 rDeposit,
-        bytes32 sDeposit // tokenDeposits
+        uint256 _deadline,
+        uint8 _vPrice,
+        bytes32 _rPrice,
+        bytes32 _sPrice, // tokenPrice
+        uint8 _vDeposit,
+        bytes32 _rDeposit,
+        bytes32 _sDeposit // tokenDeposits
     ) external override nonReentrant whenNotPaused {
         // check if _tokenIdSupply mapped to gate contract
         // if yes, deactivate (user,_tokenIdSupply) to prevent double spending
@@ -435,19 +435,19 @@ contract BosonRouter is
         permitTransferFromAndAddEscrow(
             tokenPriceAddress,
             price,
-            deadline,
-            vPrice,
-            rPrice,
-            sPrice
+            _deadline,
+            _vPrice,
+            _rPrice,
+            _sPrice
         );
 
         permitTransferFromAndAddEscrow(
             tokenDepositAddress,
             depositBu,
-            deadline,
-            vDeposit,
-            rDeposit,
-            sDeposit
+            _deadline,
+            _vDeposit,
+            _rDeposit,
+            _sDeposit
         );
 
         IVoucherKernel(voucherKernel).fillOrder(
@@ -464,19 +464,19 @@ contract BosonRouter is
      * @param _tokenIdSupply ID of the supply token
      * @param _issuer address of the issuer of the supply token
      * @param _tokensSent total number of tokens sent. Must be equal to buyer deposit plus price
-     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
-     * @param v signature component used to verify the permit. See EIP-2612
-     * @param r signature component used to verify the permit. See EIP-2612
-     * @param s signature component used to verify the permit. See EIP-2612
+     * @param _deadline deadline after which permit signature is no longer valid. See EIP-2612
+     * @param _v signature component used to verify the permit. See EIP-2612
+     * @param _r signature component used to verify the permit. See EIP-2612
+     * @param _s signature component used to verify the permit. See EIP-2612
      */
     function requestVoucherTKNTKNSameWithPermit(
         uint256 _tokenIdSupply,
         address _issuer,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
     ) external override nonReentrant whenNotPaused {
         // check if _tokenIdSupply mapped to gate contract
         // if yes, deactivate (user,_tokenIdSupply) to prevent double spending
@@ -498,10 +498,10 @@ contract BosonRouter is
         permitTransferFromAndAddEscrow(
             tokenPriceAddress,
             _tokensSent,
-            deadline,
-            v,
-            r,
-            s
+            _deadline,
+            _v,
+            _r,
+            _s
         );
 
         IVoucherKernel(voucherKernel).fillOrder(
@@ -518,19 +518,19 @@ contract BosonRouter is
      * @param _tokenIdSupply ID of the supply token
      * @param _issuer address of the issuer of the supply token
      * @param _tokensDeposit number of tokens sent to cover buyer deposit
-     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
-     * @param v signature component used to verify the permit. See EIP-2612
-     * @param r signature component used to verify the permit. See EIP-2612
-     * @param s signature component used to verify the permit. See EIP-2612
+     * @param _deadline deadline after which permit signature is no longer valid. See EIP-2612
+     * @param _v signature component used to verify the permit. See EIP-2612
+     * @param _r signature component used to verify the permit. See EIP-2612
+     * @param _s signature component used to verify the permit. See EIP-2612
      */
     function requestVoucherETHTKNWithPermit(
         uint256 _tokenIdSupply,
         address _issuer,
         uint256 _tokensDeposit,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
     ) external payable override nonReentrant whenNotPaused {
         (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
             .getBuyerOrderCosts(_tokenIdSupply);
@@ -543,10 +543,10 @@ contract BosonRouter is
         permitTransferFromAndAddEscrow(
             tokenDepositAddress,
             _tokensDeposit,
-            deadline,
-            v,
-            r,
-            s
+            _deadline,
+            _v,
+            _r,
+            _s
         );
 
         IVoucherKernel(voucherKernel).fillOrder(
@@ -566,19 +566,19 @@ contract BosonRouter is
      * @param _tokenIdSupply ID of the supply token
      * @param _issuer address of the issuer of the supply token
      * @param _tokensPrice number of tokens sent to cover price
-     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
-     * @param v signature component used to verify the permit. See EIP-2612
-     * @param r signature component used to verify the permit. See EIP-2612
-     * @param s signature component used to verify the permit. See EIP-2612
+     * @param _deadline deadline after which permit signature is no longer valid. See EIP-2612
+     * @param _v signature component used to verify the permit. See EIP-2612
+     * @param _r signature component used to verify the permit. See EIP-2612
+     * @param _s signature component used to verify the permit. See EIP-2612
      */
     function requestVoucherTKNETHWithPermit(
         uint256 _tokenIdSupply,
         address _issuer,
         uint256 _tokensPrice,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
     ) external payable override nonReentrant whenNotPaused {
         (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
             .getBuyerOrderCosts(_tokenIdSupply);
@@ -591,10 +591,10 @@ contract BosonRouter is
         permitTransferFromAndAddEscrow(
             tokenPriceAddress,
             price,
-            deadline,
-            v,
-            r,
-            s
+            _deadline,
+            _v,
+            _r,
+            _s
         );
 
         IVoucherKernel(voucherKernel).fillOrder(
@@ -713,40 +713,39 @@ contract BosonRouter is
 
     /**
      * @notice Call permit on either a token directly or on a token wrapper
-     * @param token Address of the token owner who is approving tokens to be transferred by spender
-     * @param owner Address of the token owner who is approving tokens to be transferred by spender
-     * @param owner Address of the token owner who is approving tokens to be transferred by spender
-     * @param spender Address of the party who is transferring tokens on owner's behalf
-     * @param value Number of tokens to be transferred
-     * @param deadline Time after which this permission to transfer is no longer valid. See EIP-2612
-     * @param v Part of the owner's signatue. See EIP-2612
-     * @param r Part of the owner's signatue. See EIP-2612
-     * @param s Part of the owner's signatue. See EIP-2612
+     * @param _token Address of the token owner who is approving tokens to be transferred by spender
+     * @param _owner Address of the token owner who is approving tokens to be transferred by spender
+     * @param _spender Address of the party who is transferring tokens on owner's behalf
+     * @param _value Number of tokens to be transferred
+     * @param _deadline Time after which this permission to transfer is no longer valid. See EIP-2612
+     * @param _v Part of the owner's signatue. See EIP-2612
+     * @param _r Part of the owner's signatue. See EIP-2612
+     * @param _s Part of the owner's signatue. See EIP-2612
      */
     function _permit(
-        address token,
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        address _token,
+        address _owner,
+        address _spender,
+        uint256 _value,
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
     ) internal {
         address tokenWrapper = ITokenRegistry(tokenRegistry)
-            .getTokenWrapperAddress(token);
+            .getTokenWrapperAddress(_token);
         require(tokenWrapper != address(0), "UNSUPPORTED_TOKEN");
 
         //The BosonToken contract conforms to this spec, so it will be callable this way
         //if it's address is mapped to itself in the TokenRegistry
         ITokenWrapper(tokenWrapper).permit(
-            owner,
-            spender,
-            value,
-            deadline,
-            v,
-            r,
-            s
+            _owner,
+            _spender,
+            _value,
+            _deadline,
+            _v,
+            _r,
+            _s
         );
     }    
 
@@ -804,52 +803,52 @@ contract BosonRouter is
 
     /**
      * @notice Checks if supplied values are within set limits
-     *  @param metadata metadata which is required for creation of a voucher
+     *  @param _metadata metadata which is required for creation of a voucher
      *  Metadata array is used as in some scenarios we need several more params, as we need to recover
      *  owner address in order to permit the contract to transfer funds on his behalf.
      *  Since the params get too many, we end up in situation that the stack is too deep.
      *
-     *  uint256 _validFrom = metadata[0];
-     *  uint256 _validTo = metadata[1];
-     *  uint256 _price = metadata[2];
-     *  uint256 _depositSe = metadata[3];
-     *  uint256 _depositBu = metadata[4];
-     *  uint256 _quantity = metadata[5];
+     *  uint256 _validFrom = _metadata[0];
+     *  uint256 _validTo = _metadata[1];
+     *  uint256 _price = _metadata[2];
+     *  uint256 _depositSe = _metadata[3];
+     *  uint256 _depositBu = _metadata[4];
+     *  uint256 _quantity = _metadata[5];
      * @param _tokenPriceAddress     token address which will hold the funds for the price of the voucher
      * @param _tokenDepositAddress  token address which will hold the funds for the deposits of the voucher
      * @param _tokensSent     tokens sent to cashier contract
      */
     function checkLimits(
-        uint256[] memory metadata,
+        uint256[] memory _metadata,
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent
     ) internal view returns (bool) {
         // check price limits. If price address == 0 -> prices in ETH
         if (_tokenPriceAddress == address(0)) {
-            notAboveETHLimit(metadata[2].mul(metadata[5]));
+            notAboveETHLimit(_metadata[2].mul(_metadata[5]));
         } else {
             notAboveTokenLimit(
                 _tokenPriceAddress,
-                metadata[2].mul(metadata[5])
+                _metadata[2].mul(_metadata[5])
             );
         }
 
         // check deposit limits. If deposit address == 0 -> deposits in ETH
         if (_tokenDepositAddress == address(0)) {
-            notAboveETHLimit(metadata[3].mul(metadata[5]));
-            notAboveETHLimit(metadata[4].mul(metadata[5]));
-            require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
+            notAboveETHLimit(_metadata[3].mul(_metadata[5]));
+            notAboveETHLimit(_metadata[4].mul(_metadata[5]));
+            require(_metadata[3].mul(_metadata[5]) == msg.value, "IF"); //invalid funds
         } else {
             notAboveTokenLimit(
                 _tokenDepositAddress,
-                metadata[3].mul(metadata[5])
+                _metadata[3].mul(_metadata[5])
             );
             notAboveTokenLimit(
                 _tokenDepositAddress,
-                metadata[4].mul(metadata[5])
+                _metadata[4].mul(_metadata[5])
             );
-            require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
+            require(_metadata[3].mul(_metadata[5]) == _tokensSent, "IF"); //invalid funds
         }
     }
 
@@ -859,36 +858,36 @@ contract BosonRouter is
      * @param _tokenPriceAddress address of the token to be used for the price
      * @param _tokenDepositAddress address of the token to be used for the deposits
      * @param _tokensSent total number of tokens sent. Must be equal to seller deposit * quantity
-     * @param deadline deadline after which permit signature is no longer valid. See EIP-2612
-     * @param v signature component used to verify the permit. See EIP-2612
-     * @param r signature component used to verify the permit. See EIP-2612
-     * @param s signature component used to verify the permit. See EIP-2612
-     * @param metadata metadata which is required for creation of a voucher set
+     * @param _deadline deadline after which permit signature is no longer valid. See EIP-2612
+     * @param _v signature component used to verify the permit. See EIP-2612
+     * @param _r signature component used to verify the permit. See EIP-2612
+     * @param _s signature component used to verify the permit. See EIP-2612
+     * @param _metadata metadata which is required for creation of a voucher set
      * Metadata array is used for consistency across the permutations of similar functions.
      * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
      *
-     * uint256 _validFrom = metadata[0];
-     * uint256 _validTo = metadata[1];
-     * uint256 _price = metadata[2];
-     * uint256 _depositSe = metadata[3];
-     * uint256 _depositBu = metadata[4];
-     * uint256 _quantity = metadata[5];
+     * uint256 _validFrom = _metadata[0];
+     * uint256 _validTo = _metadata[1];
+     * uint256 _price = _metadata[2];
+     * uint256 _depositSe = _metadata[3];
+     * uint256 _depositBu = _metadata[4];
+     * uint256 _quantity = _metadata[5];
      */
     function requestCreateOrderTKNTKNWithPermitInternal(
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint256[] calldata metadata
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s,
+        uint256[] calldata _metadata
     ) internal whenNotPaused returns (uint256) {
         notZeroAddress(_tokenPriceAddress);
         notZeroAddress(_tokenDepositAddress);
         checkLimits(
-            metadata,
+            _metadata,
             _tokenPriceAddress,
             _tokenDepositAddress,
             _tokensSent
@@ -899,15 +898,15 @@ contract BosonRouter is
             msg.sender,
             address(this),
             _tokensSent,
-            deadline,
-            v,
-            r,
-            s
+            _deadline,
+            _v,
+            _r,
+            _s
         );
 
         return
             requestCreateOrder(
-                metadata,
+                _metadata,
                 TKNTKN,
                 _tokenPriceAddress,
                 _tokenDepositAddress,
@@ -921,24 +920,24 @@ contract BosonRouter is
      * - creates payment method
      * - adds escrow ammount
      * - transfers tokens (if needed)
-     * @param metadata metadata which is required for creation of a voucher
+     * @param _metadata metadata which is required for creation of a voucher
      *  Metadata array is used as in some scenarios we need several more params, as we need to recover
      *  owner address in order to permit the contract to transfer funds on his behalf.
      *  Since the params get too many, we end up in situation that the stack is too deep.
      *
-     *  uint256 _validFrom = metadata[0];
-     *  uint256 _validTo = metadata[1];
-     *  uint256 _price = metadata[2];
-     *  uint256 _depositSe = metadata[3];
-     *  uint256 _depositBu = metadata[4];
-     *  uint256 _quantity = metadata[5];
+     *  uint256 _validFrom = _metadata[0];
+     *  uint256 _validTo = _metadata[1];
+     *  uint256 _price = _metadata[2];
+     *  uint256 _depositSe = _metadata[3];
+     *  uint256 _depositBu = _metadata[4];
+     *  uint256 _quantity = _metadata[5];
      * @param _paymentMethod  might be ETHETH, ETHTKN, TKNETH or TKNTKN
      * @param _tokenPriceAddress     token address which will hold the funds for the price of the voucher
      * @param _tokenDepositAddress  token address which will hold the funds for the deposits of the voucher
      * @param _tokensSent     tokens sent to cashier contract
      */
     function requestCreateOrder(
-        uint256[] memory metadata,
+        uint256[] memory _metadata,
         uint8 _paymentMethod,
         address _tokenPriceAddress,
         address _tokenDepositAddress,
@@ -947,12 +946,12 @@ contract BosonRouter is
         uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
             .createTokenSupplyId(
                 msg.sender,
-                metadata[0],
-                metadata[1],
-                metadata[2],
-                metadata[3],
-                metadata[4],
-                metadata[5]
+                _metadata[0],
+                _metadata[1],
+                _metadata[2],
+                _metadata[3],
+                _metadata[4],
+                _metadata[5]
             );
 
         IVoucherKernel(voucherKernel).createPaymentMethod(
@@ -974,7 +973,7 @@ contract BosonRouter is
         emit LogOrderCreated(
             tokenIdSupply,
             msg.sender,
-            metadata[5],
+            _metadata[5],
             _paymentMethod
         );
 

@@ -16,15 +16,15 @@ interface IERC20WithPermit is IERC20 {
     // solhint-disable-next-line func-name-mixedcase
     function PERMIT_TYPEHASH() external pure returns (bytes32);
 
-    function nonces(address owner) external view returns (uint256);
+    function nonces(address _owner) external view returns (uint256);
 
     function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        address _owner,
+        address _spender,
+        uint256 _value,
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
     ) external;
 }
