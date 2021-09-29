@@ -757,11 +757,13 @@ contract BosonRouter is
     function transferFromAndAddEscrow(address _tokenAddress, uint256 _amount)
         internal
     {
-        bool transfered = IERC20WithPermit(_tokenAddress).transferFrom(
+        bool transfered = false;
+        transfered = IERC20WithPermit(_tokenAddress).transferFrom(
             msg.sender,
             address(cashierAddress),
             _amount
         );
+        require(transfered, "TFF"); //Transfer from failed
 
         if (transfered) {
             ICashier(cashierAddress).addEscrowTokensAmount(
