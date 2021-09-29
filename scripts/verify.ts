@@ -83,7 +83,7 @@ export async function verifyContracts(env: string): Promise<void> {
   try {
     await hre.run('verify:verify', {
       address: contracts.erc1155NonTransferable,
-      constructorArguments: ['http://dummyuri'],
+      constructorArguments: ['https://quests.bosonportal.io'],
     });
   } catch (error) {
     logError('ERC1155NonTransferable', error.message);
