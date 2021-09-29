@@ -9,19 +9,19 @@ interface IBosonRouter {
 
     /**
      * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
-        @param metadata metadata which is required for creation of a voucher
+        @param _metadata metadata which is required for creation of a voucher
         Metadata array is used as in some scenarios we need several more params, as we need to recover 
         owner address in order to permit the contract to transfer funds in his behalf. 
         Since the params get too many, we end up in situation that the stack is too deep.
         
-        uint256 _validFrom = metadata[0];
-        uint256 _validTo = metadata[1];
-        uint256 _price = metadata[2];
-        uint256 _depositSe = metadata[3];
-        uint256 _depositBu = metadata[4];
-        uint256 _quantity = metadata[5];
+        uint256 _validFrom = _metadata[0];
+        uint256 _validTo = _metadata[1];
+        uint256 _price = _metadata[2];
+        uint256 _depositSe = _metadata[3];
+        uint256 _depositBu = _metadata[4];
+        uint256 _quantity = _metadata[5];
      */
-    function requestCreateOrderETHETH(uint256[] calldata metadata)
+    function requestCreateOrderETHETH(uint256[] calldata _metadata)
         external
         payable;
 
@@ -29,22 +29,22 @@ interface IBosonRouter {
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint256[] calldata metadata
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s,
+        uint256[] calldata _metadata
     ) external;
 
     function requestCreateOrderTKNTKNWithPermitConditional(
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint256[] calldata metadata,
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s,
+        uint256[] calldata _metadata,
         address _gateAddress,
         uint256 _nftTokenId
     ) external;
@@ -52,16 +52,16 @@ interface IBosonRouter {
     function requestCreateOrderETHTKNWithPermit(
         address _tokenDepositAddress,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint256[] calldata metadata
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s,
+        uint256[] calldata _metadata
     ) external;
 
     function requestCreateOrderTKNETH(
         address _tokenPriceAddress,
-        uint256[] calldata metadata
+        uint256[] calldata _metadata
     ) external payable;
 
     /**
@@ -77,43 +77,43 @@ interface IBosonRouter {
         uint256 _tokenIdSupply,
         address _issuer,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 vPrice,
-        bytes32 rPrice,
-        bytes32 sPrice, // tokenPrice
-        uint8 vDeposit,
-        bytes32 rDeposit,
-        bytes32 sDeposit // tokenDeposits
+        uint256 _deadline,
+        uint8 _vPrice,
+        bytes32 _rPrice,
+        bytes32 _sPrice, // tokenPrice
+        uint8 _vDeposit,
+        bytes32 _rDeposit,
+        bytes32 _sDeposit // tokenDeposits
     ) external;
 
     function requestVoucherTKNTKNSameWithPermit(
         uint256 _tokenIdSupply,
         address _issuer,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
     ) external;
 
     function requestVoucherETHTKNWithPermit(
         uint256 _tokenIdSupply,
         address _issuer,
         uint256 _tokensDeposit,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
     ) external payable;
 
     function requestVoucherTKNETHWithPermit(
         uint256 _tokenIdSupply,
         address _issuer,
         uint256 _tokensPrice,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
     ) external payable;
 
     /**

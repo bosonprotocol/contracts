@@ -49,82 +49,82 @@ contract ERC20WithPermit is IERC20WithPermit, Pausable {
         );
     }
 
-    function _mint(address to, uint256 value) internal {
-        totalSupply = totalSupply.add(value);
-        balanceOf[to] = balanceOf[to].add(value);
-        emit Transfer(address(0), to, value);
+    function _mint(address _to, uint256 _value) internal {
+        totalSupply = totalSupply.add(_value);
+        balanceOf[_to] = balanceOf[_to].add(_value);
+        emit Transfer(address(0), _to, _value);
     }
 
-    function _burn(address from, uint256 value) internal {
-        balanceOf[from] = balanceOf[from].sub(value);
-        totalSupply = totalSupply.sub(value);
-        emit Transfer(from, address(0), value);
+    function _burn(address _from, uint256 _value) internal {
+        balanceOf[_from] = balanceOf[_from].sub(_value);
+        totalSupply = totalSupply.sub(_value);
+        emit Transfer(_from, address(0), _value);
     }
 
     function _approve(
-        address owner,
-        address spender,
-        uint256 value
+        address _owner,
+        address _spender,
+        uint256 _value
     ) private {
-        allowance[owner][spender] = value;
-        emit Approval(owner, spender, value);
+        allowance[_owner][_spender] = _value;
+        emit Approval(_owner, _spender, _value);
     }
 
     function _transfer(
-        address from,
-        address to,
-        uint256 value
+        address _from,
+        address _to,
+        uint256 _value
     ) private {
-        balanceOf[from] = balanceOf[from].sub(value);
-        balanceOf[to] = balanceOf[to].add(value);
-        emit Transfer(from, to, value);
+        balanceOf[_from] = balanceOf[_from].sub(_value);
+        balanceOf[_to] = balanceOf[_to].add(_value);
+        emit Transfer(_from, _to, _value);
     }
 
-    function approve(address spender, uint256 value)
+    function approve(address _spender, uint256 _value)
         external
         override
         whenNotPaused
         returns (bool)
     {
-        _approve(msg.sender, spender, value);
+        _approve(msg.sender, _spender, _value);
         return true;
     }
 
-    function transfer(address to, uint256 value)
+    function transfer(address _to, uint256 _value)
         external
         override
         whenNotPaused
         returns (bool)
     {
-        _transfer(msg.sender, to, value);
+        _transfer(msg.sender, _to, _value);
         return true;
     }
 
     function transferFrom(
-        address from,
-        address to,
-        uint256 value
+        address _from,
+        address _to,
+        uint256 _value
     ) external override whenNotPaused returns (bool) {
-        if (allowance[from][msg.sender] != uint256(-1)) {
-            allowance[from][msg.sender] = allowance[from][msg.sender].sub(
-                value
+        if (allowance[_from][msg.sender] != uint256(-1)) {
+            allowance[_from][msg.sender] = allowance[_from][msg.sender].sub(
+                _value
             );
         }
-        _transfer(from, to, value);
+        _transfer(_from, _to, _value);
         return true;
     }
 
     function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        address _owner,
+        address _spender,
+        uint256 _value,
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
     ) external override whenNotPaused {
         // solhint-disable-next-line
-        require(deadline >= block.timestamp, "ERC20WithPermit: EXPIRED");
+        require(_deadline >= block.timestamp, "ERC20WithPermit: EXPIRED");
 
         bytes32 digest =
             keccak256(
@@ -134,22 +134,22 @@ contract ERC20WithPermit is IERC20WithPermit, Pausable {
                     keccak256(
                         abi.encode(
                             PERMIT_TYPEHASH,
-                            owner,
-                            spender,
-                            value,
-                            nonces[owner]++,
-                            deadline
+                            _owner,
+                            _spender,
+                            _value,
+                            nonces[_owner]++,
+                            _deadline
                         )
                     )
                 )
             );
 
-        address recoveredAddress = ecrecover(digest, v, r, s);
+        address recoveredAddress = ecrecover(digest, _v, _r, _s);
         require(
-            recoveredAddress != address(0) && recoveredAddress == owner,
+            recoveredAddress != address(0) && recoveredAddress == _owner,
             "ERC20WithPermit: INVALID_SIGNATURE"
         );
 
-        _approve(owner, spender, value);
+        _approve(_owner, _spender, _value);
     }
 }

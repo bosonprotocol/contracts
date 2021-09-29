@@ -35,11 +35,11 @@ interface IERC1155ERC721 {
     /**
      * @notice Function to mint tokens.
      * @dev ERC-721
-     * @param to The address that will receive the minted tokens.
-     * @param tokenId The token id to mint.
+     * @param _to The address that will receive the minted tokens.
+     * @param _tokenId The token id to mint.
      * @return A boolean that indicates if the operation was successful.
      */
-    function mint(address to, uint256 tokenId) external returns (bool);
+    function mint(address _to, uint256 _tokenId) external returns (bool);
 
     /**
         @dev MUST emit when approval for a second party/operator address to manage all tokens for an owner address is enabled or disabled (absence of an event assumes disabled).        
