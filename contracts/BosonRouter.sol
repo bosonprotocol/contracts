@@ -338,28 +338,15 @@ contract BosonRouter is
         bytes32 r,
         bytes32 s,
         uint256[] calldata metadata
-    ) external override whenNotPaused {
-        notZeroAddress(_tokenDepositAddress);
-        checkLimits(metadata, address(0), _tokenDepositAddress, _tokensSent);
+    ) external override {
+        requestCreateOrderETHTKNWithPermitInternal( _tokenDepositAddress,
+         _tokensSent,
+         deadline,
+         v,
+         r,
+         s,
+        metadata);
 
-        _permit(
-            _tokenDepositAddress,
-            msg.sender,
-            address(this),
-            _tokensSent,
-            deadline,
-            v,
-            r,
-            s
-        );
-
-        requestCreateOrder(
-            metadata,
-            ETHTKN,
-            address(0),
-            _tokenDepositAddress,
-            _tokensSent
-        );
     }
 
     /**
@@ -400,29 +387,16 @@ contract BosonRouter is
         uint256[] calldata metadata,
         address _gateAddress,
         uint256 _nftTokenId
-    ) external override whenNotPaused {
-        notZeroAddress(_tokenDepositAddress);
+    ) external override {
         notZeroAddress(_gateAddress);
-        checkLimits(metadata, address(0), _tokenDepositAddress, _tokensSent);
 
-        _permit(
-            _tokenDepositAddress,
-            msg.sender,
-            address(this),
-            _tokensSent,
-            deadline,
-            v,
-            r,
-            s
-        );
-
-        uint256 tokenIdSupply = requestCreateOrder(
-            metadata,
-            ETHTKN,
-            address(0),
-            _tokenDepositAddress,
-            _tokensSent
-        );
+        uint256 tokenIdSupply = requestCreateOrderETHTKNWithPermitInternal( _tokenDepositAddress,
+         _tokensSent,
+         deadline,
+         v,
+         r,
+         s,
+        metadata);
 
         finalizeConditionalOrder(tokenIdSupply, _gateAddress, _nftTokenId);
     }
@@ -448,11 +422,13 @@ contract BosonRouter is
     function requestCreateOrderTKNETH(
         address _tokenPriceAddress,
         uint256[] calldata metadata
-    ) external payable override nonReentrant whenNotPaused {
-        notZeroAddress(_tokenPriceAddress);
-        checkLimits(metadata, _tokenPriceAddress, address(0), 0);
+    ) external payable override {
+        requestCreateOrderTKNETHInternal(_tokenPriceAddress, metadata);
 
-        requestCreateOrder(metadata, TKNETH, _tokenPriceAddress, address(0), 0);
+        // notZeroAddress(_tokenPriceAddress);
+        // checkLimits(metadata, _tokenPriceAddress, address(0), 0);
+
+        // requestCreateOrder(metadata, TKNETH, _tokenPriceAddress, address(0), 0);
     }
 
     /**
@@ -485,12 +461,14 @@ contract BosonRouter is
         uint256[] calldata metadata,
         address _gateAddress,
         uint256 _nftTokenId
-    ) external payable override nonReentrant whenNotPaused {
-        notZeroAddress(_tokenPriceAddress);
+    ) external payable override {
         notZeroAddress(_gateAddress);
-        checkLimits(metadata, _tokenPriceAddress, address(0), 0);
+        uint256 tokenIdSupply = requestCreateOrderTKNETHInternal(_tokenPriceAddress, metadata);
+        // notZeroAddress(_tokenPriceAddress);
+        
+        // checkLimits(metadata, _tokenPriceAddress, address(0), 0);
 
-        uint256 tokenIdSupply = requestCreateOrder(metadata, TKNETH, _tokenPriceAddress, address(0), 0);
+        // uint256 tokenIdSupply = requestCreateOrder(metadata, TKNETH, _tokenPriceAddress, address(0), 0);
         finalizeConditionalOrder(tokenIdSupply, _gateAddress, _nftTokenId);
     }
 
@@ -1045,6 +1023,49 @@ contract BosonRouter is
                 _tokenDepositAddress,
                 _tokensSent
             );
+    }
+
+
+    function requestCreateOrderETHTKNWithPermitInternal(
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256[] calldata metadata
+    ) internal whenNotPaused returns (uint256) {
+        notZeroAddress(_tokenDepositAddress);
+        checkLimits(metadata, address(0), _tokenDepositAddress, _tokensSent);
+
+        _permit(
+            _tokenDepositAddress,
+            msg.sender,
+            address(this),
+            _tokensSent,
+            deadline,
+            v,
+            r,
+            s
+        );
+
+        return requestCreateOrder(
+            metadata,
+            ETHTKN,
+            address(0),
+            _tokenDepositAddress,
+            _tokensSent
+        );
+    }
+
+    function requestCreateOrderTKNETHInternal(
+        address _tokenPriceAddress,
+        uint256[] calldata metadata
+    ) internal nonReentrant whenNotPaused returns (uint256) {
+        notZeroAddress(_tokenPriceAddress);
+        checkLimits(metadata, _tokenPriceAddress, address(0), 0);
+
+        return requestCreateOrder(metadata, TKNETH, _tokenPriceAddress, address(0), 0);
     }
 
     /**
