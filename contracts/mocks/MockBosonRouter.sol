@@ -29,7 +29,6 @@ contract MockBosonRouter is
 {
     using Address for address payable;
     using SafeMath for uint256;
-    using SafeERC20WithPermit for IERC20WithPermit;
 
     address private cashierAddress;
     address private voucherKernel;
