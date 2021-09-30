@@ -1222,7 +1222,7 @@ describe('Voucher tests', () => {
 
   describe('TransferFrom: It is safe to interact with older ERC20 tokens', function () {
     let sellerInstance;
-    beforeEach('set seller as boson router', async () => {
+    beforeEach('set mock as boson router', async () => {
       //Set mock so that failed transferFrom of tokens with no return value can be tested in transferFromAndAddEscrow
       await contractCashier.setBosonRouterAddress(
         contractMockBosonRouter.address
