@@ -176,7 +176,7 @@ contract MockBosonRouter is
      * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token.
      * This is the "condition" under which a buyer may commit to redeem a voucher that is part of the voucher set created by this function.
      * Payment and deposits are specified in ETH.
-     * @param metadata metadata which is required for creation of a voucher set
+     * @param _metadata metadata which is required for creation of a voucher set
      * Metadata array is used for consistency across the permutations of similar functions.
      * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
@@ -194,14 +194,14 @@ contract MockBosonRouter is
      * in the voucher set created by this function.
      */
     function requestCreateOrderETHETHConditional(
-        uint256[] calldata metadata,
+        uint256[] calldata _metadata,
         address _gateAddress,
         uint256 _nftTokenId
     ) external payable override nonReentrant whenNotPaused {
         notZeroAddress(_gateAddress);
-        checkLimits(metadata, address(0), address(0), 0);
+        checkLimits(_metadata, address(0), address(0), 0);
         uint256 _tokenIdSupply =
-            requestCreateOrder(metadata, ETHETH, address(0), address(0), 0);
+            requestCreateOrder(_metadata, ETHETH, address(0), address(0), 0);
         finalizeConditionalOrder(_tokenIdSupply, _gateAddress, _nftTokenId);
     }
 
@@ -1041,29 +1041,29 @@ contract MockBosonRouter is
     function requestCreateOrderETHTKNWithPermitInternal(
         address _tokenDepositAddress,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint256[] calldata metadata
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s,
+        uint256[] calldata _metadata
     ) internal whenNotPaused returns (uint256) {
         notZeroAddress(_tokenDepositAddress);
-        checkLimits(metadata, address(0), _tokenDepositAddress, _tokensSent);
+        checkLimits(_metadata, address(0), _tokenDepositAddress, _tokensSent);
 
         _permit(
             _tokenDepositAddress,
             msg.sender,
             address(this),
             _tokensSent,
-            deadline,
-            v,
-            r,
-            s
+            _deadline,
+            _v,
+            _r,
+            _s
         );
 
         return
             requestCreateOrder(
-                metadata,
+                _metadata,
                 ETHTKN,
                 address(0),
                 _tokenDepositAddress,

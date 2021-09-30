@@ -253,7 +253,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.QTY_10,
               ],
               contractGate.address,
-              '0',
+              constants.EMPTY_NFT_TOKEN_ID,
               {value: txValue}
             )
         )
@@ -395,7 +395,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.QTY_10,
             ],
             contractGate.address,
-            '0',
+            constants.EMPTY_NFT_TOKEN_ID,
             {value: txValue}
           );
 
@@ -448,7 +448,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.QTY_10,
               ],
               constants.ZERO_ADDRESS,
-              '0',
+              constants.EMPTY_NFT_TOKEN_ID,
               {value: txValue}
             )
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
@@ -509,7 +509,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.QTY_10,
               ],
               contractGate.address,
-              '0'
+              constants.EMPTY_NFT_TOKEN_ID
             )
         )
           .to.emit(
@@ -660,7 +660,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.QTY_10,
             ],
             contractGate.address,
-            '0'
+            constants.EMPTY_NFT_TOKEN_ID
           );
 
         expect(
@@ -731,7 +731,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.QTY_10,
               ],
               constants.ZERO_ADDRESS,
-              '0'
+              constants.EMPTY_NFT_TOKEN_ID
             )
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
       });
@@ -790,7 +790,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.QTY_10,
               ],
               contractGate.address,
-              '0'
+              constants.EMPTY_NFT_TOKEN_ID
             )
         )
           .to.emit(
@@ -940,7 +940,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.QTY_10,
             ],
             contractGate.address,
-            '0'
+            constants.EMPTY_NFT_TOKEN_ID
           );
 
         expect(
@@ -1009,7 +1009,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.QTY_10,
               ],
               constants.ZERO_ADDRESS,
-              '0'
+              constants.EMPTY_NFT_TOKEN_ID
             )
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
       });
@@ -1038,7 +1038,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.QTY_10,
               ],
               contractGate.address,
-              '0',
+              constants.EMPTY_NFT_TOKEN_ID,
               {value: txValue}
             )
         )
@@ -1181,7 +1181,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.QTY_10,
             ],
             contractGate.address,
-            '0',
+            constants.EMPTY_NFT_TOKEN_ID,
             {value: txValue}
           );
 
@@ -1236,7 +1236,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.QTY_10,
               ],
               constants.ZERO_ADDRESS,
-              '0',
+              constants.EMPTY_NFT_TOKEN_ID,
               {value: txValue}
             )
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
@@ -1293,7 +1293,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.QTY_10,
             ],
             contractGate.address,
-            '0',
+            constants.EMPTY_NFT_TOKEN_ID,
             {value: txValue}
           );
 
@@ -1444,7 +1444,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.QTY_10,
             ],
             users.other1.address, /// gate address that maps to EOA
-            '0',
+            constants.EMPTY_NFT_TOKEN_ID,
             {value: txValue}
           );
 
@@ -1481,7 +1481,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.QTY_10,
             ],
             contractGate.address,
-            '0',
+            constants.EMPTY_NFT_TOKEN_ID,
             {value: txValue}
           );
 
@@ -2259,7 +2259,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.QTY_10,
             ],
             contractGate.address,
-            '0'
+            constants.EMPTY_NFT_TOKEN_ID
           );
 
         const txReceipt = await txOrder.wait();
@@ -2453,7 +2453,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.QTY_10,
             ],
             users.other1.address, /// gate address that maps to EOA
-            '0'
+            constants.EMPTY_NFT_TOKEN_ID
           );
 
         const txReceipt = await txOrder.wait();
@@ -2532,7 +2532,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.QTY_10,
             ],
             contractGate.address,
-            '0'
+            constants.EMPTY_NFT_TOKEN_ID
           );
 
         const txReceipt = await txOrder.wait();
@@ -2643,7 +2643,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.QTY_10,
             ],
             contractGate.address,
-            '0',
+            constants.EMPTY_NFT_TOKEN_ID,
             {value: txValue}
           );
 
@@ -2815,7 +2815,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.QTY_10,
             ],
             users.other1.address, /// gate address that maps to EOA
-            '0',
+            constants.EMPTY_NFT_TOKEN_ID,
             {value: txValue}
           );
 
@@ -2861,7 +2861,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.QTY_10,
             ],
             contractGate.address,
-            '0',
+            constants.EMPTY_NFT_TOKEN_ID,
             {value: txValue}
           );
 
