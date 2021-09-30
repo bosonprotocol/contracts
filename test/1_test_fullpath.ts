@@ -109,7 +109,6 @@ describe('Voucher tests', () => {
     await contractMockBosonRouter.deployed();
     await contractBSNTokenPrice.deployed();
 
-
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
       true
@@ -1229,9 +1228,7 @@ describe('Voucher tests', () => {
         contractMockBosonRouter.address
       );
 
-      sellerInstance = contractMockBosonRouter.connect(
-        users.seller.signer
-      );
+      sellerInstance = contractMockBosonRouter.connect(users.seller.signer);
     });
 
     it('[Negative] safeTransferFrom will revert the transaction if it fails', async () => {
