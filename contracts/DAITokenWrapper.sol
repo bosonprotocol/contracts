@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 pragma solidity 0.7.6;
 
-
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/ITokenWrapper.sol";
 import "./interfaces/IDAI.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title DAITokenWrapper

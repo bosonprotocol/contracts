@@ -1,38 +1,14 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 pragma solidity 0.7.6;
 
-interface IERC20WithPermit {
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
-    );
-    event Transfer(address indexed from, address indexed to, uint256 value);
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+interface IERC20WithPermit is IERC20 {
     function name() external view returns (string memory);
 
     function symbol() external view returns (string memory);
 
     function decimals() external pure returns (uint8);
-
-    function totalSupply() external view returns (uint256);
-
-    function balanceOf(address _owner) external view returns (uint256);
-
-    function allowance(address _owner, address _spender)
-        external
-        view
-        returns (uint256);
-
-    function approve(address _spender, uint256 _value) external returns (bool);
-
-    function transfer(address _to, uint256 _value) external returns (bool);
-
-    function transferFrom(
-        address _from,
-        address _to,
-        uint256 _value
-    ) external returns (bool);
 
     // solhint-disable-next-line func-name-mixedcase
     function DOMAIN_SEPARATOR() external view returns (bytes32);
