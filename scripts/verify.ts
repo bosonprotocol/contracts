@@ -98,16 +98,6 @@ export async function verifyContracts(env: string): Promise<void> {
   } catch (error) {
     logError('Gate', error.message);
   }
-
-  //verify SafeERC20WithPermit
-  try {
-    await hre.run('verify:verify', {
-      address: contracts.safeERC20WithPermit,
-      contract: 'contracts/libs/SafeERC20WithPermit.sol:SafeERC20WithPermit',
-    });
-  } catch (error) {
-    logError('SafeERC20WithPermit', error.message);
-  }
 }
 
 function logError(contractName, msg) {
