@@ -23,6 +23,7 @@ import {
   Cashier,
   TokenRegistry,
   MockBosonRouter,
+  MockERC20Permit,
 } from '../typechain';
 
 let ERC1155ERC721_Factory: ContractFactory;
@@ -31,6 +32,7 @@ let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
 let TokenRegistry_Factory: ContractFactory;
 let MockBosonRouter_Factory: ContractFactory;
+let MockERC20Permit_Factory: ContractFactory;
 
 const BN = ethers.BigNumber.from;
 
@@ -42,7 +44,8 @@ describe('Voucher tests', () => {
     contractCashier: Cashier,
     contractBosonRouter: BosonRouter,
     contractTokenRegistry: TokenRegistry,
-    contractMockBosonRouter: MockBosonRouter;
+    contractMockBosonRouter: MockBosonRouter,
+    contractBSNTokenPrice: MockERC20Permit;
 
   let tokenSupplyKey1,
     tokenSupplyKey2,
@@ -62,6 +65,9 @@ describe('Voucher tests', () => {
     TokenRegistry_Factory = await ethers.getContractFactory('TokenRegistry');
     MockBosonRouter_Factory = await ethers.getContractFactory(
       'MockBosonRouter'
+    );
+    MockERC20Permit_Factory = await ethers.getContractFactory(
+      'MockERC20Permit'
     );
   });
 
@@ -90,12 +96,19 @@ describe('Voucher tests', () => {
       contractCashier.address
     )) as Contract & MockBosonRouter;
 
+    contractBSNTokenPrice = (await MockERC20Permit_Factory.deploy(
+      'BosonTokenPrice',
+      'BPRC'
+    )) as Contract & MockERC20Permit;
+
     await contractTokenRegistry.deployed();
     await contractERC1155ERC721.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
     await contractBosonRouter.deployed();
     await contractMockBosonRouter.deployed();
+    await contractBSNTokenPrice.deployed();
+
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
@@ -1205,6 +1218,40 @@ describe('Voucher tests', () => {
         BN(constants.PROMISE_PRICE1)
       );
       assert.isTrue(sellerBalanceAfter.eq(expectedSellerBalance));
+    });
+  });
+
+  describe('TransferFrom: It is safe to interact with older ERC20 tokens', function () {
+    let sellerInstance;
+    beforeEach('set seller as boson router', async () => {
+      //Set mock so that failed transferFrom of tokens with no return value can be tested in transferFromAndAddEscrow
+      await contractCashier.setBosonRouterAddress(
+        contractMockBosonRouter.address
+      );
+
+      sellerInstance = contractMockBosonRouter.connect(
+        users.seller.signer
+      );
+    });
+
+    it('[Negative] safeTransferFrom will revert the transaction if it fails', async () => {
+      await contractBSNTokenPrice.pause();
+
+      await expect(
+        sellerInstance.transferFromAndAddEscrow(
+          contractBSNTokenPrice.address,
+          BN(0)
+        )
+      ).to.be.revertedWith(revertReasons.PAUSED);
+    });
+
+    it('safeTransferFrom will NOT revert the transaction if it succeeds', async () => {
+      await expect(
+        sellerInstance.transferFromAndAddEscrow(
+          contractBSNTokenPrice.address,
+          BN(0)
+        )
+      ).to.not.be.revertedWith(revertReasons.PAUSED);
     });
   });
 }); //end of contract
