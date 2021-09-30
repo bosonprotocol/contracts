@@ -14,6 +14,7 @@ import "../interfaces/ICashier.sol";
 import "../interfaces/IGate.sol";
 import "../interfaces/ITokenWrapper.sol";
 import "../UsingHelpers.sol";
+import "../libs/SafeERC20WithPermit.sol";
 
 /**
  * @title Mock Contract for testing purposes.
@@ -28,6 +29,7 @@ contract MockBosonRouter is
 {
     using Address for address payable;
     using SafeMath for uint256;
+    using SafeERC20WithPermit for IERC20WithPermit;
 
     address private cashierAddress;
     address private voucherKernel;
@@ -814,6 +816,28 @@ contract MockBosonRouter is
             _v,
             _r,
             _s
+        );
+    }
+
+    /**
+     * @notice Transfer tokens to cashier and adds it to escrow
+     * @param _tokenAddress tokens that are transfered
+     * @param _amount       amount of tokens to transfer (expected permit)
+     */
+    function transferFromAndAddEscrow(address _tokenAddress, uint256 _amount)
+        external
+    {
+        SafeERC20WithPermit.safeTransferFrom(
+            IERC20WithPermit(_tokenAddress),
+            msg.sender,
+            address(cashierAddress),
+            _amount
+        );
+
+        ICashier(cashierAddress).addEscrowTokensAmount(
+            _tokenAddress,
+            msg.sender,
+            _amount
         );
     }
 
