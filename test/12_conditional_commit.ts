@@ -1256,10 +1256,6 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         constants.PROMISE_VALID_FROM = timestamp;
         constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
-        const tokensToMint = BN(constants.product_price).mul(
-          BN(constants.QTY_20)
-        );
-
         await contractERC1155NonTransferable.mint(
           users.buyer.address,
           constants.NFT_TOKEN_ID,
@@ -1371,7 +1367,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           BN(constants.QTY_10)
         );
         
-        const txOrder = await contractBosonRouter
+        await contractBosonRouter
             .connect(users.seller.signer)
             .requestCreateOrderETHETHConditional(
               [
@@ -1387,18 +1383,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               {value: txValue}
             )
         
-        const txReceipt = await txOrder.wait();
-
-        let eventArgs;
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          BosonRouter_Factory,
-          eventNames.LOG_ORDER_CREATED,
-          (e) => (eventArgs = e)
-        );
-
-        const tokenSupplyKey = eventArgs._tokenIdSupply;
+        const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);
        
         const buyerInstance = contractBosonRouter.connect(
           users.other1.signer
@@ -1418,7 +1403,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           BN(constants.QTY_10)
         );
         
-        const txOrder = await contractBosonRouter
+        await contractBosonRouter
             .connect(users.seller.signer)
             .requestCreateOrderETHETHConditional(
               [
@@ -1434,18 +1419,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               {value: txValue}
             )
 
-        const txReceipt = await txOrder.wait();
-
-        let eventArgs;
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          BosonRouter_Factory,
-          eventNames.LOG_ORDER_CREATED,
-          (e) => (eventArgs = e)
-        );
-
-        const tokenSupplyKey = eventArgs._tokenIdSupply;       
+        const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);    
 
         const buyerInstance = contractBosonRouter.connect(
           users.other1.signer
@@ -1697,28 +1671,17 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       });
 
       it('[NEGATIVE] Should revert if specified gate contract does not exist', async () => {
-        const txOrder = await utils.createOrderConditional(
+        await utils.createOrderConditional(
           users.seller,
           timestamp,
           timestamp + constants.SECONDS_IN_DAY,
           constants.seller_deposit,
           constants.QTY_10,
-          contractBSNTokenDeposit,
+          users.other1, /// gate address that maps to EOA
           0
         );
 
-        const txReceipt = await txOrder.wait();
-
-        let eventArgs;
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          BosonRouter_Factory,
-          eventNames.LOG_ORDER_CREATED,
-          (e) => (eventArgs = e)
-        );
-
-        const tokenSupplyKey = eventArgs._tokenIdSupply;
+        const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);
 
         const {txValue, DEPOSIT, PRICE} = await generateInputs(
           users.buyer,
@@ -1749,11 +1712,11 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             rDeposit,
             sDeposit
           )
-        ).to.be.reverted;
+        ).to.be.revertedWith(revertReasons.EOA);
       });
 
-      it('[NEGATIVE] Should revert if mapping between voucherset and nfttoken not exist', async () => {
-        const txOrder = await utils.createOrderConditional(
+      it('[NEGATIVE] Should revert if mapping between voucherset and nfttoken does not exist', async () => {
+        await utils.createOrderConditional(
           users.seller,
           timestamp,
           timestamp + constants.SECONDS_IN_DAY,
@@ -1763,18 +1726,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           0
         );
 
-        const txReceipt = await txOrder.wait();
-
-        let eventArgs;
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          BosonRouter_Factory,
-          eventNames.LOG_ORDER_CREATED,
-          (e) => (eventArgs = e)
-        );
-
-        const tokenSupplyKey = eventArgs._tokenIdSupply;
+        const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);
 
         const {txValue, DEPOSIT, PRICE} = await generateInputs(
           users.buyer,
@@ -1994,28 +1946,17 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       });
 
       it('[NEGATIVE] Should revert if specified gate contract does not exist', async () => {
-        const txOrder = await utils.createOrderConditional(
+        await utils.createOrderConditional(
           users.seller,
           timestamp,
           timestamp + constants.SECONDS_IN_DAY,
           constants.seller_deposit,
           constants.QTY_10,
-          contractBSNTokenDeposit,
+          users.other1, /// gate address that maps to EOA
           0
         );
 
-        const txReceipt = await txOrder.wait();
-
-        let eventArgs;
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          BosonRouter_Factory,
-          eventNames.LOG_ORDER_CREATED,
-          (e) => (eventArgs = e)
-        );
-
-        const tokenSupplyKey = eventArgs._tokenIdSupply;
+        const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);
 
         const {txValue, v, r, s} = await generateInputs(
           users.buyer,
@@ -2036,11 +1977,11 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             r,
             s
           )
-        ).to.be.reverted;
+        ).to.be.revertedWith(revertReasons.EOA);
       });
 
       it('[NEGATIVE] Should revert if mapping between voucherset and nfttoken not exist', async () => {
-        const txOrder = await utils.createOrderConditional(
+        await utils.createOrderConditional(
           users.seller,
           timestamp,
           timestamp + constants.SECONDS_IN_DAY,
@@ -2050,18 +1991,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           0
         );
 
-        const txReceipt = await txOrder.wait();
-
-        let eventArgs;
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          BosonRouter_Factory,
-          eventNames.LOG_ORDER_CREATED,
-          (e) => (eventArgs = e)
-        );
-
-        const tokenSupplyKey = eventArgs._tokenIdSupply;
+        const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);
 
         const {txValue, v, r, s} = await generateInputs(
           users.buyer,
@@ -2090,10 +2020,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       async function generateInputs(
         account: Account,
         deposit: number | string,
-        product_price: number | string
       ) {
         const nonce = await contractBSNTokenDeposit.nonces(account.address);
-        const txValue = BN(deposit).add(BN(product_price)); // shoud go out
 
         const digest = await getApprovalDigest(
           contractBSNTokenDeposit,
@@ -2108,7 +2036,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           Buffer.from(digest.slice(2), 'hex'),
           Buffer.from(account.privateKey.slice(2), 'hex')
         );
-        return {txValue, v, r, s};
+        return {v, r, s};
       }
 
       beforeEach(async () => {
@@ -2212,10 +2140,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       });
 
       it('Should be able to request voucher', async () => {
-        const {txValue, v, r, s} = await generateInputs(
+        const {v, r, s} = await generateInputs(
           users.buyer,
           constants.PROMISE_DEPOSITBU1,
-          constants.PROMISE_PRICE1
         );
 
         const buyerInstance = contractBosonRouter.connect(
@@ -2239,10 +2166,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       });
 
       it('[NEGATIVE] Should not be able to request voucher twice', async () => {
-        let {txValue, v, r, s} = await generateInputs(
+        let {v, r, s} = await generateInputs(
           users.buyer,
           constants.PROMISE_DEPOSITBU1,
-          constants.PROMISE_PRICE1
         );
 
         const buyerInstance = contractBosonRouter.connect(
@@ -2260,10 +2186,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             {value:constants.PROMISE_PRICE1}
           );
 
-        ({txValue, v, r, s} = await generateInputs(
+        ({v, r, s} = await generateInputs(
           users.buyer,
           constants.PROMISE_DEPOSITBU1,
-          constants.PROMISE_PRICE1
         ));
 
         await expect(
@@ -2281,10 +2206,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       });
 
       it('[NEGATIVE] Should not be able to request voucher without NFT token', async () => {
-        const {txValue, v, r, s} = await generateInputs(
+        const {v, r, s} = await generateInputs(
           users.other1,
           constants.PROMISE_DEPOSITBU1,
-          constants.PROMISE_PRICE1
         );
 
         const buyerInstance = contractBosonRouter.connect(
@@ -2305,7 +2229,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       });
 
       it('[NEGATIVE] Should revert if specified gate contract does not exist', async () => {
-        const txValueSeller = BN(constants.PROMISE_DEPOSITSE1).mul(BN(constants.QTY_10));
+        const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(BN(constants.QTY_10));
 
         const nonce = await contractBSNTokenDeposit.nonces(users.seller.address);
   
@@ -2313,7 +2237,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           contractBSNTokenDeposit,
           users.seller.address,
           contractBosonRouter.address,
-          txValueSeller,
+          txValue,
           nonce,
           deadline
         );
@@ -2327,7 +2251,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         .connect(users.seller.signer)
         .requestCreateOrderETHTKNWithPermitConditional(
           contractBSNTokenDeposit.address,
-          txValueSeller,
+          txValue,
           deadline,
           sellerSignature.v,
           sellerSignature.r,
@@ -2357,10 +2281,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
         const tokenSupplyKey = eventArgs._tokenIdSupply;
 
-        const {txValue, v, r, s} = await generateInputs(
+        const {v, r, s} = await generateInputs(
           users.buyer,
           constants.PROMISE_DEPOSITBU1,
-          constants.PROMISE_PRICE1
         );
 
         const buyerInstance = contractBosonRouter.connect(
@@ -2381,7 +2304,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       });
 
       it('[NEGATIVE] Should revert if mapping between voucherset and nfttoken does not exist', async () => {
-        const txValueSeller = BN(constants.PROMISE_DEPOSITSE1).mul(BN(constants.QTY_10));
+        const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(BN(constants.QTY_10));
 
         const nonce = await contractBSNTokenDeposit.nonces(users.seller.address);
   
@@ -2389,7 +2312,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           contractBSNTokenDeposit,
           users.seller.address,
           contractBosonRouter.address,
-          txValueSeller,
+          txValue,
           nonce,
           deadline
         );
@@ -2403,7 +2326,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         .connect(users.seller.signer)
         .requestCreateOrderETHTKNWithPermitConditional(
           contractBSNTokenDeposit.address,
-          txValueSeller,
+          txValue,
           deadline,
           sellerSignature.v,
           sellerSignature.r,
@@ -2433,10 +2356,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
         const tokenSupplyKey = eventArgs._tokenIdSupply;
 
-        const {txValue, v, r, s} = await generateInputs(
+        const {v, r, s} = await generateInputs(
           users.buyer,
           constants.PROMISE_DEPOSITBU1,
-          constants.PROMISE_PRICE1
         );
 
         const buyerInstance = contractBosonRouter.connect(
@@ -2460,11 +2382,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     describe('TKNETH', () => {
       async function generateInputs(
         account: Account,
-        deposit: number | string,
         product_price: number | string
       ) {
         const nonce = await contractBSNTokenDeposit.nonces(account.address);
-        const txValue = BN(deposit).add(BN(product_price)); // shoud go out
 
         const digest = await getApprovalDigest(
           contractBSNTokenDeposit,
@@ -2479,7 +2399,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           Buffer.from(digest.slice(2), 'hex'),
           Buffer.from(account.privateKey.slice(2), 'hex')
         );
-        return {txValue, v, r, s};
+        return {v, r, s};
       }
 
       beforeEach(async () => {
@@ -2504,12 +2424,6 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             contractBSNTokenDeposit,
             contractBSNTokenDeposit
           );
-
-        await utils.mintTokens(
-          'contractBSNTokenDeposit',
-          users.seller.address,
-          tokensToMint
-        );
 
         await utils.mintTokens(
           'contractBSNTokenDeposit',
@@ -2563,10 +2477,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       });
 
       it('Should be able to request voucher', async () => {
-        const {txValue, v, r, s} = await generateInputs(
+        const {v, r, s} = await generateInputs(
           users.buyer,
-          constants.PROMISE_DEPOSITBU1,
-          constants.PROMISE_PRICE1
+          constants.PROMISE_PRICE1,
         );
 
         const buyerInstance = contractBosonRouter.connect(
@@ -2590,10 +2503,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       });
 
       it('[NEGATIVE] Should not be able to request voucher twice', async () => {
-        let {txValue, v, r, s} = await generateInputs(
+        let {v, r, s} = await generateInputs(
           users.buyer,
-          constants.PROMISE_DEPOSITBU1,
-          constants.PROMISE_PRICE1
+          constants.PROMISE_PRICE1,
         );
 
         const buyerInstance = contractBosonRouter.connect(
@@ -2611,10 +2523,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           {value:constants.PROMISE_DEPOSITBU1}
         );
 
-        ({txValue, v, r, s} = await generateInputs(
+        ({v, r, s} = await generateInputs(
           users.buyer,
-          constants.PROMISE_DEPOSITBU1,
-          constants.PROMISE_PRICE1
+          constants.PROMISE_PRICE1,
         ));
 
         await expect(
@@ -2632,10 +2543,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       });
 
       it('[NEGATIVE] Should not be able to request voucher without NFT token', async () => {
-        const {txValue, v, r, s} = await generateInputs(
+        const {v, r, s} = await generateInputs(
           users.other1,
-          constants.PROMISE_DEPOSITBU1,
-          constants.PROMISE_PRICE1
+          constants.PROMISE_PRICE1,
         );
 
         const buyerInstance = contractBosonRouter.connect(
@@ -2656,9 +2566,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       });
 
       it('[NEGATIVE] Should revert if specified gate contract does not exist', async () => {
-        const txValueSeller = BN(constants.PROMISE_DEPOSITSE1).mul(BN(constants.QTY_10));
+        const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(BN(constants.QTY_10));
 
-        const txOrder = await contractBosonRouter
+        await contractBosonRouter
         .connect(users.seller.signer)
         .requestCreateOrderTKNETHConditional(
           contractBSNTokenDeposit.address,
@@ -2672,26 +2582,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           ],
           users.other1.address, /// gate address that maps to EOA
           '0',
-          {value: txValueSeller}
+          {value: txValue}
         );
 
-        const txReceipt = await txOrder.wait();
+        const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);
 
-        let eventArgs;
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          BosonRouter_Factory,
-          eventNames.LOG_ORDER_CREATED,
-          (e) => (eventArgs = e)
-        );
-
-        const tokenSupplyKey = eventArgs._tokenIdSupply;
-
-        const {txValue, v, r, s} = await generateInputs(
+        const {v, r, s} = await generateInputs(
           users.buyer,
-          constants.PROMISE_DEPOSITBU1,
-          constants.PROMISE_PRICE1
+          constants.PROMISE_PRICE1,
         );
 
         const buyerInstance = contractBosonRouter.connect(
@@ -2712,9 +2610,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       });
 
       it('[NEGATIVE] Should revert if mapping between voucherset and nfttoken does not exist', async () => {
-        const txValueSeller = BN(constants.PROMISE_DEPOSITSE1).mul(BN(constants.QTY_10));
+        const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(BN(constants.QTY_10));
 
-        const txOrder = await contractBosonRouter
+        await contractBosonRouter
         .connect(users.seller.signer)
         .requestCreateOrderTKNETHConditional(
           contractBSNTokenDeposit.address,
@@ -2728,26 +2626,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           ],
           contractGate.address,
           '0',
-          {value: txValueSeller}
+          {value: txValue}
         );
 
-        const txReceipt = await txOrder.wait();
+        const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);
 
-        let eventArgs;
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          BosonRouter_Factory,
-          eventNames.LOG_ORDER_CREATED,
-          (e) => (eventArgs = e)
-        );
-
-        const tokenSupplyKey = eventArgs._tokenIdSupply;
-
-        const {txValue, v, r, s} = await generateInputs(
+        const {v, r, s} = await generateInputs(
           users.buyer,
-          constants.PROMISE_DEPOSITBU1,
-          constants.PROMISE_PRICE1
+          constants.PROMISE_PRICE1,
         );
 
         const buyerInstance = contractBosonRouter.connect(

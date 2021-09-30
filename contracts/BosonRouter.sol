@@ -424,11 +424,6 @@ contract BosonRouter is
         uint256[] calldata _metadata
     ) external payable override {
         requestCreateOrderTKNETHInternal(_tokenPriceAddress, _metadata);
-
-        // notZeroAddress(_tokenPriceAddress);
-        // checkLimits(metadata, _tokenPriceAddress, address(0), 0);
-
-        // requestCreateOrder(metadata, TKNETH, _tokenPriceAddress, address(0), 0);
     }
 
     /**
@@ -464,11 +459,6 @@ contract BosonRouter is
     ) external payable override {
         notZeroAddress(_gateAddress);
         uint256 tokenIdSupply = requestCreateOrderTKNETHInternal(_tokenPriceAddress, _metadata);
-        // notZeroAddress(_tokenPriceAddress);
-        
-        // checkLimits(metadata, _tokenPriceAddress, address(0), 0);
-
-        // uint256 tokenIdSupply = requestCreateOrder(metadata, TKNETH, _tokenPriceAddress, address(0), 0);
         finalizeConditionalOrder(tokenIdSupply, _gateAddress, _nftTokenId);
     }
 
