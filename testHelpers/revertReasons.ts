@@ -48,4 +48,5 @@ export default {
   INVALID_SIGNATURE_COMPONENTS: 'INVALID_SIGNATURE_COMPONENTS',
   DAI_INVALID_PERMIT: 'Dai/invalid-permit',
   UNSUPPORTED_TOKEN: 'UNSUPPORTED_TOKEN',
+  EOA: 'Transaction reverted: function call to a non-contract account',
 };
