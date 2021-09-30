@@ -24,7 +24,6 @@ class DeploymentExecutor {
   dai_token;
   gate;
   erc1155NonTransferable;
-  safeERC20WithPermit;
 
   constructor() {
     if (this.constructor == DeploymentExecutor) {
@@ -48,7 +47,6 @@ class DeploymentExecutor {
     this.dai_token = process.env.DAI_TOKEN;
     this.gate;
     this.erc1155NonTransferable;
-    this.safeERC20WithPermit;
   }
 
   async setDefaults() {
@@ -155,9 +153,6 @@ class DeploymentExecutor {
     const ERC1155NonTransferable = await ethers.getContractFactory(
       'ERC1155NonTransferable'
     );
-    const SafeERC20WithPermit = await ethers.getContractFactory(
-      'SafeERC20WithPermit'
-    );
 
     this.tokenRegistry = await TokenRegistry.deploy();
     this.erc1155erc721 = await ERC1155ERC721.deploy();
@@ -173,7 +168,6 @@ class DeploymentExecutor {
     this.erc1155NonTransferable = await ERC1155NonTransferable.deploy(
       'https://quests.bosonportal.io'
     );
-    this.safeERC20WithPermit = await SafeERC20WithPermit.deploy();
 
     await this.tokenRegistry.deployed();
     await this.erc1155erc721.deployed();
@@ -183,7 +177,6 @@ class DeploymentExecutor {
     await this.daiTokenWrapper.deployed();
     await this.gate.deployed();
     await this.erc1155NonTransferable.deployed();
-    await this.safeERC20WithPermit.deployed();
   }
 
   logContracts() {
@@ -209,10 +202,6 @@ class DeploymentExecutor {
       this.erc1155NonTransferable.address
     );
     console.log('DAI Token Address Used: ', this.dai_token);
-    console.log(
-      'SafeERC20WithPermit Library Address Used: ',
-      this.safeERC20WithPermit.address
-    );
   }
 
   writeContracts() {
@@ -230,7 +219,6 @@ class DeploymentExecutor {
           gate: this.gate.address,
           erc1155NonTransferable: this.erc1155NonTransferable.address,
           daiTokenUsed: this.dai_token,
-          safeERC20WithPermit: this.safeERC20WithPermit.address,
         },
         null,
         2
