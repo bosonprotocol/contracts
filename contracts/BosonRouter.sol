@@ -162,7 +162,6 @@ contract BosonRouter is
     function requestCreateOrderETHETH(uint256[] calldata _metadata)
         external
         payable
-        virtual
         override
         nonReentrant
         whenNotPaused
