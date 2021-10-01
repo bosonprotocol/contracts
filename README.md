@@ -43,6 +43,7 @@ At a minimum, you'll need:
 * Bundler (> 2)
 * Git
 * direnv
+* Docker
 
 For instructions on how to get set up with these specific versions:
 * See the [OS X guide](docs/setup/osx.md) if you are on a Mac.
