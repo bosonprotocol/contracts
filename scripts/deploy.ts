@@ -119,6 +119,8 @@ class DeploymentExecutor {
       this.daiTokenWrapper.address
     );
 
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
     console.log(
       '$ TokenRegistry',
       event.event,
@@ -128,6 +130,15 @@ class DeploymentExecutor {
 
     tx = await this.gate.setNonTransferableTokenContract(
       this.erc1155NonTransferable.address
+    );
+
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log(
+      '$ Gate',
+      event.event,
+      'at:',
+      event.args._nonTransferableTokenContractAddress
     );
   }
 
@@ -155,7 +166,7 @@ class DeploymentExecutor {
     this.daiTokenWrapper = await DAITokenWrapper.deploy(this.dai_token);
     this.gate = await Gate.deploy(this.br.address);
     this.erc1155NonTransferable = await ERC1155NonTransferable.deploy(
-      'http://dummyuri'
+      'https://quests.bosonportal.io'
     );
 
     await this.tokenRegistry.deployed();
@@ -190,6 +201,7 @@ class DeploymentExecutor {
       'ERC1155NonTransferable Contract Address: ',
       this.erc1155NonTransferable.address
     );
+    console.log('DAI Token Address Used: ', this.dai_token);
   }
 
   writeContracts() {
@@ -206,6 +218,7 @@ class DeploymentExecutor {
           daiTokenWrapper: this.daiTokenWrapper.address,
           gate: this.gate.address,
           erc1155NonTransferable: this.erc1155NonTransferable.address,
+          daiTokenUsed: this.dai_token,
         },
         null,
         2

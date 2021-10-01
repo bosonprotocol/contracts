@@ -50,8 +50,8 @@ contract MockBosonRouter is
     /**
      * @notice Acts as a modifier, but it's cheaper. Checking if a non-zero address is provided, otherwise reverts.
      */
-    function notZeroAddress(address tokenAddress) private pure {
-        require(tokenAddress != address(0), "0A"); //zero address
+    function notZeroAddress(address _tokenAddress) private pure {
+        require(_tokenAddress != address(0), "0A"); //zero address
     }
 
     /**
@@ -63,11 +63,11 @@ contract MockBosonRouter is
 
     /**
      * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the TokenRegistry.
-     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the TokenRegistry (ETH).
+     * @param _value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the TokenRegistry (ETH).
      */
-    function notAboveETHLimit(uint256 value) internal view {
+    function notAboveETHLimit(uint256 _value) internal view {
         require(
-            value <= ITokenRegistry(tokenRegistry).getETHLimit(),
+            _value <= ITokenRegistry(tokenRegistry).getETHLimit(),
             "AL" // above limit
         );
     }
@@ -75,14 +75,15 @@ contract MockBosonRouter is
     /**
      * @notice Acts as a modifier, but it's cheaper. Checks whether provided value corresponds to the limits in the TokenRegistry.
      * @param _tokenAddress the token address which, we are getting the limits for.
-     * @param value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the TokenRegistry (ETH).
+     * @param _value the specified value is per voucher set level. E.g. deposit * qty should not be greater or equal to the limit in the TokenRegistry (ETH).
      */
-    function notAboveTokenLimit(address _tokenAddress, uint256 value)
+    function notAboveTokenLimit(address _tokenAddress, uint256 _value)
         internal
         view
     {
         require(
-            value <= ITokenRegistry(tokenRegistry).getTokenLimit(_tokenAddress),
+            _value <=
+                ITokenRegistry(tokenRegistry).getTokenLimit(_tokenAddress),
             "AL" //above limit
         );
     }
@@ -128,19 +129,19 @@ contract MockBosonRouter is
 
     /**
      * @notice Issuer/Seller offers promises as supply tokens and needs to escrow the deposit
-        @param metadata metadata which is required for creation of a voucher
+        @param _metadata metadata which is required for creation of a voucher
         Metadata array is used as in some scenarios we need several more params, as we need to recover 
         owner address in order to permit the contract to transfer funds on his behalf. 
         Since the params get too many, we end up in situation that the stack is too deep.
         
-        uint256 _validFrom = metadata[0];
-        uint256 _validTo = metadata[1];
-        uint256 _price = metadata[2];
-        uint256 _depositSe = metadata[3];
-        uint256 _depositBu = metadata[4];
-        uint256 _quantity = metadata[5];
+        uint256 _validFrom = _metadata[0];
+        uint256 _validTo = _metadata[1];
+        uint256 _price = _metadata[2];
+        uint256 _depositSe = _metadata[3];
+        uint256 _depositBu = _metadata[4];
+        uint256 _quantity = _metadata[5];
      */
-    function requestCreateOrderETHETH(uint256[] calldata metadata)
+    function requestCreateOrderETHETH(uint256[] calldata _metadata)
         external
         payable
         override
@@ -152,15 +153,16 @@ contract MockBosonRouter is
         notAboveETHLimit(metadata[4].mul(metadata[5]));
         require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
 
+
         uint256 tokenIdSupply =
             IVoucherKernel(voucherKernel).createTokenSupplyId(
                 msg.sender,
-                metadata[0],
-                metadata[1],
-                metadata[2],
-                metadata[3],
-                metadata[4],
-                metadata[5]
+                _metadata[0],
+                _metadata[1],
+                _metadata[2],
+                _metadata[3],
+                _metadata[4],
+                _metadata[5]
             );
 
         IVoucherKernel(voucherKernel).createPaymentMethod(
@@ -173,24 +175,30 @@ contract MockBosonRouter is
         //record funds in escrow ...
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
 
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHETH);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, _metadata[5], ETHETH);
     }
 
     function requestCreateOrderTKNTKNWithPermitInternal(
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint256[] calldata metadata
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s,
+        uint256[] calldata _metadata
     ) internal whenNotPaused returns (uint256) {
         notZeroAddress(_tokenPriceAddress);
         notZeroAddress(_tokenDepositAddress);
-        notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
-        notAboveTokenLimit(_tokenDepositAddress, metadata[3].mul(metadata[5]));
-        notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
+        notAboveTokenLimit(_tokenPriceAddress, _metadata[2].mul(_metadata[5]));
+        notAboveTokenLimit(
+            _tokenDepositAddress,
+            _metadata[3].mul(_metadata[5])
+        );
+        notAboveTokenLimit(
+            _tokenDepositAddress,
+            _metadata[4].mul(_metadata[5])
+        );
 
         require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
 
@@ -199,21 +207,21 @@ contract MockBosonRouter is
             msg.sender,
             address(this),
             _tokensSent,
-            deadline,
-            v,
-            r,
-            s
+            _deadline,
+            _v,
+            _r,
+            _s
         );
 
         uint256 tokenIdSupply =
             IVoucherKernel(voucherKernel).createTokenSupplyId(
                 msg.sender,
-                metadata[0],
-                metadata[1],
-                metadata[2],
-                metadata[3],
-                metadata[4],
-                metadata[5]
+                _metadata[0],
+                _metadata[1],
+                _metadata[2],
+                _metadata[3],
+                _metadata[4],
+                _metadata[5]
             );
 
         IVoucherKernel(voucherKernel).createPaymentMethod(
@@ -236,7 +244,7 @@ contract MockBosonRouter is
             _tokensSent
         );
 
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNTKN);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, _metadata[5], TKNTKN);
 
         return tokenIdSupply;
     }
@@ -245,21 +253,21 @@ contract MockBosonRouter is
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint256[] calldata metadata
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s,
+        uint256[] calldata _metadata
     ) external override {
         requestCreateOrderTKNTKNWithPermitInternal(
             _tokenPriceAddress,
             _tokenDepositAddress,
             _tokensSent,
-            deadline,
-            v,
-            r,
-            s,
-            metadata
+            _deadline,
+            _v,
+            _r,
+            _s,
+            _metadata
         );
     }
 
@@ -267,11 +275,11 @@ contract MockBosonRouter is
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint256[] calldata metadata,
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s,
+        uint256[] calldata _metadata,
         address _gateAddress,
         uint256 _nftTokenId
     ) external override {
@@ -282,11 +290,11 @@ contract MockBosonRouter is
                 _tokenPriceAddress,
                 _tokenDepositAddress,
                 _tokensSent,
-                deadline,
-                v,
-                r,
-                s,
-                metadata
+                _deadline,
+                _v,
+                _r,
+                _s,
+                _metadata
             );
 
         voucherSetToGateContract[tokenIdSupply] = _gateAddress;
@@ -304,16 +312,22 @@ contract MockBosonRouter is
     function requestCreateOrderETHTKNWithPermit(
         address _tokenDepositAddress,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        uint256[] calldata metadata
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s,
+        uint256[] calldata _metadata
     ) external override whenNotPaused {
         notZeroAddress(_tokenDepositAddress);
-        notAboveETHLimit(metadata[2].mul(metadata[5]));
-        notAboveTokenLimit(_tokenDepositAddress, metadata[3].mul(metadata[5]));
-        notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
+        notAboveETHLimit(_metadata[2].mul(_metadata[5]));
+        notAboveTokenLimit(
+            _tokenDepositAddress,
+            _metadata[3].mul(_metadata[5])
+        );
+        notAboveTokenLimit(
+            _tokenDepositAddress,
+            _metadata[4].mul(_metadata[5])
+        );
 
         require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
 
@@ -322,21 +336,21 @@ contract MockBosonRouter is
             msg.sender,
             address(this),
             _tokensSent,
-            deadline,
-            v,
-            r,
-            s
+            _deadline,
+            _v,
+            _r,
+            _s
         );
 
         uint256 tokenIdSupply =
             IVoucherKernel(voucherKernel).createTokenSupplyId(
                 msg.sender,
-                metadata[0],
-                metadata[1],
-                metadata[2],
-                metadata[3],
-                metadata[4],
-                metadata[5]
+                _metadata[0],
+                _metadata[1],
+                _metadata[2],
+                _metadata[3],
+                _metadata[4],
+                _metadata[5]
             );
 
         IVoucherKernel(voucherKernel).createPaymentMethod(
@@ -359,29 +373,29 @@ contract MockBosonRouter is
             _tokensSent
         );
 
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], ETHTKN);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, _metadata[5], ETHTKN);
     }
 
     function requestCreateOrderTKNETH(
         address _tokenPriceAddress,
-        uint256[] calldata metadata
+        uint256[] calldata _metadata
     ) external payable override nonReentrant whenNotPaused {
         notZeroAddress(_tokenPriceAddress);
-        notAboveTokenLimit(_tokenPriceAddress, metadata[2].mul(metadata[5]));
-        notAboveETHLimit(metadata[3].mul(metadata[5]));
-        notAboveETHLimit(metadata[4].mul(metadata[5]));
+        notAboveTokenLimit(_tokenPriceAddress, _metadata[2].mul(_metadata[5]));
+        notAboveETHLimit(_metadata[3].mul(_metadata[5]));
+        notAboveETHLimit(_metadata[4].mul(_metadata[5]));
 
         require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
 
         uint256 tokenIdSupply =
             IVoucherKernel(voucherKernel).createTokenSupplyId(
                 msg.sender,
-                metadata[0],
-                metadata[1],
-                metadata[2],
-                metadata[3],
-                metadata[4],
-                metadata[5]
+                _metadata[0],
+                _metadata[1],
+                _metadata[2],
+                _metadata[3],
+                _metadata[4],
+                _metadata[5]
             );
         IVoucherKernel(voucherKernel).createPaymentMethod(
             tokenIdSupply,
@@ -393,7 +407,7 @@ contract MockBosonRouter is
         //record funds in escrow ...
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
 
-        emit LogOrderCreated(tokenIdSupply, msg.sender, metadata[5], TKNETH);
+        emit LogOrderCreated(tokenIdSupply, msg.sender, _metadata[5], TKNETH);
     }
 
     /**
@@ -430,13 +444,13 @@ contract MockBosonRouter is
         uint256 _tokenIdSupply,
         address _issuer,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 vPrice,
-        bytes32 rPrice,
-        bytes32 sPrice, // tokenPrice
-        uint8 vDeposit,
-        bytes32 rDeposit,
-        bytes32 sDeposit // tokenDeposits
+        uint256 _deadline,
+        uint8 _vPrice,
+        bytes32 _rPrice,
+        bytes32 _sPrice, // tokenPrice
+        uint8 _vDeposit,
+        bytes32 _rDeposit,
+        bytes32 _sDeposit // tokenDeposits
     ) external override nonReentrant whenNotPaused {
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
@@ -454,10 +468,10 @@ contract MockBosonRouter is
             msg.sender,
             address(this),
             price,
-            deadline,
-            vPrice,
-            rPrice,
-            sPrice
+            _deadline,
+            _vPrice,
+            _rPrice,
+            _sPrice
         );
 
         _permit(
@@ -465,10 +479,10 @@ contract MockBosonRouter is
             msg.sender,
             address(this),
             depositBu,
-            deadline,
-            vDeposit,
-            rDeposit,
-            sDeposit
+            _deadline,
+            _vDeposit,
+            _rDeposit,
+            _sDeposit
         );
 
         IVoucherKernel(voucherKernel).fillOrder(
@@ -508,10 +522,10 @@ contract MockBosonRouter is
         uint256 _tokenIdSupply,
         address _issuer,
         uint256 _tokensSent,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
     ) external override nonReentrant whenNotPaused {
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
@@ -533,10 +547,10 @@ contract MockBosonRouter is
             msg.sender,
             address(this),
             _tokensSent,
-            deadline,
-            v,
-            r,
-            s
+            _deadline,
+            _v,
+            _r,
+            _s
         );
 
         IVoucherKernel(voucherKernel).fillOrder(
@@ -564,10 +578,10 @@ contract MockBosonRouter is
         uint256 _tokenIdSupply,
         address _issuer,
         uint256 _tokensDeposit,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
     ) external payable override nonReentrant whenNotPaused {
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
@@ -584,10 +598,10 @@ contract MockBosonRouter is
             msg.sender,
             address(this),
             _tokensDeposit,
-            deadline,
-            v,
-            r,
-            s
+            _deadline,
+            _v,
+            _r,
+            _s
         );
 
         IVoucherKernel(voucherKernel).fillOrder(
@@ -618,10 +632,10 @@ contract MockBosonRouter is
         uint256 _tokenIdSupply,
         address _issuer,
         uint256 _tokensPrice,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
     ) external payable override nonReentrant whenNotPaused {
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
@@ -636,10 +650,10 @@ contract MockBosonRouter is
             msg.sender,
             address(this),
             price,
-            deadline,
-            v,
-            r,
-            s
+            _deadline,
+            _v,
+            _r,
+            _s
         );
 
         IVoucherKernel(voucherKernel).fillOrder(
@@ -759,40 +773,39 @@ contract MockBosonRouter is
 
     /**
      * @notice Call permit on either a token directly or on a token wrapper
-     * @param token Address of the token owner who is approving tokens to be transferred by spender
-     * @param owner Address of the token owner who is approving tokens to be transferred by spender
-     * @param owner Address of the token owner who is approving tokens to be transferred by spender
-     * @param spender Address of the party who is transferring tokens on owner's behalf
-     * @param value Number of tokens to be transferred
-     * @param deadline Time after which this permission to transfer is no longer valid
-     * @param v Part of the owner's signatue
-     * @param r Part of the owner's signatue
-     * @param s Part of the owner's signatue
+     * @param _token Address of the token owner who is approving tokens to be transferred by spender
+     * @param _owner Address of the token owner who is approving tokens to be transferred by spender
+     * @param _spender Address of the party who is transferring tokens on owner's behalf
+     * @param _value Number of tokens to be transferred
+     * @param _deadline Time after which this permission to transfer is no longer valid
+     * @param _v Part of the owner's signatue
+     * @param _r Part of the owner's signatue
+     * @param _s Part of the owner's signatue
      */
     function _permit(
-        address token,
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        address _token,
+        address _owner,
+        address _spender,
+        uint256 _value,
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
     ) internal {
         address tokenWrapper =
-            ITokenRegistry(tokenRegistry).getTokenWrapperAddress(token);
+            ITokenRegistry(tokenRegistry).getTokenWrapperAddress(_token);
         require(tokenWrapper != address(0), "UNSUPPORTED_TOKEN");
 
         //The BosonToken contract conforms to this spec, so it will be callable this way
         //if it's address is mapped to itself in the TokenRegistry
         ITokenWrapper(tokenWrapper).permit(
-            owner,
-            spender,
-            value,
-            deadline,
-            v,
-            r,
-            s
+            _owner,
+            _spender,
+            _value,
+            _deadline,
+            _v,
+            _r,
+            _s
         );
     }
 

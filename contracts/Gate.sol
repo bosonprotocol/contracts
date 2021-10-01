@@ -4,9 +4,8 @@ pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
-
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "./interfaces/IGate.sol";
-import "./interfaces/IERC1155.sol";
 
 /**
  * @title Gate contract between Boson router and ERC1155NonTransferable
@@ -39,8 +38,8 @@ contract Gate is IGate, Ownable, Pausable {
     /**
      * @notice  Checking if a non-zero address is provided, otherwise reverts.
      */
-    modifier notZeroAddress(address tokenAddress) {
-        require(tokenAddress != address(0), "0A"); //zero address
+    modifier notZeroAddress(address _tokenAddress) {
+        require(_tokenAddress != address(0), "0A"); //zero address
         _;
     }
 
