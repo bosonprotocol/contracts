@@ -82,3 +82,9 @@ and use `rbenv init - zsh`.
 
 Note: if you use Fedora, see installation instructions at 
 [Installing Ruby and Rails with rbenv](https://developer.fedoraproject.org/start/sw/web-app/rails.html).
+
+### Docker
+
+Please visit [Install Docker Engine on Ubuntu](https://docs.docker.com/engine/install/ubuntu/) to follow instructions on how to install Docker on Ubuntu.
+
+Note: if you use Fedora, see installation instructions at [Install Docker Engine on Fedora](https://docs.docker.com/engine/install/fedora/).

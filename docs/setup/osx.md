@@ -77,3 +77,7 @@ gem install bundler
 
 Note: if you use bash instead of zsh, change `~/.zshrc` above to `~/.bashrc`
 and use `rbenv init - bash`.
+
+### Docker
+
+Please visit https://docs.docker.com/desktop/mac/install/ to follow instructions on how to install Docker on your Mac.
