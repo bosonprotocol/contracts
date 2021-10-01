@@ -132,7 +132,7 @@ contract ERC1155NonTransferable is
      */
     function setUri(string memory _newUri) external onlyOwner {
         require(bytes(_newUri).length != 0, "INVALID_VALUE");
-        super._setURI(_newUri);
+        _setURI(_newUri);
         emit LogUriSet(_newUri, msg.sender);
     }
 }
