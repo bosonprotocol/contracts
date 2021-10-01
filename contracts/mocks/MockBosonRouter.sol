@@ -6,14 +6,15 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "./../interfaces/IVoucherKernel.sol";
-import "./../interfaces/IERC20WithPermit.sol";
-import "./../interfaces/ITokenRegistry.sol";
-import "./../interfaces/IBosonRouter.sol";
-import "./../interfaces/ICashier.sol";
-import "./../interfaces/IGate.sol";
-import "./../interfaces/ITokenWrapper.sol";
-import "./../UsingHelpers.sol";
+import "../interfaces/IVoucherKernel.sol";
+import "../interfaces/IERC20WithPermit.sol";
+import "../interfaces/ITokenRegistry.sol";
+import "../interfaces/IBosonRouter.sol";
+import "../interfaces/ICashier.sol";
+import "../interfaces/IGate.sol";
+import "../interfaces/ITokenWrapper.sol";
+import "../UsingHelpers.sol";
+import "../libs/SafeERC20WithPermit.sol";
 
 /**
  * @title Contract for interacting with Boson Protocol from the user's perspective.
@@ -881,7 +882,8 @@ contract MockBosonRouter is
     function transferFromAndAddEscrow(address _tokenAddress, uint256 _amount)
         internal
     {
-        IERC20WithPermit(_tokenAddress).transferFrom(
+        SafeERC20WithPermit.safeTransferFrom(
+            IERC20WithPermit(_tokenAddress),
             msg.sender,
             address(cashierAddress),
             _amount

@@ -14,6 +14,7 @@ import "./interfaces/ICashier.sol";
 import "./interfaces/IGate.sol";
 import "./interfaces/ITokenWrapper.sol";
 import "./UsingHelpers.sol";
+import "./libs/SafeERC20WithPermit.sol";
 
 /**
  * @title Contract for interacting with Boson Protocol from the user's perspective.
@@ -868,7 +869,8 @@ contract BosonRouter is
     function transferFromAndAddEscrow(address _tokenAddress, uint256 _amount)
         internal
     {
-        IERC20WithPermit(_tokenAddress).transferFrom(
+        SafeERC20WithPermit.safeTransferFrom(
+            IERC20WithPermit(_tokenAddress),
             msg.sender,
             address(cashierAddress),
             _amount
