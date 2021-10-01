@@ -151,7 +151,6 @@ contract MockBosonRouter is
         notAboveETHLimit(metadata[3].mul(metadata[5]));
         notAboveETHLimit(metadata[4].mul(metadata[5]));
         require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         uint256 tokenIdSupply =
             IVoucherKernel(voucherKernel).createTokenSupplyId(
@@ -194,7 +193,6 @@ contract MockBosonRouter is
         notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
 
         require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         _permit(
             _tokenDepositAddress,
@@ -318,7 +316,6 @@ contract MockBosonRouter is
         notAboveTokenLimit(_tokenDepositAddress, metadata[4].mul(metadata[5]));
 
         require(metadata[3].mul(metadata[5]) == _tokensSent, "IF"); //invalid funds
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         _permit(
             _tokenDepositAddress,
@@ -375,7 +372,6 @@ contract MockBosonRouter is
         notAboveETHLimit(metadata[4].mul(metadata[5]));
 
         require(metadata[3].mul(metadata[5]) == msg.value, "IF"); //invalid funds
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         uint256 tokenIdSupply =
             IVoucherKernel(voucherKernel).createTokenSupplyId(
@@ -418,7 +414,6 @@ contract MockBosonRouter is
         (uint256 price, , uint256 depositBu) =
             IVoucherKernel(voucherKernel).getOrderCosts(_tokenIdSupply);
         require(price.add(depositBu) == weiReceived, "IF"); //invalid funds
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         IVoucherKernel(voucherKernel).fillOrder(
             _tokenIdSupply,
@@ -577,9 +572,7 @@ contract MockBosonRouter is
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
         require(price == msg.value, "IP"); //invalid price
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         require(depositBu == _tokensDeposit, "ID"); // invalid deposit
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         address tokenDepositAddress =
             IVoucherKernel(voucherKernel).getVoucherDepositToken(
@@ -633,9 +626,7 @@ contract MockBosonRouter is
         (uint256 price, uint256 depositBu) =
             IVoucherKernel(voucherKernel).getBuyerOrderCosts(_tokenIdSupply);
         require(price == _tokensPrice, "IP"); //invalid price
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
         require(depositBu == msg.value, "ID"); // invalid deposit
-        //hex"54" FISSION.code(FISSION.Category.Finance, FISSION.Status.InsufficientFunds)
 
         address tokenPriceAddress =
             IVoucherKernel(voucherKernel).getVoucherPriceToken(_tokenIdSupply);
