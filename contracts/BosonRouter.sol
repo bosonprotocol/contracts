@@ -365,12 +365,12 @@ contract BosonRouter is
      * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
      *   
-     * uint256 _validFrom = metadata[0];
-     * uint256 _validTo = metadata[1];
-     * uint256 _price = metadata[2];
-     * uint256 _depositSe = metadata[3];
-     * uint256 _depositBu = metadata[4];
-     * uint256 _quantity = metadata[5];
+     * uint256 _validFrom = _metadata[0];
+     * uint256 _validTo = _metadata[1];
+     * uint256 _price = _metadata[2];
+     * uint256 _depositSe = _metadata[3];
+     * uint256 _depositBu = _metadata[4];
+     * uint256 _quantity = _metadata[5];
      *
      * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT, 
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
@@ -439,12 +439,12 @@ contract BosonRouter is
      *  Some functions require other parameters, and the number of parameters causes stack too deep error.
      *  The use of the matadata array mitigates the stack too deep error.
      *   
-     * uint256 _validFrom = metadata[0];
-     * uint256 _validTo = metadata[1];
-     * uint256 _price = metadata[2];
-     * uint256 _depositSe = metadata[3];
-     * uint256 _depositBu = metadata[4];
-     * uint256 _quantity = metadata[5];
+     * uint256 _validFrom = _metadata[0];
+     * uint256 _validTo = _metadata[1];
+     * uint256 _price = _metadata[2];
+     * uint256 _depositSe = _metadata[3];
+     * uint256 _depositBu = _metadata[4];
+     * uint256 _quantity = _metadata[5];
      *
      * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT, 
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
@@ -1062,12 +1062,12 @@ contract BosonRouter is
 
     function requestCreateOrderTKNETHInternal(
         address _tokenPriceAddress,
-        uint256[] calldata metadata
+        uint256[] calldata _metadata
     ) internal nonReentrant whenNotPaused returns (uint256) {
         notZeroAddress(_tokenPriceAddress);
-        checkLimits(metadata, _tokenPriceAddress, address(0), 0);
+        checkLimits(_metadata, _tokenPriceAddress, address(0), 0);
 
-        return requestCreateOrder(metadata, TKNETH, _tokenPriceAddress, address(0), 0);
+        return requestCreateOrder(_metadata, TKNETH, _tokenPriceAddress, address(0), 0);
     }
 
     /**
