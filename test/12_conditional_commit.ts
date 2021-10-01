@@ -16,6 +16,7 @@ import {
   MockERC20Permit,
   ERC1155NonTransferable,
   Gate,
+  MockGate,
 } from '../typechain';
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
@@ -36,6 +37,7 @@ let TokenRegistry_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
 let ERC1155NonTransferable_Factory: ContractFactory;
 let Gate_Factory: ContractFactory;
+let MockGate_Factory: ContractFactory;
 
 const eventNames = eventUtils.eventNames;
 let users;
@@ -62,6 +64,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       'ERC1155NonTransferable'
     );
     Gate_Factory = await ethers.getContractFactory('Gate');
+    MockGate_Factory = await ethers.getContractFactory('MockGate');
     MockERC20Permit_Factory = await ethers.getContractFactory(
       'MockERC20Permit'
     );
@@ -75,7 +78,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     contractBSNTokenDeposit: MockERC20Permit,
     contractTokenRegistry: TokenRegistry,
     contractERC1155NonTransferable: ERC1155NonTransferable,
-    contractGate: Gate;
+    contractGate: Gate,
+    contractMockGate: MockGate;
 
   const deadline = toWei(1);
   let timestamp;
@@ -174,7 +178,6 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     await contractGate.setNonTransferableTokenContract(
       contractERC1155NonTransferable.address
     );
-    await contractGate.setBosonRouterAddress(contractBosonRouter.address);
   }
 
   describe('TOKEN SUPPLY CREATION WITH TOKEN CONDITIONAL COMMIT (Create Voucher Set)', () => {
@@ -377,6 +380,71 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           sellerERC1155ERC721Balance.eq(constants.QTY_10),
           'ERC1155ERC721 seller balance mismatch'
         );
+      });
+
+      describe('Flow with automatic gate.registerVoucherSetId', () => {
+        beforeEach(async () => {
+          // deploy gate address that supports setting from router
+          contractMockGate = (await MockGate_Factory.deploy()) as Contract &
+            Gate;
+
+          await contractMockGate.deployed();
+
+          await contractMockGate.setNonTransferableTokenContract(
+            contractERC1155NonTransferable.address
+          );
+          await contractMockGate.setBosonRouterAddress(
+            contractBosonRouter.address
+          );
+        });
+
+        it('Should be able to create Voucher with gate address and non empty nft token id', async () => {
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(constants.QTY_10)
+          );
+          expect(
+            await contractBosonRouter
+              .connect(users.seller.signer)
+              .requestCreateOrderETHETHConditional(
+                [
+                  constants.PROMISE_VALID_FROM,
+                  constants.PROMISE_VALID_TO,
+                  constants.PROMISE_PRICE1,
+                  constants.PROMISE_DEPOSITSE1,
+                  constants.PROMISE_DEPOSITBU1,
+                  constants.QTY_10,
+                ],
+                contractMockGate.address,
+                constants.NFT_TOKEN_ID,
+                {value: txValue}
+              )
+          )
+            .to.emit(contractMockGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
+            .withArgs(tokenSupplyKey, constants.NFT_TOKEN_ID);
+        });
+
+        it('[NEGATIVE] Should revert if non empty nft token id and wrong gate address', async () => {
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(constants.QTY_10)
+          );
+          await expect(
+            contractBosonRouter
+              .connect(users.seller.signer)
+              .requestCreateOrderETHETHConditional(
+                [
+                  constants.PROMISE_VALID_FROM,
+                  constants.PROMISE_VALID_TO,
+                  constants.PROMISE_PRICE1,
+                  constants.PROMISE_DEPOSITSE1,
+                  constants.PROMISE_DEPOSITBU1,
+                  constants.QTY_10,
+                ],
+                users.other1.address, /// gate address that maps to EOA
+                constants.NFT_TOKEN_ID,
+                {value: txValue}
+              )
+          ).to.be.revertedWith(revertReasons.EOA);
+        });
       });
 
       it('One should get the gate address that handles conditional commit', async () => {
@@ -632,6 +700,89 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           sellerERC1155ERC721Balance.eq(constants.QTY_10),
           'ERC1155ERC721 seller balance mismatch'
         );
+      });
+
+      describe('Flow with automatic gate.registerVoucherSetId', () => {
+        beforeEach(async () => {
+          // deploy gate address that supports setting from router
+          contractMockGate = (await MockGate_Factory.deploy()) as Contract &
+            Gate;
+
+          await contractMockGate.deployed();
+
+          await contractMockGate.setNonTransferableTokenContract(
+            contractERC1155NonTransferable.address
+          );
+          await contractMockGate.setBosonRouterAddress(
+            contractBosonRouter.address
+          );
+        });
+
+        it('Should be able to create Voucher with gate address and non empty nft token id', async () => {
+          const {txValue, v, r, s} = await generateInputs(
+            users.seller,
+            constants.PROMISE_DEPOSITSE1,
+            constants.QTY_10
+          );
+
+          expect(
+            await contractBosonRouter
+              .connect(users.seller.signer)
+              .requestCreateOrderTKNTKNWithPermitConditional(
+                contractBSNTokenPrice.address,
+                contractBSNTokenDeposit.address,
+                txValue,
+                deadline,
+                v,
+                r,
+                s,
+                [
+                  constants.PROMISE_VALID_FROM,
+                  constants.PROMISE_VALID_TO,
+                  constants.PROMISE_PRICE1,
+                  constants.PROMISE_DEPOSITSE1,
+                  constants.PROMISE_DEPOSITBU1,
+                  constants.QTY_10,
+                ],
+                contractMockGate.address,
+                constants.NFT_TOKEN_ID
+              )
+          )
+            .to.emit(contractMockGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
+            .withArgs(tokenSupplyKey, constants.NFT_TOKEN_ID);
+        });
+
+        it('[NEGATIVE] Should revert if non empty nft token id and wrong gate address', async () => {
+          const {txValue, v, r, s} = await generateInputs(
+            users.seller,
+            constants.PROMISE_DEPOSITSE1,
+            constants.QTY_10
+          );
+
+          await expect(
+            contractBosonRouter
+              .connect(users.seller.signer)
+              .requestCreateOrderTKNTKNWithPermitConditional(
+                contractBSNTokenPrice.address,
+                contractBSNTokenDeposit.address,
+                txValue,
+                deadline,
+                v,
+                r,
+                s,
+                [
+                  constants.PROMISE_VALID_FROM,
+                  constants.PROMISE_VALID_TO,
+                  constants.PROMISE_PRICE1,
+                  constants.PROMISE_DEPOSITSE1,
+                  constants.PROMISE_DEPOSITBU1,
+                  constants.QTY_10,
+                ],
+                users.other1.address, /// gate address that maps to EOA
+                constants.NFT_TOKEN_ID
+              )
+          ).to.be.revertedWith(revertReasons.EOA);
+        });
       });
 
       it('One should get the gate address that handles conditional commit', async () => {
@@ -915,6 +1066,87 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         );
       });
 
+      describe('Flow with automatic gate.registerVoucherSetId', () => {
+        beforeEach(async () => {
+          // deploy gate address that supports setting from router
+          contractMockGate = (await MockGate_Factory.deploy()) as Contract &
+            Gate;
+
+          await contractMockGate.deployed();
+
+          await contractMockGate.setNonTransferableTokenContract(
+            contractERC1155NonTransferable.address
+          );
+          await contractMockGate.setBosonRouterAddress(
+            contractBosonRouter.address
+          );
+        });
+
+        it('Should be able to create Voucher with gate address and non empty nft token id', async () => {
+          const {txValue, v, r, s} = await generateInputs(
+            users.seller,
+            constants.PROMISE_DEPOSITSE1,
+            constants.QTY_10
+          );
+
+          expect(
+            await contractBosonRouter
+              .connect(users.seller.signer)
+              .requestCreateOrderETHTKNWithPermitConditional(
+                contractBSNTokenDeposit.address,
+                txValue,
+                deadline,
+                v,
+                r,
+                s,
+                [
+                  constants.PROMISE_VALID_FROM,
+                  constants.PROMISE_VALID_TO,
+                  constants.PROMISE_PRICE1,
+                  constants.PROMISE_DEPOSITSE1,
+                  constants.PROMISE_DEPOSITBU1,
+                  constants.QTY_10,
+                ],
+                contractMockGate.address,
+                constants.NFT_TOKEN_ID
+              )
+          )
+            .to.emit(contractMockGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
+            .withArgs(tokenSupplyKey, constants.NFT_TOKEN_ID);
+        });
+
+        it('[NEGATIVE] Should revert if non empty nft token id and wrong gate address', async () => {
+          const {txValue, v, r, s} = await generateInputs(
+            users.seller,
+            constants.PROMISE_DEPOSITSE1,
+            constants.QTY_10
+          );
+
+          await expect(
+            contractBosonRouter
+              .connect(users.seller.signer)
+              .requestCreateOrderETHTKNWithPermitConditional(
+                contractBSNTokenDeposit.address,
+                txValue,
+                deadline,
+                v,
+                r,
+                s,
+                [
+                  constants.PROMISE_VALID_FROM,
+                  constants.PROMISE_VALID_TO,
+                  constants.PROMISE_PRICE1,
+                  constants.PROMISE_DEPOSITSE1,
+                  constants.PROMISE_DEPOSITBU1,
+                  constants.QTY_10,
+                ],
+                users.other1.address, /// gate address that maps to EOA
+                constants.NFT_TOKEN_ID
+              )
+          ).to.be.revertedWith(revertReasons.EOA);
+        });
+      });
+
       it('One should get the gate address that handles conditional commit', async () => {
         const {txValue, v, r, s} = await generateInputs(
           users.seller,
@@ -1162,6 +1394,73 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           sellerERC1155ERC721Balance.eq(constants.QTY_10),
           'ERC1155ERC721 seller balance mismatch'
         );
+      });
+
+      describe('Flow with automatic gate.registerVoucherSetId', () => {
+        beforeEach(async () => {
+          // deploy gate address that supports setting from router
+          contractMockGate = (await MockGate_Factory.deploy()) as Contract &
+            Gate;
+
+          await contractMockGate.deployed();
+
+          await contractMockGate.setNonTransferableTokenContract(
+            contractERC1155NonTransferable.address
+          );
+          await contractMockGate.setBosonRouterAddress(
+            contractBosonRouter.address
+          );
+        });
+
+        it('Should be able to create Voucher with gate address and non empty nft token id', async () => {
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(constants.QTY_10)
+          );
+          expect(
+            await contractBosonRouter
+              .connect(users.seller.signer)
+              .requestCreateOrderTKNETHConditional(
+                contractBSNTokenPrice.address,
+                [
+                  constants.PROMISE_VALID_FROM,
+                  constants.PROMISE_VALID_TO,
+                  constants.PROMISE_PRICE1,
+                  constants.PROMISE_DEPOSITSE1,
+                  constants.PROMISE_DEPOSITBU1,
+                  constants.QTY_10,
+                ],
+                contractMockGate.address,
+                constants.NFT_TOKEN_ID,
+                {value: txValue}
+              )
+          )
+            .to.emit(contractMockGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
+            .withArgs(tokenSupplyKey, constants.NFT_TOKEN_ID);
+        });
+
+        it('[NEGATIVE] Should revert if non empty nft token id and wrong gate address', async () => {
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(constants.QTY_10)
+          );
+          await expect(
+            contractBosonRouter
+              .connect(users.seller.signer)
+              .requestCreateOrderTKNETHConditional(
+                contractBSNTokenPrice.address,
+                [
+                  constants.PROMISE_VALID_FROM,
+                  constants.PROMISE_VALID_TO,
+                  constants.PROMISE_PRICE1,
+                  constants.PROMISE_DEPOSITSE1,
+                  constants.PROMISE_DEPOSITBU1,
+                  constants.QTY_10,
+                ],
+                users.other1.address, /// gate address that maps to EOA
+                constants.NFT_TOKEN_ID,
+                {value: txValue}
+              )
+          ).to.be.revertedWith(revertReasons.EOA);
+        });
       });
 
       it('One should get the gate address that handles conditional commit', async () => {
