@@ -166,7 +166,7 @@ class DeploymentExecutor {
     this.daiTokenWrapper = await DAITokenWrapper.deploy(this.dai_token);
     this.gate = await Gate.deploy(this.br.address);
     this.erc1155NonTransferable = await ERC1155NonTransferable.deploy(
-      'https://quests.bosonportal.io'
+      'https://quests.bosonportal.io/{id}.json'
     );
 
     await this.tokenRegistry.deployed();
