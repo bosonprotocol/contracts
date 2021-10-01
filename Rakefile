@@ -24,6 +24,7 @@ task :build_fix => [
     :"contracts:compile",
     :"contracts:lint_fix",
     :"contracts:format_fix",
+    :"contracts:slither",
     :"tests:lint_fix",
     :"tests:format_fix"
 ]
@@ -69,6 +70,11 @@ namespace :contracts do
   desc "Format & fix all contracts"
   task :format_fix => [:'dependencies:install'] do
     sh('npm', 'run', 'contracts:format-fix')
+  end
+
+  desc "Execute static analysis framework : Slither"
+  task :slither => [:'dependencies:install'] do
+    sh('./scripts/slither.sh')
   end
 end
 
