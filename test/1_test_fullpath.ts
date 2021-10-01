@@ -1235,7 +1235,7 @@ describe('Voucher tests', () => {
       await contractBSNTokenPrice.pause();
 
       await expect(
-        sellerInstance.transferFromAndAddEscrow(
+        sellerInstance.transferFromAndAddEscrowTest(
           contractBSNTokenPrice.address,
           BN(0)
         )
@@ -1244,7 +1244,7 @@ describe('Voucher tests', () => {
 
     it('safeTransferFrom will NOT revert the transaction if it succeeds', async () => {
       await expect(
-        sellerInstance.transferFromAndAddEscrow(
+        sellerInstance.transferFromAndAddEscrowTest(
           contractBSNTokenPrice.address,
           BN(0)
         )

@@ -896,6 +896,14 @@ contract MockBosonRouter is
         );
     }
 
+    // only for test
+    function transferFromAndAddEscrowTest(
+        address _tokenAddress,
+        uint256 _amount
+    ) external {
+        transferFromAndAddEscrow(_tokenAddress, _amount);
+    }
+
     /**
      * @notice Calls token that implements permits, transfer tokens from there to cashier and adds it to escrow
      * @param _tokenAddress tokens that are transfered
