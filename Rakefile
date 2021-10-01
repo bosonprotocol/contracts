@@ -16,6 +16,7 @@ task :build => [
     :"contracts:compile",
     :"contracts:lint",
     :"contracts:format",
+    :"contracts:slither",
     :"tests:lint",
     :"tests:format"
 ]
@@ -24,7 +25,6 @@ task :build_fix => [
     :"contracts:compile",
     :"contracts:lint_fix",
     :"contracts:format_fix",
-    :"contracts:slither",
     :"tests:lint_fix",
     :"tests:format_fix"
 ]
