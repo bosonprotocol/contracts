@@ -76,6 +76,12 @@ To compile the contracts:
 ./go contracts:compile
 ```
 
+To execute slither for the contracts:
+
+```shell script
+./go contracts:slither
+```
+
 ---
 ### Run
 To deploy instances of the contracts for local development without prior knowledge to Hardhat, first copy .env.example to .env and run the following command:
