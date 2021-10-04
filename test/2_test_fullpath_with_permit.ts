@@ -1,5 +1,5 @@
 import {ethers} from 'hardhat';
-import {Signer, ContractFactory, Contract} from 'ethers';
+import {Signer, ContractFactory, Contract, BigNumber} from 'ethers';
 import {assert, expect} from 'chai';
 import {ecsign} from 'ethereumjs-util';
 import constants from '../testHelpers/constants';
@@ -16,6 +16,7 @@ import {
   TokenRegistry,
   MockERC20Permit,
 } from '../typechain';
+const {keccak256, solidityPack} = ethers.utils;
 
 let ERC1155ERC721_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
@@ -34,7 +35,10 @@ const BN = ethers.BigNumber.from;
 let utils: Utils;
 let users;
 
+
 describe('Cashier and VoucherKernel', () => {
+  let promiseId: string, tokenSupplyKey: string; // todo remove string when finished
+
   before(async () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
@@ -47,6 +51,27 @@ describe('Cashier and VoucherKernel', () => {
     MockERC20Permit_Factory = await ethers.getContractFactory(
       'MockERC20Permit'
     );
+
+    await setPeriods();
+
+    // calculate expected tokenSupplyID for first voucher
+    promiseId = keccak256(
+      solidityPack(
+        ['address', 'uint256', 'uint256', 'uint256'],
+        [
+          users.seller.address,
+          constants.ZERO,
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+        ]
+      )
+    );
+
+    // calculate expected tokenSupplyID for first voucher
+    const tokenIndex = constants.ONE;
+    const TYPE_NF_BIT = constants.ONE.shl(255);
+    tokenSupplyKey = TYPE_NF_BIT.or(tokenIndex.shl(128)).toString();
+    
   });
 
   let contractERC1155ERC721: ERC1155ERC721,
@@ -57,10 +82,10 @@ describe('Cashier and VoucherKernel', () => {
     contractBSNTokenDeposit: MockERC20Permit,
     contractTokenRegistry: TokenRegistry;
 
-  let tokenSupplyKey, tokenVoucherKey, tokenVoucherKey1;
+  let tokenVoucherKey, tokenVoucherKey1;
 
-  const ZERO = BN(0);
-  const ONE_VOUCHER = 1;
+  const ZERO = BN(0);  // TODO: use constants.zero
+  const ONE_VOUCHER = 1; // TODO: use constants.one
 
   const deadline = toWei(1);
 
@@ -72,7 +97,7 @@ describe('Cashier and VoucherKernel', () => {
     escrowAmount: BN(0),
   };
 
-  async function setPeriods() {
+  async function setPeriods() {  // TODO use where applicable; why this async?
     const timestamp = await Utils.getCurrTimestamp();
 
     constants.PROMISE_VALID_FROM = timestamp;
@@ -173,7 +198,7 @@ describe('Cashier and VoucherKernel', () => {
       TKNTKN: 4,
     };
 
-    afterEach(() => {
+    afterEach(() => { // TODO REMOVE
       remQty = constants.QTY_10;
     });
 
@@ -190,15 +215,48 @@ describe('Cashier and VoucherKernel', () => {
             contractBosonRouter
           );
 
-        timestamp = await Utils.getCurrTimestamp();
-        constants.PROMISE_VALID_FROM = timestamp;
-        constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
+        // timestamp = await Utils.getCurrTimestamp();
+        // constants.PROMISE_VALID_FROM = timestamp;
+        // constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
-        tokenSupplyKey = await utils.createOrder(
-          users.seller,
-          timestamp,
-          timestamp + constants.SECONDS_IN_DAY,
-          constants.seller_deposit,
+        // setPeriods();
+
+        // tokenSupplyKey = await utils.createOrder(
+        //   users.seller,
+        //   timestamp,
+        //   timestamp + constants.SECONDS_IN_DAY,
+        //   constants.seller_deposit,
+        //   constants.QTY_10
+        // );
+      });
+
+      it.only('All expected events are emitted', async () => {
+          expect(await 
+          utils.createOrder(
+            users.seller,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_DEPOSITSE1,
+            constants.QTY_10,
+            true
+          )
+        ).to.emit(contractBosonRouter, eventNames.LOG_ORDER_CREATED)
+        .withArgs(tokenSupplyKey, users.seller.address, constants.QTY_10, paymentMethods.ETHETH)
+        .to.emit(contractVoucherKernel, eventNames.LOG_PROMISE_CREATED)
+        .withArgs(
+          promiseId,
+          constants.ONE,
+          users.seller.address,
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.ZERO
+        )
+        .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+        .withArgs(
+          contractVoucherKernel.address,
+          constants.ZERO_ADDRESS,
+          users.seller.address,
+          tokenSupplyKey,
           constants.QTY_10
         );
       });

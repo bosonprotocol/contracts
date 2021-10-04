@@ -105,6 +105,10 @@ class Utils {
       }
     );
 
+    if (returnTx) {
+      return txOrder
+    }
+
     const txReceipt = await txOrder.wait();
     let eventArgs;
 
@@ -115,7 +119,7 @@ class Utils {
       (e) => (eventArgs = e)
     );
 
-    return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
+    return eventArgs._tokenIdSupply.toString();
   }
 
   async requestCreateOrderETHTKNSameWithPermit(
