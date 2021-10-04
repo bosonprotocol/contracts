@@ -196,6 +196,17 @@ describe('ERC1155 non transferable functionality', async () => {
       ).to.include.members(zeroBalances.map((balance) => balance.toString()));
     });
 
+    it('Owner should be able to set URI', async () => {
+      const newUri = 'https://new.domain/{id}.json';
+      expect(await contractERC1155NonTransferable.setUri(newUri))
+        .to.emit(contractERC1155NonTransferable, eventNames.LOG_URI_SET)
+        .withArgs(newUri, users.deployer.address);
+
+      expect(
+        await contractERC1155NonTransferable.uri(constants.NFT_TOKEN_ID)
+      ).to.equal(newUri);
+    });
+
     it('Tokens are non-transferable', async () => {
       const nftTokenID = BN('2');
       await contractERC1155NonTransferable.mint(
@@ -302,6 +313,26 @@ describe('ERC1155 non transferable functionality', async () => {
       await expect(
         attackerInstance.burnBatch(users.other1.address, nftTokenIDs, balances)
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+
+    it('[NEGATIVE][setUri] Should revert if executed by attacker', async () => {
+      const attackerInstance = contractERC1155NonTransferable.connect(
+        users.attacker.signer
+      );
+
+      const newUri = 'https://new.domain/{id}.json';
+
+      await expect(attackerInstance.setUri(newUri)).to.be.revertedWith(
+        revertReasons.UNAUTHORIZED_OWNER
+      );
+    });
+
+    it('[NEGATIVE][setUri] Should revert if uri is empty string', async () => {
+      const newUri = '';
+
+      await expect(
+        contractERC1155NonTransferable.setUri(newUri)
+      ).to.be.revertedWith(revertReasons.INVALID_VALUE);
     });
 
     it('Owner should be able to pause', async () => {

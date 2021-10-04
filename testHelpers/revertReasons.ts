@@ -49,4 +49,5 @@ export default {
   DAI_INVALID_PERMIT: 'Dai/invalid-permit',
   UNSUPPORTED_TOKEN: 'UNSUPPORTED_TOKEN',
   EOA: 'Transaction reverted: function call to a non-contract account',
+  INVALID_VALUE: 'INVALID_VALUE',
 };
