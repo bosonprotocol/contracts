@@ -94,6 +94,7 @@ const PROMISE_ORDER_FIELDS = {} as any;
 }
 
 const NFT_TOKEN_ID = BN('12345');
+const EMPTY_NFT_TOKEN_ID = BN('0');
 const VOUCHER_SET_ID = BN('54321');
 
 export default {
@@ -146,5 +147,6 @@ export default {
   VOUCHER_STATUS_FIELDS,
   PROMISE_ORDER_FIELDS,
   NFT_TOKEN_ID,
+  EMPTY_NFT_TOKEN_ID,
   VOUCHER_SET_ID,
 };
