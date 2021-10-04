@@ -28,7 +28,7 @@ import {
 } from '../typechain';
 
 class Utils {
-  createOrder: (seller, from, to, sellerDeposit, qty, returnTx?) => any;
+  createOrder: (seller, from, to, sellerDeposit, qty, returnTx?, promisePrice?, buyerDeposit?) => any;
   createOrderConditional: (
     seller,
     from,
@@ -84,7 +84,9 @@ class Utils {
     to: number,
     sellerDeposit: number | string,
     qty: number | string,
-    returnTx = false
+    returnTx = false,
+    promisePrice = constants.PROMISE_PRICE1,
+    buyerDeposit = constants.PROMISE_DEPOSITBU1
   ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
@@ -95,9 +97,9 @@ class Utils {
       [
         from,
         to,
-        constants.product_price,
+        promisePrice, // TODO MAKE A INPUT PARAMETER
         sellerDeposit,
-        constants.buyer_deposit,
+        buyerDeposit, // TODO MAKE A INPUT PARAMETER
         qty,
       ],
       {
@@ -602,9 +604,9 @@ class Utils {
     tokenSupplyId: string,
     returnTx = false
   ): Promise<ContractTransaction | string> {
-    const txValue = BN(constants.buyer_deposit).add(
-      BN(constants.product_price)
-    );
+    const txValue = BN(constants.PROMISE_DEPOSITBU1).add(
+      BN(constants.PROMISE_PRICE1)
+    ); // TODO MAKE PARAMETERS
 
     const buyerInstance = this.contractBSNRouter.connect(
       buyer.signer
