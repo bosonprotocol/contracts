@@ -203,7 +203,7 @@ describe('Cashier and VoucherKernel', () => {
     });
 
     describe('ETHETH', () => {
-      before(async () => {
+      beforeEach(async () => {
         await deployContracts();
 
         utils = await UtilsBuilder.create()
@@ -230,7 +230,7 @@ describe('Cashier and VoucherKernel', () => {
         // );
       });
 
-      it.only('All expected events are emitted', async () => {
+      it('All expected events are emitted', async () => {
           expect(await 
           utils.createOrder(
             users.seller,
@@ -260,6 +260,46 @@ describe('Cashier and VoucherKernel', () => {
           constants.QTY_10
         );
       });
+
+      it.only('Promise data is correct', async () => {
+        await utils.createOrder(
+          users.seller,
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_DEPOSITSE1,
+          constants.QTY_10,
+          true
+        )
+
+        const promiseData = await contractVoucherKernel.getPromiseData(
+          promiseId
+        );
+        assert.equal(
+          promiseData[constants.PROMISE_DATA_FIELDS.promiseId],
+          promiseId,
+          'Promise Id incorrect'
+        );
+
+        assert.equal(
+          promiseData[constants.PROMISE_DATA_FIELDS.nonce].toString(),
+          constants.ONE.toString(),
+          'Nonce is incorrect'
+        );
+        assert.equal(
+          promiseData[constants.PROMISE_DATA_FIELDS.validFrom],
+          constants.PROMISE_VALID_FROM.toString(), 
+        );
+
+        assert.equal(
+          promiseData[constants.PROMISE_DATA_FIELDS.validTo].toString(),
+          constants.PROMISE_VALID_TO.toString()
+        );
+        assert.equal(
+          promiseData[constants.PROMISE_DATA_FIELDS.idx].toString(),
+          constants.ZERO.toString()
+        );
+      
+    });
 
       it('[NEGATIVE] Should revert if validTo is set below 5 minutes from now', async () => {
         await expect(
