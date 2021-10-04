@@ -1,5 +1,5 @@
 import {ethers} from 'hardhat';
-import {Signer, ContractFactory, Contract, Wallet, BigNumber} from 'ethers';
+import {Signer, ContractFactory, Contract, BigNumber} from 'ethers';
 import {assert, expect, use} from 'chai';
 import {ecsign} from 'ethereumjs-util';
 import constants from '../testHelpers/constants';
