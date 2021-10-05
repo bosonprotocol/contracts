@@ -1,7 +1,7 @@
 import {ethers} from 'hardhat';
 import {ContractFactory, Contract, Wallet, BigNumber} from 'ethers';
 import {waffle} from 'hardhat';
-import {assert, expect} from 'chai';
+import {expect} from 'chai';
 import {ecsign} from 'ethereumjs-util';
 import constants from '../testHelpers/constants';
 import {advanceTimeSeconds} from '../testHelpers/timemachine';

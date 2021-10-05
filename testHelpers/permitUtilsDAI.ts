@@ -44,6 +44,7 @@ export async function getApprovalDigestDAI(
   );
 }
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 export function getDomainSeparator(name: string, tokenAddress: string): string {
   //Hardcoding he DOMAIN_SEPARATOR hash to the one for the DAI token on Rinkeby.
   //Retrieved from Etherscan. It doesn't seem possible to generat the correct
@@ -77,3 +78,4 @@ export function getDomainSeparator(name: string, tokenAddress: string): string {
   //This is the DOMAIN_SEPARATOR hash of the DAI token on Rinkeby
   return '0x47d45448983c2e0e8e44c1742c08102651ce6a7c04b99128a81d918f2b204f74';
 }
+/* eslint-enable @typescript-eslint/no-unused-vars */
