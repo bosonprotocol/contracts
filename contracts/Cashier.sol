@@ -56,8 +56,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     );
 
     modifier onlyFromRouter() {
-        require(bosonRouterAddress != address(0), "UNSPECIFIED_BR"); // hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR"); // hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(bosonRouterAddress != address(0), "UNSPECIFIED_BR");
+        require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR");
         _;
     }
 
@@ -164,7 +164,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     {
         VoucherDetails memory voucherDetails;
 
-        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");
 
         voucherDetails.tokenIdVoucher = _tokenIdVoucher;
         voucherDetails.tokenIdSupply = IVoucherKernel(voucherKernel)
@@ -781,7 +781,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         uint8 _paymentMethod,
         uint256 _tokenIdSupply
     ) internal {
-        require(_recipient != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_recipient != address(0), "UNSPECIFIED_ADDRESS");
         require(_amount > 0, "");
 
         if (_paymentMethod == ETHETH || _paymentMethod == ETHTKN) {
@@ -816,7 +816,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         uint8 _paymentMethod,
         uint256 _tokenIdSupply
     ) internal {
-        require(_recipient != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_recipient != address(0), "UNSPECIFIED_ADDRESS");
         require(_amount > 0, "");
 
         if (_paymentMethod == ETHETH || _paymentMethod == TKNETH) {
@@ -847,7 +847,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         override
         onlyOwner
     {
-        require(_bosonRouterAddress != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_bosonRouterAddress != address(0), "UNSPECIFIED_ADDRESS");
 
         bosonRouterAddress = _bosonRouterAddress;
 
@@ -864,7 +864,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         onlyOwner
     {
      
-        require(_tokensContractAddress != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_tokensContractAddress != address(0), "UNSPECIFIED_ADDRESS");
         tokensContractAddress = _tokensContractAddress;
         emit LogTokenContractSet(_tokensContractAddress, msg.sender);
     }

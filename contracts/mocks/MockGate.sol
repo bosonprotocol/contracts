@@ -21,8 +21,8 @@ contract MockGate is IGate, Ownable, Pausable {
     address private bosonRouterAddress;
 
     modifier onlyFromRouter() {
-        require(bosonRouterAddress != address(0), "UNSPECIFIED_BR"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(bosonRouterAddress != address(0), "UNSPECIFIED_BR");
+        require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR");
         _;
     }
 

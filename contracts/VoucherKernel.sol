@@ -146,8 +146,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @notice Checks that only the BosonRouter contract can call a function
     */
     modifier onlyFromRouter() {
-        require(bosonRouterAddress != address(0), "UNSPECIFIED_BR"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(bosonRouterAddress != address(0), "UNSPECIFIED_BR");
+        require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR");
         _;
     }
 
@@ -155,8 +155,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @notice Checks that only the Cashier contract can call a function
     */
     modifier onlyFromCashier() {
-        require(cashierAddress != address(0), "UNSPECIFIED_BR"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(msg.sender == cashierAddress, "UNAUTHORIZED_C"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(cashierAddress != address(0), "UNSPECIFIED_BR");
+        require(msg.sender == cashierAddress, "UNAUTHORIZED_C");
         _;
     }
 
@@ -168,7 +168,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         require(
             IERC721(tokensContract).ownerOf(_tokenIdVoucher) == _sender,
             "UNAUTHORIZED_V"
-        ); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        );
         _;
     }
 
@@ -218,9 +218,9 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         uint256 _depositBu,
         uint256 _quantity
     ) external override onlyFromRouter returns (uint256) {
-        require(_validFrom <= _validTo, "INVALID_VALIDITY_FROM"); //hex"26" FISSION.code(FISSION.Category.Find, FISSION.Status.Above_Range_Overflow)
+        require(_validFrom <= _validTo, "INVALID_VALIDITY_FROM");
         // solhint-disable-next-line not-rely-on-time
-        require(_validTo >= block.timestamp + 5 minutes, "INVALID_VALIDITY_TO"); //"Minimum order validity is set to prevent any potential attack from flash-loans or similar." //hex"24" FISSION.code(FISSION.Category.Find, FISSION.Status.BelowRange_Underflow)
+        require(_validTo >= block.timestamp + 5 minutes, "INVALID_VALIDITY_TO");
 
         bytes32 key;
         key = keccak256(
@@ -298,9 +298,9 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         bytes32 _promiseId,
         uint256 _quantity
     ) private returns (uint256) {
-        require(_promiseId != bytes32(0), "UNSPECIFIED_PROMISE"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(promises[_promiseId].seller == _seller, "UNAUTHORIZED_CO"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
-        require(_quantity > 0, "INVALID_QUANTITY"); //hex"24" FISSION.code(FISSION.Category.Find, FISSION.Status.BelowRange_Underflow)
+        require(_promiseId != bytes32(0), "UNSPECIFIED_PROMISE");
+        require(promises[_promiseId].seller == _seller, "UNAUTHORIZED_CO");
+        require(_quantity > 0, "INVALID_QUANTITY");
 
         uint256 tokenIdSupply = generateTokenType(true); //create & assign a new non-fungible type
 
@@ -359,21 +359,21 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         address _issuer,
         address _holder
     ) internal view {
-        require(_tokenIdSupply != 0, "UNSPECIFIED_ID"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_tokenIdSupply != 0, "UNSPECIFIED_ID");
 
         if (_holder.isContract()) {
             require(
                 IERC165(_holder).supportsInterface(0x150b7a02),
                 "UNSUPPORTED_ERC721_RECEIVED"
-            ); //hex"31"
-            //bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))
+            );
+
         }
 
-        require(_holder != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_holder != address(0), "UNSPECIFIED_ADDRESS");
         require(
             IERC1155(tokensContract).balanceOf(_issuer, _tokenIdSupply) > 0,
             "OFFER_EMPTY"
-        ); //hex"40" FISSION.code(FISSION.Category.Availability, FISSION.Status.Unavailable)
+        );
 
         bytes32 promiseKey = ordersPromise[_tokenIdSupply];
 
@@ -405,7 +405,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
                     ""
                 ) == IERC721Receiver(_to).onERC721Received.selector,
                 "UNSUPPORTED_ERC721_RECEIVED"
-            ); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+            );
             //bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))
         }
 
@@ -482,7 +482,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         require(
             isStateCommitted(vouchersStatus[_tokenIdVoucher].status),
             "ALREADY_PROCESSED"
-        ); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
+        );
 
         //check validity period
         isInValidityPeriod(_tokenIdVoucher);
@@ -521,7 +521,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         require(
             isStateCommitted(vouchersStatus[_tokenIdVoucher].status),
             "INAPPLICABLE_STATUS"
-        ); //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicableToCurrentState)
+        );
 
         //check validity period
         isInValidityPeriod(_tokenIdVoucher);
@@ -550,11 +550,11 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         require(
             !isStatus(vouchersStatus[_tokenIdVoucher].status, IDX_COMPLAIN),
             "ALREADY_COMPLAINED"
-        ); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
+        );
         require(
             !isStatus(vouchersStatus[_tokenIdVoucher].status, IDX_FINAL),
             "ALREADY_FINALIZED"
-        ); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
+        );
 
         //check if still in the complain period
         Promise memory tPromise =
@@ -577,14 +577,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
                             complainPeriod +
                             cancelFaultPeriod,
                     "COMPLAINPERIOD_EXPIRED"
-                ); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
+                );
             } else {
                 require(
                     block.timestamp <=
                         vouchersStatus[_tokenIdVoucher].complainPeriodStart +
                             complainPeriod,
                     "COMPLAINPERIOD_EXPIRED"
-                ); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
+                );
             }
 
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block
@@ -608,12 +608,12 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
                     block.timestamp <=
                         tPromise.validTo + complainPeriod + cancelFaultPeriod,
                     "COMPLAINPERIOD_EXPIRED"
-                ); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
+                );
             } else {
                 require(
                     block.timestamp <= tPromise.validTo + complainPeriod,
                     "COMPLAINPERIOD_EXPIRED"
-                ); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
+                );
             }
 
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block
@@ -634,7 +634,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
                     vouchersStatus[_tokenIdVoucher].complainPeriodStart +
                         complainPeriod,
                 "COMPLAINPERIOD_EXPIRED"
-            ); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired));
+            );
 
             vouchersStatus[_tokenIdVoucher].status = determineStatus(
                 vouchersStatus[_tokenIdVoucher].status,
@@ -643,7 +643,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
 
             emit LogVoucherComplain(_tokenIdVoucher);
         } else {
-            revert("INAPPLICABLE_STATUS"); //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicableToCurrentState)
+            revert("INAPPLICABLE_STATUS");
         }
     }
 
@@ -660,12 +660,12 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         require(
             getSupplyHolder(tokenIdSupply) == _msgSender,
             "UNAUTHORIZED_COF"
-        ); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        );
 
         uint8 tStatus = vouchersStatus[_tokenIdVoucher].status;
 
-        require(!isStatus(tStatus, IDX_CANCEL_FAULT), "ALREADY_CANCELFAULT"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
-        require(!isStatus(tStatus, IDX_FINAL), "ALREADY_FINALIZED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
+        require(!isStatus(tStatus, IDX_CANCEL_FAULT), "ALREADY_CANCELFAULT");
+        require(!isStatus(tStatus, IDX_FINAL), "ALREADY_FINALIZED");
 
         Promise memory tPromise =
             promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
@@ -679,7 +679,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
                             complainPeriod +
                             cancelFaultPeriod,
                     "COFPERIOD_EXPIRED"
-                ); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
+                );
                 vouchersStatus[_tokenIdVoucher].complainPeriodStart = block
                     .timestamp; //resetting the complain period
             } else {
@@ -688,7 +688,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
                         vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart +
                             cancelFaultPeriod,
                     "COFPERIOD_EXPIRED"
-                ); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
+                );
             }
         } else if (isStatus(tStatus, IDX_EXPIRE)) {
             //if expired
@@ -697,7 +697,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
                     block.timestamp <=
                         tPromise.validTo + complainPeriod + cancelFaultPeriod,
                     "COFPERIOD_EXPIRED"
-                ); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
+                );
                 vouchersStatus[_tokenIdVoucher].complainPeriodStart = block
                     .timestamp;
             } else {
@@ -706,7 +706,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
                         vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart +
                             cancelFaultPeriod,
                     "COFPERIOD_EXPIRED"
-                ); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
+                );
             }
         } else if (isStateCommitted(tStatus)) {
             //if committed only
@@ -714,11 +714,11 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
                 block.timestamp <=
                     tPromise.validTo + complainPeriod + cancelFaultPeriod,
                 "COFPERIOD_EXPIRED"
-            ); //hex"46" FISSION.code(FISSION.Category.Availability, FISSION.Status.Expired)
+            );
             vouchersStatus[_tokenIdVoucher].complainPeriodStart = block
                 .timestamp; //complain period starts
         } else {
-            revert("INAPPLICABLE_STATUS"); //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicableToCurrentState)
+            revert("INAPPLICABLE_STATUS");
         }
 
         vouchersStatus[_tokenIdVoucher].status = determineStatus(
@@ -767,7 +767,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         override
         onlyFromCashier
     {
-        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");
         vouchersStatus[_tokenIdVoucher].isPaymentReleased = true;
 
         emit LogFundsReleased(_tokenIdVoucher, 0);
@@ -782,7 +782,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         override
         onlyFromCashier
     {
-        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");
         vouchersStatus[_tokenIdVoucher].isDepositsReleased = true;
 
         emit LogFundsReleased(_tokenIdVoucher, 1);
@@ -793,7 +793,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @param _tokenIdVoucher   ID of the voucher token
      */
     function triggerExpiration(uint256 _tokenIdVoucher) external override {
-        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");
 
         Promise memory tPromise =
             promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
@@ -816,11 +816,11 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @param _tokenIdVoucher   ID of the voucher token
      */
     function triggerFinalizeVoucher(uint256 _tokenIdVoucher) external override {
-        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");
 
         uint8 tStatus = vouchersStatus[_tokenIdVoucher].status;
 
-        require(!isStatus(tStatus, IDX_FINAL), "ALREADY_FINALIZED"); //hex"48" FISSION.code(FISSION.Category.Availability, FISSION.Status.AlreadyDone)
+        require(!isStatus(tStatus, IDX_FINAL), "ALREADY_FINALIZED");
 
         bool mark;
         Promise memory tPromise =
@@ -899,7 +899,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         external
         onlyOwner
     {
-        require(_bosonRouterAddress != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_bosonRouterAddress != address(0), "UNSPECIFIED_ADDRESS");
 
         bosonRouterAddress = _bosonRouterAddress;
 
@@ -915,7 +915,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         override
         onlyOwner
     {
-        require(_cashierAddress != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_cashierAddress != address(0), "UNSPECIFIED_ADDRESS");
 
         cashierAddress = _cashierAddress;
 
@@ -993,7 +993,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         override
         returns (bytes32)
     {
-        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");
 
         uint256 tokenIdSupply = getIdSupplyFromVoucher(_tokenIdVoucher);
         return promises[ordersPromise[tokenIdSupply]].promiseId;
@@ -1192,8 +1192,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         //check validity period
         Promise memory tPromise =
             promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
-        require(tPromise.validFrom <= block.timestamp, "INVALID_VALIDITY_FROM"); //hex"26" FISSION.code(FISSION.Category.Find, FISSION.Status.Above_Range_Overflow)
-        require(tPromise.validTo >= block.timestamp, "INVALID_VALIDITY_TO"); //hex"24" FISSION.code(FISSION.Category.Find, FISSION.Status.BelowRange_Underflow)
+        require(tPromise.validFrom <= block.timestamp, "INVALID_VALIDITY_FROM");
+        require(tPromise.validTo >= block.timestamp, "INVALID_VALIDITY_TO");
 
         return true;
     }
