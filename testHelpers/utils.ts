@@ -28,7 +28,16 @@ import {
 } from '../typechain';
 
 class Utils {
-  createOrder: (seller, from, to, sellerDeposit, qty, returnTx?, promisePrice?, buyerDeposit?) => any;
+  createOrder: (
+    seller,
+    from,
+    to,
+    sellerDeposit,
+    qty,
+    returnTx?,
+    promisePrice?,
+    buyerDeposit?
+  ) => any;
   createOrderConditional: (
     seller,
     from,
@@ -38,7 +47,7 @@ class Utils {
     gateContract,
     nftTokenID,
     returnTx?,
-    promisePrice?, 
+    promisePrice?,
     buyerDeposit?
   ) => any;
   commitToBuy: (buyer, seller, tokenSupplyId, returnTx?) => any;
@@ -96,14 +105,7 @@ class Utils {
       seller.signer
     ) as BosonRouter;
     const txOrder = await sellerInstance.requestCreateOrderETHETH(
-      [
-        from,
-        to,
-        promisePrice, 
-        sellerDeposit,
-        buyerDeposit, 
-        qty,
-      ],
+      [from, to, promisePrice, sellerDeposit, buyerDeposit, qty],
       {
         value: txValue,
       }
@@ -126,7 +128,8 @@ class Utils {
     return eventArgs._tokenIdSupply.toString();
   }
 
-  async requestCreateOrderETHTKNSameWithPermit( // is this really needed?
+  async requestCreateOrderETHTKNSameWithPermit(
+    // is this really needed?
     seller: Account,
     from: number,
     to: number,
@@ -166,14 +169,7 @@ class Utils {
       v,
       r,
       s,
-      [
-        from,
-        to,
-        promisePrice,
-        sellerDeposit,
-        buyerDeposit,
-        qty,
-      ],
+      [from, to, promisePrice, sellerDeposit, buyerDeposit, qty],
       {
         from: seller.address,
       }
@@ -205,7 +201,7 @@ class Utils {
     returnTx = false,
     promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
     buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
-  ): Promise<ContractTransaction | string>{
+  ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
     const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
@@ -235,14 +231,7 @@ class Utils {
       v,
       r,
       s,
-      [
-        from,
-        to,
-        promisePrice,
-        sellerDeposit,
-        buyerDeposit,
-        qty,
-      ],
+      [from, to, promisePrice, sellerDeposit, buyerDeposit, qty],
       {
         from: seller.address,
       }
@@ -276,7 +265,7 @@ class Utils {
     returnTx = false,
     promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
     buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
-    ): Promise<ContractTransaction | string>{
+  ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
     const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
@@ -299,7 +288,6 @@ class Utils {
       seller.signer
     ) as BosonRouter;
     const txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermitConditional(
-
       this.contractBSNTokenPrice.address,
       this.contractBSNTokenDeposit.address,
       txValue,
@@ -307,14 +295,7 @@ class Utils {
       v,
       r,
       s,
-      [
-        from,
-        to,
-        promisePrice,
-        sellerDeposit,
-        buyerDeposit,
-        qty,
-      ],
+      [from, to, promisePrice, sellerDeposit, buyerDeposit, qty],
       gateContract.address,
       nftTokenId || '0',
       {
@@ -377,14 +358,7 @@ class Utils {
       v,
       r,
       s,
-      [
-        from,
-        to,
-        promisePrice,
-        sellerDeposit,
-        buyerDeposit,
-        qty,
-      ],
+      [from, to, promisePrice, sellerDeposit, buyerDeposit, qty],
       {
         from: seller.address,
       }
@@ -424,14 +398,7 @@ class Utils {
     ) as BosonRouter;
     const txOrder = await sellerInstance.requestCreateOrderTKNETH(
       this.contractBSNTokenPrice.address,
-      [
-        from,
-        to,
-        promisePrice,
-        sellerDeposit,
-        buyerDeposit,
-        qty,
-      ],
+      [from, to, promisePrice, sellerDeposit, buyerDeposit, qty],
       {
         value: txValue,
       }
@@ -460,11 +427,9 @@ class Utils {
     tokenSupplyId: string,
     returnTx = false,
     promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
-    buyerDeposit = constants.PROMISE_DEPOSITBU1, // todo shift on right place, remove default
+    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
   ): Promise<ContractTransaction | string> {
-    const txValue = BN(buyerDeposit).add(
-      BN(promisePrice)
-    );
+    const txValue = BN(buyerDeposit).add(BN(promisePrice));
     const nonce1 = await this.contractBSNTokenDeposit.nonces(buyer.address);
 
     const digestDeposit = await getApprovalDigest(
@@ -544,11 +509,9 @@ class Utils {
     tokenSupplyId: string,
     returnTx = false,
     promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
-    buyerDeposit = constants.PROMISE_DEPOSITBU1, // todo shift on right place, remove default
+    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
   ): Promise<ContractTransaction | string> {
-    const txValue = BN(buyerDeposit).add(
-      BN(promisePrice)
-    );
+    const txValue = BN(buyerDeposit).add(BN(promisePrice));
     const nonce = await this.contractBSNTokenSame.nonces(buyer.address);
 
     const digestTxValue = await getApprovalDigest(
@@ -605,7 +568,7 @@ class Utils {
     tokenSupplyId: string,
     returnTx = false,
     promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
-    buyerDeposit = constants.PROMISE_DEPOSITBU1, // todo shift on right place, remove default
+    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
   ): Promise<ContractTransaction | string> {
     const nonce1 = await this.contractBSNTokenDeposit.nonces(buyer.address);
 
@@ -660,11 +623,9 @@ class Utils {
     tokenSupplyId: string,
     returnTx = false,
     promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
-    buyerDeposit = constants.PROMISE_DEPOSITBU1, // todo shift on right place, remove default
+    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
   ): Promise<ContractTransaction | string> {
-    const txValue = BN(buyerDeposit).add(
-      BN(promisePrice)
-    ); // TODO MAKE PARAMETERS
+    const txValue = BN(buyerDeposit).add(BN(promisePrice)); // TODO MAKE PARAMETERS
 
     const buyerInstance = this.contractBSNRouter.connect(
       buyer.signer
@@ -700,7 +661,7 @@ class Utils {
     tokenSupplyId: string,
     returnTx = false,
     promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
-    buyerDeposit = constants.PROMISE_DEPOSITBU1, // todo shift on right place, remove default
+    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
   ): Promise<ContractTransaction | string> {
     const nonce1 = await this.contractBSNTokenPrice.nonces(buyer.address);
 
