@@ -81,7 +81,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
     ) external override {
         require(_to != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         require(
-            _from == msg.sender || operatorApprovals[_from][msg.sender] == true,
+            _from == msg.sender || operatorApprovals[_from][msg.sender],
             "UNAUTHORIZED_ST"
         ); //hex"10"FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
 
@@ -284,7 +284,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         require(_to != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
         require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTHS"); //hex"28" FISSION.code(FISSION.Category.Find, FISSION.Status.Duplicate_Conflict_Collision)
         require(
-            _from == msg.sender || operatorApprovals[_from][msg.sender] == true,
+            _from == msg.sender || operatorApprovals[_from][msg.sender],
             "UNAUTHORIZED_SB"
         ); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
 
