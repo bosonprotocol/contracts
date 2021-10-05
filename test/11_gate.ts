@@ -74,13 +74,8 @@ describe('Gate contract', async () => {
     contractMockGate: MockGate;
 
   async function deployContracts() {
-    // const timestamp = await Utils.getCurrTimestamp();
-
-    // constants.PROMISE_VALID_FROM = timestamp;
-    // constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
-
     contractERC1155NonTransferable = (await ERC1155NonTransferable_Factory.deploy(
-      '/non/transferable/uri'
+      'https://token-cdn-domain/{id}.json'
     )) as Contract & ERC1155NonTransferable;
     const routerAddress =
       (contractBosonRouter && contractBosonRouter.address) ||

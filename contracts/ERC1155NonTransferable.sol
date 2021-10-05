@@ -14,6 +14,9 @@ contract ERC1155NonTransferable is
     ERC1155Pausable,
     Ownable
 {
+   
+    event LogUriSet(string _newUri, address _triggeredBy);
+
     /**
      * @notice Construct and initialze the contract. 
      * @param _uri metadata uri
@@ -121,5 +124,15 @@ contract ERC1155NonTransferable is
      */
     function unpause() external override onlyOwner {
         _unpause();
+    }
+
+    /**
+     * @notice Setting the metadata uri
+     * @param _newUri   New uri to be used
+     */
+    function setUri(string memory _newUri) external onlyOwner {
+        require(bytes(_newUri).length != 0, "INVALID_VALUE");
+        _setURI(_newUri);
+        emit LogUriSet(_newUri, msg.sender);
     }
 }

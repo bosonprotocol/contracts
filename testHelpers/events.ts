@@ -40,6 +40,7 @@ export const eventNames = {
   LOG_TOKEN_WRAPPER_CHANGED: 'LogTokenWrapperChanged',
   LOG_TOKEN_ADDRESS_CHANGED: 'LogTokenAddressChanged',
   LOG_PERMIT_CALLED_ON_TOKEN: 'LogPermitCalledOnToken',
+  LOG_URI_SET: 'LogUriSet',
 };
 
 import {ContractFactory, ContractReceipt} from 'ethers';
