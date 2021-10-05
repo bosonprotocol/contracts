@@ -37,7 +37,9 @@ class Utils {
     qty,
     gateContract,
     nftTokenID,
-    returnTx?
+    returnTx?,
+    promisePrice?, 
+    buyerDeposit?
   ) => any;
   commitToBuy: (buyer, seller, tokenSupplyId, returnTx?) => any;
   factories?: {
@@ -85,8 +87,8 @@ class Utils {
     sellerDeposit: number | string,
     qty: number | string,
     returnTx = false,
-    promisePrice = constants.PROMISE_PRICE1,
-    buyerDeposit = constants.PROMISE_DEPOSITBU1
+    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
+    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
   ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
@@ -97,9 +99,9 @@ class Utils {
       [
         from,
         to,
-        promisePrice, // TODO MAKE A INPUT PARAMETER
+        promisePrice, 
         sellerDeposit,
-        buyerDeposit, // TODO MAKE A INPUT PARAMETER
+        buyerDeposit, 
         qty,
       ],
       {
@@ -107,10 +109,10 @@ class Utils {
       }
     );
 
-    if (returnTx) {
-      return txOrder
-    }
+    if (returnTx) return txOrder;
 
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
+    // ?TODO make returnTx = true default?
     const txReceipt = await txOrder.wait();
     let eventArgs;
 
@@ -124,13 +126,15 @@ class Utils {
     return eventArgs._tokenIdSupply.toString();
   }
 
-  async requestCreateOrderETHTKNSameWithPermit(
+  async requestCreateOrderETHTKNSameWithPermit( // is this really needed?
     seller: Account,
     from: number,
     to: number,
     sellerDeposit: number | string,
     qty: number | string,
-    returnTx = false
+    returnTx = false,
+    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
+    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
   ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
@@ -165,9 +169,9 @@ class Utils {
       [
         from,
         to,
-        constants.product_price,
+        promisePrice,
         sellerDeposit,
-        constants.buyer_deposit,
+        buyerDeposit,
         qty,
       ],
       {
@@ -175,6 +179,10 @@ class Utils {
       }
     );
 
+    if (returnTx) return txOrder;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
+    // ?TODO make returnTx = true default?
     const txReceipt = await txOrder.wait();
     let eventArgs;
 
@@ -185,7 +193,7 @@ class Utils {
       (e) => (eventArgs = e)
     );
 
-    return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
+    return eventArgs._tokenIdSupply.toString();
   }
 
   async requestCreateOrderTKNTKNWithPermit(
@@ -193,8 +201,11 @@ class Utils {
     from: number,
     to: number,
     sellerDeposit: number | string,
-    qty: number | string
-  ): Promise<string> {
+    qty: number | string,
+    returnTx = false,
+    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
+    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
+  ): Promise<ContractTransaction | string>{
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
     const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
@@ -227,9 +238,9 @@ class Utils {
       [
         from,
         to,
-        constants.product_price,
+        promisePrice,
         sellerDeposit,
-        constants.buyer_deposit,
+        buyerDeposit,
         qty,
       ],
       {
@@ -237,6 +248,10 @@ class Utils {
       }
     );
 
+    if (returnTx) return txOrder;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
+    // ?TODO make returnTx = true default?
     const txReceipt = await txOrder.wait();
     let eventArgs;
 
@@ -257,8 +272,11 @@ class Utils {
     sellerDeposit: number | string,
     qty: number | string,
     gateContract: Account,
-    nftTokenId: number | string | null
-  ): Promise<ContractTransaction> {
+    nftTokenId: number | string | null,
+    returnTx = false,
+    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
+    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
+    ): Promise<ContractTransaction | string>{
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
     const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
@@ -280,8 +298,8 @@ class Utils {
     const sellerInstance = this.contractBSNRouter.connect(
       seller.signer
     ) as BosonRouter;
-    return sellerInstance.requestCreateOrderTKNTKNWithPermitConditional(
-      // const txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermitConditional(
+    const txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermitConditional(
+
       this.contractBSNTokenPrice.address,
       this.contractBSNTokenDeposit.address,
       txValue,
@@ -292,9 +310,9 @@ class Utils {
       [
         from,
         to,
-        constants.product_price,
+        promisePrice,
         sellerDeposit,
-        constants.buyer_deposit,
+        buyerDeposit,
         qty,
       ],
       gateContract.address,
@@ -303,6 +321,11 @@ class Utils {
         from: seller.address,
       }
     );
+
+    if (returnTx) return txOrder;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
+    // ?TODO make returnTx = true default?
 
     // const txReceipt = await txOrder.wait();
     // let eventArgs;
@@ -323,7 +346,9 @@ class Utils {
     to: number,
     sellerDeposit: number | string,
     qty: number | string,
-    returnTx = false
+    returnTx = false,
+    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
+    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
   ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
     const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
@@ -355,9 +380,9 @@ class Utils {
       [
         from,
         to,
-        constants.product_price,
+        promisePrice,
         sellerDeposit,
-        constants.buyer_deposit,
+        buyerDeposit,
         qty,
       ],
       {
@@ -365,6 +390,10 @@ class Utils {
       }
     );
 
+    if (returnTx) return txOrder;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
+    // ?TODO make returnTx = true default?
     const txReceipt = await txOrder.wait();
     let eventArgs;
 
@@ -375,7 +404,7 @@ class Utils {
       (e) => (eventArgs = e)
     );
 
-    return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
+    return eventArgs._tokenIdSupply.toString();
   }
 
   async requestCreateOrderTKNETH(
@@ -384,7 +413,9 @@ class Utils {
     to: number,
     sellerDeposit: number | string,
     qty: number | string,
-    returnTx = false
+    returnTx = false,
+    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
+    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
   ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
@@ -396,9 +427,9 @@ class Utils {
       [
         from,
         to,
-        constants.product_price,
+        promisePrice,
         sellerDeposit,
-        constants.buyer_deposit,
+        buyerDeposit,
         qty,
       ],
       {
@@ -406,6 +437,10 @@ class Utils {
       }
     );
 
+    if (returnTx) return txOrder;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
+    // ?TODO make returnTx = true default?
     const txReceipt = await txOrder.wait();
     let eventArgs;
 
@@ -416,16 +451,19 @@ class Utils {
       (e) => (eventArgs = e)
     );
 
-    return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
+    return eventArgs._tokenIdSupply.toString();
   }
 
   async commitToBuyTKNTKNWithPermit(
     buyer: Account,
     seller: Account,
-    tokenSupplyId: string
-  ): Promise<string> {
-    const txValue = BN(constants.buyer_deposit).add(
-      BN(constants.product_price)
+    tokenSupplyId: string,
+    returnTx = false,
+    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
+    buyerDeposit = constants.PROMISE_DEPOSITBU1, // todo shift on right place, remove default
+  ): Promise<ContractTransaction | string> {
+    const txValue = BN(buyerDeposit).add(
+      BN(promisePrice)
     );
     const nonce1 = await this.contractBSNTokenDeposit.nonces(buyer.address);
 
@@ -433,7 +471,7 @@ class Utils {
       this.contractBSNTokenDeposit,
       buyer.address,
       this.contractBSNRouter.address,
-      constants.buyer_deposit,
+      buyerDeposit,
       nonce1,
       this.deadline
     );
@@ -453,7 +491,7 @@ class Utils {
       this.contractBSNTokenPrice,
       buyer.address,
       this.contractBSNRouter.address,
-      constants.product_price,
+      promisePrice,
       nonce2,
       this.deadline
     );
@@ -483,6 +521,10 @@ class Utils {
       sDeposit
     );
 
+    if (returnTx) return commitTx;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
+    // ?TODO make returnTx = true default?
     const txReceipt = await commitTx.wait();
     let eventArgs;
 
@@ -499,10 +541,13 @@ class Utils {
   async commitToBuyTKNTKNSameWithPermit(
     buyer: Account,
     seller: Account,
-    tokenSupplyId: string
-  ): Promise<string> {
-    const txValue = BN(constants.buyer_deposit).add(
-      BN(constants.product_price)
+    tokenSupplyId: string,
+    returnTx = false,
+    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
+    buyerDeposit = constants.PROMISE_DEPOSITBU1, // todo shift on right place, remove default
+  ): Promise<ContractTransaction | string> {
+    const txValue = BN(buyerDeposit).add(
+      BN(promisePrice)
     );
     const nonce = await this.contractBSNTokenSame.nonces(buyer.address);
 
@@ -537,6 +582,10 @@ class Utils {
       s
     );
 
+    if (returnTx) return commitTx;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
+    // ?TODO make returnTx = true default?
     const txReceipt = await commitTx.wait();
     let eventArgs;
 
@@ -553,15 +602,18 @@ class Utils {
   async commitToBuyETHTKNWithPermit(
     buyer: Account,
     seller: Account,
-    tokenSupplyId: string
-  ): Promise<string> {
+    tokenSupplyId: string,
+    returnTx = false,
+    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
+    buyerDeposit = constants.PROMISE_DEPOSITBU1, // todo shift on right place, remove default
+  ): Promise<ContractTransaction | string> {
     const nonce1 = await this.contractBSNTokenDeposit.nonces(buyer.address);
 
     const digestDeposit = await getApprovalDigest(
       this.contractBSNTokenDeposit,
       buyer.address,
       this.contractBSNRouter.address,
-      constants.buyer_deposit,
+      buyerDeposit,
       nonce1,
       this.deadline
     );
@@ -574,18 +626,22 @@ class Utils {
     const buyerInstance = this.contractBSNRouter.connect(
       buyer.signer
     ) as BosonRouter;
-    const txOrder = await buyerInstance.requestVoucherETHTKNWithPermit(
+    const commitTx = await buyerInstance.requestVoucherETHTKNWithPermit(
       tokenSupplyId,
       seller.address,
-      constants.buyer_deposit,
+      buyerDeposit,
       this.deadline,
       v,
       r,
       s,
-      {value: constants.product_price.toString()}
+      {value: promisePrice.toString()}
     );
 
-    const txReceipt = await txOrder.wait();
+    if (returnTx) return commitTx;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
+    // ?TODO make returnTx = true default?
+    const txReceipt = await commitTx.wait();
     let eventArgs;
 
     events.assertEventEmitted(
@@ -602,10 +658,12 @@ class Utils {
     buyer: Account,
     seller: Account,
     tokenSupplyId: string,
-    returnTx = false
+    returnTx = false,
+    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
+    buyerDeposit = constants.PROMISE_DEPOSITBU1, // todo shift on right place, remove default
   ): Promise<ContractTransaction | string> {
-    const txValue = BN(constants.PROMISE_DEPOSITBU1).add(
-      BN(constants.PROMISE_PRICE1)
+    const txValue = BN(buyerDeposit).add(
+      BN(promisePrice)
     ); // TODO MAKE PARAMETERS
 
     const buyerInstance = this.contractBSNRouter.connect(
@@ -619,6 +677,10 @@ class Utils {
       }
     );
 
+    if (returnTx) return commitTx;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
+    // ?TODO make returnTx = true default?
     const txReceipt = await commitTx.wait();
     let eventArgs;
 
@@ -629,21 +691,24 @@ class Utils {
       (e) => (eventArgs = e)
     );
 
-    return returnTx ? txReceipt : eventArgs._tokenIdVoucher;
+    return eventArgs._tokenIdVoucher;
   }
 
   async commitToBuyTKNETHWithPermit(
     buyer: Account,
     seller: Account,
-    tokenSupplyId: string
-  ): Promise<string> {
+    tokenSupplyId: string,
+    returnTx = false,
+    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
+    buyerDeposit = constants.PROMISE_DEPOSITBU1, // todo shift on right place, remove default
+  ): Promise<ContractTransaction | string> {
     const nonce1 = await this.contractBSNTokenPrice.nonces(buyer.address);
 
     const digestDeposit = await getApprovalDigest(
       this.contractBSNTokenPrice,
       buyer.address,
       this.contractBSNRouter.address,
-      constants.product_price,
+      promisePrice,
       nonce1,
       this.deadline
     );
@@ -656,18 +721,22 @@ class Utils {
     const buyerInstance = this.contractBSNRouter.connect(
       buyer.signer
     ) as BosonRouter;
-    const txOrder = await buyerInstance.requestVoucherTKNETHWithPermit(
+    const commitTx = await buyerInstance.requestVoucherTKNETHWithPermit(
       tokenSupplyId,
       seller.address,
-      constants.product_price,
+      promisePrice,
       this.deadline,
       v,
       r,
       s,
-      {value: constants.buyer_deposit}
+      {value: buyerDeposit}
     );
 
-    const txReceipt = await txOrder.wait();
+    if (returnTx) return commitTx;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
+    // ?TODO make returnTx = true default?
+    const txReceipt = await commitTx.wait();
     let eventArgs;
 
     events.assertEventEmitted(
