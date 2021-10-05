@@ -81,7 +81,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
     ) external override {
         require(_to != address(0), "UNSPECIFIED_ADDRESS");
         require(
-            _from == msg.sender || operatorApprovals[_from][msg.sender] == true,
+            _from == msg.sender || operatorApprovals[_from][msg.sender],
             "UNAUTHORIZED_ST"
         );
 
@@ -284,7 +284,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         require(_to != address(0), "UNSPECIFIED_ADDRESS");
         require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTHS");
         require(
-            _from == msg.sender || operatorApprovals[_from][msg.sender] == true,
+            _from == msg.sender || operatorApprovals[_from][msg.sender],
             "UNAUTHORIZED_SB"
         );
 
