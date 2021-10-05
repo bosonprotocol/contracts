@@ -77,30 +77,30 @@ interface IVoucherKernel {
     /**
      * @notice Redemption of the vouchers promise
      * @param _tokenIdVoucher   ID of the voucher
-     * @param _msgSender owner of the voucher
+     * @param _messageSender owner of the voucher
      */
-    function redeem(uint256 _tokenIdVoucher, address _msgSender) external;
+    function redeem(uint256 _tokenIdVoucher, address _messageSender) external;
 
     /**
      * @notice Refunding a voucher
      * @param _tokenIdVoucher   ID of the voucher
-     * @param _msgSender owner of the voucher
+     * @param _messageSender owner of the voucher
      */
-    function refund(uint256 _tokenIdVoucher, address _msgSender) external;
+    function refund(uint256 _tokenIdVoucher, address _messageSender) external;
 
     /**
      * @notice Issue a complain for a voucher
      * @param _tokenIdVoucher   ID of the voucher
-     * @param _msgSender owner of the voucher
+     * @param _messageSender owner of the voucher
      */
-    function complain(uint256 _tokenIdVoucher, address _msgSender) external;
+    function complain(uint256 _tokenIdVoucher, address _messageSender) external;
 
     /**
      * @notice Cancel/Fault transaction by the Seller, admitting to a fault or backing out of the deal
      * @param _tokenIdVoucher   ID of the voucher
-     * @param _msgSender owner of the voucher set (seller)
+     * @param _messageSender owner of the voucher set (seller)
      */
-    function cancelOrFault(uint256 _tokenIdVoucher, address _msgSender)
+    function cancelOrFault(uint256 _tokenIdVoucher, address _messageSender)
         external;
 
     /**
