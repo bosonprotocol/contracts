@@ -169,7 +169,7 @@ contract MockBosonRouter is
         whenNotPaused
     {
         checkLimits(_metadata, address(0), address(0), 0);
-        requestCreateOrder(_metadata, ETHETH, address(0), address(0), 0);
+        requestCreateOrder(_metadata, 5, address(0), address(0), 0);
     }
 
     /**
@@ -1140,7 +1140,7 @@ contract MockBosonRouter is
 
         IVoucherKernel(voucherKernel).createPaymentMethod(
             tokenIdSupply,
-            5,
+            _paymentMethod,
             _tokenPriceAddress,
             _tokenDepositAddress
         );
