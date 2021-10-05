@@ -50,7 +50,14 @@ class Utils {
     promisePrice?,
     buyerDeposit?
   ) => any;
-  commitToBuy: (buyer, seller, tokenSupplyId, returnTx?) => any;
+  commitToBuy: (
+    buyer,
+    seller,
+    tokenSupplyId,
+    returnTx?,
+    promisePrice?,
+    buyerDeposit?
+  ) => any;
   factories?: {
     ERC1155ERC721: ERC1155ERC721__factory | any;
     VoucherKernel: VoucherKernel__factory | any;
