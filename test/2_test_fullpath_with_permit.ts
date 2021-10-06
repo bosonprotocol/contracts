@@ -2040,7 +2040,7 @@ describe('Cashier and VoucherKernel', () => {
         });
       });
 
-      describe.only('TKNTKN', () => {
+      describe('TKNTKN', () => {
         beforeEach(async () => {
           await deployContracts();
 
@@ -2219,69 +2219,6 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('[NEGATIVE] Should not create order with incorrect price', async () => {
-          // const nonce1 = await contractBSNTokenDeposit.nonces(
-          //   users.buyer.address
-          // );
-          // const tokensToSend = BN(constants.incorrect_product_price).add(
-          //   BN(constants.buyer_deposit)
-          // );
-
-          // const digestDeposit = await getApprovalDigest(
-          //   contractBSNTokenDeposit,
-          //   users.buyer.address,
-          //   contractCashier.address,
-          //   constants.buyer_deposit,
-          //   nonce1,
-          //   deadline
-          // );
-
-          // const VRS_DEPOSIT = ecsign(
-          //   Buffer.from(digestDeposit.slice(2), 'hex'),
-          //   Buffer.from(users.buyer.privateKey.slice(2), 'hex')
-          // );
-
-          // const vDeposit = VRS_DEPOSIT.v;
-          // const rDeposit = VRS_DEPOSIT.r;
-          // const sDeposit = VRS_DEPOSIT.s;
-
-          // const nonce2 = await contractBSNTokenPrice.nonces(
-          //   users.buyer.address
-          // );
-
-          // const digestPrice = await getApprovalDigest(
-          //   contractBSNTokenPrice,
-          //   users.buyer.address,
-          //   contractCashier.address,
-          //   constants.product_price,
-          //   nonce2,
-          //   deadline
-          // );
-
-          // const VRS_PRICE = ecsign(
-          //   Buffer.from(digestPrice.slice(2), 'hex'),
-          //   Buffer.from(users.buyer.privateKey.slice(2), 'hex')
-          // );
-
-          // const vPrice = VRS_PRICE.v;
-          // const rPrice = VRS_PRICE.r;
-          // const sPrice = VRS_PRICE.s;
-
-          // const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
-
-          // await expect(
-          //   buyerInstance.requestVoucherTKNTKNWithPermit(
-          //     TOKEN_SUPPLY_ID,
-          //     users.seller.address,
-          //     tokensToSend,
-          //     deadline,
-          //     vPrice,
-          //     rPrice,
-          //     sPrice,
-          //     vDeposit,
-          //     rDeposit,
-          //     sDeposit
-          //   )
-          // ).to.be.revertedWith(revertReasons.INVALID_FUNDS);
           await expect(
             utils.commitToBuy(
               users.buyer,
@@ -2308,7 +2245,7 @@ describe('Cashier and VoucherKernel', () => {
         });
       });
 
-      describe('TKNTKN Same', () => {
+      describe.only('TKNTKN Same', () => {
         const tokensToMintSeller = BN(constants.seller_deposit).mul(
           BN(ORDER_QTY)
         );
@@ -2316,7 +2253,7 @@ describe('Cashier and VoucherKernel', () => {
           BN(ORDER_QTY)
         );
 
-        before(async () => {
+        beforeEach(async () => {
           await deployContracts();
 
           utils = await UtilsBuilder.create()
@@ -2340,70 +2277,112 @@ describe('Cashier and VoucherKernel', () => {
             tokensToMintBuyer
           );
 
-          timestamp = await Utils.getCurrTimestamp();
-          constants.PROMISE_VALID_FROM = timestamp;
-          constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
-
           TOKEN_SUPPLY_ID = await utils.createOrder(
             users.seller,
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
-            constants.seller_deposit,
+            constants.PROMISE_DEPOSITSE1,
             ORDER_QTY
           );
         });
 
         it('Should create voucher', async () => {
-          const nonce = await utils.contractBSNTokenSame.nonces(
-            users.buyer.address
-          );
-          const tokensToSend = BN(constants.product_price).add(
-            BN(constants.buyer_deposit)
-          );
+          await expect(
+            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, true)
+          )
+            .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
+            .withArgs(
+              tokenSupplyKey,
+              voucherTokenId,
+              users.seller.address,
+              users.buyer.address,
+              promiseId
+            )
+            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+            .withArgs(
+              contractVoucherKernel.address,
+              users.seller.address,
+              constants.ZERO,
+              tokenSupplyKey,
+              constants.ONE
+            )
+            .to.emit(contractERC1155ERC721, eventNames.TRANSFER)
+            .withArgs(constants.ZERO, users.buyer.address, voucherTokenId)
+            .to.emit(contractBSNTokenPrice, eventNames.TRANSFER)
+            .withArgs(
+              users.buyer.address,
+              contractCashier.address,
+              BN(constants.PROMISE_PRICE1).add(constants.PROMISE_DEPOSITBU1)
+            );
+        });
 
-          const digestTokens = await getApprovalDigest(
-            utils.contractBSNTokenSame,
-            users.buyer.address,
-            contractBosonRouter.address,
-            tokensToSend,
-            nonce,
-            deadline
-          );
+        describe('After request', () => {
+          beforeEach(async () => {
+            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+          });
 
-          const VRS_TOKENS = ecsign(
-            Buffer.from(digestTokens.slice(2), 'hex'),
-            Buffer.from(users.buyer.privateKey.slice(2), 'hex')
-          );
+          it('Voucher Kernel state is correct', async () => {
+            const voucherStatus = await contractVoucherKernel.getVoucherStatus(
+              voucherTokenId
+            );
 
-          const v = VRS_TOKENS.v;
-          const r = VRS_TOKENS.r;
-          const s = VRS_TOKENS.s;
+            const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
 
-          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
+            assert.equal(
+              voucherStatus[0],
+              expectedStatus.toNumber(),
+              'Wrong status'
+            );
+            assert.isFalse(voucherStatus[1], 'Payment should not be released');
+            assert.isFalse(voucherStatus[2], 'Deposit should not be released');
+            assert.isTrue(
+              voucherStatus[3].eq(constants.ZERO),
+              'Complaint period should not started yet'
+            );
+            assert.isTrue(
+              voucherStatus[4].eq(constants.ZERO),
+              'COF period should not started yet'
+            );
+          });
 
-          const txFillOrder = await buyerInstance.requestVoucherTKNTKNSameWithPermit(
-            TOKEN_SUPPLY_ID,
-            users.seller.address,
-            tokensToSend,
-            deadline,
-            v,
-            r,
-            s
-          );
+          it.only('Cashier Contract has correct amount of funds', async () => {
+            const sellerDeposits = BN(constants.PROMISE_DEPOSITSE1).mul(
+              BN(ORDER_QTY)
+            );
+            const buyerTokensSent = BN(constants.PROMISE_PRICE1).add(
+              BN(constants.PROMISE_DEPOSITBU1)
+            );
+            const expectedDepositBalance = buyerTokensSent.add(sellerDeposits);
 
-          const txReceipt = await txFillOrder.wait();
+            expect(
+              await utils.contractBSNTokenSame.balanceOf(
+                contractCashier.address
+              )
+            ).to.equal(expectedDepositBalance, 'Cashier amount is incorrect');
+          });
 
-          eventUtils.assertEventEmitted(
-            txReceipt,
-            VoucherKernel_Factory,
-            eventNames.LOG_VOUCHER_DELIVERED,
-            (ev) => {
-              assert.equal(ev._issuer, users.seller.address);
-              tokenVoucherKey1 = ev._tokenIdVoucher;
-            }
-          );
+          it.only('Escrows should be updated', async () => {
+            const sellerDeposits = BN(constants.PROMISE_DEPOSITSE1).mul(
+              BN(ORDER_QTY)
+            );
+            const buyerTknSent = BN(constants.PROMISE_PRICE1).add(
+              BN(constants.PROMISE_DEPOSITBU1)
+            );
 
-          assert.isDefined(tokenVoucherKey1.toString());
+            expect(
+              await contractCashier.getEscrowTokensAmount(
+                utils.contractBSNTokenSame.address,
+                users.seller.address
+              )
+            ).to.equal(sellerDeposits, 'Escrow amount is incorrect');
+
+            expect(
+              await contractCashier.getEscrowTokensAmount(
+                utils.contractBSNTokenSame.address,
+                users.buyer.address
+              )
+            ).to.equal(buyerTknSent, 'Escrow amount is incorrect');
+          });
         });
 
         it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
@@ -2424,128 +2403,28 @@ describe('Cashier and VoucherKernel', () => {
           ).to.be.revertedWith(revertReasons.INCORRECT_PAYMENT_METHOD);
         });
 
-        it('Cashier Contract has correct amount of funds', async () => {
-          const cashierTokenBalanceSame = await utils.contractBSNTokenSame.balanceOf(
-            contractCashier.address
-          );
-          const sellerDeposits = BN(constants.seller_deposit).mul(
-            BN(ORDER_QTY)
-          );
-          const buyerTokensSent = BN(constants.product_price).add(
-            BN(constants.buyer_deposit)
-          );
-          const expectedDepositBalance = buyerTokensSent.add(sellerDeposits);
-
-          assert.isTrue(
-            BN(cashierTokenBalanceSame).eq(expectedDepositBalance),
-            'Cashier amount is incorrect'
-          );
-        });
-
-        it('Escrows should be updated', async () => {
-          const sellerDeposits = BN(constants.seller_deposit).mul(
-            BN(ORDER_QTY)
-          );
-          const buyerTknSent = BN(constants.product_price).add(
-            BN(constants.buyer_deposit)
-          );
-
-          const escrowSellerTknDeposit = await contractCashier.getEscrowTokensAmount(
-            utils.contractBSNTokenSame.address,
-            users.seller.address
-          );
-          const escrowBuyerTkn = await contractCashier.getEscrowTokensAmount(
-            utils.contractBSNTokenSame.address,
-            users.buyer.address
-          );
-
-          assert.isTrue(
-            BN(sellerDeposits).eq(escrowSellerTknDeposit),
-            'Escrow amount is incorrect'
-          );
-
-          assert.isTrue(
-            BN(buyerTknSent).eq(escrowBuyerTkn),
-            'Escrow amount is incorrect'
-          );
-        });
-
         it('[NEGATIVE] Should not create order with incorrect price', async () => {
-          const nonce = await contractBSNTokenDeposit.nonces(
-            users.buyer.address
-          );
-          const incorrectTokensToSign = BN(
-            constants.incorrect_product_price
-          ).add(BN(constants.buyer_deposit));
-          const digestTokens = await getApprovalDigest(
-            utils.contractBSNTokenSame,
-            users.buyer.address,
-            contractCashier.address,
-            incorrectTokensToSign,
-            nonce,
-            deadline
-          );
-
-          const VRS_TOKENS = ecsign(
-            Buffer.from(digestTokens.slice(2), 'hex'),
-            Buffer.from(users.buyer.privateKey.slice(2), 'hex')
-          );
-
-          const v = VRS_TOKENS.v;
-          const r = VRS_TOKENS.r;
-          const s = VRS_TOKENS.s;
-
-          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
-
           await expect(
-            buyerInstance.requestVoucherTKNTKNSameWithPermit(
+            utils.commitToBuy(
+              users.buyer,
+              users.seller,
               TOKEN_SUPPLY_ID,
-              users.seller.address,
-              incorrectTokensToSign,
-              deadline,
-              v,
-              r,
-              s
+              false,
+              constants.incorrect_product_price,
+              constants.PROMISE_DEPOSITBU1
             )
           ).to.be.revertedWith(revertReasons.INVALID_FUNDS);
         });
 
         it('[NEGATIVE] Should not create order with incorrect deposit', async () => {
-          const nonce = await contractBSNTokenDeposit.nonces(
-            users.buyer.address
-          );
-          const incorrectTokensToSign = BN(constants.product_price).add(
-            BN(constants.buyer_incorrect_deposit)
-          );
-          const digestTokens = await getApprovalDigest(
-            utils.contractBSNTokenSame,
-            users.buyer.address,
-            contractCashier.address,
-            incorrectTokensToSign,
-            nonce,
-            deadline
-          );
-
-          const VRS_TOKENS = ecsign(
-            Buffer.from(digestTokens.slice(2), 'hex'),
-            Buffer.from(users.buyer.privateKey.slice(2), 'hex')
-          );
-
-          const v = VRS_TOKENS.v;
-          const r = VRS_TOKENS.r;
-          const s = VRS_TOKENS.s;
-
-          const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
-
           await expect(
-            buyerInstance.requestVoucherTKNTKNSameWithPermit(
+            utils.commitToBuy(
+              users.buyer,
+              users.seller,
               TOKEN_SUPPLY_ID,
-              users.seller.address,
-              incorrectTokensToSign,
-              deadline,
-              v,
-              r,
-              s
+              false,
+              constants.PROMISE_PRICE1,
+              constants.buyer_incorrect_deposit
             )
           ).to.be.revertedWith(revertReasons.INVALID_FUNDS);
         });
@@ -2581,15 +2460,15 @@ describe('Cashier and VoucherKernel', () => {
             users.seller,
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
-            constants.seller_deposit,
+            constants.PROMISE_DEPOSITSE1,
             ORDER_QTY
           );
 
           const nonce = await utils.contractBSNTokenSame.nonces(
             users.buyer.address
           );
-          const tokensToSend = BN(constants.product_price).add(
-            BN(constants.buyer_deposit)
+          const tokensToSend = BN(constants.PROMISE_PRICE1).add(
+            BN(constants.PROMISE_DEPOSITBU1)
           );
 
           const digestTokens = await getApprovalDigest(
