@@ -184,7 +184,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     constructor(address _tokensContract)
     notZeroAddress(_tokensContract)
     {
-        require(_tokensContract != address(0), "0A");
         tokensContract = _tokensContract;
 
         complainPeriod = 7 * 1 days;
