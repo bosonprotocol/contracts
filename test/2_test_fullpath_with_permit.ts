@@ -2506,7 +2506,7 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       describe.only('TKNETH', () => {
-        before(async () => {
+        beforeEach(async () => {
           await deployContracts();
 
           utils = await UtilsBuilder.create()
@@ -2543,45 +2543,44 @@ describe('Cashier and VoucherKernel', () => {
           await expect(
             utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, true)
           )
-          .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
-          .withArgs(
-            tokenSupplyKey,
-            voucherTokenId,
-            users.seller.address,
-            users.buyer.address,
-            promiseId
-          )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
-          .withArgs(
-            contractVoucherKernel.address,
-            users.seller.address,
-            constants.ZERO,
-            tokenSupplyKey,
-            constants.ONE
-          )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER)
-          .withArgs(constants.ZERO, users.buyer.address, voucherTokenId)
-          .to.emit(contractBSNTokenPrice, eventNames.TRANSFER)
-          .withArgs(
-            users.buyer.address,
-            contractCashier.address,
-            constants.PROMISE_PRICE1
-          );
-
+            .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
+            .withArgs(
+              tokenSupplyKey,
+              voucherTokenId,
+              users.seller.address,
+              users.buyer.address,
+              promiseId
+            )
+            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+            .withArgs(
+              contractVoucherKernel.address,
+              users.seller.address,
+              constants.ZERO,
+              tokenSupplyKey,
+              constants.ONE
+            )
+            .to.emit(contractERC1155ERC721, eventNames.TRANSFER)
+            .withArgs(constants.ZERO, users.buyer.address, voucherTokenId)
+            .to.emit(contractBSNTokenPrice, eventNames.TRANSFER)
+            .withArgs(
+              users.buyer.address,
+              contractCashier.address,
+              constants.PROMISE_PRICE1
+            );
         });
 
         describe('After request', () => {
           beforeEach(async () => {
             await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
           });
-  
+
           it('Voucher Kernel state is correct', async () => {
             const voucherStatus = await contractVoucherKernel.getVoucherStatus(
               voucherTokenId
             );
-  
+
             const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
-  
+
             assert.equal(
               voucherStatus[0],
               expectedStatus.toNumber(),
@@ -2598,7 +2597,7 @@ describe('Cashier and VoucherKernel', () => {
               'COF period should not started yet'
             );
           });
-  
+
           it('Cashier Contract has correct amount of funds', async () => {
             const sellerDeposits = BN(constants.PROMISE_DEPOSITSE1).mul(
               BN(ORDER_QTY)
@@ -2606,99 +2605,32 @@ describe('Cashier and VoucherKernel', () => {
             const expectedDepositBalance = BN(constants.PROMISE_DEPOSITBU1).add(
               sellerDeposits
             );
-  
-            expect(await ethers.provider.getBalance(
-              contractCashier.address
-            )).to.equal(expectedDepositBalance, 'Cashier amount is incorrect');
 
-            expect(await contractBSNTokenPrice.balanceOf(
-              contractCashier.address
-              )).to.equal(constants.PROMISE_PRICE1, 'Cashier amount is incorrect');
-  
-            // assert.isTrue(
-            //   BN(cashierDepositETH).eq(expectedDepositBalance),
-            //   'Cashier amount is incorrect'
-            // );
-            // assert.isTrue(
-            //   BN(cashierPriceTokenBalance).eq(BN(constants.product_price)),
-            //   'Cashier amount is incorrect'
-            // );
+            expect(
+              await ethers.provider.getBalance(contractCashier.address)
+            ).to.equal(expectedDepositBalance, 'Cashier amount is incorrect');
+
+            expect(
+              await contractBSNTokenPrice.balanceOf(contractCashier.address)
+            ).to.equal(constants.PROMISE_PRICE1, 'Cashier amount is incorrect');
           });
-  
-          // it.only('Escrow should be updated', async () => {
-          //   const sellerDeposits = BN(constants.PROMISE_DEPOSITSE1).mul(
-          //     BN(ORDER_QTY)
-          //   );
-  
-          //   // const buyerTknSent = BN(constants.product_price);
-          //   // const buyerEthSent = BN(constants.buyer_deposit);
-  
-          //   expect(await contractCashier.getEscrowAmount(
-          //     users.seller.address
-          //   )).to.equal(sellerDeposits, 'Escrow amount is incorrect');
-           
-          //   // expect(await contractCashier.getEscrowAmount(
-          //   //   users.buyer.address
-          //   // )).to.equal(constants.PROMISE_DEPOSITBU1, 'Escrow amount is incorrect');
-           
-          //   expect(await contractCashier.getEscrowTokensAmount(
-          //     contractBSNTokenPrice.address,
-          //     users.buyer.address
-          //   )).to.equal(constants.PROMISE_PRICE1,'Escrow amount is incorrect');
-  
-          //   // assert.isTrue(
-          //   //   BN(sellerDeposits).eq(escrowSeller),
-          //   //   'Escrow amount is incorrect'
-          //   // );
-  
-          //   // assert.isTrue(
-          //   //   BN(buyerEthSent).eq(escrowBuyerEth),
-          //   //   'Escrow amount is incorrect'
-          //   // );
-  
-          //   // assert.isTrue(
-          //   //   BN(buyerTknSent).eq(escrowBuyerTkn),
-          //   //   'Escrow amount is incorrect'
-          //   // );
-          // });
 
-           
-          it.only('Escrow should be updated', async () => {
-            const sellerDeposits = BN(constants.PROMISE_PRICE1).mul(
+          it('Escrow should be updated', async () => {
+            const sellerDeposits = BN(constants.PROMISE_DEPOSITSE1).mul(
               BN(ORDER_QTY)
             );
-  
-            const buyerTknSent = BN(constants.PROMISE_PRICE1);
-            const buyerEthSent = BN(constants.PROMISE_DEPOSITBU1);
-  
-            const escrowSeller = await contractCashier.getEscrowAmount(
-              users.seller.address
-            );
-            const escrowBuyerEth = await contractCashier.getEscrowAmount(
-              users.buyer.address
-            );
-            const escrowBuyerTkn = await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenPrice.address,
-              users.buyer.address
-            );
-  
-            assert.isTrue(
-              BN(sellerDeposits).eq(escrowSeller),
-              'Escrow amount is incorrect'
-            );
-  
-            assert.isTrue(
-              BN(buyerEthSent).eq(escrowBuyerEth),
-              'Escrow amount is incorrect'
-            );
-  
-            assert.isTrue(
-              BN(buyerTknSent).eq(escrowBuyerTkn),
-              'Escrow amount is incorrect'
-            );
+
+            expect(
+              await contractCashier.getEscrowAmount(users.seller.address)
+            ).to.equal(sellerDeposits, 'Escrow amount is incorrect');
+
+            expect(
+              await contractCashier.getEscrowTokensAmount(
+                contractBSNTokenPrice.address,
+                users.buyer.address
+              )
+            ).to.equal(constants.PROMISE_PRICE1, 'Escrow amount is incorrect');
           });
-
-
         });
 
         it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
@@ -2718,8 +2650,6 @@ describe('Cashier and VoucherKernel', () => {
             utilsEthEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
           ).to.be.revertedWith(revertReasons.INCORRECT_PAYMENT_METHOD);
         });
-
-
 
         it('[NEGATIVE] Should not create order with incorrect deposit', async () => {
           // const nonce = await contractBSNTokenPrice.nonces(users.buyer.address);
