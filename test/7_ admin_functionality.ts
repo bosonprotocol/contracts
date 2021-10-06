@@ -163,6 +163,12 @@ describe('Admin functionality', async () => {
         contractCashier.setTokenContractAddress(constants.ZERO_ADDRESS)
       ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
     });
+
+    it('[NEGATIVE][setBosonRouterAddress] Should revert if ZERO address is provided at deployment', async () => {
+      await expect(
+        Cashier_Factory.deploy(constants.ZERO_ADDRESS)
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+    });
   });
 
   describe('ERC1155721', () => {
@@ -352,6 +358,12 @@ describe('Admin functionality', async () => {
       await expect(
         contractVoucherKernel.setBosonRouterAddress(constants.ZERO_ADDRESS)
       ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
+    });
+
+    it('[NEGATIVE][setBosonRouterAddress] Should revert if ZERO address is provided at deployment', async () => {
+      await expect(
+        VoucherKernel_Factory.deploy(constants.ZERO_ADDRESS)
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
   });
 }); //end of contract

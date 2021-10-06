@@ -61,8 +61,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         _;
     }
 
-    modifier notZeroAddress(address _tokenAddress) {
-        require(_tokenAddress != address(0), "INVALID_TOKEN_ADDRESS");
+    modifier notZeroAddress(address _addressToCheck) {
+        require(_addressToCheck != address(0), "0A");
         _;
     }
 
@@ -78,7 +78,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @notice Construct and initialze the contract. Iniialises associated contract addresses. Iniialises disaster state to false.    
      * @param _voucherKernel address of the associated VocherKernal contract instance
      */
-    constructor(address _voucherKernel) {
+    constructor(address _voucherKernel) 
+     notZeroAddress(_voucherKernel)
+    {
         voucherKernel = _voucherKernel;
         disasterState = false;
     }
