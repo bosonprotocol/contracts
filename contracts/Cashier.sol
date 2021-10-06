@@ -785,7 +785,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     ) internal
       notZeroAddress(_recipient)
     {
-        require(_recipient != address(0), "UNSPECIFIED_ADDRESS");
         require(_amount > 0, "");
 
         if (_paymentMethod == ETHETH || _paymentMethod == ETHTKN) {
@@ -822,7 +821,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     ) internal    
       notZeroAddress(_recipient)
     {
-        require(_recipient != address(0), "UNSPECIFIED_ADDRESS");
         require(_amount > 0, "");
 
         if (_paymentMethod == ETHETH || _paymentMethod == TKNETH) {
