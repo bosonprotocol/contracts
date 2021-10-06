@@ -782,7 +782,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         uint256 _amount,
         uint8 _paymentMethod,
         uint256 _tokenIdSupply
-    ) internal {
+    ) internal
+      notZeroAddress(_recipient)
+    {
         require(_recipient != address(0), "UNSPECIFIED_ADDRESS");
         require(_amount > 0, "");
 
@@ -817,7 +819,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         uint256 _amount,
         uint8 _paymentMethod,
         uint256 _tokenIdSupply
-    ) internal {
+    ) internal    
+      notZeroAddress(_recipient)
+    {
         require(_recipient != address(0), "UNSPECIFIED_ADDRESS");
         require(_amount > 0, "");
 
