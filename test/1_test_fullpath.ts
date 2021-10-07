@@ -1371,13 +1371,47 @@ describe('Voucher tests', () => {
 
       const txReceipt: ContractReceipt = await txOrder1.wait();
 
+      const sellerInstance2 = contractBosonRouter_2.connect(
+        users.seller.signer
+      );
+
+      const txOrder2 = await sellerInstance2.requestCreateOrderETHETH(
+        [
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITSE1,
+          constants.PROMISE_DEPOSITBU1,
+          constants.ORDER_QUANTITY1,
+        ],
+        {
+          value: constants.PROMISE_DEPOSITSE1,
+        }
+      );
+
+      const txReceipt2: ContractReceipt = await txOrder2.wait();
+
+      let promiseIdFromBosonRouter1: string;
+
       eventUtils.assertEventEmitted(
         txReceipt,
         VoucherKernel_Factory,
         eventNames.LOG_PROMISE_CREATED,
         (ev) => {
+          promiseIdFromBosonRouter1 = ev._promiseId;
           assert.isTrue(ev._promiseId == promisekey1);
           assert.isTrue(ev._promiseId != promisekey2);
+        }
+      );
+
+      eventUtils.assertEventEmitted(
+        txReceipt2,
+        VoucherKernel_Factory2,
+        eventNames.LOG_PROMISE_CREATED,
+        (ev) => {
+          assert.isTrue(ev._promiseId == promisekey2);
+          assert.isTrue(ev._promiseId != promiseIdFromBosonRouter1);
+          assert.isTrue(ev._promiseId != promisekey1);
         }
       );
     });
