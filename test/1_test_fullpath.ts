@@ -1,5 +1,5 @@
 import {ethers} from 'hardhat';
-import {Signer, ContractFactory, Contract} from 'ethers';
+import {Signer, ContractFactory, Contract, ContractReceipt} from 'ethers';
 
 // later consider using
 // https://github.com/OpenZeppelin/openzeppelin-test-helpers
@@ -14,6 +14,7 @@ import {assert, expect} from 'chai';
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
 const eventNames = eventUtils.eventNames;
+const {keccak256, solidityPack} = ethers.utils;
 import fnSignatures from '../testHelpers/functionSignatures';
 
 import {
@@ -34,6 +35,12 @@ let TokenRegistry_Factory: ContractFactory;
 let MockBosonRouter_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
 
+let ERC1155ERC721_Factory2: ContractFactory;
+let VoucherKernel_Factory2: ContractFactory;
+let Cashier_Factory2: ContractFactory;
+let BosonRouter_Factory2: ContractFactory;
+let TokenRegistry_Factory2: ContractFactory;
+
 const BN = ethers.BigNumber.from;
 
 let users;
@@ -46,6 +53,12 @@ describe('Voucher tests', () => {
     contractTokenRegistry: TokenRegistry,
     contractMockBosonRouter: MockBosonRouter,
     contractBSNTokenPrice: MockERC20Permit;
+
+  let contractERC1155ERC721_2: ERC1155ERC721,
+    contractVoucherKernel_2: VoucherKernel,
+    contractCashier_2: Cashier,
+    contractBosonRouter_2: BosonRouter,
+    contractTokenRegistry_2: TokenRegistry;
 
   let tokenSupplyKey1,
     tokenSupplyKey2,
@@ -131,6 +144,63 @@ describe('Voucher tests', () => {
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
+  }
+
+  async function deployContracts2() {
+    ERC1155ERC721_Factory2 = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherKernel_Factory2 = await ethers.getContractFactory('VoucherKernel');
+    Cashier_Factory2 = await ethers.getContractFactory('Cashier');
+    BosonRouter_Factory2 = await ethers.getContractFactory('BosonRouter');
+    TokenRegistry_Factory2 = await ethers.getContractFactory('TokenRegistry');
+
+    const sixtySeconds = 60;
+
+    contractTokenRegistry_2 = (await TokenRegistry_Factory2.deploy()) as Contract &
+      TokenRegistry;
+    contractERC1155ERC721_2 = (await ERC1155ERC721_Factory2.deploy()) as Contract &
+      ERC1155ERC721;
+    contractVoucherKernel_2 = (await VoucherKernel_Factory2.deploy(
+      contractERC1155ERC721_2.address
+    )) as Contract & VoucherKernel;
+    contractCashier_2 = (await Cashier_Factory2.deploy(
+      contractVoucherKernel_2.address
+    )) as Contract & Cashier;
+    contractBosonRouter_2 = (await BosonRouter_Factory2.deploy(
+      contractVoucherKernel_2.address,
+      contractTokenRegistry_2.address,
+      contractCashier_2.address
+    )) as Contract & BosonRouter;
+
+    await contractTokenRegistry_2.deployed();
+    await contractERC1155ERC721_2.deployed();
+    await contractVoucherKernel_2.deployed();
+    await contractCashier_2.deployed();
+    await contractBosonRouter_2.deployed();
+
+    await contractERC1155ERC721_2.setApprovalForAll(
+      contractVoucherKernel_2.address,
+      true
+    );
+    await contractERC1155ERC721_2.setVoucherKernelAddress(
+      contractVoucherKernel_2.address
+    );
+
+    await contractERC1155ERC721_2.setCashierAddress(contractCashier_2.address);
+
+    await contractVoucherKernel_2.setBosonRouterAddress(
+      contractBosonRouter_2.address
+    );
+    await contractVoucherKernel_2.setCashierAddress(contractCashier_2.address);
+
+    await contractCashier_2.setBosonRouterAddress(
+      contractBosonRouter_2.address
+    );
+    await contractCashier_2.setTokenContractAddress(
+      contractERC1155ERC721_2.address
+    );
+
+    await contractVoucherKernel_2.setComplainPeriod(sixtySeconds);
+    await contractVoucherKernel_2.setCancelFaultPeriod(sixtySeconds);
   }
 
   beforeEach('execute prerequisite steps', async () => {
@@ -1249,6 +1319,67 @@ describe('Voucher tests', () => {
           BN(0)
         )
       ).to.not.be.revertedWith(revertReasons.PAUSED);
+    });
+  });
+
+  describe('Creates unique Promise keys for every VoucherKernal instance', async () => {
+    beforeEach(
+      'Deploy and create another instance of the contracts',
+      async () => {
+        await deployContracts2();
+      }
+    );
+
+    async function promiseKeyForVoucherKernel(voucherKernel: VoucherKernel) {
+      return keccak256(
+        solidityPack(
+          ['address', 'uint256', 'uint256', 'uint256', 'address'],
+          [
+            users.seller.address,
+            constants.ZERO,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            voucherKernel.address,
+          ]
+        )
+      );
+    }
+
+    it('Promise key is DIFFERENT for different instances of VoucherKernal contract', async () => {
+      const promisekey1 = await promiseKeyForVoucherKernel(
+        contractVoucherKernel
+      );
+      const promisekey2 = await promiseKeyForVoucherKernel(
+        contractVoucherKernel_2
+      );
+
+      const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+
+      const txOrder1 = await sellerInstance.requestCreateOrderETHETH(
+        [
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITSE1,
+          constants.PROMISE_DEPOSITBU1,
+          constants.ORDER_QUANTITY1,
+        ],
+        {
+          value: constants.PROMISE_DEPOSITSE1,
+        }
+      );
+
+      const txReceipt: ContractReceipt = await txOrder1.wait();
+
+      eventUtils.assertEventEmitted(
+        txReceipt,
+        VoucherKernel_Factory,
+        eventNames.LOG_PROMISE_CREATED,
+        (ev) => {
+          assert.isTrue(ev._promiseId == promisekey1);
+          assert.isTrue(ev._promiseId != promisekey2);
+        }
+      );
     });
   });
 }); //end of contract
