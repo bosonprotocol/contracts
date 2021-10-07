@@ -4565,15 +4565,16 @@ describe('Cashier and VoucherKernel', () => {
           users.seller,
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
-          constants.seller_deposit,
+          constants.PROMISE_DEPOSITSE1,
           constants.QTY_10
         );
       });
 
       it('Should update escrow amounts after transfer', async () => {
-        const expectedBalanceInEscrow = BN(constants.product_price).add(
-          BN(constants.buyer_deposit)
+        const expectedBalanceInEscrow = BN(constants.PROMISE_PRICE1).add(
+          BN(constants.PROMISE_DEPOSITBU1)
         );
+
         const voucherID = await utils.commitToBuy(
           users.other1,
           users.seller,
@@ -4621,11 +4622,15 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
-        const expectedBuyerAmount = BN(constants.buyer_deposit)
-          .add(BN(constants.product_price))
-          .add(BN(constants.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
-        const expectedSellerAmount = BN(constants.seller_deposit).div(BN(4)); // 0.0125
-        const expectedEscrowAmount = BN(constants.seller_deposit).div(BN(4)); // 0.0125
+        const expectedBuyerAmount = BN(constants.PROMISE_DEPOSITBU1)
+          .add(BN(constants.PROMISE_PRICE1))
+          .add(BN(constants.PROMISE_DEPOSITSE1).div(BN(2)));
+        const expectedSellerAmount = BN(constants.PROMISE_DEPOSITSE1).div(
+          BN(4)
+        ); 
+        const expectedEscrowAmount = BN(constants.PROMISE_DEPOSITSE1).div(
+          BN(4)
+        ); 
 
         const voucherID = await utils.commitToBuy(
           users.other1,
@@ -4748,28 +4753,6 @@ describe('Cashier and VoucherKernel', () => {
 
     describe('[WITH PERMIT]', () => {
       describe('ETHTKN', () => {
-        let balanceBuyerFromDeposits = BN(0);
-        let balanceSellerFromDeposits = BN(0);
-        let escrowBalanceFromDeposits = BN(0);
-
-        let cashierPaymentLeft = BN(0);
-        let cashierDepositLeft = BN(0);
-
-        async function getBalancesDepositToken() {
-          balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-            users.other2.address
-          );
-          balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-            users.seller.address
-          );
-          escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-            users.deployer.address
-          );
-          cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(
-            utils.contractCashier.address
-          );
-        }
-
         beforeEach(async () => {
           await deployContracts();
           await setPeriods();
@@ -4787,7 +4770,9 @@ describe('Cashier and VoucherKernel', () => {
             );
 
           const supplyQty = 1;
-          const tokensToMint = BN(constants.seller_deposit).mul(BN(supplyQty));
+          const tokensToMint = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(supplyQty)
+          );
 
           await utils.mintTokens(
             'contractBSNTokenDeposit',
@@ -4797,14 +4782,14 @@ describe('Cashier and VoucherKernel', () => {
           await utils.mintTokens(
             'contractBSNTokenDeposit',
             users.other1.address,
-            constants.buyer_deposit
+            BN(constants.PROMISE_DEPOSITBU1)
           );
 
           tokenSupplyKey = await utils.createOrder(
             users.seller,
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
-            constants.seller_deposit,
+            constants.PROMISE_DEPOSITSE1,
             supplyQty
           );
         });
@@ -4815,23 +4800,11 @@ describe('Cashier and VoucherKernel', () => {
             sellerAmount: BN(0),
             escrowAmount: BN(0),
           };
-
-          balanceBuyerFromDeposits = BN(0);
-          balanceSellerFromDeposits = BN(0);
-          escrowBalanceFromDeposits = BN(0);
-
-          cashierPaymentLeft = BN(0);
-          cashierDepositLeft = BN(0);
-
-          const isPaused = await contractCashier.paused();
-          if (isPaused) {
-            await contractCashier.unpause();
-          }
         });
 
         it('Should update escrow amounts after transfer', async () => {
-          const expectedBalanceInEscrowEth = BN(constants.product_price);
-          const expectedBalanceInEscrowTkn = BN(constants.buyer_deposit);
+          const expectedBalanceInEscrowEth = BN(constants.PROMISE_PRICE1);
+          const expectedBalanceInEscrowTkn = BN(constants.PROMISE_DEPOSITBU1);
 
           const voucherID = await utils.commitToBuy(
             users.other1,
@@ -4924,14 +4897,16 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
-          const expectedBuyerPrice = BN(constants.product_price); // 0.3
-          const expectedBuyerDeposit = BN(constants.buyer_deposit).add(
-            BN(constants.seller_deposit).div(BN(2))
-          ); // 0.065
-          const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(4)); // 0.0125
-          const expectedEscrowAmountDeposit = BN(constants.seller_deposit).div(
+          const expectedBuyerPrice = BN(constants.PROMISE_PRICE1);
+          const expectedBuyerDeposit = BN(constants.PROMISE_DEPOSITBU1).add(
+            BN(constants.PROMISE_DEPOSITSE1).div(BN(2))
+          );
+          const expectedSellerDeposit = BN(constants.PROMISE_DEPOSITSE1).div(
             BN(4)
-          ); // 0.0125
+          );
+          const expectedEscrowAmountDeposit = BN(
+            constants.PROMISE_DEPOSITSE1
+          ).div(BN(4));
 
           const voucherID = await utils.commitToBuy(
             users.other1,
@@ -4956,8 +4931,6 @@ describe('Cashier and VoucherKernel', () => {
             users.deployer.signer
           );
 
-          await getBalancesDepositToken();
-
           // Payment should have been returned to buyer
           const txReceipt = await withdrawTx.wait();
           eventUtils.assertEventEmitted(
@@ -4971,28 +4944,39 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           //Deposits
-          assert.isTrue(
-            balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
+          expect(
+            await utils.contractBSNTokenDeposit.balanceOf(users.other2.address)
+          ).to.equal(
+            expectedBuyerDeposit,
             'NewVoucherOwner did not get expected tokens from DepositTokenContract'
           );
-          assert.isTrue(
-            balanceSellerFromDeposits.eq(expectedSellerDeposit),
+          expect(
+            await utils.contractBSNTokenDeposit.balanceOf(users.seller.address)
+          ).to.equal(
+            expectedSellerDeposit,
             'Seller did not get expected tokens from DepositTokenContract'
           );
-          assert.isTrue(
-            escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
+          expect(
+            await utils.contractBSNTokenDeposit.balanceOf(
+              users.deployer.address
+            )
+          ).to.equal(
+            expectedEscrowAmountDeposit,
             'Escrow did not get expected tokens from DepositTokenContract'
           );
 
           //Cashier Should be Empty
-          assert.isTrue(
-            cashierPaymentLeft.eq(BN(0)),
-            'Cashier Contract is not empty'
-          );
-          assert.isTrue(
-            cashierDepositLeft.eq(BN(0)),
-            'Cashier Contract is not empty'
-          );
+          expect(
+            await utils.contractBSNTokenPrice.balanceOf(
+              utils.contractCashier.address
+            )
+          ).to.equal(constants.ZERO, 'Cashier Contract is not empty');
+
+          expect(
+            await utils.contractBSNTokenDeposit.balanceOf(
+              utils.contractCashier.address
+            )
+          ).to.equal(constants.ZERO, 'Cashier Contract is not empty');
         });
 
         it('[NEGATIVE] Should not transfer a voucher if payments / deposits are released', async () => {
@@ -5061,48 +5045,6 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       describe('TKNTKN', () => {
-        let balanceBuyerFromPayment = BN(0);
-        let balanceBuyerFromDeposits = BN(0);
-
-        let balanceSellerFromPayment = BN(0);
-        let balanceSellerFromDeposits = BN(0);
-
-        let escrowBalanceFromPayment = BN(0);
-        let escrowBalanceFromDeposits = BN(0);
-
-        let cashierPaymentLeft = BN(0);
-        let cashierDepositLeft = BN(0);
-
-        async function getBalancesFromPiceTokenAndDepositToken() {
-          balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
-            users.other2.address
-          );
-          balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-            users.other2.address
-          );
-
-          balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
-            users.seller.address
-          );
-          balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-            users.seller.address
-          );
-
-          escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(
-            users.deployer.address
-          );
-          escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-            users.deployer.address
-          );
-
-          cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(
-            utils.contractCashier.address
-          );
-          cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(
-            utils.contractCashier.address
-          );
-        }
-
         beforeEach(async () => {
           await deployContracts();
           await setPeriods();
@@ -5120,7 +5062,9 @@ describe('Cashier and VoucherKernel', () => {
             );
 
           const supplyQty = 1;
-          const tokensToMint = BN(constants.seller_deposit).mul(BN(supplyQty));
+          const tokensToMint = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(supplyQty)
+          );
 
           await utils.mintTokens(
             'contractBSNTokenDeposit',
@@ -5142,14 +5086,16 @@ describe('Cashier and VoucherKernel', () => {
             users.seller,
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
-            constants.seller_deposit,
+            constants.PROMISE_DEPOSITSE1,
             supplyQty
           );
         });
 
         it('Should update escrow amounts after transfer', async () => {
-          const expectedBalanceInEscrowTknPrice = BN(constants.product_price);
-          const expectedBalanceInEscrowTknDeposit = BN(constants.buyer_deposit);
+          const expectedBalanceInEscrowTknPrice = BN(constants.PROMISE_PRICE1);
+          const expectedBalanceInEscrowTknDeposit = BN(
+            constants.PROMISE_DEPOSITBU1
+          );
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
@@ -5252,15 +5198,17 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
-          const expectedBuyerPrice = BN(constants.product_price); // 0.3
-          const expectedBuyerDeposit = BN(constants.buyer_deposit).add(
-            BN(constants.seller_deposit).div(BN(2))
-          ); // 0.065
+          const expectedBuyerPrice = BN(constants.PROMISE_PRICE1);
+          const expectedBuyerDeposit = BN(constants.PROMISE_DEPOSITBU1).add(
+            BN(constants.PROMISE_DEPOSITSE1).div(BN(2))
+          );
           const expectedSellerPrice = BN(0);
-          const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(4)); // 0.0125
-          const expectedEscrowAmountDeposit = BN(constants.seller_deposit).div(
+          const expectedSellerDeposit = BN(constants.PROMISE_DEPOSITSE1).div(
             BN(4)
-          ); // 0.0125
+          );
+          const expectedEscrowAmountDeposit = BN(
+            constants.PROMISE_DEPOSITSE1
+          ).div(BN(4));
           const expectedEscrowAmountPrice = BN(0);
 
           const voucherID = await utils.commitToBuy(
@@ -5283,45 +5231,64 @@ describe('Cashier and VoucherKernel', () => {
 
           await utils.withdraw(voucherID, users.deployer.signer);
 
-          await getBalancesFromPiceTokenAndDepositToken();
-
           //Payments
-          assert.isTrue(
-            balanceBuyerFromPayment.eq(expectedBuyerPrice),
+          expect(
+            await utils.contractBSNTokenPrice.balanceOf(users.other2.address)
+          ).to.equal(
+            expectedBuyerPrice,
             'Buyer did not get expected tokens from PriceTokenContract'
           );
-          assert.isTrue(
-            balanceSellerFromPayment.eq(expectedSellerPrice),
+
+          expect(
+            await utils.contractBSNTokenPrice.balanceOf(users.seller.address)
+          ).to.equal(
+            expectedSellerPrice,
             'Seller did not get expected tokens from PriceTokenContract'
           );
-          assert.isTrue(
-            escrowBalanceFromPayment.eq(expectedEscrowAmountPrice),
+
+          expect(
+            await utils.contractBSNTokenPrice.balanceOf(users.deployer.address)
+          ).to.equal(
+            expectedEscrowAmountPrice,
             'Escrow did not get expected tokens from PriceTokenContract'
           );
 
           //Deposits
-          assert.isTrue(
-            balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
+          expect(
+            await utils.contractBSNTokenDeposit.balanceOf(users.other2.address)
+          ).to.equal(
+            expectedBuyerDeposit,
             'Buyer did not get expected tokens from DepositTokenContract'
           );
-          assert.isTrue(
-            balanceSellerFromDeposits.eq(expectedSellerDeposit),
+
+          expect(
+            await utils.contractBSNTokenDeposit.balanceOf(users.seller.address)
+          ).to.equal(
+            expectedSellerDeposit,
             'Seller did not get expected tokens from DepositTokenContract'
           );
-          assert.isTrue(
-            escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
+
+          expect(
+            await utils.contractBSNTokenDeposit.balanceOf(
+              users.deployer.address
+            )
+          ).to.equal(
+            expectedEscrowAmountDeposit,
             'Buyer did not get expected tokens from DepositTokenContract'
           );
 
           //Cashier Should be Empty
-          assert.isTrue(
-            cashierPaymentLeft.eq(BN(0)),
-            'Cashier Contract is not empty'
-          );
-          assert.isTrue(
-            cashierDepositLeft.eq(BN(0)),
-            'Cashier Contract is not empty'
-          );
+          expect(
+            await utils.contractBSNTokenPrice.balanceOf(
+              utils.contractCashier.address
+            )
+          ).to.equal(constants.ZERO, 'Cashier Contract is not empty');
+
+          expect(
+            await utils.contractBSNTokenDeposit.balanceOf(
+              utils.contractCashier.address
+            )
+          ).to.equal(constants.ZERO, 'Cashier Contract is not empty');
         });
 
         it('[NEGATIVE] Should not transfer a voucher if payments / deposits are released', async () => {
@@ -5390,13 +5357,6 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       describe('TKNETH', () => {
-        let balanceBuyerFromPayment = BN(0);
-        let balanceSellerFromPayment = BN(0);
-        let escrowBalanceFromPayment = BN(0);
-
-        let cashierPaymentLeft = BN(0);
-        const cashierDepositLeft = BN(0);
-
         beforeEach(async () => {
           await deployContracts();
           await setPeriods();
@@ -5410,42 +5370,27 @@ describe('Cashier and VoucherKernel', () => {
               contractCashier,
               contractBosonRouter,
               contractBSNTokenPrice,
-              ''
+              contractBSNTokenDeposit
             );
 
           await utils.mintTokens(
             'contractBSNTokenPrice',
             users.other1.address,
-            constants.product_price
+            BN(constants.PROMISE_PRICE1)
           );
 
           tokenSupplyKey = await utils.createOrder(
             users.seller,
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
-            constants.seller_deposit,
+            constants.PROMISE_DEPOSITSE1,
             constants.QTY_1
           );
         });
 
-        async function getBalancesPriceToken() {
-          balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
-            users.other2.address
-          );
-          balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
-            users.seller.address
-          );
-          escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(
-            users.deployer.address
-          );
-          cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(
-            utils.contractCashier.address
-          );
-        }
-
         it('Should update escrow amounts after transfer', async () => {
-          const expectedBalanceInEscrowEth = BN(constants.buyer_deposit);
-          const expectedBalanceInEscrowTkn = BN(constants.product_price);
+          const expectedBalanceInEscrowEth = BN(constants.PROMISE_DEPOSITBU1);
+          const expectedBalanceInEscrowTkn = BN(constants.PROMISE_PRICE1);
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
@@ -5536,16 +5481,18 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
-          const expectedBuyerPrice = BN(constants.product_price); // 0.3
+          const expectedBuyerPrice = BN(constants.PROMISE_PRICE1);
           const expectedSellerPrice = BN(0);
           const expectedEscrowPrice = BN(0);
-          const expectedBuyerDeposit = BN(constants.buyer_deposit).add(
-            BN(constants.seller_deposit).div(BN(2))
-          ); // 0.065
-          const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(4)); // 0.0125
-          const expectedEscrowAmountDeposit = BN(constants.seller_deposit).div(
+          const expectedBuyerDeposit = BN(constants.PROMISE_DEPOSITBU1).add(
+            BN(constants.PROMISE_DEPOSITSE1).div(BN(2))
+          );
+          const expectedSellerDeposit = BN(constants.PROMISE_DEPOSITSE1).div(
             BN(4)
-          ); // 0.0125
+          );
+          const expectedEscrowAmountDeposit = BN(
+            constants.PROMISE_DEPOSITSE1
+          ).div(BN(4));
 
           const voucherID = await utils.commitToBuy(
             users.other1,
@@ -5558,8 +5505,8 @@ describe('Cashier and VoucherKernel', () => {
             users.other2.address,
             voucherID,
             users.other1.signer
-          ),
-            await utils.refund(voucherID, users.other2.signer);
+          );
+          await utils.refund(voucherID, users.other2.signer);
           await utils.complain(voucherID, users.other2.signer);
           await utils.cancel(voucherID, users.seller.signer);
           await utils.finalize(voucherID, users.deployer.signer);
@@ -5569,20 +5516,24 @@ describe('Cashier and VoucherKernel', () => {
             users.deployer.signer
           );
 
-          await getBalancesPriceToken();
-
           // Payments in TKN
           // Payment should have been returned to buyer
-          assert.isTrue(
-            balanceBuyerFromPayment.eq(expectedBuyerPrice),
+          expect(
+            await utils.contractBSNTokenPrice.balanceOf(users.other2.address)
+          ).to.equal(
+            expectedBuyerPrice,
             'Buyer did not get expected tokens from PaymentTokenContract'
           );
-          assert.isTrue(
-            balanceSellerFromPayment.eq(expectedSellerPrice),
+          expect(
+            await utils.contractBSNTokenPrice.balanceOf(users.seller.address)
+          ).to.equal(
+            expectedSellerPrice,
             'Seller did not get expected tokens from PaymentTokenContract'
           );
-          assert.isTrue(
-            escrowBalanceFromPayment.eq(expectedEscrowPrice),
+          expect(
+            await utils.contractBSNTokenPrice.balanceOf(users.deployer.address)
+          ).to.equal(
+            expectedEscrowPrice,
             'Escrow did not get expected tokens from PaymentTokenContract'
           );
 
@@ -5617,14 +5568,17 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           //Cashier Should be Empty
-          assert.isTrue(
-            cashierPaymentLeft.eq(BN(0)),
-            'Cashier Contract is not empty'
-          );
-          assert.isTrue(
-            cashierDepositLeft.eq(BN(0)),
-            'Cashier Contract is not empty'
-          );
+          expect(
+            await utils.contractBSNTokenPrice.balanceOf(
+              utils.contractCashier.address
+            )
+          ).to.equal(constants.ZERO, 'Cashier Contract is not empty');
+
+          expect(
+            await utils.contractBSNTokenDeposit.balanceOf(
+              utils.contractCashier.address
+            )
+          ).to.equal(constants.ZERO, 'Cashier Contract is not empty');
         });
 
         it('[NEGATIVE] Should not transfer a voucher if payments / deposits are released', async () => {
