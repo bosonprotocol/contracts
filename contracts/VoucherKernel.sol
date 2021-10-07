@@ -172,11 +172,18 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         _;
     }
 
+    modifier notZeroAddress(address _addressToCheck) {
+        require(_addressToCheck != address(0), "0A");
+        _;
+    }
+
     /**
      * @notice Construct and initialze the contract. Iniialises associated contract addresses, the complain period, and the cancel or fault period
      * @param _tokensContract address of the associated ERC1155ERC721 contract instance
      */
-    constructor(address _tokensContract) {
+    constructor(address _tokensContract)
+    notZeroAddress(_tokensContract)
+    {
         tokensContract = _tokensContract;
 
         complainPeriod = 7 * 1 days;

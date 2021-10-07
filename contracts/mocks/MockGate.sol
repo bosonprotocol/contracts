@@ -27,6 +27,14 @@ contract MockGate is IGate, Ownable, Pausable {
     }
 
     /**
+     * @notice  Checking if a non-zero address is provided, otherwise reverts.
+     */
+    modifier notZeroAddress(address _tokenAddress) {
+        require(_tokenAddress != address(0), "0A"); //zero address
+        _;
+    }
+
+    /**
      * @notice For a given _tokenIdSupply, it tells on which NFT it depends
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
      * @return quest NFT token ID
@@ -78,6 +86,7 @@ contract MockGate is IGate, Ownable, Pausable {
         external
         override
         onlyOwner
+        notZeroAddress(_bosonRouterAddress)
     {
         bosonRouterAddress = _bosonRouterAddress;
 
