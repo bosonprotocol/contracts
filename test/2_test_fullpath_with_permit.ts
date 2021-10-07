@@ -3240,7 +3240,7 @@ describe('Cashier and VoucherKernel', () => {
     });
   });
 
-  describe('TOKEN SUPPLY TRANSFER', () => {
+  describe.only('TOKEN SUPPLY TRANSFER', () => {
     let actualOldOwnerBalanceFromEscrow = BN(0);
     let actualNewOwnerBalanceFromEscrow = BN(0);
     let expectedBalanceInEscrow = BN(0);
@@ -3277,6 +3277,32 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Should transfer voucher supply', async () => {
+        // balances before
+        const user1BalanceBeforeTransfer = (
+          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            users.other1.address,
+            tokenSupplyKey
+          )
+        )[0];
+
+        const user2BalanceBeforeTransfer = (
+          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            users.other2.address,
+            tokenSupplyKey
+          )
+        )[0];
+
+        assert.equal(
+          user1BalanceBeforeTransfer,
+          constants.QTY_10,
+          'User1 before balance mismatch'
+        );
+        assert.equal(
+          user2BalanceBeforeTransfer,
+          0,
+          'User2 before balance mismatch'
+        );
+
         const transferTx = await utils.safeTransfer1155(
           users.other1.address,
           users.other2.address,
@@ -3298,6 +3324,32 @@ describe('Cashier and VoucherKernel', () => {
             assert.isTrue(ev._id.eq(tokenSupplyKey));
             assert.isTrue(ev._value.eq(constants.QTY_10));
           }
+        );
+
+        // balances after
+        const user1BalanceAfterTransfer = (
+          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            users.other1.address,
+            tokenSupplyKey
+          )
+        )[0];
+
+        const user2BalanceAfterTransfer = (
+          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            users.other2.address,
+            tokenSupplyKey
+          )
+        )[0];
+
+        assert.equal(
+          user1BalanceAfterTransfer,
+          0,
+          'User1 after balance mismatch'
+        );
+        assert.equal(
+          user2BalanceAfterTransfer,
+          constants.QTY_10,
+          'User2 after balance mismatch'
         );
       });
 
@@ -3324,8 +3376,9 @@ describe('Cashier and VoucherKernel', () => {
           )
         )[0];
 
-        assert.isTrue(
-          balanceBeforeTransfer.eq(balanceAfterTransfer),
+        assert.equal(
+          balanceBeforeTransfer.toString(),
+          balanceAfterTransfer.toString(),
           'Balance mismatch!'
         );
 
@@ -3368,107 +3421,168 @@ describe('Cashier and VoucherKernel', () => {
         ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_1155);
       });
 
-      it('Should transfer batch voucher supply', async () => {
-        const transferTx = await utils.safeBatchTransfer1155(
-          users.other1.address,
-          users.other2.address,
-          [tokenSupplyKey],
-          [constants.QTY_10],
-          users.other1.signer
-        );
+      describe('Batchtransfers', () => {
+        let tokenSupplyKey2;
+        let tokenSupplyBatch;
+        let batchQuantities = [BN(constants.QTY_10), BN(constants.QTY_20)];
 
-        const txReceipt = await transferTx.wait();
+        beforeEach(async () => {
+          const timestamp = await Utils.getCurrTimestamp();
 
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          ERC1155ERC721_Factory,
-          eventNames.TRANSFER_BATCH,
-          (ev) => {
-            assert.equal(ev._from, users.other1.address);
-            assert.equal(ev._to, users.other2.address);
-            assert.equal(
-              JSON.stringify(ev._ids),
-              JSON.stringify([BN(tokenSupplyKey)])
-            );
-            assert.equal(
-              JSON.stringify(ev._values),
-              JSON.stringify([BN(constants.QTY_10)])
-            );
-          }
-        );
-      });
+          tokenSupplyKey2 = await utils.createOrder(
+            users.other1,
+            timestamp,
+            timestamp + constants.SECONDS_IN_DAY,
+            constants.seller_deposit,
+            constants.QTY_20
+          );
 
-      it('Should transfer batch voucher supply to self and balance should be the same', async () => {
-        const balanceBeforeTransfer = (
-          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
-            users.other1.address,
-            tokenSupplyKey
-          )
-        )[0];
+          tokenSupplyBatch = [BN(tokenSupplyKey), BN(tokenSupplyKey2)];
+        });
 
-        const transferTx = await utils.safeBatchTransfer1155(
-          users.other1.address,
-          users.other1.address,
-          [tokenSupplyKey],
-          [constants.QTY_10],
-          users.other1.signer
-        );
+        it('Should transfer batch voucher supply', async () => {
+          // balances before
+          const user1BalanceBeforeTransfer = await contractERC1155ERC721.balanceOfBatch(
+            [users.other1.address, users.other1.address],
+            tokenSupplyBatch
+          );
 
-        const balanceAfterTransfer = (
-          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
-            users.other1.address,
-            tokenSupplyKey
-          )
-        )[0];
+          const user2BalanceBeforeTransfer = await contractERC1155ERC721.balanceOfBatch(
+            [users.other2.address, users.other2.address],
+            tokenSupplyBatch
+          );
 
-        assert.isTrue(
-          balanceBeforeTransfer.eq(balanceAfterTransfer),
-          'Balance mismatch!'
-        );
+          assert.equal(
+            JSON.stringify(user1BalanceBeforeTransfer),
+            JSON.stringify(batchQuantities),
+            'User1 before balance mismatch'
+          );
+          assert.equal(
+            JSON.stringify(user2BalanceBeforeTransfer),
+            JSON.stringify([constants.ZERO, constants.ZERO]),
+            'User2 before balance mismatch'
+          );
 
-        const txReceipt = await transferTx.wait();
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          ERC1155ERC721_Factory,
-          eventNames.TRANSFER_BATCH,
-          (ev) => {
-            assert.equal(ev._from, users.other1.address);
-            assert.equal(ev._to, users.other1.address);
-            assert.equal(
-              JSON.stringify(ev._ids),
-              JSON.stringify([BN(tokenSupplyKey)])
-            );
-            assert.equal(
-              JSON.stringify(ev._values),
-              JSON.stringify([BN(constants.QTY_10)])
-            );
-          }
-        );
-      });
-
-      it('[NEGATIVE] Should revert if owner tries to transfer voucher supply batch partially', async () => {
-        await expect(
-          utils.safeBatchTransfer1155(
+          const transferTx = await utils.safeBatchTransfer1155(
             users.other1.address,
             users.other2.address,
-            [tokenSupplyKey],
-            [constants.QTY_1],
+            tokenSupplyBatch,
+            batchQuantities.map((q) => q.toString()),
             users.other1.signer
-          )
-        ).to.be.revertedWith(revertReasons.INVALID_QUANTITY);
-      });
+          );
 
-      it('[NEGATIVE] Should revert if Attacker tries to transfer batch voucher supply', async () => {
-        await expect(
-          utils.safeBatchTransfer1155(
+          const txReceipt = await transferTx.wait();
+
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            ERC1155ERC721_Factory,
+            eventNames.TRANSFER_BATCH,
+            (ev) => {
+              assert.equal(ev._from, users.other1.address);
+              assert.equal(ev._to, users.other2.address);
+              assert.equal(
+                JSON.stringify(ev._ids),
+                JSON.stringify(tokenSupplyBatch)
+              );
+              assert.equal(
+                JSON.stringify(ev._values),
+                JSON.stringify(batchQuantities)
+              );
+            }
+          );
+
+          // balances after
+          const user1BalanceAfterTransfer = await contractERC1155ERC721.balanceOfBatch(
+            [users.other1.address, users.other1.address],
+            tokenSupplyBatch
+          );
+
+          const user2BalanceAfterTransfer = await contractERC1155ERC721.balanceOfBatch(
+            [users.other2.address, users.other2.address],
+            tokenSupplyBatch
+          );
+
+          assert.equal(
+            JSON.stringify(user1BalanceAfterTransfer),
+            JSON.stringify([constants.ZERO, constants.ZERO]),
+            'User1 after balance mismatch'
+          );
+          assert.equal(
+            JSON.stringify(user2BalanceAfterTransfer),
+            JSON.stringify(batchQuantities),
+            'User2 after balance mismatch'
+          );
+        });
+
+        it('Should transfer batch voucher supply to self and balance should be the same', async () => {
+          const balanceBeforeTransfer = await contractERC1155ERC721.balanceOfBatch(
+            [users.other1.address, users.other1.address],
+            tokenSupplyBatch
+          );
+
+          const transferTx = await utils.safeBatchTransfer1155(
             users.other1.address,
-            users.other2.address,
-            [tokenSupplyKey],
-            [constants.QTY_10],
-            users.attacker.signer
-          )
-        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_BATCH_1155);
+            users.other1.address,
+            tokenSupplyBatch,
+            batchQuantities.map((q) => q.toString()),
+            users.other1.signer
+          );
+
+          const balanceAfterTransfer = await contractERC1155ERC721.balanceOfBatch(
+            [users.other1.address, users.other1.address],
+            tokenSupplyBatch
+          );
+
+          assert.equal(
+            JSON.stringify(balanceBeforeTransfer),
+            JSON.stringify(balanceAfterTransfer),
+            'Balance mismatch!'
+          );
+
+          const txReceipt = await transferTx.wait();
+
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            ERC1155ERC721_Factory,
+            eventNames.TRANSFER_BATCH,
+            (ev) => {
+              assert.equal(ev._from, users.other1.address);
+              assert.equal(ev._to, users.other1.address);
+              assert.equal(
+                JSON.stringify(ev._ids),
+                JSON.stringify(tokenSupplyBatch)
+              );
+              assert.equal(
+                JSON.stringify(ev._values),
+                JSON.stringify(batchQuantities)
+              );
+            }
+          );
+        });
+
+        it('[NEGATIVE] Should revert if owner tries to transfer voucher supply batch partially', async () => {
+          await expect(
+            utils.safeBatchTransfer1155(
+              users.other1.address,
+              users.other2.address,
+              tokenSupplyBatch,
+              [constants.QTY_10, constants.QTY_10],
+              users.other1.signer
+            )
+          ).to.be.revertedWith(revertReasons.INVALID_QUANTITY);
+        });
+
+        it('[NEGATIVE] Should revert if Attacker tries to transfer batch voucher supply', async () => {
+          await expect(
+            utils.safeBatchTransfer1155(
+              users.other1.address,
+              users.other2.address,
+              tokenSupplyBatch,
+              batchQuantities.map((q) => q.toString()),
+              users.attacker.signer
+            )
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_BATCH_1155);
+        });
       });
     });
 
