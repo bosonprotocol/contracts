@@ -82,7 +82,6 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     contractMockGate: MockGate;
 
   const deadline = toWei(1);
-  let timestamp;
 
   async function deployContracts() {
     const sixtySeconds = 60;
@@ -180,6 +179,28 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     );
   }
 
+  let timestamp, tokenSupplyKey: BigNumber, promiseId: string;
+
+  async function preparePromiseKey() {
+    timestamp = await Utils.getCurrTimestamp();
+    constants.PROMISE_VALID_FROM = timestamp;
+    constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
+
+    tokenSupplyKey = calculateTokenSupplyKey(constants.ONE);
+    promiseId = keccak256(
+      solidityPack(
+        ['address', 'uint256', 'uint256', 'uint256', 'address'],
+        [
+          users.seller.address,
+          constants.ZERO,
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          contractVoucherKernel.address,
+        ]
+      )
+    );
+  }
+
   describe('TOKEN SUPPLY CREATION WITH TOKEN CONDITIONAL COMMIT (Create Voucher Set)', () => {
     const paymentMethods = {
       ETHETH: 1,
@@ -187,7 +208,6 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       TKNETH: 3,
       TKNTKN: 4,
     };
-    let timestamp, tokenSupplyKey: BigNumber, promiseId: string;
 
     async function generateInputs(
       account: Account,
@@ -215,28 +235,10 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       return {txValue, v, r, s};
     }
 
-    before(async () => {
-      timestamp = await Utils.getCurrTimestamp();
-      constants.PROMISE_VALID_FROM = timestamp;
-      constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
-
-      tokenSupplyKey = calculateTokenSupplyKey(constants.ONE);
-      promiseId = keccak256(
-        solidityPack(
-          ['address', 'uint256', 'uint256', 'uint256'],
-          [
-            users.seller.address,
-            constants.ZERO,
-            constants.PROMISE_VALID_FROM,
-            constants.PROMISE_VALID_TO,
-          ]
-        )
-      );
-    });
-
     describe('ETHETH', () => {
       beforeEach(async () => {
         await deployContracts();
+        await preparePromiseKey();
       });
 
       it('Should be able to create Voucher with gate address', async () => {
@@ -526,6 +528,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     describe('TKNTKN', () => {
       beforeEach(async () => {
         await deployContracts();
+        await preparePromiseKey();
 
         const tokensToMint = BN(constants.product_price).mul(
           BN(constants.QTY_20)
@@ -891,6 +894,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     describe('ETHTKN', () => {
       beforeEach(async () => {
         await deployContracts();
+        await preparePromiseKey();
 
         const tokensToMint = BN(constants.product_price).mul(
           BN(constants.QTY_20)
@@ -1250,6 +1254,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     describe('TKNETH', () => {
       beforeEach(async () => {
         await deployContracts();
+        await preparePromiseKey();
       });
 
       it('Should be able to create Voucher with gate address', async () => {
@@ -1544,30 +1549,10 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
   });
 
   describe('VOUCHER CREATION (Commit to buy)', () => {
-    let tokenSupplyKey, promiseId: string;
-
-    before(async () => {
-      timestamp = await Utils.getCurrTimestamp();
-      constants.PROMISE_VALID_FROM = timestamp;
-      constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
-
-      tokenSupplyKey = calculateTokenSupplyKey(constants.ONE);
-      promiseId = keccak256(
-        solidityPack(
-          ['address', 'uint256', 'uint256', 'uint256'],
-          [
-            users.seller.address,
-            constants.ZERO,
-            constants.PROMISE_VALID_FROM,
-            constants.PROMISE_VALID_TO,
-          ]
-        )
-      );
-    });
-
     describe('ETHETH', () => {
       beforeEach(async () => {
         await deployContracts();
+        await preparePromiseKey();
 
         await contractERC1155NonTransferable.mint(
           users.buyer.address,
@@ -1861,6 +1846,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
       beforeEach(async () => {
         await deployContracts();
+        await preparePromiseKey();
 
         const tokensToMint = BN(constants.product_price).mul(
           BN(constants.QTY_20)
@@ -2191,6 +2177,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
       beforeEach(async () => {
         await deployContracts();
+        await preparePromiseKey();
 
         const tokensToMint = BN(constants.product_price).mul(
           BN(constants.QTY_20)
@@ -2482,6 +2469,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
       beforeEach(async () => {
         await deployContracts();
+        await preparePromiseKey();
 
         const tokensToMint = BN(constants.product_price).mul(
           BN(constants.QTY_20)
@@ -2895,6 +2883,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
       beforeEach(async () => {
         await deployContracts();
+        await preparePromiseKey();
 
         const tokensToMint = BN(constants.product_price).mul(
           BN(constants.QTY_20)
