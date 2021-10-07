@@ -476,14 +476,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     /**
      * @notice Redemption of the vouchers promise
      * @param _tokenIdVoucher   ID of the voucher
-     * @param _msgSender   account called the fn from the BR contract
+     * @param _messageSender   account that called the fn from the BR contract
      */
-    function redeem(uint256 _tokenIdVoucher, address _msgSender)
+    function redeem(uint256 _tokenIdVoucher, address _messageSender)
         external
         override
         whenNotPaused
         onlyFromRouter
-        onlyVoucherOwner(_tokenIdVoucher, _msgSender)
+        onlyVoucherOwner(_tokenIdVoucher, _messageSender)
     {
         //check status
         require(
@@ -504,7 +504,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
 
         emit LogVoucherRedeemed(
             _tokenIdVoucher,
-            _msgSender,
+            _messageSender,
             tPromise.promiseId
         );
     }
@@ -516,14 +516,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     /**
      * @notice Refunding a voucher
      * @param _tokenIdVoucher   ID of the voucher
-     * @param _msgSender   account called the fn from the BR contract
+     * @param _messageSender   account that called the fn from the BR contract
      */
-    function refund(uint256 _tokenIdVoucher, address _msgSender)
+    function refund(uint256 _tokenIdVoucher, address _messageSender)
         external
         override
         whenNotPaused
         onlyFromRouter
-        onlyVoucherOwner(_tokenIdVoucher, _msgSender)
+        onlyVoucherOwner(_tokenIdVoucher, _messageSender)
     {
         require(
             isStateCommitted(vouchersStatus[_tokenIdVoucher].status),
@@ -545,14 +545,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     /**
      * @notice Issue a complaint for a voucher
      * @param _tokenIdVoucher   ID of the voucher
-     * @param _msgSender   account called the fn from the BR contract
+     * @param _messageSender   account that called the fn from the BR contract
      */
-    function complain(uint256 _tokenIdVoucher, address _msgSender)
+    function complain(uint256 _tokenIdVoucher, address _messageSender)
         external
         override
         whenNotPaused
         onlyFromRouter
-        onlyVoucherOwner(_tokenIdVoucher, _msgSender)
+        onlyVoucherOwner(_tokenIdVoucher, _messageSender)
     {
         require(
             !isStatus(vouchersStatus[_tokenIdVoucher].status, IDX_COMPLAIN),
@@ -657,15 +657,16 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     /**
      * @notice Cancel/Fault transaction by the Seller, admitting to a fault or backing out of the deal
      * @param _tokenIdVoucher   ID of the voucher
+     * @param _messageSender   account that called the fn from the BR contract
      */
-    function cancelOrFault(uint256 _tokenIdVoucher, address _msgSender)
+    function cancelOrFault(uint256 _tokenIdVoucher, address _messageSender)
         external
         override
         whenNotPaused
     {
         uint256 tokenIdSupply = getIdSupplyFromVoucher(_tokenIdVoucher);
         require(
-            getSupplyHolder(tokenIdSupply) == _msgSender,
+            getSupplyHolder(tokenIdSupply) == _messageSender,
             "UNAUTHORIZED_COF"
         );
 

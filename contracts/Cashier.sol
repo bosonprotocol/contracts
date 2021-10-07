@@ -721,12 +721,12 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the voucher set is no longer in exchange.
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
      * @param _burnedQty burned quantity that the deposits should be withdrawn for
-     * @param _msgSender owner of the voucher set
+     * @param _messageSender owner of the voucher set
      */
     function withdrawDepositsSe(
         uint256 _tokenIdSupply,
         uint256 _burnedQty,
-        address payable _msgSender
+        address payable _messageSender
     ) external override nonReentrant onlyFromRouter {
         uint256 deposit =
             IVoucherKernel(voucherKernel).getSellerDeposit(_tokenIdSupply);
@@ -744,7 +744,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         );
 
         if (paymentMethod == ETHETH || paymentMethod == TKNETH) {
-            escrow[_msgSender] = escrow[_msgSender].sub(depositAmount);
+            escrow[_messageSender] = escrow[_messageSender].sub(depositAmount);
         }
 
         if (paymentMethod == ETHTKN || paymentMethod == TKNTKN) {
@@ -753,14 +753,14 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                     _tokenIdSupply
                 );
 
-            escrowTokens[addressTokenDeposits][_msgSender] = escrowTokens[
+            escrowTokens[addressTokenDeposits][_messageSender] = escrowTokens[
                 addressTokenDeposits
-            ][_msgSender]
+            ][_messageSender]
                 .sub(depositAmount);
         }
 
         _withdrawDeposits(
-            _msgSender,
+            _messageSender,
             depositAmount,
             paymentMethod,
             _tokenIdSupply
