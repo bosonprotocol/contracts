@@ -1791,13 +1791,14 @@ describe('Cashier and VoucherKernel', () => {
             BN(constants.QTY_10)
           );
           const buyerETHSent = BN(constants.PROMISE_PRICE1).add(
-            BN(constants.PROMISE_DEPOSITSE1)
+            BN(constants.PROMISE_DEPOSITBU1)
           );
           const expectedBalance = sellerDeposits.add(buyerETHSent);
 
           expect(
             await ethers.provider.getBalance(contractCashier.address)
           ).to.equal(expectedBalance, 'Escrow amount is incorrect');
+
         });
 
         it('Escrow should be updated', async () => {
@@ -3252,6 +3253,7 @@ describe('Cashier and VoucherKernel', () => {
     describe('Common transfer', () => {
       beforeEach(async () => {
         await deployContracts();
+        await setPeriods();
         utils = await UtilsBuilder.create()
           .ETHETH()
           .buildAsync(
