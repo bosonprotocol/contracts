@@ -419,6 +419,41 @@ describe('Cashier and VoucherKernel', () => {
         });
       });
 
+      it('It should be possible to create Order with 0 buyer deposit', async () => {
+        await utils.createOrder(
+          users.seller,
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_DEPOSITSE1,
+          constants.QTY_10,
+          true,
+          constants.PROMISE_PRICE1,
+          constants.ZERO
+        );
+        const promiseOrderData = await contractVoucherKernel.getOrderCosts(
+          tokenSupplyKey
+        );
+        assert.isTrue(
+          promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
+            BN(constants.PROMISE_PRICE1)
+          ),
+          'Promise produt price mismatch'
+        );
+
+        assert.isTrue(
+          promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositSe].eq(
+            BN(constants.PROMISE_DEPOSITSE1)
+          ),
+          'Promise seller deposit mismatch'
+        );
+        assert.isTrue(
+          promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositBu].eq(
+            BN(constants.ZERO)
+          ),
+          'Promise buyer deposit mismatch'
+        );
+      });
+
       it('[NEGATIVE] Should revert if validTo is set below 5 minutes from now', async () => {
         await expect(
           utils.createOrder(
@@ -734,6 +769,41 @@ describe('Cashier and VoucherKernel', () => {
               );
             }
           });
+        });
+
+        it('It should be possible to create Order with 0 buyer deposit', async () => {
+          await utils.createOrder(
+            users.seller,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_DEPOSITSE1,
+            constants.QTY_10,
+            true,
+            constants.PROMISE_PRICE1,
+            constants.ZERO
+          );
+          const promiseOrderData = await contractVoucherKernel.getOrderCosts(
+            tokenSupplyKey
+          );
+          assert.isTrue(
+            promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
+              BN(constants.PROMISE_PRICE1)
+            ),
+            'Promise produt price mismatch'
+          );
+
+          assert.isTrue(
+            promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositSe].eq(
+              BN(constants.PROMISE_DEPOSITSE1)
+            ),
+            'Promise seller deposit mismatch'
+          );
+          assert.isTrue(
+            promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositBu].eq(
+              BN(constants.ZERO)
+            ),
+            'Promise buyer deposit mismatch'
+          );
         });
 
         it('[NEGATIVE] Should revert if validTo is set below 5 minutes from now', async () => {
@@ -1079,6 +1149,41 @@ describe('Cashier and VoucherKernel', () => {
           });
         });
 
+        it('It should be possible to create Order with 0 buyer deposit', async () => {
+          await utils.createOrder(
+            users.seller,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_DEPOSITSE1,
+            constants.QTY_10,
+            true,
+            constants.PROMISE_PRICE1,
+            constants.ZERO
+          );
+          const promiseOrderData = await contractVoucherKernel.getOrderCosts(
+            tokenSupplyKey
+          );
+          assert.isTrue(
+            promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
+              BN(constants.PROMISE_PRICE1)
+            ),
+            'Promise produt price mismatch'
+          );
+
+          assert.isTrue(
+            promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositSe].eq(
+              BN(constants.PROMISE_DEPOSITSE1)
+            ),
+            'Promise seller deposit mismatch'
+          );
+          assert.isTrue(
+            promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositBu].eq(
+              BN(constants.ZERO)
+            ),
+            'Promise buyer deposit mismatch'
+          );
+        });
+
         it('[NEGATIVE] Should fail if token price contract is zero address', async () => {
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
@@ -1403,6 +1508,41 @@ describe('Cashier and VoucherKernel', () => {
               );
             }
           });
+        });
+
+        it('It should be possible to create Order with 0 buyer deposit', async () => {
+          await utils.createOrder(
+            users.seller,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_DEPOSITSE1,
+            constants.QTY_10,
+            true,
+            constants.PROMISE_PRICE1,
+            constants.ZERO
+          );
+          const promiseOrderData = await contractVoucherKernel.getOrderCosts(
+            tokenSupplyKey
+          );
+          assert.isTrue(
+            promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
+              BN(constants.PROMISE_PRICE1)
+            ),
+            'Promise produt price mismatch'
+          );
+
+          assert.isTrue(
+            promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositSe].eq(
+              BN(constants.PROMISE_DEPOSITSE1)
+            ),
+            'Promise seller deposit mismatch'
+          );
+          assert.isTrue(
+            promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositBu].eq(
+              BN(constants.ZERO)
+            ),
+            'Promise buyer deposit mismatch'
+          );
         });
 
         it('[NEGATIVE] Should revert if validTo is set below 5 minutes from now', async () => {
@@ -1798,7 +1938,6 @@ describe('Cashier and VoucherKernel', () => {
           expect(
             await ethers.provider.getBalance(contractCashier.address)
           ).to.equal(expectedBalance, 'Escrow amount is incorrect');
-
         });
 
         it('Escrow should be updated', async () => {
@@ -1817,6 +1956,42 @@ describe('Cashier and VoucherKernel', () => {
             await contractCashier.getEscrowAmount(users.buyer.address)
           ).to.equal(buyerETHSent, 'Buyer escrow amount is incorrect');
         });
+      });
+
+      it('It should be possible to request voucher with 0 buyer deposit', async () => {
+        let TOKEN_SUPPLY_ID = await utils.createOrder(
+          users.seller,
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_DEPOSITSE1,
+          ORDER_QTY,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.ZERO
+        );
+
+        await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.ZERO
+        );
+
+        let voucherTokenId = BN(TOKEN_SUPPLY_ID).or(constants.ONE);
+
+        const voucherStatus = await contractVoucherKernel.getVoucherStatus(
+          voucherTokenId
+        );
+
+        const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+
+        assert.equal(
+          voucherStatus[0],
+          expectedStatus.toNumber(),
+          'Wrong status'
+        );
       });
 
       it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
@@ -2045,6 +2220,50 @@ describe('Cashier and VoucherKernel', () => {
               )
             ).to.equal(buyerTKNSent, 'Escrow amount is incorrect');
           });
+        });
+
+        it('It should be possible to request voucher with 0 buyer deposit', async () => {
+          const tokensToMintSeller = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(ORDER_QTY)
+          );
+          await contractBSNTokenDeposit.mint(
+            users.seller.address,
+            tokensToMintSeller
+          );
+
+          let TOKEN_SUPPLY_ID = await utils.createOrder(
+            users.seller,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_DEPOSITSE1,
+            ORDER_QTY,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.ZERO
+          );
+
+          await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.ZERO
+          );
+
+          let voucherTokenId = BN(TOKEN_SUPPLY_ID).or(constants.ONE);
+
+          const voucherStatus = await contractVoucherKernel.getVoucherStatus(
+            voucherTokenId
+          );
+
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+
+          assert.equal(
+            voucherStatus[0],
+            expectedStatus.toNumber(),
+            'Wrong status'
+          );
         });
 
         it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
@@ -2281,6 +2500,42 @@ describe('Cashier and VoucherKernel', () => {
           });
         });
 
+        it('It should be possible to request voucher with 0 buyer deposit', async () => {
+          let TOKEN_SUPPLY_ID = await utils.createOrder(
+            users.seller,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_DEPOSITSE1,
+            ORDER_QTY,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.ZERO
+          );
+
+          await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.ZERO
+          );
+
+          let voucherTokenId = BN(TOKEN_SUPPLY_ID).or(constants.ONE);
+
+          const voucherStatus = await contractVoucherKernel.getVoucherStatus(
+            voucherTokenId
+          );
+
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+
+          assert.equal(
+            voucherStatus[0],
+            expectedStatus.toNumber(),
+            'Wrong status'
+          );
+        });
+
         it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
           const utilsEthTkn = await UtilsBuilder.create()
             .ERC20withPermit()
@@ -2493,6 +2748,42 @@ describe('Cashier and VoucherKernel', () => {
               )
             ).to.equal(buyerTknSent, 'Escrow amount is incorrect');
           });
+        });
+
+        it('It should be possible to request voucher with 0 buyer deposit', async () => {
+          let TOKEN_SUPPLY_ID = await utils.createOrder(
+            users.seller,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_DEPOSITSE1,
+            ORDER_QTY,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.ZERO
+          );
+
+          await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.ZERO
+          );
+
+          let voucherTokenId = BN(TOKEN_SUPPLY_ID).or(constants.ONE);
+
+          const voucherStatus = await contractVoucherKernel.getVoucherStatus(
+            voucherTokenId
+          );
+
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+
+          assert.equal(
+            voucherStatus[0],
+            expectedStatus.toNumber(),
+            'Wrong status'
+          );
         });
 
         it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
@@ -2770,6 +3061,42 @@ describe('Cashier and VoucherKernel', () => {
               )
             ).to.equal(constants.PROMISE_PRICE1, 'Escrow amount is incorrect');
           });
+        });
+
+        it('It should be possible to request voucher with 0 buyer deposit', async () => {
+          let TOKEN_SUPPLY_ID = await utils.createOrder(
+            users.seller,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_DEPOSITSE1,
+            ORDER_QTY,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.ZERO
+          );
+
+          await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.ZERO
+          );
+
+          let voucherTokenId = BN(TOKEN_SUPPLY_ID).or(constants.ONE);
+
+          const voucherStatus = await contractVoucherKernel.getVoucherStatus(
+            voucherTokenId
+          );
+
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+
+          assert.equal(
+            voucherStatus[0],
+            expectedStatus.toNumber(),
+            'Wrong status'
+          );
         });
 
         it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
@@ -4629,10 +4956,10 @@ describe('Cashier and VoucherKernel', () => {
           .add(BN(constants.PROMISE_DEPOSITSE1).div(BN(2)));
         const expectedSellerAmount = BN(constants.PROMISE_DEPOSITSE1).div(
           BN(4)
-        ); 
+        );
         const expectedEscrowAmount = BN(constants.PROMISE_DEPOSITSE1).div(
           BN(4)
-        ); 
+        );
 
         const voucherID = await utils.commitToBuy(
           users.other1,
