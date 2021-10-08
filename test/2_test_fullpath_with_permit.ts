@@ -96,7 +96,6 @@ describe('Cashier and VoucherKernel', () => {
   };
 
   async function setPeriods() {
-    // TODO use where applicable; why this async?
     const timestamp = await Utils.getCurrTimestamp();
 
     constants.PROMISE_VALID_FROM = timestamp;
@@ -3569,6 +3568,12 @@ describe('Cashier and VoucherKernel', () => {
   });
 
   describe('TOKEN SUPPLY TRANSFER', () => {
+    const paymentType = {
+      PAYMENT: 0,
+      DEPOSIT_SELLER: 1,
+      DEPOSIT_BUYER: 2,
+    };
+
     afterEach(() => {
       distributedAmounts = {
         buyerAmount: BN(0),
@@ -3976,7 +3981,7 @@ describe('Cashier and VoucherKernel', () => {
         );
       });
 
-      it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
+      it.only('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
         const expectedBuyerAmount = BN(constants.PROMISE_DEPOSITBU1);
         const expectedSellerAmount = BN(constants.PROMISE_DEPOSITSE1).add(
           BN(constants.PROMISE_PRICE1)
@@ -4014,6 +4019,61 @@ describe('Cashier and VoucherKernel', () => {
           Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
+            expect(ev._type).to.be.oneOf(Object.values(paymentType));
+            switch (ev._type) {
+              case paymentType.PAYMENT:
+                assert.equal(
+                  ev._tokenIdVoucher.toString(),
+                  voucherID.toString(),
+                  'Wrong token id voucher'
+                );
+                assert.equal(
+                  ev._to,
+                  users.other2.address,
+                  'Wrong payment recipient'
+                );
+                assert.equal(
+                  ev._payment,
+                  constants.PROMISE_PRICE1,
+                  'Wrong payment amount'
+                );
+                break;
+              case paymentType.DEPOSIT_SELLER:
+                assert.equal(
+                  ev._tokenIdVoucher.toString(),
+                  voucherID.toString(),
+                  'Wrong token id voucher'
+                );
+                assert.equal(
+                  ev._to,
+                  users.other2.address,
+                  'Wrong seller deposit recipient'
+                );
+                assert.equal(
+                  ev._payment,
+                  constants.PROMISE_DEPOSITSE1,
+                  'Wrong seller deposit amount'
+                );
+                break;
+              case paymentType.DEPOSIT_BUYER:
+                assert.equal(
+                  ev._tokenIdVoucher.toString(),
+                  voucherID.toString(),
+                  'Wrong token id voucher'
+                );
+                assert.equal(
+                  ev._to,
+                  users.buyer.address,
+                  'Wrong buyer deposit recipient'
+                );
+                assert.equal(
+                  ev._payment,
+                  constants.PROMISE_DEPOSITBU1,
+                  'Wrong buyer deposit amount'
+                );
+                break;
+            }
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -4175,7 +4235,7 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
+        it.only('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
           const expectedBuyerDeposit = BN(constants.PROMISE_DEPOSITBU1);
           const expectedSellerPrice = BN(constants.PROMISE_PRICE1);
           const expectedSellerDeposit = BN(constants.PROMISE_DEPOSITSE1);
@@ -4206,6 +4266,7 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           const txReceipt = await withdrawTx.wait();
+
           eventUtils.assertEventEmitted(
             txReceipt,
             Cashier_Factory,
@@ -4213,6 +4274,76 @@ describe('Cashier and VoucherKernel', () => {
             (ev) => {
               assert.equal(ev._payee, users.other2.address, 'Incorrect Payee');
               assert.isTrue(ev._payment.eq(expectedSellerPrice));
+            }
+          );
+
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            Cashier_Factory,
+            eventNames.LOG_AMOUNT_DISTRIBUTION,
+            (ev) => {
+              expect(ev._type).to.be.oneOf(Object.values(paymentType));
+              switch (ev._type) {
+                case paymentType.PAYMENT:
+                  assert.equal(
+                    ev._tokenIdVoucher.toString(),
+                    voucherID.toString(),
+                    'Wrong token id voucher'
+                  );
+                  assert.equal(
+                    ev._to,
+                    users.other2.address,
+                    'Wrong payment recipient'
+                  );
+                  assert.equal(
+                    ev._payment,
+                    constants.PROMISE_PRICE1,
+                    'Wrong payment amount'
+                  );
+                  break;
+                case paymentType.DEPOSIT_SELLER:
+                  assert.equal(
+                    ev._tokenIdVoucher.toString(),
+                    voucherID.toString(),
+                    'Wrong token id voucher'
+                  );
+                  assert.equal(
+                    ev._to,
+                    users.other2.address,
+                    'Wrong seller deposit recipient'
+                  );
+                  assert.equal(
+                    ev._payment,
+                    constants.PROMISE_DEPOSITSE1,
+                    'Wrong seller deposit amount'
+                  );
+                  break;
+                case paymentType.DEPOSIT_BUYER:
+                  assert.equal(
+                    ev._tokenIdVoucher.toString(),
+                    voucherID.toString(),
+                    'Wrong token id voucher'
+                  );
+                  assert.equal(
+                    ev._to,
+                    users.buyer.address,
+                    'Wrong buyer deposit recipient'
+                  );
+                  assert.equal(
+                    ev._payment,
+                    constants.PROMISE_DEPOSITBU1,
+                    'Wrong buyer deposit amount'
+                  );
+                  break;
+              }
+
+              utils.calcTotalAmountToRecipients(
+                ev,
+                distributedAmounts,
+                '_to',
+                users.buyer.address,
+                users.other2.address
+              );
             }
           );
 
@@ -4399,7 +4530,7 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
+        it.only('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
           const expectedBuyerPrice = BN(0);
           const expectedBuyerDeposit = BN(constants.PROMISE_DEPOSITBU1);
           const expectedSellerPrice = BN(constants.PROMISE_PRICE1);
@@ -4426,7 +4557,82 @@ describe('Cashier and VoucherKernel', () => {
           await advanceTimeSeconds(60);
           await utils.finalize(voucherID, users.deployer.signer);
 
-          await utils.withdraw(voucherID, users.deployer.signer);
+          const withdrawTx = await utils.withdraw(
+            voucherID,
+            users.deployer.signer
+          );
+
+          const txReceipt = await withdrawTx.wait();
+
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            Cashier_Factory,
+            eventNames.LOG_AMOUNT_DISTRIBUTION,
+            (ev) => {
+              expect(ev._type).to.be.oneOf(Object.values(paymentType));
+              switch (ev._type) {
+                case paymentType.PAYMENT:
+                  assert.equal(
+                    ev._tokenIdVoucher.toString(),
+                    voucherID.toString(),
+                    'Wrong token id voucher'
+                  );
+                  assert.equal(
+                    ev._to,
+                    users.other2.address,
+                    'Wrong payment recipient'
+                  );
+                  assert.equal(
+                    ev._payment,
+                    constants.PROMISE_PRICE1,
+                    'Wrong payment amount'
+                  );
+                  break;
+                case paymentType.DEPOSIT_SELLER:
+                  assert.equal(
+                    ev._tokenIdVoucher.toString(),
+                    voucherID.toString(),
+                    'Wrong token id voucher'
+                  );
+                  assert.equal(
+                    ev._to,
+                    users.other2.address,
+                    'Wrong seller deposit recipient'
+                  );
+                  assert.equal(
+                    ev._payment,
+                    constants.PROMISE_DEPOSITSE1,
+                    'Wrong seller deposit amount'
+                  );
+                  break;
+                case paymentType.DEPOSIT_BUYER:
+                  assert.equal(
+                    ev._tokenIdVoucher.toString(),
+                    voucherID.toString(),
+                    'Wrong token id voucher'
+                  );
+                  assert.equal(
+                    ev._to,
+                    users.buyer.address,
+                    'Wrong buyer deposit recipient'
+                  );
+                  assert.equal(
+                    ev._payment,
+                    constants.PROMISE_DEPOSITBU1,
+                    'Wrong buyer deposit amount'
+                  );
+                  break;
+              }
+
+              utils.calcTotalAmountToRecipients(
+                ev,
+                distributedAmounts,
+                '_to',
+                users.buyer.address,
+                users.other2.address
+              );
+            }
+          );
 
           //Payments
           expect(
@@ -4611,7 +4817,7 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
+        it.only('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
           const expectedBuyerPrice = BN(0);
           const expectedSellerPrice = BN(constants.PROMISE_PRICE1);
           const expectedEscrowPrice = BN(0);
@@ -4678,6 +4884,76 @@ describe('Cashier and VoucherKernel', () => {
                 users.buyer.address,
                 users.other2.address
               );
+            }
+          );
+
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            Cashier_Factory,
+            eventNames.LOG_AMOUNT_DISTRIBUTION,
+            (ev) => {
+              expect(ev._type).to.be.oneOf(Object.values(paymentType));
+              switch (ev._type) {
+                case paymentType.PAYMENT:
+                  assert.equal(
+                    ev._tokenIdVoucher.toString(),
+                    voucherID.toString(),
+                    'Wrong token id voucher'
+                  );
+                  assert.equal(
+                    ev._to,
+                    users.other2.address,
+                    'Wrong payment recipient'
+                  );
+                  assert.equal(
+                    ev._payment,
+                    constants.PROMISE_PRICE1,
+                    'Wrong payment amount'
+                  );
+                  break;
+                case paymentType.DEPOSIT_SELLER:
+                  assert.equal(
+                    ev._tokenIdVoucher.toString(),
+                    voucherID.toString(),
+                    'Wrong token id voucher'
+                  );
+                  assert.equal(
+                    ev._to,
+                    users.other2.address,
+                    'Wrong seller deposit recipient'
+                  );
+                  assert.equal(
+                    ev._payment,
+                    constants.PROMISE_DEPOSITSE1,
+                    'Wrong seller deposit amount'
+                  );
+                  break;
+                case paymentType.DEPOSIT_BUYER:
+                  assert.equal(
+                    ev._tokenIdVoucher.toString(),
+                    voucherID.toString(),
+                    'Wrong token id voucher'
+                  );
+                  assert.equal(
+                    ev._to,
+                    users.buyer.address,
+                    'Wrong buyer deposit recipient'
+                  );
+                  assert.equal(
+                    ev._payment,
+                    constants.PROMISE_DEPOSITBU1,
+                    'Wrong buyer deposit amount'
+                  );
+                  break;
+              }
+
+              // utils.calcTotalAmountToRecipients(
+              //   ev,
+              //   distributedAmounts,
+              //   '_to',
+              //   users.buyer.address,
+              //   users.other2.address
+              // );
             }
           );
 
@@ -4757,6 +5033,12 @@ describe('Cashier and VoucherKernel', () => {
   });
 
   describe('VOUCHER TRANSFER', () => {
+    const paymentType = {
+      PAYMENT: 0,
+      DEPOSIT_SELLER: 1,
+      DEPOSIT_BUYER: 2,
+    };
+
     afterEach(() => {
       distributedAmounts = {
         buyerAmount: BN(0),
@@ -4950,7 +5232,7 @@ describe('Cashier and VoucherKernel', () => {
         );
       });
 
-      it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
+      it.only('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
         const expectedBuyerAmount = BN(constants.PROMISE_DEPOSITBU1)
           .add(BN(constants.PROMISE_PRICE1))
           .add(BN(constants.PROMISE_DEPOSITSE1).div(BN(2)));
@@ -4998,6 +5280,111 @@ describe('Cashier and VoucherKernel', () => {
               users.other2.address,
               users.seller.address
             );
+          }
+        );
+
+        // const withdrawTx = await utils.withdraw(
+        //   voucherID,
+        //   users.deployer.signer
+        // );
+
+        // const txReceipt = await withdrawTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            expect(ev._type).to.be.oneOf(
+              Object.values(paymentType),
+              'Wrong paymeny type'
+            );
+            switch (ev._type) {
+              case paymentType.PAYMENT:
+                assert.equal(
+                  ev._tokenIdVoucher.toString(),
+                  voucherID.toString(),
+                  'Wrong token id voucher'
+                );
+                assert.equal(
+                  ev._to,
+                  users.other2.address,
+                  'Wrong payment recipient'
+                );
+                assert.equal(
+                  ev._payment,
+                  constants.PROMISE_PRICE1,
+                  'Wrong payment amount'
+                );
+                break;
+              case paymentType.DEPOSIT_SELLER:
+                // expect(ev._type).to.be.oneOf([users.other2.address, users.buyer.address, contractCashier.address], 'Unexpected recepient');
+
+                switch (ev._to) {
+                  case users.other2.address:
+                    assert.equal(
+                      ev._tokenIdVoucher.toString(),
+                      voucherID.toString(),
+                      'Wrong token id voucher'
+                    );
+                    assert.equal(
+                      ev._payment,
+                      BN(constants.PROMISE_DEPOSITSE1).div(2).toString(),
+                      'Wrong payment amount'
+                    );
+                    break;
+                  case users.buyer.address:
+                    assert.equal(
+                      ev._tokenIdVoucher.toString(),
+                      voucherID.toString(),
+                      'Wrong token id voucher'
+                    );
+                    assert.equal(
+                      ev._payment,
+                      BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),
+                      'Wrong payment amount'
+                    );
+                    break;
+                  case contractCashier.address:
+                    assert.equal(
+                      ev._tokenIdVoucher.toString(),
+                      voucherID.toString(),
+                      'Wrong token id voucher'
+                    );
+                    assert.equal(
+                      ev._payment,
+                      BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),
+                      'Wrong payment amount'
+                    );
+                    break;
+                }
+                break;
+              case paymentType.DEPOSIT_BUYER:
+                assert.equal(
+                  ev._tokenIdVoucher.toString(),
+                  voucherID.toString(),
+                  'Wrong token id voucher'
+                );
+                assert.equal(
+                  ev._to,
+                  users.other2.address,
+                  'Wrong buyer deposit recipient'
+                );
+                assert.equal(
+                  ev._payment,
+                  constants.PROMISE_DEPOSITBU1,
+                  'Wrong buyer deposit amount'
+                );
+                break;
+            }
+
+            //     utils.calcTotalAmountToRecipients(
+            //       ev,
+            //       distributedAmounts,
+            //       '_to',
+            //       users.other2.address,
+            //       users.seller.address
+            //     );
           }
         );
 
@@ -5225,7 +5612,7 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
+        it.only('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
           const expectedBuyerPrice = BN(constants.PROMISE_PRICE1);
           const expectedBuyerDeposit = BN(constants.PROMISE_DEPOSITBU1).add(
             BN(constants.PROMISE_DEPOSITSE1).div(BN(2))
@@ -5260,8 +5647,109 @@ describe('Cashier and VoucherKernel', () => {
             users.deployer.signer
           );
 
-          // Payment should have been returned to buyer
           const txReceipt = await withdrawTx.wait();
+
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            Cashier_Factory,
+            eventNames.LOG_AMOUNT_DISTRIBUTION,
+
+            (ev) => {
+              expect(ev._type).to.be.oneOf(
+                Object.values(paymentType),
+                'Wrong paymeny type'
+              );
+              switch (ev._type) {
+                case paymentType.PAYMENT:
+                  assert.equal(
+                    ev._tokenIdVoucher.toString(),
+                    voucherID.toString(),
+                    'Wrong token id voucher'
+                  );
+                  assert.equal(
+                    ev._to,
+                    users.other2.address,
+                    'Wrong payment recipient'
+                  );
+                  assert.equal(
+                    ev._payment,
+                    constants.PROMISE_PRICE1,
+                    'Wrong payment amount'
+                  );
+                  break;
+                case paymentType.DEPOSIT_SELLER:
+                  // expect(ev._to).to.be.oneOf([users.other2.address, users.buyer.address, contractCashier.address], 'Unexpected recepient');
+
+                  switch (ev._to) {
+                    case users.other2.address:
+                      assert.equal(
+                        ev._tokenIdVoucher.toString(),
+                        voucherID.toString(),
+                        'Wrong token id voucher'
+                      );
+                      assert.equal(
+                        ev._payment,
+                        BN(constants.PROMISE_DEPOSITSE1).div(2).toString(),
+                        'Wrong payment amount'
+                      );
+                      break;
+                    case users.buyer.address:
+                      assert.equal(
+                        ev._tokenIdVoucher.toString(),
+                        voucherID.toString(),
+                        'Wrong token id voucher'
+                      );
+                      assert.equal(
+                        ev._payment,
+                        BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),
+                        'Wrong payment amount'
+                      );
+                      break;
+                    case contractCashier.address:
+                      assert.equal(
+                        ev._tokenIdVoucher.toString(),
+                        voucherID.toString(),
+                        'Wrong token id voucher'
+                      );
+                      assert.equal(
+                        ev._payment,
+                        BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),
+                        'Wrong payment amount'
+                      );
+                      break;
+                  }
+                  break;
+                case paymentType.DEPOSIT_BUYER:
+                  assert.equal(
+                    ev._tokenIdVoucher.toString(),
+                    voucherID.toString(),
+                    'Wrong token id voucher'
+                  );
+                  assert.equal(
+                    ev._to,
+                    users.other2.address,
+                    'Wrong buyer deposit recipient'
+                  );
+                  assert.equal(
+                    ev._payment,
+                    constants.PROMISE_DEPOSITBU1,
+                    'Wrong buyer deposit amount'
+                  );
+                  break;
+              }
+
+              utils.calcTotalAmountToRecipients(
+                ev,
+                distributedAmounts,
+                '_to',
+                users.buyer.address,
+                users.other2.address
+              );
+            }
+          );
+
+          // Payment should have been returned to buyer
+          // const txReceipt = await withdrawTx.wait();
           eventUtils.assertEventEmitted(
             txReceipt,
             Cashier_Factory,
@@ -5526,7 +6014,7 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
+        it.only('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
           const expectedBuyerPrice = BN(constants.PROMISE_PRICE1);
           const expectedBuyerDeposit = BN(constants.PROMISE_DEPOSITBU1).add(
             BN(constants.PROMISE_DEPOSITSE1).div(BN(2))
@@ -5558,7 +6046,111 @@ describe('Cashier and VoucherKernel', () => {
           await utils.cancel(voucherID, users.seller.signer);
           await utils.finalize(voucherID, users.deployer.signer);
 
-          await utils.withdraw(voucherID, users.deployer.signer);
+          // await utils.withdraw(voucherID, users.deployer.signer);
+          const withdrawTx = await utils.withdraw(
+            voucherID,
+            users.deployer.signer
+          );
+
+          const txReceipt = await withdrawTx.wait();
+
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            Cashier_Factory,
+            eventNames.LOG_AMOUNT_DISTRIBUTION,
+            (ev) => {
+              expect(ev._type).to.be.oneOf(
+                Object.values(paymentType),
+                'Wrong paymeny type'
+              );
+              switch (ev._type) {
+                case paymentType.PAYMENT:
+                  assert.equal(
+                    ev._tokenIdVoucher.toString(),
+                    voucherID.toString(),
+                    'Wrong token id voucher'
+                  );
+                  assert.equal(
+                    ev._to,
+                    users.other2.address,
+                    'Wrong payment recipient'
+                  );
+                  assert.equal(
+                    ev._payment,
+                    constants.PROMISE_PRICE1,
+                    'Wrong payment amount'
+                  );
+                  break;
+                case paymentType.DEPOSIT_SELLER:
+                  // expect(ev._to).to.be.oneOf([users.other2.address, users.buyer.address, contractCashier.address], 'Unexpected recepient');
+
+                  switch (ev._to) {
+                    case users.other2.address:
+                      assert.equal(
+                        ev._tokenIdVoucher.toString(),
+                        voucherID.toString(),
+                        'Wrong token id voucher'
+                      );
+                      assert.equal(
+                        ev._payment,
+                        BN(constants.PROMISE_DEPOSITSE1).div(2).toString(),
+                        'Wrong payment amount'
+                      );
+                      break;
+                    case users.buyer.address:
+                      assert.equal(
+                        ev._tokenIdVoucher.toString(),
+                        voucherID.toString(),
+                        'Wrong token id voucher'
+                      );
+                      assert.equal(
+                        ev._payment,
+                        BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),
+                        'Wrong payment amount'
+                      );
+                      break;
+                    case contractCashier.address:
+                      assert.equal(
+                        ev._tokenIdVoucher.toString(),
+                        voucherID.toString(),
+                        'Wrong token id voucher'
+                      );
+                      assert.equal(
+                        ev._payment,
+                        BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),
+                        'Wrong payment amount'
+                      );
+                      break;
+                  }
+                  break;
+                case paymentType.DEPOSIT_BUYER:
+                  assert.equal(
+                    ev._tokenIdVoucher.toString(),
+                    voucherID.toString(),
+                    'Wrong token id voucher'
+                  );
+                  assert.equal(
+                    ev._to,
+                    users.other2.address,
+                    'Wrong buyer deposit recipient'
+                  );
+                  assert.equal(
+                    ev._payment,
+                    constants.PROMISE_DEPOSITBU1,
+                    'Wrong buyer deposit amount'
+                  );
+                  break;
+              }
+
+              utils.calcTotalAmountToRecipients(
+                ev,
+                distributedAmounts,
+                '_to',
+                users.buyer.address,
+                users.other2.address
+              );
+            }
+          );
 
           //Payments
           expect(
@@ -5809,7 +6401,7 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
+        it.only('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
           const expectedBuyerPrice = BN(constants.PROMISE_PRICE1);
           const expectedSellerPrice = BN(0);
           const expectedEscrowPrice = BN(0);
@@ -5845,6 +6437,8 @@ describe('Cashier and VoucherKernel', () => {
             users.deployer.signer
           );
 
+          const txReceipt = await withdrawTx.wait();
+
           // Payments in TKN
           // Payment should have been returned to buyer
           expect(
@@ -5866,8 +6460,98 @@ describe('Cashier and VoucherKernel', () => {
             'Escrow did not get expected tokens from PaymentTokenContract'
           );
 
-          const txReceipt = await withdrawTx.wait();
-          //Deposits in ETH
+          // const txReceipt = await withdrawTx.wait();
+          // //Deposits in ETH
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            Cashier_Factory,
+            eventNames.LOG_AMOUNT_DISTRIBUTION,
+            (ev) => {
+              expect(ev._type).to.be.oneOf(
+                Object.values(paymentType),
+                'Wrong paymeny type'
+              );
+              switch (ev._type) {
+                case paymentType.PAYMENT:
+                  assert.equal(
+                    ev._tokenIdVoucher.toString(),
+                    voucherID.toString(),
+                    'Wrong token id voucher'
+                  );
+                  assert.equal(
+                    ev._to,
+                    users.other2.address,
+                    'Wrong payment recipient'
+                  );
+                  assert.equal(
+                    ev._payment,
+                    constants.PROMISE_PRICE1,
+                    'Wrong payment amount'
+                  );
+                  break;
+                case paymentType.DEPOSIT_SELLER:
+                  // expect(ev._to).to.be.oneOf([users.other2.address, users.buyer.address, contractCashier.address], 'Unexpected recepient');
+
+                  switch (ev._to) {
+                    case users.other2.address:
+                      assert.equal(
+                        ev._tokenIdVoucher.toString(),
+                        voucherID.toString(),
+                        'Wrong token id voucher'
+                      );
+                      assert.equal(
+                        ev._payment,
+                        BN(constants.PROMISE_DEPOSITSE1).div(2).toString(),
+                        'Wrong payment amount'
+                      );
+                      break;
+                    case users.buyer.address:
+                      assert.equal(
+                        ev._tokenIdVoucher.toString(),
+                        voucherID.toString(),
+                        'Wrong token id voucher'
+                      );
+                      assert.equal(
+                        ev._payment,
+                        BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),
+                        'Wrong payment amount'
+                      );
+                      break;
+                    case contractCashier.address:
+                      assert.equal(
+                        ev._tokenIdVoucher.toString(),
+                        voucherID.toString(),
+                        'Wrong token id voucher'
+                      );
+                      assert.equal(
+                        ev._payment,
+                        BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),
+                        'Wrong payment amount'
+                      );
+                      break;
+                  }
+                  break;
+                case paymentType.DEPOSIT_BUYER:
+                  assert.equal(
+                    ev._tokenIdVoucher.toString(),
+                    voucherID.toString(),
+                    'Wrong token id voucher'
+                  );
+                  assert.equal(
+                    ev._to,
+                    users.other2.address,
+                    'Wrong buyer deposit recipient'
+                  );
+                  assert.equal(
+                    ev._payment,
+                    constants.PROMISE_DEPOSITBU1,
+                    'Wrong buyer deposit amount'
+                  );
+                  break;
+              }
+            }
+          );
+
           eventUtils.assertEventEmitted(
             txReceipt,
             Cashier_Factory,
