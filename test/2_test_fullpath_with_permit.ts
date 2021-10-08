@@ -1696,7 +1696,6 @@ describe('Cashier and VoucherKernel', () => {
   });
 
   describe('TOKEN SUPPLY CANCELLATION', () => {
-    // TODO: rewrite to match style
     before(async () => {
       await deployContracts();
 
@@ -1790,7 +1789,7 @@ describe('Cashier and VoucherKernel', () => {
 
   describe('VOUCHER CREATION (Commit to buy)', () => {
     const ORDER_QTY = 5;
-    let TOKEN_SUPPLY_ID; // todo not really needed probably
+    let TOKEN_SUPPLY_ID; 
 
     // calculate expected tokenSupplyID for first voucher
     const tokenIndex = constants.ONE;
@@ -3552,7 +3551,7 @@ describe('Cashier and VoucherKernel', () => {
       DEPOSIT_BUYER: 2,
     };
 
-    afterEach(() => {
+    beforeEach(() => {
       distributedAmounts = {
         buyerAmount: BN(0),
         sellerAmount: BN(0),
@@ -5032,7 +5031,7 @@ describe('Cashier and VoucherKernel', () => {
       DEPOSIT_BUYER: 2,
     };
 
-    afterEach(() => {
+    beforeEach(() => {
       distributedAmounts = {
         buyerAmount: BN(0),
         sellerAmount: BN(0),
@@ -5524,7 +5523,7 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        afterEach(async () => {
+        beforeEach(async () => {
           distributedAmounts = {
             buyerAmount: BN(0),
             sellerAmount: BN(0),
