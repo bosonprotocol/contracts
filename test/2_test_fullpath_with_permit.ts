@@ -4019,13 +4019,19 @@ describe('Cashier and VoucherKernel', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
-            expect(ev._payee).to.be.oneOf([users.other2.address,users.buyer.address], 'Incorrect Payee');
+            expect(ev._payee).to.be.oneOf(
+              [users.other2.address, users.buyer.address],
+              'Incorrect Payee'
+            );
             switch (ev._payee) {
               case users.other2.address:
-                  expect(ev._payment.toNumber()).to.be.oneOf([constants.PROMISE_PRICE1, constants.PROMISE_DEPOSITSE1]);
+                expect(ev._payment.toNumber()).to.be.oneOf([
+                  constants.PROMISE_PRICE1,
+                  constants.PROMISE_DEPOSITSE1,
+                ]);
                 break;
               case users.buyer.address:
-                  assert.equal(ev._payment, constants.PROMISE_DEPOSITBU1);
+                assert.equal(ev._payment, constants.PROMISE_DEPOSITBU1);
                 break;
             }
           }
@@ -4963,7 +4969,6 @@ describe('Cashier and VoucherKernel', () => {
                   );
                   break;
               }
-
             }
           );
 
@@ -5283,16 +5288,32 @@ describe('Cashier and VoucherKernel', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
-            expect(ev._payee).to.be.oneOf([users.other2.address, users.seller.address, users.deployer.address], 'Incorrect Payee');
+            expect(ev._payee).to.be.oneOf(
+              [
+                users.other2.address,
+                users.seller.address,
+                users.deployer.address,
+              ],
+              'Incorrect Payee'
+            );
             switch (ev._payee) {
               case users.other2.address:
-                  expect(ev._payment.toNumber()).to.be.oneOf([expectedBuyerAmount.sub(constants.PROMISE_PRICE1).toNumber(), constants.PROMISE_PRICE1]);
+                expect(ev._payment.toNumber()).to.be.oneOf([
+                  expectedBuyerAmount.sub(constants.PROMISE_PRICE1).toNumber(),
+                  constants.PROMISE_PRICE1,
+                ]);
                 break;
-                case users.seller.address:
-                  expect(ev._payment.toNumber()).to.be.oneOf([BN(constants.PROMISE_DEPOSITSE1).div(4).toNumber(), constants.PROMISE_DEPOSITBU1]);
+              case users.seller.address:
+                expect(ev._payment.toNumber()).to.be.oneOf([
+                  BN(constants.PROMISE_DEPOSITSE1).div(4).toNumber(),
+                  constants.PROMISE_DEPOSITBU1,
+                ]);
                 break;
-                case users.deployer.address:
-                  assert.equal(ev._payment, BN(constants.PROMISE_DEPOSITSE1).div(4).toNumber());
+              case users.deployer.address:
+                assert.equal(
+                  ev._payment,
+                  BN(constants.PROMISE_DEPOSITSE1).div(4).toNumber()
+                );
                 break;
             }
           }
@@ -5326,7 +5347,14 @@ describe('Cashier and VoucherKernel', () => {
                 );
                 break;
               case paymentType.DEPOSIT_SELLER:
-                // expect(ev._type).to.be.oneOf([users.other2.address, users.buyer.address, contractCashier.address], 'Unexpected recepient');
+                expect(ev._to).to.be.oneOf(
+                  [
+                    users.seller.address,
+                    users.deployer.address,
+                    users.other2.address,
+                  ],
+                  'Unexpected recepient'
+                );
 
                 switch (ev._to) {
                   case users.other2.address:
@@ -5341,7 +5369,7 @@ describe('Cashier and VoucherKernel', () => {
                       'Wrong payment amount'
                     );
                     break;
-                  case users.buyer.address:
+                  case users.seller.address:
                     assert.equal(
                       ev._tokenIdVoucher.toString(),
                       voucherID.toString(),
@@ -5353,7 +5381,7 @@ describe('Cashier and VoucherKernel', () => {
                       'Wrong payment amount'
                     );
                     break;
-                  case contractCashier.address:
+                  case users.deployer.address:
                     assert.equal(
                       ev._tokenIdVoucher.toString(),
                       voucherID.toString(),
@@ -5662,19 +5690,33 @@ describe('Cashier and VoucherKernel', () => {
             Cashier_Factory,
             eventNames.LOG_WITHDRAWAL,
             (ev) => {
-                expect(ev._payee).to.be.oneOf([users.other2.address,users.seller.address, users.deployer.address], 'Incorrect Payee' );
+              expect(ev._payee).to.be.oneOf(
+                [
+                  users.other2.address,
+                  users.seller.address,
+                  users.deployer.address,
+                ],
+                'Incorrect Payee'
+              );
               switch (ev._payee) {
-              case users.other2.address:
-                  expect(ev._payment.toNumber()).to.be.oneOf([constants.PROMISE_PRICE1]);
-                break;
+                case users.other2.address:
+                  expect(ev._payment.toNumber()).to.be.oneOf([
+                    constants.PROMISE_PRICE1,
+                  ]);
+                  break;
                 case users.seller.address:
-                  expect(ev._payment.toNumber()).to.be.oneOf([BN(constants.PROMISE_DEPOSITSE1).div(4).toNumber(), constants.PROMISE_DEPOSITBU1]);
-                break;
+                  expect(ev._payment.toNumber()).to.be.oneOf([
+                    BN(constants.PROMISE_DEPOSITSE1).div(4).toNumber(),
+                    constants.PROMISE_DEPOSITBU1,
+                  ]);
+                  break;
                 case users.deployer.address:
-                  assert.equal(ev._payment, BN(constants.PROMISE_DEPOSITSE1).div(4).toNumber());
-                break;
-            }
-              
+                  assert.equal(
+                    ev._payment,
+                    BN(constants.PROMISE_DEPOSITSE1).div(4).toNumber()
+                  );
+                  break;
+              }
             }
           );
 
@@ -5707,7 +5749,14 @@ describe('Cashier and VoucherKernel', () => {
                   );
                   break;
                 case paymentType.DEPOSIT_SELLER:
-                  // expect(ev._to).to.be.oneOf([users.other2.address, users.buyer.address, contractCashier.address], 'Unexpected recepient');
+                  expect(ev._to).to.be.oneOf(
+                    [
+                      users.seller.address,
+                      users.deployer.address,
+                      users.other2.address,
+                    ],
+                    'Unexpected recepient'
+                  );
 
                   switch (ev._to) {
                     case users.other2.address:
@@ -5722,7 +5771,7 @@ describe('Cashier and VoucherKernel', () => {
                         'Wrong payment amount'
                       );
                       break;
-                    case users.buyer.address:
+                    case users.seller.address:
                       assert.equal(
                         ev._tokenIdVoucher.toString(),
                         voucherID.toString(),
@@ -5734,7 +5783,7 @@ describe('Cashier and VoucherKernel', () => {
                         'Wrong payment amount'
                       );
                       break;
-                    case contractCashier.address:
+                    case users.deployer.address:
                       assert.equal(
                         ev._tokenIdVoucher.toString(),
                         voucherID.toString(),
@@ -6111,7 +6160,14 @@ describe('Cashier and VoucherKernel', () => {
                   );
                   break;
                 case paymentType.DEPOSIT_SELLER:
-                  // expect(ev._to).to.be.oneOf([users.other2.address, users.buyer.address, contractCashier.address], 'Unexpected recepient');
+                  expect(ev._to).to.be.oneOf(
+                    [
+                      users.seller.address,
+                      users.deployer.address,
+                      users.other2.address,
+                    ],
+                    'Unexpected recepient'
+                  );
 
                   switch (ev._to) {
                     case users.other2.address:
@@ -6126,7 +6182,7 @@ describe('Cashier and VoucherKernel', () => {
                         'Wrong payment amount'
                       );
                       break;
-                    case users.buyer.address:
+                    case users.seller.address:
                       assert.equal(
                         ev._tokenIdVoucher.toString(),
                         voucherID.toString(),
@@ -6138,7 +6194,7 @@ describe('Cashier and VoucherKernel', () => {
                         'Wrong payment amount'
                       );
                       break;
-                    case contractCashier.address:
+                    case users.deployer:
                       assert.equal(
                         ev._tokenIdVoucher.toString(),
                         voucherID.toString(),
@@ -6430,7 +6486,7 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it.only('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
+        it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
           const expectedBuyerPrice = BN(constants.PROMISE_PRICE1);
           const expectedSellerPrice = BN(0);
           const expectedEscrowPrice = BN(0);
@@ -6494,23 +6550,39 @@ describe('Cashier and VoucherKernel', () => {
             Cashier_Factory,
             eventNames.LOG_WITHDRAWAL,
             (ev) => {
-             
-            expect(ev._payee).to.be.oneOf([users.other2.address, users.seller.address, users.deployer.address], 'Incorrect Payee');
-            switch (ev._payee) {
-              case users.other2.address:
-                assert.equal(ev._payment.toString(),expectedBuyerDeposit.toString(),'Wrong payment amount');
-                break;
+              expect(ev._payee).to.be.oneOf(
+                [
+                  users.other2.address,
+                  users.seller.address,
+                  users.deployer.address,
+                ],
+                'Incorrect Payee'
+              );
+              switch (ev._payee) {
+                case users.other2.address:
+                  assert.equal(
+                    ev._payment.toString(),
+                    expectedBuyerDeposit.toString(),
+                    'Wrong payment amount'
+                  );
+                  break;
                 case users.seller.address:
-                  assert.equal(ev._payment.toString(),BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),'Wrong payment amount');
-                break;
+                  assert.equal(
+                    ev._payment.toString(),
+                    BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),
+                    'Wrong payment amount'
+                  );
+                  break;
                 case users.deployer.address:
-                  assert.equal(ev._payment, BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),'Wrong payment amount');
-                break;
-            }
+                  assert.equal(
+                    ev._payment,
+                    BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),
+                    'Wrong payment amount'
+                  );
+                  break;
+              }
             }
           );
-
-         
 
           // //Deposits in ETH
           eventUtils.assertEventEmitted(
@@ -6541,7 +6613,14 @@ describe('Cashier and VoucherKernel', () => {
                   );
                   break;
                 case paymentType.DEPOSIT_SELLER:
-                  expect(ev._to).to.be.oneOf([users.seller.address, users.deployer.address, users.other2.address], 'Unexpected recepient');
+                  expect(ev._to).to.be.oneOf(
+                    [
+                      users.seller.address,
+                      users.deployer.address,
+                      users.other2.address,
+                    ],
+                    'Unexpected recepient'
+                  );
 
                   switch (ev._to) {
                     case users.seller.address:
