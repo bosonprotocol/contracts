@@ -3981,7 +3981,7 @@ describe('Cashier and VoucherKernel', () => {
         );
       });
 
-      it.only('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
+      it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
         const expectedBuyerAmount = BN(constants.PROMISE_DEPOSITBU1);
         const expectedSellerAmount = BN(constants.PROMISE_DEPOSITSE1).add(
           BN(constants.PROMISE_PRICE1)
@@ -4013,6 +4013,23 @@ describe('Cashier and VoucherKernel', () => {
         );
 
         const txReceipt = await withdrawTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            expect(ev._payee).to.be.oneOf([users.other2.address,users.buyer.address], 'Incorrect Payee');
+            switch (ev._payee) {
+              case users.other2.address:
+                  expect(ev._payment.toNumber()).to.be.oneOf([constants.PROMISE_PRICE1, constants.PROMISE_DEPOSITSE1]);
+                break;
+              case users.buyer.address:
+                  assert.equal(ev._payment, constants.PROMISE_DEPOSITBU1);
+                break;
+            }
+          }
+        );
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -4235,7 +4252,7 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it.only('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
+        it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
           const expectedBuyerDeposit = BN(constants.PROMISE_DEPOSITBU1);
           const expectedSellerPrice = BN(constants.PROMISE_PRICE1);
           const expectedSellerDeposit = BN(constants.PROMISE_DEPOSITSE1);
@@ -4530,7 +4547,7 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it.only('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
+        it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
           const expectedBuyerPrice = BN(0);
           const expectedBuyerDeposit = BN(constants.PROMISE_DEPOSITBU1);
           const expectedSellerPrice = BN(constants.PROMISE_PRICE1);
@@ -4817,7 +4834,7 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it.only('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
+        it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
           const expectedBuyerPrice = BN(0);
           const expectedSellerPrice = BN(constants.PROMISE_PRICE1);
           const expectedEscrowPrice = BN(0);
@@ -4947,13 +4964,6 @@ describe('Cashier and VoucherKernel', () => {
                   break;
               }
 
-              // utils.calcTotalAmountToRecipients(
-              //   ev,
-              //   distributedAmounts,
-              //   '_to',
-              //   users.buyer.address,
-              //   users.other2.address
-              // );
             }
           );
 
@@ -5232,7 +5242,7 @@ describe('Cashier and VoucherKernel', () => {
         );
       });
 
-      it.only('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
+      it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
         const expectedBuyerAmount = BN(constants.PROMISE_DEPOSITBU1)
           .add(BN(constants.PROMISE_PRICE1))
           .add(BN(constants.PROMISE_DEPOSITSE1).div(BN(2)));
@@ -5271,24 +5281,22 @@ describe('Cashier and VoucherKernel', () => {
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
-          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          eventNames.LOG_WITHDRAWAL,
           (ev) => {
-            utils.calcTotalAmountToRecipients(
-              ev,
-              distributedAmounts,
-              '_to',
-              users.other2.address,
-              users.seller.address
-            );
+            expect(ev._payee).to.be.oneOf([users.other2.address, users.seller.address, users.deployer.address], 'Incorrect Payee');
+            switch (ev._payee) {
+              case users.other2.address:
+                  expect(ev._payment.toNumber()).to.be.oneOf([expectedBuyerAmount.sub(constants.PROMISE_PRICE1).toNumber(), constants.PROMISE_PRICE1]);
+                break;
+                case users.seller.address:
+                  expect(ev._payment.toNumber()).to.be.oneOf([BN(constants.PROMISE_DEPOSITSE1).div(4).toNumber(), constants.PROMISE_DEPOSITBU1]);
+                break;
+                case users.deployer.address:
+                  assert.equal(ev._payment, BN(constants.PROMISE_DEPOSITSE1).div(4).toNumber());
+                break;
+            }
           }
         );
-
-        // const withdrawTx = await utils.withdraw(
-        //   voucherID,
-        //   users.deployer.signer
-        // );
-
-        // const txReceipt = await withdrawTx.wait();
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -5378,13 +5386,13 @@ describe('Cashier and VoucherKernel', () => {
                 break;
             }
 
-            //     utils.calcTotalAmountToRecipients(
-            //       ev,
-            //       distributedAmounts,
-            //       '_to',
-            //       users.other2.address,
-            //       users.seller.address
-            //     );
+            utils.calcTotalAmountToRecipients(
+              ev,
+              distributedAmounts,
+              '_to',
+              users.other2.address,
+              users.seller.address
+            );
           }
         );
 
@@ -5612,7 +5620,7 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it.only('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
+        it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
           const expectedBuyerPrice = BN(constants.PROMISE_PRICE1);
           const expectedBuyerDeposit = BN(constants.PROMISE_DEPOSITBU1).add(
             BN(constants.PROMISE_DEPOSITSE1).div(BN(2))
@@ -5648,6 +5656,27 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           const txReceipt = await withdrawTx.wait();
+
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            Cashier_Factory,
+            eventNames.LOG_WITHDRAWAL,
+            (ev) => {
+                expect(ev._payee).to.be.oneOf([users.other2.address,users.seller.address, users.deployer.address], 'Incorrect Payee' );
+              switch (ev._payee) {
+              case users.other2.address:
+                  expect(ev._payment.toNumber()).to.be.oneOf([constants.PROMISE_PRICE1]);
+                break;
+                case users.seller.address:
+                  expect(ev._payment.toNumber()).to.be.oneOf([BN(constants.PROMISE_DEPOSITSE1).div(4).toNumber(), constants.PROMISE_DEPOSITBU1]);
+                break;
+                case users.deployer.address:
+                  assert.equal(ev._payment, BN(constants.PROMISE_DEPOSITSE1).div(4).toNumber());
+                break;
+            }
+              
+            }
+          );
 
           eventUtils.assertEventEmitted(
             txReceipt,
@@ -6014,7 +6043,7 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it.only('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
+        it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
           const expectedBuyerPrice = BN(constants.PROMISE_PRICE1);
           const expectedBuyerDeposit = BN(constants.PROMISE_DEPOSITBU1).add(
             BN(constants.PROMISE_DEPOSITSE1).div(BN(2))
@@ -6460,7 +6489,29 @@ describe('Cashier and VoucherKernel', () => {
             'Escrow did not get expected tokens from PaymentTokenContract'
           );
 
-          // const txReceipt = await withdrawTx.wait();
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            Cashier_Factory,
+            eventNames.LOG_WITHDRAWAL,
+            (ev) => {
+             
+            expect(ev._payee).to.be.oneOf([users.other2.address, users.seller.address, users.deployer.address], 'Incorrect Payee');
+            switch (ev._payee) {
+              case users.other2.address:
+                assert.equal(ev._payment.toString(),expectedBuyerDeposit.toString(),'Wrong payment amount');
+                break;
+                case users.seller.address:
+                  assert.equal(ev._payment.toString(),BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),'Wrong payment amount');
+                break;
+                case users.deployer.address:
+                  assert.equal(ev._payment, BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),'Wrong payment amount');
+                break;
+            }
+            }
+          );
+
+         
+
           // //Deposits in ETH
           eventUtils.assertEventEmitted(
             txReceipt,
@@ -6490,9 +6541,33 @@ describe('Cashier and VoucherKernel', () => {
                   );
                   break;
                 case paymentType.DEPOSIT_SELLER:
-                  // expect(ev._to).to.be.oneOf([users.other2.address, users.buyer.address, contractCashier.address], 'Unexpected recepient');
+                  expect(ev._to).to.be.oneOf([users.seller.address, users.deployer.address, users.other2.address], 'Unexpected recepient');
 
                   switch (ev._to) {
+                    case users.seller.address:
+                      assert.equal(
+                        ev._tokenIdVoucher.toString(),
+                        voucherID.toString(),
+                        'Wrong token id voucher'
+                      );
+                      assert.equal(
+                        ev._payment,
+                        BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),
+                        'Wrong payment amount'
+                      );
+                      break;
+                    case users.deployer.address:
+                      assert.equal(
+                        ev._tokenIdVoucher.toString(),
+                        voucherID.toString(),
+                        'Wrong token id voucher'
+                      );
+                      assert.equal(
+                        ev._payment,
+                        BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),
+                        'Wrong payment amount'
+                      );
+                      break;
                     case users.other2.address:
                       assert.equal(
                         ev._tokenIdVoucher.toString(),
@@ -6502,30 +6577,6 @@ describe('Cashier and VoucherKernel', () => {
                       assert.equal(
                         ev._payment,
                         BN(constants.PROMISE_DEPOSITSE1).div(2).toString(),
-                        'Wrong payment amount'
-                      );
-                      break;
-                    case users.buyer.address:
-                      assert.equal(
-                        ev._tokenIdVoucher.toString(),
-                        voucherID.toString(),
-                        'Wrong token id voucher'
-                      );
-                      assert.equal(
-                        ev._payment,
-                        BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),
-                        'Wrong payment amount'
-                      );
-                      break;
-                    case contractCashier.address:
-                      assert.equal(
-                        ev._tokenIdVoucher.toString(),
-                        voucherID.toString(),
-                        'Wrong token id voucher'
-                      );
-                      assert.equal(
-                        ev._payment,
-                        BN(constants.PROMISE_DEPOSITSE1).div(4).toString(),
                         'Wrong payment amount'
                       );
                       break;
