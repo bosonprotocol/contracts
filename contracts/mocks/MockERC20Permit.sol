@@ -16,7 +16,7 @@ contract MockERC20Permit is ERC20WithPermit, AccessControl {
         _setupRole(PAUSER_ROLE, _msgSender());
     }
 
-    function mint(address _to, uint256 _amount) public {
+    function mint(address _to, uint256 _amount) external {
         require(
             hasRole(MINTER_ROLE, _msgSender()),
             "ERC20PresetMinterPauser: must have minter role to mint"
@@ -24,7 +24,7 @@ contract MockERC20Permit is ERC20WithPermit, AccessControl {
         _mint(_to, _amount);
     }
 
-    function pause() public {
+    function pause() external {
         require(
             hasRole(PAUSER_ROLE, _msgSender()),
             "ERC20PresetMinterPauser: must have pauser role to pause"
@@ -32,7 +32,7 @@ contract MockERC20Permit is ERC20WithPermit, AccessControl {
         _pause();
     }
 
-    function unpause() public {
+    function unpause() external {
         require(
             hasRole(PAUSER_ROLE, _msgSender()),
             "ERC20PresetMinterPauser: must have pauser role to unpause"

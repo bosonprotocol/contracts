@@ -36,7 +36,7 @@ contract ERC1155NonTransferable is
         uint256 _tokenId,
         uint256 _value,
         bytes memory _data
-    ) public override onlyOwner {
+    ) external override onlyOwner {
         _mint(_to, _tokenId, _value, _data);
     }
 
@@ -53,7 +53,7 @@ contract ERC1155NonTransferable is
         uint256[] memory _tokenIds,
         uint256[] memory _values,
         bytes memory _data
-    ) public onlyOwner {
+    ) external onlyOwner {
         _mintBatch(_to, _tokenIds, _values, _data);
     }
 
@@ -68,7 +68,7 @@ contract ERC1155NonTransferable is
         address _account,
         uint256 _tokenId,
         uint256 _value
-    ) public override onlyOwner {
+    ) external override onlyOwner {
         _burn(_account, _tokenId, _value);
     }
 
@@ -83,7 +83,7 @@ contract ERC1155NonTransferable is
         address _account,
         uint256[] memory _tokenIds,
         uint256[] memory _values
-    ) public onlyOwner {
+    ) external onlyOwner {
         _burnBatch(_account, _tokenIds, _values);
     }
 
