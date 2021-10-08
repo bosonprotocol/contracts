@@ -1556,28 +1556,6 @@ describe('Cashier and VoucherKernel', () => {
           ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
         });
 
-        it('Create Conditional Commit', async () => {
-          // ?? todo
-          expect(
-            await utils.createOrderConditional(
-              users.seller,
-              constants.PROMISE_VALID_FROM,
-              constants.PROMISE_VALID_TO,
-              constants.seller_deposit,
-              constants.QTY_10,
-              users.seller,
-              0,
-              true
-            )
-          ).to.emit(
-            contractBosonRouter,
-            eventNames.LOG_CONDITIONAL_ORDER_CREATED
-          );
-
-          // .withArgs(); should calculate token supply id and compare it it
-          // console.log(tokenSupplyID)
-        });
-
         it('[NEGATIVE] Should revert if token price contract address is zero address', async () => {
           const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
           const nonce = await contractBSNTokenDeposit.nonces(
