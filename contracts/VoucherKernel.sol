@@ -1010,16 +1010,16 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     /**
      * @notice Get the remaining quantity left in supply of tokens (e.g ERC-721 left in ERC-1155) of an account
      * @param _tokenSupplyId  Token supply ID
-     * @param _owner    holder of the Token Supply
+     * @param _tokenSupplyOwner    holder of the Token Supply
      * @return          remaining quantity
      */
-    function getRemQtyForSupply(uint256 _tokenSupplyId, address _owner)
+    function getRemQtyForSupply(uint256 _tokenSupplyId, address _tokenSupplyOwner)
         public
         view
         override
         returns (uint256)
     {
-        return IERC1155(tokensContract).balanceOf(_owner, _tokenSupplyId);
+        return IERC1155(tokensContract).balanceOf(_tokenSupplyOwner, _tokenSupplyId);
     }
 
     /**

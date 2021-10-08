@@ -401,12 +401,12 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
 
     /// @notice Count all NFTs assigned to an owner
     /// @dev ERC-721
-    /// @param _owner An address for whom to query the balance
+    /// @param _tokenOwner An address for whom to query the balance
     /// @return The number of NFTs owned by `_owner`, possibly zero
-    function balanceOf(address _owner) external view override returns (uint256) {
-        require(_owner != address(0), "UNSPECIFIED_ADDRESS");
+    function balanceOf(address _tokenOwner) external view override returns (uint256) {
+        require(_tokenOwner != address(0), "UNSPECIFIED_ADDRESS");
 
-        return balance721[_owner];
+        return balance721[_tokenOwner];
     }
 
     /**
