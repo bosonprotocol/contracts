@@ -1894,7 +1894,10 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           constants.PROMISE_DEPOSITSE1,
           constants.QTY_10,
           contractGate,
-          0
+          0,
+          true,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         const txReceipt = await txOrder.wait();
@@ -1993,7 +1996,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       });
 
       it('[NEGATIVE] Should not be able to request voucher twice', async () => {
-        await utils.commitToBuy(users.buyer, users.seller, tokenSupplyKey);
+        await utils.commitToBuy(users.buyer, users.seller, tokenSupplyKey, false, constants.product_price, constants.buyer_deposit);
 
         const {txValue, DEPOSIT, PRICE} = await generateInputs(
           users.buyer,
@@ -2067,7 +2070,10 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           constants.seller_deposit,
           constants.QTY_10,
           users.other1, /// gate address that maps to EOA
-          0
+          0,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);
@@ -2112,7 +2118,10 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           constants.seller_deposit,
           constants.QTY_10,
           contractGate,
-          0
+          0,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);
@@ -2221,7 +2230,10 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           constants.PROMISE_DEPOSITSE1,
           constants.QTY_10,
           contractGate,
-          0
+          0,
+          true,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         const txReceipt = await txOrder.wait();
@@ -2381,7 +2393,10 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           constants.seller_deposit,
           constants.QTY_10,
           users.other1, /// gate address that maps to EOA
-          0
+          0,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);
@@ -2416,7 +2431,10 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           constants.seller_deposit,
           constants.QTY_10,
           contractGate,
-          0
+          0,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);
