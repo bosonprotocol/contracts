@@ -99,8 +99,8 @@ contract Gate is IGate, Ownable, Pausable {
         external
         override
         whenNotPaused
-        onlyOwner
     {
+        require(msg.sender == bosonRouterAddress || msg.sender == owner(), "UNAUTHORIZED_O_BR"); 
         require(_nftTokenId != 0, "TOKEN_ID_0_NOT_ALLOWED");
         require(_tokenIdSupply != 0, "INVALID_TOKEN_SUPPLY");
 
