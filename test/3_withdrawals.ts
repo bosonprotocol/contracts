@@ -275,7 +275,9 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+          TOKEN_SUPPLY_ID,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.refund(voucherID, users.buyer.signer);
@@ -4723,8 +4725,14 @@ describe('Cashier withdrawals ', () => {
         );
 
         for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
-          await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit);
-             remQty--;
+          await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
+          );
+          remQty--;
         }
       });
 
@@ -4794,7 +4802,13 @@ describe('Cashier withdrawals ', () => {
 
       it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
         await expect(
-          utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit)
+          utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
+          )
         ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
       });
 
@@ -4868,7 +4882,13 @@ describe('Cashier withdrawals ', () => {
           );
 
           for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
-            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit);
+            await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
+            );
             remQty--;
           }
         });
@@ -4957,7 +4977,13 @@ describe('Cashier withdrawals ', () => {
 
         it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
           await expect(
-            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit)
+            utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
+            )
           ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
         });
 
@@ -5029,7 +5055,13 @@ describe('Cashier withdrawals ', () => {
           );
 
           for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
-            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit);
+            await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
+            );
             remQty--;
           }
         });
@@ -5118,7 +5150,13 @@ describe('Cashier withdrawals ', () => {
 
         it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
           await expect(
-            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit)
+            utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
+            )
           ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
         });
 
@@ -5183,7 +5221,13 @@ describe('Cashier withdrawals ', () => {
           );
 
           for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
-            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit);
+            await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
+            );
             remQty--;
           }
         });
@@ -5257,7 +5301,13 @@ describe('Cashier withdrawals ', () => {
 
         it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
           await expect(
-            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit)
+            utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
+            )
           ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
         });
 
@@ -5356,7 +5406,13 @@ describe('Cashier withdrawals ', () => {
         );
 
         for (let i = 0; i < vouchersToBuy; i++) {
-          await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit);
+          await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
+          );
         }
 
         await contractBosonRouter.pause();
@@ -5525,7 +5581,13 @@ describe('Cashier withdrawals ', () => {
         );
 
         for (let i = 0; i < vouchersToBuy; i++) {
-          await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit);
+          await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
+          );
         }
 
         await contractBosonRouter.pause();

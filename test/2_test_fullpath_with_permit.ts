@@ -36,7 +36,7 @@ let utils: Utils;
 let users;
 
 describe('Cashier and VoucherKernel', () => {
-  let promiseId: string, tokenSupplyKey: string; // todo remove string when finished
+  let promiseId: string, tokenSupplyKey: string;
 
   before(async () => {
     const signers: Signer[] = await ethers.getSigners();
@@ -61,11 +61,6 @@ describe('Cashier and VoucherKernel', () => {
     contractBSNTokenPrice: MockERC20Permit,
     contractBSNTokenDeposit: MockERC20Permit,
     contractTokenRegistry: TokenRegistry;
-
-  let tokenVoucherKey, tokenVoucherKey1;
-
-  const ZERO = BN(0); // TODO: use constants.zero
-  const ONE_VOUCHER = 1; // TODO: use constants.one
 
   const deadline = toWei(1);
 
@@ -356,7 +351,7 @@ describe('Cashier and VoucherKernel', () => {
             );
           });
 
-          it('Deposit and Price address should be zero', async () => {
+          it('Deposit and Price address should be constants.ZERO', async () => {
             expect(
               await contractVoucherKernel.getVoucherPriceToken(tokenSupplyKey)
             ).to.equal(
@@ -503,7 +498,7 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_DEPOSITSE1,
             constants.ABOVE_ETH_LIMIT,
             constants.ONE,
-            true            
+            true
           )
         ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
       });
@@ -518,7 +513,7 @@ describe('Cashier and VoucherKernel', () => {
             constants.ABOVE_ETH_LIMIT,
             constants.PROMISE_DEPOSITBU1,
             constants.ONE,
-            true          
+            true
           )
         ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
       });
@@ -703,7 +698,7 @@ describe('Cashier and VoucherKernel', () => {
               );
             });
 
-            it('Deposit contract should be correct and Price address should be zero', async () => {
+            it('Deposit contract should be correct and Price address should be constants.ZERO', async () => {
               expect(
                 await contractVoucherKernel.getVoucherPriceToken(tokenSupplyKey)
               ).to.equal(
@@ -838,8 +833,8 @@ describe('Cashier and VoucherKernel', () => {
           ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
         });
 
-        it('[NEGATIVE] Should revert if token deposit contract address is zero address', async () => {
-          const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
+        it('[NEGATIVE] Should revert if token deposit contract address is constants.ZERO address', async () => {
+          const txValue = BN(constants.seller_deposit).mul(BN(constants.ONE));
           const nonce = await contractBSNTokenDeposit.nonces(
             users.seller.address
           );
@@ -1100,7 +1095,7 @@ describe('Cashier and VoucherKernel', () => {
               );
             });
 
-            it('Price address should be correct and Deposit should be zero', async () => {
+            it('Price address should be correct and Deposit should be constants.ZERO', async () => {
               expect(
                 await contractVoucherKernel.getVoucherPriceToken(tokenSupplyKey)
               ).to.equal(
@@ -1210,7 +1205,7 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it('[NEGATIVE] Should fail if token price contract is zero address', async () => {
+        it('[NEGATIVE] Should fail if token price contract is constants.ZERO address', async () => {
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
           );
@@ -1252,7 +1247,7 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_DEPOSITSE1,
               constants.ABOVE_TOKEN_LIMIT,
               constants.QTY_10,
-              true            
+              true
             )
           ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
         });
@@ -1320,7 +1315,7 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_DEPOSITSE1,
               constants.PROMISE_DEPOSITBU1,
               constants.QTY_10,
-              true,             
+              true
             )
           )
             .to.emit(contractBosonRouter, eventNames.LOG_ORDER_CREATED)
@@ -1591,8 +1586,8 @@ describe('Cashier and VoucherKernel', () => {
           ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
         });
 
-        it('[NEGATIVE] Should revert if token price contract address is zero address', async () => {
-          const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
+        it('[NEGATIVE] Should revert if token price contract address is constants.ZERO address', async () => {
+          const txValue = BN(constants.seller_deposit).mul(BN(constants.ONE));
           const nonce = await contractBSNTokenDeposit.nonces(
             users.seller.address
           );
@@ -1636,8 +1631,8 @@ describe('Cashier and VoucherKernel', () => {
           ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
         });
 
-        it('[NEGATIVE] Should revert if token deposit contract address is zero address', async () => {
-          const txValue = BN(constants.seller_deposit).mul(BN(ONE_VOUCHER));
+        it('[NEGATIVE] Should revert if token deposit contract address is constants.ZERO address', async () => {
+          const txValue = BN(constants.seller_deposit).mul(BN(constants.ONE));
           const nonce = await contractBSNTokenDeposit.nonces(
             users.seller.address
           );
@@ -1987,7 +1982,7 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('It should be possible to request voucher with 0 buyer deposit', async () => {
-        let TOKEN_SUPPLY_ID = await utils.createOrder(
+        const TOKEN_SUPPLY_ID = await utils.createOrder(
           users.seller,
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
@@ -2005,7 +2000,7 @@ describe('Cashier and VoucherKernel', () => {
           constants.ZERO
         );
 
-        let voucherTokenId = BN(TOKEN_SUPPLY_ID).or(constants.ONE);
+        const voucherTokenId = BN(TOKEN_SUPPLY_ID).or(constants.ONE);
 
         const voucherStatus = await contractVoucherKernel.getVoucherStatus(
           voucherTokenId
@@ -2118,7 +2113,7 @@ describe('Cashier and VoucherKernel', () => {
             utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID,              
+              TOKEN_SUPPLY_ID,
               constants.PROMISE_PRICE1,
               constants.PROMISE_DEPOSITBU1,
               true
@@ -2276,7 +2271,7 @@ describe('Cashier and VoucherKernel', () => {
             tokensToMintSeller
           );
 
-          let TOKEN_SUPPLY_ID = await utils.createOrder(
+          const TOKEN_SUPPLY_ID = await utils.createOrder(
             users.seller,
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
@@ -2294,7 +2289,7 @@ describe('Cashier and VoucherKernel', () => {
             constants.ZERO
           );
 
-          let voucherTokenId = BN(TOKEN_SUPPLY_ID).or(constants.ONE);
+          const voucherTokenId = BN(TOKEN_SUPPLY_ID).or(constants.ONE);
 
           const voucherStatus = await contractVoucherKernel.getVoucherStatus(
             voucherTokenId
@@ -2563,7 +2558,7 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('It should be possible to request voucher with 0 buyer deposit', async () => {
-          let TOKEN_SUPPLY_ID = await utils.createOrder(
+          const TOKEN_SUPPLY_ID = await utils.createOrder(
             users.seller,
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
@@ -2581,7 +2576,7 @@ describe('Cashier and VoucherKernel', () => {
             constants.ZERO
           );
 
-          let voucherTokenId = BN(TOKEN_SUPPLY_ID).or(constants.ONE);
+          const voucherTokenId = BN(TOKEN_SUPPLY_ID).or(constants.ONE);
 
           const voucherStatus = await contractVoucherKernel.getVoucherStatus(
             voucherTokenId
@@ -2830,7 +2825,7 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('It should be possible to request voucher with 0 buyer deposit', async () => {
-          let TOKEN_SUPPLY_ID = await utils.createOrder(
+          const TOKEN_SUPPLY_ID = await utils.createOrder(
             users.seller,
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
@@ -2848,7 +2843,7 @@ describe('Cashier and VoucherKernel', () => {
             constants.ZERO
           );
 
-          let voucherTokenId = BN(TOKEN_SUPPLY_ID).or(constants.ONE);
+          const voucherTokenId = BN(TOKEN_SUPPLY_ID).or(constants.ONE);
 
           const voucherStatus = await contractVoucherKernel.getVoucherStatus(
             voucherTokenId
@@ -3066,9 +3061,13 @@ describe('Cashier and VoucherKernel', () => {
 
         describe('After request', () => {
           beforeEach(async () => {
-            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID,
+            await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
               constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITBU1)
+              constants.PROMISE_DEPOSITBU1
+            );
           });
 
           it('Voucher Kernel state is correct', async () => {
@@ -3160,7 +3159,7 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('It should be possible to request voucher with 0 buyer deposit', async () => {
-          let TOKEN_SUPPLY_ID = await utils.createOrder(
+          const TOKEN_SUPPLY_ID = await utils.createOrder(
             users.seller,
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
@@ -3178,7 +3177,7 @@ describe('Cashier and VoucherKernel', () => {
             constants.ZERO
           );
 
-          let voucherTokenId = BN(TOKEN_SUPPLY_ID).or(constants.ONE);
+          const voucherTokenId = BN(TOKEN_SUPPLY_ID).or(constants.ONE);
 
           const voucherStatus = await contractVoucherKernel.getVoucherStatus(
             voucherTokenId
@@ -3893,7 +3892,7 @@ describe('Cashier and VoucherKernel', () => {
       describe('Batchtransfers', () => {
         let tokenSupplyKey2;
         let tokenSupplyBatch;
-        let batchQuantities = [BN(constants.QTY_10), BN(constants.QTY_20)];
+        const batchQuantities = [BN(constants.QTY_10), BN(constants.QTY_20)];
 
         beforeEach(async () => {
           tokenSupplyKey2 = await utils.createOrder(
@@ -4081,7 +4080,7 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Should update escrow amounts after transfer', async () => {
-        let expectedBalanceInEscrow = BN(constants.PROMISE_DEPOSITSE1).mul(
+        const expectedBalanceInEscrow = BN(constants.PROMISE_DEPOSITSE1).mul(
           BN(constants.QTY_1)
         );
 
@@ -4097,7 +4096,7 @@ describe('Cashier and VoucherKernel', () => {
           'Old owner balance from escrow does not match'
         );
         assert.isTrue(
-          actualNewOwnerBalanceFromEscrow.eq(ZERO),
+          actualNewOwnerBalanceFromEscrow.eq(constants.ZERO),
           'New owner balance from escrow does not match'
         );
 
@@ -4117,7 +4116,7 @@ describe('Cashier and VoucherKernel', () => {
         );
 
         assert.isTrue(
-          actualOldOwnerBalanceFromEscrow.eq(ZERO),
+          actualOldOwnerBalanceFromEscrow.eq(constants.ZERO),
           'Old owner balance from escrow does not match'
         );
         assert.isTrue(
@@ -4362,7 +4361,7 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should update escrow amounts after transfer', async () => {
-          let expectedBalanceInEscrow = BN(constants.PROMISE_DEPOSITSE1).mul(
+          const expectedBalanceInEscrow = BN(constants.PROMISE_DEPOSITSE1).mul(
             BN(constants.QTY_1)
           );
 
@@ -4380,7 +4379,7 @@ describe('Cashier and VoucherKernel', () => {
             'Old owner balance from escrow does not match'
           );
           assert.isTrue(
-            actualNewOwnerBalanceFromEscrow.eq(ZERO),
+            actualNewOwnerBalanceFromEscrow.eq(constants.ZERO),
             'New owner balance from escrow does not match'
           );
 
@@ -4402,7 +4401,7 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           assert.isTrue(
-            actualOldOwnerBalanceFromEscrow.eq(ZERO),
+            actualOldOwnerBalanceFromEscrow.eq(constants.ZERO),
             'Old owner balance from escrow does not match'
           );
           assert.isTrue(
@@ -4525,19 +4524,19 @@ describe('Cashier and VoucherKernel', () => {
             }
           );
 
-          let balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+          const balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
             users.buyer.address
           );
-          let balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+          const balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
             users.other2.address
           );
-          let escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
+          const escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
             users.deployer.address
           );
-          let cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(
+          const cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(
             utils.contractCashier.address
           );
-          let cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(
+          const cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(
             utils.contractCashier.address
           );
 
@@ -4665,7 +4664,7 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should update escrow amounts after transfer', async () => {
-          let expectedBalanceInEscrow = BN(constants.PROMISE_DEPOSITSE1).mul(
+          const expectedBalanceInEscrow = BN(constants.PROMISE_DEPOSITSE1).mul(
             BN(constants.QTY_1)
           );
 
@@ -4683,7 +4682,7 @@ describe('Cashier and VoucherKernel', () => {
             'Old owner balance from escrow does not match'
           );
           assert.isTrue(
-            actualNewOwnerBalanceFromEscrow.eq(ZERO),
+            actualNewOwnerBalanceFromEscrow.eq(constants.ZERO),
             'New owner balance from escrow does not match'
           );
 
@@ -4705,7 +4704,7 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           assert.isTrue(
-            actualOldOwnerBalanceFromEscrow.eq(ZERO),
+            actualOldOwnerBalanceFromEscrow.eq(constants.ZERO),
             'Old owner balance from escrow does not match'
           );
           assert.isTrue(
@@ -4964,7 +4963,7 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should update escrow amounts after transfer', async () => {
-          let expectedBalanceInEscrow = BN(constants.PROMISE_DEPOSITSE1).mul(
+          const expectedBalanceInEscrow = BN(constants.PROMISE_DEPOSITSE1).mul(
             BN(constants.QTY_1)
           );
 
@@ -4980,7 +4979,7 @@ describe('Cashier and VoucherKernel', () => {
             'Old owner balance from escrow does not match'
           );
           assert.isTrue(
-            actualNewOwnerBalanceFromEscrow.eq(ZERO),
+            actualNewOwnerBalanceFromEscrow.eq(constants.ZERO),
             'New owner balance from escrow does not match'
           );
 
@@ -5000,7 +4999,7 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           assert.isTrue(
-            actualOldOwnerBalanceFromEscrow.eq(ZERO),
+            actualOldOwnerBalanceFromEscrow.eq(constants.ZERO),
             'Old owner balance from escrow does not match'
           );
           assert.isTrue(
@@ -5375,7 +5374,7 @@ describe('Cashier and VoucherKernel', () => {
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITSE1,
           constants.PROMISE_DEPOSITBU1,
-          constants.QTY_10          
+          constants.QTY_10
         );
       });
 
@@ -5404,7 +5403,7 @@ describe('Cashier and VoucherKernel', () => {
           'Old owner balance from escrow does not match'
         );
         assert.isTrue(
-          actualNewOwnerBalanceFromEscrowEth.eq(ZERO),
+          actualNewOwnerBalanceFromEscrowEth.eq(constants.ZERO),
           'New owner balance from escrow does not match'
         );
 
@@ -5423,7 +5422,7 @@ describe('Cashier and VoucherKernel', () => {
         );
 
         assert.isTrue(
-          actualOldOwnerBalanceFromEscrowEth.eq(ZERO),
+          actualOldOwnerBalanceFromEscrowEth.eq(constants.ZERO),
           'Old owner balance from escrow does not match'
         );
         assert.isTrue(
@@ -5790,12 +5789,12 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           assert.isTrue(
-            actualNewOwnerBalanceFromEscrowEth.eq(ZERO),
+            actualNewOwnerBalanceFromEscrowEth.eq(constants.ZERO),
             'New owner balance from escrow does not match'
           );
 
           assert.isTrue(
-            actualNewOwnerBalanceFromEscrowTkn.eq(ZERO),
+            actualNewOwnerBalanceFromEscrowTkn.eq(constants.ZERO),
             'New owner balance from escrow does not match'
           );
 
@@ -5825,12 +5824,12 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           assert.isTrue(
-            actualOldOwnerBalanceFromEscrowEth.eq(ZERO),
+            actualOldOwnerBalanceFromEscrowEth.eq(constants.ZERO),
             'Old owner balance from escrow does not match'
           );
 
           assert.isTrue(
-            actualOldOwnerBalanceFromEscrowTkn.eq(ZERO),
+            actualOldOwnerBalanceFromEscrowTkn.eq(constants.ZERO),
             'Old owner balance from escrow does not match'
           );
 
@@ -6241,12 +6240,12 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           assert.isTrue(
-            actualNewOwnerBalanceFromEscrowTknPrice.eq(ZERO),
+            actualNewOwnerBalanceFromEscrowTknPrice.eq(constants.ZERO),
             'New owner balance from escrow does not match'
           );
 
           assert.isTrue(
-            actualNewOwnerBalanceFromEscrowTknDeposit.eq(ZERO),
+            actualNewOwnerBalanceFromEscrowTknDeposit.eq(constants.ZERO),
             'New owner balance from escrow does not match'
           );
 
@@ -6277,12 +6276,12 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           assert.isTrue(
-            actualOldOwnerBalanceFromEscrowTknPrice.eq(ZERO),
+            actualOldOwnerBalanceFromEscrowTknPrice.eq(constants.ZERO),
             'Old owner balance from escrow does not match'
           );
 
           assert.isTrue(
-            actualOldOwnerBalanceFromEscrowTknDeposit.eq(ZERO),
+            actualOldOwnerBalanceFromEscrowTknDeposit.eq(constants.ZERO),
             'Old owner balance from escrow does not match'
           );
 
@@ -6653,12 +6652,12 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           assert.isTrue(
-            actualNewOwnerBalanceFromEscrowEth.eq(ZERO),
+            actualNewOwnerBalanceFromEscrowEth.eq(constants.ZERO),
             'New owner balance from escrow does not match'
           );
 
           assert.isTrue(
-            actualNewOwnerBalanceFromEscrowTkn.eq(ZERO),
+            actualNewOwnerBalanceFromEscrowTkn.eq(constants.ZERO),
             'New owner balance from escrow does not match'
           );
 
@@ -6687,12 +6686,12 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           assert.isTrue(
-            actualOldOwnerBalanceFromEscrowEth.eq(ZERO),
+            actualOldOwnerBalanceFromEscrowEth.eq(constants.ZERO),
             'Old owner balance from escrow does not match'
           );
 
           assert.isTrue(
-            actualOldOwnerBalanceFromEscrowTkn.eq(ZERO),
+            actualOldOwnerBalanceFromEscrowTkn.eq(constants.ZERO),
             'Old owner balance from escrow does not match'
           );
 

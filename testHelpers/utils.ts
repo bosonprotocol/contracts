@@ -3,7 +3,6 @@ import {ecsign} from 'ethereumjs-util';
 import {BigNumber, Contract, ContractTransaction, Signer} from 'ethers';
 import {Account, DistributionAmounts, DistributionEvent} from './types';
 
-import constants from './constants';
 import * as events from './events';
 import fnSignatures from './functionSignatures';
 import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
@@ -104,7 +103,7 @@ class Utils {
     sellerDeposit: number | string,
     buyerDeposit: number | string,
     qty: number | string,
-    returnTx = false,
+    returnTx = false
   ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
@@ -121,7 +120,6 @@ class Utils {
     if (returnTx) return txOrder;
 
     // only needed when needed to get _tokenIdSupply. Not really checking anything.
-    // ?TODO make returnTx = true default?
     const txReceipt = await txOrder.wait();
     let eventArgs;
 
@@ -136,7 +134,6 @@ class Utils {
   }
 
   async requestCreateOrderETHTKNSameWithPermit(
-    // todo is this really needed?
     seller: Account,
     from: number,
     to: number,
@@ -185,7 +182,6 @@ class Utils {
     if (returnTx) return txOrder;
 
     // only needed when needed to get _tokenIdSupply. Not really checking anything.
-    // ?TODO make returnTx = true default?
     const txReceipt = await txOrder.wait();
     let eventArgs;
 
@@ -207,7 +203,7 @@ class Utils {
     sellerDeposit: number | string,
     buyerDeposit: number | string,
     qty: number | string,
-    returnTx = false,
+    returnTx = false
   ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
@@ -247,7 +243,6 @@ class Utils {
     if (returnTx) return txOrder;
 
     // only needed when needed to get _tokenIdSupply. Not really checking anything.
-    // ?TODO make returnTx = true default?
     const txReceipt = await txOrder.wait();
     let eventArgs;
 
@@ -312,20 +307,17 @@ class Utils {
 
     if (returnTx) return txOrder;
 
-    // only needed when needed to get _tokenIdSupply. Not really checking anything.
-    // ?TODO make returnTx = true default?
+    const txReceipt = await txOrder.wait();
+    let eventArgs;
 
-    // const txReceipt = await txOrder.wait();
-    // let eventArgs;
+    events.assertEventEmitted(
+      txReceipt,
+      this.factories.BosonRouter,
+      events.eventNames.LOG_ORDER_CREATED,
+      (e) => (eventArgs = e)
+    );
 
-    // events.assertEventEmitted(
-    //   txReceipt,
-    //   this.factories.BosonRouter,
-    //   events.eventNames.LOG_ORDER_CREATED,
-    //   (e) => (eventArgs = e)
-    // );
-
-    // return eventArgs._tokenIdSupply.toString();
+    return eventArgs._tokenIdSupply.toString();
   }
 
   async requestCreateOrderETHTKNWithPermit(
@@ -374,7 +366,6 @@ class Utils {
     if (returnTx) return txOrder;
 
     // only needed when needed to get _tokenIdSupply. Not really checking anything.
-    // ?TODO make returnTx = true default?
     const txReceipt = await txOrder.wait();
     let eventArgs;
 
@@ -396,7 +387,7 @@ class Utils {
     sellerDeposit: number | string,
     buyerDeposit: number | string,
     qty: number | string,
-    returnTx = false,
+    returnTx = false
   ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
@@ -414,7 +405,6 @@ class Utils {
     if (returnTx) return txOrder;
 
     // only needed when needed to get _tokenIdSupply. Not really checking anything.
-    // ?TODO make returnTx = true default?
     const txReceipt = await txOrder.wait();
     let eventArgs;
 
@@ -496,7 +486,6 @@ class Utils {
     if (returnTx) return commitTx;
 
     // only needed when needed to get _tokenIdSupply. Not really checking anything.
-    // ?TODO make returnTx = true default?
     const txReceipt = await commitTx.wait();
     let eventArgs;
 
@@ -555,7 +544,6 @@ class Utils {
     if (returnTx) return commitTx;
 
     // only needed when needed to get _tokenIdSupply. Not really checking anything.
-    // ?TODO make returnTx = true default?
     const txReceipt = await commitTx.wait();
     let eventArgs;
 
@@ -610,7 +598,6 @@ class Utils {
     if (returnTx) return commitTx;
 
     // only needed when needed to get _tokenIdSupply. Not really checking anything.
-    // ?TODO make returnTx = true default?
     const txReceipt = await commitTx.wait();
     let eventArgs;
 
@@ -648,7 +635,6 @@ class Utils {
     if (returnTx) return commitTx;
 
     // only needed when needed to get _tokenIdSupply. Not really checking anything.
-    // ?TODO make returnTx = true default?
     const txReceipt = await commitTx.wait();
     let eventArgs;
 
@@ -703,7 +689,6 @@ class Utils {
     if (returnTx) return commitTx;
 
     // only needed when needed to get _tokenIdSupply. Not really checking anything.
-    // ?TODO make returnTx = true default?
     const txReceipt = await commitTx.wait();
     let eventArgs;
 

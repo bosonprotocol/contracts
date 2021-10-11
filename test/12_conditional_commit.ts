@@ -1996,7 +1996,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       });
 
       it('[NEGATIVE] Should not be able to request voucher twice', async () => {
-        await utils.commitToBuy(users.buyer, users.seller, tokenSupplyKey, constants.product_price, constants.buyer_deposit);
+        await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          tokenSupplyKey,
+          constants.product_price,
+          constants.buyer_deposit
+        );
 
         const {txValue, DEPOSIT, PRICE} = await generateInputs(
           users.buyer,

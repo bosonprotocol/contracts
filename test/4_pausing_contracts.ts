@@ -262,9 +262,13 @@ describe('Cashier && VK', () => {
           await contractBosonRouter.pause();
 
           await expect(
-            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID,
+            utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
               constants.product_price,
-              constants.buyer_deposit)
+              constants.buyer_deposit
+            )
           ).to.be.revertedWith(revertReasons.PAUSED);
         });
       });
@@ -346,9 +350,13 @@ describe('Cashier && VK', () => {
             await contractBosonRouter.pause();
 
             await expect(
-              utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID,
+              utils.commitToBuy(
+                users.buyer,
+                users.seller,
+                TOKEN_SUPPLY_ID,
                 constants.product_price,
-                constants.buyer_deposit)
+                constants.buyer_deposit
+              )
             ).to.be.revertedWith(revertReasons.PAUSED);
           });
         });
@@ -435,7 +443,13 @@ describe('Cashier && VK', () => {
             await contractBosonRouter.pause();
 
             await expect(
-              utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit)
+              utils.commitToBuy(
+                users.buyer,
+                users.seller,
+                TOKEN_SUPPLY_ID,
+                constants.product_price,
+                constants.buyer_deposit
+              )
             ).to.be.revertedWith(revertReasons.PAUSED);
           });
         });
@@ -523,7 +537,13 @@ describe('Cashier && VK', () => {
             await contractBosonRouter.pause();
 
             await expect(
-              utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit)
+              utils.commitToBuy(
+                users.buyer,
+                users.seller,
+                TOKEN_SUPPLY_ID,
+                constants.product_price,
+                constants.buyer_deposit
+              )
             ).to.be.revertedWith(revertReasons.PAUSED);
           });
         });
@@ -599,7 +619,9 @@ describe('Cashier && VK', () => {
           VOUCHER_ID = await utils.commitToBuy(
             users.buyer,
             users.seller,
-            TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
           );
 
           await contractBosonRouter.pause();
@@ -613,7 +635,7 @@ describe('Cashier && VK', () => {
           VOUCHER_ID = await utils.commitToBuy(
             users.buyer,
             users.seller,
-            TOKEN_SUPPLY_ID,            
+            TOKEN_SUPPLY_ID,
             constants.product_price,
             constants.buyer_deposit
           );
@@ -631,7 +653,9 @@ describe('Cashier && VK', () => {
           VOUCHER_ID = await utils.commitToBuy(
             users.buyer,
             users.seller,
-            TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
           );
 
           await contractBosonRouter.pause();
@@ -645,7 +669,9 @@ describe('Cashier && VK', () => {
           VOUCHER_ID = await utils.commitToBuy(
             users.buyer,
             users.seller,
-            TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
           );
           await utils.redeem(VOUCHER_ID, users.buyer.signer);
 
@@ -705,7 +731,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await contractBosonRouter.pause();
@@ -719,7 +747,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await utils.refund(VOUCHER_ID, users.buyer.signer);
@@ -735,7 +765,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await contractBosonRouter.pause();
@@ -749,7 +781,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
             await utils.redeem(VOUCHER_ID, users.buyer.signer);
 
@@ -803,7 +837,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await contractBosonRouter.pause();
@@ -817,7 +853,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await utils.refund(VOUCHER_ID, users.buyer.signer);
@@ -833,7 +871,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await contractBosonRouter.pause();
@@ -847,7 +887,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
             await utils.redeem(VOUCHER_ID, users.buyer.signer);
 
@@ -911,8 +953,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, 
-              constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await contractBosonRouter.pause();
@@ -926,7 +969,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await utils.refund(VOUCHER_ID, users.buyer.signer);
@@ -942,7 +987,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await contractBosonRouter.pause();
@@ -956,8 +1003,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, 
-              constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
             await utils.redeem(VOUCHER_ID, users.buyer.signer);
 
@@ -967,7 +1015,6 @@ describe('Cashier && VK', () => {
               utils.cancel(VOUCHER_ID, users.seller.signer)
             ).to.be.revertedWith(revertReasons.PAUSED);
           });
-
         });
 
         describe('TKNTKN Same', () => {
@@ -1017,8 +1064,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, 
-              constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await contractBosonRouter.pause();
@@ -1032,7 +1080,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await utils.refund(VOUCHER_ID, users.buyer.signer);
@@ -1048,7 +1098,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await contractBosonRouter.pause();
@@ -1062,7 +1114,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
             await utils.redeem(VOUCHER_ID, users.buyer.signer);
 
@@ -1163,7 +1217,9 @@ describe('Cashier && VK', () => {
           const voucherID = await utils.commitToBuy(
             users.buyer,
             users.seller,
-            TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
           );
           await utils.refund(voucherID, users.buyer.signer);
 
@@ -1225,7 +1281,9 @@ describe('Cashier && VK', () => {
             const voucherID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
             await utils.refund(voucherID, users.buyer.signer);
 
@@ -1280,7 +1338,9 @@ describe('Cashier && VK', () => {
             const voucherID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID, constants.product_price, constants.buyer_deposit
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
             await utils.refund(voucherID, users.buyer.signer);
 
