@@ -36,7 +36,7 @@ contract DAITokenWrapper is
 
     /**
      * @notice Conforms to EIP-2612. Calls permit on token, which may or may not have a permit function that conforms to EIP-2612
-     * @param _owner Address of the token owner who is approving tokens to be transferred by spender
+     * @param _tokenOwner Address of the token owner who is approving tokens to be transferred by spender
      * @param _spender Address of the party who is transferring tokens on owner's behalf
      * @param _value Number of tokens to be transferred
      * @param _deadline Time after which this permission to transfer is no longer valid
@@ -45,7 +45,7 @@ contract DAITokenWrapper is
      * @param _s Part of the owner's signatue
      */
     function permit(
-        address _owner,
+        address _tokenOwner,
         address _spender,
         uint256 _value,
         uint256 _deadline,
@@ -55,14 +55,14 @@ contract DAITokenWrapper is
     ) 
         external
         override
-        notZeroAddress(_owner)
+        notZeroAddress(_tokenOwner)
         notZeroAddress(_spender)
     {
         require(_deadline == 0 || block.timestamp <= _deadline, "PERMIT_EXPIRED");
         require(_r != bytes32(0) && _s != bytes32(0), "INVALID_SIGNATURE_COMPONENTS");
-        uint nonce =  IDAI(daiTokenAddress).nonces(_owner);
-        IDAI(daiTokenAddress).permit(_owner, _spender, nonce, _deadline, true, _v, _r, _s);
-        emit LogPermitCalledOnToken(daiTokenAddress, _owner, _spender, 0);
+        uint nonce =  IDAI(daiTokenAddress).nonces(_tokenOwner);
+        IDAI(daiTokenAddress).permit(_tokenOwner, _spender, nonce, _deadline, true, _v, _r, _s);
+        emit LogPermitCalledOnToken(daiTokenAddress, _tokenOwner, _spender, 0);
     }
 
     /**
