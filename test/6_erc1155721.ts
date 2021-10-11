@@ -213,11 +213,11 @@ describe('ERC1155ERC721', () => {
           users.seller,
           timestamp,
           timestamp + constants.SECONDS_IN_DAY,
-          constants.seller_deposit,
-          constants.QTY_10,
-          true,
           constants.product_price,
-          constants.buyer_deposit
+          constants.seller_deposit,
+          constants.buyer_deposit,
+          constants.QTY_10,
+          true
         );
 
         const txReceipt = await txFillOrder.wait();
@@ -398,11 +398,10 @@ describe('ERC1155ERC721', () => {
           users.seller,
           timestamp,
           timestamp + constants.SECONDS_IN_DAY,
-          constants.seller_deposit,
-          constants.QTY_10,
-          false,
           constants.product_price,
-          constants.buyer_deposit
+          constants.seller_deposit,
+          constants.buyer_deposit,
+          constants.QTY_10
         );
       });
 
@@ -519,11 +518,10 @@ describe('ERC1155ERC721', () => {
           users.seller,
           timestamp,
           timestamp + constants.SECONDS_IN_DAY,
-          constants.seller_deposit,
-          constants.QTY_10,
-          false,
           constants.product_price,
-          constants.buyer_deposit
+          constants.seller_deposit,
+          constants.buyer_deposit,
+          constants.QTY_10
         );
       });
 
@@ -652,11 +650,10 @@ describe('ERC1155ERC721', () => {
           users.seller,
           timestamp,
           timestamp + constants.SECONDS_IN_DAY,
-          constants.seller_deposit,
-          constants.QTY_10,
-          false,
           constants.product_price,
-          constants.buyer_deposit
+          constants.seller_deposit,
+          constants.buyer_deposit,
+          constants.QTY_10
         );
 
         erc721 = await utils.commitToBuy(

@@ -225,13 +225,13 @@ describe('Gate contract', async () => {
       users.seller,
       timestamp,
       timestamp + constants.SECONDS_IN_DAY,
+      constants.product_price,
       constants.seller_deposit,
+      constants.buyer_deposit,
       constants.QTY_10,
       gate,
       conditionalOrderNftTokenID,
-      true,
-      constants.product_price,
-      constants.buyer_deposit
+      true
     );
 
     const txReceipt = await txOrder.wait();

@@ -32,23 +32,23 @@ class Utils {
     seller,
     from,
     to,
+    promisePrice,
     sellerDeposit,
+    buyerDeposit,
     qty,
-    returnTx?,
-    promisePrice?,
-    buyerDeposit?
+    returnTx?
   ) => any;
   createOrderConditional: (
     seller,
     from,
     to,
+    promisePrice,
     sellerDeposit,
+    buyerDeposit,
     qty,
     gateContract,
     nftTokenID,
-    returnTx?,
-    promisePrice?,
-    buyerDeposit?
+    returnTx?
   ) => any;
   commitToBuy: (
     buyer,
@@ -100,11 +100,11 @@ class Utils {
     seller: Account,
     from: number,
     to: number,
+    promisePrice: number | string | BigNumber,
     sellerDeposit: number | string,
+    buyerDeposit: number | string,
     qty: number | string,
     returnTx = false,
-    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
-    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
   ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
@@ -136,15 +136,15 @@ class Utils {
   }
 
   async requestCreateOrderETHTKNSameWithPermit(
-    // is this really needed?
+    // todo is this really needed?
     seller: Account,
     from: number,
     to: number,
+    promisePrice: number | string | BigNumber,
     sellerDeposit: number | string,
+    buyerDeposit: number | string,
     qty: number | string,
-    returnTx = false,
-    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
-    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
+    returnTx = false
   ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
@@ -203,11 +203,11 @@ class Utils {
     seller: Account,
     from: number,
     to: number,
+    promisePrice: number | string | BigNumber,
     sellerDeposit: number | string,
+    buyerDeposit: number | string,
     qty: number | string,
     returnTx = false,
-    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
-    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
   ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
@@ -265,13 +265,13 @@ class Utils {
     seller: Account,
     from: number,
     to: number,
+    promisePrice: number | string | BigNumber,
     sellerDeposit: number | string,
+    buyerDeposit: number | string,
     qty: number | string,
     gateContract: Account,
     nftTokenId: number | string | null,
-    returnTx = false,
-    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
-    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
+    returnTx = false
   ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
@@ -332,11 +332,11 @@ class Utils {
     seller: Account,
     from: number,
     to: number,
+    promisePrice: number | string | BigNumber,
     sellerDeposit: number | string,
+    buyerDeposit: number | string,
     qty: number | string,
-    returnTx = false,
-    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
-    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
+    returnTx = false
   ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
     const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
@@ -392,11 +392,11 @@ class Utils {
     seller: Account,
     from: number,
     to: number,
+    promisePrice: number | string | BigNumber,
     sellerDeposit: number | string,
+    buyerDeposit: number | string,
     qty: number | string,
     returnTx = false,
-    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
-    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
   ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 

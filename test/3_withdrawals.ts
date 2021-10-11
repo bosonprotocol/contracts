@@ -258,11 +258,10 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
-          constants.seller_deposit,
-          constants.QTY_15,
-          false,
           constants.product_price,
+          constants.seller_deposit,
           constants.buyer_deposit,
+          constants.QTY_15
         );
       });
 
@@ -968,11 +967,10 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
-          constants.seller_deposit,
-          supplyQty,          
-          false,
           constants.product_price,
+          constants.seller_deposit,
           constants.buyer_deposit,
+          supplyQty
         );
       });
 
@@ -1953,11 +1951,10 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
-          constants.seller_deposit,
-          supplyQty,          
-          false,
           constants.product_price,
+          constants.seller_deposit,
           constants.buyer_deposit,
+          supplyQty
         );
       });
 
@@ -2739,11 +2736,10 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
-          constants.seller_deposit,
-          supplyQty,          
-          false,
           constants.product_price,
+          constants.seller_deposit,
           constants.buyer_deposit,
+          supplyQty
         );
       });
 
@@ -3653,11 +3649,10 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
-          constants.seller_deposit,
-          constants.QTY_1,          
-          false,
           constants.product_price,
+          constants.seller_deposit,
           constants.buyer_deposit,
+          constants.QTY_1
         );
       });
 
@@ -4752,7 +4747,7 @@ describe('Cashier withdrawals ', () => {
     });
   });
 
-  describe.only('Seller cancels uncommitted voucher set', () => {
+  describe('Seller cancels uncommitted voucher set', () => {
     let remQty = 10;
     let voucherToBuyBeforeBurn = 5;
     let tokensToMintSeller, tokensToMintBuyer;
@@ -4775,11 +4770,10 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
-          constants.seller_deposit,
-          constants.QTY_10,          
-          false,
           constants.product_price,
+          constants.seller_deposit,
           constants.buyer_deposit,
+          constants.QTY_10
         );
 
         for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
@@ -4922,11 +4916,10 @@ describe('Cashier withdrawals ', () => {
             users.seller,
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
-            constants.seller_deposit,
-            constants.QTY_10,          
-            false,
             constants.product_price,
+            constants.seller_deposit,
             constants.buyer_deposit,
+            constants.QTY_10
           );
 
           for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
@@ -5084,11 +5077,10 @@ describe('Cashier withdrawals ', () => {
             users.seller,
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
-            constants.seller_deposit,
-            constants.QTY_10,          
-            false,
             constants.product_price,
+            constants.seller_deposit,
             constants.buyer_deposit,
+            constants.QTY_10
           );
 
           for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
@@ -5239,11 +5231,10 @@ describe('Cashier withdrawals ', () => {
             users.seller,
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
-            constants.seller_deposit,
-            constants.QTY_10,          
-            false,
             constants.product_price,
+            constants.seller_deposit,
             constants.buyer_deposit,
+            constants.QTY_10
           );
 
           for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
@@ -5371,11 +5362,10 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
-          constants.seller_deposit,
-          constants.QTY_10,          
-          false,
           constants.product_price,
+          constants.seller_deposit,
           constants.buyer_deposit,
+          constants.QTY_10
         );
       });
 
@@ -5414,11 +5404,10 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
-          constants.seller_deposit,
-          constants.QTY_10,          
-          false,
           constants.product_price,
+          constants.seller_deposit,
           constants.buyer_deposit,
+          constants.QTY_10
         );
 
         for (let i = 0; i < vouchersToBuy; i++) {
@@ -5584,11 +5573,10 @@ describe('Cashier withdrawals ', () => {
           users.seller,
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
-          constants.seller_deposit,
-          constants.QTY_10,          
-          false,
           constants.product_price,
+          constants.seller_deposit,
           constants.buyer_deposit,
+          constants.QTY_10
         );
 
         for (let i = 0; i < vouchersToBuy; i++) {
