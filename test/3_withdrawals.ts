@@ -259,7 +259,10 @@ describe('Cashier withdrawals ', () => {
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.seller_deposit,
-          constants.QTY_15
+          constants.QTY_15,
+          false,
+          constants.product_price,
+          constants.buyer_deposit,
         );
       });
 
@@ -273,7 +276,7 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID, false, constants.product_price, constants.buyer_deposit
         );
 
         await utils.refund(voucherID, users.buyer.signer);
@@ -326,7 +329,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.cancel(voucherID, users.seller.signer);
@@ -378,7 +384,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.refund(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
@@ -432,7 +441,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.refund(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
@@ -485,7 +497,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.refund(voucherID, users.buyer.signer);
 
@@ -538,7 +553,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.cancel(voucherID, users.seller.signer);
 
@@ -591,7 +609,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.redeem(voucherID, users.buyer.signer);
 
@@ -642,7 +663,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
@@ -698,7 +722,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
@@ -755,7 +782,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
@@ -811,7 +841,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
@@ -936,7 +969,10 @@ describe('Cashier withdrawals ', () => {
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.seller_deposit,
-          supplyQty
+          supplyQty,          
+          false,
+          constants.product_price,
+          constants.buyer_deposit,
         );
       });
 
@@ -966,7 +1002,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.refund(voucherID, users.buyer.signer);
@@ -1046,7 +1085,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.cancel(voucherID, users.seller.signer);
@@ -1125,7 +1167,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.refund(voucherID, users.buyer.signer);
@@ -1204,7 +1249,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.refund(voucherID, users.buyer.signer);
@@ -1284,7 +1332,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.refund(voucherID, users.buyer.signer);
 
@@ -1359,7 +1410,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.cancel(voucherID, users.seller.signer);
@@ -1437,7 +1491,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.redeem(voucherID, users.buyer.signer);
 
@@ -1512,7 +1569,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.redeem(voucherID, users.buyer.signer);
@@ -1589,7 +1649,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
@@ -1670,7 +1733,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
@@ -1751,7 +1817,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.redeem(voucherID, users.buyer.signer);
@@ -1885,7 +1954,10 @@ describe('Cashier withdrawals ', () => {
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.seller_deposit,
-          supplyQty
+          supplyQty,          
+          false,
+          constants.product_price,
+          constants.buyer_deposit,
         );
       });
 
@@ -1908,7 +1980,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.refund(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
@@ -1970,7 +2045,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.cancel(voucherID, users.seller.signer);
@@ -2032,7 +2110,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.refund(voucherID, users.buyer.signer);
@@ -2094,7 +2175,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.refund(voucherID, users.buyer.signer);
@@ -2157,7 +2241,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.refund(voucherID, users.buyer.signer);
 
@@ -2215,7 +2302,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.cancel(voucherID, users.seller.signer);
@@ -2276,7 +2366,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.redeem(voucherID, users.buyer.signer);
 
@@ -2333,7 +2426,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.redeem(voucherID, users.buyer.signer);
@@ -2393,7 +2489,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
@@ -2457,7 +2556,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
@@ -2521,7 +2623,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.redeem(voucherID, users.buyer.signer);
@@ -2635,7 +2740,10 @@ describe('Cashier withdrawals ', () => {
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.seller_deposit,
-          supplyQty
+          supplyQty,          
+          false,
+          constants.product_price,
+          constants.buyer_deposit,
         );
       });
 
@@ -2660,7 +2768,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.refund(voucherID, users.buyer.signer);
@@ -2735,7 +2846,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.cancel(voucherID, users.seller.signer);
@@ -2809,7 +2923,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.refund(voucherID, users.buyer.signer);
@@ -2883,7 +3000,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.refund(voucherID, users.buyer.signer);
@@ -2958,7 +3078,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.refund(voucherID, users.buyer.signer);
 
@@ -3028,7 +3151,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.cancel(voucherID, users.seller.signer);
@@ -3101,7 +3227,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.redeem(voucherID, users.buyer.signer);
 
@@ -3171,7 +3300,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.redeem(voucherID, users.buyer.signer);
@@ -3243,7 +3375,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
@@ -3319,7 +3454,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
@@ -3395,7 +3533,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.redeem(voucherID, users.buyer.signer);
@@ -3513,7 +3654,10 @@ describe('Cashier withdrawals ', () => {
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.seller_deposit,
-          constants.QTY_1
+          constants.QTY_1,          
+          false,
+          constants.product_price,
+          constants.buyer_deposit,
         );
       });
 
@@ -3521,7 +3665,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.refund(voucherID, users.buyer.signer);
@@ -3617,7 +3764,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.cancel(voucherID, users.seller.signer);
@@ -3712,7 +3862,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.refund(voucherID, users.buyer.signer);
@@ -3807,7 +3960,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.refund(voucherID, users.buyer.signer);
@@ -3903,7 +4059,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.refund(voucherID, users.buyer.signer);
 
@@ -3994,7 +4153,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.cancel(voucherID, users.seller.signer);
@@ -4088,7 +4250,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.redeem(voucherID, users.buyer.signer);
 
@@ -4179,7 +4344,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.redeem(voucherID, users.buyer.signer);
@@ -4272,7 +4440,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
@@ -4369,7 +4540,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
@@ -4466,7 +4640,10 @@ describe('Cashier withdrawals ', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await utils.redeem(voucherID, users.buyer.signer);
@@ -4575,7 +4752,7 @@ describe('Cashier withdrawals ', () => {
     });
   });
 
-  describe('Seller cancels uncommitted voucher set', () => {
+  describe.only('Seller cancels uncommitted voucher set', () => {
     let remQty = 10;
     let voucherToBuyBeforeBurn = 5;
     let tokensToMintSeller, tokensToMintBuyer;
@@ -4599,11 +4776,15 @@ describe('Cashier withdrawals ', () => {
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.seller_deposit,
-          constants.QTY_10
+          constants.QTY_10,          
+          false,
+          constants.product_price,
+          constants.buyer_deposit,
         );
 
         for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
-          await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+          await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, false, constants.product_price, constants.buyer_deposit);
+          // utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, false, constants.product_price, constants.buyer_deposit)
           remQty--;
         }
       });
@@ -4674,7 +4855,7 @@ describe('Cashier withdrawals ', () => {
 
       it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
         await expect(
-          utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+          utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, false, constants.product_price, constants.buyer_deposit)
         ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
       });
 
@@ -4742,11 +4923,14 @@ describe('Cashier withdrawals ', () => {
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
             constants.seller_deposit,
-            constants.QTY_10
+            constants.QTY_10,          
+            false,
+            constants.product_price,
+            constants.buyer_deposit,
           );
 
           for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
-            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, false, constants.product_price, constants.buyer_deposit);
             remQty--;
           }
         });
@@ -4835,7 +5019,7 @@ describe('Cashier withdrawals ', () => {
 
         it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
           await expect(
-            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, false, constants.product_price, constants.buyer_deposit)
           ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
         });
 
@@ -4901,11 +5085,14 @@ describe('Cashier withdrawals ', () => {
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
             constants.seller_deposit,
-            constants.QTY_10
+            constants.QTY_10,          
+            false,
+            constants.product_price,
+            constants.buyer_deposit,
           );
 
           for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
-            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, false, constants.product_price, constants.buyer_deposit);
             remQty--;
           }
         });
@@ -4994,7 +5181,7 @@ describe('Cashier withdrawals ', () => {
 
         it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
           await expect(
-            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, false, constants.product_price, constants.buyer_deposit)
           ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
         });
 
@@ -5053,11 +5240,14 @@ describe('Cashier withdrawals ', () => {
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
             constants.seller_deposit,
-            constants.QTY_10
+            constants.QTY_10,          
+            false,
+            constants.product_price,
+            constants.buyer_deposit,
           );
 
           for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
-            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, false, constants.product_price, constants.buyer_deposit);
             remQty--;
           }
         });
@@ -5131,7 +5321,7 @@ describe('Cashier withdrawals ', () => {
 
         it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
           await expect(
-            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, false, constants.product_price, constants.buyer_deposit)
           ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
         });
 
@@ -5182,7 +5372,10 @@ describe('Cashier withdrawals ', () => {
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.seller_deposit,
-          constants.QTY_10
+          constants.QTY_10,          
+          false,
+          constants.product_price,
+          constants.buyer_deposit,
         );
       });
 
@@ -5222,11 +5415,14 @@ describe('Cashier withdrawals ', () => {
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.seller_deposit,
-          constants.QTY_10
+          constants.QTY_10,          
+          false,
+          constants.product_price,
+          constants.buyer_deposit,
         );
 
         for (let i = 0; i < vouchersToBuy; i++) {
-          await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+          await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, false, constants.product_price, constants.buyer_deposit);
         }
 
         await contractBosonRouter.pause();
@@ -5389,11 +5585,14 @@ describe('Cashier withdrawals ', () => {
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.seller_deposit,
-          constants.QTY_10
+          constants.QTY_10,          
+          false,
+          constants.product_price,
+          constants.buyer_deposit,
         );
 
         for (let i = 0; i < vouchersToBuy; i++) {
-          await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+          await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, false, constants.product_price, constants.buyer_deposit);
         }
 
         await contractBosonRouter.pause();
