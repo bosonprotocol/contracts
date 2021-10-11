@@ -142,21 +142,25 @@ describe('ERC1155ERC721', () => {
     );
   }
 
+  async function prepareUtils() {
+    utils = await UtilsBuilder.create()
+      .ETHETH()
+      .buildAsync(
+        contractERC1155ERC721,
+        contractVoucherKernel,
+        contractCashier,
+        contractBosonRouter
+      );
+
+    timestamp = await Utils.getCurrTimestamp();
+    return utils;
+  }
+
   describe('Multi-token contract', function () {
     describe('Common', () => {
       before(async () => {
         await deployContracts();
-
-        utils = await UtilsBuilder.create()
-          .ETHETH()
-          .buildAsync(
-            contractERC1155ERC721,
-            contractVoucherKernel,
-            contractCashier,
-            contractBosonRouter
-          );
-
-        timestamp = await Utils.getCurrTimestamp();
+        utils = await prepareUtils();
       });
 
       it('Should have correct name on deploy', async () => {
@@ -379,17 +383,7 @@ describe('ERC1155ERC721', () => {
     describe('Negative 1155 Transfers', () => {
       beforeEach(async () => {
         await deployContracts();
-
-        utils = await UtilsBuilder.create()
-          .ETHETH()
-          .buildAsync(
-            contractERC1155ERC721,
-            contractVoucherKernel,
-            contractCashier,
-            contractBosonRouter
-          );
-
-        timestamp = await Utils.getCurrTimestamp();
+        utils = await prepareUtils();
 
         TOKEN_SUPPLY_ID = await utils.createOrder(
           users.seller,
@@ -499,17 +493,7 @@ describe('ERC1155ERC721', () => {
     describe('Negative 721 Transfers', () => {
       beforeEach(async () => {
         await deployContracts();
-
-        utils = await UtilsBuilder.create()
-          .ETHETH()
-          .buildAsync(
-            contractERC1155ERC721,
-            contractVoucherKernel,
-            contractCashier,
-            contractBosonRouter
-          );
-
-        timestamp = await Utils.getCurrTimestamp();
+        utils = await prepareUtils();
 
         TOKEN_SUPPLY_ID = await utils.createOrder(
           users.seller,
@@ -627,17 +611,7 @@ describe('ERC1155ERC721', () => {
 
       before(async () => {
         await deployContracts();
-
-        utils = await UtilsBuilder.create()
-          .ETHETH()
-          .buildAsync(
-            contractERC1155ERC721,
-            contractVoucherKernel,
-            contractCashier,
-            contractBosonRouter
-          );
-
-        timestamp = await Utils.getCurrTimestamp();
+        utils = await prepareUtils();
 
         TOKEN_SUPPLY_ID = await utils.createOrder(
           users.seller,
