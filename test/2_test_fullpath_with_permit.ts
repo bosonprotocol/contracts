@@ -53,23 +53,6 @@ describe('Cashier and VoucherKernel', () => {
 
     await setPeriods();
 
-    // calculate expected tokenSupplyID for first voucher
-    promiseId = keccak256(
-      solidityPack(
-        ['address', 'uint256', 'uint256', 'uint256'],
-        [
-          users.seller.address,
-          constants.ZERO,
-          constants.PROMISE_VALID_FROM,
-          constants.PROMISE_VALID_TO,
-        ]
-      )
-    );
-
-    // calculate expected tokenSupplyID for first voucher
-    const tokenIndex = constants.ONE;
-    const TYPE_NF_BIT = constants.ONE.shl(255);
-    tokenSupplyKey = TYPE_NF_BIT.or(tokenIndex.shl(128)).toString();
   });
 
   let contractERC1155ERC721: ERC1155ERC721,
@@ -183,6 +166,26 @@ describe('Cashier and VoucherKernel', () => {
       contractBSNTokenDeposit.address,
       contractBSNTokenDeposit.address
     );
+
+
+     // calculate expected tokenSupplyID for first voucher
+ promiseId = keccak256(
+  solidityPack(
+    ['address', 'uint256', 'uint256', 'uint256', 'address'],
+    [
+      users.seller.address,
+      constants.ZERO,
+      constants.PROMISE_VALID_FROM,
+      constants.PROMISE_VALID_TO,
+      contractVoucherKernel.address,
+    ]
+  )
+);
+
+    // calculate expected tokenSupplyID for first voucher
+    const tokenIndex = constants.ONE;
+    const TYPE_NF_BIT = constants.ONE.shl(255);
+    tokenSupplyKey = TYPE_NF_BIT.or(tokenIndex.shl(128)).toString();
   }
 
   describe('TOKEN SUPPLY CREATION (Voucher batch creation)', () => {
