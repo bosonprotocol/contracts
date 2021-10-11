@@ -15,8 +15,7 @@ contract DAITokenWrapper is
 {
 
     address private daiTokenAddress;
-    address private bosonRouterAddress;
-  
+
 
     constructor(
         address _daiTokenAddress
