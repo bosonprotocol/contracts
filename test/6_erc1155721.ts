@@ -215,11 +215,15 @@ describe('ERC1155ERC721', () => {
           timestamp + constants.SECONDS_IN_DAY,
           constants.seller_deposit,
           constants.QTY_10,
-          true
+          true,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
+        const txReceipt = await txFillOrder.wait();
+
         eventUtils.assertEventEmitted(
-          txFillOrder,
+          txReceipt,
           ERC1155ERC721_Factory,
           eventNames.TRANSFER_SINGLE,
           (ev) => {
@@ -249,11 +253,15 @@ describe('ERC1155ERC721', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          true
+          true,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
+        const txReceipt = await commitTx.wait();
+
         eventUtils.assertEventEmitted(
-          commitTx,
+          txReceipt,
           ERC1155ERC721_Factory,
           eventNames.TRANSFER_SINGLE,
           (ev) => {
@@ -274,7 +282,7 @@ describe('ERC1155ERC721', () => {
         );
 
         eventUtils.assertEventEmitted(
-          commitTx,
+          txReceipt,
           ERC1155ERC721_Factory,
           eventNames.TRANSFER,
           (ev) => {
@@ -293,7 +301,10 @@ describe('ERC1155ERC721', () => {
         const token721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         const owner721Instance = contractERC1155ERC721.connect(
@@ -333,7 +344,10 @@ describe('ERC1155ERC721', () => {
         const token721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         const attackerInstance = contractERC1155ERC721.connect(
@@ -349,7 +363,10 @@ describe('ERC1155ERC721', () => {
         const token721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         const attackerInstance = contractERC1155ERC721.connect(
@@ -382,7 +399,10 @@ describe('ERC1155ERC721', () => {
           timestamp,
           timestamp + constants.SECONDS_IN_DAY,
           constants.seller_deposit,
-          constants.QTY_10
+          constants.QTY_10,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
       });
 
@@ -500,7 +520,10 @@ describe('ERC1155ERC721', () => {
           timestamp,
           timestamp + constants.SECONDS_IN_DAY,
           constants.seller_deposit,
-          constants.QTY_10
+          constants.QTY_10,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
       });
 
@@ -526,7 +549,10 @@ describe('ERC1155ERC721', () => {
         const erc721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await expect(
@@ -543,7 +569,10 @@ describe('ERC1155ERC721', () => {
         const erc721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await expect(
@@ -560,7 +589,10 @@ describe('ERC1155ERC721', () => {
         const erc721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await expect(
@@ -577,7 +609,10 @@ describe('ERC1155ERC721', () => {
         const erc721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await expect(
@@ -618,13 +653,19 @@ describe('ERC1155ERC721', () => {
           timestamp,
           timestamp + constants.SECONDS_IN_DAY,
           constants.seller_deposit,
-          constants.QTY_10
+          constants.QTY_10,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         erc721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.product_price,
+          constants.buyer_deposit
         );
 
         await contractERC1155ERC721._setMetadataBase(metadataBase);
