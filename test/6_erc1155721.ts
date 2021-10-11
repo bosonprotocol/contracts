@@ -1,10 +1,8 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
-
 import {assert, expect} from 'chai';
 
 import constants from '../testHelpers/constants';
-
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
 import UtilsBuilder from '../testHelpers/utilsBuilder';
@@ -58,7 +56,7 @@ describe('ERC1155ERC721', () => {
     contractBSNTokenDeposit: MockERC20Permit,
     contractTokenRegistry: TokenRegistry;
 
-  let timestamp;
+  let timestamp: number;
 
   async function deployContracts() {
     const sixtySeconds = 60;
@@ -163,25 +161,19 @@ describe('ERC1155ERC721', () => {
         utils = await prepareUtils();
       });
 
-      it('Should have correct name on deploy', async () => {
+      it('[name] Should have correct name on deploy', async () => {
         const expectedName = 'Boson Smart Voucher';
         const actual = await contractERC1155ERC721.name();
 
         assert.equal(actual, expectedName, 'name not set correctly!');
       });
 
-      it('Should have correct symbol on deploy', async () => {
+      it('[symbol] Should have correct symbol on deploy', async () => {
         const expectedSymbol = 'BSV';
 
         const actual = await contractERC1155ERC721.symbol();
 
         assert.equal(actual, expectedSymbol, 'symbol not set correctly!');
-      });
-
-      it('[NEGATIVE][setApprovalForAll] Should revert if tries to set self as an operator', async () => {
-        await expect(
-          contractERC1155ERC721.setApprovalForAll(users.deployer.address, true)
-        ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
       });
 
       it('[setApprovalForAll] Should emit ApprovalForAll', async () => {
@@ -210,6 +202,12 @@ describe('ERC1155ERC721', () => {
             assert.equal(ev._approved, true, 'ev._value not expected!');
           }
         );
+      });
+
+      it('[NEGATIVE][setApprovalForAll] Should revert if tries to set self as an operator', async () => {
+        await expect(
+          contractERC1155ERC721.setApprovalForAll(users.deployer.address, true)
+        ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
       });
 
       it('Should emit TransferSingle event', async () => {
@@ -301,7 +299,7 @@ describe('ERC1155ERC721', () => {
         );
       });
 
-      it('Owner should approve transfer of erc721', async () => {
+      it('[approve] Owner should approve transfer of erc721', async () => {
         const token721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
@@ -343,7 +341,7 @@ describe('ERC1155ERC721', () => {
         );
       });
 
-      it('[NEGATIVE] Attacker should not approve transfer of erc721 that does not possess', async () => {
+      it('[NEGATIVE][approve] Attacker should not approve transfer of erc721 that does not possess', async () => {
         const token721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
@@ -361,7 +359,7 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.UNAUTHORIZED_APPROVAL);
       });
 
-      it('[NEGATIVE] Should revert if buyer tries to approve to self', async () => {
+      it('[NEGATIVE][approve] Should revert if buyer tries to approve to self', async () => {
         const token721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
@@ -396,7 +394,7 @@ describe('ERC1155ERC721', () => {
         );
       });
 
-      it('Attacker should not be able to transfer', async () => {
+      it('[NEGATIVE][safeTransfer1155] Attacker should not be able to transfer', async () => {
         await expect(
           utils.safeTransfer1155(
             users.seller.address,
@@ -408,7 +406,7 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_1155);
       });
 
-      it('Seller should not transfer to ZERO address', async () => {
+      it('[NEGATIVE][safeTransfer1155] Seller should not transfer to ZERO address', async () => {
         await expect(
           utils.safeTransfer1155(
             users.seller.address,
@@ -420,7 +418,7 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
       });
 
-      it('Seller should not transfer to contract address', async () => {
+      it('[NEGATIVE][safeTransfer1155] Seller should not transfer to contract address', async () => {
         await expect(
           utils.safeTransfer1155(
             users.seller.address,
@@ -432,7 +430,7 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.FN_SELECTOR_NOT_RECOGNIZED);
       });
 
-      it('Should not be able to transfer batch to ZERO address', async () => {
+      it('[NEGATIVE][safeBatchTransfer1155] Should not be able to transfer batch to ZERO address', async () => {
         await expect(
           utils.safeBatchTransfer1155(
             users.seller.address,
@@ -444,7 +442,7 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
       });
 
-      it('Should revert if array lengths mismatch', async () => {
+      it('[NEGATIVE][safeBatchTransfer1155] Should revert if array lengths mismatch', async () => {
         await expect(
           utils.safeBatchTransfer1155(
             users.seller.address,
@@ -456,7 +454,7 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.MISMATCHED_ARRAY_LENGTHS);
       });
 
-      it('Seller should not transfer batch to contract address', async () => {
+      it('[NEGATIVE][safeBatchTransfer1155] Seller should not transfer batch to contract address', async () => {
         await expect(
           utils.safeBatchTransfer1155(
             users.seller.address,
@@ -468,7 +466,7 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.FN_SELECTOR_NOT_RECOGNIZED);
       });
 
-      it('Should revert if attacker tries to transfer batch', async () => {
+      it('[NEGATIVE][safeBatchTransfer1155] Should revert if attacker tries to transfer batch', async () => {
         await expect(
           utils.safeBatchTransfer1155(
             users.seller.address,
@@ -480,7 +478,7 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_BATCH_1155);
       });
 
-      it('Should revert if balanceOfBatch has been provided with mismatched lengths', async () => {
+      it('[NEGATIVE][balanceOfBatch] Should revert if balanceOfBatch has been provided with mismatched lengths', async () => {
         await expect(
           contractERC1155ERC721.balanceOfBatch(
             [users.seller.address],
@@ -506,7 +504,7 @@ describe('ERC1155ERC721', () => {
         );
       });
 
-      it('[ownerOf] should revert if incorrectId id provided', async () => {
+      it('[NEGATIVE][ownerOf] should revert if incorrectId id provided', async () => {
         const sellerInstance = contractERC1155ERC721.connect(
           users.seller.signer
         );
@@ -515,7 +513,7 @@ describe('ERC1155ERC721', () => {
         );
       });
 
-      it('[balanceOf] should revert if ZERO address is provided', async () => {
+      it('[NEGATIVE][balanceOf] should revert if ZERO address is provided', async () => {
         const balanceOf =
           contractERC1155ERC721.functions[fnSignatures.balanceOf721];
 
@@ -524,7 +522,7 @@ describe('ERC1155ERC721', () => {
         );
       });
 
-      it('Should not be able to transfer to contract address', async () => {
+      it('[NEGATIVE][safeTransfer721] Should not be able to transfer to contract address', async () => {
         const erc721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
@@ -543,7 +541,7 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.FN_SELECTOR_NOT_RECOGNIZED);
       });
 
-      it('Attacker should not be able to transfer erc721', async () => {
+      it('[NEGATIVE][safeTransfer721] Attacker should not be able to transfer erc721', async () => {
         const erc721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
@@ -562,7 +560,7 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.NOT_OWNER_NOR_APPROVED);
       });
 
-      it('Should not be able to transfer erc721 to ZERO address', async () => {
+      it('[NEGATIVE][safeTransfer721] Should not be able to transfer erc721 to ZERO address', async () => {
         const erc721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
@@ -581,7 +579,7 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
       });
 
-      it('Should not be able to transfer erc721 if address from is not authorized', async () => {
+      it('[NEGATIVE][safeTransfer721] Should not be able to transfer erc721 if address from is not authorized', async () => {
         const erc721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
@@ -636,12 +634,12 @@ describe('ERC1155ERC721', () => {
         await contractERC1155ERC721._set721Route(metadata721Route);
       });
 
-      it('Should return correct url for erc1155', async () => {
+      it('[uri]Should return correct url for erc1155', async () => {
         const url = await contractERC1155ERC721.uri(TOKEN_SUPPLY_ID);
         assert.equal(url, metadataBase + metadata1155Route + TOKEN_SUPPLY_ID);
       });
 
-      it('Should return correct url for erc721', async () => {
+      it('[tokenURI] Should return correct url for erc721', async () => {
         const url = await contractERC1155ERC721.tokenURI(erc721);
 
         assert.equal(url, metadataBase + metadata721Route + erc721);
@@ -653,7 +651,7 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.INVALID_ID);
       });
 
-      it('[NEGATIVE] Should revert if attacker tries to set metadataBase', async () => {
+      it('[NEGATIVE][_setMetadataBase] Should revert if attacker tries to set metadataBase', async () => {
         const attackerInstance = contractERC1155ERC721.connect(
           users.attacker.signer
         );
@@ -663,7 +661,7 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
       });
 
-      it('[NEGATIVE] Should revert if attacker tries to set metadata1155Route', async () => {
+      it('[NEGATIVE][_set1155Route] Should revert if attacker tries to set metadata1155Route', async () => {
         const attackerInstance = contractERC1155ERC721.connect(
           users.attacker.signer
         );
@@ -672,7 +670,7 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
       });
 
-      it('[NEGATIVE] Should revert if attacker tries to set metadata721Route', async () => {
+      it('[NEGATIVE][_set721Route] Should revert if attacker tries to set metadata721Route', async () => {
         const attackerInstance = contractERC1155ERC721.connect(
           users.attacker.signer
         );
