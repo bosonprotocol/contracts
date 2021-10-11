@@ -52,8 +52,8 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         require(
             voucherKernelAddress != address(0),
             "UNSPECIFIED_VOUCHERKERNEL"
-        ); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(msg.sender == voucherKernelAddress, "UNAUTHORIZED_VK"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        );
+        require(msg.sender == voucherKernelAddress, "UNAUTHORIZED_VK");
         _;
     }
 
@@ -79,11 +79,11 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         uint256 _value,
         bytes calldata _data
     ) external override {
-        require(_to != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_to != address(0), "UNSPECIFIED_ADDRESS");
         require(
             _from == msg.sender || operatorApprovals[_from][msg.sender],
             "UNAUTHORIZED_ST"
-        ); //hex"10"FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        );
 
         require(balances[_tokenId][_from] == _value, "IQ"); //invalid qty
 
@@ -158,7 +158,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
                     _data
                 ) == IERC721Receiver(_to).onERC721Received.selector,
                 "UNSUPPORTED_ERC721_RECEIVED"
-            ); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+            );
         }
     }
 
@@ -180,7 +180,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
             operator721[_tokenId] == msg.sender ||
                 ownerOf(_tokenId) == msg.sender,
             "NOT_OWNER_NOR_APPROVED"
-        ); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        );
 
         _transferFrom(_from, _to, _tokenId);
     }
@@ -198,8 +198,8 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         address _to,
         uint256 _tokenId
     ) internal {
-        require(ownerOf(_tokenId) == _from, "UNAUTHORIZED_T"); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
-        require(_to != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(ownerOf(_tokenId) == _from, "UNAUTHORIZED_T");
+        require(_to != address(0), "UNSPECIFIED_ADDRESS");
 
         operator721[_tokenId] = address(0);
 
@@ -230,13 +230,13 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
      */
     function approve(address _to, uint256 _tokenId) public override {
         address tokenOwner = ownerOf(_tokenId);
-        require(_to != tokenOwner, "REDUNDANT_CALL"); //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicatableToCurrentState)
+        require(_to != tokenOwner, "REDUNDANT_CALL");
 
         require(
             msg.sender == tokenOwner ||
                 operatorApprovals[tokenOwner][msg.sender], // isApprovedForAll(owner, msg.sender),
             "UNAUTHORIZED_A"
-        ); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        );
         //"ERC721: approve caller is not owner nor approved for all"
 
         operator721[_tokenId] = _to;
@@ -281,12 +281,12 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         uint256[] calldata _values,
         bytes calldata _data
     ) external override {
-        require(_to != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTHS"); //hex"28" FISSION.code(FISSION.Category.Find, FISSION.Status.Duplicate_Conflict_Collision)
+        require(_to != address(0), "UNSPECIFIED_ADDRESS");
+        require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTHS");
         require(
             _from == msg.sender || operatorApprovals[_from][msg.sender],
             "UNAUTHORIZED_SB"
-        ); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        );
 
         for (uint256 i = 0; i < _tokenIds.length; ++i) {
             uint256 tokenId = _tokenIds[i];
@@ -347,7 +347,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
                     _data
                 ) == IERC1155Receiver(_to).onERC1155Received.selector,
                 "NOT_SUPPORTED"
-            ); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+            );
         }
     }
 
@@ -379,7 +379,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
                     _data
                 ) == IERC1155Receiver(_to).onERC1155BatchReceived.selector,
                 "NOT_SUPPORTED"
-            ); //hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+            );
         }
     }
 
@@ -404,7 +404,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
     /// @param _owner An address for whom to query the balance
     /// @return The number of NFTs owned by `_owner`, possibly zero
     function balanceOf(address _owner) public view override returns (uint256) {
-        require(_owner != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_owner != address(0), "UNSPECIFIED_ADDRESS");
 
         return balance721[_owner];
     }
@@ -417,7 +417,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
      */
     function ownerOf(uint256 _tokenId) public view override returns (address) {
         address tokenOwner = owners721[_tokenId];
-        require(tokenOwner != address(0), "UNDEFINED_OWNER"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(tokenOwner != address(0), "UNDEFINED_OWNER");
 
         return tokenOwner;
     }
@@ -436,7 +436,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         require(
             _accounts.length == _tokenIds.length,
             "MISMATCHED_ARRAY_LENGTHS"
-        ); //hex"28" FISSION.code(FISSION.Category.Find, FISSION.Status.Duplicate_Conflict_Collision)
+        );
         uint256[] memory batchBalances = new uint256[](_accounts.length);
 
         for (uint256 i = 0; i < _accounts.length; ++i) {
@@ -457,7 +457,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         external
         override
     {
-        require(msg.sender != _operator, "REDUNDANT_CALL"); //hex"18" FISSION.code(FISSION.Category.Permission, FISSION.Status.NotApplicatableToCurrentState)
+        require(msg.sender != _operator, "REDUNDANT_CALL");
         operatorApprovals[msg.sender][_operator] = _approve;
         emit ApprovalForAll(msg.sender, _operator, _approve);
     }
@@ -532,7 +532,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         uint256 _value,
         bytes memory _data
     ) internal {
-        require(_to != address(0), "UNSPECIFIED_ADDRESS"); //FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_to != address(0), "UNSPECIFIED_ADDRESS");
 
         balances[_tokenId][_to] = balances[_tokenId][_to].add(_value);
         emit TransferSingle(msg.sender, address(0), _to, _tokenId, _value);
@@ -572,7 +572,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
      * @param _tokenId uint256 ID of the token to be minted
      */
     function _mint(address _to, uint256 _tokenId) internal {
-        require(_to != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_to != address(0), "UNSPECIFIED_ADDRESS");
         require(
             owners721[_tokenId] == address(0),
             "ERC721: token already minted"
@@ -618,8 +618,8 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         uint256[] memory _values,
         bytes memory _data
     ) internal {
-        require(_to != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTHS"); //hex"28" FISSION.code(FISSION.Category.Find, FISSION.Status.Duplicate_Conflict_Collision)
+        require(_to != address(0), "UNSPECIFIED_ADDRESS");
+        require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTHS");
 
         for (uint256 i = 0; i < _tokenIds.length; i++) {
             balances[_tokenIds[i]][_to] = _values[i].add(
@@ -666,7 +666,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         uint256 _tokenId,
         uint256 _value
     ) internal {
-        require(_account != address(0), "UNSPECIFIED_ADDRESS"); //"UNSPECIFIED_ADDRESS" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_account != address(0), "UNSPECIFIED_ADDRESS");
 
         balances[_tokenId][_account] = balances[_tokenId][_account].sub(_value);
         emit TransferSingle(msg.sender, _account, address(0), _tokenId, _value);
@@ -701,8 +701,8 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         uint256[] memory _tokenIds,
         uint256[] memory _values
     ) internal {
-        require(_account != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTHS"); //hex"28" FISSION.code(FISSION.Category.Find, FISSION.Status.Duplicate_Conflict_Collision)
+        require(_account != address(0), "UNSPECIFIED_ADDRESS");
+        require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTHS");
 
         for (uint256 i = 0; i < _tokenIds.length; i++) {
             balances[_tokenIds[i]][_account] = balances[_tokenIds[i]][_account]

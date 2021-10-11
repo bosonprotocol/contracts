@@ -56,13 +56,13 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     );
 
     modifier onlyFromRouter() {
-        require(bosonRouterAddress != address(0), "UNSPECIFIED_BR"); // hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
-        require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR"); // hex"10" FISSION.code(FISSION.Category.Permission, FISSION.Status.Disallowed_Stop)
+        require(bosonRouterAddress != address(0), "UNSPECIFIED_BR");
+        require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR");
         _;
     }
 
-    modifier notZeroAddress(address _tokenAddress) {
-        require(_tokenAddress != address(0), "INVALID_TOKEN_ADDRESS");
+    modifier notZeroAddress(address _addressToCheck) {
+        require(_addressToCheck != address(0), "0A");
         _;
     }
 
@@ -78,7 +78,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @notice Construct and initialze the contract. Iniialises associated contract addresses. Iniialises disaster state to false.    
      * @param _voucherKernel address of the associated VocherKernal contract instance
      */
-    constructor(address _voucherKernel) {
+    constructor(address _voucherKernel) 
+     notZeroAddress(_voucherKernel)
+    {
         voucherKernel = _voucherKernel;
         disasterState = false;
     }
@@ -164,7 +166,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     {
         VoucherDetails memory voucherDetails;
 
-        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");
 
         voucherDetails.tokenIdVoucher = _tokenIdVoucher;
         voucherDetails.tokenIdSupply = IVoucherKernel(voucherKernel)
@@ -719,12 +721,12 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the voucher set is no longer in exchange.
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
      * @param _burnedQty burned quantity that the deposits should be withdrawn for
-     * @param _msgSender owner of the voucher set
+     * @param _messageSender owner of the voucher set
      */
     function withdrawDepositsSe(
         uint256 _tokenIdSupply,
         uint256 _burnedQty,
-        address payable _msgSender
+        address payable _messageSender
     ) external override nonReentrant onlyFromRouter {
         uint256 deposit =
             IVoucherKernel(voucherKernel).getSellerDeposit(_tokenIdSupply);
@@ -742,7 +744,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         );
 
         if (paymentMethod == ETHETH || paymentMethod == TKNETH) {
-            escrow[_msgSender] = escrow[_msgSender].sub(depositAmount);
+            escrow[_messageSender] = escrow[_messageSender].sub(depositAmount);
         }
 
         if (paymentMethod == ETHTKN || paymentMethod == TKNTKN) {
@@ -751,14 +753,14 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                     _tokenIdSupply
                 );
 
-            escrowTokens[addressTokenDeposits][_msgSender] = escrowTokens[
+            escrowTokens[addressTokenDeposits][_messageSender] = escrowTokens[
                 addressTokenDeposits
-            ][_msgSender]
+            ][_messageSender]
                 .sub(depositAmount);
         }
 
         _withdrawDeposits(
-            _msgSender,
+            _messageSender,
             depositAmount,
             paymentMethod,
             _tokenIdSupply
@@ -780,8 +782,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         uint256 _amount,
         uint8 _paymentMethod,
         uint256 _tokenIdSupply
-    ) internal {
-        require(_recipient != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+    ) internal
+      notZeroAddress(_recipient)
+    {
         require(_amount > 0, "");
 
         if (_paymentMethod == ETHETH || _paymentMethod == ETHTKN) {
@@ -815,8 +818,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         uint256 _amount,
         uint8 _paymentMethod,
         uint256 _tokenIdSupply
-    ) internal {
-        require(_recipient != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+    ) internal    
+      notZeroAddress(_recipient)
+    {
         require(_amount > 0, "");
 
         if (_paymentMethod == ETHETH || _paymentMethod == TKNETH) {
@@ -847,7 +851,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         override
         onlyOwner
     {
-        require(_bosonRouterAddress != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_bosonRouterAddress != address(0), "UNSPECIFIED_ADDRESS");
 
         bosonRouterAddress = _bosonRouterAddress;
 
@@ -864,7 +868,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         onlyOwner
     {
      
-        require(_tokensContractAddress != address(0), "UNSPECIFIED_ADDRESS"); //hex"20" FISSION.code(FISSION.Category.Find, FISSION.Status.NotFound_Unequal_OutOfRange)
+        require(_tokensContractAddress != address(0), "UNSPECIFIED_ADDRESS");
         tokensContractAddress = _tokensContractAddress;
         emit LogTokenContractSet(_tokensContractAddress, msg.sender);
     }
