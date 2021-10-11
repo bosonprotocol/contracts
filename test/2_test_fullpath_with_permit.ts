@@ -52,7 +52,6 @@ describe('Cashier and VoucherKernel', () => {
     );
 
     await setPeriods();
-
   });
 
   let contractERC1155ERC721: ERC1155ERC721,
@@ -167,20 +166,19 @@ describe('Cashier and VoucherKernel', () => {
       contractBSNTokenDeposit.address
     );
 
-
-     // calculate expected tokenSupplyID for first voucher
- promiseId = keccak256(
-  solidityPack(
-    ['address', 'uint256', 'uint256', 'uint256', 'address'],
-    [
-      users.seller.address,
-      constants.ZERO,
-      constants.PROMISE_VALID_FROM,
-      constants.PROMISE_VALID_TO,
-      contractVoucherKernel.address,
-    ]
-  )
-);
+    // calculate expected tokenSupplyID for first voucher
+    promiseId = keccak256(
+      solidityPack(
+        ['address', 'uint256', 'uint256', 'uint256', 'address'],
+        [
+          users.seller.address,
+          constants.ZERO,
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          contractVoucherKernel.address,
+        ]
+      )
+    );
 
     // calculate expected tokenSupplyID for first voucher
     const tokenIndex = constants.ONE;
@@ -220,7 +218,9 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_VALID_TO,
             constants.PROMISE_DEPOSITSE1,
             constants.QTY_10,
-            true
+            true,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           )
         )
           .to.emit(contractBosonRouter, eventNames.LOG_ORDER_CREATED)
@@ -256,7 +256,10 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
             constants.PROMISE_DEPOSITSE1,
-            constants.QTY_10
+            constants.QTY_10,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
         });
 
@@ -407,7 +410,14 @@ describe('Cashier and VoucherKernel', () => {
           ).to.equal(constants.QTY_10, 'Remaining qty is not correct');
 
           for (let i = 0; i < vouchersToBuy; i++) {
-            await utils.commitToBuy(users.buyer, users.seller, tokenSupplyKey);
+            await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              tokenSupplyKey,
+              false,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
+            );
             expect(
               await contractVoucherKernel.getRemQtyForSupply(
                 tokenSupplyKey,
@@ -463,7 +473,10 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_FROM + constants.ONE_MINUTE,
             constants.PROMISE_DEPOSITSE1,
-            constants.QTY_10
+            constants.QTY_10,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           )
         ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
       });
@@ -555,7 +568,9 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_VALID_TO,
               constants.PROMISE_DEPOSITSE1,
               constants.QTY_10,
-              true
+              true,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
             )
           )
             .to.emit(contractBosonRouter, eventNames.LOG_ORDER_CREATED)
@@ -591,7 +606,10 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_VALID_FROM,
               constants.PROMISE_VALID_TO,
               constants.PROMISE_DEPOSITSE1,
-              constants.QTY_10
+              constants.QTY_10,
+              false,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
             );
           });
 
@@ -758,7 +776,10 @@ describe('Cashier and VoucherKernel', () => {
               await utils.commitToBuy(
                 users.buyer,
                 users.seller,
-                tokenSupplyKey
+                tokenSupplyKey,
+                false,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITBU1
               );
               expect(
                 await contractVoucherKernel.getRemQtyForSupply(
@@ -815,7 +836,10 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_VALID_FROM,
               constants.PROMISE_VALID_FROM + constants.ONE_MINUTE,
               constants.PROMISE_DEPOSITSE1,
-              constants.QTY_10
+              constants.QTY_10,
+              false,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
             )
           ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
         });
@@ -944,7 +968,9 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_VALID_TO,
               constants.PROMISE_DEPOSITSE1,
               constants.QTY_10,
-              true
+              true,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
             )
           )
             .to.emit(contractBosonRouter, eventNames.LOG_ORDER_CREATED)
@@ -980,7 +1006,10 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_VALID_FROM,
               constants.PROMISE_VALID_TO,
               constants.PROMISE_DEPOSITSE1,
-              constants.QTY_10
+              constants.QTY_10,
+              false,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
             );
           });
 
@@ -1136,7 +1165,10 @@ describe('Cashier and VoucherKernel', () => {
               await utils.commitToBuy(
                 users.buyer,
                 users.seller,
-                tokenSupplyKey
+                tokenSupplyKey,
+                false,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITBU1
               );
               expect(
                 await contractVoucherKernel.getRemQtyForSupply(
@@ -1294,7 +1326,9 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_VALID_TO,
               constants.PROMISE_DEPOSITBU1,
               constants.QTY_10,
-              true
+              true,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
             )
           )
             .to.emit(contractBosonRouter, eventNames.LOG_ORDER_CREATED)
@@ -1330,7 +1364,10 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_VALID_FROM,
               constants.PROMISE_VALID_TO,
               constants.PROMISE_DEPOSITSE1,
-              constants.QTY_10
+              constants.QTY_10,
+              false,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
             );
           });
 
@@ -1497,7 +1534,10 @@ describe('Cashier and VoucherKernel', () => {
               await utils.commitToBuy(
                 users.buyer,
                 users.seller,
-                tokenSupplyKey
+                tokenSupplyKey,
+                false,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITBU1
               );
               expect(
                 await contractVoucherKernel.getRemQtyForSupply(
@@ -1554,7 +1594,10 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_VALID_FROM,
               constants.PROMISE_VALID_FROM + constants.ONE_MINUTE,
               constants.PROMISE_DEPOSITSE1,
-              constants.QTY_10
+              constants.QTY_10,
+              false,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
             )
           ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
         });
@@ -1718,7 +1761,10 @@ describe('Cashier and VoucherKernel', () => {
         timestamp,
         timestamp + constants.SECONDS_IN_DAY,
         constants.seller_deposit,
-        constants.QTY_10
+        constants.QTY_10,
+        false,
+        constants.PROMISE_PRICE1,
+        constants.PROMISE_DEPOSITBU1
       );
     });
 
@@ -1792,7 +1838,7 @@ describe('Cashier and VoucherKernel', () => {
 
   describe('VOUCHER CREATION (Commit to buy)', () => {
     const ORDER_QTY = 5;
-    let TOKEN_SUPPLY_ID; 
+    let TOKEN_SUPPLY_ID;
 
     // calculate expected tokenSupplyID for first voucher
     const tokenIndex = constants.ONE;
@@ -1818,13 +1864,23 @@ describe('Cashier and VoucherKernel', () => {
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.PROMISE_DEPOSITSE1,
-          constants.QTY_10
+          constants.QTY_10,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
       });
 
       it('Should create order', async () => {
         await expect(
-          utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, true)
+          utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            true,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
+          )
         )
           .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
           .withArgs(
@@ -1848,7 +1904,14 @@ describe('Cashier and VoucherKernel', () => {
 
       describe('After request', () => {
         beforeEach(async () => {
-          await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+          await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
+          );
         });
 
         it('Voucher Kernel state is correct', async () => {
@@ -1987,7 +2050,14 @@ describe('Cashier and VoucherKernel', () => {
           );
 
         await expect(
-          utilsTknEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+          utilsTknEth.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
+          )
         ).to.be.revertedWith(revertReasons.INCORRECT_PAYMENT_METHOD);
       });
 
@@ -2056,13 +2126,23 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
             constants.PROMISE_DEPOSITSE1,
-            ORDER_QTY
+            ORDER_QTY,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
         });
 
         it('Should create order', async () => {
           await expect(
-            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, true)
+            utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              true,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
+            )
           )
             .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
             .withArgs(
@@ -2100,7 +2180,14 @@ describe('Cashier and VoucherKernel', () => {
 
         describe('After request', () => {
           beforeEach(async () => {
-            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+            await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              false,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
+            );
           });
 
           it('Voucher Kernel state is correct', async () => {
@@ -2259,7 +2346,14 @@ describe('Cashier and VoucherKernel', () => {
             );
 
           await expect(
-            utilsEthEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+            utilsEthEth.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              false,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
+            )
           ).to.be.revertedWith(revertReasons.INCORRECT_PAYMENT_METHOD);
         });
 
@@ -2331,13 +2425,23 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
             constants.PROMISE_DEPOSITSE1,
-            ORDER_QTY
+            ORDER_QTY,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
         });
 
         it('Should create order', async () => {
           await expect(
-            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, true)
+            utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              true,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
+            )
           )
             .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
             .withArgs(
@@ -2373,7 +2477,14 @@ describe('Cashier and VoucherKernel', () => {
 
         describe('After request', () => {
           beforeEach(async () => {
-            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+            await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              false,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
+            );
           });
 
           it('Voucher Kernel state is correct', async () => {
@@ -2529,7 +2640,14 @@ describe('Cashier and VoucherKernel', () => {
             );
 
           await expect(
-            utilsEthTkn.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+            utilsEthTkn.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              false,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
+            )
           ).to.be.revertedWith(revertReasons.INCORRECT_PAYMENT_METHOD);
         });
 
@@ -2597,13 +2715,23 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
             constants.PROMISE_DEPOSITSE1,
-            ORDER_QTY
+            ORDER_QTY,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
         });
 
         it('Should create voucher', async () => {
           await expect(
-            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, true)
+            utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              true,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
+            )
           )
             .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
             .withArgs(
@@ -2633,7 +2761,14 @@ describe('Cashier and VoucherKernel', () => {
 
         describe('After request', () => {
           beforeEach(async () => {
-            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+            await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              false,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
+            );
           });
 
           it('Voucher Kernel state is correct', async () => {
@@ -2779,7 +2914,14 @@ describe('Cashier and VoucherKernel', () => {
             );
 
           await expect(
-            utilsEthEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+            utilsEthEth.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              false,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
+            )
           ).to.be.revertedWith(revertReasons.INCORRECT_PAYMENT_METHOD);
         });
 
@@ -2841,7 +2983,10 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
             constants.PROMISE_DEPOSITSE1,
-            ORDER_QTY
+            ORDER_QTY,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           const nonce = await utils.contractBSNTokenSame.nonces(
@@ -2915,13 +3060,23 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
             constants.PROMISE_DEPOSITSE1,
-            ORDER_QTY
+            ORDER_QTY,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
         });
 
         it('Should create order', async () => {
           await expect(
-            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID, true)
+            utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              true,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
+            )
           )
             .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
             .withArgs(
@@ -2951,7 +3106,10 @@ describe('Cashier and VoucherKernel', () => {
 
         describe('After request', () => {
           beforeEach(async () => {
-            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID);
+            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
+              false,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1;
           });
 
           it('Voucher Kernel state is correct', async () => {
@@ -3092,7 +3250,14 @@ describe('Cashier and VoucherKernel', () => {
             );
 
           await expect(
-            utilsEthEth.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+            utilsEthEth.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              false,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
+            )
           ).to.be.revertedWith(revertReasons.INCORRECT_PAYMENT_METHOD);
         });
 
@@ -3150,7 +3315,10 @@ describe('Cashier and VoucherKernel', () => {
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.seller_deposit,
-          constants.QTY_10
+          constants.QTY_10,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
       });
 
@@ -3160,7 +3328,14 @@ describe('Cashier and VoucherKernel', () => {
         );
 
         await expect(
-          utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+          utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
+          )
         ).to.be.revertedWith(revertReasons.OFFER_EXPIRED);
       });
 
@@ -3168,7 +3343,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
         await advanceTimeSeconds(
           constants.PROMISE_VALID_TO + cancelPeriod + complainPeriod
@@ -3183,7 +3361,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await utils.cancel(voucherID, users.seller.signer);
@@ -3199,7 +3380,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await advanceTimeSeconds(
@@ -3215,7 +3399,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await advanceTimeSeconds(
@@ -3231,7 +3418,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
         await utils.redeem(voucherID, users.buyer.signer);
 
@@ -3248,7 +3438,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
         await utils.redeem(voucherID, users.buyer.signer);
 
@@ -3265,7 +3458,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
@@ -3280,7 +3476,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await utils.redeem(voucherID, users.buyer.signer);
@@ -3296,7 +3495,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await utils.refund(voucherID, users.buyer.signer);
@@ -3314,7 +3516,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await utils.refund(voucherID, users.buyer.signer);
@@ -3332,7 +3537,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await utils.refund(voucherID, users.buyer.signer);
@@ -3349,7 +3557,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await utils.refund(voucherID, users.buyer.signer);
@@ -3369,7 +3580,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await advanceTimeSeconds(ONE_WEEK);
@@ -3409,7 +3623,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await advanceTimeSeconds(ONE_WEEK);
@@ -3449,7 +3666,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await advanceTimeSeconds(ONE_WEEK);
@@ -3501,7 +3721,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.seller,
-          TOKEN_SUPPLY_ID
+          TOKEN_SUPPLY_ID,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await advanceTimeSeconds(ONE_WEEK);
@@ -3580,7 +3803,10 @@ describe('Cashier and VoucherKernel', () => {
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.PROMISE_DEPOSITSE1,
-          constants.QTY_10
+          constants.QTY_10,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
       });
 
@@ -3740,7 +3966,10 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
             constants.PROMISE_DEPOSITSE2,
-            constants.QTY_20
+            constants.QTY_20,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           tokenSupplyBatch = [BN(tokenSupplyKey), BN(tokenSupplyKey2)];
@@ -3911,7 +4140,10 @@ describe('Cashier and VoucherKernel', () => {
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.PROMISE_DEPOSITSE1,
-          constants.QTY_1
+          constants.QTY_1,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
       });
 
@@ -3979,7 +4211,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.other2,
-          tokenSupplyKey
+          tokenSupplyKey,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await utils.redeem(voucherID, users.buyer.signer);
@@ -4113,7 +4348,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.other2,
-          tokenSupplyKey
+          tokenSupplyKey,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await utils.redeem(voucherID, users.buyer.signer);
@@ -4135,7 +4373,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.buyer,
           users.other2,
-          tokenSupplyKey
+          tokenSupplyKey,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await utils.redeem(voucherID, users.buyer.signer);
@@ -4184,7 +4425,10 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
             constants.PROMISE_DEPOSITSE1,
-            constants.QTY_1
+            constants.QTY_1,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
         });
 
@@ -4403,7 +4647,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.buyer,
             users.other2,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await utils.redeem(voucherID, users.buyer.signer);
@@ -4425,7 +4672,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.buyer,
             users.other2,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await utils.redeem(voucherID, users.buyer.signer);
@@ -4479,7 +4729,10 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
             constants.PROMISE_DEPOSITSE1,
-            supplyQty
+            supplyQty,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
         });
 
@@ -4552,7 +4805,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.buyer,
             users.other2,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await utils.redeem(voucherID, users.buyer.signer);
@@ -4709,7 +4965,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.buyer,
             users.other2,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await utils.redeem(voucherID, users.buyer.signer);
@@ -4731,7 +4990,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.buyer,
             users.other2,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await utils.redeem(voucherID, users.buyer.signer);
@@ -4770,7 +5032,10 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
             constants.PROMISE_DEPOSITSE1,
-            constants.QTY_1
+            constants.QTY_1,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
         });
 
@@ -4839,7 +5104,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.buyer,
             users.other2,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
           await utils.redeem(voucherID, users.buyer.signer);
 
@@ -4992,7 +5260,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.buyer,
             users.other2,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await utils.redeem(voucherID, users.buyer.signer);
@@ -5014,7 +5285,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.buyer,
             users.other2,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await utils.redeem(voucherID, users.buyer.signer);
@@ -5062,13 +5336,19 @@ describe('Cashier and VoucherKernel', () => {
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.PROMISE_DEPOSITSE1,
-          constants.QTY_10
+          constants.QTY_10,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         voucherID = await utils.commitToBuy(
           users.other1,
           users.seller,
-          tokenSupplyKey
+          tokenSupplyKey,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
       });
 
@@ -5126,7 +5406,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.other1,
           users.seller,
-          tokenSupplyKey
+          tokenSupplyKey,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         const balanceBeforeTransfer = (
@@ -5172,7 +5455,10 @@ describe('Cashier and VoucherKernel', () => {
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.PROMISE_DEPOSITSE1,
-          constants.QTY_10
+          constants.QTY_10,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
       });
 
@@ -5241,7 +5527,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.other1,
           users.seller,
-          tokenSupplyKey
+          tokenSupplyKey,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await utils.safeTransfer721(
@@ -5446,7 +5735,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.other1,
           users.seller,
-          tokenSupplyKey
+          tokenSupplyKey,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await utils.safeTransfer721(
@@ -5469,7 +5761,10 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.other1,
           users.seller,
-          tokenSupplyKey
+          tokenSupplyKey,
+          false,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await expect(
@@ -5522,7 +5817,10 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
             constants.PROMISE_DEPOSITSE1,
-            supplyQty
+            supplyQty,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
         });
 
@@ -5541,7 +5839,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           let actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
@@ -5643,7 +5944,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await utils.safeTransfer721(
@@ -5858,7 +6162,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await utils.refund(voucherID, users.other1.signer);
@@ -5882,7 +6189,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await utils.safeTransfer721(
@@ -5905,7 +6215,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await expect(
@@ -5962,7 +6275,10 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
             constants.PROMISE_DEPOSITSE1,
-            supplyQty
+            supplyQty,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
         });
 
@@ -5974,7 +6290,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           let actualOldOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
@@ -6089,7 +6408,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await utils.safeTransfer721(
@@ -6281,7 +6603,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await utils.refund(voucherID, users.other1.signer);
@@ -6305,7 +6630,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await utils.safeTransfer721(
@@ -6328,7 +6656,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await expect(
@@ -6370,7 +6701,10 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_VALID_FROM,
             constants.PROMISE_VALID_TO,
             constants.PROMISE_DEPOSITSE1,
-            constants.QTY_1
+            constants.QTY_1,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
         });
 
@@ -6380,7 +6714,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           let actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
@@ -6483,7 +6820,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await utils.safeTransfer721(
@@ -6708,7 +7048,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await utils.refund(voucherID, users.other1.signer);
@@ -6732,7 +7075,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await utils.safeTransfer721(
@@ -6754,7 +7100,10 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.other1,
             users.seller,
-            tokenSupplyKey
+            tokenSupplyKey,
+            false,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await expect(
