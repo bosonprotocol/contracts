@@ -253,9 +253,9 @@ describe('ERC1155ERC721', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          true,
           constants.product_price,
-          constants.buyer_deposit
+          constants.buyer_deposit,
+          true
         );
 
         const txReceipt = await commitTx.wait();
@@ -302,7 +302,6 @@ describe('ERC1155ERC721', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.product_price,
           constants.buyer_deposit
         );
@@ -345,7 +344,6 @@ describe('ERC1155ERC721', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.product_price,
           constants.buyer_deposit
         );
@@ -364,7 +362,6 @@ describe('ERC1155ERC721', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.product_price,
           constants.buyer_deposit
         );
@@ -548,7 +545,6 @@ describe('ERC1155ERC721', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.product_price,
           constants.buyer_deposit
         );
@@ -568,7 +564,6 @@ describe('ERC1155ERC721', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.product_price,
           constants.buyer_deposit
         );
@@ -588,7 +583,6 @@ describe('ERC1155ERC721', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.product_price,
           constants.buyer_deposit
         );
@@ -608,7 +602,6 @@ describe('ERC1155ERC721', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.product_price,
           constants.buyer_deposit
         );
@@ -660,7 +653,6 @@ describe('ERC1155ERC721', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.product_price,
           constants.buyer_deposit
         );

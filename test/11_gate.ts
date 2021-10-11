@@ -484,7 +484,7 @@ describe('Gate contract', async () => {
         expect(await contractGate.check(users.buyer.address, tokenId)).to.be
           .true;
 
-        await utils.commitToBuy(users.buyer, users.seller, tokenId, false, constants.product_price, constants.buyer_deposit);
+        await utils.commitToBuy(users.buyer, users.seller, tokenId, constants.product_price, constants.buyer_deposit);
 
         expect(await contractGate.check(users.buyer.address, tokenId)).to.be
           .false;

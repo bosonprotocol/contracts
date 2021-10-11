@@ -413,7 +413,6 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               tokenSupplyKey,
-              false,
               constants.PROMISE_PRICE1,
               constants.PROMISE_DEPOSITBU1
             );
@@ -774,7 +773,6 @@ describe('Cashier and VoucherKernel', () => {
                 users.buyer,
                 users.seller,
                 tokenSupplyKey,
-                false,
                 constants.PROMISE_PRICE1,
                 constants.PROMISE_DEPOSITBU1
               );
@@ -1161,7 +1159,6 @@ describe('Cashier and VoucherKernel', () => {
                 users.buyer,
                 users.seller,
                 tokenSupplyKey,
-                false,
                 constants.PROMISE_PRICE1,
                 constants.PROMISE_DEPOSITBU1
               );
@@ -1529,7 +1526,6 @@ describe('Cashier and VoucherKernel', () => {
                 users.buyer,
                 users.seller,
                 tokenSupplyKey,
-                false,
                 constants.PROMISE_PRICE1,
                 constants.PROMISE_DEPOSITBU1
               );
@@ -1868,9 +1864,9 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.seller,
             TOKEN_SUPPLY_ID,
-            true,
             constants.PROMISE_PRICE1,
-            constants.PROMISE_DEPOSITBU1
+            constants.PROMISE_DEPOSITBU1,
+            true
           )
         )
           .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
@@ -1899,7 +1895,6 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.seller,
             TOKEN_SUPPLY_ID,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -2006,7 +2001,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.PROMISE_PRICE1,
           constants.ZERO
         );
@@ -2044,7 +2038,6 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.seller,
             TOKEN_SUPPLY_ID,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           )
@@ -2057,7 +2050,6 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.seller,
             TOKEN_SUPPLY_ID,
-            false,
             constants.incorrect_product_price,
             constants.PROMISE_DEPOSITBU1
           )
@@ -2070,7 +2062,6 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.seller,
             TOKEN_SUPPLY_ID,
-            false,
             constants.PROMISE_PRICE1,
             constants.buyer_incorrect_deposit
           )
@@ -2127,10 +2118,10 @@ describe('Cashier and VoucherKernel', () => {
             utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID,
-              true,
+              TOKEN_SUPPLY_ID,              
               constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITBU1
+              constants.PROMISE_DEPOSITBU1,
+              true
             )
           )
             .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
@@ -2173,7 +2164,6 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              false,
               constants.PROMISE_PRICE1,
               constants.PROMISE_DEPOSITBU1
             );
@@ -2300,7 +2290,6 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.seller,
             TOKEN_SUPPLY_ID,
-            false,
             constants.PROMISE_PRICE1,
             constants.ZERO
           );
@@ -2338,7 +2327,6 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              false,
               constants.PROMISE_PRICE1,
               constants.PROMISE_DEPOSITBU1
             )
@@ -2351,7 +2339,6 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              false,
               constants.incorrect_product_price,
               constants.PROMISE_DEPOSITBU1
             )
@@ -2364,7 +2351,6 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              false,
               constants.PROMISE_PRICE1,
               constants.buyer_incorrect_deposit
             )
@@ -2425,9 +2411,9 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              true,
               constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITBU1
+              constants.PROMISE_DEPOSITBU1,
+              true
             )
           )
             .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
@@ -2468,7 +2454,6 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              false,
               constants.PROMISE_PRICE1,
               constants.PROMISE_DEPOSITBU1
             );
@@ -2592,7 +2577,6 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.seller,
             TOKEN_SUPPLY_ID,
-            false,
             constants.PROMISE_PRICE1,
             constants.ZERO
           );
@@ -2630,7 +2614,6 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              false,
               constants.PROMISE_PRICE1,
               constants.PROMISE_DEPOSITBU1
             )
@@ -2643,7 +2626,6 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              false,
               constants.incorrect_product_price,
               constants.PROMISE_DEPOSITBU1
             )
@@ -2656,7 +2638,6 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              false,
               constants.PROMISE_PRICE1,
               constants.buyer_incorrect_deposit
             )
@@ -2713,9 +2694,9 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              true,
               constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITBU1
+              constants.PROMISE_DEPOSITBU1,
+              true
             )
           )
             .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
@@ -2750,7 +2731,6 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              false,
               constants.PROMISE_PRICE1,
               constants.PROMISE_DEPOSITBU1
             );
@@ -2864,7 +2844,6 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.seller,
             TOKEN_SUPPLY_ID,
-            false,
             constants.PROMISE_PRICE1,
             constants.ZERO
           );
@@ -2902,7 +2881,6 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              false,
               constants.PROMISE_PRICE1,
               constants.PROMISE_DEPOSITBU1
             )
@@ -2915,7 +2893,6 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              false,
               constants.incorrect_product_price,
               constants.PROMISE_DEPOSITBU1
             )
@@ -2928,7 +2905,7 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              false,
+
               constants.PROMISE_PRICE1,
               constants.buyer_incorrect_deposit
             )
@@ -3056,9 +3033,9 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              true,
               constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITBU1
+              constants.PROMISE_DEPOSITBU1,
+              true
             )
           )
             .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
@@ -3089,10 +3066,9 @@ describe('Cashier and VoucherKernel', () => {
 
         describe('After request', () => {
           beforeEach(async () => {
-            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID),
-              false,
+            await utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID,
               constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITBU1;
+              constants.PROMISE_DEPOSITBU1)
           });
 
           it('Voucher Kernel state is correct', async () => {
@@ -3198,7 +3174,6 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.seller,
             TOKEN_SUPPLY_ID,
-            false,
             constants.PROMISE_PRICE1,
             constants.ZERO
           );
@@ -3236,7 +3211,6 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              false,
               constants.PROMISE_PRICE1,
               constants.PROMISE_DEPOSITBU1
             )
@@ -3249,7 +3223,6 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              false,
               constants.incorrect_product_price,
               constants.PROMISE_DEPOSITBU1
             )
@@ -3262,7 +3235,6 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
-              false,
               constants.PROMISE_PRICE1,
               constants.buyer_incorrect_deposit
             )
@@ -3313,7 +3285,6 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.seller,
             TOKEN_SUPPLY_ID,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           )
@@ -3325,7 +3296,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -3343,7 +3313,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -3362,7 +3331,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -3381,7 +3349,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -3400,7 +3367,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -3420,7 +3386,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -3440,7 +3405,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -3458,7 +3422,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -3477,7 +3440,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -3498,7 +3460,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -3519,7 +3480,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -3539,7 +3499,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -3562,7 +3521,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -3605,7 +3563,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -3648,7 +3605,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -3703,7 +3659,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -4190,7 +4145,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.other2,
           tokenSupplyKey,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -4327,7 +4281,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.other2,
           tokenSupplyKey,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -4352,7 +4305,6 @@ describe('Cashier and VoucherKernel', () => {
           users.buyer,
           users.other2,
           tokenSupplyKey,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -4476,7 +4428,9 @@ describe('Cashier and VoucherKernel', () => {
           const voucherID = await utils.commitToBuy(
             users.buyer,
             users.other2,
-            tokenSupplyKey
+            tokenSupplyKey,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
           );
 
           await utils.redeem(voucherID, users.buyer.signer);
@@ -4625,7 +4579,6 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.other2,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -4650,7 +4603,6 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.other2,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -4782,7 +4734,6 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.other2,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -4942,7 +4893,6 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.other2,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -4967,7 +4917,6 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.other2,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -5080,7 +5029,6 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.other2,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -5236,7 +5184,6 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.other2,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -5261,7 +5208,6 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer,
             users.other2,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -5320,7 +5266,6 @@ describe('Cashier and VoucherKernel', () => {
           users.other1,
           users.seller,
           tokenSupplyKey,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -5381,7 +5326,6 @@ describe('Cashier and VoucherKernel', () => {
           users.other1,
           users.seller,
           tokenSupplyKey,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -5443,7 +5387,9 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.other1,
           users.seller,
-          tokenSupplyKey
+          tokenSupplyKey,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         let actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
@@ -5501,7 +5447,6 @@ describe('Cashier and VoucherKernel', () => {
           users.other1,
           users.seller,
           tokenSupplyKey,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -5684,7 +5629,9 @@ describe('Cashier and VoucherKernel', () => {
         const voucherID = await utils.commitToBuy(
           users.other1,
           users.seller,
-          tokenSupplyKey
+          tokenSupplyKey,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
         );
 
         await utils.refund(voucherID, users.other1.signer);
@@ -5709,7 +5656,6 @@ describe('Cashier and VoucherKernel', () => {
           users.other1,
           users.seller,
           tokenSupplyKey,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -5735,7 +5681,6 @@ describe('Cashier and VoucherKernel', () => {
           users.other1,
           users.seller,
           tokenSupplyKey,
-          false,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITBU1
         );
@@ -5812,7 +5757,6 @@ describe('Cashier and VoucherKernel', () => {
             users.other1,
             users.seller,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -5917,7 +5861,6 @@ describe('Cashier and VoucherKernel', () => {
             users.other1,
             users.seller,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -6135,7 +6078,6 @@ describe('Cashier and VoucherKernel', () => {
             users.other1,
             users.seller,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -6162,7 +6104,6 @@ describe('Cashier and VoucherKernel', () => {
             users.other1,
             users.seller,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -6188,7 +6129,6 @@ describe('Cashier and VoucherKernel', () => {
             users.other1,
             users.seller,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -6262,7 +6202,6 @@ describe('Cashier and VoucherKernel', () => {
             users.other1,
             users.seller,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -6380,7 +6319,6 @@ describe('Cashier and VoucherKernel', () => {
             users.other1,
             users.seller,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -6575,7 +6513,6 @@ describe('Cashier and VoucherKernel', () => {
             users.other1,
             users.seller,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -6602,7 +6539,6 @@ describe('Cashier and VoucherKernel', () => {
             users.other1,
             users.seller,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -6628,7 +6564,6 @@ describe('Cashier and VoucherKernel', () => {
             users.other1,
             users.seller,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -6685,7 +6620,6 @@ describe('Cashier and VoucherKernel', () => {
             users.other1,
             users.seller,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -6791,7 +6725,6 @@ describe('Cashier and VoucherKernel', () => {
             users.other1,
             users.seller,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -7019,7 +6952,6 @@ describe('Cashier and VoucherKernel', () => {
             users.other1,
             users.seller,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -7046,7 +6978,6 @@ describe('Cashier and VoucherKernel', () => {
             users.other1,
             users.seller,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );
@@ -7071,7 +7002,6 @@ describe('Cashier and VoucherKernel', () => {
             users.other1,
             users.seller,
             tokenSupplyKey,
-            false,
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           );

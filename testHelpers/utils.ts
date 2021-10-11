@@ -54,9 +54,9 @@ class Utils {
     buyer,
     seller,
     tokenSupplyId,
-    returnTx?,
-    promisePrice?,
-    buyerDeposit?
+    promisePrice,
+    buyerDeposit,
+    returnTx?
   ) => any;
   factories?: {
     ERC1155ERC721: ERC1155ERC721__factory | any;
@@ -432,9 +432,9 @@ class Utils {
     buyer: Account,
     seller: Account,
     tokenSupplyId: string,
-    returnTx = false,
-    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
-    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
+    promisePrice: number | string | BigNumber,
+    buyerDeposit: number | string,
+    returnTx = false
   ): Promise<ContractTransaction | string> {
     const txValue = BN(buyerDeposit).add(BN(promisePrice));
     const nonce1 = await this.contractBSNTokenDeposit.nonces(buyer.address);
@@ -514,9 +514,9 @@ class Utils {
     buyer: Account,
     seller: Account,
     tokenSupplyId: string,
-    returnTx = false,
-    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
-    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
+    promisePrice: number | string | BigNumber,
+    buyerDeposit: number | string,
+    returnTx = false
   ): Promise<ContractTransaction | string> {
     const txValue = BN(buyerDeposit).add(BN(promisePrice));
     const nonce = await this.contractBSNTokenSame.nonces(buyer.address);
@@ -573,9 +573,9 @@ class Utils {
     buyer: Account,
     seller: Account,
     tokenSupplyId: string,
-    returnTx = false,
-    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
-    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
+    promisePrice: number | string | BigNumber,
+    buyerDeposit: number | string,
+    returnTx = false
   ): Promise<ContractTransaction | string> {
     const nonce1 = await this.contractBSNTokenDeposit.nonces(buyer.address);
 
@@ -628,9 +628,9 @@ class Utils {
     buyer: Account,
     seller: Account,
     tokenSupplyId: string,
-    returnTx = false,
-    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
-    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
+    promisePrice: number | string | BigNumber,
+    buyerDeposit: number | string,
+    returnTx = false
   ): Promise<ContractTransaction | string> {
     const txValue = BN(buyerDeposit).add(BN(promisePrice)); // TODO MAKE PARAMETERS
 
@@ -666,9 +666,9 @@ class Utils {
     buyer: Account,
     seller: Account,
     tokenSupplyId: string,
-    returnTx = false,
-    promisePrice = constants.PROMISE_PRICE1, // todo shift on right place, remove default
-    buyerDeposit = constants.PROMISE_DEPOSITBU1 // todo shift on right place, remove default
+    promisePrice: number | string | BigNumber,
+    buyerDeposit: number | string,
+    returnTx = false
   ): Promise<ContractTransaction | string> {
     const nonce1 = await this.contractBSNTokenPrice.nonces(buyer.address);
 
