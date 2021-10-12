@@ -749,7 +749,7 @@ class Utils {
 
     const receipt = await tx.wait();
 
-    console.log('GAS USED: ', receipt.gasUsed.toString());
+    //console.log('GAS USED: ', receipt.gasUsed.toString());
 
     return tx;
   }

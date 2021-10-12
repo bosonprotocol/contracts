@@ -307,7 +307,7 @@ describe('Cashier and VoucherKernel', () => {
               promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
                 BN(constants.PROMISE_PRICE1)
               ),
-              'Promise produt price mismatch'
+              'Promise product price mismatch'
             );
             assert.isTrue(
               promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositSe].eq(
@@ -336,7 +336,7 @@ describe('Cashier and VoucherKernel', () => {
               await contractVoucherKernel.getPromiseIdFromSupplyId(
                 tokenSupplyKey
               ),
-              'PromisId mismatch'
+              'PromiseId mismatch'
             );
           });
 
@@ -442,7 +442,7 @@ describe('Cashier and VoucherKernel', () => {
           promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
             BN(constants.PROMISE_PRICE1)
           ),
-          'Promise produt price mismatch'
+          'Promise product price mismatch'
         );
 
         assert.isTrue(
@@ -654,7 +654,7 @@ describe('Cashier and VoucherKernel', () => {
                 promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
                   BN(constants.PROMISE_PRICE1)
                 ),
-                'Promise produt price mismatch'
+                'Promise product price mismatch'
               );
               assert.isTrue(
                 promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositSe].eq(
@@ -683,7 +683,7 @@ describe('Cashier and VoucherKernel', () => {
                 await contractVoucherKernel.getPromiseIdFromSupplyId(
                   tokenSupplyKey
                 ),
-                'PromisId mismatch'
+                'PromiseId mismatch'
               );
             });
 
@@ -802,7 +802,7 @@ describe('Cashier and VoucherKernel', () => {
             promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
               BN(constants.PROMISE_PRICE1)
             ),
-            'Promise produt price mismatch'
+            'Promise product price mismatch'
           );
 
           assert.isTrue(
@@ -936,7 +936,7 @@ describe('Cashier and VoucherKernel', () => {
               contractCashier,
               contractBosonRouter,
               contractBSNTokenPrice,
-              ''
+              contractBSNTokenDeposit
             );
 
           const tokensToMint = BN(constants.product_price).mul(
@@ -1051,7 +1051,7 @@ describe('Cashier and VoucherKernel', () => {
                 promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
                   BN(constants.PROMISE_PRICE1)
                 ),
-                'Promise produt price mismatch'
+                'Promise product price mismatch'
               );
               assert.isTrue(
                 promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositSe].eq(
@@ -1080,7 +1080,7 @@ describe('Cashier and VoucherKernel', () => {
                 await contractVoucherKernel.getPromiseIdFromSupplyId(
                   tokenSupplyKey
                 ),
-                'PromisId mismatch'
+                'PromiseId mismatch'
               );
             });
 
@@ -1188,7 +1188,7 @@ describe('Cashier and VoucherKernel', () => {
             promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
               BN(constants.PROMISE_PRICE1)
             ),
-            'Promise produt price mismatch'
+            'Promise product price mismatch'
           );
 
           assert.isTrue(
@@ -1407,7 +1407,7 @@ describe('Cashier and VoucherKernel', () => {
                 promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
                   BN(constants.PROMISE_PRICE1)
                 ),
-                'Promise produt price mismatch'
+                'Promise product price mismatch'
               );
               assert.isTrue(
                 promiseOrderData[constants.PROMISE_ORDER_FIELDS.depositSe].eq(
@@ -1436,7 +1436,7 @@ describe('Cashier and VoucherKernel', () => {
                 await contractVoucherKernel.getPromiseIdFromSupplyId(
                   tokenSupplyKey
                 ),
-                'PromisId mismatch'
+                'PromiseId mismatch'
               );
             });
 
@@ -1555,7 +1555,7 @@ describe('Cashier and VoucherKernel', () => {
             promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
               BN(constants.PROMISE_PRICE1)
             ),
-            'Promise produt price mismatch'
+            'Promise product price mismatch'
           );
 
           assert.isTrue(
@@ -3745,6 +3745,43 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Should transfer voucher supply', async () => {
+
+        // Check supply holder before
+        let supplyHolder = await contractVoucherKernel.getSupplyHolder(tokenSupplyKey);
+
+        assert.equal(
+          supplyHolder,
+          users.other1.address,
+          'Supply holder mismatch'
+        );
+
+/*
+        // TODO: why doesn't this work?
+        let actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
+          users.other1.address
+        );
+        let actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
+          users.other2.address
+        );
+
+        assert.isTrue(
+          actualOldOwnerBalanceFromEscrow.eq(BN(constants.PROMISE_DEPOSITSE1)),
+          'Old owner balance from escrow does not match'
+        );
+        assert.isTrue(
+          actualNewOwnerBalanceFromEscrow.eq(BN(constants.PROMISE_DEPOSITBU1)),
+          'New owner balance from escrow does not match'
+        );
+
+        console.log (actualOldOwnerBalanceFromEscrow, BN(constants.PROMISE_DEPOSITSE1), actualNewOwnerBalanceFromEscrow, BN(constants.PROMISE_DEPOSITBU1) )
+        // actualOldOwnerBalanceFromEscrow: BigNumber { _hex: '0x989680', _isBigNumber: true }
+        // BN(constants.PROMISE_DEPOSITSE1): BigNumber { _hex: '0x0f4240', _isBigNumber: true }
+        // actualNewOwnerBalanceFromEscrow: BigNumber { _hex: '0x00', _isBigNumber: true }
+        // BN(constants.PROMISE_DEPOSITBU1): BigNumber { _hex: '0x01', _isBigNumber: true }
+
+        // From the setup in beforeEach, I expected these asserts to be true. why
+
+*/
         // balances before
         const user1BalanceBeforeTransfer = (
           await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
@@ -3819,6 +3856,15 @@ describe('Cashier and VoucherKernel', () => {
           constants.QTY_10,
           'User2 after balance mismatch'
         );
+
+        supplyHolder = await contractVoucherKernel.getSupplyHolder(tokenSupplyKey);
+
+        assert.equal(
+          supplyHolder,
+          users.other2.address,
+          'Supply holder mismatch'
+        );
+
       });
 
       it('Should transfer voucher supply to self and balance should be the same', async () => {
@@ -3889,7 +3935,7 @@ describe('Cashier and VoucherKernel', () => {
         ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_1155);
       });
 
-      describe('Batchtransfers', () => {
+      describe('Batch transfers', () => {
         let tokenSupplyKey2;
         let tokenSupplyBatch;
         const batchQuantities = [BN(constants.QTY_10), BN(constants.QTY_20)];
@@ -3909,6 +3955,35 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Should transfer batch voucher supply', async () => {
+
+/*
+          // TODO: why doesn't this work?
+
+          // Check supply holder before
+          let supplyHolder = await contractVoucherKernel.getSupplyHolder(tokenSupplyKey2);
+
+          assert.equal(
+            supplyHolder,
+            users.other1.address,
+            'Supply holder mismatch'
+          );
+
+         // Supply holder mismatch
+         // + expected - actual
+         //
+         // -0x1487756254E93d00a6DCDfc40bAe757c1e99E8c0
+         // +0x7aDCcBe646B707d0E8c0a339dF5277ee006f172B
+
+         // But if I switch the expected supply holder to users.other1.address,
+         // it fails and the expected/actual values are REVERSED!!!!
+
+         // Supply holder mismatch
+         // + expected - actual
+         //
+         // -0x7aDCcBe646B707d0E8c0a339dF5277ee006f172B
+         // +0x1487756254E93d00a6DCDfc40bAe757c1e99E8c0
+*/
+
           // balances before
           const user1BalanceBeforeTransfer = await contractERC1155ERC721.balanceOfBatch(
             [users.other1.address, users.other1.address],
@@ -3980,9 +4055,20 @@ describe('Cashier and VoucherKernel', () => {
             JSON.stringify(batchQuantities),
             'User2 after balance mismatch'
           );
+
         });
 
         it('Should transfer batch voucher supply to self and balance should be the same', async () => {
+
+          // Check supply holder before
+          let supplyHolder = await contractVoucherKernel.getSupplyHolder(tokenSupplyKey);
+
+          assert.equal(
+            supplyHolder,
+            users.other1.address,
+            'Supply holder mismatch'
+          );
+
           const balanceBeforeTransfer = await contractERC1155ERC721.balanceOfBatch(
             [users.other1.address, users.other1.address],
             tokenSupplyBatch
@@ -4126,6 +4212,16 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
+
+        // Check supply holder before
+        let supplyHolder = await contractVoucherKernel.getSupplyHolder(tokenSupplyKey);
+
+        assert.equal(
+          supplyHolder,
+          users.other1.address,
+          'Supply holder mismatch'
+        );
+
         const expectedBuyerAmount = BN(constants.PROMISE_DEPOSITBU1);
         const expectedSellerAmount = BN(constants.PROMISE_DEPOSITSE1).add(
           BN(constants.PROMISE_PRICE1)
@@ -4250,6 +4346,7 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer.address,
               users.other2.address
             );
+
           }
         );
 
@@ -4264,6 +4361,14 @@ describe('Cashier and VoucherKernel', () => {
         assert.isTrue(
           distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
           'Escrow Amount is not as expected'
+        );
+
+        supplyHolder = await contractVoucherKernel.getSupplyHolder(tokenSupplyKey);
+
+        assert.equal(
+          supplyHolder,
+          users.other2.address,
+          'Supply holder mismatch'
         );
       });
 
@@ -5512,7 +5617,7 @@ describe('Cashier and VoucherKernel', () => {
           (ev) => {
             expect(ev._type).to.be.oneOf(
               Object.values(paymentType),
-              'Wrong paymeny type'
+              'Wrong payment type'
             );
             switch (ev._type) {
               case paymentType.PAYMENT:
@@ -5539,7 +5644,7 @@ describe('Cashier and VoucherKernel', () => {
                     users.deployer.address,
                     users.other2.address,
                   ],
-                  'Unexpected recepient'
+                  'Unexpected recipient'
                 );
 
                 switch (ev._to) {
@@ -5926,7 +6031,7 @@ describe('Cashier and VoucherKernel', () => {
             (ev) => {
               expect(ev._type).to.be.oneOf(
                 Object.values(paymentType),
-                'Wrong paymeny type'
+                'Wrong payment type'
               );
               switch (ev._type) {
                 case paymentType.PAYMENT:
@@ -5953,7 +6058,7 @@ describe('Cashier and VoucherKernel', () => {
                       users.deployer.address,
                       users.other2.address,
                     ],
-                    'Unexpected recepient'
+                    'Unexpected recipient'
                   );
 
                   switch (ev._to) {
@@ -6254,11 +6359,12 @@ describe('Cashier and VoucherKernel', () => {
             users.other2.address,
             voucherID,
             users.other1.signer
-          ),
-            (actualOldOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
-              contractBSNTokenPrice.address,
-              users.other1.address
-            ));
+          );
+
+          (actualOldOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.other1.address
+          ));
 
           actualOldOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
             contractBSNTokenDeposit.address,
@@ -6349,7 +6455,7 @@ describe('Cashier and VoucherKernel', () => {
             (ev) => {
               expect(ev._type).to.be.oneOf(
                 Object.values(paymentType),
-                'Wrong paymeny type'
+                'Wrong payment type'
               );
               switch (ev._type) {
                 case paymentType.PAYMENT:
@@ -6376,7 +6482,7 @@ describe('Cashier and VoucherKernel', () => {
                       users.deployer.address,
                       users.other2.address,
                     ],
-                    'Unexpected recepient'
+                    'Unexpected recipient'
                   );
 
                   switch (ev._to) {
@@ -6666,10 +6772,11 @@ describe('Cashier and VoucherKernel', () => {
             users.other2.address,
             voucherID,
             users.other1.signer
-          ),
-            (actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
-              users.other1.address
-            ));
+          );
+
+          (actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
+            users.other1.address
+          ));
 
           actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
             contractBSNTokenPrice.address,
@@ -6814,7 +6921,7 @@ describe('Cashier and VoucherKernel', () => {
             (ev) => {
               expect(ev._type).to.be.oneOf(
                 Object.values(paymentType),
-                'Wrong paymeny type'
+                'Wrong payment type'
               );
               switch (ev._type) {
                 case paymentType.PAYMENT:
@@ -6841,7 +6948,7 @@ describe('Cashier and VoucherKernel', () => {
                       users.deployer.address,
                       users.other2.address,
                     ],
-                    'Unexpected recepient'
+                    'Unexpected recipient'
                   );
 
                   switch (ev._to) {
@@ -6986,14 +7093,16 @@ describe('Cashier and VoucherKernel', () => {
             users.other2.address,
             voucherID,
             users.other1.signer
-          ),
-            await expect(
-              utils.redeem(voucherID, users.other1.signer)
-            ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
+          );
+
+          await expect(
+            utils.redeem(voucherID, users.other1.signer)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
 
           await expect(
             utils.refund(voucherID, users.other1.signer)
           ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
+
         });
 
         it('[NEGATIVE] Transfer should revert if Attacker tries to execute voucher transfer', async () => {
