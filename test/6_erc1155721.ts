@@ -376,6 +376,38 @@ describe('ERC1155ERC721', () => {
           attackerInstance.approve(users.buyer.address, token721)
         ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
       });
+
+      it('[setVoucherKernelAddress] Should set setVoucherKernelAddress to valid address', async () => {
+        const tx = await contractERC1155ERC721.setVoucherKernelAddress(
+          users.other1.address
+        );
+
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.LOG_VK_SET,
+          (ev) => {
+            assert.equal(
+              ev._newVoucherKernel,
+              users.other1.address,
+              'ev._newVoucherKernel not as expected!'
+            );
+            assert.equal(
+              ev._triggeredBy,
+              users.deployer.address,
+              'ev._triggeredBy not as expected!'
+            );
+          }
+        );
+      });
+
+      it('[NEGATIVE][setVoucherKernelAddress] Should revert for zero address', async () => {
+        await expect(
+          contractERC1155ERC721.setVoucherKernelAddress(constants.ZERO_ADDRESS)
+        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
+      });
     });
 
     describe('ERC1155', () => {
