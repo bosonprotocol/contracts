@@ -408,6 +408,38 @@ describe('ERC1155ERC721', () => {
           contractERC1155ERC721.setVoucherKernelAddress(constants.ZERO_ADDRESS)
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
       });
+
+      it('[setCashierAddress] Should set setVoucherKernelAddress to valid address', async () => {
+        const tx = await contractERC1155ERC721.setCashierAddress(
+          contractCashier.address
+        );
+
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.LOG_CASHIER_SET,
+          (ev) => {
+            assert.equal(
+              ev._newCashier,
+              contractCashier.address,
+              'ev._newCashier not as expected!'
+            );
+            assert.equal(
+              ev._triggeredBy,
+              users.deployer.address,
+              'ev._triggeredBy not as expected!'
+            );
+          }
+        );
+      });
+
+      it('[NEGATIVE][setCashierAddress] Should revert for zero address', async () => {
+        await expect(
+          contractERC1155ERC721.setVoucherKernelAddress(constants.ZERO_ADDRESS)
+        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
+      });
     });
 
     describe('ERC1155', () => {
