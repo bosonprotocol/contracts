@@ -682,64 +682,6 @@ describe('ERC1155ERC721', () => {
         assert.equal(approvedAddress, expectedApprovedAddress);
       });
 
-      it('[approve] Should revert when same token owner is again approved', async () => {
-        const erc721 = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
-
-        const owner721Instance = contractERC1155ERC721.connect(
-          users.buyer.signer
-        );
-
-        const tx = await owner721Instance.approve(users.other1.address, erc721);
-        const txReceipt = await tx.wait();
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          ERC1155ERC721_Factory,
-          eventNames.APPROVAL,
-          (ev) => {
-            assert.equal(
-              ev._owner,
-              users.buyer.address,
-              'ev._owner not as expected!'
-            );
-            assert.equal(
-              ev._approved,
-              users.other1.address,
-              'ev._approved not as expected!'
-            );
-            assert.equal(
-              ev._tokenId._hex,
-              erc721._hex,
-              'ev._tokenId not as expected!'
-            );
-          }
-        );
-      });
-
-      it('[NEGATIVE][approve] Should revert when same token owner is again approved', async () => {
-        const erc721 = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
-
-        const owner721Instance = contractERC1155ERC721.connect(
-          users.buyer.signer
-        );
-
-        await expect(
-          owner721Instance.approve(users.buyer.address, erc721)
-        ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
-      });
-
       it('[mint] Should mint a token', async () => {
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
