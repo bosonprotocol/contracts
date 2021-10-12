@@ -378,7 +378,7 @@ describe('ERC1155ERC721', () => {
       });
     });
 
-    describe('Negative 1155 Transfers', () => {
+    describe('[NEGATIVE] 1155 Transfers', () => {
       beforeEach(async () => {
         await deployContracts();
         utils = await prepareUtils();
@@ -488,7 +488,7 @@ describe('ERC1155ERC721', () => {
       });
     });
 
-    describe('Negative 721 Transfers', () => {
+    describe('[Negative] 721 Transfers', () => {
       beforeEach(async () => {
         await deployContracts();
         utils = await prepareUtils();
@@ -504,7 +504,7 @@ describe('ERC1155ERC721', () => {
         );
       });
 
-      it('[NEGATIVE][ownerOf] should revert if incorrectId id provided', async () => {
+      it('[NEGATIVE][ownerOf] should revert if incorrect id provided', async () => {
         const sellerInstance = contractERC1155ERC721.connect(
           users.seller.signer
         );
@@ -599,6 +599,54 @@ describe('ERC1155ERC721', () => {
           revertReasons.TRANSFER_721_ADDRESS_FROM_NOT_AUTHORIZED
         );
       });
+
+      it('[transferFrom] Should be able to transfer ownership of ERC721 to another address', async () => {
+        const oldOwner = users.buyer;
+        const expectedNewOwner = users.other2;
+
+        const erc721 = await utils.commitToBuy(
+          oldOwner,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.product_price,
+          constants.buyer_deposit
+        );
+
+        await utils.transfer721(
+          oldOwner.address,
+          expectedNewOwner.address,
+          erc721,
+          users.buyer.signer
+        );
+
+        const owner721Instance = contractERC1155ERC721.connect(
+          users.buyer.signer
+        );
+        const newTokenOwner = await owner721Instance.ownerOf(erc721);
+
+        assert.equal(newTokenOwner, expectedNewOwner.address);
+      });
+
+      it('[NEGATIVE][transferFrom] Should not be able to transfer erc721 if address from is not authorized', async () => {
+        const erc721 = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.product_price,
+          constants.buyer_deposit
+        );
+
+        await expect(
+          utils.transfer721(
+            users.other1.address,
+            users.other2.address,
+            erc721,
+            users.buyer.signer
+          )
+        ).to.be.revertedWith(
+          revertReasons.TRANSFER_721_ADDRESS_FROM_NOT_AUTHORIZED
+        );
+      });
     });
 
     describe('Metadata', () => {
@@ -634,7 +682,7 @@ describe('ERC1155ERC721', () => {
         await contractERC1155ERC721._set721Route(metadata721Route);
       });
 
-      it('[uri]Should return correct url for erc1155', async () => {
+      it('[uri] Should return correct url for erc1155', async () => {
         const url = await contractERC1155ERC721.uri(TOKEN_SUPPLY_ID);
         assert.equal(url, metadataBase + metadata1155Route + TOKEN_SUPPLY_ID);
       });

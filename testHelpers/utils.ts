@@ -824,6 +824,21 @@ class Utils {
     );
   }
 
+  async transfer721(
+    oldVoucherOwner: string,
+    newVoucherOwner: string,
+    voucherID: string,
+    signer: Signer
+  ): Promise<ContractTransaction> {
+    const fromInstance = this.contractERC1155ERC721.connect(
+      signer
+    ) as ERC1155ERC721;
+
+    const method = fromInstance.functions[fnSignatures.transfer721];
+
+    return await method(oldVoucherOwner, newVoucherOwner, voucherID);
+  }
+
   calcTotalAmountToRecipients(
     event: DistributionEvent,
     distributionAmounts: DistributionAmounts,
