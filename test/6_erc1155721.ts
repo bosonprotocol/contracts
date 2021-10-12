@@ -681,6 +681,52 @@ describe('ERC1155ERC721', () => {
         const approvedAddress = await owner721Instance.getApproved(erc721);
         assert.equal(approvedAddress, expectedApprovedAddress);
       });
+
+      it('[mint] Should mint a token', async () => {
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        const tokenIdForMint = 123;
+        const tx = await contractERC1155ERC721.functions[fnSignatures.mint721](
+          users.other1.address,
+          tokenIdForMint
+        );
+
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.TRANSFER,
+          (ev) => {
+            assert.equal(
+              ev._from,
+              constants.ZERO_ADDRESS,
+              'ev._from not as expected!'
+            );
+            assert.equal(
+              ev._to,
+              users.other1.address,
+              'ev._to not as expected!'
+            );
+            assert.equal(
+              ev._tokenId,
+              tokenIdForMint,
+              'ev._tokenId not as expected!'
+            );
+          }
+        );
+      });
+
+      it('[NEGATIVE][mint] must fail: unauthorized minting ERC-721', async () => {
+        await expect(
+          contractERC1155ERC721.functions[fnSignatures.mint721](
+            users.attacker.address,
+            666
+          )
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VK);
+      });
     });
 
     describe('Metadata', () => {
