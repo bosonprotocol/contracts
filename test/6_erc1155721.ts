@@ -568,6 +568,25 @@ describe('ERC1155ERC721', () => {
         );
       });
 
+      it('[ownerOf] should token owner address for valid token', async () => {
+        const expectedOwner = users.buyer;
+
+        const erc721 = await utils.commitToBuy(
+          expectedOwner,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.product_price,
+          constants.buyer_deposit
+        );
+
+        const owner721Instance = contractERC1155ERC721.connect(
+          users.buyer.signer
+        );
+        const tokenOwner = await owner721Instance.ownerOf(erc721);
+
+        assert.equal(tokenOwner, expectedOwner.address);
+      });
+
       it('[NEGATIVE][ownerOf] should revert if incorrect id provided', async () => {
         const sellerInstance = contractERC1155ERC721.connect(
           users.seller.signer
