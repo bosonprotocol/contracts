@@ -378,7 +378,7 @@ describe('ERC1155ERC721', () => {
       });
     });
 
-    describe('[NEGATIVE] 1155 Transfers', () => {
+    describe('ERC1155', () => {
       beforeEach(async () => {
         await deployContracts();
         utils = await prepareUtils();
@@ -488,7 +488,7 @@ describe('ERC1155ERC721', () => {
       });
     });
 
-    describe('[Negative] 721 Transfers', () => {
+    describe('ERC721', () => {
       beforeEach(async () => {
         await deployContracts();
         utils = await prepareUtils();
@@ -646,6 +646,40 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(
           revertReasons.TRANSFER_721_ADDRESS_FROM_NOT_AUTHORIZED
         );
+      });
+
+      it('[getApproved] Should return zero address if no address set', async () => {
+        const erc721 = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.product_price,
+          constants.buyer_deposit
+        );
+
+        const owner721Instance = contractERC1155ERC721.connect(
+          users.buyer.signer
+        );
+        const approvedAddress = await owner721Instance.getApproved(erc721);
+        assert.equal(approvedAddress, constants.ZERO_ADDRESS);
+      });
+
+      it('[getApproved] Should return the approved address for a token ID', async () => {
+        const expectedApprovedAddress = users.other1.address;
+        const erc721 = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.product_price,
+          constants.buyer_deposit
+        );
+
+        const owner721Instance = contractERC1155ERC721.connect(
+          users.buyer.signer
+        );
+        await owner721Instance.approve(expectedApprovedAddress, erc721);
+        const approvedAddress = await owner721Instance.getApproved(erc721);
+        assert.equal(approvedAddress, expectedApprovedAddress);
       });
     });
 
