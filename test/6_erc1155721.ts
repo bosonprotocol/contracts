@@ -472,6 +472,27 @@ describe('ERC1155ERC721', () => {
         );
       });
 
+      it('[balanceOf] Get the balance of tokens of an account', async () => {
+        const expectedCount = constants.QTY_10;
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        await contractERC1155ERC721.functions[fnSignatures.mint1155](
+          users.deployer.address,
+          TOKEN_SUPPLY_ID,
+          expectedCount,
+          ethers.utils.formatBytes32String('0x0')
+        );
+
+        const balance = await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          users.deployer.address,
+          TOKEN_SUPPLY_ID
+        );
+
+        assert.equal(balance.toString(), expectedCount.toString());
+      });
+
       it('[NEGATIVE][safeTransfer1155] Attacker should not be able to transfer', async () => {
         await expect(
           utils.safeTransfer1155(
