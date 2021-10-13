@@ -16,6 +16,7 @@ node_modules
 # Secrets
 .secret
 .env
+.env.*
 
 # OS
 .DS_Store
@@ -32,3 +33,4 @@ coverage*
 # Personal Preferences
 .vscode
 *.txt
+

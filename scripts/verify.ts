@@ -83,7 +83,7 @@ export async function verifyContracts(env: string): Promise<void> {
   try {
     await hre.run('verify:verify', {
       address: contracts.erc1155NonTransferable,
-      constructorArguments: ['https://quests.bosonportal.io'],
+      constructorArguments: [process.env.CONDITIONAL_COMMIT_TOKEN_METADATA_URI],
     });
   } catch (error) {
     logError('ERC1155NonTransferable', error.message);
@@ -93,10 +93,10 @@ export async function verifyContracts(env: string): Promise<void> {
   try {
     await hre.run('verify:verify', {
       address: contracts.daiTokenWrapper,
-      constructorArguments: [contracts.daiToken],
+      constructorArguments: [contracts.daiTokenUsed],
     });
   } catch (error) {
-    logError('Gate', error.message);
+    logError('DAITokenWrapper', error.message);
   }
 }
 
