@@ -5,6 +5,11 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/cryptography/ECDSA.sol";
 
+/*
+ * This contract accepts metatransactions signed by the Owner.
+ * The signature of the Owner is verfied on chain and as a result 
+ * the metatransactions can be sent to the network by any EOA
+ */
 contract MetaTransactionReceiver is Ownable {
 
     using ECDSA for bytes32;
