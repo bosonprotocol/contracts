@@ -872,6 +872,35 @@ describe('ERC1155ERC721', () => {
         );
       });
 
+      describe('[balanceOf] should count all NFTs assigned to an owner', async () => {
+        it('[balanceOf] returns 1 when 1 NFT is assigned to owner', async () => {
+          await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
+          );
+          const expectedCount = 1;
+
+          const balanceOfBuyer = await contractERC1155ERC721.functions[
+            fnSignatures.balanceOf721
+          ](users.buyer.address);
+
+          assert.equal(balanceOfBuyer.toString(), expectedCount.toString());
+        });
+
+        it('[balanceOf] returns 0 when no NFTs are assigned to owner', async () => {
+          const expectedCount = 0;
+
+          const balanceOfBuyer = await contractERC1155ERC721.functions[
+            fnSignatures.balanceOf721
+          ](users.buyer.address);
+
+          assert.equal(balanceOfBuyer.toString(), expectedCount.toString());
+        });
+      });
+
       it('[NEGATIVE][balanceOf] should revert if ZERO address is provided', async () => {
         const balanceOf =
           contractERC1155ERC721.functions[fnSignatures.balanceOf721];
