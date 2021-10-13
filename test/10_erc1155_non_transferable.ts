@@ -256,7 +256,7 @@ describe('ERC1155 non transferable functionality', async () => {
           constants.ONE,
           constants.ZERO_BYTES
         )
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER_OR_SELF);
     });
 
     it('[NEGATIVE][mintBatch] Should revert if executed by attacker', async () => {
@@ -270,7 +270,7 @@ describe('ERC1155 non transferable functionality', async () => {
           [constants.ONE, constants.ONE, constants.ONE],
           constants.ZERO_BYTES
         )
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER_OR_SELF);
     });
 
     it('[NEGATIVE][burn] Should revert if executed by attacker', async () => {
@@ -288,7 +288,7 @@ describe('ERC1155 non transferable functionality', async () => {
 
       await expect(
         attackerInstance.burn(users.other1.address, nftTokenID, constants.ONE)
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER_OR_SELF);
     });
 
     it('[NEGATIVE][burnBatch] Should revert if executed by attacker', async () => {
@@ -312,7 +312,7 @@ describe('ERC1155 non transferable functionality', async () => {
 
       await expect(
         attackerInstance.burnBatch(users.other1.address, nftTokenIDs, balances)
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER_OR_SELF);
     });
 
     it('[NEGATIVE][setUri] Should revert if executed by attacker', async () => {
@@ -323,7 +323,7 @@ describe('ERC1155 non transferable functionality', async () => {
       const newUri = 'https://new.domain/{id}.json';
 
       await expect(attackerInstance.setUri(newUri)).to.be.revertedWith(
-        revertReasons.UNAUTHORIZED_OWNER
+        revertReasons.UNAUTHORIZED_OWNER_OR_SELF
       );
     });
 
@@ -407,7 +407,7 @@ describe('ERC1155 non transferable functionality', async () => {
         users.attacker.signer
       );
       await expect(attackerInstance.pause()).to.be.revertedWith(
-        revertReasons.UNAUTHORIZED_OWNER
+        revertReasons.UNAUTHORIZED_OWNER_OR_SELF
       );
     });
 
@@ -418,8 +418,194 @@ describe('ERC1155 non transferable functionality', async () => {
         users.attacker.signer
       );
       await expect(attackerInstance.unpause()).to.be.revertedWith(
-        revertReasons.UNAUTHORIZED_OWNER
+        revertReasons.UNAUTHORIZED_OWNER_OR_SELF
       );
+    });
+
+    describe('Metatransaction', () => {
+      beforeEach(async () => {
+        await deployContracts();
+      });
+
+      it('Self should be able to mint', async () => {
+        const nftTokenID = BN('2');
+
+        const mintiface = new ethers.utils.Interface([
+          'function mint(address _to, uint256 _tokenId, uint256 _value, bytes memory _data)',
+        ]);
+        const mintData = mintiface.encodeFunctionData('mint', [
+          users.other1.address,
+          nftTokenID,
+          constants.ONE,
+          constants.ZERO_BYTES,
+        ]);
+
+        const relayTransactionHash = ethers.utils.keccak256(
+          ethers.utils.solidityPack(
+            ['string', 'uint', 'address', 'uint', 'bytes'],
+            [
+              'boson:',
+              ethers.provider.network.chainId,
+              contractERC1155NonTransferable.address,
+              constants.ONE,
+              mintData,
+            ]
+          )
+        );
+
+        const sig = await users.deployer.signer.signMessage(
+          ethers.utils.arrayify(relayTransactionHash)
+        );
+
+        expect(
+          await contractERC1155NonTransferable.executeMetaTransaction(
+            constants.ONE,
+            mintData,
+            sig
+          )
+        )
+          .to.emit(contractERC1155NonTransferable, eventNames.TRANSFER_SINGLE)
+          .withArgs(
+            contractERC1155NonTransferable.address,
+            constants.ZERO_ADDRESS,
+            users.other1.address,
+            nftTokenID,
+            constants.ONE
+          );
+      });
+
+      it('[Negative][mint] Attacker should not be able to mint', async () => {
+        const nftTokenID = BN('2');
+
+        const mintiface = new ethers.utils.Interface([
+          'function mint(address _to, uint256 _tokenId, uint256 _value, bytes memory _data)',
+        ]);
+        const mintData = mintiface.encodeFunctionData('mint', [
+          users.other1.address,
+          nftTokenID,
+          constants.ONE,
+          constants.ZERO_BYTES,
+        ]);
+
+        const relayTransactionHash = ethers.utils.keccak256(
+          ethers.utils.solidityPack(
+            ['string', 'uint', 'address', 'uint', 'bytes'],
+            [
+              'boson:',
+              ethers.provider.network.chainId,
+              contractERC1155NonTransferable.address,
+              constants.ONE,
+              mintData,
+            ]
+          )
+        );
+
+        const sig = await users.other1.signer.signMessage(
+          ethers.utils.arrayify(relayTransactionHash)
+        );
+
+        await expect(
+          contractERC1155NonTransferable.executeMetaTransaction(
+            constants.ONE,
+            mintData,
+            sig
+          )
+        ).to.be.revertedWith(revertReasons.METATX_UNAUTHORIZED);
+      });
+
+      it('[Negative][mint] Owner should not be able to replay', async () => {
+        const nftTokenID = BN('2');
+
+        const mintiface = new ethers.utils.Interface([
+          'function mint(address _to, uint256 _tokenId, uint256 _value, bytes memory _data)',
+        ]);
+        const mintData = mintiface.encodeFunctionData('mint', [
+          users.other1.address,
+          nftTokenID,
+          constants.ONE,
+          constants.ZERO_BYTES,
+        ]);
+
+        const relayTransactionHash = ethers.utils.keccak256(
+          ethers.utils.solidityPack(
+            ['string', 'uint', 'address', 'uint', 'bytes'],
+            [
+              'boson:',
+              ethers.provider.network.chainId,
+              contractERC1155NonTransferable.address,
+              constants.ONE,
+              mintData,
+            ]
+          )
+        );
+
+        const sig = await users.deployer.signer.signMessage(
+          ethers.utils.arrayify(relayTransactionHash)
+        );
+
+        expect(
+          await contractERC1155NonTransferable.executeMetaTransaction(
+            constants.ONE,
+            mintData,
+            sig
+          )
+        )
+          .to.emit(contractERC1155NonTransferable, eventNames.TRANSFER_SINGLE)
+          .withArgs(
+            contractERC1155NonTransferable.address,
+            constants.ZERO_ADDRESS,
+            users.other1.address,
+            nftTokenID,
+            constants.ONE
+          );
+
+        await expect(
+          contractERC1155NonTransferable.executeMetaTransaction(
+            constants.ONE,
+            mintData,
+            sig
+          )
+        ).to.be.revertedWith(revertReasons.METATX_NONCE);
+      });
+
+      it('[Negative][XXXX] Owner should fail to call a non-existant method', async () => {
+        const nftTokenID = BN('2');
+
+        const mintiface = new ethers.utils.Interface([
+          'function XXXX(address _to, uint256 _tokenId, uint256 _value, bytes memory _data)',
+        ]);
+        const mintData = mintiface.encodeFunctionData('XXXX', [
+          users.other1.address,
+          nftTokenID,
+          constants.ONE,
+          constants.ZERO_BYTES,
+        ]);
+
+        const relayTransactionHash = ethers.utils.keccak256(
+          ethers.utils.solidityPack(
+            ['string', 'uint', 'address', 'uint', 'bytes'],
+            [
+              'boson:',
+              ethers.provider.network.chainId,
+              contractERC1155NonTransferable.address,
+              constants.ONE,
+              mintData,
+            ]
+          )
+        );
+
+        const sig = await users.deployer.signer.signMessage(
+          ethers.utils.arrayify(relayTransactionHash)
+        );
+
+        await expect(
+          contractERC1155NonTransferable.executeMetaTransaction(
+            constants.ONE,
+            mintData,
+            sig
+          )
+        ).to.be.revertedWith('');
+      });
     });
   });
 });
