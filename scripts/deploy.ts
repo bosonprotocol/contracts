@@ -206,10 +206,6 @@ class DeploymentExecutor {
     console.log('Cashier Contract Address: ', this.cashier.address);
     console.log('Boson Router Contract Address: ', this.br.address);
     console.log(
-      'Token Registry Contract Address: ',
-      this.tokenRegistry.address
-    );
-    console.log(
       'DAI Token Wrapper Contract Address: ',
       this.daiTokenWrapper.address
     );
