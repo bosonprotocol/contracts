@@ -3745,16 +3745,9 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Should transfer voucher supply', async () => {
-
-        // Check supply holder before
-        let supplyHolder = await contractVoucherKernel.getSupplyHolder(tokenSupplyKey);
-
-        assert.equal(
-          supplyHolder,
-          users.other1.address,
-          'Supply holder mismatch'
-        );
-
+          // Check supply holder before
+          expect(await contractVoucherKernel.getSupplyHolder(tokenSupplyKey)).to.equal(users.other1.address, 'Supply 1 before - holder mismatch');
+         
 /*
         // TODO: why doesn't this work?
         let actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
@@ -3857,13 +3850,8 @@ describe('Cashier and VoucherKernel', () => {
           'User2 after balance mismatch'
         );
 
-        supplyHolder = await contractVoucherKernel.getSupplyHolder(tokenSupplyKey);
-
-        assert.equal(
-          supplyHolder,
-          users.other2.address,
-          'Supply holder mismatch'
-        );
+          // Check supply holder after
+          expect(await contractVoucherKernel.getSupplyHolder(tokenSupplyKey)).to.equal(users.other2.address, 'Supply 1 after - holder mismatch');
 
       });
 
@@ -3954,36 +3942,11 @@ describe('Cashier and VoucherKernel', () => {
           tokenSupplyBatch = [BN(tokenSupplyKey), BN(tokenSupplyKey2)];
         });
 
-        it('Should transfer batch voucher supply', async () => {
-
-/*
-          // TODO: why doesn't this work?
-
+        it.only('Should transfer batch voucher supply', async () => {
           // Check supply holder before
-          let supplyHolder = await contractVoucherKernel.getSupplyHolder(tokenSupplyKey2);
-
-          assert.equal(
-            supplyHolder,
-            users.other1.address,
-            'Supply holder mismatch'
-          );
-
-         // Supply holder mismatch
-         // + expected - actual
-         //
-         // -0x1487756254E93d00a6DCDfc40bAe757c1e99E8c0
-         // +0x7aDCcBe646B707d0E8c0a339dF5277ee006f172B
-
-         // But if I switch the expected supply holder to users.other1.address,
-         // it fails and the expected/actual values are REVERSED!!!!
-
-         // Supply holder mismatch
-         // + expected - actual
-         //
-         // -0x7aDCcBe646B707d0E8c0a339dF5277ee006f172B
-         // +0x1487756254E93d00a6DCDfc40bAe757c1e99E8c0
-*/
-
+          expect(await contractVoucherKernel.getSupplyHolder(tokenSupplyKey)).to.equal(users.other1.address, 'Supply 1 before - holder mismatch');
+          expect(await contractVoucherKernel.getSupplyHolder(tokenSupplyKey2)).to.equal(users.other1.address, 'Supply 2 before - holder mismatch');
+         
           // balances before
           const user1BalanceBeforeTransfer = await contractERC1155ERC721.balanceOfBatch(
             [users.other1.address, users.other1.address],
@@ -4055,6 +4018,11 @@ describe('Cashier and VoucherKernel', () => {
             JSON.stringify(batchQuantities),
             'User2 after balance mismatch'
           );
+
+
+          // Check supply holder after
+          expect(await contractVoucherKernel.getSupplyHolder(tokenSupplyKey)).to.equal(users.other2.address, 'Supply 1 after - holder mismatch');
+          expect(await contractVoucherKernel.getSupplyHolder(tokenSupplyKey2)).to.equal(users.other2.address, 'Supply 2 after - holder mismatch');
 
         });
 
