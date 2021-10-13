@@ -556,6 +556,15 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_BATCH_1155);
       });
 
+      it('[balanceOfBatch] Should return balance of account-token pairs', async () => {
+        const balance = await contractERC1155ERC721.balanceOfBatch(
+          [users.seller.address],
+          [TOKEN_SUPPLY_ID]
+        );
+
+        assert.equal(balance[0].toString(), constants.QTY_10.toString());
+      });
+
       it('[NEGATIVE][balanceOfBatch] Should revert if balanceOfBatch has been provided with mismatched lengths', async () => {
         await expect(
           contractERC1155ERC721.balanceOfBatch(
