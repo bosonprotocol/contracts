@@ -423,23 +423,7 @@ describe('ERC1155 non transferable functionality', async () => {
     });
 
     describe('Metatransaction', () => {
-      beforeEach(async () => {
-        await deployContracts();
-      });
-
-      it('Self should be able to mint', async () => {
-        const nftTokenID = BN('2');
-
-        const mintiface = new ethers.utils.Interface([
-          'function mint(address _to, uint256 _tokenId, uint256 _value, bytes memory _data)',
-        ]);
-        const mintData = mintiface.encodeFunctionData('mint', [
-          users.other1.address,
-          nftTokenID,
-          constants.ONE,
-          constants.ZERO_BYTES,
-        ]);
-
+      function signData(signer, dataToSign) {
         const relayTransactionHash = ethers.utils.keccak256(
           ethers.utils.solidityPack(
             ['string', 'uint', 'address', 'uint', 'bytes'],
@@ -448,14 +432,33 @@ describe('ERC1155 non transferable functionality', async () => {
               ethers.provider.network.chainId,
               contractERC1155NonTransferable.address,
               constants.ONE,
-              mintData,
+              dataToSign,
             ]
           )
         );
 
-        const sig = await users.deployer.signer.signMessage(
+        const sig = signer.signMessage(
           ethers.utils.arrayify(relayTransactionHash)
         );
+
+        return sig
+      }
+
+      beforeEach(async () => {
+        await deployContracts();
+      });
+
+      it.only('Self should be able to mint', async () => {
+        const nftTokenID = BN('2');
+
+        const mintData = contractERC1155NonTransferable.interface.encodeFunctionData('mint', [
+          users.other1.address,
+          nftTokenID,
+          constants.ONE,
+          constants.ZERO_BYTES,
+        ]);
+
+        let sig = signData(users.deployer.signer, mintData);
 
         expect(
           await contractERC1155NonTransferable.executeMetaTransaction(
@@ -474,35 +477,17 @@ describe('ERC1155 non transferable functionality', async () => {
           );
       });
 
-      it('[Negative][mint] Attacker should not be able to mint', async () => {
+      it.only('[Negative][mint] Attacker should not be able to mint', async () => {
         const nftTokenID = BN('2');
 
-        const mintiface = new ethers.utils.Interface([
-          'function mint(address _to, uint256 _tokenId, uint256 _value, bytes memory _data)',
-        ]);
-        const mintData = mintiface.encodeFunctionData('mint', [
+        const mintData = contractERC1155NonTransferable.interface.encodeFunctionData('mint', [
           users.other1.address,
           nftTokenID,
           constants.ONE,
           constants.ZERO_BYTES,
         ]);
 
-        const relayTransactionHash = ethers.utils.keccak256(
-          ethers.utils.solidityPack(
-            ['string', 'uint', 'address', 'uint', 'bytes'],
-            [
-              'boson:',
-              ethers.provider.network.chainId,
-              contractERC1155NonTransferable.address,
-              constants.ONE,
-              mintData,
-            ]
-          )
-        );
-
-        const sig = await users.other1.signer.signMessage(
-          ethers.utils.arrayify(relayTransactionHash)
-        );
+        let sig = signData(users.other1.signer, mintData);
 
         await expect(
           contractERC1155NonTransferable.executeMetaTransaction(
@@ -513,35 +498,17 @@ describe('ERC1155 non transferable functionality', async () => {
         ).to.be.revertedWith(revertReasons.METATX_UNAUTHORIZED);
       });
 
-      it('[Negative][mint] Owner should not be able to replay', async () => {
+      it.only('[Negative][mint] Owner should not be able to replay', async () => {
         const nftTokenID = BN('2');
 
-        const mintiface = new ethers.utils.Interface([
-          'function mint(address _to, uint256 _tokenId, uint256 _value, bytes memory _data)',
-        ]);
-        const mintData = mintiface.encodeFunctionData('mint', [
+        const mintData = contractERC1155NonTransferable.interface.encodeFunctionData('mint', [
           users.other1.address,
           nftTokenID,
           constants.ONE,
           constants.ZERO_BYTES,
         ]);
 
-        const relayTransactionHash = ethers.utils.keccak256(
-          ethers.utils.solidityPack(
-            ['string', 'uint', 'address', 'uint', 'bytes'],
-            [
-              'boson:',
-              ethers.provider.network.chainId,
-              contractERC1155NonTransferable.address,
-              constants.ONE,
-              mintData,
-            ]
-          )
-        );
-
-        const sig = await users.deployer.signer.signMessage(
-          ethers.utils.arrayify(relayTransactionHash)
-        );
+        let sig = signData(users.deployer.signer, mintData);
 
         await contractERC1155NonTransferable.executeMetaTransaction(
           constants.ONE,
@@ -558,40 +525,25 @@ describe('ERC1155 non transferable functionality', async () => {
         ).to.be.revertedWith(revertReasons.METATX_NONCE);
       });
 
-      it('[Negative][XXXX] Owner should fail to call a non-existant method', async () => {
+      it.only('[Negative][XXXX] Owner should fail to call a non-existant method', async () => {
         const nftTokenID = BN('2');
 
         const mintiface = new ethers.utils.Interface([
           'function XXXX(address _to, uint256 _tokenId, uint256 _value, bytes memory _data)',
         ]);
-        const mintData = mintiface.encodeFunctionData('XXXX', [
+        const xxxxData = mintiface.encodeFunctionData('XXXX', [
           users.other1.address,
           nftTokenID,
           constants.ONE,
           constants.ZERO_BYTES,
         ]);
 
-        const relayTransactionHash = ethers.utils.keccak256(
-          ethers.utils.solidityPack(
-            ['string', 'uint', 'address', 'uint', 'bytes'],
-            [
-              'boson:',
-              ethers.provider.network.chainId,
-              contractERC1155NonTransferable.address,
-              constants.ONE,
-              mintData,
-            ]
-          )
-        );
-
-        const sig = await users.deployer.signer.signMessage(
-          ethers.utils.arrayify(relayTransactionHash)
-        );
+        let sig = signData(users.deployer.signer, xxxxData);
 
         await expect(
           contractERC1155NonTransferable.executeMetaTransaction(
             constants.ONE,
-            mintData,
+            xxxxData,
             sig
           )
         ).to.be.revertedWith('');
