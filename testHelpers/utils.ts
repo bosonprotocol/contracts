@@ -747,10 +747,6 @@ class Utils {
     const deployerInstance = this.contractCashier.connect(deployer) as Cashier;
     const tx = await deployerInstance.withdraw(voucherID);
 
-    const receipt = await tx.wait();
-
-    //console.log('GAS USED: ', receipt.gasUsed.toString());
-
     return tx;
   }
 
