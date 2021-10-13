@@ -38,7 +38,6 @@ contract DAITokenWrapper is
      * @notice Conforms to EIP-2612. Calls permit on token, which may or may not have a permit function that conforms to EIP-2612
      * @param _tokenOwner Address of the token owner who is approving tokens to be transferred by spender
      * @param _spender Address of the party who is transferring tokens on owner's behalf
-     * @param _value Number of tokens to be transferred
      * @param _deadline Time after which this permission to transfer is no longer valid
      * @param _v Part of the owner's signatue
      * @param _r Part of the owner's signatue
@@ -47,7 +46,7 @@ contract DAITokenWrapper is
     function permit(
         address _tokenOwner,
         address _spender,
-        uint256 _value,
+        uint256,
         uint256 _deadline,
         uint8 _v,
         bytes32 _r,
