@@ -755,6 +755,77 @@ describe('ERC1155ERC721', () => {
           )
         ).to.be.revertedWith(revertReasons.MISMATCHED_ARRAY_LENGTHS);
       });
+
+      it('[burnBatch] Should do batch minting of tokens', async () => {
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        const tokenIds = TOKEN_SUPPLY_ID;
+        const tx = await contractERC1155ERC721.burnBatch(
+          users.seller.address,
+          [tokenIds],
+          [constants.QTY_10]
+        );
+
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.TRANSFER_BATCH,
+          (ev) => {
+            assert.equal(
+              ev._to,
+              constants.ZERO_ADDRESS,
+              'ev._to not as expected!'
+            );
+            assert.equal(
+              ev._from,
+              users.seller.address,
+              'ev._from not as expected!'
+            );
+            assert.equal(
+              ev._ids.toString(),
+              tokenIds.toString(),
+              'ev._ids not as expected!'
+            );
+            assert.equal(
+              ev._values.toString(),
+              constants.QTY_10.toString(),
+              'ev._values not as expected!'
+            );
+          }
+        );
+      });
+
+      it('[NEGATIVE][burnBatch] Should revert when to is a zero address', async () => {
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        await expect(
+          contractERC1155ERC721.burnBatch(
+            constants.ZERO_ADDRESS,
+            [TOKEN_SUPPLY_ID],
+            [constants.QTY_10]
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
+      });
+
+      it('[NEGATIVE][burnBatch] Should revert if array lengths mismatch', async () => {
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        await expect(
+          contractERC1155ERC721.burnBatch(
+            users.seller.address,
+            [TOKEN_SUPPLY_ID],
+            [constants.QTY_10, constants.QTY_1]
+          )
+        ).to.be.revertedWith(revertReasons.MISMATCHED_ARRAY_LENGTHS);
+      });
     });
 
     describe('ERC721', () => {
