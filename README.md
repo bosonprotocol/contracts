@@ -121,6 +121,23 @@ otherwise, create a JSON file creating accounts in the same format as
 ./go "tests:unit[<port>,<path-to-accounts-json>]"
 ```
 
+#### Forking Rinkeby to localnode
+
+It is possible to fork the state of the Rinkeby chain to have it deployed locally. 
+The following hardhat commands will achieve this:
+
+```shell script
+npx hardhat node --fork https://eth-rinkeby.alchemyapi.io/v2/<<alchemy key>>
+```
+
+You can then deploy using the command
+
+```shell script
+npx hardhat deploy --network localhost  (edited) 
+```
+
+This makes the BOSON test token deployed on Rinkeby (0xEDa08eF1c6ff51Ca7Fd681295797102c1B84606c) available to your local hardhat chain
+
 #### Coverage
 
 We use [solidity-coverage](https://github.com/sc-forks/solidity-coverage) to 
