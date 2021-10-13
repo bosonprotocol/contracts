@@ -700,6 +700,13 @@ contract BosonRouter is
         address tokenPriceAddress = IVoucherKernel(voucherKernel)
             .getVoucherPriceToken(_tokenIdSupply);
 
+        IVoucherKernel(voucherKernel).fillOrder(
+            _tokenIdSupply,
+            _issuer,
+            msg.sender,
+            TKNETH
+        );
+
         permitTransferFromAndAddEscrow(
             tokenPriceAddress,
             price,
@@ -708,14 +715,7 @@ contract BosonRouter is
             _r,
             _s
         );
-
-        IVoucherKernel(voucherKernel).fillOrder(
-            _tokenIdSupply,
-            _issuer,
-            msg.sender,
-            TKNETH
-        );
-
+        
         //record funds in escrow ...
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }

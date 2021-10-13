@@ -32,7 +32,7 @@ let PROMISE_VALID_FROM: number; // evaluated based on the current block timestam
 let PROMISE_VALID_TO: number; // evaluated based on the PROMISE_VALID_FROM + 2 * SECONDS_IN_DAY
 const PROMISE_PRICE1 = 10;
 const PROMISE_PRICE2 = 21;
-const PROMISE_DEPOSITSE1 = 1;
+const PROMISE_DEPOSITSE1 = 1000000;
 const PROMISE_DEPOSITSE2 = 5;
 const PROMISE_DEPOSITBU1 = 1;
 const PROMISE_DEPOSITBU2 = 2;

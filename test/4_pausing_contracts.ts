@@ -226,7 +226,9 @@ describe('Cashier && VK', () => {
               users.seller,
               timestamp,
               timestamp + constants.SECONDS_IN_DAY,
+              constants.product_price,
               constants.seller_deposit,
+              constants.buyer_deposit,
               constants.QTY_1
             )
           ).to.be.revertedWith(revertReasons.PAUSED);
@@ -237,7 +239,9 @@ describe('Cashier && VK', () => {
             users.seller,
             timestamp,
             timestamp + constants.SECONDS_IN_DAY,
+            constants.product_price,
             constants.seller_deposit,
+            constants.buyer_deposit,
             constants.QTY_1
           );
 
@@ -249,14 +253,22 @@ describe('Cashier && VK', () => {
             users.seller,
             timestamp,
             timestamp + constants.SECONDS_IN_DAY,
+            constants.product_price,
             constants.seller_deposit,
+            constants.buyer_deposit,
             constants.QTY_1
           );
 
           await contractBosonRouter.pause();
 
           await expect(
-            utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+            utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
+            )
           ).to.be.revertedWith(revertReasons.PAUSED);
         });
       });
@@ -302,7 +314,9 @@ describe('Cashier && VK', () => {
                 users.seller,
                 timestamp,
                 timestamp + constants.SECONDS_IN_DAY,
+                constants.product_price,
                 constants.seller_deposit,
+                constants.buyer_deposit,
                 constants.QTY_1
               )
             ).to.be.revertedWith(revertReasons.PAUSED);
@@ -313,7 +327,9 @@ describe('Cashier && VK', () => {
               users.seller,
               timestamp,
               timestamp + constants.SECONDS_IN_DAY,
+              constants.product_price,
               constants.seller_deposit,
+              constants.buyer_deposit,
               constants.QTY_1
             );
 
@@ -325,14 +341,22 @@ describe('Cashier && VK', () => {
               users.seller,
               timestamp,
               timestamp + constants.SECONDS_IN_DAY,
+              constants.product_price,
               constants.seller_deposit,
+              constants.buyer_deposit,
               constants.QTY_1
             );
 
             await contractBosonRouter.pause();
 
             await expect(
-              utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+              utils.commitToBuy(
+                users.buyer,
+                users.seller,
+                TOKEN_SUPPLY_ID,
+                constants.product_price,
+                constants.buyer_deposit
+              )
             ).to.be.revertedWith(revertReasons.PAUSED);
           });
         });
@@ -368,7 +392,9 @@ describe('Cashier && VK', () => {
               users.seller,
               timestamp,
               timestamp + constants.SECONDS_IN_DAY,
+              constants.product_price,
               constants.seller_deposit,
+              constants.buyer_deposit,
               constants.QTY_10
             );
           });
@@ -381,7 +407,9 @@ describe('Cashier && VK', () => {
                 users.seller,
                 timestamp,
                 timestamp + constants.SECONDS_IN_DAY,
+                constants.product_price,
                 constants.seller_deposit,
+                constants.buyer_deposit,
                 constants.QTY_1
               )
             ).to.be.revertedWith(revertReasons.PAUSED);
@@ -392,7 +420,9 @@ describe('Cashier && VK', () => {
               users.seller,
               timestamp,
               timestamp + constants.SECONDS_IN_DAY,
+              constants.product_price,
               constants.seller_deposit,
+              constants.buyer_deposit,
               constants.QTY_1
             );
 
@@ -404,14 +434,22 @@ describe('Cashier && VK', () => {
               users.seller,
               timestamp,
               timestamp + constants.SECONDS_IN_DAY,
+              constants.product_price,
               constants.seller_deposit,
+              constants.buyer_deposit,
               constants.QTY_1
             );
 
             await contractBosonRouter.pause();
 
             await expect(
-              utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+              utils.commitToBuy(
+                users.buyer,
+                users.seller,
+                TOKEN_SUPPLY_ID,
+                constants.product_price,
+                constants.buyer_deposit
+              )
             ).to.be.revertedWith(revertReasons.PAUSED);
           });
         });
@@ -463,7 +501,9 @@ describe('Cashier && VK', () => {
                 users.seller,
                 timestamp,
                 timestamp + constants.SECONDS_IN_DAY,
+                constants.product_price,
                 constants.seller_deposit,
+                constants.buyer_deposit,
                 constants.QTY_1
               )
             ).to.be.revertedWith(revertReasons.PAUSED);
@@ -474,7 +514,9 @@ describe('Cashier && VK', () => {
               users.seller,
               timestamp,
               timestamp + constants.SECONDS_IN_DAY,
+              constants.product_price,
               constants.seller_deposit,
+              constants.buyer_deposit,
               constants.QTY_1
             );
 
@@ -486,14 +528,22 @@ describe('Cashier && VK', () => {
               users.seller,
               timestamp,
               timestamp + constants.SECONDS_IN_DAY,
+              constants.product_price,
               constants.seller_deposit,
+              constants.buyer_deposit,
               constants.QTY_1
             );
 
             await contractBosonRouter.pause();
 
             await expect(
-              utils.commitToBuy(users.buyer, users.seller, TOKEN_SUPPLY_ID)
+              utils.commitToBuy(
+                users.buyer,
+                users.seller,
+                TOKEN_SUPPLY_ID,
+                constants.product_price,
+                constants.buyer_deposit
+              )
             ).to.be.revertedWith(revertReasons.PAUSED);
           });
         });
@@ -558,7 +608,9 @@ describe('Cashier && VK', () => {
             users.seller,
             timestamp,
             timestamp + constants.SECONDS_IN_DAY,
+            constants.product_price,
             constants.seller_deposit,
+            constants.buyer_deposit,
             constants.QTY_10
           );
         });
@@ -567,7 +619,9 @@ describe('Cashier && VK', () => {
           VOUCHER_ID = await utils.commitToBuy(
             users.buyer,
             users.seller,
-            TOKEN_SUPPLY_ID
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
           );
 
           await contractBosonRouter.pause();
@@ -581,7 +635,9 @@ describe('Cashier && VK', () => {
           VOUCHER_ID = await utils.commitToBuy(
             users.buyer,
             users.seller,
-            TOKEN_SUPPLY_ID
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
           );
 
           await utils.refund(VOUCHER_ID, users.buyer.signer);
@@ -597,7 +653,9 @@ describe('Cashier && VK', () => {
           VOUCHER_ID = await utils.commitToBuy(
             users.buyer,
             users.seller,
-            TOKEN_SUPPLY_ID
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
           );
 
           await contractBosonRouter.pause();
@@ -611,7 +669,9 @@ describe('Cashier && VK', () => {
           VOUCHER_ID = await utils.commitToBuy(
             users.buyer,
             users.seller,
-            TOKEN_SUPPLY_ID
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
           );
           await utils.redeem(VOUCHER_ID, users.buyer.signer);
 
@@ -660,7 +720,9 @@ describe('Cashier && VK', () => {
               users.seller,
               timestamp,
               timestamp + constants.SECONDS_IN_DAY,
+              constants.product_price,
               constants.seller_deposit,
+              constants.buyer_deposit,
               constants.QTY_10
             );
           });
@@ -669,7 +731,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await contractBosonRouter.pause();
@@ -683,7 +747,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await utils.refund(VOUCHER_ID, users.buyer.signer);
@@ -699,7 +765,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await contractBosonRouter.pause();
@@ -713,7 +781,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
             await utils.redeem(VOUCHER_ID, users.buyer.signer);
 
@@ -756,7 +826,9 @@ describe('Cashier && VK', () => {
               users.seller,
               timestamp,
               timestamp + constants.SECONDS_IN_DAY,
+              constants.product_price,
               constants.seller_deposit,
+              constants.buyer_deposit,
               constants.QTY_10
             );
           });
@@ -765,7 +837,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await contractBosonRouter.pause();
@@ -779,7 +853,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await utils.refund(VOUCHER_ID, users.buyer.signer);
@@ -795,7 +871,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await contractBosonRouter.pause();
@@ -809,7 +887,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
             await utils.redeem(VOUCHER_ID, users.buyer.signer);
 
@@ -862,7 +942,9 @@ describe('Cashier && VK', () => {
               users.seller,
               timestamp,
               timestamp + constants.SECONDS_IN_DAY,
+              constants.product_price,
               constants.seller_deposit,
+              constants.buyer_deposit,
               constants.QTY_10
             );
           });
@@ -871,7 +953,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await contractBosonRouter.pause();
@@ -885,7 +969,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await utils.refund(VOUCHER_ID, users.buyer.signer);
@@ -901,7 +987,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await contractBosonRouter.pause();
@@ -915,7 +1003,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
             await utils.redeem(VOUCHER_ID, users.buyer.signer);
 
@@ -963,7 +1053,9 @@ describe('Cashier && VK', () => {
               users.seller,
               timestamp,
               timestamp + constants.SECONDS_IN_DAY,
+              constants.product_price,
               constants.seller_deposit,
+              constants.buyer_deposit,
               constants.QTY_10
             );
           });
@@ -972,7 +1064,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await contractBosonRouter.pause();
@@ -986,7 +1080,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await utils.refund(VOUCHER_ID, users.buyer.signer);
@@ -1002,7 +1098,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
 
             await contractBosonRouter.pause();
@@ -1016,7 +1114,9 @@ describe('Cashier && VK', () => {
             VOUCHER_ID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
             await utils.redeem(VOUCHER_ID, users.buyer.signer);
 
@@ -1108,14 +1208,18 @@ describe('Cashier && VK', () => {
             users.seller,
             timestamp,
             timestamp + constants.SECONDS_IN_DAY,
+            constants.product_price,
             constants.seller_deposit,
+            constants.buyer_deposit,
             constants.QTY_1
           );
 
           const voucherID = await utils.commitToBuy(
             users.buyer,
             users.seller,
-            TOKEN_SUPPLY_ID
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
           );
           await utils.refund(voucherID, users.buyer.signer);
 
@@ -1168,14 +1272,18 @@ describe('Cashier && VK', () => {
               users.seller,
               timestamp,
               timestamp + constants.SECONDS_IN_DAY,
+              constants.product_price,
               constants.seller_deposit,
+              constants.buyer_deposit,
               constants.QTY_1
             );
 
             const voucherID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
             await utils.refund(voucherID, users.buyer.signer);
 
@@ -1221,14 +1329,18 @@ describe('Cashier && VK', () => {
               users.seller,
               timestamp,
               timestamp + constants.SECONDS_IN_DAY,
+              constants.product_price,
               constants.seller_deposit,
+              constants.buyer_deposit,
               constants.QTY_1
             );
 
             const voucherID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
             await utils.refund(voucherID, users.buyer.signer);
 
@@ -1287,14 +1399,18 @@ describe('Cashier && VK', () => {
               users.seller,
               timestamp,
               timestamp + constants.SECONDS_IN_DAY,
+              constants.product_price,
               constants.seller_deposit,
+              constants.buyer_deposit,
               constants.QTY_1
             );
 
             const voucherID = await utils.commitToBuy(
               users.buyer,
               users.seller,
-              TOKEN_SUPPLY_ID
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
             );
             await utils.refund(voucherID, users.buyer.signer);
 

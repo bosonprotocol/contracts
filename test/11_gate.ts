@@ -219,10 +219,13 @@ describe('Gate contract', async () => {
       users.seller,
       timestamp,
       timestamp + constants.SECONDS_IN_DAY,
+      constants.product_price,
       constants.seller_deposit,
+      constants.buyer_deposit,
       constants.QTY_10,
       gate,
-      conditionalOrderNftTokenID
+      conditionalOrderNftTokenID,
+      true
     );
 
     const txReceipt = await txOrder.wait();
@@ -475,7 +478,13 @@ describe('Gate contract', async () => {
         expect(await contractGate.check(users.buyer.address, tokenId)).to.be
           .true;
 
-        await utils.commitToBuy(users.buyer, users.seller, tokenId);
+        await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          tokenId,
+          constants.product_price,
+          constants.buyer_deposit
+        );
 
         expect(await contractGate.check(users.buyer.address, tokenId)).to.be
           .false;

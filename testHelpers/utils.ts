@@ -3,7 +3,6 @@ import {ecsign} from 'ethereumjs-util';
 import {BigNumber, Contract, ContractTransaction, Signer} from 'ethers';
 import {Account, DistributionAmounts, DistributionEvent} from './types';
 
-import constants from './constants';
 import * as events from './events';
 import fnSignatures from './functionSignatures';
 import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
@@ -28,18 +27,36 @@ import {
 } from '../typechain';
 
 class Utils {
-  createOrder: (seller, from, to, sellerDeposit, qty, returnTx?) => any;
+  createOrder: (
+    seller,
+    from,
+    to,
+    promisePrice,
+    sellerDeposit,
+    buyerDeposit,
+    qty,
+    returnTx?
+  ) => any;
   createOrderConditional: (
     seller,
     from,
     to,
+    promisePrice,
     sellerDeposit,
+    buyerDeposit,
     qty,
     gateContract,
     nftTokenID,
     returnTx?
   ) => any;
-  commitToBuy: (buyer, seller, tokenSupplyId, returnTx?) => any;
+  commitToBuy: (
+    buyer,
+    seller,
+    tokenSupplyId,
+    promisePrice,
+    buyerDeposit,
+    returnTx?
+  ) => any;
   factories?: {
     ERC1155ERC721: ERC1155ERC721__factory | any;
     VoucherKernel: VoucherKernel__factory | any;
@@ -82,7 +99,9 @@ class Utils {
     seller: Account,
     from: number,
     to: number,
+    promisePrice: number | string | BigNumber,
     sellerDeposit: number | string,
+    buyerDeposit: number | string,
     qty: number | string,
     returnTx = false
   ): Promise<ContractTransaction | string> {
@@ -92,19 +111,15 @@ class Utils {
       seller.signer
     ) as BosonRouter;
     const txOrder = await sellerInstance.requestCreateOrderETHETH(
-      [
-        from,
-        to,
-        constants.product_price,
-        sellerDeposit,
-        constants.buyer_deposit,
-        qty,
-      ],
+      [from, to, promisePrice, sellerDeposit, buyerDeposit, qty],
       {
         value: txValue,
       }
     );
 
+    if (returnTx) return txOrder;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
     const txReceipt = await txOrder.wait();
     let eventArgs;
 
@@ -115,14 +130,16 @@ class Utils {
       (e) => (eventArgs = e)
     );
 
-    return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
+    return eventArgs._tokenIdSupply.toString();
   }
 
   async requestCreateOrderETHTKNSameWithPermit(
     seller: Account,
     from: number,
     to: number,
+    promisePrice: number | string | BigNumber,
     sellerDeposit: number | string,
+    buyerDeposit: number | string,
     qty: number | string,
     returnTx = false
   ): Promise<ContractTransaction | string> {
@@ -156,19 +173,15 @@ class Utils {
       v,
       r,
       s,
-      [
-        from,
-        to,
-        constants.product_price,
-        sellerDeposit,
-        constants.buyer_deposit,
-        qty,
-      ],
+      [from, to, promisePrice, sellerDeposit, buyerDeposit, qty],
       {
         from: seller.address,
       }
     );
 
+    if (returnTx) return txOrder;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
     const txReceipt = await txOrder.wait();
     let eventArgs;
 
@@ -179,16 +192,19 @@ class Utils {
       (e) => (eventArgs = e)
     );
 
-    return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
+    return eventArgs._tokenIdSupply.toString();
   }
 
   async requestCreateOrderTKNTKNWithPermit(
     seller: Account,
     from: number,
     to: number,
+    promisePrice: number | string | BigNumber,
     sellerDeposit: number | string,
-    qty: number | string
-  ): Promise<string> {
+    buyerDeposit: number | string,
+    qty: number | string,
+    returnTx = false
+  ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
     const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
@@ -218,19 +234,15 @@ class Utils {
       v,
       r,
       s,
-      [
-        from,
-        to,
-        constants.product_price,
-        sellerDeposit,
-        constants.buyer_deposit,
-        qty,
-      ],
+      [from, to, promisePrice, sellerDeposit, buyerDeposit, qty],
       {
         from: seller.address,
       }
     );
 
+    if (returnTx) return txOrder;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
     const txReceipt = await txOrder.wait();
     let eventArgs;
 
@@ -248,11 +260,14 @@ class Utils {
     seller: Account,
     from: number,
     to: number,
+    promisePrice: number | string | BigNumber,
     sellerDeposit: number | string,
+    buyerDeposit: number | string,
     qty: number | string,
     gateContract: Account,
-    nftTokenId: number | string | null
-  ): Promise<ContractTransaction> {
+    nftTokenId: number | string | null,
+    returnTx = false
+  ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
 
     const nonce = await this.contractBSNTokenDeposit.nonces(seller.address);
@@ -274,8 +289,7 @@ class Utils {
     const sellerInstance = this.contractBSNRouter.connect(
       seller.signer
     ) as BosonRouter;
-    return sellerInstance.requestCreateOrderTKNTKNWithPermitConditional(
-      // const txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermitConditional(
+    const txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermitConditional(
       this.contractBSNTokenPrice.address,
       this.contractBSNTokenDeposit.address,
       txValue,
@@ -283,14 +297,7 @@ class Utils {
       v,
       r,
       s,
-      [
-        from,
-        to,
-        constants.product_price,
-        sellerDeposit,
-        constants.buyer_deposit,
-        qty,
-      ],
+      [from, to, promisePrice, sellerDeposit, buyerDeposit, qty],
       gateContract.address,
       nftTokenId || '0',
       {
@@ -298,24 +305,28 @@ class Utils {
       }
     );
 
-    // const txReceipt = await txOrder.wait();
-    // let eventArgs;
+    if (returnTx) return txOrder;
 
-    // events.assertEventEmitted(
-    //   txReceipt,
-    //   this.factories.BosonRouter,
-    //   events.eventNames.LOG_ORDER_CREATED,
-    //   (e) => (eventArgs = e)
-    // );
+    const txReceipt = await txOrder.wait();
+    let eventArgs;
 
-    // return eventArgs._tokenIdSupply.toString();
+    events.assertEventEmitted(
+      txReceipt,
+      this.factories.BosonRouter,
+      events.eventNames.LOG_ORDER_CREATED,
+      (e) => (eventArgs = e)
+    );
+
+    return eventArgs._tokenIdSupply.toString();
   }
 
   async requestCreateOrderETHTKNWithPermit(
     seller: Account,
     from: number,
     to: number,
+    promisePrice: number | string | BigNumber,
     sellerDeposit: number | string,
+    buyerDeposit: number | string,
     qty: number | string,
     returnTx = false
   ): Promise<ContractTransaction | string> {
@@ -346,19 +357,15 @@ class Utils {
       v,
       r,
       s,
-      [
-        from,
-        to,
-        constants.product_price,
-        sellerDeposit,
-        constants.buyer_deposit,
-        qty,
-      ],
+      [from, to, promisePrice, sellerDeposit, buyerDeposit, qty],
       {
         from: seller.address,
       }
     );
 
+    if (returnTx) return txOrder;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
     const txReceipt = await txOrder.wait();
     let eventArgs;
 
@@ -369,14 +376,16 @@ class Utils {
       (e) => (eventArgs = e)
     );
 
-    return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
+    return eventArgs._tokenIdSupply.toString();
   }
 
   async requestCreateOrderTKNETH(
     seller: Account,
     from: number,
     to: number,
+    promisePrice: number | string | BigNumber,
     sellerDeposit: number | string,
+    buyerDeposit: number | string,
     qty: number | string,
     returnTx = false
   ): Promise<ContractTransaction | string> {
@@ -387,19 +396,15 @@ class Utils {
     ) as BosonRouter;
     const txOrder = await sellerInstance.requestCreateOrderTKNETH(
       this.contractBSNTokenPrice.address,
-      [
-        from,
-        to,
-        constants.product_price,
-        sellerDeposit,
-        constants.buyer_deposit,
-        qty,
-      ],
+      [from, to, promisePrice, sellerDeposit, buyerDeposit, qty],
       {
         value: txValue,
       }
     );
 
+    if (returnTx) return txOrder;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
     const txReceipt = await txOrder.wait();
     let eventArgs;
 
@@ -410,24 +415,25 @@ class Utils {
       (e) => (eventArgs = e)
     );
 
-    return returnTx ? txReceipt : eventArgs._tokenIdSupply.toString();
+    return eventArgs._tokenIdSupply.toString();
   }
 
   async commitToBuyTKNTKNWithPermit(
     buyer: Account,
     seller: Account,
-    tokenSupplyId: string
-  ): Promise<string> {
-    const txValue = BN(constants.buyer_deposit).add(
-      BN(constants.product_price)
-    );
+    tokenSupplyId: string,
+    promisePrice: number | string | BigNumber,
+    buyerDeposit: number | string,
+    returnTx = false
+  ): Promise<ContractTransaction | string> {
+    const txValue = BN(buyerDeposit).add(BN(promisePrice));
     const nonce1 = await this.contractBSNTokenDeposit.nonces(buyer.address);
 
     const digestDeposit = await getApprovalDigest(
       this.contractBSNTokenDeposit,
       buyer.address,
       this.contractBSNRouter.address,
-      constants.buyer_deposit,
+      buyerDeposit,
       nonce1,
       this.deadline
     );
@@ -447,7 +453,7 @@ class Utils {
       this.contractBSNTokenPrice,
       buyer.address,
       this.contractBSNRouter.address,
-      constants.product_price,
+      promisePrice,
       nonce2,
       this.deadline
     );
@@ -477,6 +483,9 @@ class Utils {
       sDeposit
     );
 
+    if (returnTx) return commitTx;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
     const txReceipt = await commitTx.wait();
     let eventArgs;
 
@@ -493,11 +502,12 @@ class Utils {
   async commitToBuyTKNTKNSameWithPermit(
     buyer: Account,
     seller: Account,
-    tokenSupplyId: string
-  ): Promise<string> {
-    const txValue = BN(constants.buyer_deposit).add(
-      BN(constants.product_price)
-    );
+    tokenSupplyId: string,
+    promisePrice: number | string | BigNumber,
+    buyerDeposit: number | string,
+    returnTx = false
+  ): Promise<ContractTransaction | string> {
+    const txValue = BN(buyerDeposit).add(BN(promisePrice));
     const nonce = await this.contractBSNTokenSame.nonces(buyer.address);
 
     const digestTxValue = await getApprovalDigest(
@@ -531,6 +541,9 @@ class Utils {
       s
     );
 
+    if (returnTx) return commitTx;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
     const txReceipt = await commitTx.wait();
     let eventArgs;
 
@@ -547,15 +560,18 @@ class Utils {
   async commitToBuyETHTKNWithPermit(
     buyer: Account,
     seller: Account,
-    tokenSupplyId: string
-  ): Promise<string> {
+    tokenSupplyId: string,
+    promisePrice: number | string | BigNumber,
+    buyerDeposit: number | string,
+    returnTx = false
+  ): Promise<ContractTransaction | string> {
     const nonce1 = await this.contractBSNTokenDeposit.nonces(buyer.address);
 
     const digestDeposit = await getApprovalDigest(
       this.contractBSNTokenDeposit,
       buyer.address,
       this.contractBSNRouter.address,
-      constants.buyer_deposit,
+      buyerDeposit,
       nonce1,
       this.deadline
     );
@@ -568,18 +584,21 @@ class Utils {
     const buyerInstance = this.contractBSNRouter.connect(
       buyer.signer
     ) as BosonRouter;
-    const txOrder = await buyerInstance.requestVoucherETHTKNWithPermit(
+    const commitTx = await buyerInstance.requestVoucherETHTKNWithPermit(
       tokenSupplyId,
       seller.address,
-      constants.buyer_deposit,
+      buyerDeposit,
       this.deadline,
       v,
       r,
       s,
-      {value: constants.product_price.toString()}
+      {value: promisePrice.toString()}
     );
 
-    const txReceipt = await txOrder.wait();
+    if (returnTx) return commitTx;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
+    const txReceipt = await commitTx.wait();
     let eventArgs;
 
     events.assertEventEmitted(
@@ -596,11 +615,11 @@ class Utils {
     buyer: Account,
     seller: Account,
     tokenSupplyId: string,
+    promisePrice: number | string | BigNumber,
+    buyerDeposit: number | string,
     returnTx = false
   ): Promise<ContractTransaction | string> {
-    const txValue = BN(constants.buyer_deposit).add(
-      BN(constants.product_price)
-    );
+    const txValue = BN(buyerDeposit).add(BN(promisePrice)); // TODO MAKE PARAMETERS
 
     const buyerInstance = this.contractBSNRouter.connect(
       buyer.signer
@@ -613,6 +632,9 @@ class Utils {
       }
     );
 
+    if (returnTx) return commitTx;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
     const txReceipt = await commitTx.wait();
     let eventArgs;
 
@@ -623,21 +645,24 @@ class Utils {
       (e) => (eventArgs = e)
     );
 
-    return returnTx ? txReceipt : eventArgs._tokenIdVoucher;
+    return eventArgs._tokenIdVoucher;
   }
 
   async commitToBuyTKNETHWithPermit(
     buyer: Account,
     seller: Account,
-    tokenSupplyId: string
-  ): Promise<string> {
+    tokenSupplyId: string,
+    promisePrice: number | string | BigNumber,
+    buyerDeposit: number | string,
+    returnTx = false
+  ): Promise<ContractTransaction | string> {
     const nonce1 = await this.contractBSNTokenPrice.nonces(buyer.address);
 
     const digestDeposit = await getApprovalDigest(
       this.contractBSNTokenPrice,
       buyer.address,
       this.contractBSNRouter.address,
-      constants.product_price,
+      promisePrice,
       nonce1,
       this.deadline
     );
@@ -650,18 +675,21 @@ class Utils {
     const buyerInstance = this.contractBSNRouter.connect(
       buyer.signer
     ) as BosonRouter;
-    const txOrder = await buyerInstance.requestVoucherTKNETHWithPermit(
+    const commitTx = await buyerInstance.requestVoucherTKNETHWithPermit(
       tokenSupplyId,
       seller.address,
-      constants.product_price,
+      promisePrice,
       this.deadline,
       v,
       r,
       s,
-      {value: constants.buyer_deposit}
+      {value: buyerDeposit}
     );
 
-    const txReceipt = await txOrder.wait();
+    if (returnTx) return commitTx;
+
+    // only needed when needed to get _tokenIdSupply. Not really checking anything.
+    const txReceipt = await commitTx.wait();
     let eventArgs;
 
     events.assertEventEmitted(
@@ -718,10 +746,6 @@ class Utils {
   ): Promise<ContractTransaction> {
     const deployerInstance = this.contractCashier.connect(deployer) as Cashier;
     const tx = await deployerInstance.withdraw(voucherID);
-
-    const receipt = await tx.wait();
-
-    console.log('GAS USED: ', receipt.gasUsed.toString());
 
     return tx;
   }
