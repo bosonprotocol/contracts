@@ -135,6 +135,14 @@ contract ERC1155NonTransferable is
     function setUri(string memory _newUri) external onlyOwnerOrSelf {
         require(bytes(_newUri).length != 0, "INVALID_VALUE");
         _setURI(_newUri);
-        emit LogUriSet(_newUri, msg.sender);
+        emit LogUriSet(_newUri, _msgSender());
+    }
+
+    /**
+     * @notice When functions are invoked via metatransactions, it is already checked there that signer is the owner of transaction
+     * and we can declare it as a message sender
+     */
+    function _msgSender() internal view virtual override returns (address payable) {
+        return msg.sender == address(this) ? payable(owner()) : msg.sender;
     }
 }

@@ -466,7 +466,7 @@ describe('ERC1155 non transferable functionality', async () => {
         )
           .to.emit(contractERC1155NonTransferable, eventNames.TRANSFER_SINGLE)
           .withArgs(
-            contractERC1155NonTransferable.address,
+            users.deployer.address,
             constants.ZERO_ADDRESS,
             users.other1.address,
             nftTokenID,
@@ -543,21 +543,11 @@ describe('ERC1155 non transferable functionality', async () => {
           ethers.utils.arrayify(relayTransactionHash)
         );
 
-        expect(
-          await contractERC1155NonTransferable.executeMetaTransaction(
-            constants.ONE,
-            mintData,
-            sig
-          )
-        )
-          .to.emit(contractERC1155NonTransferable, eventNames.TRANSFER_SINGLE)
-          .withArgs(
-            contractERC1155NonTransferable.address,
-            constants.ZERO_ADDRESS,
-            users.other1.address,
-            nftTokenID,
-            constants.ONE
-          );
+        await contractERC1155NonTransferable.executeMetaTransaction(
+          constants.ONE,
+          mintData,
+          sig
+        );
 
         await expect(
           contractERC1155NonTransferable.executeMetaTransaction(
