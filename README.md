@@ -38,7 +38,7 @@ tools installed.
 
 At a minimum, you'll need:
 * Node (12.20)
-* NPM (> 6)
+* NPM (7)
 * Ruby (2.7)
 * Bundler (> 2)
 * Git
@@ -90,9 +90,27 @@ If preferred by those who are familiar with Hardhat, the standard Hardhat comman
 
 In a separate terminal, contracts can be deployed using
 ```shell
-  npx hardhat --network [customNetworkName] deploy
+  npx hardhat --network localhost deploy
 ```
 
+#### Forking Rinkeby to localnode
+
+It is possible to fork the state of the Rinkeby chain to have it deployed locally. 
+The following hardhat commands will achieve this:
+
+```shell script
+npx hardhat node --fork https://eth-rinkeby.alchemyapi.io/v2/<<alchemy key>>
+```
+Alchemy is recommended by Hardhat over Infura because it's free accounts provide archived data, which is required for successful forking.
+
+You can then deploy from a separate terminal using the command
+
+```shell script
+npx hardhat deploy --network localhost
+```
+
+This makes the BOSON test token deployed on Rinkeby (0xEDa08eF1c6ff51Ca7Fd681295797102c1B84606c) and the official DAI token 
+deployed on Rinkeby (0x6A9865aDE2B6207dAAC49f8bCba9705dEB0B0e6D) available to your local hardhat chain.
 
 ---
 ### Test

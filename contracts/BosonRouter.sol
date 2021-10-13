@@ -826,7 +826,7 @@ contract BosonRouter is
     /**
      * @notice Call permit on either a token directly or on a token wrapper
      * @param _token Address of the token owner who is approving tokens to be transferred by spender
-     * @param _owner Address of the token owner who is approving tokens to be transferred by spender
+     * @param _tokenOwner Address of the token owner who is approving tokens to be transferred by spender
      * @param _spender Address of the party who is transferring tokens on owner's behalf
      * @param _value Number of tokens to be transferred
      * @param _deadline Time after which this permission to transfer is no longer valid. See EIP-2612
@@ -836,7 +836,7 @@ contract BosonRouter is
      */
     function _permit(
         address _token,
-        address _owner,
+        address _tokenOwner,
         address _spender,
         uint256 _value,
         uint256 _deadline,
@@ -851,7 +851,7 @@ contract BosonRouter is
         //The BosonToken contract conforms to this spec, so it will be callable this way
         //if it's address is mapped to itself in the TokenRegistry
         ITokenWrapper(tokenWrapper).permit(
-            _owner,
+            _tokenOwner,
             _spender,
             _value,
             _deadline,

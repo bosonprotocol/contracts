@@ -21,7 +21,6 @@ import {
   Cashier,
   TokenRegistry,
   MockERC20Permit,
-  MockGate,
 } from '../typechain';
 
 let ERC1155NonTransferable_Factory: ContractFactory;
@@ -32,7 +31,6 @@ let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let TokenRegistry_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
-let MockGate_Factory: ContractFactory;
 
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
@@ -59,7 +57,6 @@ describe('Gate contract', async () => {
     MockERC20Permit_Factory = await ethers.getContractFactory(
       'MockERC20Permit'
     );
-    MockGate_Factory = await ethers.getContractFactory('MockGate');
   });
 
   let contractERC1155NonTransferable: ERC1155NonTransferable,
@@ -70,8 +67,7 @@ describe('Gate contract', async () => {
     contractBosonRouter: BosonRouter,
     contractTokenRegistry: TokenRegistry,
     contractBSNTokenPrice: MockERC20Permit,
-    contractBSNTokenDeposit: MockERC20Permit,
-    contractMockGate: MockGate;
+    contractBSNTokenDeposit: MockERC20Permit;
 
   async function deployContracts() {
     contractERC1155NonTransferable = (await ERC1155NonTransferable_Factory.deploy(
@@ -82,11 +78,9 @@ describe('Gate contract', async () => {
       users.other1.address; // if router is not initalized use mock address
     contractGate = (await Gate_Factory.deploy(routerAddress)) as Contract &
       Gate;
-    contractMockGate = (await MockGate_Factory.deploy()) as Contract & MockGate;
 
     await contractERC1155NonTransferable.deployed();
     await contractGate.deployed();
-    await contractMockGate.deployed();
   }
 
   async function deployBosonRouterContracts() {
@@ -386,7 +380,7 @@ describe('Gate contract', async () => {
             constants.VOUCHER_SET_ID,
             constants.NFT_TOKEN_ID
           )
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER_OR_ROUTER);
     });
 
     it('[NEGATIVE][registerVoucherSetId] Should revert if nftTokenID id is zero', async () => {
@@ -432,7 +426,7 @@ describe('Gate contract', async () => {
 
       await expect(
         contractERC1155NonTransferable.connect(users.attacker.signer).unpause()
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER_OR_SELF);
     });
   });
 
@@ -494,23 +488,6 @@ describe('Gate contract', async () => {
 
         expect(await contractGate.check(users.buyer.address, tokenId)).to.be
           .false;
-      });
-
-      it('[NEGATIVE][registerVoucherSetId] Should revert if executed by attacker', async () => {
-        const conditionalOrderNftTokenID = BN('2');
-        const {
-          tokenId,
-          nftTokenID,
-        } = await registerVoucherSetIdFromBosonProtocol(
-          contractMockGate,
-          conditionalOrderNftTokenID
-        );
-
-        await expect(
-          contractMockGate
-            .connect(users.attacker.signer)
-            .registerVoucherSetId(tokenId, nftTokenID)
-        ).to.be.revertedWith('UNAUTHORIZED_BR');
       });
     });
   });

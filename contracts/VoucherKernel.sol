@@ -968,7 +968,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @return      Promise ID
      */
     function getPromiseKey(uint256 _idx)
-        public
+        external
         view
         override
         returns (bytes32)
@@ -1010,16 +1010,16 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
     /**
      * @notice Get the remaining quantity left in supply of tokens (e.g ERC-721 left in ERC-1155) of an account
      * @param _tokenSupplyId  Token supply ID
-     * @param _owner    holder of the Token Supply
+     * @param _tokenSupplyOwner    holder of the Token Supply
      * @return          remaining quantity
      */
-    function getRemQtyForSupply(uint256 _tokenSupplyId, address _owner)
+    function getRemQtyForSupply(uint256 _tokenSupplyId, address _tokenSupplyOwner)
         public
         view
         override
         returns (uint256)
     {
-        return IERC1155(tokensContract).balanceOf(_owner, _tokenSupplyId);
+        return IERC1155(tokensContract).balanceOf(_tokenSupplyOwner, _tokenSupplyId);
     }
 
     /**
@@ -1028,7 +1028,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @return                  returns a tuple (Payment amount, Seller's deposit, Buyer's deposit)
      */
     function getOrderCosts(uint256 _tokenIdSupply)
-        public
+        external
         view
         override
         returns (
@@ -1051,7 +1051,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @return                  returns a tuple (Payment amount, Buyer's deposit)
      */
     function getBuyerOrderCosts(uint256 _tokenIdSupply)
-        public
+        external
         view
         override
         returns (uint256, uint256)
@@ -1066,7 +1066,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @return                  returns sellers deposit
      */
     function getSellerDeposit(uint256 _tokenIdSupply)
-        public
+        external
         view
         override
         returns (uint256)
@@ -1111,7 +1111,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @return                  Status of the voucher (via enum)
      */
     function getVoucherStatus(uint256 _tokenIdVoucher)
-        public
+        external
         view
         override
         returns (
@@ -1137,7 +1137,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @return                  Address of the holder
      */
     function getVoucherHolder(uint256 _tokenIdVoucher)
-        public
+        external
         view
         override
         returns (address)
@@ -1151,7 +1151,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @return                  Address of the token
      */
     function getVoucherPriceToken(uint256 _tokenIdSupply)
-        public
+        external
         view
         override
         returns (address)
@@ -1165,7 +1165,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @return                  Address of the token
      */
     function getVoucherDepositToken(uint256 _tokenIdSupply)
-        public
+        external
         view
         override
         returns (address)
@@ -1211,7 +1211,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @param _tokenIdVoucher ID of the voucher token
      */
     function isVoucherTransferable(uint256 _tokenIdVoucher)
-        public
+        external
         view
         override
         returns (bool)

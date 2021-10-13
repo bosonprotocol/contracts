@@ -5,6 +5,7 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IERC1155NonTransferable.sol";
+import "./MetaTransactionReceiver.sol";
 
 /**
  * @title Non transferable token contract, implementing ERC-1155, but preventing transfers
@@ -12,7 +13,8 @@ import "./interfaces/IERC1155NonTransferable.sol";
 contract ERC1155NonTransferable is
     IERC1155NonTransferable,
     ERC1155Pausable,
-    Ownable
+    Ownable,
+    MetaTransactionReceiver
 {
    
     event LogUriSet(string _newUri, address _triggeredBy);
@@ -36,7 +38,7 @@ contract ERC1155NonTransferable is
         uint256 _tokenId,
         uint256 _value,
         bytes memory _data
-    ) public override onlyOwner {
+    ) external override onlyOwnerOrSelf {
         _mint(_to, _tokenId, _value, _data);
     }
 
@@ -53,7 +55,7 @@ contract ERC1155NonTransferable is
         uint256[] memory _tokenIds,
         uint256[] memory _values,
         bytes memory _data
-    ) public onlyOwner {
+    ) external onlyOwnerOrSelf {
         _mintBatch(_to, _tokenIds, _values, _data);
     }
 
@@ -68,7 +70,7 @@ contract ERC1155NonTransferable is
         address _account,
         uint256 _tokenId,
         uint256 _value
-    ) public override onlyOwner {
+    ) external override onlyOwnerOrSelf {
         _burn(_account, _tokenId, _value);
     }
 
@@ -83,7 +85,7 @@ contract ERC1155NonTransferable is
         address _account,
         uint256[] memory _tokenIds,
         uint256[] memory _values
-    ) public onlyOwner {
+    ) external onlyOwnerOrSelf {
         _burnBatch(_account, _tokenIds, _values);
     }
 
@@ -115,14 +117,14 @@ contract ERC1155NonTransferable is
     /**
      * @notice Pause all token mint, transfer, burn
      */
-    function pause() external override onlyOwner {
+    function pause() external override onlyOwnerOrSelf {
         _pause();
     }
 
     /**
      * @notice Unpause the contract and allows mint, transfer, burn
      */
-    function unpause() external override onlyOwner {
+    function unpause() external override onlyOwnerOrSelf {
         _unpause();
     }
 
@@ -130,9 +132,17 @@ contract ERC1155NonTransferable is
      * @notice Setting the metadata uri
      * @param _newUri   New uri to be used
      */
-    function setUri(string memory _newUri) external onlyOwner {
+    function setUri(string memory _newUri) external onlyOwnerOrSelf {
         require(bytes(_newUri).length != 0, "INVALID_VALUE");
         _setURI(_newUri);
-        emit LogUriSet(_newUri, msg.sender);
+        emit LogUriSet(_newUri, _msgSender());
+    }
+
+    /**
+     * @notice When functions are invoked via metatransactions, it is already checked there that signer is the owner of transaction
+     * and we can declare it as a message sender
+     */
+    function _msgSender() internal view virtual override returns (address payable) {
+        return msg.sender == address(this) ? payable(owner()) : msg.sender;
     }
 }

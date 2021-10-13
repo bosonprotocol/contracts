@@ -127,7 +127,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         address _from,
         address _to,
         uint256 _tokenId
-    ) public override {
+    ) external override {
         safeTransferFrom(_from, _to, _tokenId, "");
     }
 
@@ -228,7 +228,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
      * @param _to address to be approved for the given token ID
      * @param _tokenId uint256 ID of the token to be approved
      */
-    function approve(address _to, uint256 _tokenId) public override {
+    function approve(address _to, uint256 _tokenId) external override {
         address tokenOwner = ownerOf(_tokenId);
         require(_to != tokenOwner, "REDUNDANT_CALL");
 
@@ -251,7 +251,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
      * @return address currently approved for the given token ID
      */
     function getApproved(uint256 _tokenId)
-        public
+        external
         view
         override
         returns (address)
@@ -401,12 +401,12 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
 
     /// @notice Count all NFTs assigned to an owner
     /// @dev ERC-721
-    /// @param _owner An address for whom to query the balance
+    /// @param _tokenOwner An address for whom to query the balance
     /// @return The number of NFTs owned by `_owner`, possibly zero
-    function balanceOf(address _owner) public view override returns (uint256) {
-        require(_owner != address(0), "UNSPECIFIED_ADDRESS");
+    function balanceOf(address _tokenOwner) external view override returns (uint256) {
+        require(_tokenOwner != address(0), "UNSPECIFIED_ADDRESS");
 
-        return balance721[_owner];
+        return balance721[_tokenOwner];
     }
 
     /**
@@ -470,7 +470,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         @return           True if the operator is approved, false if not
     */
     function isApprovedForAll(address _account, address _operator)
-        public
+        external
         view
         override
         returns (bool)
@@ -514,7 +514,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         uint256 _tokenId,
         uint256 _value,
         bytes memory _data
-    ) public override onlyFromVoucherKernel {
+    ) external override onlyFromVoucherKernel {
         _mint(_to, _tokenId, _value, _data);
     }
 
@@ -555,7 +555,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
      * @return A boolean that indicates if the operation was successful.
      */
     function mint(address _to, uint256 _tokenId)
-        public
+        external
         override
         onlyFromVoucherKernel
         returns (bool)
@@ -598,7 +598,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         uint256[] memory _tokenIds,
         uint256[] memory _values,
         bytes memory _data
-    ) public onlyFromVoucherKernel {
+    ) external onlyFromVoucherKernel {
         //require approved minter
 
         _mintBatch(_to, _tokenIds, _values, _data);
@@ -650,7 +650,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         address _account,
         uint256 _tokenId,
         uint256 _value
-    ) public override onlyFromVoucherKernel {
+    ) external override onlyFromVoucherKernel {
         _burn(_account, _tokenId, _value);
     }
 
@@ -685,7 +685,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         address _account,
         uint256[] memory _tokenIds,
         uint256[] memory _values
-    ) public onlyFromVoucherKernel {
+    ) external onlyFromVoucherKernel {
         _burnBatch(_account, _tokenIds, _values);
     }
 
@@ -726,7 +726,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
      * @notice Setting the URL prefix for tokens metadata
      * @param _newBase   New prefix to be used
      */
-    function _setMetadataBase(string memory _newBase) public onlyOwner {
+    function _setMetadataBase(string memory _newBase) external onlyOwner {
         metadataBase = _newBase;
     }
 
@@ -734,7 +734,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
      * @notice Setting the URL route for ERC1155 tokens metadata
      * @param _newRoute   New route to be used
      */
-    function _set1155Route(string memory _newRoute) public onlyOwner {
+    function _set1155Route(string memory _newRoute) external onlyOwner {
         metadata1155Route = _newRoute;
     }
 
@@ -742,7 +742,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
      * @notice Setting the URL route for ERC721 tokens metadata
      * @param _newRoute   New route to be used
      */
-    function _set721Route(string memory _newRoute) public onlyOwner {
+    function _set721Route(string memory _newRoute) external onlyOwner {
         metadata721Route = _newRoute;
     }
 
