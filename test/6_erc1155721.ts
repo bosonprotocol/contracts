@@ -619,6 +619,59 @@ describe('ERC1155ERC721', () => {
           )
         ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
       });
+
+      it('[burn] Should burn an amount of tokens with the given ID', async () => {
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        const tokenIdToBurn = TOKEN_SUPPLY_ID;
+        const tx = await contractERC1155ERC721.functions[fnSignatures.burn1155](
+          users.seller.address,
+          tokenIdToBurn,
+          constants.QTY_10
+        );
+
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.TRANSFER_SINGLE,
+          (ev) => {
+            assert.equal(
+              ev._from,
+              users.seller.address,
+              'ev._from not as expected!'
+            );
+            assert.equal(
+              ev._to,
+              constants.ZERO_ADDRESS,
+              'ev._to not as expected!'
+            );
+            assert.equal(ev._id, tokenIdToBurn, 'ev._id not as expected!');
+            assert.equal(
+              ev._value,
+              constants.QTY_10,
+              'ev._value not as expected!'
+            );
+          }
+        );
+      });
+
+      it('[NEGATIVE][burn] Should revert when to is a zero address', async () => {
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        await expect(
+          contractERC1155ERC721.functions[fnSignatures.burn1155](
+            constants.ZERO_ADDRESS,
+            TOKEN_SUPPLY_ID,
+            constants.QTY_10
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
+      });
     });
 
     describe('ERC721', () => {
