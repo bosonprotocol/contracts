@@ -440,6 +440,20 @@ describe('ERC1155ERC721', () => {
           contractERC1155ERC721.setVoucherKernelAddress(constants.ZERO_ADDRESS)
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
       });
+
+      it('[isApprovedForAll] Should return the approval status of an operator for a given account', async () => {
+        const expectedApprovalStatus = true;
+        await contractERC1155ERC721.setApprovalForAll(
+          contractVoucherKernel.address,
+          expectedApprovalStatus
+        );
+
+        const approvalStatus = await contractERC1155ERC721.isApprovedForAll(
+          users.deployer.address,
+          contractVoucherKernel.address
+        );
+        assert.equal(approvalStatus, expectedApprovalStatus);
+      });
     });
 
     describe('ERC1155', () => {
