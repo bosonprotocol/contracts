@@ -6,6 +6,10 @@
     "directories": {
         "test": "test"
     },
+    "engines": {
+        "node": ">=12.20.0",
+        "npm": ">=7.15.1"
+    },
     "scripts": {
         "contracts:run": "hardhat compile && hardhat deploy",
         "contracts:compile": "hardhat compile --force",
@@ -23,7 +27,7 @@
         "tests:lint-fix": "eslint --fix test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
         "tests:format": "prettier --list-different test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
         "tests:format-fix": "prettier --write test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
-        "tests:unit": "hardhat test",
+        "tests:unit": "npx hardhat test",
         "tests:coverage": "npx hardhat coverage",
         "contracts:size": "hardhat size-contracts"
     },
