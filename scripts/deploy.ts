@@ -150,6 +150,8 @@ class DeploymentExecutor {
 
     await this.erc1155erc721._set721Route(process.env.ERC721_ROUTE);
 
+    console.log('$ ERC721Route ', 'set to :', process.env.ERC721_ROUTE);
+
     console.log(
       '$ ERC1155NonTransferable URI ',
       'set to :',
