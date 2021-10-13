@@ -8,7 +8,7 @@ on your development machine:
 * git
 * direnv
 * Node (12.20)
-* NPM (> 6)
+* NPM (7)
 * Ruby (2.7)
 * Bundler (> 2)
 
