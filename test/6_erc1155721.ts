@@ -881,6 +881,33 @@ describe('ERC1155ERC721', () => {
         );
       });
 
+      it('[safeTransfer721] Should safely transfer the ownership of a given token ID to another address', async () => {
+        const oldOwner = users.buyer;
+        const expectedNewOwner = users.other2;
+
+        const erc721 = await utils.commitToBuy(
+          oldOwner,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.product_price,
+          constants.buyer_deposit
+        );
+
+        await utils.safeTransfer721(
+          oldOwner.address,
+          expectedNewOwner.address,
+          erc721,
+          users.buyer.signer
+        );
+
+        const owner721Instance = contractERC1155ERC721.connect(
+          users.buyer.signer
+        );
+        const newTokenOwner = await owner721Instance.ownerOf(erc721);
+
+        assert.equal(newTokenOwner, expectedNewOwner.address);
+      });
+
       it('[NEGATIVE][safeTransfer721] Should not be able to transfer to contract address', async () => {
         const erc721 = await utils.commitToBuy(
           users.buyer,
