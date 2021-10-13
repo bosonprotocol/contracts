@@ -564,6 +564,61 @@ describe('ERC1155ERC721', () => {
           )
         ).to.be.revertedWith(revertReasons.MISMATCHED_ARRAY_LENGTHS);
       });
+
+      it('[mint] Should mint a desired token', async () => {
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        const tokenIdForMint = 123;
+        const tx = await contractERC1155ERC721.functions[fnSignatures.mint1155](
+          users.other1.address,
+          tokenIdForMint,
+          constants.QTY_10,
+          ethers.utils.formatBytes32String('0x0')
+        );
+
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.TRANSFER_SINGLE,
+          (ev) => {
+            assert.equal(
+              ev._from,
+              constants.ZERO_ADDRESS,
+              'ev._from not as expected!'
+            );
+            assert.equal(
+              ev._to,
+              users.other1.address,
+              'ev._to not as expected!'
+            );
+            assert.equal(ev._id, tokenIdForMint, 'ev._id not as expected!');
+            assert.equal(
+              ev._value,
+              constants.QTY_10,
+              'ev._value not as expected!'
+            );
+          }
+        );
+      });
+
+      it('[NEGATIVE][mint] Should revert when to is a zero address', async () => {
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        await expect(
+          contractERC1155ERC721.functions[fnSignatures.mint1155](
+            constants.ZERO_ADDRESS,
+            123,
+            constants.QTY_10,
+            ethers.utils.formatBytes32String('0x0')
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
+      });
     });
 
     describe('ERC721', () => {
