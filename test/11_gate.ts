@@ -423,7 +423,7 @@ describe('Gate contract', async () => {
 
       await expect(
         contractERC1155NonTransferable.connect(users.attacker.signer).unpause()
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER_OR_SELF);
     });
   });
 
