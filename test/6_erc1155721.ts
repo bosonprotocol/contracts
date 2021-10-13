@@ -485,10 +485,9 @@ describe('ERC1155ERC721', () => {
           ethers.utils.formatBytes32String('0x0')
         );
 
-        const balance = await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
-          users.deployer.address,
-          TOKEN_SUPPLY_ID
-        );
+        const balance = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf1155
+        ](users.deployer.address, TOKEN_SUPPLY_ID);
 
         assert.equal(balance.toString(), expectedCount.toString());
       });
