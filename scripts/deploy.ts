@@ -140,6 +140,29 @@ class DeploymentExecutor {
       'at:',
       event.args._nonTransferableTokenContractAddress
     );
+
+    await this.erc1155erc721._setMetadataBase(process.env.METADATA_BASE);
+
+    console.log(
+      '$ MetadataBase',
+      'set to :',
+      process.env.METADATA_BASE
+    );
+    await this.erc1155erc721._set1155Route(process.env.ERC1155_ROUTE);
+
+    console.log(
+      '$ ERC1155Route ',
+      'set to :',
+      process.env.ERC1155_ROUTE
+    );
+
+    await this.erc1155erc721._set721Route(process.env.ERC721_ROUTE);
+
+    console.log(
+      '$ ERC1155NonTransferable URI ',
+      'set to :',
+      await this.erc1155NonTransferable.uri(1)
+    );
   }
 
   async deployContracts() {
@@ -166,7 +189,7 @@ class DeploymentExecutor {
     this.daiTokenWrapper = await DAITokenWrapper.deploy(this.dai_token);
     this.gate = await Gate.deploy(this.br.address);
     this.erc1155NonTransferable = await ERC1155NonTransferable.deploy(
-      'https://quests.bosonportal.io/{id}.json'
+      process.env.CONDITIONAL_COMMIT_TOKEN_METADATA_URI
     );
 
     await this.tokenRegistry.deployed();
