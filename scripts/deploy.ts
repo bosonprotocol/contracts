@@ -143,18 +143,10 @@ class DeploymentExecutor {
 
     await this.erc1155erc721._setMetadataBase(process.env.METADATA_BASE);
 
-    console.log(
-      '$ MetadataBase',
-      'set to :',
-      process.env.METADATA_BASE
-    );
+    console.log('$ MetadataBase', 'set to :', process.env.METADATA_BASE);
     await this.erc1155erc721._set1155Route(process.env.ERC1155_ROUTE);
 
-    console.log(
-      '$ ERC1155Route ',
-      'set to :',
-      process.env.ERC1155_ROUTE
-    );
+    console.log('$ ERC1155Route ', 'set to :', process.env.ERC1155_ROUTE);
 
     await this.erc1155erc721._set721Route(process.env.ERC721_ROUTE);
 
