@@ -1,6 +1,8 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
 
+import {randomBytes} from 'crypto';
+
 import {expect} from 'chai';
 import constants from '../testHelpers/constants';
 
@@ -443,12 +445,18 @@ describe('ERC1155 non transferable functionality', async () => {
         return sig;
       }
 
+      function getRandomNonce() {
+        const value = randomBytes(32); // 32 bytes = 256 bits
+        return BN(value);
+      }
+
       beforeEach(async () => {
         await deployContracts();
       });
 
       it('Self should be able to mint', async () => {
         const nftTokenID = BN('2');
+        const nonce = getRandomNonce();
 
         const mintData = contractERC1155NonTransferable.interface.encodeFunctionData(
           'mint',
@@ -460,11 +468,11 @@ describe('ERC1155 non transferable functionality', async () => {
           ]
         );
 
-        const sig = signData(users.deployer.signer, mintData);
+        const sig = signData(users.deployer.signer, mintData, nonce);
 
         expect(
           await contractERC1155NonTransferable.executeMetaTransaction(
-            constants.ONE,
+            nonce,
             mintData,
             sig
           )
@@ -478,12 +486,23 @@ describe('ERC1155 non transferable functionality', async () => {
             constants.ONE
           )
           .to.emit(contractERC1155NonTransferable, eventNames.USED_NONCE)
-          .withArgs(constants.ONE)
+          .withArgs(nonce)
           .to.emit(contractERC1155NonTransferable, eventNames.EXECUTED_META_TX)
           .withArgs(mintData, '0x');
+
+        expect(
+          await contractERC1155NonTransferable.balanceOf(
+            users.other1.address,
+            nftTokenID
+          )
+        ).to.equal(constants.ONE);
+
+        expect(await contractERC1155NonTransferable.isUsedNonce(nonce)).to.be
+          .true;
       });
 
       it('Self should be able to mint batch', async () => {
+        const nonce = getRandomNonce();
         const nftTokenIDs = [BN('2'), BN('5'), BN('7'), BN('9')];
         const balances = [
           constants.ONE,
@@ -497,11 +516,11 @@ describe('ERC1155 non transferable functionality', async () => {
           [users.other1.address, nftTokenIDs, balances, constants.ZERO_BYTES]
         );
 
-        const sig = signData(users.deployer.signer, mintBatchData);
+        const sig = signData(users.deployer.signer, mintBatchData, nonce);
 
         expect(
           await contractERC1155NonTransferable.executeMetaTransaction(
-            constants.ONE,
+            nonce,
             mintBatchData,
             sig
           )
@@ -515,7 +534,7 @@ describe('ERC1155 non transferable functionality', async () => {
             balances
           )
           .to.emit(contractERC1155NonTransferable, eventNames.USED_NONCE)
-          .withArgs(constants.ONE)
+          .withArgs(nonce)
           .to.emit(contractERC1155NonTransferable, eventNames.EXECUTED_META_TX)
           .withArgs(mintBatchData, '0x');
 
@@ -532,9 +551,13 @@ describe('ERC1155 non transferable functionality', async () => {
             )
           ).map((balance) => balance.toString())
         ).to.include.members(balances.map((balance) => balance.toString()));
+
+        expect(await contractERC1155NonTransferable.isUsedNonce(nonce)).to.be
+          .true;
       });
 
       it('Self should be able to burn', async () => {
+        const nonce = getRandomNonce();
         const nftTokenID = BN('2');
 
         const burnData = contractERC1155NonTransferable.interface.encodeFunctionData(
@@ -542,7 +565,7 @@ describe('ERC1155 non transferable functionality', async () => {
           [users.other1.address, nftTokenID, constants.ONE]
         );
 
-        const sig = signData(users.deployer.signer, burnData);
+        const sig = signData(users.deployer.signer, burnData, nonce);
 
         await contractERC1155NonTransferable.mint(
           users.other1.address,
@@ -553,7 +576,7 @@ describe('ERC1155 non transferable functionality', async () => {
 
         expect(
           await contractERC1155NonTransferable.executeMetaTransaction(
-            constants.ONE,
+            nonce,
             burnData,
             sig
           )
@@ -567,7 +590,7 @@ describe('ERC1155 non transferable functionality', async () => {
             constants.ONE
           )
           .to.emit(contractERC1155NonTransferable, eventNames.USED_NONCE)
-          .withArgs(constants.ONE)
+          .withArgs(nonce)
           .to.emit(contractERC1155NonTransferable, eventNames.EXECUTED_META_TX)
           .withArgs(burnData, '0x');
 
@@ -577,9 +600,13 @@ describe('ERC1155 non transferable functionality', async () => {
             nftTokenID
           )
         ).to.equal(constants.ZERO);
+
+        expect(await contractERC1155NonTransferable.isUsedNonce(nonce)).to.be
+          .true;
       });
 
       it('Self should be able to burn batch', async () => {
+        const nonce = getRandomNonce();
         const nftTokenIDs = [BN('2'), BN('5'), BN('7'), BN('9')];
         const balances = [
           constants.ONE,
@@ -599,7 +626,7 @@ describe('ERC1155 non transferable functionality', async () => {
           [users.other1.address, nftTokenIDs, balances]
         );
 
-        const sig = signData(users.deployer.signer, burnBatchData);
+        const sig = signData(users.deployer.signer, burnBatchData, nonce);
 
         await contractERC1155NonTransferable.mintBatch(
           users.other1.address,
@@ -610,7 +637,7 @@ describe('ERC1155 non transferable functionality', async () => {
 
         expect(
           await contractERC1155NonTransferable.executeMetaTransaction(
-            constants.ONE,
+            nonce,
             burnBatchData,
             sig
           )
@@ -624,7 +651,7 @@ describe('ERC1155 non transferable functionality', async () => {
             balances
           )
           .to.emit(contractERC1155NonTransferable, eventNames.USED_NONCE)
-          .withArgs(constants.ONE)
+          .withArgs(nonce)
           .to.emit(contractERC1155NonTransferable, eventNames.EXECUTED_META_TX)
           .withArgs(burnBatchData, '0x');
 
@@ -641,9 +668,13 @@ describe('ERC1155 non transferable functionality', async () => {
             )
           ).map((balance) => balance.toString())
         ).to.include.members(zeroBalances.map((balance) => balance.toString()));
+
+        expect(await contractERC1155NonTransferable.isUsedNonce(nonce)).to.be
+          .true;
       });
 
       it('Self should be able to set URI', async () => {
+        const nonce = getRandomNonce();
         const newUri = 'https://new.domain/{id}.json';
 
         const setUriData = contractERC1155NonTransferable.interface.encodeFunctionData(
@@ -651,11 +682,11 @@ describe('ERC1155 non transferable functionality', async () => {
           [newUri]
         );
 
-        const sig = signData(users.deployer.signer, setUriData);
+        const sig = signData(users.deployer.signer, setUriData, nonce);
 
         expect(
           await contractERC1155NonTransferable.executeMetaTransaction(
-            constants.ONE,
+            nonce,
             setUriData,
             sig
           )
@@ -663,25 +694,29 @@ describe('ERC1155 non transferable functionality', async () => {
           .to.emit(contractERC1155NonTransferable, eventNames.LOG_URI_SET)
           .withArgs(newUri, users.deployer.address)
           .to.emit(contractERC1155NonTransferable, eventNames.USED_NONCE)
-          .withArgs(constants.ONE)
+          .withArgs(nonce)
           .to.emit(contractERC1155NonTransferable, eventNames.EXECUTED_META_TX)
           .withArgs(setUriData, '0x');
 
         expect(
           await contractERC1155NonTransferable.uri(constants.NFT_TOKEN_ID)
         ).to.equal(newUri);
+
+        expect(await contractERC1155NonTransferable.isUsedNonce(nonce)).to.be
+          .true;
       });
 
       it('Self should be able to pause', async () => {
+        const nonce = getRandomNonce();
         const pauseData = contractERC1155NonTransferable.interface.encodeFunctionData(
           'pause'
         );
 
-        const sig = signData(users.deployer.signer, pauseData);
+        const sig = signData(users.deployer.signer, pauseData, nonce);
 
         expect(
           await contractERC1155NonTransferable.executeMetaTransaction(
-            constants.ONE,
+            nonce,
             pauseData,
             sig
           )
@@ -689,25 +724,29 @@ describe('ERC1155 non transferable functionality', async () => {
           .to.emit(contractERC1155NonTransferable, eventNames.PAUSED)
           .withArgs(users.deployer.address)
           .to.emit(contractERC1155NonTransferable, eventNames.USED_NONCE)
-          .withArgs(constants.ONE)
+          .withArgs(nonce)
           .to.emit(contractERC1155NonTransferable, eventNames.EXECUTED_META_TX)
           .withArgs(pauseData, '0x');
 
         expect(await contractERC1155NonTransferable.paused()).to.be.true;
+
+        expect(await contractERC1155NonTransferable.isUsedNonce(nonce)).to.be
+          .true;
       });
 
       it('Self should be able to unpause', async () => {
+        const nonce = getRandomNonce();
         await contractERC1155NonTransferable.pause();
 
         const unpauseData = contractERC1155NonTransferable.interface.encodeFunctionData(
           'unpause'
         );
 
-        const sig = signData(users.deployer.signer, unpauseData);
+        const sig = signData(users.deployer.signer, unpauseData, nonce);
 
         expect(
           await contractERC1155NonTransferable.executeMetaTransaction(
-            constants.ONE,
+            nonce,
             unpauseData,
             sig
           )
@@ -715,11 +754,14 @@ describe('ERC1155 non transferable functionality', async () => {
           .to.emit(contractERC1155NonTransferable, eventNames.UNPAUSED)
           .withArgs(users.deployer.address)
           .to.emit(contractERC1155NonTransferable, eventNames.USED_NONCE)
-          .withArgs(constants.ONE)
+          .withArgs(nonce)
           .to.emit(contractERC1155NonTransferable, eventNames.EXECUTED_META_TX)
           .withArgs(unpauseData, '0x');
 
         expect(await contractERC1155NonTransferable.paused()).to.be.false;
+
+        expect(await contractERC1155NonTransferable.isUsedNonce(nonce)).to.be
+          .true;
       });
 
       it('[Negative][mint] Attacker should not be able to mint', async () => {

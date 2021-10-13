@@ -36,6 +36,8 @@ contract MetaTransactionReceiver is Ownable {
     ) external {
         // Expecting prefixed data ("boson:") indicating relayed transaction...
         // ...and an Ethereum Signed Message to protect user from signing an actual Tx
+        require(!usedNonce[_nonce], "METATX_NONCE");
+
         uint256 id;
         assembly {
             id := chainid() //1 for Ethereum mainnet, > 1 for public testnets.
@@ -44,7 +46,7 @@ contract MetaTransactionReceiver is Ownable {
         // Verify signature validity i.e. signer == owner
         isValidOwnerSignature(dataHash, _signature);
         // Verify that the nonce hasn't been used before
-        require(!usedNonce[_nonce], "METATX_NONCE");
+        
 
         // Store the nonce provided to avoid playback of the same tx
         usedNonce[_nonce] = true;
@@ -56,6 +58,13 @@ contract MetaTransactionReceiver is Ownable {
         require(success, string(returnData));
 
         emit ExecutedMetaTransaction(_data, returnData);
+    }
+
+    /// @dev Tells if nonce was used already
+    /// @param _nonce only used for relayed transactions. This is used as an idempotency key
+    /// @return true if used already, otherwise false
+    function isUsedNonce(uint256 _nonce) external view returns(bool) {
+        return usedNonce[_nonce];
     }
 
     /// @dev This method ensures that the signature belongs to the owner
