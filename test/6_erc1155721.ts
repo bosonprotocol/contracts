@@ -681,6 +681,80 @@ describe('ERC1155ERC721', () => {
           )
         ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
       });
+
+      it('[mintBatch] Should do batch minting of tokens', async () => {
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        const tokenIds = TOKEN_SUPPLY_ID;
+        const tx = await contractERC1155ERC721.mintBatch(
+          users.seller.address,
+          [tokenIds],
+          [constants.QTY_10],
+          ethers.utils.formatBytes32String('0x0')
+        );
+
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.TRANSFER_BATCH,
+          (ev) => {
+            assert.equal(
+              ev._from,
+              constants.ZERO_ADDRESS,
+              'ev._from not as expected!'
+            );
+            assert.equal(
+              ev._to,
+              users.seller.address,
+              'ev._to not as expected!'
+            );
+            assert.equal(
+              ev._ids.toString(),
+              tokenIds.toString(),
+              'ev._ids not as expected!'
+            );
+            assert.equal(
+              ev._values.toString(),
+              constants.QTY_10.toString(),
+              'ev._values not as expected!'
+            );
+          }
+        );
+      });
+
+      it('[NEGATIVE][mintBatch] Should revert when to is a zero address', async () => {
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        await expect(
+          contractERC1155ERC721.mintBatch(
+            constants.ZERO_ADDRESS,
+            [TOKEN_SUPPLY_ID],
+            [constants.QTY_10],
+            ethers.utils.formatBytes32String('0x0')
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
+      });
+
+      it('[NEGATIVE][mintBatch] Should revert if array lengths mismatch', async () => {
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        await expect(
+          contractERC1155ERC721.mintBatch(
+            users.seller.address,
+            [TOKEN_SUPPLY_ID],
+            [constants.QTY_10, constants.QTY_1],
+            ethers.utils.formatBytes32String('0x0')
+          )
+        ).to.be.revertedWith(revertReasons.MISMATCHED_ARRAY_LENGTHS);
+      });
     });
 
     describe('ERC721', () => {
