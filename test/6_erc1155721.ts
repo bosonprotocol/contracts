@@ -51,12 +51,8 @@ describe('ERC1155ERC721', () => {
     MockERC20Permit_Factory = await ethers.getContractFactory(
       'MockERC20Permit'
     );
-    MockERC721_Factory = await ethers.getContractFactory(
-      'MockERC721'
-    );
-    MockERC1155_Factory = await ethers.getContractFactory(
-      'MockERC1155'
-    );
+    MockERC721_Factory = await ethers.getContractFactory('MockERC721');
+    MockERC1155_Factory = await ethers.getContractFactory('MockERC1155');
   });
 
   let contractERC1155ERC721: ERC1155ERC721,
@@ -104,7 +100,7 @@ describe('ERC1155ERC721', () => {
       MockERC721;
 
     contractMockERC1155 = (await MockERC1155_Factory.deploy()) as Contract &
-    MockERC1155;
+      MockERC1155;
 
     await contractTokenRegistry.deployed();
     await contractERC1155ERC721.deployed();
@@ -383,6 +379,40 @@ describe('ERC1155ERC721', () => {
         ](users.deployer.address, TOKEN_SUPPLY_ID);
 
         assert.equal(balance.toString(), expectedCount.toString());
+      });
+
+      it('[safeTransfer1155] Should be able to safely transfer to contracts that support ERC1155', async () => {
+        const erc1155supportingContract = contractMockERC1155;
+
+        const transferTx = await utils.safeTransfer1155(
+          users.seller.address,
+          erc1155supportingContract.address,
+          TOKEN_SUPPLY_ID,
+          constants.QTY_10,
+          users.seller.signer
+        );
+
+        const txReceipt = await transferTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.TRANSFER_SINGLE,
+          (ev) => {
+            ev;
+            assert.equal(ev._from, users.seller.address);
+            assert.equal(ev._to, erc1155supportingContract.address);
+            assert.equal(ev._id.toString(), TOKEN_SUPPLY_ID);
+            assert.equal(ev._value.toString(), constants.QTY_10);
+          }
+        );
+
+        const expectedBalance = constants.QTY_10;
+        const balanceOfOwner = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf1155
+        ](erc1155supportingContract.address, TOKEN_SUPPLY_ID);
+
+        assert.equal(balanceOfOwner.toString(), expectedBalance.toString());
       });
 
       it('[NEGATIVE][safeTransfer1155] Attacker should not be able to transfer', async () => {
