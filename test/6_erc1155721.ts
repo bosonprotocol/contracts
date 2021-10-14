@@ -1034,6 +1034,55 @@ describe('ERC1155ERC721', () => {
         assert.equal(newTokenOwner, expectedNewOwner.address);
       });
 
+      it('[safeTransfer721] Should safely transfer the ownership of a given token ID to ERC721 supporting contract', async () => {
+        const oldOwner = users.buyer;
+        const expectedNewOwnerAddress = contractMockERC721.address;
+
+        const erc721 = await utils.commitToBuy(
+          oldOwner,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.product_price,
+          constants.buyer_deposit
+        );
+
+        const tx = await utils.safeTransfer721(
+          oldOwner.address,
+          expectedNewOwnerAddress,
+          erc721,
+          users.buyer.signer
+        );
+
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.TRANSFER,
+          (ev) => {
+            assert.equal(
+              ev._from,
+              oldOwner.address,
+              'ev._from not as expected!'
+            );
+            assert.equal(
+              ev._to,
+              expectedNewOwnerAddress,
+              'ev._to not as expected!'
+            );
+            assert.equal(
+              ev._tokenId.toString(),
+              erc721.toString(),
+              'ev._tokenId not as expected!'
+            );
+          }
+        );
+
+        const newTokenOwner = await contractERC1155ERC721.ownerOf(erc721);
+
+        assert.equal(newTokenOwner, expectedNewOwnerAddress);
+      });
+
       it('[NEGATIVE][safeTransfer721] Should not be able to transfer to contract address', async () => {
         const erc721 = await utils.commitToBuy(
           users.buyer,
