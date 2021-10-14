@@ -35,7 +35,7 @@ let TOKEN_SUPPLY_ID;
 let users;
 
 describe('ERC1155ERC721', () => {
-  before(async () => {
+  beforeEach(async () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
 
@@ -157,7 +157,7 @@ describe('ERC1155ERC721', () => {
 
   describe('Multi-token contract', function () {
     describe('Common', () => {
-      before(async () => {
+      beforeEach(async () => {
         await deployContracts();
         utils = await prepareUtils();
       });
@@ -637,19 +637,19 @@ describe('ERC1155ERC721', () => {
 
         const balanceOfToken1 = await contractERC1155ERC721.functions[
           fnSignatures.balanceOf1155
-        ](users.seller.address, BN(123));
+        ](users.seller.address, tokenIds[0]);
 
         const balanceOfToken2 = await contractERC1155ERC721.functions[
           fnSignatures.balanceOf1155
-        ](users.seller.address, BN(456));
+        ](users.seller.address, tokenIds[1]);
 
         const balanceOfToken3 = await contractERC1155ERC721.functions[
           fnSignatures.balanceOf1155
-        ](users.seller.address, BN(789));
+        ](users.seller.address, tokenIds[2]);
 
-        assert.equal(balanceOfToken1, constants.QTY_10);
-        assert.equal(balanceOfToken2, constants.QTY_15);
-        assert.equal(balanceOfToken3, constants.QTY_20);
+        assert.equal(balanceOfToken1.toString(), quantities[0].toString());
+        assert.equal(balanceOfToken2.toString(), quantities[1].toString());
+        assert.equal(balanceOfToken3.toString(), quantities[2].toString());
       });
 
       it('[NEGATIVE][mintBatch] Should revert when _account is a zero address', async () => {
@@ -1253,7 +1253,7 @@ describe('ERC1155ERC721', () => {
       const metadata1155Route = 'voucher-sets/';
       const metadata721Route = 'vouchers/';
 
-      before(async () => {
+      beforeEach(async () => {
         await deployContracts();
         utils = await prepareUtils();
 
