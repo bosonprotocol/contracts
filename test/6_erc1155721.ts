@@ -295,6 +295,29 @@ describe('ERC1155ERC721', () => {
         );
         assert.equal(approvalStatus, expectedApprovalStatus);
       });
+
+      describe('[supportsInterface]', () => {
+        it('Should return True for supported _interfaceId', async () => {
+          const expectedResult = true;
+          const supportedInterfaceIds = ['0x01ffc9a7', '0xd9b67a26', '0x80ac58cd', '0x5b5e139f', '0x0e89341c'];
+
+          const randomInterfaceId = supportedInterfaceIds[Math.floor(Math.random() * supportedInterfaceIds.length)];
+          const isSupported: boolean = await contractERC1155ERC721.supportsInterface(
+            randomInterfaceId
+          );
+          assert.equal(isSupported, expectedResult);
+        });
+
+        it('Should return False for un-supported _interfaceId', async () => {
+          const expectedResult = false;
+          const unSupportedInterfaceId = '0x150b7a02';
+
+          const isSupported: boolean = await contractERC1155ERC721.supportsInterface(
+            unSupportedInterfaceId
+          );
+          assert.equal(isSupported, expectedResult);
+        });
+      });
     });
 
     describe('ERC1155', () => {
