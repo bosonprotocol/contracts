@@ -534,6 +534,54 @@ describe('ERC1155ERC721', () => {
         assert.equal(balanceOfOwner.toString(), expectedBalance.toString());
       });
 
+      it('[mint] Should mint a desired token to ERC1155 supporting contract', async () => {
+        const erc1155supportingContract = contractMockERC1155;
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        const tokenIdForMint = 123;
+        const tx = await contractERC1155ERC721.functions[fnSignatures.mint1155](
+          erc1155supportingContract.address,
+          tokenIdForMint,
+          constants.QTY_10,
+          ethers.utils.formatBytes32String('0x0')
+        );
+
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.TRANSFER_SINGLE,
+          (ev) => {
+            assert.equal(
+              ev._from,
+              constants.ZERO_ADDRESS,
+              'ev._from not as expected!'
+            );
+            assert.equal(
+              ev._to,
+              erc1155supportingContract.address,
+              'ev._to not as expected!'
+            );
+            assert.equal(ev._id, tokenIdForMint, 'ev._id not as expected!');
+            assert.equal(
+              ev._value,
+              constants.QTY_10,
+              'ev._value not as expected!'
+            );
+          }
+        );
+
+        const expectedBalance = constants.QTY_10;
+        const balanceOfOwner = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf1155
+        ](erc1155supportingContract.address, tokenIdForMint);
+
+        assert.equal(balanceOfOwner.toString(), expectedBalance.toString());
+      });
+
       it('[NEGATIVE][mint] must fail: unauthorized minting ERC-1155', async () => {
         await expect(
           contractERC1155ERC721.functions[fnSignatures.mint1155](

@@ -16,4 +16,14 @@ contract MockERC1155 is ERC1155 {
     ) external pure returns(bytes4) {
         return bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
     }
+
+    function onERC1155Received(
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes calldata
+    ) external pure returns(bytes4) {
+      return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
+    }
 }
