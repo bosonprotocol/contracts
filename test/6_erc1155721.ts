@@ -299,9 +299,18 @@ describe('ERC1155ERC721', () => {
       describe('[supportsInterface]', () => {
         it('Should return True for supported _interfaceId', async () => {
           const expectedResult = true;
-          const supportedInterfaceIds = ['0x01ffc9a7', '0xd9b67a26', '0x80ac58cd', '0x5b5e139f', '0x0e89341c'];
+          const supportedInterfaceIds = [
+            '0x01ffc9a7',
+            '0xd9b67a26',
+            '0x80ac58cd',
+            '0x5b5e139f',
+            '0x0e89341c',
+          ];
 
-          const randomInterfaceId = supportedInterfaceIds[Math.floor(Math.random() * supportedInterfaceIds.length)];
+          const randomInterfaceId =
+            supportedInterfaceIds[
+              Math.floor(Math.random() * supportedInterfaceIds.length)
+            ];
           const isSupported: boolean = await contractERC1155ERC721.supportsInterface(
             randomInterfaceId
           );
@@ -597,7 +606,11 @@ describe('ERC1155ERC721', () => {
         );
 
         const tokenIds = [BN(123), BN(456), BN(789)];
-        const quantities = [BN(constants.QTY_10), BN(constants.QTY_15), BN(constants.QTY_20)];
+        const quantities = [
+          BN(constants.QTY_10),
+          BN(constants.QTY_15),
+          BN(constants.QTY_20),
+        ];
         const tx = await contractERC1155ERC721.mintBatch(
           users.seller.address,
           tokenIds,
@@ -879,7 +892,7 @@ describe('ERC1155ERC721', () => {
 
           const tokenIdsForMint = [10, 20, 30, 40];
 
-          for (var idForMint of tokenIdsForMint) {
+          for (const idForMint of tokenIdsForMint) {
             await contractERC1155ERC721.functions[fnSignatures.mint721](
               users.other1.address,
               idForMint
@@ -1171,7 +1184,9 @@ describe('ERC1155ERC721', () => {
           tokenIdForMint
         );
 
-        const approvedAddress = await contractERC1155ERC721.getApproved(tokenIdForMint);
+        const approvedAddress = await contractERC1155ERC721.getApproved(
+          tokenIdForMint
+        );
         assert.equal(approvedAddress, constants.ZERO_ADDRESS);
       });
 
@@ -1188,8 +1203,13 @@ describe('ERC1155ERC721', () => {
           tokenIdForMint
         );
 
-        await contractERC1155ERC721.approve(expectedApprovedAddress, tokenIdForMint);
-        const approvedAddress = await contractERC1155ERC721.getApproved(tokenIdForMint);
+        await contractERC1155ERC721.approve(
+          expectedApprovedAddress,
+          tokenIdForMint
+        );
+        const approvedAddress = await contractERC1155ERC721.getApproved(
+          tokenIdForMint
+        );
         assert.equal(approvedAddress, expectedApprovedAddress);
       });
 

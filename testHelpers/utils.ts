@@ -788,13 +788,10 @@ class Utils {
       signer
     ) as ERC1155ERC721;
 
-    const method = fromInstance.functions[fnSignatures.safeTransfer721WithNoData];
+    const method =
+      fromInstance.functions[fnSignatures.safeTransfer721WithNoData];
 
-    return await method(
-      oldVoucherOwner,
-      newVoucherOwner,
-      voucherID
-    );
+    return await method(oldVoucherOwner, newVoucherOwner, voucherID);
   }
 
   async safeTransfer1155(
