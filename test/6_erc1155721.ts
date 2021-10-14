@@ -16,6 +16,7 @@ import {
   TokenRegistry,
   MockERC20Permit,
   MockERC721,
+  MockERC1155,
 } from '../typechain';
 
 let ERC1155ERC721_Factory: ContractFactory;
@@ -25,6 +26,7 @@ let BosonRouter_Factory: ContractFactory;
 let TokenRegistry_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
 let MockERC721_Factory: ContractFactory;
+let MockERC1155_Factory: ContractFactory;
 
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
@@ -52,6 +54,9 @@ describe('ERC1155ERC721', () => {
     MockERC721_Factory = await ethers.getContractFactory(
       'MockERC721'
     );
+    MockERC1155_Factory = await ethers.getContractFactory(
+      'MockERC1155'
+    );
   });
 
   let contractERC1155ERC721: ERC1155ERC721,
@@ -61,7 +66,8 @@ describe('ERC1155ERC721', () => {
     contractBSNTokenPrice: MockERC20Permit,
     contractBSNTokenDeposit: MockERC20Permit,
     contractTokenRegistry: TokenRegistry,
-    contractMockERC721: MockERC721;
+    contractMockERC721: MockERC721,
+    contractMockERC1155: MockERC1155;
 
   let timestamp: number;
 
@@ -93,8 +99,12 @@ describe('ERC1155ERC721', () => {
       'BosonTokenDeposit',
       'BDEP'
     )) as Contract & MockERC20Permit;
+
     contractMockERC721 = (await MockERC721_Factory.deploy()) as Contract &
       MockERC721;
+
+    contractMockERC1155 = (await MockERC1155_Factory.deploy()) as Contract &
+    MockERC1155;
 
     await contractTokenRegistry.deployed();
     await contractERC1155ERC721.deployed();
@@ -104,6 +114,7 @@ describe('ERC1155ERC721', () => {
     await contractBSNTokenPrice.deployed();
     await contractBSNTokenDeposit.deployed();
     await contractMockERC721.deployed();
+    await contractMockERC1155.deployed();
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
@@ -672,6 +683,58 @@ describe('ERC1155ERC721', () => {
         assert.equal(balanceOfToken1.toString(), quantities[0].toString());
         assert.equal(balanceOfToken2.toString(), quantities[1].toString());
         assert.equal(balanceOfToken3.toString(), quantities[2].toString());
+      });
+
+      it('[mintBatch] Should do batch minting of tokens to ERC1155 supporting contract', async () => {
+        const erc1155supportingContract = contractMockERC1155;
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        const tokenIds = [BN(123)];
+        const quantities = [BN(constants.QTY_10)];
+        const tx = await contractERC1155ERC721.mintBatch(
+          erc1155supportingContract.address,
+          tokenIds,
+          quantities,
+          ethers.utils.formatBytes32String('0x0')
+        );
+
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.TRANSFER_BATCH,
+          (ev) => {
+            assert.equal(
+              ev._from,
+              constants.ZERO_ADDRESS,
+              'ev._from not as expected!'
+            );
+            assert.equal(
+              ev._to,
+              erc1155supportingContract.address,
+              'ev._to not as expected!'
+            );
+            assert.equal(
+              ev._ids.toString(),
+              tokenIds.toString(),
+              'ev._ids not as expected!'
+            );
+            assert.equal(
+              JSON.stringify(ev._values),
+              JSON.stringify(quantities),
+              'ev._values not as expected!'
+            );
+          }
+        );
+
+        const balanceOfToken1 = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf1155
+        ](erc1155supportingContract.address, tokenIds[0]);
+
+        assert.equal(balanceOfToken1.toString(), quantities[0].toString());
       });
 
       it('[NEGATIVE][mintBatch] Should revert when _account is a zero address', async () => {
