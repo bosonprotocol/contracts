@@ -6,6 +6,7 @@ import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
 import UtilsBuilder from '../testHelpers/utilsBuilder';
+const BN = ethers.BigNumber.from;
 
 import {
   BosonRouter,
@@ -210,180 +211,13 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
       });
 
-      it('Should emit TransferSingle event', async () => {
-        const txFillOrder = await utils.createOrder(
-          users.seller,
-          timestamp,
-          timestamp + constants.SECONDS_IN_DAY,
-          constants.product_price,
-          constants.seller_deposit,
-          constants.buyer_deposit,
-          constants.QTY_10,
-          true
-        );
-
-        const txReceipt = await txFillOrder.wait();
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          ERC1155ERC721_Factory,
-          eventNames.TRANSFER_SINGLE,
-          (ev) => {
-            assert.equal(
-              ev._operator,
-              contractVoucherKernel.address,
-              '_operator not expected!'
-            );
-            assert.equal(
-              ev._from,
-              constants.ZERO_ADDRESS,
-              '_from not expected!'
-            );
-            assert.equal(ev._to, users.seller.address, '_to not expected!');
-            assert.equal(
-              ev._value.toString(),
-              constants.QTY_10,
-              '_value not expected!'
-            );
-            TOKEN_SUPPLY_ID = ev._id.toString();
-          }
-        );
-      });
-
-      it('Should emit TransferSingle (burn 1155) && Transfer(mint 721)', async () => {
-        const commitTx = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit,
-          true
-        );
-
-        const txReceipt = await commitTx.wait();
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          ERC1155ERC721_Factory,
-          eventNames.TRANSFER_SINGLE,
-          (ev) => {
-            assert.equal(
-              ev._operator,
-              contractVoucherKernel.address,
-              '_operator not expected!'
-            );
-            assert.equal(ev._from, users.seller.address, '_from not expected!');
-            assert.equal(ev._to, constants.ZERO_ADDRESS, '_to not expected!');
-            assert.equal(
-              ev._value.toString(),
-              constants.QTY_1,
-              '_value not expected!'
-            );
-            return true;
-          }
-        );
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          ERC1155ERC721_Factory,
-          eventNames.TRANSFER,
-          (ev) => {
-            assert.equal(
-              ev._from,
-              constants.ZERO_ADDRESS,
-              '_from not expected!'
-            );
-            assert.equal(ev._to, users.buyer.address, '_to not expected!');
-            return true;
-          }
-        );
-      });
-
-      it('[approve] Owner should approve transfer of erc721', async () => {
-        const token721 = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
-
-        const owner721Instance = contractERC1155ERC721.connect(
-          users.buyer.signer
-        );
-        const tx = await owner721Instance.approve(
-          users.other1.address,
-          token721
-        );
-        const txReceipt = await tx.wait();
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          ERC1155ERC721_Factory,
-          eventNames.APPROVAL,
-          (ev) => {
-            assert.equal(
-              ev._owner,
-              users.buyer.address,
-              'Owner not as expected!'
-            );
-            assert.equal(
-              ev._approved,
-              users.other1.address,
-              'Approved not as expected!'
-            );
-            assert.equal(
-              ev._tokenId.toString(),
-              token721.toString(),
-              'tokenId not as expected!'
-            );
-          }
-        );
-      });
-
-      it('[NEGATIVE][approve] Attacker should not approve transfer of erc721 that does not possess', async () => {
-        const token721 = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
-
-        const attackerInstance = contractERC1155ERC721.connect(
-          users.attacker.signer
-        );
-
-        await expect(
-          attackerInstance.approve(users.other1.address, token721)
-        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_APPROVAL);
-      });
-
-      it('[NEGATIVE][approve] Should revert if buyer tries to approve to self', async () => {
-        const token721 = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
-
-        const attackerInstance = contractERC1155ERC721.connect(
-          users.attacker.signer
-        );
-
-        await expect(
-          attackerInstance.approve(users.buyer.address, token721)
-        ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
-      });
-
       it('[setVoucherKernelAddress] Should set setVoucherKernelAddress to valid address', async () => {
+        const expectedVoucherKernelAddress = users.other1.address;
         const tx = await contractERC1155ERC721.setVoucherKernelAddress(
-          users.other1.address
+          expectedVoucherKernelAddress
         );
 
         const txReceipt = await tx.wait();
-
         eventUtils.assertEventEmitted(
           txReceipt,
           ERC1155ERC721_Factory,
@@ -401,6 +235,9 @@ describe('ERC1155ERC721', () => {
             );
           }
         );
+
+        const voucherKernelAddress = await contractERC1155ERC721.getVoucherKernelAddress();
+        assert.equal(voucherKernelAddress, expectedVoucherKernelAddress);
       });
 
       it('[NEGATIVE][setVoucherKernelAddress] Should revert for zero address', async () => {
@@ -409,9 +246,10 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
       });
 
-      it('[setCashierAddress] Should set setVoucherKernelAddress to valid address', async () => {
+      it('[setCashierAddress] Should set setCashierAddress to valid address', async () => {
+        const expectedCashierAddress = contractCashier.address;
         const tx = await contractERC1155ERC721.setCashierAddress(
-          contractCashier.address
+          expectedCashierAddress
         );
 
         const txReceipt = await tx.wait();
@@ -433,6 +271,9 @@ describe('ERC1155ERC721', () => {
             );
           }
         );
+
+        const cashierAddress = await contractERC1155ERC721.getCashierAddress();
+        assert.equal(cashierAddress, expectedCashierAddress);
       });
 
       it('[NEGATIVE][setCashierAddress] Should revert for zero address', async () => {
@@ -516,7 +357,7 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
       });
 
-      it('[NEGATIVE][safeTransfer1155] Seller should not transfer to contract address', async () => {
+      it('[NEGATIVE][safeTransfer1155] it should not be transferred to a contract that cannot receive it', async () => {
         await expect(
           utils.safeTransfer1155(
             users.seller.address,
@@ -632,6 +473,24 @@ describe('ERC1155ERC721', () => {
             );
           }
         );
+
+        const expectedBalance = constants.QTY_10;
+        const balanceOfOwner = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf1155
+        ](users.other1.address, tokenIdForMint);
+
+        assert.equal(balanceOfOwner.toString(), expectedBalance.toString());
+      });
+
+      it('[NEGATIVE][mint] must fail: unauthorized minting ERC-1155', async () => {
+        await expect(
+          contractERC1155ERC721.functions[fnSignatures.mint1155](
+            users.attacker.address,
+            666,
+            constants.QTY_10,
+            ethers.utils.formatBytes32String('0x0')
+          )
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VK);
       });
 
       it('[NEGATIVE][mint] Should revert when to is a zero address', async () => {
@@ -686,9 +545,16 @@ describe('ERC1155ERC721', () => {
             );
           }
         );
+
+        const expectedBalance = 0;
+        const balanceOfOwner = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf721
+        ](users.seller.address);
+
+        assert.equal(balanceOfOwner.toString(), expectedBalance.toString());
       });
 
-      it('[NEGATIVE][burn] Should revert when to is a zero address', async () => {
+      it('[NEGATIVE][burn] Should revert when _account is a zero address', async () => {
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -707,11 +573,12 @@ describe('ERC1155ERC721', () => {
           users.deployer.address
         );
 
-        const tokenIds = TOKEN_SUPPLY_ID;
+        const tokenIds = [BN(123), BN(456), BN(789)];
+        const quantities = [BN(constants.QTY_10), BN(constants.QTY_15), BN(constants.QTY_20)];
         const tx = await contractERC1155ERC721.mintBatch(
           users.seller.address,
-          [tokenIds],
-          [constants.QTY_10],
+          tokenIds,
+          quantities,
           ethers.utils.formatBytes32String('0x0')
         );
 
@@ -738,15 +605,31 @@ describe('ERC1155ERC721', () => {
               'ev._ids not as expected!'
             );
             assert.equal(
-              ev._values.toString(),
-              constants.QTY_10.toString(),
+              JSON.stringify(ev._values),
+              JSON.stringify(quantities),
               'ev._values not as expected!'
             );
           }
         );
+
+        const balanceOfToken1 = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf1155
+        ](users.seller.address, BN(123));
+
+        const balanceOfToken2 = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf1155
+        ](users.seller.address, BN(456));
+
+        const balanceOfToken3 = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf1155
+        ](users.seller.address, BN(789));
+
+        assert.equal(balanceOfToken1, constants.QTY_10);
+        assert.equal(balanceOfToken2, constants.QTY_15);
+        assert.equal(balanceOfToken3, constants.QTY_20);
       });
 
-      it('[NEGATIVE][mintBatch] Should revert when to is a zero address', async () => {
+      it('[NEGATIVE][mintBatch] Should revert when _account is a zero address', async () => {
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -819,7 +702,7 @@ describe('ERC1155ERC721', () => {
         );
       });
 
-      it('[NEGATIVE][burnBatch] Should revert when to is a zero address', async () => {
+      it('[NEGATIVE][burnBatch] Should revert when _account is a zero address', async () => {
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -864,11 +747,9 @@ describe('ERC1155ERC721', () => {
         );
       });
 
-      it('[ownerOf] should token owner address for valid token', async () => {
-        const expectedOwner = users.buyer;
-
-        const erc721 = await utils.commitToBuy(
-          expectedOwner,
+      it('[approve] Owner should approve transfer of erc721', async () => {
+        const token721 = await utils.commitToBuy(
+          users.buyer,
           users.seller,
           TOKEN_SUPPLY_ID,
           constants.product_price,
@@ -878,7 +759,82 @@ describe('ERC1155ERC721', () => {
         const owner721Instance = contractERC1155ERC721.connect(
           users.buyer.signer
         );
-        const tokenOwner = await owner721Instance.ownerOf(erc721);
+        const tx = await owner721Instance.approve(
+          users.other1.address,
+          token721
+        );
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.APPROVAL,
+          (ev) => {
+            assert.equal(
+              ev._owner,
+              users.buyer.address,
+              'Owner not as expected!'
+            );
+            assert.equal(
+              ev._approved,
+              users.other1.address,
+              'Approved not as expected!'
+            );
+            assert.equal(
+              ev._tokenId.toString(),
+              token721.toString(),
+              'tokenId not as expected!'
+            );
+          }
+        );
+      });
+
+      it('[NEGATIVE][approve] Attacker should not approve transfer of erc721 that does not possess', async () => {
+        const token721 = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.product_price,
+          constants.buyer_deposit
+        );
+
+        const attackerInstance = contractERC1155ERC721.connect(
+          users.attacker.signer
+        );
+
+        await expect(
+          attackerInstance.approve(users.other1.address, token721)
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_APPROVAL);
+      });
+
+      it('[NEGATIVE][approve] Should revert if buyer tries to approve to self', async () => {
+        const token721 = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.product_price,
+          constants.buyer_deposit
+        );
+
+        await expect(
+          contractERC1155ERC721.approve(users.buyer.address, token721)
+        ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
+      });
+
+      it('[ownerOf] should token owner address for valid token', async () => {
+        const expectedOwner = users.buyer;
+        const tokenIdsForMint = 123;
+
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        await contractERC1155ERC721.functions[fnSignatures.mint721](
+          expectedOwner.address,
+          tokenIdsForMint
+        );
+
+        const tokenOwner = await contractERC1155ERC721.ownerOf(tokenIdsForMint);
 
         assert.equal(tokenOwner, expectedOwner.address);
       });
@@ -893,21 +849,26 @@ describe('ERC1155ERC721', () => {
       });
 
       describe('[balanceOf] should count all NFTs assigned to an owner', async () => {
-        it('[balanceOf] returns 1 when 1 NFT is assigned to owner', async () => {
-          await utils.commitToBuy(
-            users.buyer,
-            users.seller,
-            TOKEN_SUPPLY_ID,
-            constants.product_price,
-            constants.buyer_deposit
+        it('[balanceOf] returns 4 when 4 NFTs are assigned to owner', async () => {
+          await contractERC1155ERC721.setVoucherKernelAddress(
+            users.deployer.address
           );
-          const expectedCount = 1;
 
-          const balanceOfBuyer = await contractERC1155ERC721.functions[
+          const tokenIdsForMint = [10, 20, 30, 40];
+
+          for (var idForMint of tokenIdsForMint) {
+            await contractERC1155ERC721.functions[fnSignatures.mint721](
+              users.other1.address,
+              idForMint
+            );
+          }
+
+          const expectedCount = tokenIdsForMint.length;
+          const balanceOfOwner = await contractERC1155ERC721.functions[
             fnSignatures.balanceOf721
-          ](users.buyer.address);
+          ](users.other1.address);
 
-          assert.equal(balanceOfBuyer.toString(), expectedCount.toString());
+          assert.equal(balanceOfOwner.toString(), expectedCount.toString());
         });
 
         it('[balanceOf] returns 0 when no NFTs are assigned to owner', async () => {
@@ -930,6 +891,55 @@ describe('ERC1155ERC721', () => {
         );
       });
 
+      it('[safeTransfer721WithNoData] Should safely transfer the ownership of a given token ID to another address', async () => {
+        const oldOwner = users.buyer;
+        const expectedNewOwner = users.other2;
+
+        const erc721 = await utils.commitToBuy(
+          oldOwner,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.product_price,
+          constants.buyer_deposit
+        );
+
+        const tx = await utils.safeTransfer721WithNoData(
+          oldOwner.address,
+          expectedNewOwner.address,
+          erc721,
+          users.buyer.signer
+        );
+
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.TRANSFER,
+          (ev) => {
+            assert.equal(
+              ev._from,
+              oldOwner.address,
+              'ev._from not as expected!'
+            );
+            assert.equal(
+              ev._to,
+              users.other2.address,
+              'ev._to not as expected!'
+            );
+            assert.equal(
+              ev._tokenId.toString(),
+              erc721.toString(),
+              'ev._tokenId not as expected!'
+            );
+          }
+        );
+
+        const newTokenOwner = await contractERC1155ERC721.ownerOf(erc721);
+
+        assert.equal(newTokenOwner, expectedNewOwner.address);
+      });
+
       it('[safeTransfer721] Should safely transfer the ownership of a given token ID to another address', async () => {
         const oldOwner = users.buyer;
         const expectedNewOwner = users.other2;
@@ -942,17 +952,39 @@ describe('ERC1155ERC721', () => {
           constants.buyer_deposit
         );
 
-        await utils.safeTransfer721(
+        const tx = await utils.safeTransfer721(
           oldOwner.address,
           expectedNewOwner.address,
           erc721,
           users.buyer.signer
         );
 
-        const owner721Instance = contractERC1155ERC721.connect(
-          users.buyer.signer
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.TRANSFER,
+          (ev) => {
+            assert.equal(
+              ev._from,
+              oldOwner.address,
+              'ev._from not as expected!'
+            );
+            assert.equal(
+              ev._to,
+              users.other2.address,
+              'ev._to not as expected!'
+            );
+            assert.equal(
+              ev._tokenId.toString(),
+              erc721.toString(),
+              'ev._tokenId not as expected!'
+            );
+          }
         );
-        const newTokenOwner = await owner721Instance.ownerOf(erc721);
+
+        const newTokenOwner = await contractERC1155ERC721.ownerOf(erc721);
 
         assert.equal(newTokenOwner, expectedNewOwner.address);
       });
@@ -1047,17 +1079,39 @@ describe('ERC1155ERC721', () => {
           constants.buyer_deposit
         );
 
-        await utils.transfer721(
+        const tx = await utils.transfer721(
           oldOwner.address,
           expectedNewOwner.address,
           erc721,
           users.buyer.signer
         );
 
-        const owner721Instance = contractERC1155ERC721.connect(
-          users.buyer.signer
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.TRANSFER,
+          (ev) => {
+            assert.equal(
+              ev._from,
+              oldOwner.address,
+              'ev._from not as expected!'
+            );
+            assert.equal(
+              ev._to,
+              users.other2.address,
+              'ev._to not as expected!'
+            );
+            assert.equal(
+              ev._tokenId.toString(),
+              erc721.toString(),
+              'ev._tokenId not as expected!'
+            );
+          }
         );
-        const newTokenOwner = await owner721Instance.ownerOf(erc721);
+
+        const newTokenOwner = await contractERC1155ERC721.ownerOf(erc721);
 
         assert.equal(newTokenOwner, expectedNewOwner.address);
       });
@@ -1084,36 +1138,35 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[getApproved] Should return zero address if no address set', async () => {
-        const erc721 = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
         );
 
-        const owner721Instance = contractERC1155ERC721.connect(
-          users.buyer.signer
+        const tokenIdForMint = 123;
+        await contractERC1155ERC721.functions[fnSignatures.mint721](
+          users.deployer.address,
+          tokenIdForMint
         );
-        const approvedAddress = await owner721Instance.getApproved(erc721);
+
+        const approvedAddress = await contractERC1155ERC721.getApproved(tokenIdForMint);
         assert.equal(approvedAddress, constants.ZERO_ADDRESS);
       });
 
       it('[getApproved] Should return the approved address for a token ID', async () => {
         const expectedApprovedAddress = users.other1.address;
-        const erc721 = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
+
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
         );
 
-        const owner721Instance = contractERC1155ERC721.connect(
-          users.buyer.signer
+        const tokenIdForMint = 123;
+        await contractERC1155ERC721.functions[fnSignatures.mint721](
+          users.deployer.address,
+          tokenIdForMint
         );
-        await owner721Instance.approve(expectedApprovedAddress, erc721);
-        const approvedAddress = await owner721Instance.getApproved(erc721);
+
+        await contractERC1155ERC721.approve(expectedApprovedAddress, tokenIdForMint);
+        const approvedAddress = await contractERC1155ERC721.getApproved(tokenIdForMint);
         assert.equal(approvedAddress, expectedApprovedAddress);
       });
 
@@ -1152,6 +1205,13 @@ describe('ERC1155ERC721', () => {
             );
           }
         );
+
+        const expectedBalance = 1;
+        const balanceOfBuyer = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf721
+        ](users.other1.address);
+
+        assert.equal(balanceOfBuyer.toString(), expectedBalance.toString());
       });
 
       it('[NEGATIVE][mint] must fail: unauthorized minting ERC-721', async () => {
