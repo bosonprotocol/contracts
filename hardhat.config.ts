@@ -24,6 +24,13 @@ task("deploy", "Deploy contracts on a provided network")
 		await deploy(env);
 	})
 
+task("deployConditionalCommitTokenAndGate", "Deploy conditional commit token and gate contracts on a provided network")
+	.addOptionalParam("env", "Which environment is going to be used for contract deployment. Choose between prod, demo, dev or empty for local deployment", "hardhat")
+	.setAction( async ({env}) => {
+		const { deploy } = await lazyImport('./scripts/deployConditionalCommitTokenAndGate')
+		await deploy(env);
+	})
+
 task("contracts-verify", "Verify already deployed contracts. Bear in mind that at least couple of blocks should be mined before execution!")
 	.addOptionalParam("env", "Which environment is going to be used for contract deployment. Choose between prod, demo & dev", "dev")
 	.setAction(async ({env}) => {
@@ -49,9 +56,12 @@ const config: HardhatUserConfig = {
 		},
 		rinkeby: {
 			url: `https://rinkeby.infura.io/v3/${INFURA_KEY}`,
-			accounts: [
-				DEPLOYER_PRIVATE_KEY,
-			]
+			accounts: {
+				count: 2,
+				initialIndex: 0,
+				mnemonic: process.env.MNEMONIC,
+				path: "m/44'/60'/0'/0",
+			},
 		},
 	},
 	etherscan: {
