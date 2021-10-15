@@ -11,7 +11,8 @@ import { HardhatUserConfig } from "hardhat/config";
 const { task } = require("hardhat/config");
 const testMnemonic = 'inhale wood champion certain immense wash pepper enact enrich infant purse maid'
 const INFURA_KEY = process.env.INFURA_API_KEY;
-const DEPLOYER_PRIVATE_KEY = process.env.PK;
+const PROTOCOL_DEPLOYER_PRIVATE_KEY = process.env.PROTOCOL_DEPLOYER_PRIVATE_KEY;
+const CC_TOKEN_DEPLOYER_PRIVATE_KEY = process.env.CC_TOKEN_DEPLOYER_PRIVATE_KEY;
 
 const lazyImport = async (module) => {
 	return await import(module);
@@ -21,13 +22,6 @@ task("deploy", "Deploy contracts on a provided network")
 	.addOptionalParam("env", "Which environment is going to be used for contract deployment. Choose between prod, demo, dev or empty for local deployment", "hardhat")
 	.setAction( async ({env}) => {
 		const { deploy } = await lazyImport('./scripts/deploy')
-		await deploy(env);
-	})
-
-task("deployConditionalCommitTokenAndGate", "Deploy conditional commit token and gate contracts on a provided network")
-	.addOptionalParam("env", "Which environment is going to be used for contract deployment. Choose between prod, demo, dev or empty for local deployment", "hardhat")
-	.setAction( async ({env}) => {
-		const { deploy } = await lazyImport('./scripts/deployConditionalCommitTokenAndGate')
 		await deploy(env);
 	})
 
@@ -56,12 +50,10 @@ const config: HardhatUserConfig = {
 		},
 		rinkeby: {
 			url: `https://rinkeby.infura.io/v3/${INFURA_KEY}`,
-			accounts: {
-				count: 2,
-				initialIndex: 0,
-				mnemonic: process.env.MNEMONIC,
-				path: "m/44'/60'/0'/0",
-			},
+			accounts: [
+				PROTOCOL_DEPLOYER_PRIVATE_KEY,
+				CC_TOKEN_DEPLOYER_PRIVATE_KEY //this one MUST remain in the second spont (account[1])
+			]
 		},
 	},
 	etherscan: {
