@@ -1729,6 +1729,15 @@ describe('ERC1155ERC721', () => {
           )
         ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VK);
       });
+
+      it('[NEGATIVE][mint] Should revert when to is a zero address', async () => {
+        await expect(
+          contractERC1155ERC721.functions[fnSignatures.mint721](
+            constants.ZERO_ADDRESS,
+            666
+          )
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VK);
+      });
     });
 
     describe('Metadata', () => {
