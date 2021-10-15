@@ -1015,6 +1015,21 @@ describe('ERC1155ERC721', () => {
         assert.equal(balanceOfToken1.toString(), quantities[0].toString());
       });
 
+      it('[NEGATIVE][mintBatch] Should revert when to is a contract that cannot receive it', async () => {
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        await expect(
+          contractERC1155ERC721.mintBatch(
+            contractCashier.address,
+            [TOKEN_SUPPLY_ID],
+            [constants.QTY_10],
+            ethers.utils.formatBytes32String('0x0')
+          )
+        ).to.be.revertedWith(revertReasons.FN_SELECTOR_NOT_RECOGNIZED);
+      });
+
       it('[NEGATIVE][mintBatch] Should revert when _account is a zero address', async () => {
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
