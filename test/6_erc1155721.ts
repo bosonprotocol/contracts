@@ -15,8 +15,8 @@ import {
   Cashier,
   TokenRegistry,
   MockERC20Permit,
-  MockERC721,
-  MockERC1155,
+  MockERC721Receiver,
+  MockERC1155Receiver,
 } from '../typechain';
 
 let ERC1155ERC721_Factory: ContractFactory;
@@ -25,8 +25,8 @@ let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
 let TokenRegistry_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
-let MockERC721_Factory: ContractFactory;
-let MockERC1155_Factory: ContractFactory;
+let MockERC721Receiver_Factory: ContractFactory;
+let MockERC1155Receiver_Factory: ContractFactory;
 
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
@@ -51,8 +51,12 @@ describe('ERC1155ERC721', () => {
     MockERC20Permit_Factory = await ethers.getContractFactory(
       'MockERC20Permit'
     );
-    MockERC721_Factory = await ethers.getContractFactory('MockERC721');
-    MockERC1155_Factory = await ethers.getContractFactory('MockERC1155');
+    MockERC721Receiver_Factory = await ethers.getContractFactory(
+      'MockERC721Receiver'
+    );
+    MockERC1155Receiver_Factory = await ethers.getContractFactory(
+      'MockERC1155Receiver'
+    );
   });
 
   let contractERC1155ERC721: ERC1155ERC721,
@@ -62,8 +66,8 @@ describe('ERC1155ERC721', () => {
     contractBSNTokenPrice: MockERC20Permit,
     contractBSNTokenDeposit: MockERC20Permit,
     contractTokenRegistry: TokenRegistry,
-    contractMockERC721: MockERC721,
-    contractMockERC1155: MockERC1155;
+    contractMockERC721Receiver: MockERC721Receiver,
+    contractMockERC1155Receiver: MockERC1155Receiver;
 
   let timestamp: number;
 
@@ -96,11 +100,11 @@ describe('ERC1155ERC721', () => {
       'BDEP'
     )) as Contract & MockERC20Permit;
 
-    contractMockERC721 = (await MockERC721_Factory.deploy()) as Contract &
-      MockERC721;
+    contractMockERC721Receiver = (await MockERC721Receiver_Factory.deploy()) as Contract &
+      MockERC721Receiver;
 
-    contractMockERC1155 = (await MockERC1155_Factory.deploy()) as Contract &
-      MockERC1155;
+    contractMockERC1155Receiver = (await MockERC1155Receiver_Factory.deploy()) as Contract &
+      MockERC1155Receiver;
 
     await contractTokenRegistry.deployed();
     await contractERC1155ERC721.deployed();
@@ -109,8 +113,8 @@ describe('ERC1155ERC721', () => {
     await contractBosonRouter.deployed();
     await contractBSNTokenPrice.deployed();
     await contractBSNTokenDeposit.deployed();
-    await contractMockERC721.deployed();
-    await contractMockERC1155.deployed();
+    await contractMockERC721Receiver.deployed();
+    await contractMockERC1155Receiver.deployed();
 
     await contractERC1155ERC721.setApprovalForAll(
       contractVoucherKernel.address,
@@ -305,16 +309,16 @@ describe('ERC1155ERC721', () => {
           expectedApprovalStatus
         );
 
-        const approvalStatus = await contractERC1155ERC721.isApprovedForAll(
-          users.deployer.address,
-          contractVoucherKernel.address
+        assert.isTrue(
+          await contractERC1155ERC721.isApprovedForAll(
+            users.deployer.address,
+            contractVoucherKernel.address
+          )
         );
-        assert.equal(approvalStatus, expectedApprovalStatus);
       });
 
       describe('[supportsInterface]', () => {
         it('Should return True for supported _interfaceId', async () => {
-          const expectedResult = true;
           const supportedInterfaceIds = [
             '0x01ffc9a7',
             '0xd9b67a26',
@@ -327,20 +331,20 @@ describe('ERC1155ERC721', () => {
             supportedInterfaceIds[
               Math.floor(Math.random() * supportedInterfaceIds.length)
             ];
-          const isSupported: boolean = await contractERC1155ERC721.supportsInterface(
-            randomInterfaceId
+
+          assert.isTrue(
+            await contractERC1155ERC721.supportsInterface(randomInterfaceId)
           );
-          assert.equal(isSupported, expectedResult);
         });
 
         it('Should return False for un-supported _interfaceId', async () => {
-          const expectedResult = false;
           const unSupportedInterfaceId = '0x150b7a02';
 
-          const isSupported: boolean = await contractERC1155ERC721.supportsInterface(
-            unSupportedInterfaceId
+          assert.isFalse(
+            await contractERC1155ERC721.supportsInterface(
+              unSupportedInterfaceId
+            )
           );
-          assert.equal(isSupported, expectedResult);
         });
       });
     });
@@ -382,7 +386,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[safeTransfer1155] Should be able to safely transfer to contracts that support ERC1155', async () => {
-        const erc1155supportingContract = contractMockERC1155;
+        const erc1155supportingContract = contractMockERC1155Receiver;
 
         const transferTx = await utils.safeTransfer1155(
           users.seller.address,
@@ -565,7 +569,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[mint] Should mint a desired token to ERC1155 supporting contract', async () => {
-        const erc1155supportingContract = contractMockERC1155;
+        const erc1155supportingContract = contractMockERC1155Receiver;
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -764,7 +768,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[mintBatch] Should do batch minting of tokens to ERC1155 supporting contract', async () => {
-        const erc1155supportingContract = contractMockERC1155;
+        const erc1155supportingContract = contractMockERC1155Receiver;
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -973,6 +977,11 @@ describe('ERC1155ERC721', () => {
             );
           }
         );
+
+        const approvedAddress = await contractERC1155ERC721.getApproved(
+          token721
+        );
+        assert.equal(approvedAddress, users.other1.address);
       });
 
       it('[NEGATIVE][approve] Attacker should not approve transfer of erc721 that does not possess', async () => {
@@ -1007,8 +1016,8 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
       });
 
-      it('[ownerOf] should token owner address for valid token', async () => {
-        const expectedOwner = users.buyer;
+      it('[ownerOf] should return the token owner address for valid token', async () => {
+        const expectedOwner = users.buyer.address;
         const tokenIdsForMint = 123;
 
         await contractERC1155ERC721.setVoucherKernelAddress(
@@ -1016,13 +1025,13 @@ describe('ERC1155ERC721', () => {
         );
 
         await contractERC1155ERC721.functions[fnSignatures.mint721](
-          expectedOwner.address,
+          expectedOwner,
           tokenIdsForMint
         );
 
         const tokenOwner = await contractERC1155ERC721.ownerOf(tokenIdsForMint);
 
-        assert.equal(tokenOwner, expectedOwner.address);
+        assert.equal(tokenOwner, expectedOwner);
       });
 
       it('[NEGATIVE][ownerOf] should revert if incorrect id provided', async () => {
@@ -1177,7 +1186,7 @@ describe('ERC1155ERC721', () => {
 
       it('[safeTransfer721] Should safely transfer the ownership of a given token ID to ERC721 supporting contract', async () => {
         const oldOwner = users.buyer;
-        const expectedNewOwnerAddress = contractMockERC721.address;
+        const expectedNewOwnerAddress = contractMockERC721Receiver.address;
 
         const erc721 = await utils.commitToBuy(
           oldOwner,
@@ -1457,7 +1466,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[mint] Should be able to mint a token to a contract that supports it', async () => {
-        const supportingContractAddress = contractMockERC721.address;
+        const supportingContractAddress = contractMockERC721Receiver.address;
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );

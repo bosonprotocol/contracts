@@ -1,19 +1,17 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts/introspection/ERC165.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 
-contract MockERC1155 is ERC1155 {
-    // solhint-disable-next-line no-empty-blocks
-    constructor() ERC1155("https://mock.example/{id}.json") {}
-
+contract MockERC1155Receiver is ERC165, IERC1155Receiver {
     function onERC1155BatchReceived(
         address,
         address,
         uint256[] calldata,
         uint256[] calldata,
         bytes calldata
-    ) external pure returns (bytes4) {
+    ) external pure override returns (bytes4) {
         return
             bytes4(
                 keccak256(
@@ -28,7 +26,7 @@ contract MockERC1155 is ERC1155 {
         uint256,
         uint256,
         bytes calldata
-    ) external pure returns (bytes4) {
+    ) external pure override returns (bytes4) {
         return
             bytes4(
                 keccak256(
