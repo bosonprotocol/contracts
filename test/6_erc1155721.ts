@@ -487,6 +487,155 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.FN_SELECTOR_NOT_RECOGNIZED);
       });
 
+      it('[safeBatchTransfer1155] Should be able to safely batch transfer to EOA', async () => {
+        const tokenIds = [BN(123), BN(456), BN(789)];
+        const quantities = [
+          BN(constants.QTY_10),
+          BN(constants.QTY_15),
+          BN(constants.QTY_20),
+        ];
+
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        await contractERC1155ERC721.mintBatch(
+          users.deployer.address,
+          tokenIds,
+          quantities,
+          ethers.utils.formatBytes32String('0x0')
+        );
+
+        const tx = await utils.safeBatchTransfer1155(
+          users.deployer.address,
+          users.other1.address,
+          tokenIds,
+          quantities,
+          users.deployer.signer
+        )
+
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.TRANSFER_BATCH,
+          (ev) => {
+            assert.equal(
+              ev._from,
+              users.deployer.address,
+              'ev._from not as expected!'
+            );
+            assert.equal(
+              ev._to,
+              users.other1.address,
+              'ev._to not as expected!'
+            );
+            assert.equal(
+              ev._ids.toString(),
+              tokenIds.toString(),
+              'ev._ids not as expected!'
+            );
+            assert.equal(
+              JSON.stringify(ev._values),
+              JSON.stringify(quantities),
+              'ev._values not as expected!'
+            );
+          }
+        );
+
+        const balanceOfToken1 = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf1155
+        ](users.other1.address, tokenIds[0]);
+
+        const balanceOfToken2 = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf1155
+        ](users.other1.address, tokenIds[1]);
+
+        const balanceOfToken3 = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf1155
+        ](users.other1.address, tokenIds[2]);
+
+        assert.equal(balanceOfToken1.toString(), quantities[0].toString());
+        assert.equal(balanceOfToken2.toString(), quantities[1].toString());
+        assert.equal(balanceOfToken3.toString(), quantities[2].toString());
+      });
+
+      it('[safeBatchTransfer1155] Should be able to safely batch transfer to contracts that support ERC1155', async () => {
+        const erc1155supportingContract = contractMockERC1155Receiver;
+        const tokenIds = [BN(123), BN(456), BN(789)];
+        const quantities = [
+          BN(constants.QTY_10),
+          BN(constants.QTY_15),
+          BN(constants.QTY_20),
+        ];
+
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        await contractERC1155ERC721.mintBatch(
+          users.deployer.address,
+          tokenIds,
+          quantities,
+          ethers.utils.formatBytes32String('0x0')
+        );
+
+        const tx = await utils.safeBatchTransfer1155(
+          users.deployer.address,
+          erc1155supportingContract.address,
+          tokenIds,
+          quantities,
+          users.deployer.signer
+        )
+
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.TRANSFER_BATCH,
+          (ev) => {
+            assert.equal(
+              ev._from,
+              users.deployer.address,
+              'ev._from not as expected!'
+            );
+            assert.equal(
+              ev._to,
+              erc1155supportingContract.address,
+              'ev._to not as expected!'
+            );
+            assert.equal(
+              ev._ids.toString(),
+              tokenIds.toString(),
+              'ev._ids not as expected!'
+            );
+            assert.equal(
+              JSON.stringify(ev._values),
+              JSON.stringify(quantities),
+              'ev._values not as expected!'
+            );
+          }
+        );
+
+        const balanceOfToken1 = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf1155
+        ](erc1155supportingContract.address, tokenIds[0]);
+
+        const balanceOfToken2 = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf1155
+        ](erc1155supportingContract.address, tokenIds[1]);
+
+        const balanceOfToken3 = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf1155
+        ](erc1155supportingContract.address, tokenIds[2]);
+
+        assert.equal(balanceOfToken1.toString(), quantities[0].toString());
+        assert.equal(balanceOfToken2.toString(), quantities[1].toString());
+        assert.equal(balanceOfToken3.toString(), quantities[2].toString());
+      });
+
       it('[NEGATIVE][safeBatchTransfer1155] Should not be able to transfer batch to ZERO address', async () => {
         await expect(
           utils.safeBatchTransfer1155(

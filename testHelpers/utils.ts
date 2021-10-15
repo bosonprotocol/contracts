@@ -820,8 +820,8 @@ class Utils {
   async safeBatchTransfer1155(
     oldSupplyOwner: string,
     newSupplyOwner: string,
-    supplyIDs: Array<string | number>,
-    values: Array<string | number>,
+    supplyIDs: Array<string | number | BigNumber>,
+    values: Array<string | number | BigNumber>,
     signer: Signer
   ): Promise<ContractTransaction> {
     const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
