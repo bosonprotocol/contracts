@@ -231,8 +231,92 @@ describe('Cashier withdrawals ', () => {
       DEPOSIT_BUYER: 2,
     };
 
+    function validateEmittedLogAmountDistribution(ev, expected) {
+      expect(ev._type).to.be.oneOf(Object.values(paymentType));
+      switch (ev._type) {
+        case paymentType.PAYMENT:
+          assert.equal(
+            ev._tokenIdVoucher.toString(),
+            expected.voucherID.toString(),
+            'Wrong token id voucher'
+          );
+          assert.equal(
+            ev._to,
+            expected.payment.receiver.address,
+            'Wrong payment recipient'
+          );
+          assert.equal(
+            ev._payment,
+            expected.payment.amount.toString(),
+            'Wrong payment amount'
+          );
+          break;
+        case paymentType.DEPOSIT_SELLER:
+          expect(ev._to).to.be.oneOf(
+            expected.sellerDeposit.receivers.map((user) => user.address),
+            'Unexpected recipient'
+          );
+
+          switch (ev._to) {
+            case expected.sellerDeposit.receivers[0].address:
+              assert.equal(
+                ev._tokenIdVoucher.toString(),
+                expected.voucherID.toString(),
+                'Wrong token id voucher'
+              );
+              assert.equal(
+                ev._payment,
+                expected.sellerDeposit.amounts[0].toString(),
+                'Wrong seller deposit amount'
+              );
+              break;
+            case expected.sellerDeposit.receivers[1].address:
+              assert.equal(
+                ev._tokenIdVoucher.toString(),
+                expected.voucherID.toString(),
+                'Wrong token id voucher'
+              );
+              assert.equal(
+                ev._payment,
+                expected.sellerDeposit.amounts[1].toString(),
+                'Wrong seller deposit amount'
+              );
+              break;
+            case expected.sellerDeposit.receivers[2].address:
+              assert.equal(
+                ev._tokenIdVoucher.toString(),
+                expected.voucherID.toString(),
+                'Wrong token id voucher'
+              );
+              assert.equal(
+                ev._payment,
+                expected.sellerDeposit.amounts[2].toString(),
+                'Wrong seller deposit amount'
+              );
+              break;
+          }
+          break;
+        case paymentType.DEPOSIT_BUYER:
+          assert.equal(
+            ev._tokenIdVoucher.toString(),
+            expected.voucherID.toString(),
+            'Wrong token id voucher'
+          );
+          assert.equal(
+            ev._to,
+            expected.buyerDeposit.receiver.address,
+            'Wrong buyer deposit recipient'
+          );
+          assert.equal(
+            ev._payment,
+            expected.buyerDeposit.amount.toString(),
+            'Wrong buyer deposit amount'
+          );
+          break;
+      }
+    }
+
     beforeEach(async () => {
-      // should i move deploy contracts inside describe?
       await deployContracts();
       await setPeriods();
     });
@@ -281,6 +365,7 @@ describe('Cashier withdrawals ', () => {
         );
       });
 
+      
       it('COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
         const expectedBuyerAmount = BN(constants.buyer_deposit)
           .add(BN(constants.product_price))
@@ -304,92 +389,25 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
-            expect(ev._type).to.be.oneOf(Object.values(paymentType));
-            switch (ev._type) {
-              case paymentType.PAYMENT:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.buyer.address,
-                  'Wrong payment recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.product_price,
-                  'Wrong payment amount'
-                );
-                break;
-              case paymentType.DEPOSIT_SELLER:
-                expect(ev._to).to.be.oneOf(
-                  [
-                    users.buyer.address,
-                    users.seller.address,
-                    users.deployer.address,
-                  ],
-                  'Unexpected recipient'
-                );
-
-                switch (ev._to) {
-                  case users.buyer.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      BN(constants.seller_deposit).div(2).toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                  case users.seller.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      expectedSellerAmount.toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                  case users.deployer.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      expectedEscrowAmount.toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                }
-                break;
-              case paymentType.DEPOSIT_BUYER:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.buyer.address,
-                  'Wrong buyer deposit recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.buyer_deposit,
-                  'Wrong buyer deposit amount'
-                );
-                break;
-            }
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.buyer, users.seller, users.deployer],
+                amounts: [
+                  BN(constants.seller_deposit).div(2).toString(),
+                  expectedSellerAmount,
+                  expectedEscrowAmount,
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
 
             utils.calcTotalAmountToRecipients(
               ev,
@@ -437,91 +455,26 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
-            expect(ev._type).to.be.oneOf(Object.values(paymentType));
-            switch (ev._type) {
-              case paymentType.PAYMENT:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.buyer.address,
-                  'Wrong payment recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.product_price,
-                  'Wrong payment amount'
-                );
-                break;
-              case paymentType.DEPOSIT_SELLER:
-                expect(ev._to).to.be.oneOf(
-                  [
-                    users.buyer.address,
-                    users.seller.address,
-                    users.deployer.address,
-                  ],
-                  'Unexpected recipient'
-                );
-                switch (ev._to) {
-                  case users.buyer.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      BN(constants.seller_deposit).div(2).toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                  case users.seller.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      expectedSellerAmount.toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                  case users.deployer.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      expectedEscrowAmount.toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                }
-                break;
-              case paymentType.DEPOSIT_BUYER:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.buyer.address,
-                  'Wrong buyer deposit recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.buyer_deposit,
-                  'Wrong buyer deposit amount'
-                );
-                break;
-            }
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.buyer, users.seller, users.deployer],
+                amounts: [
+                  BN(constants.seller_deposit).div(2).toString(),
+                  expectedSellerAmount,
+                  expectedEscrowAmount,
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -571,60 +524,25 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
-            expect(ev._type).to.be.oneOf(Object.values(paymentType));
-            switch (ev._type) {
-              case paymentType.PAYMENT:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.buyer.address,
-                  'Wrong payment recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.product_price,
-                  'Wrong payment amount'
-                );
-                break;
-              case paymentType.DEPOSIT_SELLER:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.deployer.address,
-                  'Wrong seller deposit recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.seller_deposit,
-                  'Wrong seller deposit amount'
-                );
-                break;
-              case paymentType.DEPOSIT_BUYER:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.deployer.address,
-                  'Wrong buyer deposit recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.buyer_deposit,
-                  'Wrong buyer deposit amount'
-                );
-                break;
-            }
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.deployer],
+                amounts: [
+                  constants.seller_deposit
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.deployer,
+                amount: constants.buyer_deposit,
+              },
+            });
+
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -675,78 +593,26 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
-            expect(ev._type).to.be.oneOf(Object.values(paymentType));
-            switch (ev._type) {
-              case paymentType.PAYMENT:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.buyer.address,
-                  'Wrong payment recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.product_price,
-                  'Wrong payment amount'
-                );
-                break;
-              case paymentType.DEPOSIT_SELLER:
-                expect(ev._to).to.be.oneOf(
-                  [
-                    users.seller.address,
-                    users.buyer.address
-                  ],
-                  'Unexpected recipient'
-                );
-                switch (ev._to) {
-                  case users.seller.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      expectedSellerAmount.toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                  case users.buyer.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      BN(constants.seller_deposit).div(BN(2)).toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                }
-                break;
-              case paymentType.DEPOSIT_BUYER:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.buyer.address,
-                  'Wrong buyer deposit recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.buyer_deposit,
-                  'Wrong buyer deposit amount'
-                );
-                break;
-            }
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.seller, users.buyer],
+                amounts: [                  
+                  expectedSellerAmount,
+                  BN(constants.seller_deposit).div(2).toString(),
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
+
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -800,60 +666,24 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
-            expect(ev._type).to.be.oneOf(Object.values(paymentType));
-            switch (ev._type) {
-              case paymentType.PAYMENT:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.buyer.address,
-                  'Wrong payment recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.product_price,
-                  'Wrong payment amount'
-                );
-                break;
-              case paymentType.DEPOSIT_SELLER:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.seller.address,
-                  'Wrong seller deposit recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.seller_deposit,
-                  'Wrong seller deposit amount'
-                );
-                break;
-              case paymentType.DEPOSIT_BUYER:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.deployer.address,
-                  'Wrong buyer deposit recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.buyer_deposit,
-                  'Wrong buyer deposit amount'
-                );
-                break;
-            }
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.seller],
+                amounts: [                  
+                  constants.seller_deposit
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.deployer,
+                amount: constants.buyer_deposit,
+              },
+            });
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -885,7 +715,6 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerAmount = BN(constants.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmount = BN(0); // 0
 
-
         await utils.cancel(voucherID, users.seller.signer);
 
         await advanceTimeSeconds(60);
@@ -903,78 +732,25 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
-            expect(ev._type).to.be.oneOf(Object.values(paymentType));
-            switch (ev._type) {
-              case paymentType.PAYMENT:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.buyer.address,
-                  'Wrong payment recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.product_price,
-                  'Wrong payment amount'
-                );
-                break;
-              case paymentType.DEPOSIT_SELLER:
-                expect(ev._to).to.be.oneOf(
-                  [
-                    users.seller.address,
-                    users.buyer.address
-                  ],
-                  'Unexpected recipient'
-                );
-                switch (ev._to) {
-                  case users.seller.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      expectedSellerAmount.toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                  case users.buyer.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      BN(constants.seller_deposit).div(BN(2)).toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                }
-                break;
-              case paymentType.DEPOSIT_BUYER:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.buyer.address,
-                  'Wrong buyer deposit recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.buyer_deposit,
-                  'Wrong buyer deposit amount'
-                );
-                break;
-            }
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.seller,users.buyer],
+                amounts: [                  
+                  expectedSellerAmount.toString(),
+                  BN(constants.seller_deposit).div(BN(2)).toString()
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -1023,60 +799,24 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
-            expect(ev._type).to.be.oneOf(Object.values(paymentType));
-            switch (ev._type) {
-              case paymentType.PAYMENT:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.seller.address,
-                  'Wrong payment recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.product_price,
-                  'Wrong payment amount'
-                );
-                break;
-              case paymentType.DEPOSIT_SELLER:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.seller.address,
-                  'Wrong seller deposit recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.seller_deposit,
-                  'Wrong seller deposit amount'
-                );
-                break;
-              case paymentType.DEPOSIT_BUYER:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.buyer.address,
-                  'Wrong buyer deposit recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.buyer_deposit,
-                  'Wrong buyer deposit amount'
-                );
-                break;
-            }
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.seller,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.seller],
+                amounts: [                  
+                  constants.seller_deposit
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -1124,60 +864,24 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
-            expect(ev._type).to.be.oneOf(Object.values(paymentType));
-            switch (ev._type) {
-              case paymentType.PAYMENT:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.seller.address,
-                  'Wrong payment recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.product_price,
-                  'Wrong payment amount'
-                );
-                break;
-              case paymentType.DEPOSIT_SELLER:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.deployer.address,
-                  'Wrong seller deposit recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.seller_deposit,
-                  'Wrong seller deposit amount'
-                );
-                break;
-              case paymentType.DEPOSIT_BUYER:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.buyer.address,
-                  'Wrong buyer deposit recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.buyer_deposit,
-                  'Wrong buyer deposit amount'
-                );
-                break;
-            }
+              validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.seller,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.deployer],
+                amounts: [                  
+                  constants.seller_deposit
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -1230,92 +934,27 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
-            expect(ev._type).to.be.oneOf(Object.values(paymentType));
-            switch (ev._type) {
-              case paymentType.PAYMENT:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.seller.address,
-                  'Wrong payment recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.product_price,
-                  'Wrong payment amount'
-                );
-                break;
-              case paymentType.DEPOSIT_SELLER:
-                expect(ev._to).to.be.oneOf(
-                  [
-                    users.buyer.address,
-                    users.seller.address,
-                    users.deployer.address,
-                  ],
-                  'Unexpected recipient'
-                );
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.seller,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.buyer, users.seller,users.deployer],
+                amounts: [  
+                  BN(constants.seller_deposit).div(2).toString(),   
+                  BN(constants.seller_deposit).div(BN(4)).toString(),             
+                  expectedEscrowAmount
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
 
-                switch (ev._to) {
-                  case users.buyer.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      BN(constants.seller_deposit).div(2).toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                  case users.seller.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      BN(constants.seller_deposit).div(BN(4)).toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                  case users.deployer.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      expectedEscrowAmount.toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                }
-                break;
-              case paymentType.DEPOSIT_BUYER:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.buyer.address,
-                  'Wrong buyer deposit recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.buyer_deposit,
-                  'Wrong buyer deposit amount'
-                );
-                break;
-            }
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -1368,92 +1007,26 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
-            expect(ev._type).to.be.oneOf(Object.values(paymentType));
-            switch (ev._type) {
-              case paymentType.PAYMENT:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.seller.address,
-                  'Wrong payment recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.product_price,
-                  'Wrong payment amount'
-                );
-                break;
-              case paymentType.DEPOSIT_SELLER:
-                expect(ev._to).to.be.oneOf(
-                  [
-                    users.buyer.address,
-                    users.seller.address,
-                    users.deployer.address,
-                  ],
-                  'Unexpected recipient'
-                );
+              validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.seller,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.buyer, users.seller,users.deployer],
+                amounts: [  
+                  BN(constants.seller_deposit).div(2).toString(),   
+                  BN(constants.seller_deposit).div(BN(4)).toString(),             
+                  expectedEscrowAmount
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
 
-                switch (ev._to) {
-                  case users.buyer.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      BN(constants.seller_deposit).div(2).toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                  case users.seller.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      BN(constants.seller_deposit).div(BN(4)).toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                  case users.deployer.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      expectedEscrowAmount.toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                }
-                break;
-              case paymentType.DEPOSIT_BUYER:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.buyer.address,
-                  'Wrong buyer deposit recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.buyer_deposit,
-                  'Wrong buyer deposit amount'
-                );
-                break;
-            }
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -1505,78 +1078,25 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
-            expect(ev._type).to.be.oneOf(Object.values(paymentType));
-            switch (ev._type) {
-              case paymentType.PAYMENT:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.seller.address,
-                  'Wrong payment recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.product_price,
-                  'Wrong payment amount'
-                );
-                break;
-              case paymentType.DEPOSIT_SELLER:
-                expect(ev._to).to.be.oneOf(
-                  [
-                    users.seller.address,
-                    users.buyer.address
-                  ],
-                  'Unexpected recipient'
-                );
-                switch (ev._to) {
-                  case users.seller.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      BN(constants.seller_deposit).div(BN(2)).toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                  case users.buyer.address:
-                    assert.equal(
-                      ev._tokenIdVoucher.toString(),
-                      voucherID.toString(),
-                      'Wrong token id voucher'
-                    );
-                    assert.equal(
-                      ev._payment,
-                      BN(constants.seller_deposit).div(BN(2)).toString(),
-                      'Wrong seller deposit amount'
-                    );
-                    break;
-                }
-                break;
-              case paymentType.DEPOSIT_BUYER:
-                assert.equal(
-                  ev._tokenIdVoucher.toString(),
-                  voucherID.toString(),
-                  'Wrong token id voucher'
-                );
-                assert.equal(
-                  ev._to,
-                  users.buyer.address,
-                  'Wrong buyer deposit recipient'
-                );
-                assert.equal(
-                  ev._payment,
-                  constants.buyer_deposit,
-                  'Wrong buyer deposit amount'
-                );
-                break;
-            }
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.seller,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.seller, users.buyer],
+                amounts: [  
+                  BN(constants.seller_deposit).div(BN(2)).toString(),   
+                  BN(constants.seller_deposit).div(BN(2)).toString()
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
