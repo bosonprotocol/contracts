@@ -621,14 +621,8 @@ describe('Cashier withdrawals ', () => {
           (ev) => {
             validateEmittedLogWithdrawal(ev, {
               caller: users.deployer,
-              payees: [users.deployer,  users.buyer],
-              amounts: [
-                [expectedEscrowAmount],
-                [
-                  constants.product_price,
-                  
-                ],
-              ],
+              payees: [users.deployer, users.buyer],
+              amounts: [[expectedEscrowAmount], [constants.product_price]],
             });
           }
         );
@@ -709,13 +703,13 @@ describe('Cashier withdrawals ', () => {
           (ev) => {
             validateEmittedLogWithdrawal(ev, {
               caller: users.deployer,
-              payees: [users.buyer,  users.seller],
+              payees: [users.buyer, users.seller],
               amounts: [
-                [constants.product_price, expectedBuyerAmount.sub(constants.product_price)],
                 [
-                  expectedSellerAmount,
-                  
+                  constants.product_price,
+                  expectedBuyerAmount.sub(constants.product_price),
                 ],
+                [expectedSellerAmount],
               ],
             });
           }
@@ -797,14 +791,11 @@ describe('Cashier withdrawals ', () => {
           (ev) => {
             validateEmittedLogWithdrawal(ev, {
               caller: users.deployer,
-              payees: [users.buyer,  users.seller, users.deployer],
+              payees: [users.buyer, users.seller, users.deployer],
               amounts: [
                 [expectedBuyerAmount],
-                [
-                  expectedSellerAmount,
-                  
-                ],
-                [expectedEscrowAmount]
+                [expectedSellerAmount],
+                [expectedEscrowAmount],
               ],
             });
           }
@@ -884,13 +875,13 @@ describe('Cashier withdrawals ', () => {
           (ev) => {
             validateEmittedLogWithdrawal(ev, {
               caller: users.deployer,
-              payees: [users.buyer,  users.seller],
+              payees: [users.buyer, users.seller],
               amounts: [
-                [constants.product_price, expectedBuyerAmount.sub(constants.product_price)],
                 [
-                  expectedSellerAmount,
-                  
-                ]
+                  constants.product_price,
+                  expectedBuyerAmount.sub(constants.product_price),
+                ],
+                [expectedSellerAmount],
               ],
             });
           }
@@ -959,7 +950,7 @@ describe('Cashier withdrawals ', () => {
             );
           }
         );
-        
+
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -967,10 +958,13 @@ describe('Cashier withdrawals ', () => {
           (ev) => {
             validateEmittedLogWithdrawal(ev, {
               caller: users.deployer,
-              payees: [users.buyer,  users.seller],
+              payees: [users.buyer, users.seller],
               amounts: [
                 [expectedBuyerAmount],
-                [constants.product_price,expectedSellerAmount.sub(constants.product_price)]
+                [
+                  constants.product_price,
+                  expectedSellerAmount.sub(constants.product_price),
+                ],
               ],
             });
           }
@@ -1046,11 +1040,11 @@ describe('Cashier withdrawals ', () => {
           (ev) => {
             validateEmittedLogWithdrawal(ev, {
               caller: users.deployer,
-              payees: [users.buyer,  users.seller, users.deployer],
+              payees: [users.buyer, users.seller, users.deployer],
               amounts: [
                 [expectedBuyerAmount],
                 [expectedSellerAmount],
-                [expectedEscrowAmount]
+                [expectedEscrowAmount],
               ],
             });
           }
@@ -1135,11 +1129,14 @@ describe('Cashier withdrawals ', () => {
           (ev) => {
             validateEmittedLogWithdrawal(ev, {
               caller: users.deployer,
-              payees: [users.buyer,  users.seller, users.deployer],
+              payees: [users.buyer, users.seller, users.deployer],
               amounts: [
                 [expectedBuyerAmount],
-                [constants.product_price, expectedSellerAmount.sub(constants.product_price)],
-                [expectedEscrowAmount]
+                [
+                  constants.product_price,
+                  expectedSellerAmount.sub(constants.product_price),
+                ],
+                [expectedEscrowAmount],
               ],
             });
           }
@@ -1224,11 +1221,14 @@ describe('Cashier withdrawals ', () => {
           (ev) => {
             validateEmittedLogWithdrawal(ev, {
               caller: users.deployer,
-              payees: [users.buyer,  users.seller, users.deployer],
+              payees: [users.buyer, users.seller, users.deployer],
               amounts: [
                 [expectedBuyerAmount],
-                [constants.product_price, expectedSellerAmount.sub(constants.product_price)],
-                [expectedEscrowAmount]
+                [
+                  constants.product_price,
+                  expectedSellerAmount.sub(constants.product_price),
+                ],
+                [expectedEscrowAmount],
               ],
             });
           }
@@ -1311,10 +1311,13 @@ describe('Cashier withdrawals ', () => {
           (ev) => {
             validateEmittedLogWithdrawal(ev, {
               caller: users.deployer,
-              payees: [users.buyer,  users.seller],
+              payees: [users.buyer, users.seller],
               amounts: [
                 [expectedBuyerAmount],
-                [constants.product_price, expectedSellerAmount.sub(constants.product_price)],
+                [
+                  constants.product_price,
+                  expectedSellerAmount.sub(constants.product_price),
+                ],
               ],
             });
           }
@@ -3318,7 +3321,7 @@ describe('Cashier withdrawals ', () => {
       });
     });
 
-    describe.only(`ETHTKN [WITH PERMIT]`, () => {
+    describe(`ETHTKN [WITH PERMIT]`, () => {
       let voucherID;
 
       let balanceBuyerFromDeposits = BN(0);
@@ -3436,7 +3439,11 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
-            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
+            assert.equal(
+              ev._caller,
+              users.deployer.address,
+              'Incorrect Caller'
+            );
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
@@ -3523,7 +3530,11 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
-            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
+            assert.equal(
+              ev._caller,
+              users.deployer.address,
+              'Incorrect Caller'
+            );
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
@@ -3610,7 +3621,11 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
-            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
+            assert.equal(
+              ev._caller,
+              users.deployer.address,
+              'Incorrect Caller'
+            );
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
@@ -3694,7 +3709,11 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
-            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
+            assert.equal(
+              ev._caller,
+              users.deployer.address,
+              'Incorrect Caller'
+            );
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
@@ -3777,7 +3796,11 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
-            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
+            assert.equal(
+              ev._caller,
+              users.deployer.address,
+              'Incorrect Caller'
+            );
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
@@ -3859,7 +3882,11 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
-            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
+            assert.equal(
+              ev._caller,
+              users.deployer.address,
+              'Incorrect Caller'
+            );
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
@@ -3942,7 +3969,11 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
-            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
+            assert.equal(
+              ev._caller,
+              users.deployer.address,
+              'Incorrect Caller'
+            );
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
           }
@@ -4023,7 +4054,11 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
-            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
+            assert.equal(
+              ev._caller,
+              users.deployer.address,
+              'Incorrect Caller'
+            );
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
           }
@@ -4109,7 +4144,11 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
-            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
+            assert.equal(
+              ev._caller,
+              users.deployer.address,
+              'Incorrect Caller'
+            );
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
           }
@@ -4199,7 +4238,11 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
-            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
+            assert.equal(
+              ev._caller,
+              users.deployer.address,
+              'Incorrect Caller'
+            );
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
           }
@@ -4286,7 +4329,11 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
-            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
+            assert.equal(
+              ev._caller,
+              users.deployer.address,
+              'Incorrect Caller'
+            );
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
           }
@@ -4453,6 +4500,16 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.deployer, users.seller, users.buyer],
+              amounts: [
+                [expectedEscrowAmountDeposit],
+                [expectedSellerDeposit],
+                [expectedBuyerDeposit],
+              ],
+            });
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -4560,6 +4617,16 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.deployer, users.seller, users.buyer],
+              amounts: [
+                [expectedEscrowAmountDeposit],
+                [expectedSellerDeposit],
+                [expectedBuyerDeposit],
+              ],
+            });
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -4667,6 +4734,12 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.deployer],
+              amounts: [[expectedEscrowAmountDeposit]],
+            });
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -4771,6 +4844,12 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.buyer, users.seller],
+              amounts: [[expectedBuyerDeposit], [expectedSellerDeposit]],
+            });
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -4874,6 +4953,12 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.seller, users.deployer],
+              amounts: [[expectedSellerDeposit], [expectedEscrowAmountDeposit]],
+            });
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -4976,6 +5061,12 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.buyer, users.seller],
+              amounts: [[expectedBuyerDeposit], [expectedSellerDeposit]],
+            });
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -5079,6 +5170,12 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.buyer, users.seller],
+              amounts: [[expectedBuyerDeposit], [expectedSellerDeposit]],
+            });
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -5180,6 +5277,11 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.buyer, users.deployer],
+              amounts: [[expectedBuyerDeposit], [expectedEscrowAmountDeposit]],
+            });
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -5286,6 +5388,16 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.buyer, users.seller, users.deployer],
+              amounts: [
+                [expectedBuyerDeposit],
+                [expectedSellerDeposit],
+                [expectedEscrowAmountDeposit],
+              ],
+            });
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -5396,6 +5508,16 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.buyer, users.seller, users.deployer],
+              amounts: [
+                [expectedBuyerDeposit],
+                [expectedSellerDeposit],
+                [expectedEscrowAmountDeposit],
+              ],
+            });
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -5502,6 +5624,12 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.buyer, users.seller],
+              amounts: [[expectedBuyerDeposit], [expectedSellerDeposit]],
+            });
+
             utils.calcTotalAmountToRecipients(
               ev,
               distributedAmounts,
@@ -5549,8 +5677,8 @@ describe('Cashier withdrawals ', () => {
               sellerDeposit: {
                 receivers: [users.seller, users.buyer],
                 amounts: [
-                  BN(constants.seller_deposit).div(BN(2)).toString(),
-                  BN(constants.seller_deposit).div(BN(2)).toString(),
+                  BN(constants.seller_deposit).div(BN(2)),
+                  BN(constants.seller_deposit).div(BN(2)),
                 ],
               },
               buyerDeposit: {
