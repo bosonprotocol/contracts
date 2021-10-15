@@ -3318,7 +3318,7 @@ describe('Cashier withdrawals ', () => {
       });
     });
 
-    describe(`ETHTKN [WITH PERMIT]`, () => {
+    describe.only(`ETHTKN [WITH PERMIT]`, () => {
       let voucherID;
 
       let balanceBuyerFromDeposits = BN(0);
@@ -3436,6 +3436,7 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
@@ -3522,6 +3523,7 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
@@ -3608,6 +3610,7 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
@@ -3691,6 +3694,7 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
@@ -3773,6 +3777,7 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
@@ -3854,6 +3859,7 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
@@ -3936,6 +3942,7 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
           }
@@ -4016,6 +4023,7 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
           }
@@ -4101,6 +4109,7 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
           }
@@ -4190,6 +4199,7 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
           }
@@ -4276,6 +4286,7 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_WITHDRAWAL,
           (ev) => {
+            assert.equal(ev._caller, users.deployer.address, 'Incorrect Caller')
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
           }
