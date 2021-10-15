@@ -128,6 +128,20 @@ class DeploymentExecutor {
       event.args._newWrapperAddress
     );
 
+    tx = await this.tokenRegistry.setTokenWrapperAddress(
+      this.boson_token,
+      this.boson_token
+    );
+
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log(
+      '$ TokenRegistry',
+      event.event,
+      'at:',
+      event.args._newWrapperAddress
+    );
+
     tx = await this.gate.setNonTransferableTokenContract(
       this.erc1155NonTransferable.address
     );
