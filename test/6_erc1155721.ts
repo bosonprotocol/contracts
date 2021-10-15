@@ -512,7 +512,7 @@ describe('ERC1155ERC721', () => {
           tokenIds,
           quantities,
           users.deployer.signer
-        )
+        );
 
         const txReceipt = await tx.wait();
 
@@ -587,7 +587,7 @@ describe('ERC1155ERC721', () => {
           tokenIds,
           quantities,
           users.deployer.signer
-        )
+        );
 
         const txReceipt = await tx.wait();
 
