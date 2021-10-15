@@ -1403,7 +1403,6 @@ describe('Cashier withdrawals ', () => {
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
-
             validateEmittedLogAmountDistribution(ev, {
               voucherID,
               payment: {
@@ -1496,7 +1495,6 @@ describe('Cashier withdrawals ', () => {
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
-
             validateEmittedLogAmountDistribution(ev, {
               voucherID,
               payment: {
@@ -1765,7 +1763,6 @@ describe('Cashier withdrawals ', () => {
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
-
             validateEmittedLogAmountDistribution(ev, {
               voucherID,
               payment: {
@@ -1854,7 +1851,6 @@ describe('Cashier withdrawals ', () => {
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
-
             validateEmittedLogAmountDistribution(ev, {
               voucherID,
               payment: {
@@ -1943,7 +1939,6 @@ describe('Cashier withdrawals ', () => {
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
-
             validateEmittedLogAmountDistribution(ev, {
               voucherID,
               payment: {
@@ -2037,7 +2032,6 @@ describe('Cashier withdrawals ', () => {
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
-
             validateEmittedLogAmountDistribution(ev, {
               voucherID,
               payment: {
@@ -2249,6 +2243,8 @@ describe('Cashier withdrawals ', () => {
     });
 
     describe(`TKNTKN SAME [WITH PERMIT]`, () => {
+      let voucherID;
+
       let balanceBuyer = BN(0);
       let balanceSeller = BN(0);
       let escrowBalance = BN(0);
@@ -2310,6 +2306,14 @@ describe('Cashier withdrawals ', () => {
           constants.buyer_deposit,
           supplyQty
         );
+
+        voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.product_price,
+          constants.buyer_deposit
+        );
       });
 
       afterEach(async () => {
@@ -2328,13 +2332,6 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
-        const voucherID = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
         await utils.refund(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
@@ -2387,19 +2384,30 @@ describe('Cashier withdrawals ', () => {
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.buyer, users.seller, users.deployer],
+                amounts: [
+                  BN(constants.seller_deposit).div(2).toString(),
+                  expectedSellerDeposit,
+                  expectedEscrowAmountDeposit,
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
           }
         );
       });
 
       it('COMMIT->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
-        const voucherID = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
-
         await utils.cancel(voucherID, users.seller.signer);
         await utils.complain(voucherID, users.buyer.signer);
         await utils.finalize(voucherID, users.deployer.signer);
@@ -2451,19 +2459,30 @@ describe('Cashier withdrawals ', () => {
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.buyer, users.seller, users.deployer],
+                amounts: [
+                  BN(constants.seller_deposit).div(2).toString(),
+                  expectedSellerDeposit,
+                  expectedEscrowAmountDeposit,
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
           }
         );
       });
 
       it('COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW', async () => {
-        const voucherID = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
-
         await utils.refund(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
 
@@ -2515,19 +2534,28 @@ describe('Cashier withdrawals ', () => {
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.deployer],
+                amounts: [
+                  constants.seller_deposit
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.deployer,
+                amount: constants.buyer_deposit,
+              },
+            });
           }
         );
       });
 
       it('COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW', async () => {
-        const voucherID = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
-
         await utils.refund(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
 
@@ -2580,18 +2608,29 @@ describe('Cashier withdrawals ', () => {
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.seller, users.buyer],
+                amounts: [                  
+                  expectedSellerDeposit,
+                  BN(constants.seller_deposit).div(2).toString(),
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
           }
         );
       });
 
       it('COMMIT->REFUND->FINALIZE->WITHDRAW', async () => {
-        const voucherID = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
         await utils.refund(voucherID, users.buyer.signer);
 
         await advanceTimeSeconds(60);
@@ -2640,19 +2679,28 @@ describe('Cashier withdrawals ', () => {
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.seller],
+                amounts: [                  
+                  constants.seller_deposit
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.deployer,
+                amount: constants.buyer_deposit,
+              },
+            });
           }
         );
       });
 
       it('COMMIT->CANCEL->FINALIZE->WITHDRAW', async () => {
-        const voucherID = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
-
         await utils.cancel(voucherID, users.seller.signer);
 
         await advanceTimeSeconds(60);
@@ -2703,18 +2751,29 @@ describe('Cashier withdrawals ', () => {
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.seller,users.buyer],
+                amounts: [                  
+                  expectedSellerDeposit,
+                  BN(constants.seller_deposit).div(BN(2))
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
           }
         );
       });
 
       it('COMMIT->REDEEM->FINALIZE->WITHDRAW', async () => {
-        const voucherID = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
         await utils.redeem(voucherID, users.buyer.signer);
 
         await advanceTimeSeconds(60);
@@ -2762,19 +2821,28 @@ describe('Cashier withdrawals ', () => {
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.seller,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.seller],
+                amounts: [                  
+                  constants.seller_deposit
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
           }
         );
       });
 
       it('COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW', async () => {
-        const voucherID = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
-
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
 
@@ -2824,18 +2892,28 @@ describe('Cashier withdrawals ', () => {
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.seller,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.deployer],
+                amounts: [                  
+                  constants.seller_deposit
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
           }
         );
       });
 
       it('COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
-        const voucherID = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
@@ -2890,18 +2968,30 @@ describe('Cashier withdrawals ', () => {
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.seller,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.buyer, users.seller,users.deployer],
+                amounts: [  
+                  BN(constants.seller_deposit).div(2),   
+                  BN(constants.seller_deposit).div(BN(4)),             
+                  expectedEscrowAmountDeposit
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
           }
         );
       });
 
       it('COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
-        const voucherID = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
         await utils.complain(voucherID, users.buyer.signer);
@@ -2956,19 +3046,30 @@ describe('Cashier withdrawals ', () => {
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.seller,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.buyer, users.seller,users.deployer],
+                amounts: [  
+                  BN(constants.seller_deposit).div(2),   
+                  BN(constants.seller_deposit).div(BN(4)),             
+                  expectedEscrowAmountDeposit
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
           }
         );
       });
 
       it('COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW', async () => {
-        const voucherID = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
-
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
 
@@ -3020,6 +3121,24 @@ describe('Cashier withdrawals ', () => {
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
             assert.isDefined(ev);
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.seller,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.seller, users.buyer],
+                amounts: [  
+                  BN(constants.seller_deposit).div(BN(2)).toString(),   
+                  BN(constants.seller_deposit).div(BN(2)).toString()
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
           }
         );
       });
