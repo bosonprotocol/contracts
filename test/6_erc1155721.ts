@@ -797,6 +797,21 @@ describe('ERC1155ERC721', () => {
         assert.equal(balanceOfOwner.toString(), expectedBalance.toString());
       });
 
+      it('[NEGATIVE][mint] Should revert when to is a contract that cannot receive it', async () => {
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        await expect(
+          contractERC1155ERC721.functions[fnSignatures.mint1155](
+            contractCashier.address,
+            666,
+            constants.QTY_10,
+            ethers.utils.formatBytes32String('0x0')
+          )
+        ).to.be.revertedWith(revertReasons.FN_SELECTOR_NOT_RECOGNIZED);
+      });
+
       it('[NEGATIVE][mint] must fail: unauthorized minting ERC-1155', async () => {
         await expect(
           contractERC1155ERC721.functions[fnSignatures.mint1155](
