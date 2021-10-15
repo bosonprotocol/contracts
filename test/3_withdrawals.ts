@@ -309,7 +309,7 @@ describe('Cashier withdrawals ', () => {
         );
       });
 
-      it('COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
+      it.only('COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
         const expectedBuyerAmount = BN(constants.buyer_deposit)
           .add(BN(constants.product_price))
           .add(BN(constants.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
@@ -394,6 +394,18 @@ describe('Cashier withdrawals ', () => {
         assert.isTrue(
           distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
           'Escrow Amount is not as expected'
+        );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowAmount(users.buyer.address)
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowAmount(users.seller.address)
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
         );
       });
 
@@ -482,6 +494,18 @@ describe('Cashier withdrawals ', () => {
           distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
           'Escrow Amount is not as expected'
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowAmount(users.buyer.address)
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowAmount(users.seller.address)
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
 
       it('COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -560,6 +584,18 @@ describe('Cashier withdrawals ', () => {
         assert.isTrue(
           distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
           'Escrow Amount is not as expected'
+        );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowAmount(users.buyer.address)
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowAmount(users.seller.address)
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
         );
       });
 
@@ -650,6 +686,18 @@ describe('Cashier withdrawals ', () => {
           distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
           'Escrow Amount is not as expected'
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowAmount(users.buyer.address)
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowAmount(users.seller.address)
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
 
       it('COMMIT->REFUND->FINALIZE->WITHDRAW', async () => {
@@ -729,6 +777,18 @@ describe('Cashier withdrawals ', () => {
         assert.isTrue(
           distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
           'Escrow Amount is not as expected'
+        );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowAmount(users.buyer.address)
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowAmount(users.seller.address)
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
         );
       });
 
@@ -817,6 +877,18 @@ describe('Cashier withdrawals ', () => {
           distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
           'Escrow Amount is not as expected'
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowAmount(users.buyer.address)
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowAmount(users.seller.address)
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
 
       it('COMMIT->REDEEM->FINALIZE->WITHDRAW', async () => {
@@ -901,6 +973,18 @@ describe('Cashier withdrawals ', () => {
           distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
           'Escrow Amount is not as expected'
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowAmount(users.buyer.address)
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowAmount(users.seller.address)
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
 
       it('COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -981,6 +1065,18 @@ describe('Cashier withdrawals ', () => {
         assert.isTrue(
           distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
           'Escrow Amount is not as expected'
+        );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowAmount(users.buyer.address)
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowAmount(users.seller.address)
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
         );
       });
 
@@ -1075,6 +1171,18 @@ describe('Cashier withdrawals ', () => {
           distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
           'Escrow Amount is not as expected'
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowAmount(users.buyer.address)
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowAmount(users.seller.address)
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
 
       it('COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -1168,6 +1276,18 @@ describe('Cashier withdrawals ', () => {
           distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
           'Escrow Amount is not as expected'
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowAmount(users.buyer.address)
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowAmount(users.seller.address)
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
 
       it('COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -1258,6 +1378,18 @@ describe('Cashier withdrawals ', () => {
           distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
           'Escrow Amount is not as expected'
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowAmount(users.buyer.address)
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowAmount(users.seller.address)
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
     });
 
@@ -1320,7 +1452,10 @@ describe('Cashier withdrawals ', () => {
           await utils.contractBSNTokenDeposit.balanceOf(
             utils.contractCashier.address
           )
-        ).to.equal(BN(0), 'Cashier Contract is not empty');
+        ).to.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Cashier Contract has wrong balance'
+        );
       }
 
       beforeEach(async () => {
@@ -1336,7 +1471,7 @@ describe('Cashier withdrawals ', () => {
             contractBSNTokenDeposit
           );
 
-        const supplyQty = 1;
+        const supplyQty = constants.QTY_15;
         const tokensToMint = BN(constants.seller_deposit).mul(BN(supplyQty));
 
         await utils.mintTokens(
@@ -1433,6 +1568,31 @@ describe('Cashier withdrawals ', () => {
             });
           }
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
 
       it('COMMIT->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -1493,6 +1653,31 @@ describe('Cashier withdrawals ', () => {
             });
           }
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
 
       it('COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -1548,6 +1733,31 @@ describe('Cashier withdrawals ', () => {
               },
             });
           }
+        );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
         );
       });
 
@@ -1609,6 +1819,31 @@ describe('Cashier withdrawals ', () => {
             });
           }
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
 
       it('COMMIT->REFUND->FINALIZE->WITHDRAW', async () => {
@@ -1660,6 +1895,31 @@ describe('Cashier withdrawals ', () => {
               },
             });
           }
+        );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
         );
       });
 
@@ -1719,6 +1979,31 @@ describe('Cashier withdrawals ', () => {
             });
           }
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
 
       it('COMMIT->REDEEM->FINALIZE->WITHDRAW', async () => {
@@ -1771,6 +2056,31 @@ describe('Cashier withdrawals ', () => {
               },
             });
           }
+        );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
         );
       });
 
@@ -1825,6 +2135,31 @@ describe('Cashier withdrawals ', () => {
               },
             });
           }
+        );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
         );
       });
 
@@ -1889,6 +2224,31 @@ describe('Cashier withdrawals ', () => {
             });
           }
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
 
       it('COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -1952,6 +2312,31 @@ describe('Cashier withdrawals ', () => {
             });
           }
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
 
       it('COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -2011,6 +2396,31 @@ describe('Cashier withdrawals ', () => {
             });
           }
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenPrice.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            contractBSNTokenDeposit.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
     });
 
@@ -2043,7 +2453,10 @@ describe('Cashier withdrawals ', () => {
           await utils.contractBSNTokenSame.balanceOf(
             utils.contractCashier.address
           )
-        ).to.equal(BN(0), 'Cashier Contract is not empty');
+        ).to.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Cashier Contract balance is wrong'
+        ); // should be what seller has in it
       }
 
       beforeEach(async () => {
@@ -2059,7 +2472,7 @@ describe('Cashier withdrawals ', () => {
             contractBSNTokenDeposit
           );
 
-        const supplyQty = 1;
+        const supplyQty = constants.QTY_15;
         const tokensToMintSeller = BN(constants.seller_deposit).mul(
           BN(supplyQty)
         );
@@ -2097,7 +2510,7 @@ describe('Cashier withdrawals ', () => {
         );
       });
 
-      it('COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
+      it.only('COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
         await utils.refund(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
@@ -2153,6 +2566,24 @@ describe('Cashier withdrawals ', () => {
               },
             });
           }
+        );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
         );
       });
 
@@ -2212,6 +2643,24 @@ describe('Cashier withdrawals ', () => {
             });
           }
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
 
       it('COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -2265,6 +2714,24 @@ describe('Cashier withdrawals ', () => {
               },
             });
           }
+        );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
         );
       });
 
@@ -2324,6 +2791,24 @@ describe('Cashier withdrawals ', () => {
             });
           }
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
 
       it('COMMIT->REFUND->FINALIZE->WITHDRAW', async () => {
@@ -2374,6 +2859,24 @@ describe('Cashier withdrawals ', () => {
               },
             });
           }
+        );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
         );
       });
 
@@ -2431,6 +2934,24 @@ describe('Cashier withdrawals ', () => {
             });
           }
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
 
       it('COMMIT->REDEEM->FINALIZE->WITHDRAW', async () => {
@@ -2481,6 +3002,24 @@ describe('Cashier withdrawals ', () => {
               },
             });
           }
+        );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
         );
       });
 
@@ -2533,6 +3072,24 @@ describe('Cashier withdrawals ', () => {
               },
             });
           }
+        );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
         );
       });
 
@@ -2595,6 +3152,24 @@ describe('Cashier withdrawals ', () => {
             });
           }
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
 
       it('COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -2656,6 +3231,24 @@ describe('Cashier withdrawals ', () => {
             });
           }
         );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
+        );
       });
 
       it('COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -2712,6 +3305,24 @@ describe('Cashier withdrawals ', () => {
               },
             });
           }
+        );
+
+        // check escrow amounts
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.buyer.address
+          )
+        ).to.be.equal(constants.ZERO, 'Buyes escrow should be zero');
+
+        expect(
+          await contractCashier.getEscrowTokensAmount(
+            utils.contractBSNTokenSame.address,
+            users.seller.address
+          )
+        ).to.be.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Seller escrow mismatch'
         );
       });
     });
