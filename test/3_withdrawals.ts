@@ -282,12 +282,15 @@ describe('Cashier withdrawals ', () => {
       let voucherID;
 
       async function checkEscrowAmounts(stage) {
-        switch (stage){
-          case "before":
+        switch (stage) {
+          case 'before':
             expect(
               await contractCashier.getEscrowAmount(users.buyer.address)
-            ).to.be.equal(BN(constants.buyer_deposit).add(constants.product_price), 'Buyers escrow should noy be zero');
-    
+            ).to.be.equal(
+              BN(constants.buyer_deposit).add(constants.product_price),
+              'Buyers escrow should noy be zero'
+            );
+
             expect(
               await contractCashier.getEscrowAmount(users.seller.address)
             ).to.be.equal(
@@ -295,11 +298,11 @@ describe('Cashier withdrawals ', () => {
               'Seller escrow mismatch'
             );
             break;
-          case "after":
+          case 'after':
             expect(
               await contractCashier.getEscrowAmount(users.buyer.address)
             ).to.be.equal(constants.ZERO, 'Buyers escrow should be zero');
-    
+
             expect(
               await contractCashier.getEscrowAmount(users.seller.address)
             ).to.be.equal(
@@ -307,8 +310,8 @@ describe('Cashier withdrawals ', () => {
               'Seller escrow mismatch'
             );
             break;
+        }
       }
-    }
 
       beforeEach(async () => {
         utils = await UtilsBuilder.create()
@@ -351,7 +354,7 @@ describe('Cashier withdrawals ', () => {
         await utils.cancel(voucherID, users.seller.signer);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -429,7 +432,7 @@ describe('Cashier withdrawals ', () => {
           'Escrow Amount is not as expected'
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -443,7 +446,7 @@ describe('Cashier withdrawals ', () => {
         await utils.complain(voucherID, users.buyer.signer);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -521,7 +524,7 @@ describe('Cashier withdrawals ', () => {
           'Escrow Amount is not as expected'
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -537,7 +540,7 @@ describe('Cashier withdrawals ', () => {
 
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -604,7 +607,7 @@ describe('Cashier withdrawals ', () => {
           'Escrow Amount is not as expected'
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -621,7 +624,7 @@ describe('Cashier withdrawals ', () => {
 
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -697,7 +700,7 @@ describe('Cashier withdrawals ', () => {
           'Escrow Amount is not as expected'
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REFUND->FINALIZE->WITHDRAW', async () => {
@@ -710,7 +713,7 @@ describe('Cashier withdrawals ', () => {
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -781,7 +784,7 @@ describe('Cashier withdrawals ', () => {
           'Escrow Amount is not as expected'
         );
 
-  await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -796,7 +799,7 @@ describe('Cashier withdrawals ', () => {
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -872,7 +875,7 @@ describe('Cashier withdrawals ', () => {
           'Escrow Amount is not as expected'
         );
 
-       await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->FINALIZE->WITHDRAW', async () => {
@@ -887,7 +890,7 @@ describe('Cashier withdrawals ', () => {
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -960,7 +963,7 @@ describe('Cashier withdrawals ', () => {
           'Escrow Amount is not as expected'
         );
 
-       await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -974,7 +977,7 @@ describe('Cashier withdrawals ', () => {
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -1045,7 +1048,7 @@ describe('Cashier withdrawals ', () => {
           'Escrow Amount is not as expected'
         );
 
-await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -1064,7 +1067,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -1142,7 +1145,7 @@ await checkEscrowAmounts("after");
           'Escrow Amount is not as expected'
         );
 
-await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -1161,7 +1164,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -1239,7 +1242,7 @@ await checkEscrowAmounts("after");
           'Escrow Amount is not as expected'
         );
 
-await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -1257,7 +1260,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -1333,7 +1336,7 @@ await checkEscrowAmounts("after");
           'Escrow Amount is not as expected'
         );
 
-await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
     });
 
@@ -1403,22 +1406,28 @@ await checkEscrowAmounts("after");
       }
 
       async function checkEscrowAmounts(stage) {
-        switch (stage){
-          case "before":
+        switch (stage) {
+          case 'before':
             expect(
               await contractCashier.getEscrowTokensAmount(
                 contractBSNTokenDeposit.address,
                 users.buyer.address
               )
-            ).to.be.equal(constants.buyer_deposit, 'Buyers escrow should not be zero');
-    
+            ).to.be.equal(
+              constants.buyer_deposit,
+              'Buyers escrow should not be zero'
+            );
+
             expect(
               await contractCashier.getEscrowTokensAmount(
                 contractBSNTokenPrice.address,
                 users.buyer.address
               )
-            ).to.be.equal(constants.product_price, 'Buyers escrow should not be zero');
-    
+            ).to.be.equal(
+              constants.product_price,
+              'Buyers escrow should not be zero'
+            );
+
             expect(
               await contractCashier.getEscrowTokensAmount(
                 contractBSNTokenDeposit.address,
@@ -1429,21 +1438,21 @@ await checkEscrowAmounts("after");
               'Seller escrow mismatch'
             );
             break;
-          case "after":
+          case 'after':
             expect(
               await contractCashier.getEscrowTokensAmount(
                 contractBSNTokenDeposit.address,
                 users.buyer.address
               )
             ).to.be.equal(constants.ZERO, 'Buyers escrow should be zero');
-    
+
             expect(
               await contractCashier.getEscrowTokensAmount(
                 contractBSNTokenPrice.address,
                 users.buyer.address
               )
             ).to.be.equal(constants.ZERO, 'Buyers escrow should be zero');
-    
+
             expect(
               await contractCashier.getEscrowTokensAmount(
                 contractBSNTokenDeposit.address,
@@ -1454,8 +1463,8 @@ await checkEscrowAmounts("after");
               'Seller escrow mismatch'
             );
             break;
+        }
       }
-    }
 
       beforeEach(async () => {
         utils = await UtilsBuilder.create()
@@ -1514,7 +1523,7 @@ await checkEscrowAmounts("after");
         await utils.cancel(voucherID, users.seller.signer);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -1570,7 +1579,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -1578,7 +1587,7 @@ await checkEscrowAmounts("after");
         await utils.complain(voucherID, users.buyer.signer);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -1634,7 +1643,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -1644,7 +1653,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -1694,7 +1703,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-       await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -1705,7 +1714,7 @@ await checkEscrowAmounts("after");
 
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -1758,7 +1767,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REFUND->FINALIZE->WITHDRAW', async () => {
@@ -1767,7 +1776,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -1814,7 +1823,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-       await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -1823,7 +1832,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -1876,7 +1885,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->FINALIZE->WITHDRAW', async () => {
@@ -1885,7 +1894,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -1933,7 +1942,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-       await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -1943,7 +1952,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -1991,7 +2000,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-       await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -2002,7 +2011,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -2058,7 +2067,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-       await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -2069,7 +2078,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -2125,7 +2134,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -2135,7 +2144,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -2188,7 +2197,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-       await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
     });
 
@@ -2228,15 +2237,18 @@ await checkEscrowAmounts("after");
       }
 
       async function checkEscrowAmounts(stage) {
-        switch (stage){
-          case "before":
+        switch (stage) {
+          case 'before':
             expect(
               await contractCashier.getEscrowTokensAmount(
                 utils.contractBSNTokenSame.address,
                 users.buyer.address
               )
-            ).to.be.equal(BN(constants.buyer_deposit).add(constants.product_price), 'Buyers escrow should not be zero');
-    
+            ).to.be.equal(
+              BN(constants.buyer_deposit).add(constants.product_price),
+              'Buyers escrow should not be zero'
+            );
+
             expect(
               await contractCashier.getEscrowTokensAmount(
                 utils.contractBSNTokenSame.address,
@@ -2247,14 +2259,14 @@ await checkEscrowAmounts("after");
               'Seller escrow mismatch'
             );
             break;
-          case "after":
+          case 'after':
             expect(
               await contractCashier.getEscrowTokensAmount(
                 utils.contractBSNTokenSame.address,
                 users.buyer.address
               )
             ).to.be.equal(constants.ZERO, 'Buyers escrow should be zero');
-    
+
             expect(
               await contractCashier.getEscrowTokensAmount(
                 utils.contractBSNTokenSame.address,
@@ -2265,8 +2277,8 @@ await checkEscrowAmounts("after");
               'Seller escrow mismatch'
             );
             break;
+        }
       }
-    }
 
       beforeEach(async () => {
         utils = await UtilsBuilder.create()
@@ -2325,7 +2337,7 @@ await checkEscrowAmounts("after");
         await utils.cancel(voucherID, users.seller.signer);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -2379,7 +2391,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -2387,7 +2399,7 @@ await checkEscrowAmounts("after");
         await utils.complain(voucherID, users.buyer.signer);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -2441,7 +2453,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -2451,7 +2463,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -2499,7 +2511,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -2510,7 +2522,7 @@ await checkEscrowAmounts("after");
 
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -2561,7 +2573,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REFUND->FINALIZE->WITHDRAW', async () => {
@@ -2570,7 +2582,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -2616,7 +2628,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-       await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -2625,7 +2637,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -2676,7 +2688,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-       await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->FINALIZE->WITHDRAW', async () => {
@@ -2685,7 +2697,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -2731,7 +2743,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-       await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -2741,7 +2753,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -2787,7 +2799,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -2798,7 +2810,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -2852,7 +2864,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-       await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -2863,7 +2875,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -2917,7 +2929,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-       await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -2927,7 +2939,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -2978,7 +2990,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
     });
 
@@ -3011,26 +3023,32 @@ await checkEscrowAmounts("after");
           await utils.contractBSNTokenDeposit.balanceOf(
             utils.contractCashier.address
           )
-        ).to.equal(BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)), 'Cashier Contract is not correct');
+        ).to.equal(
+          BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+          'Cashier Contract is not correct'
+        );
       }
 
       async function checkEscrowAmounts(stage) {
-        switch (stage){
-          case "before":
+        switch (stage) {
+          case 'before':
             expect(
               await contractCashier.getEscrowTokensAmount(
                 contractBSNTokenDeposit.address,
                 users.buyer.address
               )
-            ).to.be.equal(constants.buyer_deposit, 'Buyers escrow should be zero');
-            
+            ).to.be.equal(
+              constants.buyer_deposit,
+              'Buyers escrow should be zero'
+            );
+
             expect(
-              await contractCashier.getEscrowAmount(
-                 users.buyer.address
-              )
-            ).to.be.equal(constants.product_price, 'Buyers price escrow should be product price');
-    
-    
+              await contractCashier.getEscrowAmount(users.buyer.address)
+            ).to.be.equal(
+              constants.product_price,
+              'Buyers price escrow should be product price'
+            );
+
             expect(
               await contractCashier.getEscrowTokensAmount(
                 contractBSNTokenDeposit.address,
@@ -3040,27 +3058,26 @@ await checkEscrowAmounts("after");
               BN(constants.seller_deposit).mul(BN(constants.QTY_15)),
               'Seller escrow mismatch'
             );
-    
+
             expect(
-              await contractCashier.getEscrowAmount(
-                 users.seller.address
-              )
-            ).to.be.equal(constants.ZERO, 'Sellers price escrow should be zero');
+              await contractCashier.getEscrowAmount(users.seller.address)
+            ).to.be.equal(
+              constants.ZERO,
+              'Sellers price escrow should be zero'
+            );
             break;
-          case "after":
+          case 'after':
             expect(
               await contractCashier.getEscrowTokensAmount(
                 contractBSNTokenDeposit.address,
                 users.buyer.address
               )
             ).to.be.equal(constants.ZERO, 'Buyers escrow should be zero');
-    
+
             expect(
-              await contractCashier.getEscrowAmount(
-                 users.buyer.address
-              )
+              await contractCashier.getEscrowAmount(users.buyer.address)
             ).to.be.equal(constants.ZERO, 'Buyers escrow should be zero');
-    
+
             expect(
               await contractCashier.getEscrowTokensAmount(
                 contractBSNTokenDeposit.address,
@@ -3070,15 +3087,13 @@ await checkEscrowAmounts("after");
               BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
               'Seller escrow mismatch'
             );
-    
+
             expect(
-              await contractCashier.getEscrowAmount(
-                users.seller.address
-              )
+              await contractCashier.getEscrowAmount(users.seller.address)
             ).to.be.equal(constants.ZERO, 'Sellers escrow should be zero');
             break;
+        }
       }
-    }
 
       beforeEach(async () => {
         utils = await UtilsBuilder.create()
@@ -3132,8 +3147,8 @@ await checkEscrowAmounts("after");
         await utils.cancel(voucherID, users.seller.signer);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
-         
+        await checkEscrowAmounts('before');
+
         const withdrawTx = await utils.withdraw(
           voucherID,
           users.deployer.signer
@@ -3199,7 +3214,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");      
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -3207,7 +3222,7 @@ await checkEscrowAmounts("after");
         await utils.complain(voucherID, users.buyer.signer);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before")
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -3274,7 +3289,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after"); 
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -3284,7 +3299,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before")
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -3345,7 +3360,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after"); 
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -3356,7 +3371,7 @@ await checkEscrowAmounts("after");
 
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before")
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -3420,7 +3435,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after"); 
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REFUND->FINALIZE->WITHDRAW', async () => {
@@ -3429,7 +3444,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before")
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -3488,7 +3503,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after"); 
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -3497,7 +3512,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before")
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -3561,7 +3576,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after"); 
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->FINALIZE->WITHDRAW', async () => {
@@ -3570,7 +3585,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before")
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -3629,7 +3644,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after"); 
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -3639,7 +3654,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before")
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -3699,7 +3714,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after"); 
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -3710,7 +3725,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before")
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -3786,7 +3801,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before")
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -3853,7 +3868,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after"); 
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -3863,7 +3878,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before")
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -3926,8 +3941,8 @@ await checkEscrowAmounts("after");
             });
           }
         );
-        await checkEscrowAmounts("after"); 
-      });      
+        await checkEscrowAmounts('after');
+      });
     });
 
     describe(`TKNETH [WITH PERMIT]`, () => {
@@ -3963,70 +3978,70 @@ await checkEscrowAmounts("after");
       }
 
       async function checkEscrowAmounts(stage) {
-        switch (stage){
-          case "before":
+        switch (stage) {
+          case 'before':
             expect(
               await contractCashier.getEscrowTokensAmount(
                 contractBSNTokenPrice.address,
                 users.buyer.address
               )
-            ).to.be.equal(constants.product_price, 'Buyers token escrow should be product_price');
-            
+            ).to.be.equal(
+              constants.product_price,
+              'Buyers token escrow should be product_price'
+            );
+
             expect(
-              await contractCashier.getEscrowAmount(
-                 users.buyer.address
-              )
-            ).to.be.equal(constants.buyer_deposit, 'Buyers ETH escrow should be buyer_deposit');
-    
-    
+              await contractCashier.getEscrowAmount(users.buyer.address)
+            ).to.be.equal(
+              constants.buyer_deposit,
+              'Buyers ETH escrow should be buyer_deposit'
+            );
+
             expect(
               await contractCashier.getEscrowTokensAmount(
                 contractBSNTokenPrice.address,
                 users.seller.address
               )
-            ).to.be.equal(
-              constants.ZERO,
-              'Seller tokens escrow should be'
-            );
-    
+            ).to.be.equal(constants.ZERO, 'Seller tokens escrow should be');
+
             expect(
-              await contractCashier.getEscrowAmount(
-                 users.seller.address
-              )
-            ).to.be.equal(BN(constants.seller_deposit).mul(BN(constants.QTY_15)), 'Sellers ETH escrow mismatch');
+              await contractCashier.getEscrowAmount(users.seller.address)
+            ).to.be.equal(
+              BN(constants.seller_deposit).mul(BN(constants.QTY_15)),
+              'Sellers ETH escrow mismatch'
+            );
             break;
-          case "after":
+          case 'after':
             expect(
               await contractCashier.getEscrowTokensAmount(
                 contractBSNTokenPrice.address,
                 users.buyer.address
               )
-            ).to.be.equal(constants.ZERO, 'Buyers tokens escrow should be zero');
-    
+            ).to.be.equal(
+              constants.ZERO,
+              'Buyers tokens escrow should be zero'
+            );
+
             expect(
-              await contractCashier.getEscrowAmount(
-                 users.buyer.address
-              )
+              await contractCashier.getEscrowAmount(users.buyer.address)
             ).to.be.equal(constants.ZERO, 'Buyers ETH escrow should be zero');
-    
+
             expect(
               await contractCashier.getEscrowTokensAmount(
                 contractBSNTokenPrice.address,
                 users.seller.address
               )
-            ).to.be.equal(
-              constants.ZERO,
-              'Seller tokens escrow should be'
-            );
-    
+            ).to.be.equal(constants.ZERO, 'Seller tokens escrow should be');
+
             expect(
-              await contractCashier.getEscrowAmount(
-                users.seller.address
-              )
-            ).to.be.equal(BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)), 'Sellers ETH escrow mismatch');
+              await contractCashier.getEscrowAmount(users.seller.address)
+            ).to.be.equal(
+              BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+              'Sellers ETH escrow mismatch'
+            );
             break;
+        }
       }
-    }
 
       beforeEach(async () => {
         utils = await UtilsBuilder.create()
@@ -4072,7 +4087,7 @@ await checkEscrowAmounts("after");
         await utils.cancel(voucherID, users.seller.signer);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -4165,7 +4180,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -4173,7 +4188,7 @@ await checkEscrowAmounts("after");
         await utils.complain(voucherID, users.buyer.signer);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -4266,7 +4281,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -4276,7 +4291,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -4359,7 +4374,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -4370,7 +4385,7 @@ await checkEscrowAmounts("after");
 
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -4456,7 +4471,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REFUND->FINALIZE->WITHDRAW', async () => {
@@ -4465,7 +4480,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -4546,7 +4561,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -4555,7 +4570,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -4641,7 +4656,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->FINALIZE->WITHDRAW', async () => {
@@ -4650,7 +4665,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -4731,7 +4746,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -4741,7 +4756,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -4821,7 +4836,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -4832,7 +4847,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -4925,7 +4940,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
@@ -4936,7 +4951,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -5029,7 +5044,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
 
       it('COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW', async () => {
@@ -5039,7 +5054,7 @@ await checkEscrowAmounts("after");
         await advanceTimeSeconds(60);
         await utils.finalize(voucherID, users.deployer.signer);
 
-        await checkEscrowAmounts("before");
+        await checkEscrowAmounts('before');
 
         const withdrawTx = await utils.withdraw(
           voucherID,
@@ -5125,7 +5140,7 @@ await checkEscrowAmounts("after");
           }
         );
 
-        await checkEscrowAmounts("after");
+        await checkEscrowAmounts('after');
       });
     });
   });
