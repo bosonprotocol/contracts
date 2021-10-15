@@ -308,7 +308,7 @@ describe('Cashier withdrawals ', () => {
             );
             break;
       }
-    };
+    }
 
       beforeEach(async () => {
         utils = await UtilsBuilder.create()
@@ -1455,7 +1455,7 @@ await checkEscrowAmounts("after");
             );
             break;
       }
-    };
+    }
 
       beforeEach(async () => {
         utils = await UtilsBuilder.create()
@@ -2266,7 +2266,7 @@ await checkEscrowAmounts("after");
             );
             break;
       }
-    };
+    }
 
       beforeEach(async () => {
         utils = await UtilsBuilder.create()
@@ -3078,7 +3078,7 @@ await checkEscrowAmounts("after");
             ).to.be.equal(constants.ZERO, 'Sellers escrow should be zero');
             break;
       }
-    };
+    }
 
       beforeEach(async () => {
         utils = await UtilsBuilder.create()
@@ -4026,7 +4026,7 @@ await checkEscrowAmounts("after");
             ).to.be.equal(BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)), 'Sellers ETH escrow mismatch');
             break;
       }
-    };
+    }
 
       beforeEach(async () => {
         utils = await UtilsBuilder.create()
