@@ -316,6 +316,31 @@ describe('Cashier withdrawals ', () => {
       }
     }
 
+    function validateEmittedLogWithdrawal(ev, expected) {
+      assert.equal(ev._caller, expected.caller.address, 'Wrong caller');
+      expect(ev._payee).to.be.oneOf(
+        expected.payees.map((user) => user.address),
+        'Incorrect Payee'
+      );
+      switch (ev._payee) {
+        case expected.payees[0].address:
+          expect(ev._payment.toString()).to.be.oneOf(
+            expected.amounts[0].map((a) => a.toString())
+          );
+          break;
+        case expected.payees[1].address:
+          expect(ev._payment.toString()).to.be.oneOf(
+            expected.amounts[1].map((a) => a.toString())
+          );
+          break;
+        case expected.payees[2].address:
+          expect(ev._payment.toString()).to.be.oneOf(
+            expected.amounts[2].map((a) => a.toString())
+          );
+          break;
+      }
+    }
+
     beforeEach(async () => {
       await deployContracts();
       await setPeriods();
@@ -418,6 +443,26 @@ describe('Cashier withdrawals ', () => {
           }
         );
 
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.deployer, users.seller, users.buyer],
+              amounts: [
+                [expectedEscrowAmount],
+                [expectedSellerAmount],
+                [
+                  constants.product_price,
+                  expectedBuyerAmount.sub(BN(constants.product_price)),
+                ],
+              ],
+            });
+          }
+        );
+
         assert.isTrue(
           distributedAmounts.buyerAmount.eq(expectedBuyerAmount),
           'Buyer Amount is not as expected'
@@ -484,6 +529,26 @@ describe('Cashier withdrawals ', () => {
           }
         );
 
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.deployer, users.seller, users.buyer],
+              amounts: [
+                [expectedEscrowAmount],
+                [expectedSellerAmount],
+                [
+                  constants.product_price,
+                  expectedBuyerAmount.sub(BN(constants.product_price)),
+                ],
+              ],
+            });
+          }
+        );
+
         assert.isTrue(
           distributedAmounts.buyerAmount.eq(expectedBuyerAmount),
           'Buyer Amount is not as expected'
@@ -546,6 +611,25 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
+          }
+        );
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.deployer,  users.buyer],
+              amounts: [
+                [expectedEscrowAmount],
+                [
+                  constants.product_price,
+                  
+                ],
+              ],
+            });
           }
         );
 
@@ -618,6 +702,25 @@ describe('Cashier withdrawals ', () => {
           }
         );
 
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.buyer,  users.seller],
+              amounts: [
+                [constants.product_price, expectedBuyerAmount.sub(constants.product_price)],
+                [
+                  expectedSellerAmount,
+                  
+                ],
+              ],
+            });
+          }
+        );
+
         assert.isTrue(
           distributedAmounts.buyerAmount.eq(expectedBuyerAmount),
           'Buyer Amount is not as expected'
@@ -684,6 +787,26 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
+          }
+        );
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.buyer,  users.seller, users.deployer],
+              amounts: [
+                [expectedBuyerAmount],
+                [
+                  expectedSellerAmount,
+                  
+                ],
+                [expectedEscrowAmount]
+              ],
+            });
           }
         );
 
@@ -754,6 +877,25 @@ describe('Cashier withdrawals ', () => {
           }
         );
 
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.buyer,  users.seller],
+              amounts: [
+                [constants.product_price, expectedBuyerAmount.sub(constants.product_price)],
+                [
+                  expectedSellerAmount,
+                  
+                ]
+              ],
+            });
+          }
+        );
+
         assert.isTrue(
           distributedAmounts.buyerAmount.eq(expectedBuyerAmount),
           'Buyer Amount is not as expected'
@@ -817,6 +959,22 @@ describe('Cashier withdrawals ', () => {
             );
           }
         );
+        
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.buyer,  users.seller],
+              amounts: [
+                [expectedBuyerAmount],
+                [constants.product_price,expectedSellerAmount.sub(constants.product_price)]
+              ],
+            });
+          }
+        );
 
         assert.isTrue(
           distributedAmounts.buyerAmount.eq(expectedBuyerAmount),
@@ -878,6 +1036,23 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
+          }
+        );
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.buyer,  users.seller, users.deployer],
+              amounts: [
+                [expectedBuyerAmount],
+                [expectedSellerAmount],
+                [expectedEscrowAmount]
+              ],
+            });
           }
         );
 
@@ -953,6 +1128,23 @@ describe('Cashier withdrawals ', () => {
           }
         );
 
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.buyer,  users.seller, users.deployer],
+              amounts: [
+                [expectedBuyerAmount],
+                [constants.product_price, expectedSellerAmount.sub(constants.product_price)],
+                [expectedEscrowAmount]
+              ],
+            });
+          }
+        );
+
         assert.isTrue(
           distributedAmounts.buyerAmount.eq(expectedBuyerAmount),
           'Buyer Amount is not as expected'
@@ -1025,6 +1217,23 @@ describe('Cashier withdrawals ', () => {
           }
         );
 
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.buyer,  users.seller, users.deployer],
+              amounts: [
+                [expectedBuyerAmount],
+                [constants.product_price, expectedSellerAmount.sub(constants.product_price)],
+                [expectedEscrowAmount]
+              ],
+            });
+          }
+        );
+
         assert.isTrue(
           distributedAmounts.buyerAmount.eq(expectedBuyerAmount),
           'Buyer Amount is not as expected'
@@ -1092,6 +1301,22 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
+          }
+        );
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.buyer,  users.seller],
+              amounts: [
+                [expectedBuyerAmount],
+                [constants.product_price, expectedSellerAmount.sub(constants.product_price)],
+              ],
+            });
           }
         );
 
