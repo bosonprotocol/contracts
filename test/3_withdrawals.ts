@@ -61,7 +61,7 @@ describe('Cashier withdrawals ', () => {
     contractBSNTokenDeposit: MockERC20Permit,
     contractTokenRegistry: TokenRegistry;
 
-  let distributedAmounts = {
+  const zeroDistributedAmounts = {
     buyerAmount: BN(0),
     sellerAmount: BN(0),
     escrowAmount: BN(0),
@@ -154,74 +154,6 @@ describe('Cashier withdrawals ', () => {
 
     constants.PROMISE_VALID_FROM = timestamp;
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
-  }
-
-  // this function is used after each interaction with tokens to clear balances
-  async function giveAwayToRandom() {
-    const balanceBuyerFromPayment = await contractBSNTokenPrice.balanceOf(
-      users.buyer.address
-    );
-    const balanceBuyerFromDesosits = await contractBSNTokenDeposit.balanceOf(
-      users.buyer.address
-    );
-
-    const balanceSellerFromPayment = await contractBSNTokenPrice.balanceOf(
-      users.seller.address
-    );
-    const balanceSellerFromDesosits = await contractBSNTokenDeposit.balanceOf(
-      users.seller.address
-    );
-
-    const escrowBalanceFromPayment = await contractBSNTokenPrice.balanceOf(
-      users.deployer.address
-    );
-    const escrowBalanceFromDeposits = await contractBSNTokenDeposit.balanceOf(
-      users.deployer.address
-    );
-
-    const buyerPriceInstance = contractBSNTokenPrice.connect(
-      users.buyer.signer
-    );
-    const buyerDepositInstance = contractBSNTokenDeposit.connect(
-      users.buyer.signer
-    );
-    const sellerPriceInstance = contractBSNTokenPrice.connect(
-      users.seller.signer
-    );
-    const sellerDepositInstance = contractBSNTokenDeposit.connect(
-      users.seller.signer
-    );
-    const deployerPriceInstance = contractBSNTokenPrice.connect(
-      users.deployer.signer
-    );
-    const deployerDepositInstance = contractBSNTokenDeposit.connect(
-      users.deployer.signer
-    );
-
-    await buyerPriceInstance.transfer(
-      users.other1.address,
-      balanceBuyerFromPayment
-    );
-    await buyerDepositInstance.transfer(
-      users.other1.address,
-      balanceBuyerFromDesosits
-    );
-    await sellerPriceInstance.transfer(
-      users.other1.address,
-      balanceSellerFromPayment
-    );
-    await sellerDepositInstance.transfer(
-      users.other1.address,
-      balanceSellerFromDesosits
-    );
-    await deployerPriceInstance.transfer(
-      users.other1.address,
-      escrowBalanceFromPayment
-    );
-    await deployerDepositInstance.transfer(
-      users.other1.address,
-      escrowBalanceFromDeposits
-    );
   }
 
   describe.only('Withdraw scenarios', () => {
@@ -346,19 +278,6 @@ describe('Cashier withdrawals ', () => {
       await setPeriods();
     });
 
-    afterEach(async () => {
-      distributedAmounts = {
-        buyerAmount: BN(0),
-        sellerAmount: BN(0),
-        escrowAmount: BN(0),
-      };
-
-      const isPaused = await contractBosonRouter.paused();
-      if (isPaused) {
-        await contractBosonRouter.unpause();
-      }
-    });
-
     describe(`ETHETH`, () => {
       let voucherID;
       beforeEach(async () => {
@@ -408,6 +327,7 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -494,6 +414,7 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -583,6 +504,7 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -662,6 +584,7 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -734,13 +657,6 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerAmount = BN(constants.seller_deposit); // 0.05
         const expectedEscrowAmount = BN(constants.buyer_deposit); // 0.04
 
-        const voucherID = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
         await utils.refund(voucherID, users.buyer.signer);
 
         await advanceTimeSeconds(60);
@@ -753,6 +669,7 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -834,6 +751,7 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -920,6 +838,7 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -1002,6 +921,7 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -1087,6 +1007,7 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -1179,6 +1100,7 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -1270,6 +1192,7 @@ describe('Cashier withdrawals ', () => {
 
         const txReceipt = await withdrawTx.wait();
 
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -1341,46 +1264,63 @@ describe('Cashier withdrawals ', () => {
     describe(`TKNTKN [WITH PERMIT]`, () => {
       let voucherID;
 
-      let balanceBuyerFromPayment = BN(0);
-      let balanceBuyerFromDeposits = BN(0);
-
-      let balanceSellerFromPayment = BN(0);
-      let balanceSellerFromDeposits = BN(0);
-
-      let escrowBalanceFromPayment = BN(0);
-      let escrowBalanceFromDeposits = BN(0);
-
-      let cashierPaymentLeft = BN(0);
-      let cashierDepositLeft = BN(0);
-
-      async function getBalancesFromPriceTokenAndDepositToken() {
-        balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
-          users.buyer.address
-        );
-        balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.buyer.address
+      async function validateBalancesFromPriceTokenAndDepositToken(expected) {
+        //Payments
+        expect(
+          await utils.contractBSNTokenPrice.balanceOf(users.buyer.address)
+        ).to.equal(
+          expected.expectedBuyerPrice,
+          'Buyer did not get expected tokens from PriceTokenContract'
         );
 
-        balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
-          users.seller.address
-        );
-        balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.seller.address
-        );
-
-        escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(
-          users.deployer.address
-        );
-        escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.deployer.address
+        expect(
+          await utils.contractBSNTokenPrice.balanceOf(users.seller.address)
+        ).to.equal(
+          expected.expectedSellerPrice,
+          'Seller did not get expected tokens from PriceTokenContract'
         );
 
-        cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(
-          utils.contractCashier.address
+        expect(
+          await utils.contractBSNTokenPrice.balanceOf(users.deployer.address)
+        ).to.equal(
+          expected.expectedEscrowAmountPrice,
+          'Escrow did not get expected tokens from PriceTokenContract'
         );
-        cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(
-          utils.contractCashier.address
+
+        //Deposits
+        expect(
+          await utils.contractBSNTokenDeposit.balanceOf(users.buyer.address)
+        ).to.equal(
+          expected.expectedBuyerDeposit,
+          'Buyer did not get expected tokens from DepositTokenContract'
         );
+
+        expect(
+          await utils.contractBSNTokenDeposit.balanceOf(users.seller.address)
+        ).to.equal(
+          expected.expectedSellerDeposit,
+          'Seller did not get expected tokens from DepositTokenContract'
+        );
+
+        expect(
+          await utils.contractBSNTokenDeposit.balanceOf(users.deployer.address)
+        ).to.equal(
+          expected.expectedEscrowAmountDeposit,
+          'Buyer did not get expected tokens from DepositTokenContract'
+        );
+
+        //Cashier Should be Empty
+        expect(
+          await utils.contractBSNTokenPrice.balanceOf(
+            utils.contractCashier.address
+          )
+        ).to.equal(BN(0), 'Cashier Contract is not empty');
+
+        expect(
+          await utils.contractBSNTokenDeposit.balanceOf(
+            utils.contractCashier.address
+          )
+        ).to.equal(BN(0), 'Cashier Contract is not empty');
       }
 
       beforeEach(async () => {
@@ -1434,28 +1374,6 @@ describe('Cashier withdrawals ', () => {
         );
       });
 
-      afterEach(async () => {
-        distributedAmounts = {
-          buyerAmount: BN(0),
-          sellerAmount: BN(0),
-          escrowAmount: BN(0),
-        };
-
-        balanceBuyerFromPayment = BN(0);
-        balanceBuyerFromDeposits = BN(0);
-
-        balanceSellerFromPayment = BN(0);
-        balanceSellerFromDeposits = BN(0);
-
-        escrowBalanceFromPayment = BN(0);
-        escrowBalanceFromDeposits = BN(0);
-
-        cashierPaymentLeft = BN(0);
-        cashierDepositLeft = BN(0);
-
-        await giveAwayToRandom();
-      });
-
       it('COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
         await utils.refund(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
@@ -1480,45 +1398,14 @@ describe('Cashier withdrawals ', () => {
         ); // 0.0125
         const expectedEscrowAmountPrice = BN(0);
 
-        await getBalancesFromPriceTokenAndDepositToken();
-
-        //Payments
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowAmountPrice),
-          'Escrow did not get expected tokens from PriceTokenContract'
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromPriceTokenAndDepositToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowAmountPrice,
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -1571,45 +1458,14 @@ describe('Cashier withdrawals ', () => {
         ); // 0.0125
         const expectedEscrowAmountPrice = BN(0);
 
-        await getBalancesFromPriceTokenAndDepositToken();
-
-        //Payments
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowAmountPrice),
-          'Escrow did not get expected tokens from PriceTokenContract'
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromPriceTokenAndDepositToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowAmountPrice,
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -1662,45 +1518,14 @@ describe('Cashier withdrawals ', () => {
         ); // 0.09
         const expectedEscrowAmountPrice = BN(0);
 
-        await getBalancesFromPriceTokenAndDepositToken();
-
-        //Payments
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowAmountPrice),
-          'Escrow did not get expected tokens from PriceTokenContract'
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromPriceTokenAndDepositToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowAmountPrice,
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -1750,45 +1575,14 @@ describe('Cashier withdrawals ', () => {
         const expectedEscrowAmountDeposit = BN(0);
         const expectedEscrowAmountPrice = BN(0);
 
-        await getBalancesFromPriceTokenAndDepositToken();
-
-        //Payments
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowAmountPrice),
-          'Escrow did not get expected tokens from PriceTokenContract'
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromPriceTokenAndDepositToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowAmountPrice,
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -1837,46 +1631,14 @@ describe('Cashier withdrawals ', () => {
         const expectedEscrowAmountDeposit = BN(constants.buyer_deposit); // 0.04
         const expectedEscrowAmountPrice = BN(0);
 
-        await getBalancesFromPriceTokenAndDepositToken();
-
-        //Payments
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowAmountPrice),
-          'Escrow did not get expected tokens from PriceTokenContract'
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-
+        await validateBalancesFromPriceTokenAndDepositToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowAmountPrice,
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -1923,45 +1685,14 @@ describe('Cashier withdrawals ', () => {
         const expectedEscrowAmountPrice = BN(0);
         const expectedEscrowAmountDeposit = BN(0);
 
-        await getBalancesFromPriceTokenAndDepositToken();
-
-        //Payments
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowAmountPrice),
-          'Escrow did not get expected tokens from PriceTokenContract'
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromPriceTokenAndDepositToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowAmountPrice,
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -2010,45 +1741,14 @@ describe('Cashier withdrawals ', () => {
         const expectedEscrowAmountDeposit = BN(0);
         const expectedEscrowAmountPrice = BN(0);
 
-        await getBalancesFromPriceTokenAndDepositToken();
-
-        //Payments
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowAmountPrice),
-          'Escrow did not get expected tokens from PriceTokenContract'
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromPriceTokenAndDepositToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowAmountPrice,
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -2095,45 +1795,14 @@ describe('Cashier withdrawals ', () => {
         const expectedEscrowAmountPrice = BN(0);
         const expectedEscrowAmountDeposit = BN(constants.seller_deposit); // 0.05
 
-        await getBalancesFromPriceTokenAndDepositToken();
-
-        //Payments
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowAmountPrice),
-          'Escrow did not get expected tokens from PriceTokenContract'
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromPriceTokenAndDepositToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowAmountPrice,
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -2185,45 +1854,14 @@ describe('Cashier withdrawals ', () => {
           BN(4)
         ); // 0.0125
 
-        await getBalancesFromPriceTokenAndDepositToken();
-
-        //Payments
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowAmountPrice),
-          'Escrow did not get expected tokens from PriceTokenContract'
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromPriceTokenAndDepositToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowAmountPrice,
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -2279,45 +1917,14 @@ describe('Cashier withdrawals ', () => {
           BN(4)
         ); // 0.0125
 
-        await getBalancesFromPriceTokenAndDepositToken();
-
-        //Payments
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowAmountPrice),
-          'Escrow did not get expected tokens from PriceTokenContract'
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromPriceTokenAndDepositToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowAmountPrice,
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -2370,45 +1977,14 @@ describe('Cashier withdrawals ', () => {
         const expectedEscrowAmountPrice = BN(0);
         const expectedEscrowAmountDeposit = BN(0);
 
-        await getBalancesFromPriceTokenAndDepositToken();
-
-        //Payments
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PriceTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowAmountPrice),
-          'Escrow did not get expected tokens from PriceTokenContract'
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromPriceTokenAndDepositToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowAmountPrice,
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -2441,24 +2017,33 @@ describe('Cashier withdrawals ', () => {
     describe(`TKNTKN SAME [WITH PERMIT]`, () => {
       let voucherID;
 
-      let balanceBuyer = BN(0);
-      let balanceSeller = BN(0);
-      let escrowBalance = BN(0);
-      let cashierBalance = BN(0);
+      async function validateBalancesFromSameTokenContract(expected) {
+        expect(
+          await utils.contractBSNTokenSame.balanceOf(users.buyer.address)
+        ).to.equal(
+          expected.expectedBuyerPrice.add(expected.expectedBuyerDeposit),
+          'Buyer did not get expected tokens from SameTokenContract'
+        );
 
-      async function getBalancesFromSameTokenContract() {
-        balanceBuyer = await utils.contractBSNTokenSame.balanceOf(
-          users.buyer.address
+        expect(
+          await utils.contractBSNTokenSame.balanceOf(users.seller.address)
+        ).to.equal(
+          expected.expectedSellerPrice.add(expected.expectedSellerDeposit),
+          'Seller did not get expected tokens from SameTokenContract'
         );
-        balanceSeller = await utils.contractBSNTokenSame.balanceOf(
-          users.seller.address
+
+        expect(
+          await utils.contractBSNTokenSame.balanceOf(users.deployer.address)
+        ).to.equal(
+          expected.expectedEscrowAmountDeposit,
+          'Escrow did not get expected tokens from SameTokenContract'
         );
-        escrowBalance = await utils.contractBSNTokenSame.balanceOf(
-          users.deployer.address
-        );
-        cashierBalance = await utils.contractBSNTokenSame.balanceOf(
-          utils.contractCashier.address
-        );
+
+        expect(
+          await utils.contractBSNTokenSame.balanceOf(
+            utils.contractCashier.address
+          )
+        ).to.equal(BN(0), 'Cashier Contract is not empty');
       }
 
       beforeEach(async () => {
@@ -2512,21 +2097,6 @@ describe('Cashier withdrawals ', () => {
         );
       });
 
-      afterEach(async () => {
-        distributedAmounts = {
-          buyerAmount: BN(0),
-          sellerAmount: BN(0),
-          escrowAmount: BN(0),
-        };
-
-        balanceBuyer = BN(0);
-        balanceSeller = BN(0);
-        escrowBalance = BN(0);
-        cashierBalance = BN(0);
-
-        await giveAwayToRandom();
-      });
-
       it('COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
         await utils.refund(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
@@ -2549,30 +2119,14 @@ describe('Cashier withdrawals ', () => {
         const expectedEscrowAmountDeposit = BN(constants.seller_deposit).div(
           BN(4)
         ); // 0.0125
-        const expectedEscrowAmountPrice = BN(0);
 
-        await getBalancesFromSameTokenContract();
-
-        assert.isTrue(
-          balanceBuyer.eq(expectedBuyerPrice.add(expectedBuyerDeposit)),
-          'Buyer did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          balanceSeller.eq(expectedSellerPrice.add(expectedSellerDeposit)),
-          'Seller did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          escrowBalance.eq(
-            expectedEscrowAmountPrice.add(expectedEscrowAmountDeposit)
-          ),
-          'Escrow did not get expected tokens from SameTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierBalance.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromSameTokenContract({
+          expectedBuyerPrice,
+          expectedBuyerDeposit,
+          expectedSellerPrice,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -2623,30 +2177,14 @@ describe('Cashier withdrawals ', () => {
         const expectedEscrowAmountDeposit = BN(constants.seller_deposit).div(
           BN(4)
         ); // 0.0125
-        const expectedEscrowAmountPrice = BN(0);
 
-        await getBalancesFromSameTokenContract();
-
-        assert.isTrue(
-          balanceBuyer.eq(expectedBuyerPrice.add(expectedBuyerDeposit)),
-          'Buyer did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          balanceSeller.eq(expectedSellerPrice.add(expectedSellerDeposit)),
-          'Seller did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          escrowBalance.eq(
-            expectedEscrowAmountPrice.add(expectedEscrowAmountDeposit)
-          ),
-          'Escrow did not get expected tokens from SameTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierBalance.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromSameTokenContract({
+          expectedBuyerPrice,
+          expectedBuyerDeposit,
+          expectedSellerPrice,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -2697,30 +2235,14 @@ describe('Cashier withdrawals ', () => {
         const expectedEscrowAmountDeposit = BN(constants.seller_deposit).add(
           BN(constants.buyer_deposit)
         ); // 0.09
-        const expectedEscrowAmountPrice = BN(0);
 
-        await getBalancesFromSameTokenContract();
-
-        assert.isTrue(
-          balanceBuyer.eq(expectedBuyerPrice.add(expectedBuyerDeposit)),
-          'Buyer did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          balanceSeller.eq(expectedSellerPrice.add(expectedSellerDeposit)),
-          'Seller did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          escrowBalance.eq(
-            expectedEscrowAmountPrice.add(expectedEscrowAmountDeposit)
-          ),
-          'Escrow did not get expected tokens from SameTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierBalance.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromSameTokenContract({
+          expectedBuyerPrice,
+          expectedBuyerDeposit,
+          expectedSellerPrice,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -2768,30 +2290,14 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerPrice = BN(0);
         const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountDeposit = BN(0);
-        const expectedEscrowAmountPrice = BN(0);
 
-        await getBalancesFromSameTokenContract();
-
-        assert.isTrue(
-          balanceBuyer.eq(expectedBuyerPrice.add(expectedBuyerDeposit)),
-          'Buyer did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          balanceSeller.eq(expectedSellerPrice.add(expectedSellerDeposit)),
-          'Seller did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          escrowBalance.eq(
-            expectedEscrowAmountPrice.add(expectedEscrowAmountDeposit)
-          ),
-          'Escrow did not get expected tokens from SameTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierBalance.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromSameTokenContract({
+          expectedBuyerPrice,
+          expectedBuyerDeposit,
+          expectedSellerPrice,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -2838,30 +2344,14 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerPrice = BN(0);
         const expectedSellerDeposit = BN(constants.seller_deposit); // 0.05
         const expectedEscrowAmountDeposit = BN(constants.buyer_deposit); // 0.04
-        const expectedEscrowAmountPrice = BN(0);
 
-        await getBalancesFromSameTokenContract();
-
-        assert.isTrue(
-          balanceBuyer.eq(expectedBuyerPrice.add(expectedBuyerDeposit)),
-          'Buyer did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          balanceSeller.eq(expectedSellerPrice.add(expectedSellerDeposit)),
-          'Seller did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          escrowBalance.eq(
-            expectedEscrowAmountPrice.add(expectedEscrowAmountDeposit)
-          ),
-          'Escrow did not get expected tokens from SameTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierBalance.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromSameTokenContract({
+          expectedBuyerPrice,
+          expectedBuyerDeposit,
+          expectedSellerPrice,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -2906,31 +2396,15 @@ describe('Cashier withdrawals ', () => {
         ); // 0.065
         const expectedSellerPrice = BN(0);
         const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(2)); // 0.025
-        const expectedEscrowAmountPrice = BN(0);
         const expectedEscrowAmountDeposit = BN(0);
 
-        await getBalancesFromSameTokenContract();
-
-        assert.isTrue(
-          balanceBuyer.eq(expectedBuyerPrice.add(expectedBuyerDeposit)),
-          'Buyer did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          balanceSeller.eq(expectedSellerPrice.add(expectedSellerDeposit)),
-          'Seller did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          escrowBalance.eq(
-            expectedEscrowAmountPrice.add(expectedEscrowAmountDeposit)
-          ),
-          'Escrow did not get expected tokens from SameTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierBalance.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromSameTokenContract({
+          expectedBuyerPrice,
+          expectedBuyerDeposit,
+          expectedSellerPrice,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -2977,29 +2451,14 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerPrice = BN(constants.product_price); //// 0.3
         const expectedSellerDeposit = BN(constants.seller_deposit); // 0.05
         const expectedEscrowAmountDeposit = BN(0);
-        const expectedEscrowAmountPrice = BN(0);
-        await getBalancesFromSameTokenContract();
 
-        assert.isTrue(
-          balanceBuyer.eq(expectedBuyerPrice.add(expectedBuyerDeposit)),
-          'Buyer did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          balanceSeller.eq(expectedSellerPrice.add(expectedSellerDeposit)),
-          'Seller did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          escrowBalance.eq(
-            expectedEscrowAmountPrice.add(expectedEscrowAmountDeposit)
-          ),
-          'Escrow did not get expected tokens from SameTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierBalance.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromSameTokenContract({
+          expectedBuyerPrice,
+          expectedBuyerDeposit,
+          expectedSellerPrice,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -3043,31 +2502,15 @@ describe('Cashier withdrawals ', () => {
         const expectedBuyerDeposit = BN(constants.buyer_deposit); // 0.04
         const expectedSellerPrice = BN(constants.product_price); // 0.3
         const expectedSellerDeposit = BN(0);
-        const expectedEscrowAmountPrice = BN(0);
         const expectedEscrowAmountDeposit = BN(constants.seller_deposit); // 0.05
 
-        await getBalancesFromSameTokenContract();
-
-        assert.isTrue(
-          balanceBuyer.eq(expectedBuyerPrice.add(expectedBuyerDeposit)),
-          'Buyer did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          balanceSeller.eq(expectedSellerPrice.add(expectedSellerDeposit)),
-          'Seller did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          escrowBalance.eq(
-            expectedEscrowAmountPrice.add(expectedEscrowAmountDeposit)
-          ),
-          'Escrow did not get expected tokens from SameTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierBalance.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromSameTokenContract({
+          expectedBuyerPrice,
+          expectedBuyerDeposit,
+          expectedSellerPrice,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -3114,33 +2557,17 @@ describe('Cashier withdrawals ', () => {
         ); // 0.065
         const expectedSellerPrice = BN(constants.product_price); // 0.3
         const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(4)); // 0.0125
-        const expectedEscrowAmountPrice = BN(0);
         const expectedEscrowAmountDeposit = BN(constants.seller_deposit).div(
           BN(4)
         ); // 0.0125
 
-        await getBalancesFromSameTokenContract();
-
-        assert.isTrue(
-          balanceBuyer.eq(expectedBuyerPrice.add(expectedBuyerDeposit)),
-          'Buyer did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          balanceSeller.eq(expectedSellerPrice.add(expectedSellerDeposit)),
-          'Seller did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          escrowBalance.eq(
-            expectedEscrowAmountPrice.add(expectedEscrowAmountDeposit)
-          ),
-          'Escrow did not get expected tokens from SameTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierBalance.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromSameTokenContract({
+          expectedBuyerPrice,
+          expectedBuyerDeposit,
+          expectedSellerPrice,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -3191,33 +2618,17 @@ describe('Cashier withdrawals ', () => {
         ); // 0.065
         const expectedSellerPrice = BN(constants.product_price); // 0.3
         const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(4)); // 0.0125
-        const expectedEscrowAmountPrice = BN(0);
         const expectedEscrowAmountDeposit = BN(constants.seller_deposit).div(
           BN(4)
         ); // 0.0125
 
-        await getBalancesFromSameTokenContract();
-
-        assert.isTrue(
-          balanceBuyer.eq(expectedBuyerPrice.add(expectedBuyerDeposit)),
-          'Buyer did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          balanceSeller.eq(expectedSellerPrice.add(expectedSellerDeposit)),
-          'Seller did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          escrowBalance.eq(
-            expectedEscrowAmountPrice.add(expectedEscrowAmountDeposit)
-          ),
-          'Escrow did not get expected tokens from SameTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierBalance.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromSameTokenContract({
+          expectedBuyerPrice,
+          expectedBuyerDeposit,
+          expectedSellerPrice,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -3267,31 +2678,15 @@ describe('Cashier withdrawals ', () => {
         ); // 0.065
         const expectedSellerPrice = BN(constants.product_price); // 0.3
         const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(2)); // 0.025
-        const expectedEscrowAmountPrice = BN(0);
         const expectedEscrowAmountDeposit = BN(0);
 
-        await getBalancesFromSameTokenContract();
-
-        assert.isTrue(
-          balanceBuyer.eq(expectedBuyerPrice.add(expectedBuyerDeposit)),
-          'Buyer did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          balanceSeller.eq(expectedSellerPrice.add(expectedSellerDeposit)),
-          'Seller did not get expected tokens from SameTokenContract'
-        );
-        assert.isTrue(
-          escrowBalance.eq(
-            expectedEscrowAmountPrice.add(expectedEscrowAmountDeposit)
-          ),
-          'Escrow did not get expected tokens from SameTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierBalance.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
+        await validateBalancesFromSameTokenContract({
+          expectedBuyerPrice,
+          expectedBuyerDeposit,
+          expectedSellerPrice,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         eventUtils.assertEventEmitted(
           txReceipt,
@@ -3324,26 +2719,33 @@ describe('Cashier withdrawals ', () => {
     describe(`ETHTKN [WITH PERMIT]`, () => {
       let voucherID;
 
-      let balanceBuyerFromDeposits = BN(0);
-      let balanceSellerFromDeposits = BN(0);
-      let escrowBalanceFromDeposits = BN(0);
+      async function validateBalancesDepositToken(expected) {
+        expect(
+          await utils.contractBSNTokenDeposit.balanceOf(users.buyer.address)
+        ).to.equal(
+          expected.expectedBuyerDeposit,
+          'Buyer did not get expected tokens from DepositTokenContract'
+        );
 
-      let cashierPaymentLeft = BN(0);
-      let cashierDepositLeft = BN(0);
+        expect(
+          await utils.contractBSNTokenDeposit.balanceOf(users.seller.address)
+        ).to.equal(
+          expected.expectedSellerDeposit,
+          'Seller did not get expected tokens from DepositTokenContract'
+        );
 
-      async function getBalancesDepositToken() {
-        balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.buyer.address
+        expect(
+          await utils.contractBSNTokenDeposit.balanceOf(users.deployer.address)
+        ).to.equal(
+          expected.expectedEscrowAmountDeposit,
+          'Escrow did not get expected tokens from DepositTokenContract'
         );
-        balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.seller.address
-        );
-        escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-          users.deployer.address
-        );
-        cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(
-          utils.contractCashier.address
-        );
+
+        expect(
+          await utils.contractBSNTokenDeposit.balanceOf(
+            utils.contractCashier.address
+          )
+        ).to.equal(BN(0), 'Cashier Contract is not empty');
       }
 
       beforeEach(async () => {
@@ -3392,23 +2794,6 @@ describe('Cashier withdrawals ', () => {
         );
       });
 
-      afterEach(async () => {
-        distributedAmounts = {
-          buyerAmount: BN(0),
-          sellerAmount: BN(0),
-          escrowAmount: BN(0),
-        };
-
-        balanceBuyerFromDeposits = BN(0);
-        balanceSellerFromDeposits = BN(0);
-        escrowBalanceFromDeposits = BN(0);
-
-        cashierPaymentLeft = BN(0);
-        cashierDepositLeft = BN(0);
-
-        await giveAwayToRandom();
-      });
-
       it('COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
         await utils.refund(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
@@ -3431,7 +2816,11 @@ describe('Cashier withdrawals ', () => {
           BN(4)
         ); // 0.0125
 
-        await getBalancesDepositToken();
+        await validateBalancesDepositToken({
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         // Payment should have been returned to buyer
         eventUtils.assertEventEmitted(
@@ -3447,30 +2836,6 @@ describe('Cashier withdrawals ', () => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -3520,7 +2885,11 @@ describe('Cashier withdrawals ', () => {
           BN(4)
         ); // 0.0125
 
-        await getBalancesDepositToken();
+        await validateBalancesDepositToken({
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         const txReceipt = await withdrawTx.wait();
 
@@ -3538,30 +2907,6 @@ describe('Cashier withdrawals ', () => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -3613,7 +2958,11 @@ describe('Cashier withdrawals ', () => {
           BN(constants.buyer_deposit)
         ); // 0.09
 
-        await getBalancesDepositToken();
+        await validateBalancesDepositToken({
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         // Payment should have been returned to buyer
         eventUtils.assertEventEmitted(
@@ -3629,30 +2978,6 @@ describe('Cashier withdrawals ', () => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -3701,7 +3026,11 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountDeposit = BN(0);
 
-        await getBalancesDepositToken();
+        await validateBalancesDepositToken({
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         // Payment should have been returned to buyer
         eventUtils.assertEventEmitted(
@@ -3717,30 +3046,6 @@ describe('Cashier withdrawals ', () => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -3788,7 +3093,11 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerDeposit = BN(constants.seller_deposit); // 0.05
         const expectedEscrowAmountDeposit = BN(constants.buyer_deposit); // 0.04
 
-        await getBalancesDepositToken();
+        await validateBalancesDepositToken({
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         // Payment should have been returned to buyer
         eventUtils.assertEventEmitted(
@@ -3804,30 +3113,6 @@ describe('Cashier withdrawals ', () => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -3874,7 +3159,11 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountDeposit = BN(0);
 
-        await getBalancesDepositToken();
+        await validateBalancesDepositToken({
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         // Payment should have been returned to buyer
         eventUtils.assertEventEmitted(
@@ -3890,30 +3179,6 @@ describe('Cashier withdrawals ', () => {
             assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedBuyerPrice));
           }
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -3961,7 +3226,11 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerDeposit = BN(constants.seller_deposit); // 0.05
         const expectedEscrowAmountDeposit = BN(0);
 
-        await getBalancesDepositToken();
+        await validateBalancesDepositToken({
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         // Payment should have been sent to seller
         eventUtils.assertEventEmitted(
@@ -3977,30 +3246,6 @@ describe('Cashier withdrawals ', () => {
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
           }
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -4046,7 +3291,12 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerDeposit = BN(0);
         const expectedEscrowAmountDeposit = BN(constants.seller_deposit); // 0.05
 
-        await getBalancesDepositToken();
+        // await validateBalancesDepositToken();
+        await validateBalancesDepositToken({
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         // Payment should have been sent to seller
         eventUtils.assertEventEmitted(
@@ -4062,30 +3312,6 @@ describe('Cashier withdrawals ', () => {
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
           }
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -4136,7 +3362,11 @@ describe('Cashier withdrawals ', () => {
           BN(4)
         ); // 0.0125
 
-        await getBalancesDepositToken();
+        await validateBalancesDepositToken({
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         // Payment should have been sent to seller
         eventUtils.assertEventEmitted(
@@ -4152,30 +3382,6 @@ describe('Cashier withdrawals ', () => {
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
           }
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -4230,7 +3436,11 @@ describe('Cashier withdrawals ', () => {
           BN(4)
         ); // 0.0125
 
-        await getBalancesDepositToken();
+        await validateBalancesDepositToken({
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         // Payment should have been sent to seller
         eventUtils.assertEventEmitted(
@@ -4246,30 +3456,6 @@ describe('Cashier withdrawals ', () => {
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
           }
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -4321,7 +3507,11 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountDeposit = BN(0);
 
-        await getBalancesDepositToken();
+        await validateBalancesDepositToken({
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
 
         // Payment should have been sent to seller
         eventUtils.assertEventEmitted(
@@ -4337,30 +3527,6 @@ describe('Cashier withdrawals ', () => {
             assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
             assert.isTrue(ev._payment.eq(expectedSellerPrice));
           }
-        );
-
-        //Deposits
-        assert.isTrue(
-          balanceBuyerFromDeposits.eq(expectedBuyerDeposit),
-          'Buyer did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromDeposits.eq(expectedSellerDeposit),
-          'Seller did not get expected tokens from DepositTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromDeposits.eq(expectedEscrowAmountDeposit),
-          'Escrow did not get expected tokens from DepositTokenContract'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -4393,26 +3559,34 @@ describe('Cashier withdrawals ', () => {
 
     describe(`TKNETH [WITH PERMIT]`, () => {
       let voucherID;
-      let balanceBuyerFromPayment = BN(0);
-      let balanceSellerFromPayment = BN(0);
-      let escrowBalanceFromPayment = BN(0);
 
-      let cashierPaymentLeft = BN(0);
-      let cashierDepositLeft = BN(0);
+      async function validateBalancesPriceToken(expected) {
+        expect(
+          await utils.contractBSNTokenPrice.balanceOf(users.buyer.address)
+        ).to.equal(
+          expected.expectedBuyerPrice,
+          'Buyer did not get expected tokens from PaymentTokenContract'
+        );
 
-      async function getBalancesPriceToken() {
-        balanceBuyerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
-          users.buyer.address
+        expect(
+          await utils.contractBSNTokenPrice.balanceOf(users.seller.address)
+        ).to.equal(
+          expected.expectedSellerPrice,
+          'Seller did not get expected tokens from PaymentTokenContract'
         );
-        balanceSellerFromPayment = await utils.contractBSNTokenPrice.balanceOf(
-          users.seller.address
+
+        expect(
+          await utils.contractBSNTokenPrice.balanceOf(users.deployer.address)
+        ).to.equal(
+          expected.expectedEscrowPrice,
+          'Escrow did not get expected tokens from PaymentTokenContract'
         );
-        escrowBalanceFromPayment = await utils.contractBSNTokenPrice.balanceOf(
-          users.deployer.address
-        );
-        cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(
-          utils.contractCashier.address
-        );
+
+        expect(
+          await utils.contractBSNTokenPrice.balanceOf(
+            utils.contractCashier.address
+          )
+        ).to.equal(BN(0), 'Cashier Contract is not empty');
       }
 
       beforeEach(async () => {
@@ -4477,24 +3651,14 @@ describe('Cashier withdrawals ', () => {
           BN(4)
         ); // 0.0125
 
-        await getBalancesPriceToken();
-
-        // Payments in TKN
-        // Payment should have been returned to buyer
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowPrice),
-          'Escrow did not get expected tokens from PaymentTokenContract'
-        );
+        await validateBalancesPriceToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowPrice,
+        });
 
         //Deposits in ETH
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -4531,16 +3695,6 @@ describe('Cashier withdrawals ', () => {
         assert.isTrue(
           distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit),
           'Escrow Amount is not as expected'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -4594,24 +3748,14 @@ describe('Cashier withdrawals ', () => {
           BN(4)
         ); // 0.0125
 
-        await getBalancesPriceToken();
-
-        // Payments in TKN
-        // Payment should have been returned to buyer
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowPrice),
-          'Escrow did not get expected tokens from PaymentTokenContract'
-        );
+        await validateBalancesPriceToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowPrice,
+        });
 
         //Deposits in ETH
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -4648,16 +3792,6 @@ describe('Cashier withdrawals ', () => {
         assert.isTrue(
           distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit),
           'Escrow Amount is not as expected'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -4711,24 +3845,14 @@ describe('Cashier withdrawals ', () => {
           BN(constants.buyer_deposit)
         ); // 0.09
 
-        await getBalancesPriceToken();
-
-        // Payments in TKN
-        // Payment should have been returned to buyer
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowPrice),
-          'Escrow did not get expected tokens from PaymentTokenContract'
-        );
+        await validateBalancesPriceToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowPrice,
+        });
 
         //Deposits in ETH
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -4761,16 +3885,6 @@ describe('Cashier withdrawals ', () => {
         assert.isTrue(
           distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit),
           'Escrow Amount is not as expected'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -4821,24 +3935,14 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountDeposit = BN(0);
 
-        await getBalancesPriceToken();
-
-        // Payments in TKN
-        // Payment should have been returned to buyer
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowPrice),
-          'Escrow did not get expected tokens from PaymentTokenContract'
-        );
+        await validateBalancesPriceToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowPrice,
+        });
 
         //Deposits in ETH
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -4871,16 +3975,6 @@ describe('Cashier withdrawals ', () => {
         assert.isTrue(
           distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit),
           'Escrow Amount is not as expected'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -4930,24 +4024,14 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerDeposit = BN(constants.seller_deposit); // 0.05
         const expectedEscrowAmountDeposit = BN(constants.buyer_deposit); // 0.04
 
-        await getBalancesPriceToken();
-
-        // Payments in TKN
-        // Payment should have been returned to buyer
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowPrice),
-          'Escrow did not get expected tokens from PaymentTokenContract'
-        );
+        await validateBalancesPriceToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowPrice,
+        });
 
         //Deposits in ETH
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -4980,16 +4064,6 @@ describe('Cashier withdrawals ', () => {
         assert.isTrue(
           distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit),
           'Escrow Amount is not as expected'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -5038,24 +4112,14 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountDeposit = BN(0);
 
-        await getBalancesPriceToken();
-
-        // Payments in TKN
-        // Payment should have been returned to buyer
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowPrice),
-          'Escrow did not get expected tokens from PaymentTokenContract'
-        );
+        await validateBalancesPriceToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowPrice,
+        });
 
         //Deposits in ETH
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -5088,16 +4152,6 @@ describe('Cashier withdrawals ', () => {
         assert.isTrue(
           distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit),
           'Escrow Amount is not as expected'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -5147,24 +4201,14 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerDeposit = BN(constants.seller_deposit); // 0.05
         const expectedEscrowAmountDeposit = BN(0);
 
-        await getBalancesPriceToken();
-
-        // Payments in TKN
-        // Payment should have been sent to seller
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowPrice),
-          'Escrow did not get expected tokens from PaymentTokenContract'
-        );
+        await validateBalancesPriceToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowPrice,
+        });
 
         //Deposits in ETH
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -5197,16 +4241,6 @@ describe('Cashier withdrawals ', () => {
         assert.isTrue(
           distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit),
           'Escrow Amount is not as expected'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -5254,24 +4288,14 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerDeposit = BN(0);
         const expectedEscrowAmountDeposit = BN(constants.seller_deposit); // 0.05
 
-        await getBalancesPriceToken();
-
-        // Payments in TKN
-        // Payment should have been sent to seller
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowPrice),
-          'Escrow did not get expected tokens from PaymentTokenContract'
-        );
+        await validateBalancesPriceToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowPrice,
+        });
 
         //Deposits in ETH
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -5303,16 +4327,6 @@ describe('Cashier withdrawals ', () => {
         assert.isTrue(
           distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit),
           'Escrow Amount is not as expected'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -5365,24 +4379,14 @@ describe('Cashier withdrawals ', () => {
           BN(4)
         ); // 0.0125
 
-        await getBalancesPriceToken();
-
-        // Payments in TKN
-        // Payment should have been sent to seller
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowPrice),
-          'Escrow did not get expected tokens from PaymentTokenContract'
-        );
+        await validateBalancesPriceToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowPrice,
+        });
 
         //Deposits in ETH
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -5419,16 +4423,6 @@ describe('Cashier withdrawals ', () => {
         assert.isTrue(
           distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit),
           'Escrow Amount is not as expected'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -5485,24 +4479,14 @@ describe('Cashier withdrawals ', () => {
           BN(4)
         ); // 0.0125
 
-        await getBalancesPriceToken();
-
-        // Payments in TKN
-        // Payment should have been sent to seller
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowPrice),
-          'Escrow did not get expected tokens from PaymentTokenContract'
-        );
+        await validateBalancesPriceToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowPrice,
+        });
 
         //Deposits in ETH
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -5539,16 +4523,6 @@ describe('Cashier withdrawals ', () => {
         assert.isTrue(
           distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit),
           'Escrow Amount is not as expected'
-        );
-
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
         );
 
         eventUtils.assertEventEmitted(
@@ -5602,23 +4576,14 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmountDeposit = BN(0);
 
-        await getBalancesPriceToken();
-        // Payments in TKN
-        // Payment should have been sent to seller
-        assert.isTrue(
-          balanceBuyerFromPayment.eq(expectedBuyerPrice),
-          'Buyer did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          balanceSellerFromPayment.eq(expectedSellerPrice),
-          'Seller did not get expected tokens from PaymentTokenContract'
-        );
-        assert.isTrue(
-          escrowBalanceFromPayment.eq(expectedEscrowPrice),
-          'Escrow did not get expected tokens from PaymentTokenContract'
-        );
+        await validateBalancesPriceToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowPrice,
+        });
 
         //Deposits in ETH
+        const distributedAmounts = {...zeroDistributedAmounts};
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -5653,16 +4618,6 @@ describe('Cashier withdrawals ', () => {
           'Escrow Amount is not as expected'
         );
 
-        //Cashier Should be Empty
-        assert.isTrue(
-          cashierPaymentLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-        assert.isTrue(
-          cashierDepositLeft.eq(BN(0)),
-          'Cashier Contract is not empty'
-        );
-
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
@@ -5688,23 +4643,6 @@ describe('Cashier withdrawals ', () => {
             });
           }
         );
-      });
-
-      afterEach(async () => {
-        distributedAmounts = {
-          buyerAmount: BN(0),
-          sellerAmount: BN(0),
-          escrowAmount: BN(0),
-        };
-
-        balanceBuyerFromPayment = BN(0);
-        balanceSellerFromPayment = BN(0);
-        escrowBalanceFromPayment = BN(0);
-
-        cashierPaymentLeft = BN(0);
-        cashierDepositLeft = BN(0);
-
-        await giveAwayToRandom();
       });
     });
   });
