@@ -385,6 +385,38 @@ describe('ERC1155ERC721', () => {
         assert.equal(balance.toString(), expectedCount.toString());
       });
 
+      it('[safeTransfer1155] Should be able to safely transfer to EOA', async () => {
+        const transferTx = await utils.safeTransfer1155(
+          users.seller.address,
+          users.other1.address,
+          TOKEN_SUPPLY_ID,
+          constants.QTY_10,
+          users.seller.signer
+        );
+
+        const txReceipt = await transferTx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          ERC1155ERC721_Factory,
+          eventNames.TRANSFER_SINGLE,
+          (ev) => {
+            ev;
+            assert.equal(ev._from, users.seller.address);
+            assert.equal(ev._to, users.other1.address);
+            assert.equal(ev._id.toString(), TOKEN_SUPPLY_ID);
+            assert.equal(ev._value.toString(), constants.QTY_10);
+          }
+        );
+
+        const expectedBalance = constants.QTY_10;
+        const balanceOfOwner = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf1155
+        ](users.other1.address, TOKEN_SUPPLY_ID);
+
+        assert.equal(balanceOfOwner.toString(), expectedBalance.toString());
+      });
+
       it('[safeTransfer1155] Should be able to safely transfer to contracts that support ERC1155', async () => {
         const erc1155supportingContract = contractMockERC1155Receiver;
 
