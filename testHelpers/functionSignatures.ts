@@ -19,4 +19,8 @@ export default {
     'bytes)',
   safeTransfer721:
     'safeTransferFrom(' + 'address,' + 'address,' + 'uint256,' + 'bytes)',
+  safeTransfer721WithNoData:
+    'safeTransferFrom(' + 'address,' + 'address,' + 'uint256)',
+  transfer721: 'transferFrom(' + 'address,' + 'address,' + 'uint256)',
+  burn1155: 'burn(' + 'address,' + 'uint256,' + 'uint256)',
 };

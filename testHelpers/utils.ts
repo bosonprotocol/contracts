@@ -778,6 +778,22 @@ class Utils {
     );
   }
 
+  async safeTransfer721WithNoData(
+    oldVoucherOwner: string,
+    newVoucherOwner: string,
+    voucherID: string,
+    signer: Signer
+  ): Promise<ContractTransaction> {
+    const fromInstance = this.contractERC1155ERC721.connect(
+      signer
+    ) as ERC1155ERC721;
+
+    const method =
+      fromInstance.functions[fnSignatures.safeTransfer721WithNoData];
+
+    return await method(oldVoucherOwner, newVoucherOwner, voucherID);
+  }
+
   async safeTransfer1155(
     oldSupplyOwner: string,
     newSupplyOwner: string,
@@ -804,8 +820,8 @@ class Utils {
   async safeBatchTransfer1155(
     oldSupplyOwner: string,
     newSupplyOwner: string,
-    supplyIDs: Array<string | number>,
-    values: Array<string | number>,
+    supplyIDs: Array<string | number | BigNumber>,
+    values: Array<string | number | BigNumber>,
     signer: Signer
   ): Promise<ContractTransaction> {
     const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
@@ -822,6 +838,21 @@ class Utils {
       values,
       arbitraryBytes
     );
+  }
+
+  async transfer721(
+    oldVoucherOwner: string,
+    newVoucherOwner: string,
+    voucherID: string,
+    signer: Signer
+  ): Promise<ContractTransaction> {
+    const fromInstance = this.contractERC1155ERC721.connect(
+      signer
+    ) as ERC1155ERC721;
+
+    const method = fromInstance.functions[fnSignatures.transfer721];
+
+    return await method(oldVoucherOwner, newVoucherOwner, voucherID);
   }
 
   calcTotalAmountToRecipients(
