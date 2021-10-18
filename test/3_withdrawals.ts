@@ -5571,6 +5571,30 @@ describe('Cashier withdrawals ', () => {
         });
       });
     });
+
+    it('[NEGATIVE] should revert if not called via boson router', async () => {
+      await deployContracts();
+
+      const sellerInstance = contractVoucherKernel.connect(users.seller.signer);
+
+      const attackerInstance = contractVoucherKernel.connect(
+        users.attacker.signer
+      );
+
+      await expect(
+        sellerInstance.cancelOrFaultVoucherSet(
+          constants.ONE,
+          users.seller.address
+        )
+      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+
+      await expect(
+        attackerInstance.cancelOrFaultVoucherSet(
+          constants.ONE,
+          users.attacker.address
+        )
+      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+    });
   });
 
   describe('Withdraw on disaster', () => {
