@@ -4915,7 +4915,7 @@ describe('Cashier withdrawals ', () => {
           )).to.emit(contractBSNTokenDeposit, eventNames.TRANSFER)
           .withArgs(contractCashier.address, users.seller.address, expectedSellerDeposit) // TODO ??
           .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
-          .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
+          .withArgs(TOKEN_SUPPLY_ID, users.seller.address);
         });
 
 
@@ -4924,8 +4924,7 @@ describe('Cashier withdrawals ', () => {
             const sellerInstance = contractBosonRouter.connect(users.seller.signer);
             await sellerInstance.requestCancelOrFaultVoucherSet(
               TOKEN_SUPPLY_ID
-            );
-  
+            );  
           });
 
         it('Tokens should be returned to seller after burning the rest of the supply', async () => {
@@ -5210,8 +5209,8 @@ describe('Cashier withdrawals ', () => {
         });
       });
 
-      describe('TKNETH', () => {
-        before(async () => {
+      describe.only('TKNETH', () => {
+        beforeEach(async () => {
           await deployContracts();
           await setPeriods();
 
@@ -5255,23 +5254,7 @@ describe('Cashier withdrawals ', () => {
               constants.product_price,
               constants.buyer_deposit
             );
-            remQty--;
           }
-        });
-
-        after(() => {
-          remQty = 10;
-          voucherToBuyBeforeBurn = 5;
-        });
-
-        it('[NEGATIVE] should revert if not called from the seller', async () => {
-          const attackerInstance = contractBosonRouter.connect(
-            users.attacker.signer
-          );
-
-          await expect(
-            attackerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
-          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
         });
 
         it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
@@ -5279,26 +5262,25 @@ describe('Cashier withdrawals ', () => {
             users.seller.signer
           );
 
-          const withdrawTx = await sellerInstance.requestCancelOrFaultVoucherSet(
-            TOKEN_SUPPLY_ID
-          );
-
-          const txReceipt = await withdrawTx.wait();
-
           const expectedSellerDeposit = BN(constants.seller_deposit).mul(
             BN(remQty)
           );
 
-          eventUtils.assertEventEmitted(
-            txReceipt,
-            Cashier_Factory,
-            eventNames.LOG_WITHDRAWAL,
-            (ev) => {
-              assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
-              assert.isTrue(ev._payment.eq(expectedSellerDeposit));
-            }
-          );
+          expect(await sellerInstance.requestCancelOrFaultVoucherSet(
+            TOKEN_SUPPLY_ID
+          )).to.emit(contractCashier, eventNames.LOG_WITHDRAWAL)
+          .withArgs(contractBosonRouter.address, users.seller.address, expectedSellerDeposit) // TODO ??
+          .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
+          .withArgs(TOKEN_SUPPLY_ID, users.seller.address);
         });
+
+        describe('State after COF', () => {
+          beforeEach(async () =>{ 
+            const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+            await sellerInstance.requestCancelOrFaultVoucherSet(
+              TOKEN_SUPPLY_ID
+            );  
+          });
 
         it('Escrow should have correct balance after burning the rest of the supply', async () => {
           const expectedBalance = BN(constants.seller_deposit).mul(
@@ -5326,6 +5308,17 @@ describe('Cashier withdrawals ', () => {
           );
         });
 
+        it('ERC1155 balance should be correct', async () => {
+          const balance = await contractERC1155ERC721['balanceOf(address,uint256)'](
+            users.seller.address,
+            TOKEN_SUPPLY_ID
+          );
+  
+          assert.equal(balance.toString(), constants.ZERO.toString(),
+            'ERC1155ERC721 amount is incorrect'
+          );
+        });
+
         it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
           await expect(
             utils.commitToBuy(
@@ -5346,6 +5339,18 @@ describe('Cashier withdrawals ', () => {
           await expect(
             sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
           ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
+        });
+
+      });
+
+        it('[NEGATIVE] should revert if not called from the seller', async () => {
+          const attackerInstance = contractBosonRouter.connect(
+            users.attacker.signer
+          );
+
+          await expect(
+            attackerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
         });
 
         it('[NEGATIVE] Should revert if called when contract is paused', async () => {
