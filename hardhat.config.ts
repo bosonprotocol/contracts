@@ -53,6 +53,12 @@ const config: HardhatUserConfig = {
 				DEPLOYER_PRIVATE_KEY,
 			]
 		},
+		ropsten: {
+			url: `https://ropsten.infura.io/v3/${INFURA_KEY}`,
+			accounts: [
+				DEPLOYER_PRIVATE_KEY,
+			]
+		},
 	},
 	etherscan: {
 		apiKey: process.env.ETHERSCAN_API_KEY
