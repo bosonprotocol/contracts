@@ -171,11 +171,9 @@ class DeploymentExecutor {
       'set to :',
       await this.erc1155NonTransferable.uri(1)
     );
-
   }
 
   async deployContracts() {
-
     const [, ccTokenDeployer] = await ethers.getSigners();
 
     const ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
@@ -189,9 +187,10 @@ class DeploymentExecutor {
       'ERC1155NonTransferable'
     );
 
-
     //ERC1155NonTransferrable is a Conditional Commit token and should be deployed from a separate address
-    const ERC1155NonTransferableAsOtherSigner = ERC1155NonTransferable.connect(ccTokenDeployer);
+    const ERC1155NonTransferableAsOtherSigner = ERC1155NonTransferable.connect(
+      ccTokenDeployer
+    );
 
     this.tokenRegistry = await TokenRegistry.deploy();
     this.erc1155erc721 = await ERC1155ERC721.deploy();
@@ -210,7 +209,6 @@ class DeploymentExecutor {
       process.env.CONDITIONAL_COMMIT_TOKEN_METADATA_URI
     );
 
- 
     await this.tokenRegistry.deployed();
     await this.erc1155erc721.deployed();
     await this.voucherKernel.deployed();
@@ -219,27 +217,49 @@ class DeploymentExecutor {
     await this.daiTokenWrapper.deployed();
     await this.gate.deployed();
     await this.erc1155NonTransferable.deployed();
-
   }
 
   logContracts() {
     console.log(
       '\nToken Registry Contract Address  %s from deployer address %s: ',
-      this.tokenRegistry.address, this.tokenRegistry.deployTransaction.from
+      this.tokenRegistry.address,
+      this.tokenRegistry.deployTransaction.from
     );
-    console.log('ERC1155ERC721 Contract Address  %s from deployer address %s: ', this.erc1155erc721.address, this.erc1155erc721.deployTransaction.from);
-    console.log('VoucherKernel Contract Address  %s from deployer address %s: ', this.voucherKernel.address, this.voucherKernel.deployTransaction.from);
-    console.log('Cashier Contract Address  %s from deployer address %s: ', this.cashier.address, this.cashier.deployTransaction.from);
-    console.log('Boson Router Contract Address  %s from deployer address %s: ', this.br.address, this.br.deployTransaction.from);
+    console.log(
+      'ERC1155ERC721 Contract Address  %s from deployer address %s: ',
+      this.erc1155erc721.address,
+      this.erc1155erc721.deployTransaction.from
+    );
+    console.log(
+      'VoucherKernel Contract Address  %s from deployer address %s: ',
+      this.voucherKernel.address,
+      this.voucherKernel.deployTransaction.from
+    );
+    console.log(
+      'Cashier Contract Address  %s from deployer address %s: ',
+      this.cashier.address,
+      this.cashier.deployTransaction.from
+    );
+    console.log(
+      'Boson Router Contract Address  %s from deployer address %s: ',
+      this.br.address,
+      this.br.deployTransaction.from
+    );
     console.log(
       'DAI Token Wrapper Contract Address  %s from deployer address %s: ',
-      this.daiTokenWrapper.address, this.daiTokenWrapper.deployTransaction.from
+      this.daiTokenWrapper.address,
+      this.daiTokenWrapper.deployTransaction.from
     );
 
-    console.log('Gate Contract Address %s from deployer address %s: ', this.gate.address, this.gate.deployTransaction.from);
+    console.log(
+      'Gate Contract Address %s from deployer address %s: ',
+      this.gate.address,
+      this.gate.deployTransaction.from
+    );
     console.log(
       'ERC1155NonTransferable Contract Address: %s from deployer address %s',
-      this.erc1155NonTransferable.address, this.erc1155NonTransferable.deployTransaction.from
+      this.erc1155NonTransferable.address,
+      this.erc1155NonTransferable.deployTransaction.from
     );
 
     console.log('DAI Token Address Used: ', this.dai_token);
