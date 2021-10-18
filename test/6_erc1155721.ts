@@ -367,6 +367,8 @@ describe('ERC1155ERC721', () => {
 
       it('[balanceOf] Get the balance of tokens of an account', async () => {
         const expectedCount = constants.QTY_10;
+
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -495,6 +497,7 @@ describe('ERC1155ERC721', () => {
           BN(constants.QTY_20),
         ];
 
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -570,6 +573,7 @@ describe('ERC1155ERC721', () => {
           BN(constants.QTY_20),
         ];
 
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -703,6 +707,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[mint] Should mint a desired token', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -751,6 +756,8 @@ describe('ERC1155ERC721', () => {
 
       it('[mint] Should mint a desired token to ERC1155 supporting contract', async () => {
         const erc1155supportingContract = contractMockERC1155Receiver;
+
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -798,6 +805,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[NEGATIVE][mint] Should revert when to is a contract that cannot receive it', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -824,6 +832,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[NEGATIVE][mint] Should revert when to is a zero address', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -839,6 +848,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[burn] Should burn an amount of tokens with the given ID', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -885,6 +895,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[NEGATIVE][burn] Should revert when _account is a zero address', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -899,6 +910,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[mintBatch] Should do batch minting of tokens', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -965,6 +977,8 @@ describe('ERC1155ERC721', () => {
 
       it('[mintBatch] Should do batch minting of tokens to ERC1155 supporting contract', async () => {
         const erc1155supportingContract = contractMockERC1155Receiver;
+
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -1016,6 +1030,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[NEGATIVE][mintBatch] Should revert when to is a contract that cannot receive it', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -1031,6 +1046,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[NEGATIVE][mintBatch] Should revert when _account is a zero address', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -1046,6 +1062,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[NEGATIVE][mintBatch] Should revert if array lengths mismatch', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -1061,6 +1078,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[burnBatch] Should do batch minting of tokens', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -1104,6 +1122,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[NEGATIVE][burnBatch] Should revert when _account is a zero address', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -1118,6 +1137,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[NEGATIVE][burnBatch] Should revert if array lengths mismatch', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -1231,6 +1251,7 @@ describe('ERC1155ERC721', () => {
         const expectedOwner = users.buyer.address;
         const tokenIdsForMint = 123;
 
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -1256,6 +1277,7 @@ describe('ERC1155ERC721', () => {
 
       describe('[balanceOf] should count all NFTs assigned to an owner', async () => {
         it('[balanceOf] returns 4 when 4 NFTs are assigned to owner', async () => {
+          // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
           await contractERC1155ERC721.setVoucherKernelAddress(
             users.deployer.address
           );
@@ -1593,6 +1615,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[getApproved] Should return zero address if no address set', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -1612,6 +1635,7 @@ describe('ERC1155ERC721', () => {
       it('[getApproved] Should return the approved address for a token ID', async () => {
         const expectedApprovedAddress = users.other1.address;
 
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -1633,6 +1657,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[mint] Should mint a token', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -1678,6 +1703,8 @@ describe('ERC1155ERC721', () => {
 
       it('[mint] Should be able to mint a token to a contract that supports it', async () => {
         const supportingContractAddress = contractMockERC721Receiver.address;
+
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
@@ -1731,6 +1758,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[NEGATIVE][mint] Should revert when to is a zero address', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
         );
