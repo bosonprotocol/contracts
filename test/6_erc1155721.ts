@@ -1731,12 +1731,16 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[NEGATIVE][mint] Should revert when to is a zero address', async () => {
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
         await expect(
           contractERC1155ERC721.functions[fnSignatures.mint721](
             constants.ZERO_ADDRESS,
             666
           )
-        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VK);
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
       });
     });
 
