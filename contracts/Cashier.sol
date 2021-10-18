@@ -911,7 +911,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         address _from,
         address _to,
         uint256 _tokenIdVoucher
-    ) external override onlyTokensContract {
+    ) external override nonReentrant onlyTokensContract {
         address tokenAddress;
 
         uint256 tokenSupplyId =
@@ -1000,7 +1000,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         address _to,
         uint256 _tokenSupplyId,
         uint256 _value
-    ) external override onlyTokensContract {
+    ) external override nonReentrant onlyTokensContract {
         uint8 paymentType =
             IVoucherKernel(voucherKernel).getVoucherPaymentMethod(
                 _tokenSupplyId

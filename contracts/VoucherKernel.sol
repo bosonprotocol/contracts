@@ -2,6 +2,7 @@
 
 pragma solidity 0.7.6;
 
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
@@ -22,7 +23,7 @@ import "./UsingHelpers.sol";
  *      See: https://ethereum.stackexchange.com/questions/5924/how-do-ethereum-mining-nodes-maintain-a-time-consistent-with-the-network/5931#5931
  */
 // solhint-disable-next-line
-contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
+contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, UsingHelpers {
     using Address for address;
     using SafeMath for uint256;
 
@@ -335,7 +336,12 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         address _issuer,
         address _holder,
         uint8 _paymentMethod
-    ) external override onlyFromRouter {
+    )
+    external
+    override
+    onlyFromRouter
+    nonReentrant
+    {
         uint8 paymentMethod = getVoucherPaymentMethod(_tokenIdSupply);
 
         //checks
@@ -743,11 +749,12 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
      * @param _issuer   owner of the voucher
      */
     function cancelOrFaultVoucherSet(uint256 _tokenIdSupply, address _issuer)
-        external
-        override
-        onlyFromRouter
-        whenNotPaused
-        returns (uint256)
+    external
+    override
+    onlyFromRouter
+    nonReentrant
+    whenNotPaused
+    returns (uint256)
     {
         require(getSupplyHolder(_tokenIdSupply) == _issuer, "UNAUTHORIZED_COF");
 
