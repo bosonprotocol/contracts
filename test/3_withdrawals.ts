@@ -5126,7 +5126,7 @@ describe('Cashier withdrawals ', () => {
             const expectedBalance = BN(constants.seller_deposit).mul(
               BN(voucherToBuyBeforeBurn)
             );
-            const escrowAmount = await contractBSNTokenDeposit.balanceOf(
+            const escrowAmount = await utils.contractBSNTokenSame.balanceOf(
               users.seller.address
             );
 
