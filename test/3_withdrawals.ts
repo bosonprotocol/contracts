@@ -5035,7 +5035,7 @@ describe('Cashier withdrawals ', () => {
         });
       });
 
-      describe.only('TKNTKN Same', () => {
+      describe('TKNTKN Same', () => {
         beforeEach(async () => {
           await deployContracts();
           await setPeriods();
@@ -5090,7 +5090,7 @@ describe('Cashier withdrawals ', () => {
           }
         });
 
-        it.only('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
+        it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
           );
