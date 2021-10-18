@@ -288,7 +288,7 @@ describe('Cashier withdrawals ', () => {
               await contractCashier.getEscrowAmount(users.buyer.address)
             ).to.be.equal(
               BN(constants.buyer_deposit).add(constants.product_price),
-              'Buyers escrow should noy be zero'
+              'Buyers escrow should not be zero'
             );
 
             expect(
@@ -378,7 +378,7 @@ describe('Cashier withdrawals ', () => {
               sellerDeposit: {
                 receivers: [users.buyer, users.seller, users.deployer],
                 amounts: [
-                  BN(constants.seller_deposit).div(2).toString(),
+                  BN(constants.seller_deposit).div(2),
                   expectedSellerAmount,
                   expectedEscrowAmount,
                 ],
@@ -470,7 +470,7 @@ describe('Cashier withdrawals ', () => {
               sellerDeposit: {
                 receivers: [users.buyer, users.seller, users.deployer],
                 amounts: [
-                  BN(constants.seller_deposit).div(2).toString(),
+                  BN(constants.seller_deposit).div(2),
                   expectedSellerAmount,
                   expectedEscrowAmount,
                 ],
@@ -649,7 +649,7 @@ describe('Cashier withdrawals ', () => {
                 receivers: [users.seller, users.buyer],
                 amounts: [
                   expectedSellerAmount,
-                  BN(constants.seller_deposit).div(2).toString(),
+                  BN(constants.seller_deposit).div(2),
                 ],
               },
               buyerDeposit: {
@@ -1284,8 +1284,8 @@ describe('Cashier withdrawals ', () => {
               sellerDeposit: {
                 receivers: [users.seller, users.buyer],
                 amounts: [
-                  BN(constants.seller_deposit).div(BN(2)).toString(),
-                  BN(constants.seller_deposit).div(BN(2)).toString(),
+                  BN(constants.seller_deposit).div(BN(2)),
+                  BN(constants.seller_deposit).div(BN(2)),
                 ],
               },
               buyerDeposit: {
@@ -1566,7 +1566,7 @@ describe('Cashier withdrawals ', () => {
               sellerDeposit: {
                 receivers: [users.buyer, users.seller, users.deployer],
                 amounts: [
-                  BN(constants.seller_deposit).div(2).toString(),
+                  BN(constants.seller_deposit).div(2),
                   expectedSellerDeposit,
                   expectedEscrowAmountDeposit,
                 ],
@@ -1630,7 +1630,7 @@ describe('Cashier withdrawals ', () => {
               sellerDeposit: {
                 receivers: [users.buyer, users.seller, users.deployer],
                 amounts: [
-                  BN(constants.seller_deposit).div(2).toString(),
+                  BN(constants.seller_deposit).div(2),
                   expectedSellerDeposit,
                   expectedEscrowAmountDeposit,
                 ],
@@ -1756,7 +1756,7 @@ describe('Cashier withdrawals ', () => {
                 receivers: [users.seller, users.buyer],
                 amounts: [
                   expectedSellerDeposit,
-                  BN(constants.seller_deposit).div(2).toString(),
+                  BN(constants.seller_deposit).div(2),
                 ],
               },
               buyerDeposit: {
@@ -2185,8 +2185,8 @@ describe('Cashier withdrawals ', () => {
               sellerDeposit: {
                 receivers: [users.seller, users.buyer],
                 amounts: [
-                  BN(constants.seller_deposit).div(BN(2)).toString(),
-                  BN(constants.seller_deposit).div(BN(2)).toString(),
+                  BN(constants.seller_deposit).div(BN(2)),
+                  BN(constants.seller_deposit).div(BN(2)),
                 ],
               },
               buyerDeposit: {
@@ -2378,7 +2378,7 @@ describe('Cashier withdrawals ', () => {
               sellerDeposit: {
                 receivers: [users.buyer, users.seller, users.deployer],
                 amounts: [
-                  BN(constants.seller_deposit).div(2).toString(),
+                  BN(constants.seller_deposit).div(2),
                   expectedSellerDeposit,
                   expectedEscrowAmountDeposit,
                 ],
@@ -2440,7 +2440,7 @@ describe('Cashier withdrawals ', () => {
               sellerDeposit: {
                 receivers: [users.buyer, users.seller, users.deployer],
                 amounts: [
-                  BN(constants.seller_deposit).div(2).toString(),
+                  BN(constants.seller_deposit).div(2),
                   expectedSellerDeposit,
                   expectedEscrowAmountDeposit,
                 ],
@@ -2978,8 +2978,8 @@ describe('Cashier withdrawals ', () => {
               sellerDeposit: {
                 receivers: [users.seller, users.buyer],
                 amounts: [
-                  BN(constants.seller_deposit).div(BN(2)).toString(),
-                  BN(constants.seller_deposit).div(BN(2)).toString(),
+                  BN(constants.seller_deposit).div(BN(2)),
+                  BN(constants.seller_deposit).div(BN(2)),
                 ],
               },
               buyerDeposit: {
@@ -3201,7 +3201,7 @@ describe('Cashier withdrawals ', () => {
               sellerDeposit: {
                 receivers: [users.buyer, users.seller, users.deployer],
                 amounts: [
-                  BN(constants.seller_deposit).div(2).toString(),
+                  BN(constants.seller_deposit).div(2),
                   expectedSellerDeposit,
                   expectedEscrowAmountDeposit,
                 ],
@@ -3276,7 +3276,7 @@ describe('Cashier withdrawals ', () => {
               sellerDeposit: {
                 receivers: [users.buyer, users.seller, users.deployer],
                 amounts: [
-                  BN(constants.seller_deposit).div(2).toString(),
+                  BN(constants.seller_deposit).div(2),
                   expectedSellerDeposit,
                   expectedEscrowAmountDeposit,
                 ],
@@ -3595,7 +3595,7 @@ describe('Cashier withdrawals ', () => {
         const txReceipt = await withdrawTx.wait();
 
         const expectedBuyerDeposit = BN(constants.buyer_deposit); // 0.04
-        const expectedSellerPrice = BN(constants.product_price); //// 0.3
+        const expectedSellerPrice = BN(constants.product_price); // 0.3
         const expectedSellerDeposit = BN(constants.seller_deposit); // 0.05
         const expectedEscrowAmountDeposit = BN(0);
 
@@ -3668,7 +3668,6 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerDeposit = BN(0);
         const expectedEscrowAmountDeposit = BN(constants.seller_deposit); // 0.05
 
-        // await validateBalancesDepositToken();
         await validateBalancesDepositToken({
           expectedBuyerDeposit,
           expectedSellerDeposit,
@@ -3930,8 +3929,8 @@ describe('Cashier withdrawals ', () => {
               sellerDeposit: {
                 receivers: [users.seller, users.buyer],
                 amounts: [
-                  BN(constants.seller_deposit).div(BN(2)).toString(),
-                  BN(constants.seller_deposit).div(BN(2)).toString(),
+                  BN(constants.seller_deposit).div(BN(2)),
+                  BN(constants.seller_deposit).div(BN(2)),
                 ],
               },
               buyerDeposit: {
@@ -4167,7 +4166,7 @@ describe('Cashier withdrawals ', () => {
               sellerDeposit: {
                 receivers: [users.buyer, users.seller, users.deployer],
                 amounts: [
-                  BN(constants.seller_deposit).div(2).toString(),
+                  BN(constants.seller_deposit).div(2),
                   expectedSellerDeposit,
                   expectedEscrowAmountDeposit,
                 ],
@@ -4268,7 +4267,7 @@ describe('Cashier withdrawals ', () => {
               sellerDeposit: {
                 receivers: [users.buyer, users.seller, users.deployer],
                 amounts: [
-                  BN(constants.seller_deposit).div(2).toString(),
+                  BN(constants.seller_deposit).div(2),
                   expectedSellerDeposit,
                   expectedEscrowAmountDeposit,
                 ],
