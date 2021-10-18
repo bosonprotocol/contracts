@@ -55,6 +55,12 @@ const config: HardhatUserConfig = {
 				CC_TOKEN_DEPLOYER_PRIVATE_KEY //this one MUST remain in the second spont (account[1])
 			]
 		},
+		ropsten: {
+			url: `https://ropsten.infura.io/v3/${INFURA_KEY}`,
+			accounts: [
+				DEPLOYER_PRIVATE_KEY,
+			]
+		},
 	},
 	etherscan: {
 		apiKey: process.env.ETHERSCAN_API_KEY
