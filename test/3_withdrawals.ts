@@ -8210,6 +8210,19 @@ describe('Cashier withdrawals ', () => {
           assert.isTrue(await contractCashier.isDisasterStateSet());
         });
       });
+
+      describe('canUnpause', () => {
+        it('[canUnpause] Should return true initially when contract is deployed', async () => {
+          assert.isTrue(await contractCashier.canUnpause());
+        });
+
+        it('[canUnpause] Should return false once disasterState is set to true', async () => {
+          await contractBosonRouter.pause();
+          await contractCashier.setDisasterState();
+
+          assert.isFalse(await contractCashier.canUnpause());
+        });
+      });
     });
 
     describe('Withdraw ETH', () => {
