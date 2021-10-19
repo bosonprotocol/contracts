@@ -8170,6 +8170,21 @@ describe('Cashier withdrawals ', () => {
           );
         });
       });
+
+      describe('isDisasterStateSet', () => {
+        it('[isDisasterStateSet] Disaster State should be false initially', async () => {
+          const disasterState = await contractCashier.isDisasterStateSet();
+
+          assert.isFalse(disasterState);
+        });
+
+        it('[isDisasterStateSet] Disaster State should be true once it is set', async () => {
+          await contractBosonRouter.pause();
+          await contractCashier.setDisasterState();
+
+          assert.isTrue(await contractCashier.isDisasterStateSet());
+        });
+      });
     });
 
     describe('Withdraw ETH', () => {
@@ -8215,12 +8230,6 @@ describe('Cashier withdrawals ', () => {
         await expect(buyerInstance.withdrawEthOnDisaster()).to.be.revertedWith(
           revertReasons.MANUAL_WITHDRAW_NOT_ALLOWED
         );
-      });
-
-      it('Disaster State should be falsy value initially', async () => {
-        const disasterState = await contractCashier.isDisasterStateSet();
-
-        assert.isFalse(disasterState);
       });
 
       it('Admin should be able to set the Cashier at disaster state', async () => {
