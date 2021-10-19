@@ -435,6 +435,99 @@ describe('Cashier withdrawals ', () => {
         await checkEscrowAmounts('after');
       });
 
+      it('COMMIT->REFUND->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
+        const expectedBuyerAmount = BN(constants.buyer_deposit)
+          .add(BN(constants.product_price))
+          .add(BN(constants.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
+        const expectedSellerAmount = BN(constants.seller_deposit).div(BN(4)); // 0.0125
+        const expectedEscrowAmount = BN(constants.seller_deposit).div(BN(4)); // 0.0125
+
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
+
+        await checkEscrowAmounts('before');
+
+        const withdrawTx = await utils.withdraw(
+          voucherID,
+          users.deployer.signer
+        );
+
+        const txReceipt = await withdrawTx.wait();
+
+        const distributedAmounts = {...zeroDistributedAmounts};
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.buyer, users.seller, users.deployer],
+                amounts: [
+                  BN(constants.seller_deposit).div(2),
+                  expectedSellerAmount,
+                  expectedEscrowAmount,
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
+
+            utils.calcTotalAmountToRecipients(
+              ev,
+              distributedAmounts,
+              '_to',
+              users.buyer.address,
+              users.seller.address
+            );
+          }
+        );
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.deployer, users.seller, users.buyer],
+              amounts: [
+                [expectedEscrowAmount],
+                [expectedSellerAmount],
+                [
+                  constants.product_price,
+                  expectedBuyerAmount.sub(BN(constants.product_price)),
+                ],
+              ],
+            });
+          }
+        );
+
+        assert.isTrue(
+          distributedAmounts.buyerAmount.eq(expectedBuyerAmount),
+          'Buyer Amount is not as expected'
+        );
+        assert.isTrue(
+          distributedAmounts.sellerAmount.eq(expectedSellerAmount),
+          'Seller Amount is not as expected'
+        );
+        assert.isTrue(
+          distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
+          'Escrow Amount is not as expected'
+        );
+
+        await checkEscrowAmounts('after');
+      });
+
       it('COMMIT->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
         const expectedBuyerAmount = BN(constants.buyer_deposit)
           .add(BN(constants.product_price))
@@ -1582,6 +1675,71 @@ describe('Cashier withdrawals ', () => {
         await checkEscrowAmounts('after');
       });
 
+      it('COMMIT->REFUND->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
+
+        await checkEscrowAmounts('before');
+
+        const withdrawTx = await utils.withdraw(
+          voucherID,
+          users.deployer.signer
+        );
+
+        const txReceipt = await withdrawTx.wait();
+
+        const expectedBuyerPrice = BN(constants.product_price); // 0.3
+        const expectedBuyerDeposit = BN(constants.buyer_deposit).add(
+          BN(constants.seller_deposit).div(BN(2))
+        ); // 0.065
+        const expectedSellerPrice = BN(0);
+        const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(4)); // 0.0125
+        const expectedEscrowAmountDeposit = BN(constants.seller_deposit).div(
+          BN(4)
+        ); // 0.0125
+        const expectedEscrowAmountPrice = BN(0);
+
+        await validateBalancesFromPriceTokenAndDepositToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowAmountPrice,
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.buyer, users.seller, users.deployer],
+                amounts: [
+                  BN(constants.seller_deposit).div(2),
+                  expectedSellerDeposit,
+                  expectedEscrowAmountDeposit,
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
+          }
+        );
+
+        await checkEscrowAmounts('after');
+      });
+
       it('COMMIT->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
         await utils.cancel(voucherID, users.seller.signer);
         await utils.complain(voucherID, users.buyer.signer);
@@ -2394,6 +2552,69 @@ describe('Cashier withdrawals ', () => {
         await checkEscrowAmounts('after');
       });
 
+      it('COMMIT->REFUND->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.complain(voucherID, users.buyer.signer);        
+        await utils.finalize(voucherID, users.deployer.signer);
+
+        await checkEscrowAmounts('before');
+
+        const withdrawTx = await utils.withdraw(
+          voucherID,
+          users.deployer.signer
+        );
+
+        const txReceipt = await withdrawTx.wait();
+
+        const expectedBuyerPrice = BN(constants.product_price); // 0.3
+        const expectedBuyerDeposit = BN(constants.buyer_deposit).add(
+          BN(constants.seller_deposit).div(BN(2))
+        ); // 0.065
+        const expectedSellerPrice = BN(0);
+        const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(4)); // 0.0125
+        const expectedEscrowAmountDeposit = BN(constants.seller_deposit).div(
+          BN(4)
+        ); // 0.0125
+
+        await validateBalancesFromSameTokenContract({
+          expectedBuyerPrice,
+          expectedBuyerDeposit,
+          expectedSellerPrice,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.buyer, users.seller, users.deployer],
+                amounts: [
+                  BN(constants.seller_deposit).div(2),
+                  expectedSellerDeposit,
+                  expectedEscrowAmountDeposit,
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
+          }
+        );
+
+        await checkEscrowAmounts('after');
+      });
+
       it('COMMIT->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
         await utils.cancel(voucherID, users.seller.signer);
         await utils.complain(voucherID, users.buyer.signer);
@@ -3145,6 +3366,82 @@ describe('Cashier withdrawals ', () => {
         await utils.refund(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
+
+        await checkEscrowAmounts('before');
+
+        const withdrawTx = await utils.withdraw(
+          voucherID,
+          users.deployer.signer
+        );
+
+        const txReceipt = await withdrawTx.wait();
+
+        const expectedBuyerPrice = BN(constants.product_price); // 0.3
+        const expectedBuyerDeposit = BN(constants.buyer_deposit).add(
+          BN(constants.seller_deposit).div(BN(2))
+        ); // 0.065
+        const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(4)); // 0.0125
+        const expectedEscrowAmountDeposit = BN(constants.seller_deposit).div(
+          BN(4)
+        ); // 0.0125
+
+        await validateBalancesDepositToken({
+          expectedBuyerDeposit,
+          expectedSellerDeposit,
+          expectedEscrowAmountDeposit,
+        });
+
+        // Payment should have been returned to buyer
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            assert.equal(
+              ev._caller,
+              users.deployer.address,
+              'Incorrect Caller'
+            );
+            assert.equal(ev._payee, users.buyer.address, 'Incorrect Payee');
+            assert.isTrue(ev._payment.eq(expectedBuyerPrice));
+          }
+        );
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.buyer, users.seller, users.deployer],
+                amounts: [
+                  BN(constants.seller_deposit).div(2),
+                  expectedSellerDeposit,
+                  expectedEscrowAmountDeposit,
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
+          }
+        );
+
+        await checkEscrowAmounts('after');
+      });
+
+      it('COMMIT->REFUND->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.complain(voucherID, users.buyer.signer);        
         await utils.finalize(voucherID, users.deployer.signer);
 
         await checkEscrowAmounts('before');
@@ -4084,6 +4381,108 @@ describe('Cashier withdrawals ', () => {
         await utils.refund(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
+
+        await checkEscrowAmounts('before');
+
+        const withdrawTx = await utils.withdraw(
+          voucherID,
+          users.deployer.signer
+        );
+
+        const txReceipt = await withdrawTx.wait();
+
+        const expectedBuyerPrice = BN(constants.product_price); // 0.3
+        const expectedSellerPrice = BN(0);
+        const expectedEscrowPrice = BN(0);
+        const expectedBuyerDeposit = BN(constants.buyer_deposit).add(
+          BN(constants.seller_deposit).div(BN(2))
+        ); // 0.065
+        const expectedSellerDeposit = BN(constants.seller_deposit).div(BN(4)); // 0.0125
+        const expectedEscrowAmountDeposit = BN(constants.seller_deposit).div(
+          BN(4)
+        ); // 0.0125
+
+        await validateBalancesPriceToken({
+          expectedBuyerPrice,
+          expectedSellerPrice,
+          expectedEscrowPrice,
+        });
+
+        //Deposits in ETH
+        const distributedAmounts = {...zeroDistributedAmounts};
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.deployer, users.seller, users.buyer],
+              amounts: [
+                [expectedEscrowAmountDeposit],
+                [expectedSellerDeposit],
+                [expectedBuyerDeposit],
+              ],
+            });
+
+            utils.calcTotalAmountToRecipients(
+              ev,
+              distributedAmounts,
+              '_payee',
+              users.buyer.address,
+              users.seller.address
+            );
+          }
+        );
+
+        assert.isTrue(
+          distributedAmounts.buyerAmount.eq(expectedBuyerDeposit),
+          'Buyer Amount is not as expected'
+        );
+        assert.isTrue(
+          distributedAmounts.sellerAmount.eq(expectedSellerDeposit),
+          'Seller Amount is not as expected'
+        );
+        assert.isTrue(
+          distributedAmounts.escrowAmount.eq(expectedEscrowAmountDeposit),
+          'Escrow Amount is not as expected'
+        );
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.buyer, users.seller, users.deployer],
+                amounts: [
+                  BN(constants.seller_deposit).div(2),
+                  expectedSellerDeposit,
+                  expectedEscrowAmountDeposit,
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
+          }
+        );
+
+        await checkEscrowAmounts('after');
+      });
+
+      it('COMMIT->REFUND->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
+        await utils.refund(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.complain(voucherID, users.buyer.signer);
         await utils.finalize(voucherID, users.deployer.signer);
 
         await checkEscrowAmounts('before');
