@@ -8154,6 +8154,31 @@ describe('Cashier withdrawals ', () => {
           assert.isTrue(await contractCashier.isDisasterStateSet());
         });
 
+        it("[setDisasterState] BosonRouter's cashier address should be able to set the disaster state", async () => {
+          const expectedCashierAddress = await contractBosonRouter.getCashierAddress();
+          const cashier = await contractCashier.attach(
+            expectedCashierAddress
+          );
+          await contractBosonRouter.pause();
+
+          assert.equal(cashier.address, contractCashier.address);
+
+          const tx = await cashier.setDisasterState();
+          const txReceipt = await tx.wait();
+
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            Cashier_Factory,
+            eventNames.LOG_DISASTER_STATE_SET,
+            (ev) => {
+              assert.isTrue(ev._triggeredBy == users.deployer.address);
+              assert.isTrue(ev._disasterState);
+            }
+          );
+
+          assert.isTrue(await cashier.isDisasterStateSet());
+        });
+
         it('[NEGATIVE][setDisasterState] Disaster state should not be set when contract is not paused', async () => {
           await expect(contractCashier.setDisasterState()).to.be.revertedWith(
             revertReasons.NOT_PAUSED
