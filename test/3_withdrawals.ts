@@ -8110,7 +8110,7 @@ describe('Cashier withdrawals ', () => {
     const vouchersToBuy = 4;
 
     describe('Common', () => {
-      before(async () => {
+      beforeEach(async () => {
         await deployContracts();
         await setPeriods();
 
@@ -8134,20 +8134,41 @@ describe('Cashier withdrawals ', () => {
         );
       });
 
-      it('[NEGATIVE] Disaster state should not be set when contract is not paused', async () => {
-        await expect(contractCashier.setDisasterState()).to.be.revertedWith(
-          revertReasons.NOT_PAUSED
-        );
-      });
+      describe('setDisasterState', () => {
+        it('[setDisasterState] Disaster state should be set when paused', async () => {
+          await contractBosonRouter.pause();
+          const expectedTriggerBy = users.deployer.address;
 
-      it('[NEGATIVE] Disaster state should not be set from attacker', async () => {
-        const attackerInstance = contractCashier.connect(users.attacker.signer);
+          let tx = await contractCashier.setDisasterState();
+          let txReceipt = await tx.wait();
 
-        await contractBosonRouter.pause();
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            Cashier_Factory,
+            eventNames.LOG_DISASTER_STATE_SET,
+            (ev) => {
+              assert.equal(ev._triggeredBy, expectedTriggerBy);
+            }
+          );
 
-        await expect(attackerInstance.setDisasterState()).to.be.revertedWith(
-          revertReasons.UNAUTHORIZED_OWNER
-        );
+          assert.isTrue(await contractCashier.isDisasterStateSet());
+        });
+
+        it('[NEGATIVE][setDisasterState] Disaster state should not be set when contract is not paused', async () => {
+          await expect(contractCashier.setDisasterState()).to.be.revertedWith(
+            revertReasons.NOT_PAUSED
+          );
+        });
+
+        it('[NEGATIVE][setDisasterState] Disaster state should not be set from attacker', async () => {
+          const attackerInstance = contractCashier.connect(users.attacker.signer);
+
+          await contractBosonRouter.pause();
+
+          await expect(attackerInstance.setDisasterState()).to.be.revertedWith(
+            revertReasons.UNAUTHORIZED_OWNER
+          );
+        });
       });
     });
 
