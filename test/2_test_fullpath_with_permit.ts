@@ -79,7 +79,7 @@ describe('Cashier and VoucherKernel', () => {
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
   }
 
-  async function deployContracts() {
+  async function deployContracts(setBosonRouterAddress = true) {
     const sixtySeconds = 60;
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
@@ -132,7 +132,10 @@ describe('Cashier and VoucherKernel', () => {
     );
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
+    if (setBosonRouterAddress) {
     await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
+    };
+
     await contractCashier.setTokenContractAddress(
       contractERC1155ERC721.address
     );
@@ -7525,4 +7528,36 @@ describe('Cashier and VoucherKernel', () => {
       });
     });
   });
+
+  describe('VOUCHER KERNEL', ()=> {
+    // TODO move?
+    
+    it('[NEGATIVE] Should revert if boson router is not set', async () => {
+      await deployContracts(false);
+
+      await expect(contractBosonRouter.pause()).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+
+      utils = await UtilsBuilder.create()
+          .ETHETH()
+          .buildAsync(
+            contractERC1155ERC721,
+            contractVoucherKernel,
+            contractCashier,
+            contractBosonRouter
+          );
+
+              await expect(
+          utils.createOrder(
+            users.seller,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_FROM + constants.SECONDS_IN_DAY,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITSE1,
+            constants.PROMISE_DEPOSITBU1,
+            constants.QTY_10
+          )
+        ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+    });
+
+  })
 });
