@@ -237,7 +237,9 @@ describe('Token Wrappers', () => {
 
     it('Should revert if deadline has expired', async () => {
       await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
-      await mockDAI.mock.permit.revertsWithReason(revertReasons.DAI_PERMIT_EXPIRED);
+      await mockDAI.mock.permit.revertsWithReason(
+        revertReasons.DAI_PERMIT_EXPIRED
+      );
 
       timestamp = await Utils.getCurrTimestamp();
       const newDeadline: number = timestamp + 2 * constants.ONE_MINUTE;

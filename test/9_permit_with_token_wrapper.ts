@@ -498,7 +498,9 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           );
 
           await mockDAI.mock.nonces.withArgs(users.seller.address).returns(0);
-          await mockDAI.mock.permit.revertsWithReason(revertReasons.DAI_PERMIT_EXPIRED);
+          await mockDAI.mock.permit.revertsWithReason(
+            revertReasons.DAI_PERMIT_EXPIRED
+          );
           await mockDAI.mock.name.returns('MockDAI');
 
           const digest = await getApprovalDigestDAI(
