@@ -19,8 +19,10 @@ contract MockBosonRouter is BosonRouter {
         address _cashierAddress
     )
         BosonRouter(_voucherKernel, _tokenRegistry, _cashierAddress)
-        // solhint-disable-next-line no-empty-blocks
-    {}
+    // solhint-disable-next-line no-empty-blocks
+    {
+
+    }
 
     /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is
