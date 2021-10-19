@@ -6,9 +6,7 @@ import "../BosonRouter.sol";
 /**
  * @title A mock BosonRouter for tests only
  */
-contract MockBosonRouter is BosonRouter
-{
-
+contract MockBosonRouter is BosonRouter {
     /**
      * @notice Construct and initialze the contract. Iniialises associated contract addresses
      * @param _voucherKernel address of the associated VocherKernal contract instance
@@ -20,9 +18,9 @@ contract MockBosonRouter is BosonRouter
         address _tokenRegistry,
         address _cashierAddress
     )
-    // solhint-disable-next-line no-empty-blocks
-    BosonRouter(_voucherKernel, _tokenRegistry, _cashierAddress) {}
-
+        // solhint-disable-next-line no-empty-blocks
+        BosonRouter(_voucherKernel, _tokenRegistry, _cashierAddress)
+    {}
 
     /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is
@@ -60,5 +58,4 @@ contract MockBosonRouter is BosonRouter
     ) external {
         transferFromAndAddEscrow(_tokenAddress, _amount);
     }
-
 }
