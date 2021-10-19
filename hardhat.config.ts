@@ -58,7 +58,8 @@ const config: HardhatUserConfig = {
 		ropsten: {
 			url: `https://ropsten.infura.io/v3/${INFURA_KEY}`,
 			accounts: [
-				DEPLOYER_PRIVATE_KEY,
+				PROTOCOL_DEPLOYER_PRIVATE_KEY,
+				CC_TOKEN_DEPLOYER_PRIVATE_KEY
 			]
 		},
 	},
