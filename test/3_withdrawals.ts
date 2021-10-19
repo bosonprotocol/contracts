@@ -8399,20 +8399,6 @@ describe('Cashier withdrawals ', () => {
         ).to.be.revertedWith(revertReasons.MANUAL_WITHDRAW_NOT_ALLOWED);
       });
 
-      it('Admin should be able to set the Cashier at disaster state', async () => {
-        const tx = await contractCashier.setDisasterState();
-        const txReceipt = await tx.wait();
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          Cashier_Factory,
-          eventNames.LOG_DISASTER_STATE_SET,
-          (ev) => {
-            assert.equal(ev._triggeredBy, users.deployer.address);
-          }
-        );
-      });
-
       it('[withdrawTokensOnDisaster] Buyer should be able to withdraw all the funds locked in escrow', async () => {
         for (let i = 0; i < vouchersToBuy; i++) {
           await utils.commitToBuy(
