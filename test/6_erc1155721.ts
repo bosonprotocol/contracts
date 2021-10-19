@@ -1699,6 +1699,13 @@ describe('ERC1155ERC721', () => {
         assert.equal(approvedAddress, expectedApprovedAddress);
       });
 
+      it('[NEGATIVE][getApproved] Should revert if token does not exist', async () => {
+        await expect(contractERC1155ERC721.getApproved(
+          constants.ONE
+        )).to.be.revertedWith(revertReasons.NONEXISTENT_TOKEN);
+
+      });
+
       it('[mint] Should mint a token', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
@@ -1813,6 +1820,25 @@ describe('ERC1155ERC721', () => {
           )
         ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
       });
+
+      it('[NEGATIVE][mint] Should not be able to mint same token twice', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        const tokenIdForMint = 123;
+        await contractERC1155ERC721.functions[fnSignatures.mint721](
+          users.other1.address,
+          tokenIdForMint
+        );
+
+        await expect(contractERC1155ERC721.functions[fnSignatures.mint721](
+          users.other1.address,
+          tokenIdForMint
+        )).to.be.revertedWith(revertReasons.TOKEN_ALREADY_MINTED);
+      });
+
     });
 
     describe('Metadata', () => {
@@ -1851,6 +1877,9 @@ describe('ERC1155ERC721', () => {
       it('[uri] Should return correct url for erc1155', async () => {
         const url = await contractERC1155ERC721.uri(TOKEN_SUPPLY_ID);
         assert.equal(url, metadataBase + metadata1155Route + TOKEN_SUPPLY_ID);
+
+        const urlZero = await contractERC1155ERC721.uri(0);
+        assert.equal(urlZero, metadataBase + metadata1155Route + '0');
       });
 
       it('[tokenURI] Should return correct url for erc721', async () => {
