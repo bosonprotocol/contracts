@@ -8390,15 +8390,6 @@ describe('Cashier withdrawals ', () => {
         );
       });
 
-      it('[NEGATIVE][withdrawTokensOnDisaster] should not be executable before admin allows to', async () => {
-        await contractBosonRouter.pause();
-        const buyerInstance = contractCashier.connect(users.buyer.signer);
-
-        await expect(
-          buyerInstance.withdrawTokensOnDisaster(contractBSNTokenPrice.address)
-        ).to.be.revertedWith(revertReasons.MANUAL_WITHDRAW_NOT_ALLOWED);
-      });
-
       it('[withdrawTokensOnDisaster] Buyer should be able to withdraw all the funds locked in escrow', async () => {
         for (let i = 0; i < vouchersToBuy; i++) {
           await utils.commitToBuy(
@@ -8502,6 +8493,15 @@ describe('Cashier withdrawals ', () => {
         );
       });
 
+      it('[NEGATIVE][withdrawTokensOnDisaster] should not be executable before admin allows to', async () => {
+        await contractBosonRouter.pause();
+        const buyerInstance = contractCashier.connect(users.buyer.signer);
+
+        await expect(
+          buyerInstance.withdrawTokensOnDisaster(contractBSNTokenPrice.address)
+        ).to.be.revertedWith(revertReasons.MANUAL_WITHDRAW_NOT_ALLOWED);
+      });
+
       it('[NEGATIVE][withdrawTokensOnDisaster] Escrow amount should revert if funds already withdrawn for an account', async () => {
         for (let i = 0; i < vouchersToBuy; i++) {
           await utils.commitToBuy(
@@ -8515,7 +8515,6 @@ describe('Cashier withdrawals ', () => {
         await contractBosonRouter.pause();
         await contractCashier.setDisasterState();
         const buyerInstance = contractCashier.connect(users.buyer.signer);
-
         await buyerInstance.withdrawTokensOnDisaster(contractBSNTokenPrice.address);
 
         await expect(
