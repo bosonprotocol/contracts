@@ -8318,9 +8318,20 @@ describe('Cashier withdrawals ', () => {
       });
 
       it('[NEGATIVE][withdrawEthOnDisaster] should revert if funds already withdrawn for an account', async () => {
+        for (let i = 0; i < vouchersToBuy; i++) {
+          await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
+          );
+        }
+
         const buyerInstance = contractCashier.connect(users.buyer.signer);
         await contractBosonRouter.pause();
         await contractCashier.setDisasterState();
+        await buyerInstance.withdrawEthOnDisaster();
 
         await expect(buyerInstance.withdrawEthOnDisaster()).to.be.revertedWith(
           revertReasons.ESCROW_EMPTY
@@ -8329,7 +8340,7 @@ describe('Cashier withdrawals ', () => {
     });
 
     describe('Withdraw TKN', () => {
-      before(async () => {
+      beforeEach(async () => {
         await deployContracts();
         await setPeriods();
 
@@ -8377,21 +8388,10 @@ describe('Cashier withdrawals ', () => {
           constants.buyer_deposit,
           constants.QTY_10
         );
-
-        for (let i = 0; i < vouchersToBuy; i++) {
-          await utils.commitToBuy(
-            users.buyer,
-            users.seller,
-            TOKEN_SUPPLY_ID,
-            constants.product_price,
-            constants.buyer_deposit
-          );
-        }
-
-        await contractBosonRouter.pause();
       });
 
-      it('[NEGATIVE] withdrawTokensOnDisaster should not be executable before admin allows to', async () => {
+      it('[NEGATIVE][withdrawTokensOnDisaster] should not be executable before admin allows to', async () => {
+        await contractBosonRouter.pause();
         const buyerInstance = contractCashier.connect(users.buyer.signer);
 
         await expect(
@@ -8413,7 +8413,19 @@ describe('Cashier withdrawals ', () => {
         );
       });
 
-      it('Buyer should be able to withdraw all the funds locked in escrow', async () => {
+      it('[withdrawTokensOnDisaster] Buyer should be able to withdraw all the funds locked in escrow', async () => {
+        for (let i = 0; i < vouchersToBuy; i++) {
+          await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
+          );
+        }
+
+        await contractBosonRouter.pause();
+        await contractCashier.setDisasterState();
         const expectedTknPrice = BN(constants.product_price).mul(
           BN(vouchersToBuy)
         );
@@ -8442,7 +8454,7 @@ describe('Cashier withdrawals ', () => {
             assert.equal(
               users.buyer.address,
               ev._triggeredBy,
-              'LogWithdrawTokensOnDisaster not triggered properly'
+              'ev._triggeredBy not as expected'
             );
           }
         );
@@ -8466,13 +8478,15 @@ describe('Cashier withdrawals ', () => {
             assert.equal(
               users.buyer.address,
               ev._triggeredBy,
-              'LogWithdrawTokensOnDisaster not triggered properly'
+              'ev._triggeredBy not as expected'
             );
           }
         );
       });
 
-      it('Seller should be able to withdraw all the funds locked in escrow', async () => {
+      it('[withdrawTokensOnDisaster] Seller should be able to withdraw all the funds locked in escrow', async () => {
+        await contractBosonRouter.pause();
+        await contractCashier.setDisasterState();
         const sellerInstance = contractCashier.connect(users.seller.signer);
         const expectedSellerBalance = BN(constants.seller_deposit).mul(
           BN(constants.QTY_10)
@@ -8491,19 +8505,33 @@ describe('Cashier withdrawals ', () => {
             assert.equal(
               expectedSellerBalance.toString(),
               ev._amount.toString(),
-              "Buyer withdrawn funds don't match"
+              "Seller withdrawn funds don't match"
             );
             assert.equal(
               users.seller.address,
               ev._triggeredBy,
-              'LogWithdrawTokensOnDisaster not triggered properly'
+              'ev._triggeredBy not as expected'
             );
           }
         );
       });
 
-      it('Escrow amount should revert if funds already withdrawn for an account', async () => {
+      it('[NEGATIVE][withdrawTokensOnDisaster] Escrow amount should revert if funds already withdrawn for an account', async () => {
+        for (let i = 0; i < vouchersToBuy; i++) {
+          await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
+          );
+        }
+        await contractBosonRouter.pause();
+        await contractCashier.setDisasterState();
         const buyerInstance = contractCashier.connect(users.buyer.signer);
+
+        await buyerInstance.withdrawTokensOnDisaster(contractBSNTokenPrice.address);
+
         await expect(
           buyerInstance.withdrawTokensOnDisaster(contractBSNTokenPrice.address)
         ).to.be.revertedWith(revertReasons.ESCROW_EMPTY);
