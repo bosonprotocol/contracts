@@ -8521,6 +8521,39 @@ describe('Cashier withdrawals ', () => {
           buyerInstance.withdrawTokensOnDisaster(contractBSNTokenPrice.address)
         ).to.be.revertedWith(revertReasons.ESCROW_EMPTY);
       });
+
+      it('[NEGATIVE][withdrawTokensOnDisaster] Withdraw using safe transfer should revert if token is paused', async () => {
+        for (let i = 0; i < vouchersToBuy; i++) {
+          await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            constants.product_price,
+            constants.buyer_deposit
+          );
+        }
+        await contractBosonRouter.pause();
+        await contractCashier.setDisasterState();
+        const buyerInstance = contractCashier.connect(users.buyer.signer);
+
+        //pausing the token
+        contractBSNTokenPrice.pause();
+
+        //withdraw with token paused.
+        await expect(
+          buyerInstance.withdrawTokensOnDisaster(contractBSNTokenPrice.address)
+        ).to.be.revertedWith(revertReasons.PAUSED);
+      });
+
+      it('[NEGATIVE][withdrawTokensOnDisaster] Withdraw should revert if token address is a zero address', async () => {
+        await contractBosonRouter.pause();
+        await contractCashier.setDisasterState();
+        const buyerInstance = contractCashier.connect(users.buyer.signer);
+
+        await expect(
+          buyerInstance.withdrawTokensOnDisaster(constants.ZERO_ADDRESS)
+        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+      });
     });
   });
 });
