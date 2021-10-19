@@ -8139,8 +8139,8 @@ describe('Cashier withdrawals ', () => {
           await contractBosonRouter.pause();
           const expectedTriggerBy = users.deployer.address;
 
-          let tx = await contractCashier.setDisasterState();
-          let txReceipt = await tx.wait();
+          const tx = await contractCashier.setDisasterState();
+          const txReceipt = await tx.wait();
 
           eventUtils.assertEventEmitted(
             txReceipt,
@@ -8156,9 +8156,7 @@ describe('Cashier withdrawals ', () => {
 
         it("[setDisasterState] BosonRouter's cashier address should be able to set the disaster state", async () => {
           const expectedCashierAddress = await contractBosonRouter.getCashierAddress();
-          const cashier = await contractCashier.attach(
-            expectedCashierAddress
-          );
+          const cashier = await contractCashier.attach(expectedCashierAddress);
           await contractBosonRouter.pause();
 
           assert.equal(cashier.address, contractCashier.address);
@@ -8186,7 +8184,9 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('[NEGATIVE][setDisasterState] Disaster state should not be set from attacker', async () => {
-          const attackerInstance = contractCashier.connect(users.attacker.signer);
+          const attackerInstance = contractCashier.connect(
+            users.attacker.signer
+          );
 
           await contractBosonRouter.pause();
 
@@ -8528,7 +8528,9 @@ describe('Cashier withdrawals ', () => {
         await contractBosonRouter.pause();
         await contractCashier.setDisasterState();
         const buyerInstance = contractCashier.connect(users.buyer.signer);
-        await buyerInstance.withdrawTokensOnDisaster(contractBSNTokenPrice.address);
+        await buyerInstance.withdrawTokensOnDisaster(
+          contractBSNTokenPrice.address
+        );
 
         await expect(
           buyerInstance.withdrawTokensOnDisaster(contractBSNTokenPrice.address)
