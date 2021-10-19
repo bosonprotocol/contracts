@@ -273,6 +273,101 @@ describe('Cashier withdrawals ', () => {
       }
     }
 
+    async function allPaths(voucherID, methods, expected){
+      // allPaths takes in all methods called in certain scenarion
+      // after each method, withdraw can or cannot be called
+      // allPaths goes over all possible paths and calcuate total distributed amounts
+      // it compares it to expected values {expectedBuyerAmount, expectedSellerAmount, expectedEscrowAmount}
+      // it does not assert all emited events are correct, only that total value is correct
+
+      let len = methods.length;
+      let numberOfPaths = Math.pow(2,len);
+      
+      let snapshot = await ethers.provider.send('evm_snapshot', []);
+      await contractCashier.withdraw(voucherID);
+    
+      for (let i = 0; i < numberOfPaths; i++) {
+        const distributedAmounts = {...zeroDistributedAmounts};
+        let execTable = i.toString(2).padStart(len,"0").split("").map(d=>d=="1");
+
+        for (let j = 0; j < len; j++) {
+          await utils[methods[j].m](voucherID, methods[j].c.signer);
+          if (execTable[j]) {
+            const withdrawTx = await utils.withdraw(
+              voucherID,
+              users.deployer.signer
+            );
+    
+            const txReceipt = await withdrawTx.wait();      
+            
+            try {
+            eventUtils.assertEventEmitted(
+              txReceipt,
+              Cashier_Factory,
+              eventNames.LOG_AMOUNT_DISTRIBUTION,
+              (ev) => {     
+                utils.calcTotalAmountToRecipients(
+                  ev,
+                  distributedAmounts,
+                  '_to',
+                  users.buyer.address,
+                  users.seller.address
+                );
+              }
+            );
+          } catch (e) {
+            if (!e.message.includes("was not emitted")) {
+              throw e;
+           }
+          }
+          }
+        }
+
+        await advanceTimeSeconds(60);
+        await utils.finalize(voucherID, users.deployer.signer);
+
+        const withdrawTx = await utils.withdraw(
+          voucherID,
+          users.deployer.signer
+        );
+
+        const txReceipt = await withdrawTx.wait();      
+        
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {     
+            utils.calcTotalAmountToRecipients(
+              ev,
+              distributedAmounts,
+              '_to',
+              users.buyer.address,
+              users.seller.address
+            );
+          }
+        );
+
+        let whitdrawsAfter = methods.map((m,ind)=>execTable[ind]?m.m:"").filter(a=>a!="");
+        whitdrawsAfter.push("finalize")
+        assert.isTrue(
+          distributedAmounts.buyerAmount.eq(expected.expectedBuyerAmount),
+          `Buyer Amount is not as expected. Withdraws after "${whitdrawsAfter}"`
+        );
+        assert.isTrue(
+          distributedAmounts.sellerAmount.eq(expected.expectedSellerAmount),
+          `Seller Amount is not as expected. Withdraws after "${whitdrawsAfter}"`
+        );
+        assert.isTrue(
+          distributedAmounts.escrowAmount.eq(expected.expectedEscrowAmount),
+          `Escrow Amount is not as expected. Withdraws after "${whitdrawsAfter}"`
+        );
+
+        await ethers.provider.send('evm_revert', [snapshot]);
+        snapshot = await ethers.provider.send('evm_snapshot', []);
+      }
+    }
+
     beforeEach(async () => {
       await deployContracts();
       await setPeriods();
@@ -342,12 +437,19 @@ describe('Cashier withdrawals ', () => {
         );
       });
 
-      it('COMMIT->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
+
+
+
+      it.only('COMMIT->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
         const expectedBuyerAmount = BN(constants.buyer_deposit)
           .add(BN(constants.product_price))
           .add(BN(constants.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
         const expectedSellerAmount = BN(constants.seller_deposit).div(BN(4)); // 0.0125
         const expectedEscrowAmount = BN(constants.seller_deposit).div(BN(4)); // 0.0125
+
+        await allPaths(voucherID,
+          [{m:'cancel',c:users.seller}, {m:'complain',c:users.buyer}],
+          {expectedBuyerAmount, expectedSellerAmount, expectedEscrowAmount});
 
         await utils.cancel(voucherID, users.seller.signer);
         await utils.complain(voucherID, users.buyer.signer);
@@ -434,12 +536,16 @@ describe('Cashier withdrawals ', () => {
         await checkEscrowAmounts('after');
       });
 
-      it('COMMIT->CANCEL->FINALIZE->WITHDRAW', async () => {
+      it.only('COMMIT->CANCEL->FINALIZE->WITHDRAW', async () => {
         const expectedBuyerAmount = BN(constants.buyer_deposit)
           .add(BN(constants.product_price))
           .add(BN(constants.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
         const expectedSellerAmount = BN(constants.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmount = BN(0); // 0
+
+        await allPaths(voucherID,
+          [{m:'cancel',c:users.seller}],
+          {expectedBuyerAmount, expectedSellerAmount, expectedEscrowAmount});
 
         await utils.cancel(voucherID, users.seller.signer);
 
