@@ -225,7 +225,12 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         uint256 _depositSe,
         uint256 _depositBu,
         uint256 _quantity
-    ) external override onlyFromRouter returns (uint256) {
+    )
+    external
+    override
+    nonReentrant
+    onlyFromRouter
+    returns (uint256) {
         require(_validFrom <= _validTo, "INVALID_VALIDITY_FROM");
         // solhint-disable-next-line not-rely-on-time
         require(_validTo >= block.timestamp + 5 minutes, "INVALID_VALIDITY_TO");
