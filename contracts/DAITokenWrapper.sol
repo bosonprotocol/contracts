@@ -57,7 +57,6 @@ contract DAITokenWrapper is
         notZeroAddress(_tokenOwner)
         notZeroAddress(_spender)
     {
-        require(_deadline == 0 || block.timestamp <= _deadline, "PERMIT_EXPIRED");
         require(_r != bytes32(0) && _s != bytes32(0), "INVALID_SIGNATURE_COMPONENTS");
         uint nonce =  IDAI(daiTokenAddress).nonces(_tokenOwner);
         IDAI(daiTokenAddress).permit(_tokenOwner, _spender, nonce, _deadline, true, _v, _r, _s);
