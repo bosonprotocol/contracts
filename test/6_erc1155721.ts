@@ -71,7 +71,7 @@ describe('ERC1155ERC721', () => {
 
   let timestamp: number;
 
-  async function deployContracts() {
+  async function deployContracts(setVoucherKernelAddress = true) {
     const sixtySeconds = 60;
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
@@ -120,9 +120,12 @@ describe('ERC1155ERC721', () => {
       contractVoucherKernel.address,
       true
     );
+
+    if (setVoucherKernelAddress) {
     await contractERC1155ERC721.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
+    };
 
     await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 
@@ -264,6 +267,46 @@ describe('ERC1155ERC721', () => {
         await expect(
           contractERC1155ERC721.setVoucherKernelAddress(constants.ZERO_ADDRESS)
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
+      });
+
+      it('[NEGATIVE] Should revert if voucher kernel address is not set', async () => {
+        await deployContracts(false);
+  
+        await expect(contractERC1155ERC721.functions[fnSignatures.mint1155](
+          users.deployer.address,
+          constants.ONE,
+          constants.ONE,
+          ethers.utils.formatBytes32String('0x0')
+        )).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
+
+        await expect(contractERC1155ERC721.mintBatch(
+          users.deployer.address,
+          [BN(123), BN(456), BN(789)],
+          [
+            BN(constants.QTY_10),
+            BN(constants.QTY_15),
+            BN(constants.QTY_20),
+          ],
+          ethers.utils.formatBytes32String('0x0')
+        )).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
+
+        await expect(contractERC1155ERC721.functions[fnSignatures.mint721](
+          users.buyer.address,
+          123
+        )).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);   
+
+        await expect(contractERC1155ERC721.functions[fnSignatures.burn1155](
+          users.seller.address,
+          constants.ONE,
+          constants.QTY_10
+        )).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);   
+
+        await expect(contractERC1155ERC721.burnBatch(
+          users.seller.address,
+          [constants.ONE],
+          [constants.QTY_10]
+        )).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
+
       });
 
       it('[setCashierAddress] Should set setCashierAddress to valid address', async () => {
