@@ -8273,7 +8273,7 @@ describe('Cashier withdrawals ', () => {
             assert.equal(
               users.buyer.address,
               ev._triggeredBy,
-              'LogWithdrawEthOnDisaster not triggered properly'
+              'ev._triggeredBy not as expected'
             );
           }
         );
@@ -8297,7 +8297,7 @@ describe('Cashier withdrawals ', () => {
             assert.equal(
               expectedSellerBalance.toString(),
               ev._amount.toString(),
-              "Buyer withdrawn funds don't match"
+              "Seller withdrawn funds don't match"
             );
             assert.equal(
               users.seller.address,
