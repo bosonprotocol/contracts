@@ -8188,7 +8188,7 @@ describe('Cashier withdrawals ', () => {
     });
 
     describe('Withdraw ETH', () => {
-      before(async () => {
+      beforeEach(async () => {
         await deployContracts();
         await setPeriods();
 
@@ -8210,7 +8210,9 @@ describe('Cashier withdrawals ', () => {
           constants.buyer_deposit,
           constants.QTY_10
         );
+      });
 
+      it('[withdrawEthOnDisaster] Buyer should be able to withdraw all the funds locked in escrow', async () => {
         for (let i = 0; i < vouchersToBuy; i++) {
           await utils.commitToBuy(
             users.buyer,
@@ -8221,52 +8223,9 @@ describe('Cashier withdrawals ', () => {
           );
         }
 
+        const buyerInstance = contractCashier.connect(users.buyer.signer);
         await contractBosonRouter.pause();
-      });
-
-      it('[NEGATIVE] withdrawEthOnDisaster should not be executable before admin allows to', async () => {
-        const buyerInstance = contractCashier.connect(users.buyer.signer);
-
-        await expect(buyerInstance.withdrawEthOnDisaster()).to.be.revertedWith(
-          revertReasons.MANUAL_WITHDRAW_NOT_ALLOWED
-        );
-      });
-
-      it('Admin should be able to set the Cashier at disaster state', async () => {
-        let tx = await contractCashier.setDisasterState();
-        let txReceipt = await tx.wait();
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          Cashier_Factory,
-          eventNames.LOG_DISASTER_STATE_SET,
-          (ev) => {
-            assert.equal(ev._triggeredBy, users.deployer.address);
-          }
-        );
-
-        const cashier = await contractCashier.attach(
-          await contractBosonRouter.getCashierAddress()
-        );
-
-        tx = await cashier.setDisasterState();
-        txReceipt = await tx.wait();
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          Cashier_Factory,
-          eventNames.LOG_DISASTER_STATE_SET,
-          (ev) => {
-            assert.isTrue(ev._triggeredBy == users.deployer.address);
-          }
-        );
-
-        const disasterState = await contractCashier.isDisasterStateSet();
-        assert.isTrue(disasterState);
-      });
-
-      it('Buyer should be able to withdraw all the funds locked in escrow', async () => {
-        const buyerInstance = contractCashier.connect(users.buyer.signer);
+        await contractCashier.setDisasterState();
 
         const expectedBuyerBalance = BN(constants.product_price)
           .add(BN(constants.buyer_deposit))
@@ -8295,8 +8254,10 @@ describe('Cashier withdrawals ', () => {
         );
       });
 
-      it('Seller should be able to withdraw all the funds locked in escrow', async () => {
+      it('[withdrawEthOnDisaster] Seller should be able to withdraw all the funds locked in escrow', async () => {
         const sellerInstance = contractCashier.connect(users.seller.signer);
+        await contractBosonRouter.pause();
+        await contractCashier.setDisasterState();
         const expectedSellerBalance = BN(constants.seller_deposit).mul(
           BN(constants.QTY_10)
         );
@@ -8316,14 +8277,26 @@ describe('Cashier withdrawals ', () => {
             assert.equal(
               users.seller.address,
               ev._triggeredBy,
-              'LogWithdrawEthOnDisaster not triggered properly'
+              'ev._triggeredBy not as expected'
             );
           }
         );
       });
 
-      it('[NEGATIVE] withdrawEthOnDisaster should revert if funds already withdrawn for an account', async () => {
+      it('[NEGATIVE] withdrawEthOnDisaster should not be executable before admin allows to', async () => {
+        await contractBosonRouter.pause();
         const buyerInstance = contractCashier.connect(users.buyer.signer);
+
+        await expect(buyerInstance.withdrawEthOnDisaster()).to.be.revertedWith(
+          revertReasons.MANUAL_WITHDRAW_NOT_ALLOWED
+        );
+      });
+
+      it('[NEGATIVE][withdrawEthOnDisaster] should revert if funds already withdrawn for an account', async () => {
+        const buyerInstance = contractCashier.connect(users.buyer.signer);
+        await contractBosonRouter.pause();
+        await contractCashier.setDisasterState();
+
         await expect(buyerInstance.withdrawEthOnDisaster()).to.be.revertedWith(
           revertReasons.ESCROW_EMPTY
         );
