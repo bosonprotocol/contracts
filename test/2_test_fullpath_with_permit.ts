@@ -517,6 +517,8 @@ describe('Cashier and VoucherKernel', () => {
           )
         ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
       });
+
+
     });
 
     describe('[WITH PERMIT]', () => {
@@ -920,6 +922,38 @@ describe('Cashier and VoucherKernel', () => {
               true
             )
           ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
+        });
+
+        it('[NEGATIVE] Should revert if wrong amount of tokens sent', async () => {          
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(BN(constants.QTY_10)).div(2);
+          const nonce = await contractBSNTokenDeposit.nonces(users.seller.address);
+      
+          const digest = await getApprovalDigest(
+            contractBSNTokenDeposit,
+            users.seller.address,
+            contractBosonRouter.address,
+            txValue,
+            nonce,
+            deadline
+          );
+      
+          const {v, r, s} = ecsign(
+            Buffer.from(digest.slice(2), 'hex'),
+            Buffer.from(users.seller.privateKey.slice(2), 'hex')
+          );
+      
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+          await expect(sellerInstance.requestCreateOrderETHTKNWithPermit(
+            contractBSNTokenDeposit.address,
+            txValue,
+            deadline,
+            v,
+            r,
+            s,
+            [constants.PROMISE_VALID_FROM, constants.PROMISE_VALID_TO, constants.PROMISE_PRICE1, constants.PROMISE_DEPOSITSE1, constants.PROMISE_DEPOSITBU1, constants.QTY_10]
+          )).to.be.revertedWith(revertReasons.INVALID_FUNDS);
         });
       });
 
@@ -1720,6 +1754,39 @@ describe('Cashier and VoucherKernel', () => {
               true
             )
           ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
+        });
+
+        it('[NEGATIVE] Should revert if wrong amount of tokens sent', async () => {          
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(BN(constants.QTY_10)).div(2);
+          const nonce = await contractBSNTokenDeposit.nonces(users.seller.address);
+      
+          const digest = await getApprovalDigest(
+            contractBSNTokenDeposit,
+            users.seller.address,
+            contractBosonRouter.address,
+            txValue,
+            nonce,
+            deadline
+          );
+      
+          const {v, r, s} = ecsign(
+            Buffer.from(digest.slice(2), 'hex'),
+            Buffer.from(users.seller.privateKey.slice(2), 'hex')
+          );
+      
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+          await expect(sellerInstance.requestCreateOrderTKNTKNWithPermit(
+            contractBSNTokenPrice.address,
+            contractBSNTokenDeposit.address,
+            txValue,
+            deadline,
+            v,
+            r,
+            s,
+            [constants.PROMISE_VALID_FROM, constants.PROMISE_VALID_TO, constants.PROMISE_PRICE1, constants.PROMISE_DEPOSITSE1, constants.PROMISE_DEPOSITBU1, constants.QTY_10]
+          )).to.be.revertedWith(revertReasons.INVALID_FUNDS);
         });
       });
     });
