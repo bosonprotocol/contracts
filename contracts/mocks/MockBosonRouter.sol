@@ -19,7 +19,9 @@ contract MockBosonRouter is BosonRouter
         address _voucherKernel,
         address _tokenRegistry,
         address _cashierAddress
-    ) BosonRouter(_voucherKernel, _tokenRegistry, _cashierAddress) {}
+    )
+    // solhint-disable-next-line no-empty-blocks
+    BosonRouter(_voucherKernel, _tokenRegistry, _cashierAddress) {}
 
 
     /**
