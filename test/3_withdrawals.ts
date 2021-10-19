@@ -1431,6 +1431,467 @@ describe('Cashier withdrawals ', () => {
 
         await checkEscrowAmounts('after');
       });
+
+      it('COMMIT->EXPIRE->FINALIZE->WITHDRAW', async () => {
+        const expectedBuyerAmount = BN(constants.product_price); // 0.3
+        const expectedSellerAmount = BN(constants.seller_deposit); // 0.05
+        const expectedEscrowAmount = BN(constants.buyer_deposit); // 0.04
+
+        await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+        await contractVoucherKernel.triggerExpiration(
+          voucherID
+        );
+
+        await advanceTimeSeconds(60);
+        await utils.finalize(voucherID, users.deployer.signer);
+
+        await checkEscrowAmounts('before');
+
+        const withdrawTx = await utils.withdraw(
+          voucherID,
+          users.deployer.signer
+        );
+
+        const txReceipt = await withdrawTx.wait();
+
+        const distributedAmounts = {...zeroDistributedAmounts};
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.seller],
+                amounts: [constants.seller_deposit],
+              },
+              buyerDeposit: {
+                receiver: users.deployer,
+                amount: constants.buyer_deposit,
+              },
+            });
+
+            utils.calcTotalAmountToRecipients(
+              ev,
+              distributedAmounts,
+              '_to',
+              users.buyer.address,
+              users.seller.address
+            );
+          }
+        );
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.buyer, users.seller, users.deployer],
+              amounts: [
+                [expectedBuyerAmount],
+                [expectedSellerAmount],
+                [expectedEscrowAmount],
+              ],
+            });
+          }
+        );
+
+        assert.isTrue(
+          distributedAmounts.buyerAmount.eq(expectedBuyerAmount),
+          'Buyer Amount is not as expected'
+        );
+        assert.isTrue(
+          distributedAmounts.sellerAmount.eq(expectedSellerAmount),
+          'Seller Amount is not as expected'
+        );
+        assert.isTrue(
+          distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
+          'Escrow Amount is not as expected'
+        );
+
+        await checkEscrowAmounts('after');
+      });
+
+      it('COMMIT->EXPIRE->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
+        const expectedBuyerAmount = BN(constants.buyer_deposit)
+          .add(BN(constants.product_price))
+          .add(BN(constants.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
+        const expectedSellerAmount = BN(constants.seller_deposit).div(BN(4)); // 0.0125
+        const expectedEscrowAmount = BN(constants.seller_deposit).div(BN(4)); // 0.0125
+
+        await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+        await contractVoucherKernel.triggerExpiration(
+          voucherID
+        );
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
+
+        await checkEscrowAmounts('before');
+
+        const withdrawTx = await utils.withdraw(
+          voucherID,
+          users.deployer.signer
+        );
+
+        const txReceipt = await withdrawTx.wait();
+
+        const distributedAmounts = {...zeroDistributedAmounts};
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.buyer, users.seller, users.deployer],
+                amounts: [
+                  BN(constants.seller_deposit).div(2),
+                  expectedSellerAmount,
+                  expectedEscrowAmount,
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
+
+            utils.calcTotalAmountToRecipients(
+              ev,
+              distributedAmounts,
+              '_to',
+              users.buyer.address,
+              users.seller.address
+            );
+          }
+        );
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.deployer, users.seller, users.buyer],
+              amounts: [
+                [expectedEscrowAmount],
+                [expectedSellerAmount],
+                [
+                  constants.product_price,
+                  expectedBuyerAmount.sub(BN(constants.product_price)),
+                ],
+              ],
+            });
+          }
+        );
+
+        assert.isTrue(
+          distributedAmounts.buyerAmount.eq(expectedBuyerAmount),
+          'Buyer Amount is not as expected'
+        );
+        assert.isTrue(
+          distributedAmounts.sellerAmount.eq(expectedSellerAmount),
+          'Seller Amount is not as expected'
+        );
+        assert.isTrue(
+          distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
+          'Escrow Amount is not as expected'
+        );
+
+        await checkEscrowAmounts('after');
+      });
+
+      it('COMMIT->EXPIRE->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
+        const expectedBuyerAmount = BN(constants.buyer_deposit)
+          .add(BN(constants.product_price))
+          .add(BN(constants.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
+        const expectedSellerAmount = BN(constants.seller_deposit).div(BN(4)); // 0.0125
+        const expectedEscrowAmount = BN(constants.seller_deposit).div(BN(4)); // 0.0125
+
+        await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+        await contractVoucherKernel.triggerExpiration(
+          voucherID
+        );
+        await utils.cancel(voucherID, users.seller.signer);
+        await utils.complain(voucherID, users.buyer.signer);
+        await utils.finalize(voucherID, users.deployer.signer);
+
+        await checkEscrowAmounts('before');
+
+        const withdrawTx = await utils.withdraw(
+          voucherID,
+          users.deployer.signer
+        );
+
+        const txReceipt = await withdrawTx.wait();
+
+        const distributedAmounts = {...zeroDistributedAmounts};
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.buyer, users.seller, users.deployer],
+                amounts: [
+                  BN(constants.seller_deposit).div(2),
+                  expectedSellerAmount,
+                  expectedEscrowAmount,
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
+
+            utils.calcTotalAmountToRecipients(
+              ev,
+              distributedAmounts,
+              '_to',
+              users.buyer.address,
+              users.seller.address
+            );
+          }
+        );
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.deployer, users.seller, users.buyer],
+              amounts: [
+                [expectedEscrowAmount],
+                [expectedSellerAmount],
+                [
+                  constants.product_price,
+                  expectedBuyerAmount.sub(BN(constants.product_price)),
+                ],
+              ],
+            });
+          }
+        );
+
+        assert.isTrue(
+          distributedAmounts.buyerAmount.eq(expectedBuyerAmount),
+          'Buyer Amount is not as expected'
+        );
+        assert.isTrue(
+          distributedAmounts.sellerAmount.eq(expectedSellerAmount),
+          'Seller Amount is not as expected'
+        );
+        assert.isTrue(
+          distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
+          'Escrow Amount is not as expected'
+        );
+
+        await checkEscrowAmounts('after');
+      });
+
+      it('COMMIT->EXPIRE->COMPLAIN->FINALIZE->WITHDRAW', async () => {
+        const expectedBuyerAmount = BN(constants.product_price); // 0.3
+        const expectedSellerAmount = BN(0); // 0
+        const expectedEscrowAmount = BN(constants.seller_deposit).add(
+          BN(constants.buyer_deposit)
+        ); // 0.09
+
+        await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+        await contractVoucherKernel.triggerExpiration(
+          voucherID
+        );
+        await utils.complain(voucherID, users.buyer.signer);
+        await advanceTimeSeconds(60);
+
+        await utils.finalize(voucherID, users.deployer.signer);
+
+        await checkEscrowAmounts('before');
+
+        const withdrawTx = await utils.withdraw(
+          voucherID,
+          users.deployer.signer
+        );
+
+        const txReceipt = await withdrawTx.wait();
+
+        const distributedAmounts = {...zeroDistributedAmounts};
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.deployer],
+                amounts: [constants.seller_deposit],
+              },
+              buyerDeposit: {
+                receiver: users.deployer,
+                amount: constants.buyer_deposit,
+              },
+            });
+
+            utils.calcTotalAmountToRecipients(
+              ev,
+              distributedAmounts,
+              '_to',
+              users.buyer.address,
+              users.seller.address
+            );
+          }
+        );
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.deployer, users.buyer],
+              amounts: [[expectedEscrowAmount], [constants.product_price]],
+            });
+          }
+        );
+
+        assert.isTrue(
+          distributedAmounts.buyerAmount.eq(expectedBuyerAmount),
+          'Buyer Amount is not as expected'
+        );
+        assert.isTrue(
+          distributedAmounts.sellerAmount.eq(expectedSellerAmount),
+          'Seller Amount is not as expected'
+        );
+        assert.isTrue(
+          distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
+          'Escrow Amount is not as expected'
+        );
+
+        await checkEscrowAmounts('after');
+      });
+
+      it('COMMIT->EXPIRE->CANCEL->FINALIZE->WITHDRAW', async () => {
+        const expectedBuyerAmount = BN(constants.buyer_deposit)
+          .add(BN(constants.product_price))
+          .add(BN(constants.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
+        const expectedSellerAmount = BN(constants.seller_deposit).div(BN(2)); // 0.025
+        const expectedEscrowAmount = BN(0); //0
+
+        await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+        await contractVoucherKernel.triggerExpiration(
+          voucherID
+        );
+        await utils.cancel(voucherID, users.seller.signer);
+
+        await advanceTimeSeconds(60);
+
+        await utils.finalize(voucherID, users.deployer.signer);
+
+        await checkEscrowAmounts('before');
+
+        const withdrawTx = await utils.withdraw(
+          voucherID,
+          users.deployer.signer
+        );
+
+        const txReceipt = await withdrawTx.wait();
+
+        const distributedAmounts = {...zeroDistributedAmounts};
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_AMOUNT_DISTRIBUTION,
+          (ev) => {
+            validateEmittedLogAmountDistribution(ev, {
+              voucherID,
+              payment: {
+                receiver: users.buyer,
+                amount: constants.product_price,
+              },
+              sellerDeposit: {
+                receivers: [users.seller, users.buyer],
+                amounts: [
+                  expectedSellerAmount,
+                  BN(constants.seller_deposit).div(2),
+                ],
+              },
+              buyerDeposit: {
+                receiver: users.buyer,
+                amount: constants.buyer_deposit,
+              },
+            });
+
+            utils.calcTotalAmountToRecipients(
+              ev,
+              distributedAmounts,
+              '_to',
+              users.buyer.address,
+              users.seller.address
+            );
+          }
+        );
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              payees: [users.buyer, users.seller],
+              amounts: [
+                [
+                  constants.product_price,
+                  expectedBuyerAmount.sub(constants.product_price),
+                ],
+                [expectedSellerAmount],
+              ],
+            });
+          }
+        );
+
+        assert.isTrue(
+          distributedAmounts.buyerAmount.eq(expectedBuyerAmount),
+          'Buyer Amount is not as expected'
+        );
+        assert.isTrue(
+          distributedAmounts.sellerAmount.eq(expectedSellerAmount),
+          'Seller Amount is not as expected'
+        );
+        assert.isTrue(
+          distributedAmounts.escrowAmount.eq(expectedEscrowAmount),
+          'Escrow Amount is not as expected'
+        );
+
+        await checkEscrowAmounts('after');
+      });
     });
 
     describe(`TKNTKN [WITH PERMIT]`, () => {
