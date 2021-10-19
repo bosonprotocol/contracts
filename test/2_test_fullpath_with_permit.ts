@@ -7529,7 +7529,7 @@ describe('Cashier and VoucherKernel', () => {
     });
   });
 
-  describe('VOUCHER KERNEL', ()=> {
+  describe('CASHIER', ()=> {
     // TODO move?
     
     it('[NEGATIVE] Should revert if boson router is not set', async () => {
@@ -7559,5 +7559,33 @@ describe('Cashier and VoucherKernel', () => {
         ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
     });
 
-  })
+    describe('With normal deployment', ()=> {
+
+      beforeEach(async() => {
+        await deployContracts();
+      });
+
+    it.only('[NEGATIVE] Should revert if onERC721Transfer is called by the attacker', async () => {
+      const attackerInstance = contractCashier.connect(
+        users.attacker.signer
+      );
+
+      await expect(
+        attackerInstance.onERC721Transfer(users.other1.address, users.attacker.address, constants.ONE)
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TOKEN_CONTRACT);
+   });
+
+   it.only('[NEGATIVE] Should revert if onERC721Transfer is called by the attacker', async () => {
+    const attackerInstance = contractCashier.connect(
+      users.attacker.signer
+    );
+
+    await expect(
+      attackerInstance.onERC1155Transfer(users.other1.address, users.attacker.address, constants.ONE, constants.ONE)
+    ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TOKEN_CONTRACT);
+ });
+
+
+});
+});
 });

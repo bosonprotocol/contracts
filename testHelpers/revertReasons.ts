@@ -55,4 +55,5 @@ export default {
   UNSUPPORTED_TOKEN: 'UNSUPPORTED_TOKEN',
   EOA: 'Transaction reverted: function call to a non-contract account',
   INVALID_VALUE: 'INVALID_VALUE',
+  UNAUTHORIZED_TOKEN_CONTRACT: 'UT'
 };
