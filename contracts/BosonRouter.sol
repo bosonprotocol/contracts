@@ -1119,7 +1119,7 @@ contract BosonRouter is
      * @param _tokensSent     tokens sent to cashier contract
      */
     function requestCreateOrder(
-        uint256[] memory _metadata,
+        uint256[] calldata _metadata,
         uint8 _paymentMethod,
         address _tokenPriceAddress,
         address _tokenDepositAddress,
