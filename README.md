@@ -78,7 +78,7 @@ To compile the contracts:
 
 ---
 ### Run
-To deploy instances of the contracts for local development without prior knowledge to Hardhat, first copy .env.example to .env and run the following command:
+To deploy instances of the contracts for local development without prior knowledge of Hardhat, first copy .env.example to .env and run the following command:
 ```shell
 ./go contracts:run
 ```
@@ -101,7 +101,7 @@ The following hardhat commands will achieve this:
 ```shell script
 npx hardhat node --fork https://eth-rinkeby.alchemyapi.io/v2/<<alchemy key>>
 ```
-Alchemy is recommended by Hardhat over Infura because it's free accounts provide archived data, which is required for successful forking.
+Alchemy is recommended by Hardhat over Infura because its free accounts provide archived data, which is required for successful forking.
 
 You can then deploy from a separate terminal using the command
 
@@ -114,6 +114,10 @@ deployed on Rinkeby (0x6A9865aDE2B6207dAAC49f8bCba9705dEB0B0e6D) available to yo
 
 ---
 ### Test
+
+#### Testing with DAI
+There is no faucet for getting DAI tokens on a testnet. If you deploy the Boson Protocol contracts to a testnet or a local forked instance, you may want to use DAI test tokens for testing purposes. The easiest way to do this is to deploy your
+own DAI test token instance. See [here](docs/dai/daiTestToken.md) for instructions.
 
 #### Unit Tests
 
