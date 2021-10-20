@@ -48,7 +48,7 @@ namespace :contracts do
 
   desc "Compile all contracts"
   task :compile => [:'dependencies:install'] do
-    sh({"PK" => "123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234"}, 'npm', 'run', 'contracts:compile')
+    sh({"PROTOCOL_DEPLOYER_PRIVATE_KEY" => "123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234", "CC_TOKEN_DEPLOYER_PRIVATE_KEY" => "123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234"}, 'npm', 'run', 'contracts:compile')
   end
 
   desc "Lint all contracts"
@@ -97,7 +97,7 @@ namespace :tests do
   task :unit, [:port, :account_keys_file] =>
       [:'dependencies:install'] do |_, args|
     run_unit_tests = lambda do ||
-      sh({"PK" => "123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234"}, 'npm', 'run', 'tests:unit')
+      sh({"PROTOCOL_DEPLOYER_PRIVATE_KEY" => "123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234", "CC_TOKEN_DEPLOYER_PRIVATE_KEY" => "123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234"}, 'npm', 'run', 'tests:unit')
     
     # run_unit_tests.call()
     end
