@@ -540,7 +540,20 @@ describe('Cashier and VoucherKernel', () => {
         ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
       });
 
-
+      it('[NEGATIVE] Should not create a supply if quantity is zero', async () => {
+        await expect(
+          utils.createOrder(
+            users.seller,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITSE1,
+            constants.PROMISE_DEPOSITBU1,
+            constants.ZERO,
+            true
+          )
+        ).to.be.revertedWith(revertReasons.INVALID_QUANTITY_LONG);
+      });
     });
 
     describe('[WITH PERMIT]', () => {
@@ -961,6 +974,21 @@ describe('Cashier and VoucherKernel', () => {
           ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
         });
 
+        it('[NEGATIVE] Should not create a supply if quantity is zero', async () => {
+          await expect(
+            utils.createOrder(
+              users.seller,
+              constants.PROMISE_VALID_FROM,
+              constants.PROMISE_VALID_TO,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITSE1,
+              constants.PROMISE_DEPOSITBU1,
+              constants.ZERO,
+              true
+            )
+          ).to.be.revertedWith(revertReasons.INVALID_QUANTITY_LONG);
+        });
+
         it('[NEGATIVE] Should revert if wrong amount of tokens sent', async () => {          
           const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(BN(constants.QTY_10)).div(2);
           const nonce = await contractBSNTokenDeposit.nonces(users.seller.address);
@@ -1336,6 +1364,21 @@ describe('Cashier and VoucherKernel', () => {
               true
             )
           ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
+        });
+
+        it('[NEGATIVE] Should not create a supply if quantity is zero', async () => {
+          await expect(
+            utils.createOrder(
+              users.seller,
+              constants.PROMISE_VALID_FROM,
+              constants.PROMISE_VALID_TO,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITSE1,
+              constants.PROMISE_DEPOSITBU1,
+              constants.ZERO,
+              true
+            )
+          ).to.be.revertedWith(revertReasons.INVALID_QUANTITY_LONG);
         });
       });
 
@@ -1805,6 +1848,21 @@ describe('Cashier and VoucherKernel', () => {
               true
             )
           ).to.be.revertedWith(revertReasons.ABOVE_LIMIT);
+        });
+
+        it('[NEGATIVE] Should not create a supply if quantity is zero', async () => {
+          await expect(
+            utils.createOrder(
+              users.seller,
+              constants.PROMISE_VALID_FROM,
+              constants.PROMISE_VALID_TO,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITSE1,
+              constants.PROMISE_DEPOSITBU1,
+              constants.ZERO,
+              true
+            )
+          ).to.be.revertedWith(revertReasons.INVALID_QUANTITY_LONG);
         });
 
         it('[NEGATIVE] Should revert if wrong amount of tokens sent', async () => {          
