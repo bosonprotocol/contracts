@@ -273,7 +273,7 @@ describe('Cashier withdrawals ', () => {
       }
     }
 
-    async function allPaths(voucherID, methods, paymentWithdrawal, depositWithdrawal, expectedAmounts){
+    async function allPaths(voucherID, methods, paymentWithdrawal, depositWithdrawal, expectedAmounts, checkEscrowAmounts){
       // allPaths takes in all methods called in certain scenarion
       // after each method, withdraw can or cannot be called
       // allPaths goes over all possible paths and calcuate total distributed amounts
@@ -295,6 +295,8 @@ describe('Cashier withdrawals ', () => {
       
       await contractCashier.withdraw(voucherID); // withdraw before first action should not do anything // todo test
     
+      await checkEscrowAmounts('beforePaymentRelease');
+
       for (let i = 0; i < numberOfPaths; i++) {
         const distributedAmounts = {...zeroDistributedAmounts};
         let execTable = i.toString(2).padStart(len,"0").split("").map(d=>d=="1"); //withdraw execution table -> for each path it tells wether to call withdraw after certain action or not 
@@ -332,13 +334,15 @@ describe('Cashier withdrawals ', () => {
               }
             );
          
+          await checkEscrowAmounts('betweenPaymentAndDepositRelease');
           withdrawn = true;
         } else {
           // paymentWithdrawal already withdrawn, no changes expected
           expect(await utils.withdraw(
             voucherID,
             users.deployer.signer
-          )).to.not.emit(contractCashier, eventNames.LOG_AMOUNT_DISTRIBUTION)
+          )).to.not.emit(contractCashier, eventNames.LOG_AMOUNT_DISTRIBUTION);
+          await checkEscrowAmounts('betweenPaymentAndDepositRelease');
         }
           }
         }
@@ -376,6 +380,8 @@ describe('Cashier withdrawals ', () => {
           }
         );
 
+        await checkEscrowAmounts('afterDepositRelease');
+
         // make sure that total distributed ammount in path is correct
         let whitdrawsAfter = methods.map((m,ind)=>execTable[ind]?m.m:"").filter(a=>a!="");
         whitdrawsAfter.push("finalize")
@@ -397,6 +403,8 @@ describe('Cashier withdrawals ', () => {
         snapshot = await ethers.provider.send('evm_snapshot', []);
       }
     }
+
+    
 
     beforeEach(async () => {
       await deployContracts();
@@ -433,6 +441,48 @@ describe('Cashier withdrawals ', () => {
             ).to.be.equal(
               BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
               'Seller escrow mismatch'
+            );
+            break;
+        case 'beforePaymentRelease':
+            expect(
+              await contractCashier.getEscrowAmount(users.buyer.address)
+            ).to.be.equal(
+              BN(constants.buyer_deposit).add(constants.product_price),
+              'Buyers escrow should not be zero'
+            );
+
+            expect(
+              await contractCashier.getEscrowAmount(users.seller.address)
+            ).to.be.equal(
+              BN(constants.seller_deposit).mul(BN(constants.QTY_15)),
+              'Seller escrow mismatch - should be ful'
+            );
+            break;
+          case 'betweenPaymentAndDepositRelease':
+            expect(
+              await contractCashier.getEscrowAmount(users.buyer.address)
+            ).to.be.equal(
+              BN(constants.buyer_deposit),
+              'Buyers escrow should have only deposit'
+            );
+
+            expect(
+              await contractCashier.getEscrowAmount(users.seller.address)
+            ).to.be.equal(
+              BN(constants.seller_deposit).mul(BN(constants.QTY_15)),
+              'Seller escrow mismatch - should be full'
+            );
+            break;
+          case 'afterDepositRelease':
+            expect(
+              await contractCashier.getEscrowAmount(users.buyer.address)
+            ).to.be.equal(constants.ZERO, 'Buyers escrow should be zero');
+
+            expect(
+              await contractCashier.getEscrowAmount(users.seller.address)
+            ).to.be.equal(
+              BN(constants.seller_deposit).mul(BN(constants.QTY_15 - 1)),
+              'Seller escrow mismatch - should be reduced'
             );
             break;
         }
@@ -863,7 +913,8 @@ describe('Cashier withdrawals ', () => {
           };
             await allPaths(voucherID,
               [{m:'redeem',c:users.buyer},{m:'complain',c:users.buyer},{m:'cancel',c:users.seller}],
-              paymentWithdrawal, depositWithdrawal, {expectedBuyerAmount, expectedSellerAmount, expectedEscrowAmount});
+              paymentWithdrawal, depositWithdrawal, {expectedBuyerAmount, expectedSellerAmount, expectedEscrowAmount},
+              checkEscrowAmounts);
 
           await utils.redeem(voucherID, users.buyer.signer);
           await utils.complain(voucherID, users.buyer.signer);
