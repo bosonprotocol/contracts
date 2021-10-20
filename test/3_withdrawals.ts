@@ -273,37 +273,38 @@ describe('Cashier withdrawals ', () => {
       }
     }
 
-    async function allPaths(voucherID, methods, expected, firstWithdrawal = {}, secondWithdrawal={}){
+    async function allPaths(voucherID, methods, paymentWithdrawal, depositWithdrawal, expectedAmounts){
       // allPaths takes in all methods called in certain scenarion
       // after each method, withdraw can or cannot be called
       // allPaths goes over all possible paths and calcuate total distributed amounts
       // it compares it to expected values {expectedBuyerAmount, expectedSellerAmount, expectedEscrowAmount}
 
       // firectly after commitToBuy withdraw should not emit any event or do any state change
-      // firstWithdrawal is withdraw after some action after commitToBut (cancel, redeem, refund, expire) but before finalize
-      // secondWithdrawal is withdraw after finalize
-      // any withdrawal after firstWithdrawal but before finalize should not emit any event or do any state change
-      // if there is no withdrawal prior to finalize, firstWithdrawal and secondWithdrawal are joine together
+      // paymentWithdrawal is withdraw after some action after commitToBut (cancel, redeem, refund, expire) but before finalize. It releases payments.
+      // depositWithdrawal is withdraw after finalize. It releases deposits.
+      // any withdrawal after paymentWithdrawal but before finalize should not emit any event or do any state change
+      // if there is no withdrawal prior to finalize, paymentWithdrawal and depositWithdrawal are joined together
 
-      // todo check that no event in desired paths
-      // validate amount dist
+      // todo 
       // validate log withdrawal
 
       let len = methods.length;
-      let numberOfPaths = Math.pow(2,len);
+      let numberOfPaths = Math.pow(2,len); // you either withdraw or not after each action -> 2^(#actions) paths
       
       let snapshot = await ethers.provider.send('evm_snapshot', []);
-      await contractCashier.withdraw(voucherID);
+      
+      await contractCashier.withdraw(voucherID); // withdraw before first action should not do anything // todo test
     
       for (let i = 0; i < numberOfPaths; i++) {
         const distributedAmounts = {...zeroDistributedAmounts};
-        let execTable = i.toString(2).padStart(len,"0").split("").map(d=>d=="1");
-        let withdrawn = false;
+        let execTable = i.toString(2).padStart(len,"0").split("").map(d=>d=="1"); //withdraw execution table -> for each path it tells wether to call withdraw after certain action or not 
+        let withdrawn = false; // tells if withdraw was called already
 
         for (let j = 0; j < len; j++) {
           await utils[methods[j].m](voucherID, methods[j].c.signer);
           if (execTable[j]) {
             if (!withdrawn) {
+              // withdraw should release payments
             const withdrawTx = await utils.withdraw(
               voucherID,
               users.deployer.signer
@@ -318,9 +319,8 @@ describe('Cashier withdrawals ', () => {
               (ev) => {     
                 validateEmittedLogAmountDistribution(ev, {
                   voucherID,
-                  ...firstWithdrawal
+                  ...paymentWithdrawal
                 });
-
 
                 utils.calcTotalAmountToRecipients(
                   ev,
@@ -334,7 +334,7 @@ describe('Cashier withdrawals ', () => {
          
           withdrawn = true;
         } else {
-          // firstWithdrawal already withdrawn, no changes expected
+          // paymentWithdrawal already withdrawn, no changes expected
           expect(await utils.withdraw(
             voucherID,
             users.deployer.signer
@@ -358,12 +358,12 @@ describe('Cashier withdrawals ', () => {
           Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
-            let addFirstWithdrawal = {};
-            if (i==0) addFirstWithdrawal = firstWithdrawal;
+            let addPaymentWithdrawal = {};
+            if (i==0) addPaymentWithdrawal = paymentWithdrawal; // if payment were not withdrawn before, they should be together with deposit
             validateEmittedLogAmountDistribution(ev, {
               voucherID,
-              ...addFirstWithdrawal,
-              ...secondWithdrawal
+              ...addPaymentWithdrawal,
+              ...depositWithdrawal
             });
             
             utils.calcTotalAmountToRecipients(
@@ -376,21 +376,23 @@ describe('Cashier withdrawals ', () => {
           }
         );
 
+        // make sure that total distributed ammount in path is correct
         let whitdrawsAfter = methods.map((m,ind)=>execTable[ind]?m.m:"").filter(a=>a!="");
         whitdrawsAfter.push("finalize")
         assert.isTrue(
-          distributedAmounts.buyerAmount.eq(expected.expectedBuyerAmount),
+          distributedAmounts.buyerAmount.eq(expectedAmounts.expectedBuyerAmount),
           `Buyer Amount is not as expected. Withdraws after "${whitdrawsAfter}"`
         );
         assert.isTrue(
-          distributedAmounts.sellerAmount.eq(expected.expectedSellerAmount),
+          distributedAmounts.sellerAmount.eq(expectedAmounts.expectedSellerAmount),
           `Seller Amount is not as expected. Withdraws after "${whitdrawsAfter}"`
         );
         assert.isTrue(
-          distributedAmounts.escrowAmount.eq(expected.expectedEscrowAmount),
+          distributedAmounts.escrowAmount.eq(expectedAmounts.expectedEscrowAmount),
           `Escrow Amount is not as expected. Withdraws after "${whitdrawsAfter}"`
         );
 
+        // revert to state before path was executed
         await ethers.provider.send('evm_revert', [snapshot]);
         snapshot = await ethers.provider.send('evm_snapshot', []);
       }
@@ -472,9 +474,9 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerAmount = BN(constants.seller_deposit).div(BN(4)); // 0.0125
         const expectedEscrowAmount = BN(constants.seller_deposit).div(BN(4)); // 0.0125
 
-        await allPaths(voucherID,
-          [{m:'cancel',c:users.seller}, {m:'complain',c:users.buyer}],
-          {expectedBuyerAmount, expectedSellerAmount, expectedEscrowAmount});
+        // await allPaths(voucherID,
+        //   [{m:'cancel',c:users.seller}, {m:'complain',c:users.buyer}],
+        //   {expectedBuyerAmount, expectedSellerAmount, expectedEscrowAmount});
 
         await utils.cancel(voucherID, users.seller.signer);
         await utils.complain(voucherID, users.buyer.signer);
@@ -568,9 +570,9 @@ describe('Cashier withdrawals ', () => {
         const expectedSellerAmount = BN(constants.seller_deposit).div(BN(2)); // 0.025
         const expectedEscrowAmount = BN(0); // 0
 
-        await allPaths(voucherID,
-          [{m:'cancel',c:users.seller}],
-          {expectedBuyerAmount, expectedSellerAmount, expectedEscrowAmount});
+        // await allPaths(voucherID,
+        //   [{m:'cancel',c:users.seller}],
+        //   {expectedBuyerAmount, expectedSellerAmount, expectedEscrowAmount});
 
         await utils.cancel(voucherID, users.seller.signer);
 
@@ -840,12 +842,12 @@ describe('Cashier withdrawals ', () => {
           ); // 0.3125
           const expectedEscrowAmount = BN(constants.seller_deposit).div(BN(4)); // 0.0125
 
-          const firstWithdrawal = {payment: {
+          const paymentWithdrawal = {payment: {
             receiver: users.seller,
             amount: constants.product_price}
           };
 
-          const secondWithdrawal = {
+          const depositWithdrawal = {
             sellerDeposit: {
               receivers: [users.buyer, users.seller, users.deployer],
               amounts: [
@@ -855,13 +857,13 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.sell,
+              receiver: users.buyer,
               amount: constants.buyer_deposit,
             }
           };
             await allPaths(voucherID,
               [{m:'redeem',c:users.buyer},{m:'complain',c:users.buyer},{m:'cancel',c:users.seller}],
-              {expectedBuyerAmount, expectedSellerAmount, expectedEscrowAmount},firstWithdrawal, secondWithdrawal);
+              paymentWithdrawal, depositWithdrawal, {expectedBuyerAmount, expectedSellerAmount, expectedEscrowAmount});
 
           await utils.redeem(voucherID, users.buyer.signer);
           await utils.complain(voucherID, users.buyer.signer);
