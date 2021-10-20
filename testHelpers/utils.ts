@@ -730,6 +730,16 @@ class Utils {
     return await sellerInstance.cancelOrFault(voucherID);
   }
 
+  async expire(
+    voucherID: string,
+    seller: Signer
+  ): Promise<ContractTransaction> {
+    const sellerInstance = this.contractVoucherKernel.connect(
+      seller
+    ) as VoucherKernel;    
+    return await sellerInstance.triggerExpiration(voucherID);
+  }
+
   async finalize(
     voucherID: string,
     deployer: Signer
