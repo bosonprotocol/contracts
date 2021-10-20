@@ -595,7 +595,7 @@ contract BosonRouter is
         address tokenDepositAddress = IVoucherKernel(voucherKernel)
             .getVoucherDepositToken(_tokenIdSupply);
 
-        require(tokenPriceAddress == tokenDepositAddress, "IC"); //invalid caller
+        require(tokenPriceAddress == tokenDepositAddress, "TOKENS_ARE_NOT_THE_SAME"); //invalid caller
 
         // If tokenPriceAddress && tokenPriceAddress are the same
         // practically it's not of importance to each we are sending the funds
