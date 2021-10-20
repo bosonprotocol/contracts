@@ -481,6 +481,20 @@ describe('Cashier and VoucherKernel', () => {
         ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
       });
 
+      it('[NEGATIVE] Should revert if validFrom is greater than validTo', async () => {
+        await expect(
+          utils.createOrder(
+            users.seller,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITSE1,
+            constants.PROMISE_DEPOSITBU1,
+            constants.QTY_10
+          )
+        ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_FROM);
+      });
+
       it('[NEGATIVE] Should not create a supply if price is above the limit', async () => {
         await expect(
           utils.createOrder(
@@ -842,6 +856,21 @@ describe('Cashier and VoucherKernel', () => {
             )
           ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
         });
+
+        it('[NEGATIVE] Should revert if validFrom is greater than validTo', async () => {
+          await expect(
+            utils.createOrder(
+              users.seller,
+              constants.PROMISE_VALID_TO,
+              constants.PROMISE_VALID_FROM,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITSE1,
+              constants.PROMISE_DEPOSITBU1,
+              constants.QTY_10
+            )
+          ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_FROM);
+        });
+
 
         it('[NEGATIVE] Should revert if token deposit contract address is constants.ZERO address', async () => {
           const txValue = BN(constants.seller_deposit).mul(BN(constants.ONE));
@@ -1613,7 +1642,7 @@ describe('Cashier and VoucherKernel', () => {
             'Promise buyer deposit mismatch'
           );
         });
-
+        
         it('[NEGATIVE] Should revert if validTo is set below 5 minutes from now', async () => {
           await expect(
             utils.createOrder(
@@ -1626,6 +1655,20 @@ describe('Cashier and VoucherKernel', () => {
               constants.QTY_10
             )
           ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
+        });
+
+        it('[NEGATIVE] Should revert if validFrom is greater than validTo', async () => {
+          await expect(
+            utils.createOrder(
+              users.seller,
+              constants.PROMISE_VALID_TO,
+              constants.PROMISE_VALID_FROM,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITSE1,
+              constants.PROMISE_DEPOSITBU1,
+              constants.QTY_10
+            )
+          ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_FROM);
         });
 
         it('[NEGATIVE] Should revert if token price contract address is constants.ZERO address', async () => {
@@ -7616,6 +7659,44 @@ describe('VOUCHER KERNEL', ()=> {
     await expect(contractVoucherKernel.complain(constants.ONE, users.buyer.address)).to.be.revertedWith(revertReasons.UNSET_ROUTER);
     // await expect(contractVoucherKernel.cancelOrFault(constants.ONE, users.seller.address)).to.be.revertedWith(revertReasons.UNSET_ROUTER); // should be uncommented after https://github.com/bosonprotocol/contracts/issues/195 
     await expect(contractVoucherKernel.cancelOrFaultVoucherSet(constants.ONE, users.seller.address)).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+  });
+
+  it('[NEGATIVE] Should revert if attacker tries to call method that should be called only from bosonRouter', async () => {
+    await deployContracts();
+    
+    const attackerInstance = contractVoucherKernel.connect(
+      users.attacker.signer
+    );
+
+    await expect(attackerInstance.pause()).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+    await expect(attackerInstance.unpause()).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+    await expect(attackerInstance.createTokenSupplyId(
+      users.other1.address,
+      constants.PROMISE_VALID_FROM,
+      constants.PROMISE_VALID_TO,
+      constants.PROMISE_PRICE1,
+      constants.PROMISE_DEPOSITSE1,
+      constants.PROMISE_DEPOSITBU1,
+      constants.QTY_10,
+      
+    )).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+    await expect(attackerInstance.createPaymentMethod(
+      constants.ONE,
+      1,
+      constants.ZERO_ADDRESS,
+      constants.ZERO_ADDRESS
+    )).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+    await expect(attackerInstance.fillOrder(
+      constants.ONE,
+      users.seller.address,
+      users.buyer.address,
+      0
+    )).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+    await expect(attackerInstance.redeem(constants.ONE, users.buyer.address)).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+    await expect(attackerInstance.refund(constants.ONE, users.buyer.address)).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+    await expect(attackerInstance.complain(constants.ONE, users.buyer.address)).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+    // await expect(attackerInstance.cancelOrFault(constants.ONE, users.seller.address)).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER); // should be uncommented after https://github.com/bosonprotocol/contracts/issues/195 
+    await expect(attackerInstance.cancelOrFaultVoucherSet(constants.ONE, users.seller.address)).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
   });
 
   it('[NEGATIVE] Should revert if cashier address is not set', async () => {
