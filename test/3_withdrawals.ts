@@ -273,27 +273,30 @@ describe('Cashier withdrawals ', () => {
       }
     }
 
-    async function allPaths(voucherID, methods, paymentWithdrawal, depositWithdrawal, expectedAmounts, checkEscrowAmounts){
+    async function allPaths(voucherID, methods, paymentAmountDistribution, depositAmountDistribution, paymentWithdrawal, depositWithdrawal, expectedAmounts, checkEscrowAmounts){
       // allPaths takes in all methods called in certain scenarion
       // after each method, withdraw can or cannot be called
       // allPaths goes over all possible paths and calcuate total distributed amounts
       // it compares it to expected values {expectedBuyerAmount, expectedSellerAmount, expectedEscrowAmount}
 
       // firectly after commitToBuy withdraw should not emit any event or do any state change
-      // paymentWithdrawal is withdraw after some action after commitToBut (cancel, redeem, refund, expire) but before finalize. It releases payments.
-      // depositWithdrawal is withdraw after finalize. It releases deposits.
-      // any withdrawal after paymentWithdrawal but before finalize should not emit any event or do any state change
-      // if there is no withdrawal prior to finalize, paymentWithdrawal and depositWithdrawal are joined together
-
-      // todo 
-      // validate log withdrawal
+      // paymentAmountDistribution is withdraw after some action after commitToBut (cancel, redeem, refund, expire) but before finalize. It releases payments.
+      // depositAmountDistribution is withdraw after finalize. It releases deposits.
+      // any withdrawal after paymentAmountDistribution but before finalize should not emit any event or do any state change
+      // if there is no withdrawal prior to finalize, paymentAmountDistribution and depositAmountDistribution are joined together
 
       let len = methods.length;
       let numberOfPaths = Math.pow(2,len); // you either withdraw or not after each action -> 2^(#actions) paths
       
       let snapshot = await ethers.provider.send('evm_snapshot', []);
       
-      await contractCashier.withdraw(voucherID); // withdraw before first action should not do anything // todo test
+      // withdraw before first action should not do anything 
+      expect(await utils.withdraw(
+        voucherID,
+        users.deployer.signer
+      ))
+      .to.not.emit(contractCashier, eventNames.LOG_WITHDRAWAL)
+      .to.not.emit(contractCashier, eventNames.LOG_AMOUNT_DISTRIBUTION);
     
       await checkEscrowAmounts('beforePaymentRelease');
 
@@ -321,7 +324,7 @@ describe('Cashier withdrawals ', () => {
               (ev) => {     
                 validateEmittedLogAmountDistribution(ev, {
                   voucherID,
-                  ...paymentWithdrawal
+                  ...paymentAmountDistribution
                 });
 
                 utils.calcTotalAmountToRecipients(
@@ -333,15 +336,30 @@ describe('Cashier withdrawals ', () => {
                 );
               }
             );
+
+            eventUtils.assertEventEmitted(
+              txReceipt,
+              Cashier_Factory,
+              eventNames.LOG_WITHDRAWAL,
+              (ev) => {
+                validateEmittedLogWithdrawal(ev, {
+                  caller: users.deployer,
+                  ...paymentWithdrawal
+                });
+              }
+            );
          
           await checkEscrowAmounts('betweenPaymentAndDepositRelease');
           withdrawn = true;
         } else {
-          // paymentWithdrawal already withdrawn, no changes expected
+          // paymentAmountDistribution already withdrawn, no changes expected
           expect(await utils.withdraw(
             voucherID,
             users.deployer.signer
-          )).to.not.emit(contractCashier, eventNames.LOG_AMOUNT_DISTRIBUTION);
+          ))
+          .to.not.emit(contractCashier, eventNames.LOG_WITHDRAWAL)
+          .to.not.emit(contractCashier, eventNames.LOG_AMOUNT_DISTRIBUTION);
+
           await checkEscrowAmounts('betweenPaymentAndDepositRelease');
         }
           }
@@ -356,18 +374,18 @@ describe('Cashier withdrawals ', () => {
         );
 
         const txReceipt = await withdrawTx.wait();      
-        
+
         eventUtils.assertEventEmitted(
           txReceipt,
           Cashier_Factory,
           eventNames.LOG_AMOUNT_DISTRIBUTION,
           (ev) => {
-            let addPaymentWithdrawal = {};
-            if (i==0) addPaymentWithdrawal = paymentWithdrawal; // if payment were not withdrawn before, they should be together with deposit
-            validateEmittedLogAmountDistribution(ev, {
+            let addPaymentAmountDistribution = {};
+            if (i==0) addPaymentAmountDistribution = paymentAmountDistribution; // if payment were not withdrawn before, they should be together with deposit
+              validateEmittedLogAmountDistribution(ev, {
               voucherID,
-              ...addPaymentWithdrawal,
-              ...depositWithdrawal
+              ...addPaymentAmountDistribution,
+              ...depositAmountDistribution
             });
             
             utils.calcTotalAmountToRecipients(
@@ -377,6 +395,26 @@ describe('Cashier withdrawals ', () => {
               users.buyer.address,
               users.seller.address
             );
+          }
+        );
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Cashier_Factory,
+          eventNames.LOG_WITHDRAWAL,
+          (ev) => {
+            let expectedWithdrawal = {...depositWithdrawal};
+            if (i==0) {
+              for (let j = 0; j < expectedWithdrawal.payees.length; j++) {
+                if (expectedWithdrawal.payees[j].address == paymentWithdrawal.payees[0].address) {
+                  expectedWithdrawal.amounts[j].push(paymentWithdrawal.amounts[0]);
+                }
+              }
+            }
+            validateEmittedLogWithdrawal(ev, {
+              caller: users.deployer,
+              ...expectedWithdrawal
+            });
           }
         );
 
@@ -892,12 +930,13 @@ describe('Cashier withdrawals ', () => {
           ); // 0.3125
           const expectedEscrowAmount = BN(constants.seller_deposit).div(BN(4)); // 0.0125
 
-          const paymentWithdrawal = {payment: {
+          // content of LOG_AMOUNT_DISTRIBUTION
+          const paymentAmountDistribution = {payment: {
             receiver: users.seller,
             amount: constants.product_price}
           };
 
-          const depositWithdrawal = {
+          const depositAmountDistribution = {
             sellerDeposit: {
               receivers: [users.buyer, users.seller, users.deployer],
               amounts: [
@@ -911,9 +950,25 @@ describe('Cashier withdrawals ', () => {
               amount: constants.buyer_deposit,
             }
           };
+
+           // contents of LOG_WITHDRAWAL
+           const paymentWithdrawal = {
+             payees: [users.seller],
+             amounts: [
+              [constants.product_price]
+            ]};
+           const depositWithdrawal = {
+            payees: [users.buyer, users.seller, users.deployer],
+            amounts: [
+              [expectedBuyerAmount],
+              [expectedSellerAmount.sub(constants.product_price)],
+              [expectedEscrowAmount],
+            ]
+           };
+
             await allPaths(voucherID,
               [{m:'redeem',c:users.buyer},{m:'complain',c:users.buyer},{m:'cancel',c:users.seller}],
-              paymentWithdrawal, depositWithdrawal, {expectedBuyerAmount, expectedSellerAmount, expectedEscrowAmount},
+              paymentAmountDistribution, depositAmountDistribution, paymentWithdrawal, depositWithdrawal, {expectedBuyerAmount, expectedSellerAmount, expectedEscrowAmount},
               checkEscrowAmounts);
 
           await utils.redeem(voucherID, users.buyer.signer);
@@ -983,7 +1038,7 @@ describe('Cashier withdrawals ', () => {
                     expectedSellerAmount.sub(constants.product_price),
                   ],
                   [expectedEscrowAmount],
-                ],
+                ]
               });
             }
           );
