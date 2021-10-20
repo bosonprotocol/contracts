@@ -19,16 +19,16 @@ import "./libs/SafeERC20WithPermit.sol";
 /**
  * @title Contract for interacting with Boson Protocol from the user's perspective.
  * @notice There are multiple permutations of the requestCreateOrder and requestVoucher functions.
- * Each function name is suffixed with a payment type that denotes the currency type of the 
+ * Each function name is suffixed with a payment type that denotes the currency type of the
  * payment and deposits. The options are:
- * 
+ *
  * ETHETH  - Price and deposits are specified in ETH
  * ETHTKN - Price is specified in ETH and deposits are specified in tokens
  * TKNTKN - Price and deposits are specified in tokens
  * TKNETH - Price is specified in tokens and the deposits are specified in ETH
- * 
+ *
  * The functions that process payments and/or deposits in tokens do so using EIP-2612 permit functionality
- * 
+ *
  */
 contract BosonRouter is
     IBosonRouter,
@@ -120,7 +120,7 @@ contract BosonRouter is
 
     /**
      * @notice Pause the Cashier && the Voucher Kernel contracts in case of emergency.
-     * All functions related to creating requestCreateOrder, requestVoucher, redeem, refund, complain, cancelOrFault, 
+     * All functions related to creating requestCreateOrder, requestVoucher, redeem, refund, complain, cancelOrFault,
      * cancelOrFaultVoucherSet, or withdraw will be paused and cannot be executed.
      * The withdrawEthOnDisaster function is a special function in the Cashier contract for withdrawing funds if contract is paused.
      */
@@ -133,7 +133,7 @@ contract BosonRouter is
 
     /**
      * @notice Unpause the Cashier && the Voucher Kernel contracts.
-     * All functions related to creating requestCreateOrder, requestVoucher, redeem, refund, complain, cancelOrFault, 
+     * All functions related to creating requestCreateOrder, requestVoucher, redeem, refund, complain, cancelOrFault,
      * cancelOrFaultVoucherSet, or withdraw will be unpaused.
      */
     function unpause() external override {
@@ -163,6 +163,7 @@ contract BosonRouter is
     function requestCreateOrderETHETH(uint256[] calldata _metadata)
         external
         payable
+        virtual
         override
         nonReentrant
         whenNotPaused
@@ -172,8 +173,8 @@ contract BosonRouter is
     }
 
     /**
-     * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is also known as a voucher set. 
-     * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token. 
+     * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is also known as a voucher set.
+     * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token.
      * This is the "condition" under which a buyer may commit to redeem a voucher that is part of the voucher set created by this function.
      * Payment and deposits are specified in ETH.
      * @param _metadata metadata which is required for creation of a voucher set
@@ -188,9 +189,9 @@ contract BosonRouter is
      * uint256 _depositBu = _metadata[4];
      * uint256 _quantity = _metadata[5];
      *
-     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT, 
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
-     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher 
+     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
      */
     function requestCreateOrderETHETHConditional(uint256[] calldata _metadata, address _gateAddress,
@@ -207,7 +208,7 @@ contract BosonRouter is
         finalizeConditionalOrder(_tokenIdSupply, _gateAddress, _nftTokenId);
     }
 
-   
+
     /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is
      * also known as a voucher set. Price and deposits are specified in tokens.
@@ -222,7 +223,7 @@ contract BosonRouter is
      * Metadata array is used for consistency across the permutations of similar functions.
      * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
-     *   
+     *
      * uint256 _validFrom = _metadata[0];
      * uint256 _validTo = _metadata[1];
      * uint256 _price = _metadata[2];
@@ -239,7 +240,11 @@ contract BosonRouter is
         bytes32 _r,
         bytes32 _s,
         uint256[] calldata _metadata
-    ) external override {
+    )
+    external
+    override
+    nonReentrant
+    {
         requestCreateOrderTKNTKNWithPermitInternal(
             _tokenPriceAddress,
             _tokenDepositAddress,
@@ -252,11 +257,11 @@ contract BosonRouter is
         );
     }
 
-     /**
-     * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is also known as a voucher set. 
-     * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token. 
+    /**
+     * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is also known as a voucher set.
+     * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token.
      * This is the "condition" under which a buyer may commit to redeem a voucher that is part of the voucher set created by this function.
-     * Price and deposits are specified in tokens. 
+     * Price and deposits are specified in tokens.
      * @param _tokenPriceAddress address of the token to be used for the price
      * @param _tokenDepositAddress address of the token to be used for the deposits
      * @param _tokensSent total number of tokens sent. Must be equal to seller deposit * quantity
@@ -268,7 +273,7 @@ contract BosonRouter is
      * Metadata array is used for consistency across the permutations of similar functions.
      * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
-     *   
+     *
      * uint256 _validFrom = _metadata[0];
      * uint256 _validTo = _metadata[1];
      * uint256 _price = _metadata[2];
@@ -276,9 +281,9 @@ contract BosonRouter is
      * uint256 _depositBu = _metadata[4];
      * uint256 _quantity = _metadata[5];
      *
-     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT, 
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
-     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher 
+     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
      */
     function requestCreateOrderTKNTKNWithPermitConditional(
@@ -292,7 +297,11 @@ contract BosonRouter is
         uint256[] calldata _metadata,
         address _gateAddress,
         uint256 _nftTokenId
-    ) external override {
+    )
+    external
+    override
+    nonReentrant
+    {
         notZeroAddress(_gateAddress);
 
         uint256 tokenIdSupply = requestCreateOrderTKNTKNWithPermitInternal(
@@ -307,7 +316,7 @@ contract BosonRouter is
         );
 
         finalizeConditionalOrder(tokenIdSupply, _gateAddress, _nftTokenId);
-    }  
+    }
 
     /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is
@@ -322,7 +331,7 @@ contract BosonRouter is
      * Metadata array is used for consistency across the permutations of similar functions.
      * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
-     *   
+     *
      * uint256 _validFrom = _metadata[0];
      * uint256 _validTo = _metadata[1];
      * uint256 _price = _metadata[2];
@@ -338,7 +347,11 @@ contract BosonRouter is
         bytes32 _r,
         bytes32 _s,
         uint256[] calldata _metadata
-    ) external override {
+    )
+    external
+    override
+    nonReentrant
+    {
         requestCreateOrderETHTKNWithPermitInternal( _tokenDepositAddress,
          _tokensSent,
          _deadline,
@@ -351,7 +364,7 @@ contract BosonRouter is
 
     /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is also known as a voucher set.
-     * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token. 
+     * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token.
      * This is the "condition" under which a buyer may commit to redeem a voucher that is part of the voucher set created by this function.
      * Price is specified in ETH and deposits are specified in tokens.
      * @param _tokenDepositAddress address of the token to be used for the deposits
@@ -364,7 +377,7 @@ contract BosonRouter is
      * Metadata array is used for consistency across the permutations of similar functions.
      * Some functions require other parameters, and the number of parameters causes stack too deep error.
      * The use of the matadata array mitigates the stack too deep error.
-     *   
+     *
      * uint256 _validFrom = _metadata[0];
      * uint256 _validTo = _metadata[1];
      * uint256 _price = _metadata[2];
@@ -372,9 +385,9 @@ contract BosonRouter is
      * uint256 _depositBu = _metadata[4];
      * uint256 _quantity = _metadata[5];
      *
-     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT, 
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
-     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher 
+     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
      */
     function requestCreateOrderETHTKNWithPermitConditional(
@@ -387,7 +400,11 @@ contract BosonRouter is
         uint256[] calldata _metadata,
         address _gateAddress,
         uint256 _nftTokenId
-    ) external override {
+    )
+    external
+    override
+    nonReentrant
+    {
         notZeroAddress(_gateAddress);
 
         uint256 tokenIdSupply = requestCreateOrderETHTKNWithPermitInternal( _tokenDepositAddress,
@@ -411,7 +428,7 @@ contract BosonRouter is
      *  Metadata array is used for consistency across the permutations of similar functions.
      *  Some functions require other parameters, and the number of parameters causes stack too deep error.
      *  The use of the matadata array mitigates the stack too deep error.
-     *   
+     *
      * uint256 _validFrom = _metadata[0];
      * uint256 _validTo = _metadata[1];
      * uint256 _price = _metadata[2];
@@ -422,13 +439,18 @@ contract BosonRouter is
     function requestCreateOrderTKNETH(
         address _tokenPriceAddress,
         uint256[] calldata _metadata
-    ) external payable override {
+    )
+    external
+    payable
+    override
+    nonReentrant
+    {
         requestCreateOrderTKNETHInternal(_tokenPriceAddress, _metadata);
     }
 
     /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is also known as a voucher set.
-     * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token. 
+     * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token.
      * This is the "condition" under which a buyer may commit to redeem a voucher that is part of the voucher set created by this function.
      * Price is specified in tokens and the deposits are specified in ETH.
      * Since the price, which is specified in tokens, is not collected when a voucher set is created, there is no need to call
@@ -438,7 +460,7 @@ contract BosonRouter is
      *  Metadata array is used for consistency across the permutations of similar functions.
      *  Some functions require other parameters, and the number of parameters causes stack too deep error.
      *  The use of the matadata array mitigates the stack too deep error.
-     *   
+     *
      * uint256 _validFrom = _metadata[0];
      * uint256 _validTo = _metadata[1];
      * uint256 _price = _metadata[2];
@@ -446,9 +468,9 @@ contract BosonRouter is
      * uint256 _depositBu = _metadata[4];
      * uint256 _quantity = _metadata[5];
      *
-     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT, 
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
-     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher 
+     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
      */
     function requestCreateOrderTKNETHConditional(
@@ -456,7 +478,12 @@ contract BosonRouter is
         uint256[] calldata _metadata,
         address _gateAddress,
         uint256 _nftTokenId
-    ) external payable override {
+    )
+    external
+    payable
+    override
+    nonReentrant
+    {
         notZeroAddress(_gateAddress);
         uint256 tokenIdSupply = requestCreateOrderTKNETHInternal(_tokenPriceAddress, _metadata);
         finalizeConditionalOrder(tokenIdSupply, _gateAddress, _nftTokenId);
@@ -469,11 +496,11 @@ contract BosonRouter is
      * @param _issuer           Address of the issuer of the supply token
      */
     function requestVoucherETHETH(uint256 _tokenIdSupply, address _issuer)
-        external
-        payable
-        override
-        nonReentrant
-        whenNotPaused
+    external
+    payable
+    override
+    nonReentrant
+    whenNotPaused
     {
         // check if _tokenIdSupply mapped to gate contract
         // if yes, deactivate (user,_tokenIdSupply) to prevent double spending
@@ -496,7 +523,7 @@ contract BosonRouter is
         //record funds in escrow ...
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
-   
+
     /**
      * @notice Buyer requests/commits to redeem a voucher and receives Voucher Token in return.
      * Price and deposit is specified in tokens.
@@ -715,13 +742,13 @@ contract BosonRouter is
             _r,
             _s
         );
-        
+
         //record funds in escrow ...
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
 
     /**
-     * @notice Seller burns the remaining supply in the voucher set in case it's s/he no longer wishes to sell them. 
+     * @notice Seller burns the remaining supply in the voucher set in case it's s/he no longer wishes to sell them.
      * Remaining seller deposit in escrow account is withdrawn and sent back to the seller
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and for which deposits will be returned
      */
@@ -859,7 +886,7 @@ contract BosonRouter is
             _r,
             _s
         );
-    }    
+    }
 
     /**
      * @notice Transfer tokens to cashier and adds it to escrow
@@ -966,7 +993,7 @@ contract BosonRouter is
     }
 
     /**
-     * @notice Internal function called by other TKNTKN requestCreateOrder functions to decrease code duplication. 
+     * @notice Internal function called by other TKNTKN requestCreateOrder functions to decrease code duplication.
      * Price and deposits are specified in tokens.
      * @param _tokenPriceAddress address of the token to be used for the price
      * @param _tokenDepositAddress address of the token to be used for the deposits
@@ -1027,7 +1054,6 @@ contract BosonRouter is
             );
     }
 
-
     function requestCreateOrderETHTKNWithPermitInternal(
         address _tokenDepositAddress,
         uint256 _tokensSent,
@@ -1063,7 +1089,7 @@ contract BosonRouter is
     function requestCreateOrderTKNETHInternal(
         address _tokenPriceAddress,
         uint256[] calldata _metadata
-    ) internal nonReentrant whenNotPaused returns (uint256) {
+    ) internal whenNotPaused returns (uint256) {
         notZeroAddress(_tokenPriceAddress);
         checkLimits(_metadata, _tokenPriceAddress, address(0), 0);
 
@@ -1136,12 +1162,12 @@ contract BosonRouter is
         return tokenIdSupply;
     }
 
-     /**
+    /**
      * @notice finalizes creating of conditional order
      * @param _tokenIdSupply    ID of the supply token
-     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT, 
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
-     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher 
+     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
      */
     function finalizeConditionalOrder(uint256 _tokenIdSupply, address _gateAddress, uint256 _nftTokenId) internal {
@@ -1157,8 +1183,8 @@ contract BosonRouter is
         }
     }
 
-     /**
-     * @notice check if _tokenIdSupply mapped to gate contract, 
+    /**
+     * @notice check if _tokenIdSupply mapped to gate contract,
      * if it does, deactivate (user,_tokenIdSupply) to prevent double spending
      * @param _tokenIdSupply    ID of the supply token
      */
