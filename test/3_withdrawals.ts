@@ -313,7 +313,8 @@ describe('Cashier withdrawals ', () => {
         .to.not.emit(contractCashier, eventNames.LOG_AMOUNT_DISTRIBUTION);
 
       await checkEscrowAmounts('beforePaymentRelease');
-      if (checkTokenBalances) await checkTokenBalances(expectedAmounts.beforePaymentRelease);
+      if (checkTokenBalances)
+        await checkTokenBalances(expectedAmounts.beforePaymentRelease);
 
       for (let i = 0; i < numberOfPaths; i++) {
         const distributedAmounts = {...zeroDistributedAmounts};
@@ -383,9 +384,10 @@ describe('Cashier withdrawals ', () => {
                 );
             }
             await checkEscrowAmounts('betweenPaymentAndDepositRelease');
-            if (checkTokenBalances) await checkTokenBalances(
-              expectedAmounts.betweenPaymentAndDepositRelease
-            );
+            if (checkTokenBalances)
+              await checkTokenBalances(
+                expectedAmounts.betweenPaymentAndDepositRelease
+              );
           }
         }
 
@@ -458,7 +460,8 @@ describe('Cashier withdrawals ', () => {
           );
         }
         await checkEscrowAmounts('afterDepositRelease');
-        if (checkTokenBalances) await checkTokenBalances(expectedAmounts.afterDepositRelease);
+        if (checkTokenBalances)
+          await checkTokenBalances(expectedAmounts.afterDepositRelease);
 
         if (ethTransfers) {
           // make sure that total distributed ammount in path is correct
