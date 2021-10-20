@@ -290,8 +290,10 @@ describe('Cashier withdrawals ', () => {
       // it compares it to expected values {expectedBuyerAmount, expectedSellerAmount, expectedEscrowAmount}
 
       // firectly after commitToBuy withdraw should not emit any event or do any state change
-      // paymentAmountDistribution is withdraw after some action after commitToBut (cancel, redeem, refund, expire) but before finalize. It releases payments.
+      // paymentAmountDistribution is withdraw after some action after commitToBuy (cancel, redeem, refund, expire) but before finalize. It releases payments.
       // depositAmountDistribution is withdraw after finalize. It releases deposits.
+      // paymentWithdrawal is the amount of eth transfered in scenarios that include ETH after some action after commitToBuy (cancel, redeem, refund, expire) but before finalize. It releases payments.
+      // depositWithdrawal is the amount of eth transfered in scenarios that include ETH after finalize. It releases deposits.
       // any withdrawal after paymentAmountDistribution but before finalize should not emit any event or do any state change
       // if there is no withdrawal prior to finalize, paymentAmountDistribution and depositAmountDistribution are joined together
 
@@ -317,9 +319,9 @@ describe('Cashier withdrawals ', () => {
         let withdrawn = false; // tells if withdraw was called already
 
         for (let j = 0; j < len; j++) {
-          await utils[methods[j].m](voucherID, methods[j].c.signer);
-          if (execTable[j]) {
-            if (!withdrawn) {
+          await utils[methods[j].m](voucherID, methods[j].c.signer); // call methods tested in scenario {m:method, c:caller}
+          if (execTable[j]) { // call withdraw only if execution table says it should be done in thi subscenario
+            if (!withdrawn) { // if withdraw is called first time in the subscernario, it should emit event, and change state
               // withdraw should release payments
               const withdrawTx = await utils.withdraw(
                 voucherID,
@@ -360,19 +362,17 @@ describe('Cashier withdrawals ', () => {
                 }
               );
 
-              await checkEscrowAmounts('betweenPaymentAndDepositRelease');
               withdrawn = true;
             } else {
-              // paymentAmountDistribution already withdrawn, no changes expected
+              // already withdrawn in this subscenario, no changes expected
               expect(await utils.withdraw(voucherID, users.deployer.signer))
                 .to.not.emit(contractCashier, eventNames.LOG_WITHDRAWAL)
                 .to.not.emit(
                   contractCashier,
                   eventNames.LOG_AMOUNT_DISTRIBUTION
-                );
-
-              await checkEscrowAmounts('betweenPaymentAndDepositRelease');
+                );              
             }
+            await checkEscrowAmounts('betweenPaymentAndDepositRelease');
           }
         }
 
@@ -474,7 +474,7 @@ describe('Cashier withdrawals ', () => {
       await setPeriods();
     });
 
-    describe.only(`ETHETH`, () => {
+    describe(`ETHETH`, () => {
       let voucherID;
 
       async function checkEscrowAmounts(stage) {
@@ -491,7 +491,7 @@ describe('Cashier withdrawals ', () => {
               await contractCashier.getEscrowAmount(users.seller.address)
             ).to.be.equal(
               BN(constants.seller_deposit).mul(BN(constants.QTY_15)),
-              'Seller escrow mismatch - should be ful'
+              'Seller escrow mismatch - should be full'
             );
             break;
           case 'betweenPaymentAndDepositRelease':
@@ -553,7 +553,7 @@ describe('Cashier withdrawals ', () => {
         );
       });
 
-      it('COMMIT->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
+      it('COMMIT->CANCEL->COMPLAIN->FINALIZE', async () => {
         const expectedBuyerAmount = BN(constants.buyer_deposit)
           .add(BN(constants.product_price))
           .add(BN(constants.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
@@ -612,7 +612,7 @@ describe('Cashier withdrawals ', () => {
         );
       });
 
-      it('COMMIT->CANCEL->FINALIZE->WITHDRAW', async () => {
+      it('COMMIT->CANCEL->FINALIZE', async () => {
         const expectedBuyerAmount = BN(constants.buyer_deposit)
           .add(BN(constants.product_price))
           .add(BN(constants.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
@@ -667,7 +667,7 @@ describe('Cashier withdrawals ', () => {
       });
 
       describe('Redeem', () => {
-        it('COMMIT->REDEEM->FINALIZE->WITHDRAW', async () => {
+        it('COMMIT->REDEEM->FINALIZE', async () => {
           const expectedBuyerAmount = BN(constants.buyer_deposit); // 0.04
           const expectedSellerAmount = BN(constants.seller_deposit).add(
             BN(constants.product_price)
@@ -718,7 +718,7 @@ describe('Cashier withdrawals ', () => {
           );
         });
 
-        it('COMMIT->REDEEM->COMPLAIN->FINALIZE->WITHDRAW', async () => {
+        it('COMMIT->REDEEM->COMPLAIN->FINALIZE', async () => {
           const expectedBuyerAmount = BN(constants.buyer_deposit); // 0.04
           const expectedSellerAmount = BN(constants.product_price); // 0.3
           const expectedEscrowAmount = BN(constants.seller_deposit); // 0.05
@@ -767,7 +767,7 @@ describe('Cashier withdrawals ', () => {
           );
         });
 
-        it('COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
+        it('COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE', async () => {
           const expectedBuyerAmount = BN(constants.buyer_deposit).add(
             BN(constants.seller_deposit).div(BN(2))
           ); // 0.065
@@ -829,7 +829,7 @@ describe('Cashier withdrawals ', () => {
           );
         });
 
-        it('COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
+        it('COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE', async () => {
           const expectedBuyerAmount = BN(constants.buyer_deposit).add(
             BN(constants.seller_deposit).div(BN(2))
           ); // 0.065
@@ -891,7 +891,7 @@ describe('Cashier withdrawals ', () => {
           );
         });
 
-        it('COMMIT->REDEEM->CANCEL->FINALIZE->WITHDRAW', async () => {
+        it('COMMIT->REDEEM->CANCEL->FINALIZE', async () => {
           const expectedBuyerAmount = BN(constants.buyer_deposit).add(
             BN(constants.seller_deposit).div(BN(2))
           ); // 0.065
@@ -952,7 +952,7 @@ describe('Cashier withdrawals ', () => {
       });
 
       describe('Refund', () => {
-        it('COMMIT->REFUND->FINALIZE->WITHDRAW', async () => {
+        it('COMMIT->REFUND->FINALIZE', async () => {
           const expectedBuyerAmount = BN(constants.product_price); // 0.3
           const expectedSellerAmount = BN(constants.seller_deposit); // 0.05
           const expectedEscrowAmount = BN(constants.buyer_deposit); // 0.04
@@ -998,7 +998,7 @@ describe('Cashier withdrawals ', () => {
           );
         });
 
-        it('COMMIT->REFUND->COMPLAIN->FINALIZE->WITHDRAW', async () => {
+        it('COMMIT->REFUND->COMPLAIN->FINALIZE', async () => {
           const expectedBuyerAmount = BN(constants.product_price); // 0.3
           const expectedSellerAmount = BN(0); // 0
           const expectedEscrowAmount = BN(constants.seller_deposit).add(
@@ -1049,7 +1049,7 @@ describe('Cashier withdrawals ', () => {
           );
         });
 
-        it('COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
+        it('COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE', async () => {
           const expectedBuyerAmount = BN(constants.buyer_deposit)
             .add(BN(constants.product_price))
             .add(BN(constants.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
@@ -1109,7 +1109,7 @@ describe('Cashier withdrawals ', () => {
           );
         });
 
-        it('COMMIT->REFUND->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
+        it('COMMIT->REFUND->CANCEL->COMPLAIN->FINALIZE', async () => {
           const expectedBuyerAmount = BN(constants.buyer_deposit)
             .add(BN(constants.product_price))
             .add(BN(constants.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
@@ -1169,7 +1169,7 @@ describe('Cashier withdrawals ', () => {
           );
         });
 
-        it('COMMIT->REFUND->CANCEL->FINALIZE->WITHDRAW', async () => {
+        it('COMMIT->REFUND->CANCEL->FINALIZE', async () => {
           const expectedBuyerAmount = BN(constants.buyer_deposit)
             .add(BN(constants.product_price))
             .add(BN(constants.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
@@ -1232,7 +1232,7 @@ describe('Cashier withdrawals ', () => {
           await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
         });
 
-        it('COMMIT->EXPIRE->FINALIZE->WITHDRAW', async () => {
+        it('COMMIT->EXPIRE->FINALIZE', async () => {
           const expectedBuyerAmount = BN(constants.product_price); // 0.3
           const expectedSellerAmount = BN(constants.seller_deposit); // 0.05
           const expectedEscrowAmount = BN(constants.buyer_deposit); // 0.04
@@ -1278,7 +1278,7 @@ describe('Cashier withdrawals ', () => {
           );
         });
 
-        it('COMMIT->EXPIRE->COMPLAIN->FINALIZE->WITHDRAW', async () => {
+        it('COMMIT->EXPIRE->COMPLAIN->FINALIZE', async () => {
           const expectedBuyerAmount = BN(constants.product_price); // 0.3
           const expectedSellerAmount = BN(0); // 0
           const expectedEscrowAmount = BN(constants.seller_deposit).add(
@@ -1329,7 +1329,7 @@ describe('Cashier withdrawals ', () => {
           );
         });
 
-        it('COMMIT->EXPIRE->COMPLAIN->CANCEL->FINALIZE->WITHDRAW', async () => {
+        it('COMMIT->EXPIRE->COMPLAIN->CANCEL->FINALIZE', async () => {
           const expectedBuyerAmount = BN(constants.buyer_deposit)
             .add(BN(constants.product_price))
             .add(BN(constants.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
@@ -1389,7 +1389,7 @@ describe('Cashier withdrawals ', () => {
           );
         });
 
-        it('COMMIT->EXPIRE->CANCEL->COMPLAIN->FINALIZE->WITHDRAW', async () => {
+        it('COMMIT->EXPIRE->CANCEL->COMPLAIN->FINALIZE', async () => {
           const expectedBuyerAmount = BN(constants.buyer_deposit)
             .add(BN(constants.product_price))
             .add(BN(constants.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
@@ -1449,7 +1449,7 @@ describe('Cashier withdrawals ', () => {
           );
         });
 
-        it('COMMIT->EXPIRE->CANCEL->FINALIZE->WITHDRAW', async () => {
+        it('COMMIT->EXPIRE->CANCEL->FINALIZE', async () => {
           const expectedBuyerAmount = BN(constants.buyer_deposit)
             .add(BN(constants.product_price))
             .add(BN(constants.seller_deposit).div(BN(2))); // 0.3 + 0.04 + 0.025
