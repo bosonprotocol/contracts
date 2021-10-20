@@ -736,7 +736,7 @@ class Utils {
   ): Promise<ContractTransaction> {
     const sellerInstance = this.contractVoucherKernel.connect(
       seller
-    ) as VoucherKernel;    
+    ) as VoucherKernel;
     return await sellerInstance.triggerExpiration(voucherID);
   }
 
