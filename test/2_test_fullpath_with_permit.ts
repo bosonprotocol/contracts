@@ -79,7 +79,7 @@ describe('Cashier and VoucherKernel', () => {
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
   }
 
-  async function deployContracts(setBosonRouterAddress = true) {
+  async function deployContracts(setBosonRouterAddress = true, setCashierAddress = true) {
     const sixtySeconds = 60;
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
@@ -131,8 +131,11 @@ describe('Cashier and VoucherKernel', () => {
     await contractVoucherKernel.setBosonRouterAddress(
       contractBosonRouter.address
     );
-    };    
+    };
+    
+    if (setCashierAddress) {
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
+  };
 
     if (setBosonRouterAddress) {
     await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
@@ -7580,7 +7583,7 @@ describe('Cashier and VoucherKernel', () => {
 describe('VOUCHER KERNEL', ()=> {
   // TODO move?
   
-  it.only('[NEGATIVE] Should revert if boson router is not set', async () => {
+  it('[NEGATIVE] Should revert if boson router is not set', async () => {
     await deployContracts(false);
     await setPeriods();
 
@@ -7611,10 +7614,39 @@ describe('VOUCHER KERNEL', ()=> {
     await expect(contractVoucherKernel.redeem(constants.ONE, users.buyer.address)).to.be.revertedWith(revertReasons.UNSET_ROUTER);
     await expect(contractVoucherKernel.refund(constants.ONE, users.buyer.address)).to.be.revertedWith(revertReasons.UNSET_ROUTER);
     await expect(contractVoucherKernel.complain(constants.ONE, users.buyer.address)).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-    // await expect(contractVoucherKernel.cancelOrFault(constants.ONE, users.seller.address)).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+    // await expect(contractVoucherKernel.cancelOrFault(constants.ONE, users.seller.address)).to.be.revertedWith(revertReasons.UNSET_ROUTER); // should be uncommented after https://github.com/bosonprotocol/contracts/issues/195 
     await expect(contractVoucherKernel.cancelOrFaultVoucherSet(constants.ONE, users.seller.address)).to.be.revertedWith(revertReasons.UNSET_ROUTER);
   });
 
+  it('[NEGATIVE] Should revert if cashier address is not set', async () => {
+    await deployContracts(true, false);
+
+    await expect(contractVoucherKernel.setPaymentReleased(constants.ONE)).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+    await expect(contractVoucherKernel.setDepositsReleased(constants.ONE)).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+    await expect(contractVoucherKernel.setSupplyHolderOnTransfer(constants.ONE, users.seller.address)).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+
+    await contractBosonRouter.pause();
+
+    await expect(contractVoucherKernel.burnSupplyOnPause(
+      users.seller.address, constants.ONE, constants.QTY_10)).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+  });
+
+  it('[NEGATIVE] Should revert if attacker tries to call method that should be called only from cashier', async () => {
+    await deployContracts();
+
+    const attackerInstance = contractVoucherKernel.connect(
+      users.attacker.signer
+    );
+
+    await expect(attackerInstance.setPaymentReleased(constants.ONE)).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
+    await expect(attackerInstance.setDepositsReleased(constants.ONE)).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
+    await expect(attackerInstance.setSupplyHolderOnTransfer(constants.ONE, users.seller.address)).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
+
+    await contractBosonRouter.pause();
+
+    await expect(attackerInstance.burnSupplyOnPause(
+      users.seller.address, constants.ONE, constants.QTY_10)).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
+  });
 //   describe('With normal deployment', ()=> {
 
 //     beforeEach(async() => {
