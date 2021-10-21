@@ -6910,7 +6910,13 @@ describe('Cashier withdrawals ', () => {
           .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
           .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
           .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
-          .withArgs(contractVoucherKernel.address, users.seller.address, constants.ZERO_ADDRESS, TOKEN_SUPPLY_ID, remQty);
+          .withArgs(
+            contractVoucherKernel.address,
+            users.seller.address,
+            constants.ZERO_ADDRESS,
+            TOKEN_SUPPLY_ID,
+            remQty
+          );
       });
 
       describe('State after COF', () => {
@@ -7000,6 +7006,19 @@ describe('Cashier withdrawals ', () => {
           sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
         ).to.be.revertedWith(revertReasons.PAUSED);
       });
+
+      it('[NEGATIVE] should revert if router supplies wrong _messageSender', async () => {
+        // spoof boson router
+        await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+        await expect(
+          contractCashier.withdrawDepositsSe(
+            TOKEN_SUPPLY_ID,
+            remQty,
+            users.attacker.address
+          )
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
+      });
     });
 
     describe('[WITH PERMIT]', () => {
@@ -7085,7 +7104,13 @@ describe('Cashier withdrawals ', () => {
             .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
             .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
             .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
-          .withArgs(contractVoucherKernel.address, users.seller.address, constants.ZERO_ADDRESS, TOKEN_SUPPLY_ID, remQty);
+            .withArgs(
+              contractVoucherKernel.address,
+              users.seller.address,
+              constants.ZERO_ADDRESS,
+              TOKEN_SUPPLY_ID,
+              remQty
+            );
         });
 
         describe('State after COF', () => {
@@ -7194,6 +7219,19 @@ describe('Cashier withdrawals ', () => {
             sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
           ).to.be.revertedWith(revertReasons.PAUSED);
         });
+
+        it('[NEGATIVE] should revert if router supplies wrong _messageSender', async () => {
+          // spoof boson router
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+          await expect(
+            contractCashier.withdrawDepositsSe(
+              TOKEN_SUPPLY_ID,
+              remQty,
+              users.attacker.address
+            )
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
+        });
       });
 
       describe('TKNTKN Same', () => {
@@ -7272,7 +7310,13 @@ describe('Cashier withdrawals ', () => {
             .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
             .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
             .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
-          .withArgs(contractVoucherKernel.address, users.seller.address, constants.ZERO_ADDRESS, TOKEN_SUPPLY_ID, remQty);
+            .withArgs(
+              contractVoucherKernel.address,
+              users.seller.address,
+              constants.ZERO_ADDRESS,
+              TOKEN_SUPPLY_ID,
+              remQty
+            );
         });
 
         describe('State after COF', () => {
@@ -7381,6 +7425,19 @@ describe('Cashier withdrawals ', () => {
             sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
           ).to.be.revertedWith(revertReasons.PAUSED);
         });
+
+        it('[NEGATIVE] should revert if router supplies wrong _messageSender', async () => {
+          // spoof boson router
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+          await expect(
+            contractCashier.withdrawDepositsSe(
+              TOKEN_SUPPLY_ID,
+              remQty,
+              users.attacker.address
+            )
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
+        });
       });
 
       describe('ETHTKN', () => {
@@ -7460,7 +7517,13 @@ describe('Cashier withdrawals ', () => {
             .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
             .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
             .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
-          .withArgs(contractVoucherKernel.address, users.seller.address, constants.ZERO_ADDRESS, TOKEN_SUPPLY_ID, remQty);
+            .withArgs(
+              contractVoucherKernel.address,
+              users.seller.address,
+              constants.ZERO_ADDRESS,
+              TOKEN_SUPPLY_ID,
+              remQty
+            );
         });
 
         describe('State after COF', () => {
@@ -7570,6 +7633,19 @@ describe('Cashier withdrawals ', () => {
             sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
           ).to.be.revertedWith(revertReasons.PAUSED);
         });
+
+        it('[NEGATIVE] should revert if router supplies wrong _messageSender', async () => {
+          // spoof boson router
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+          await expect(
+            contractCashier.withdrawDepositsSe(
+              TOKEN_SUPPLY_ID,
+              remQty,
+              users.attacker.address
+            )
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
+        });
       });
 
       describe('TKNETH', () => {
@@ -7641,7 +7717,13 @@ describe('Cashier withdrawals ', () => {
             .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
             .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
             .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
-          .withArgs(contractVoucherKernel.address, users.seller.address, constants.ZERO_ADDRESS, TOKEN_SUPPLY_ID, remQty);
+            .withArgs(
+              contractVoucherKernel.address,
+              users.seller.address,
+              constants.ZERO_ADDRESS,
+              TOKEN_SUPPLY_ID,
+              remQty
+            );
         });
 
         describe('State after COF', () => {
@@ -7735,6 +7817,19 @@ describe('Cashier withdrawals ', () => {
           await expect(
             sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
           ).to.be.revertedWith(revertReasons.PAUSED);
+        });
+
+        it('[NEGATIVE] should revert if router supplies wrong _messageSender', async () => {
+          // spoof boson router
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+          await expect(
+            contractCashier.withdrawDepositsSe(
+              TOKEN_SUPPLY_ID,
+              remQty,
+              users.attacker.address
+            )
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
         });
       });
     });
