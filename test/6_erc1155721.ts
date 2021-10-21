@@ -936,8 +936,8 @@ describe('ERC1155ERC721', () => {
 
         const expectedBalance = 0;
         const balanceOfOwner = await contractERC1155ERC721.functions[
-          fnSignatures.balanceOf721
-        ](users.seller.address);
+          fnSignatures.balanceOf1155
+        ](users.seller.address, tokenIdToBurn);
 
         assert.equal(balanceOfOwner.toString(), expectedBalance.toString());
       });

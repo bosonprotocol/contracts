@@ -7974,7 +7974,7 @@ describe('Cashier and VoucherKernel', () => {
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
       });
 
-      it.only('[NEGATIVE] Should revert if fillOrder is called with holder contract that does not support ERC721 interface', async () => {
+      it('[NEGATIVE] Should revert if fillOrder is called with holder contract that does not support ERC721 interface', async () => {
         let mockERC721Receiver = await deployMockContract(
           users.deployer.signer,
           ERC721receiver.abi
@@ -7994,7 +7994,7 @@ describe('Cashier and VoucherKernel', () => {
         ).to.be.revertedWith(revertReasons.UNSUPPORTED_ERC721_RECEIVED);
       });
 
-      it.only('[NEGATIVE] Should revert if fillOrder is called with holder contract that does not implement onERC721Received', async () => {
+      it('[NEGATIVE] Should revert if fillOrder is called with holder contract that does not implement onERC721Received', async () => {
           let mockERC721Receiver = await deployMockContract(
                 users.deployer.signer,
                 ERC721receiver.abi
@@ -8018,18 +8018,6 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('Should be possible to call fillOrder with holder contract that cannot receive ERC721', async () => {
-        let mockERC721Receiver = await deployMockContract(
-          users.deployer.signer,
-          ERC721receiver.abi
-        ); //deploys mock
-  
-        await mockERC721Receiver.mock.supportsInterface
-        .withArgs("0x150b7a02")
-        .returns(true);
-      await mockERC721Receiver.mock.onERC721Received 
-        .withArgs(users.seller.address, users.deployer.address, tokenSupplyId, '0x')             
-        .returns('0xf0b9e5ba'); // bytes4(keccak256("onERC721Received(address,uint256,bytes)"))
-
         await expect(
           contractVoucherKernel.fillOrder(
             tokenSupplyId,
@@ -8038,6 +8026,45 @@ describe('Cashier and VoucherKernel', () => {
             1
           )
         ).to.not.be.reverted;
+      });
+
+      it('Should be possible to call burnSupplyOnPause if kernel is paused and cashier is caller', async () => {
+        const supplyToBurn = 6;
+        await contractVoucherKernel.pause();
+        
+        // spoof cashier address
+        await contractVoucherKernel.setCashierAddress(users.deployer.address);
+        
+        await expect(
+          contractVoucherKernel.burnSupplyOnPause(
+            users.seller.address,
+            tokenSupplyId,
+            supplyToBurn            
+          )
+        ).to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+        .withArgs(contractVoucherKernel.address, users.seller.address,constants.ZERO_ADDRESS, tokenSupplyId, supplyToBurn);
+
+        const expectedBalance = constants.QTY_10 - supplyToBurn;
+        const balanceOfOwner = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf1155
+        ](users.seller.address, tokenSupplyId);
+
+        assert.equal(balanceOfOwner.toString(), expectedBalance.toString(), 'Balance after burn mismatch');
+      });
+
+      it.only('[NEGATIVE]Should NOT be possible to call burnSupplyOnPause if kernel is not paused', async () => {
+        const supplyToBurn = 6;
+        
+        // spoof cashier address
+        await contractVoucherKernel.setCashierAddress(users.deployer.address);
+        
+        await expect(
+          contractVoucherKernel.burnSupplyOnPause(
+            users.seller.address,
+            tokenSupplyId,
+            supplyToBurn            
+          )
+        ).to.be.revertedWith(revertReasons.NOT_PAUSED)
       });
     });
   });
