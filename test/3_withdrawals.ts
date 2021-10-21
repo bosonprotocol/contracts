@@ -7548,9 +7548,9 @@ describe('Cashier withdrawals ', () => {
           await contractCashier.setDisasterState();
           assert.isTrue(await contractCashier.isDisasterStateSet());
 
-          await expect(
-            contractBosonRouter.unpause()
-          ).to.be.revertedWith(revertReasons.UNPAUSED_FORBIDDEN);
+          await expect(contractBosonRouter.unpause()).to.be.revertedWith(
+            revertReasons.UNPAUSED_FORBIDDEN
+          );
         });
 
         it('[NEGATIVE][setDisasterState] Disaster state should not be set when contract is not paused', async () => {
