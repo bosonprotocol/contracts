@@ -156,7 +156,7 @@ describe('Cashier withdrawals ', () => {
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
   }
 
-  describe.only('Withdraw scenarios', () => {
+  describe('Withdraw scenarios', () => {
     const paymentType = {
       PAYMENT: 0,
       DEPOSIT_SELLER: 1,
@@ -292,7 +292,7 @@ describe('Cashier withdrawals ', () => {
       // allPaths goes over all possible paths and calcuate total distributed amounts
       // it compares it to expected values {expectedBuyerAmount, expectedSellerAmount, expectedEscrowAmount}
 
-      // firectly after commitToBuy withdraw should not emit any event or do any state change
+      // directly after commitToBuy withdraw should not emit any event or do any state change
       // paymentAmountDistribution is withdraw after some action after commitToBuy (cancel, redeem, refund, expire) but before finalize. It releases payments.
       // depositAmountDistribution is withdraw after finalize. It releases deposits.
       // paymentWithdrawal is the amount of eth transfered in scenarios that include ETH after some action after commitToBuy (cancel, redeem, refund, expire) but before finalize. It releases payments.
@@ -323,13 +323,13 @@ describe('Cashier withdrawals ', () => {
           .padStart(len, '0')
           .split('')
           .map((d) => d == '1'); //withdraw execution table -> for each path it tells wether to call withdraw after certain action or not
-        let withdrawn = false; // tells if withdraw was called already
+        let paymentWithdrawn = false; // tells if withdraw was called already
 
         for (let j = 0; j < len; j++) {
           await utils[methods[j].m](voucherID, methods[j].c.signer); // call methods tested in scenario {m:method, c:caller}
           if (execTable[j]) {
             // call withdraw only if execution table says it should be done in thi subscenario
-            if (!withdrawn) {
+            if (!paymentWithdrawn) {
               // if withdraw is called first time in the subscernario, it should emit event, and change state
               // withdraw should release payments
               const withdrawTx = await utils.withdraw(
@@ -373,7 +373,7 @@ describe('Cashier withdrawals ', () => {
                   }
                 );
               }
-              withdrawn = true;
+              paymentWithdrawn = true;
             } else {
               // already withdrawn in this subscenario, no changes expected
               expect(await utils.withdraw(voucherID, users.deployer.signer))
@@ -417,7 +417,7 @@ describe('Cashier withdrawals ', () => {
           }
         );
 
-        if (ethTransfers && (depositWithdrawal || i == 0)) {
+        if (ethTransfers && (depositWithdrawal || !paymentWithdrawn)) {
           // only eth transfers emit LOG_WITHDRAWAL
           eventUtils.assertEventEmitted(
             txReceipt,
@@ -428,7 +428,7 @@ describe('Cashier withdrawals ', () => {
               if (depositWithdrawal == null) {
                 // if deposits are in
                 expectedWithdrawal = {...paymentWithdrawal};
-              } else if (i == 0 && paymentWithdrawal) {
+              } else if (!paymentWithdrawn && paymentWithdrawal) {
                 // if price was in TKN, paymentWithdrawal == null and no adjustment is needed
                 // if payment were not withdrawn before, they should be together with deposit
                 const find = expectedWithdrawal.payees
@@ -465,27 +465,27 @@ describe('Cashier withdrawals ', () => {
 
         if (ethTransfers) {
           // make sure that total distributed ammount in path is correct
-          const whitdrawsAfter = methods
+          const withdrawsAfter = methods
             .map((m, ind) => (execTable[ind] ? m.m : ''))
             .filter((a) => a != '');
-          whitdrawsAfter.push('finalize');
+            withdrawsAfter.push('finalize');
           assert.isTrue(
             distributedAmounts.buyerAmount.eq(
               expectedAmounts.expectedBuyerAmount
             ),
-            `Buyer Amount is not as expected. Withdraws after "${whitdrawsAfter}"`
+            `Buyer Amount is not as expected. Withdraws after "${withdrawsAfter}"`
           );
           assert.isTrue(
             distributedAmounts.sellerAmount.eq(
               expectedAmounts.expectedSellerAmount
             ),
-            `Seller Amount is not as expected. Withdraws after "${whitdrawsAfter}"`
+            `Seller Amount is not as expected. Withdraws after "${withdrawsAfter}"`
           );
           assert.isTrue(
             distributedAmounts.escrowAmount.eq(
               expectedAmounts.expectedEscrowAmount
             ),
-            `Escrow Amount is not as expected. Withdraws after "${whitdrawsAfter}"`
+            `Escrow Amount is not as expected. Withdraws after "${withdrawsAfter}"`
           );
         }
 
