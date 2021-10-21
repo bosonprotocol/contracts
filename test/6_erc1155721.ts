@@ -1748,7 +1748,7 @@ describe('ERC1155ERC721', () => {
         assert.equal(balanceOfBuyer.toString(), expectedBalance.toString());
       });
 
-      it('[NEGATIVE][mint] it should not be able to mint a token to a contract that cannot receive it', async () => {
+      it('[NEGATIVE][mint] it should not be able to mint a token to a receiver that cannot receive it', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
           users.deployer.address
