@@ -1044,13 +1044,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         );
     }
 
-    /**
-     * @notice Only accept ETH via fallback from the BR Contract
-     */
-    receive() external payable {
-        require(msg.sender == bosonRouterAddress, "INVALID_PAYEE");
-    }
-
     // // // // // // // //
     // GETTERS
     // // // // // // // //
