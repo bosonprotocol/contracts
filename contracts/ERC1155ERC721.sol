@@ -357,6 +357,29 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable, ReentrancyGuard {
     }
 
     /**
+     * @notice Check successful mint if recipient is a contract
+     * @dev ERC-721
+     * @param _to       Address of recipient
+     * @param _tokenId  ID of the token
+     */
+    function _doSafeMintAcceptanceCheck(
+        address _to,
+        uint256 _tokenId
+    ) internal {
+        if (_to.isContract()) {
+            require(
+                IERC721Receiver(_to).onERC721Received(
+                    address(0),
+                    _to,
+                    _tokenId,
+                    ""
+                ) == IERC721Receiver(_to).onERC721Received.selector,
+                "UNSUPPORTED_ERC721_RECEIVED"
+            );
+        }
+    }
+
+    /**
      * @notice Check successful transfer if recipient is a contract
      * @dev ERC-1155
      * @param _operator The operator of the transfer
@@ -587,6 +610,8 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable, ReentrancyGuard {
         balance721[_to]++;
 
         emit Transfer(address(0), _to, _tokenId);
+
+        _doSafeMintAcceptanceCheck(_to, _tokenId);
     }
 
     /**
