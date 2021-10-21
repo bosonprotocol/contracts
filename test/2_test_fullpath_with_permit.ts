@@ -1,6 +1,6 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
-import {assert, expect} from 'chai';
+import {assert, expect, util} from 'chai';
 import {ecsign} from 'ethereumjs-util';
 import constants from '../testHelpers/constants';
 import {advanceTimeSeconds} from '../testHelpers/timemachine';
@@ -7725,7 +7725,7 @@ describe('Cashier and VoucherKernel', () => {
         ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TOKEN_CONTRACT);
       });
 
-      it('[NEGATIVE] Should revert if onERC721Transfer is called by the attacker', async () => {
+      it('[NEGATIVE] Should revert if onERC1155Transfer is called by the attacker', async () => {
         const attackerInstance = contractCashier.connect(users.attacker.signer);
 
         await expect(
@@ -7929,12 +7929,71 @@ describe('Cashier and VoucherKernel', () => {
             constants.ZERO,
             users.seller.address,
             users.buyer.address,
-            1
+            0
           )
         ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
       });
 
-      describe.only('fillOrder', ()=>{
+      describe('refund at wrong step', ()=>{
+        let tokenSupplyId;
+        let tokenIdVoucherId;
+        beforeEach(async ()=>{
+          utils = await UtilsBuilder.create()
+          .ETHETH()
+          .buildAsync(
+            contractERC1155ERC721,
+            contractVoucherKernel,
+            contractCashier,
+            contractBosonRouter
+          );
+
+        tokenSupplyId = await utils.createOrder(
+          users.seller,
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITSE1,
+          constants.PROMISE_DEPOSITBU1,
+          constants.QTY_10
+        );
+
+        tokenIdVoucherId = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          tokenSupplyKey,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
+        );
+        });
+
+        it('[NEGATIVE] Should not be able to refund if already redeemed', async () => {
+          await utils.redeem(tokenIdVoucherId, users.buyer.signer);
+
+          await expect(
+            utils.refund(tokenIdVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
+        });
+
+        it.only('[NEGATIVE] Should not be able to refund if already canceled', async () => {
+          await utils.cancel(tokenIdVoucherId, users.seller.signer);
+
+          await expect(
+            utils.refund(tokenIdVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
+        });
+
+        it('[NEGATIVE] Should not be able to refund if already expired', async () => {
+          await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+          await utils.expire(tokenIdVoucherId, users.seller.signer);
+
+          await expect(
+            utils.refund(tokenIdVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
+        });
+
+      })
+
+      describe('fillOrder', ()=>{
         let tokenSupplyId;
         beforeEach(async()=>{
           utils = await UtilsBuilder.create()
@@ -8052,7 +8111,7 @@ describe('Cashier and VoucherKernel', () => {
         assert.equal(balanceOfOwner.toString(), expectedBalance.toString(), 'Balance after burn mismatch');
       });
 
-      it.only('[NEGATIVE]Should NOT be possible to call burnSupplyOnPause if kernel is not paused', async () => {
+      it('[NEGATIVE]Should NOT be possible to call burnSupplyOnPause if kernel is not paused', async () => {
         const supplyToBurn = 6;
         
         // spoof cashier address
