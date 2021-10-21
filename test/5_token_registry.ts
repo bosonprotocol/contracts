@@ -215,11 +215,12 @@ describe('TokenRegistry', () => {
       );
 
       it('[NEGATIVE] Should revert is setting token limit for zero address', async () => {
-        await expect(contractTokenRegistry.setTokenLimit(
-          constants.ZERO_ADDRESS,
-          FIVE_TOKENS
-        )).to.be.revertedWith(revertReasons.INVALID_TOKEN_ADDRESS);
-
+        await expect(
+          contractTokenRegistry.setTokenLimit(
+            constants.ZERO_ADDRESS,
+            FIVE_TOKENS
+          )
+        ).to.be.revertedWith(revertReasons.INVALID_TOKEN_ADDRESS);
       });
     });
   });
@@ -300,10 +301,12 @@ describe('TokenRegistry', () => {
         users.deployer.signer
       );
 
-      await expect(deployerInstance.setTokenWrapperAddress(
-         constants.ZERO_ADDRESS,
-         users.other1.address
-      )).to.be.revertedWith(revertReasons.INVALID_TOKEN_ADDRESS);     
+      await expect(
+        deployerInstance.setTokenWrapperAddress(
+          constants.ZERO_ADDRESS,
+          users.other1.address
+        )
+      ).to.be.revertedWith(revertReasons.INVALID_TOKEN_ADDRESS);
     });
   });
 });

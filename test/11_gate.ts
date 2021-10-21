@@ -498,8 +498,9 @@ describe('Gate contract', async () => {
 
         await contractGate.registerVoucherSetId(tokenId, nftTokenID);
 
-        await expect(contractGate.deactivate(users.buyer.address, tokenId))
-        .to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+        await expect(
+          contractGate.deactivate(users.buyer.address, tokenId)
+        ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
       });
     });
   });

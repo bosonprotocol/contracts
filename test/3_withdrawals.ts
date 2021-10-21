@@ -282,8 +282,8 @@ describe('Cashier withdrawals ', () => {
           constants.product_price,
           constants.buyer_deposit
         );
-      
-        await utils.refund(voucherID, users.buyer.signer);        
+
+        await utils.refund(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
         await utils.finalize(voucherID, users.deployer.signer);
@@ -342,8 +342,7 @@ describe('Cashier withdrawals ', () => {
         await utils.cancel(voucherID, users.seller.signer);
         await utils.complain(voucherID, users.buyer.signer);
         await utils.finalize(voucherID, users.deployer.signer);
-        
-        
+
         const withdrawTx = await utils.withdraw(
           voucherID,
           users.deployer.signer
@@ -5726,35 +5725,40 @@ describe('Cashier withdrawals ', () => {
     });
 
     it('[NEGATIVE] should revert if specified voucher ID equals 0', async () => {
-      await expect(
-        contractCashier.withdraw(constants.ZERO)
-      ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
+      await expect(contractCashier.withdraw(constants.ZERO)).to.be.revertedWith(
+        revertReasons.UNSPECIFIED_ID
+      );
     });
 
-
     it('[NEGATIVE] should revert if voucher kernel returns payment method 0', async () => {
-      await expect(
-        contractCashier.withdraw(constants.ONE)
-      ).to.be.revertedWith(revertReasons.INVALID_PAYMENT_METHOD);
+      await expect(contractCashier.withdraw(constants.ONE)).to.be.revertedWith(
+        revertReasons.INVALID_PAYMENT_METHOD
+      );
     });
 
     it('[NEGATIVE] should revert if voucher kernel returns payment method greater than 5', async () => {
       const {deployMockContract} = waffle;
-      let mockVoucherKernel = await deployMockContract(users.deployer.signer, IVK.abi); //deploys mock
+      let mockVoucherKernel = await deployMockContract(
+        users.deployer.signer,
+        IVK.abi
+      ); //deploys mock
 
-     contractCashier = (await Cashier_Factory.deploy(
-      mockVoucherKernel.address
-    )) as Contract & Cashier;
-  
+      contractCashier = (await Cashier_Factory.deploy(
+        mockVoucherKernel.address
+      )) as Contract & Cashier;
+
       await contractCashier.deployed();
-  
-      await mockVoucherKernel.mock.getIdSupplyFromVoucher.withArgs(constants.ONE).returns(constants.TWO);
-      await mockVoucherKernel.mock.getVoucherPaymentMethod.withArgs(constants.TWO).returns('5');
 
-      await expect(
-        contractCashier.withdraw(constants.ONE)
-      ).to.be.revertedWith(revertReasons.INVALID_PAYMENT_METHOD);
+      await mockVoucherKernel.mock.getIdSupplyFromVoucher
+        .withArgs(constants.ONE)
+        .returns(constants.TWO);
+      await mockVoucherKernel.mock.getVoucherPaymentMethod
+        .withArgs(constants.TWO)
+        .returns('5');
+
+      await expect(contractCashier.withdraw(constants.ONE)).to.be.revertedWith(
+        revertReasons.INVALID_PAYMENT_METHOD
+      );
     });
-
-  })
+  });
 });

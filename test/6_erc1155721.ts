@@ -122,10 +122,10 @@ describe('ERC1155ERC721', () => {
     );
 
     if (setVoucherKernelAddress) {
-    await contractERC1155ERC721.setVoucherKernelAddress(
-      contractVoucherKernel.address
-    );
-    };
+      await contractERC1155ERC721.setVoucherKernelAddress(
+        contractVoucherKernel.address
+      );
+    }
 
     await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 
@@ -271,42 +271,47 @@ describe('ERC1155ERC721', () => {
 
       it('[NEGATIVE] Should revert if voucher kernel address is not set', async () => {
         await deployContracts(false);
-  
-        await expect(contractERC1155ERC721.functions[fnSignatures.mint1155](
-          users.deployer.address,
-          constants.ONE,
-          constants.ONE,
-          ethers.utils.formatBytes32String('0x0')
-        )).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
 
-        await expect(contractERC1155ERC721.mintBatch(
-          users.deployer.address,
-          [BN(123), BN(456), BN(789)],
-          [
-            BN(constants.QTY_10),
-            BN(constants.QTY_15),
-            BN(constants.QTY_20),
-          ],
-          ethers.utils.formatBytes32String('0x0')
-        )).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
+        await expect(
+          contractERC1155ERC721.functions[fnSignatures.mint1155](
+            users.deployer.address,
+            constants.ONE,
+            constants.ONE,
+            ethers.utils.formatBytes32String('0x0')
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
 
-        await expect(contractERC1155ERC721.functions[fnSignatures.mint721](
-          users.buyer.address,
-          123
-        )).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);   
+        await expect(
+          contractERC1155ERC721.mintBatch(
+            users.deployer.address,
+            [BN(123), BN(456), BN(789)],
+            [BN(constants.QTY_10), BN(constants.QTY_15), BN(constants.QTY_20)],
+            ethers.utils.formatBytes32String('0x0')
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
 
-        await expect(contractERC1155ERC721.functions[fnSignatures.burn1155](
-          users.seller.address,
-          constants.ONE,
-          constants.QTY_10
-        )).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);   
+        await expect(
+          contractERC1155ERC721.functions[fnSignatures.mint721](
+            users.buyer.address,
+            123
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
 
-        await expect(contractERC1155ERC721.burnBatch(
-          users.seller.address,
-          [constants.ONE],
-          [constants.QTY_10]
-        )).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
+        await expect(
+          contractERC1155ERC721.functions[fnSignatures.burn1155](
+            users.seller.address,
+            constants.ONE,
+            constants.QTY_10
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
 
+        await expect(
+          contractERC1155ERC721.burnBatch(
+            users.seller.address,
+            [constants.ONE],
+            [constants.QTY_10]
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
       });
 
       it('[setCashierAddress] Should set setCashierAddress to valid address', async () => {
@@ -1700,10 +1705,9 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[NEGATIVE][getApproved] Should revert if token does not exist', async () => {
-        await expect(contractERC1155ERC721.getApproved(
-          constants.ONE
-        )).to.be.revertedWith(revertReasons.NONEXISTENT_TOKEN);
-
+        await expect(
+          contractERC1155ERC721.getApproved(constants.ONE)
+        ).to.be.revertedWith(revertReasons.NONEXISTENT_TOKEN);
       });
 
       it('[mint] Should mint a token', async () => {
@@ -1833,12 +1837,13 @@ describe('ERC1155ERC721', () => {
           tokenIdForMint
         );
 
-        await expect(contractERC1155ERC721.functions[fnSignatures.mint721](
-          users.other1.address,
-          tokenIdForMint
-        )).to.be.revertedWith(revertReasons.TOKEN_ALREADY_MINTED);
+        await expect(
+          contractERC1155ERC721.functions[fnSignatures.mint721](
+            users.other1.address,
+            tokenIdForMint
+          )
+        ).to.be.revertedWith(revertReasons.TOKEN_ALREADY_MINTED);
       });
-
     });
 
     describe('Metadata', () => {
