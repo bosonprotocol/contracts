@@ -8249,11 +8249,8 @@ describe('Cashier withdrawals ', () => {
 
         // check escrow - before
         expect(
-          await contractCashier.getEscrowAmount(
-            users.buyer.address
-          )
-        ).to.be.equal(
-          (expectedBuyerBalance), 'Buyer escrow not as expected');
+          await contractCashier.getEscrowAmount(users.buyer.address)
+        ).to.be.equal(expectedBuyerBalance, 'Buyer escrow not as expected');
 
         const tx = await buyerInstance.withdrawEthOnDisaster();
 
@@ -8279,9 +8276,7 @@ describe('Cashier withdrawals ', () => {
 
         // check escrow - after
         expect(
-          await contractCashier.getEscrowAmount(
-            users.buyer.address
-          )
+          await contractCashier.getEscrowAmount(users.buyer.address)
         ).to.be.equal(constants.ZERO, 'Buyers escrow should be zero');
       });
 
@@ -8295,11 +8290,8 @@ describe('Cashier withdrawals ', () => {
 
         // check escrow - before
         expect(
-          await contractCashier.getEscrowAmount(
-            users.seller.address
-          )
-        ).to.be.equal(
-          (expectedSellerBalance), 'Seller escrow not as expected');
+          await contractCashier.getEscrowAmount(users.seller.address)
+        ).to.be.equal(expectedSellerBalance, 'Seller escrow not as expected');
 
         const tx = await sellerInstance.withdrawEthOnDisaster();
 
@@ -8324,9 +8316,7 @@ describe('Cashier withdrawals ', () => {
 
         // check escrow - after
         expect(
-          await contractCashier.getEscrowAmount(
-            users.seller.address
-          )
+          await contractCashier.getEscrowAmount(users.seller.address)
         ).to.be.equal(constants.ZERO, 'Seller escrow should be zero');
       });
 
@@ -8454,8 +8444,7 @@ describe('Cashier withdrawals ', () => {
               contractBSNTokenPrice.address,
               users.buyer.address
             )
-          ).to.be.equal(
-            BN(constants.product_price).mul(BN(vouchersToBuy)), 'Buyer escrow not as expected');
+          ).to.be.equal(expectedTknPrice, 'Buyer escrow not as expected');
 
           const txTknPrice = await buyerInstance.withdrawTokensOnDisaster(
             contractBSNTokenPrice.address
@@ -8499,8 +8488,7 @@ describe('Cashier withdrawals ', () => {
               contractBSNTokenPrice.address,
               users.buyer.address
             )
-          ).to.be.equal(
-            BN(constants.ZERO), 'Buyer escrow should be zero');
+          ).to.be.equal(BN(constants.ZERO), 'Buyer escrow should be zero');
         });
 
         it('contractBSNTokenDeposit', async () => {
@@ -8528,8 +8516,7 @@ describe('Cashier withdrawals ', () => {
               contractBSNTokenDeposit.address,
               users.buyer.address
             )
-          ).to.be.equal(
-            BN(constants.buyer_deposit).mul(BN(vouchersToBuy)), 'Buyer escrow not as expected');
+          ).to.be.equal(expectedTknDeposit, 'Buyer escrow not as expected');
 
           const txTknDeposit = await buyerInstance.withdrawTokensOnDisaster(
             contractBSNTokenDeposit.address
@@ -8572,8 +8559,7 @@ describe('Cashier withdrawals ', () => {
               contractBSNTokenDeposit.address,
               users.buyer.address
             )
-          ).to.be.equal(
-            BN(constants.ZERO), 'Buyer escrow should be zero');
+          ).to.be.equal(BN(constants.ZERO), 'Buyer escrow should be zero');
         });
       });
 
@@ -8591,8 +8577,7 @@ describe('Cashier withdrawals ', () => {
             contractBSNTokenDeposit.address,
             users.seller.address
           )
-        ).to.be.equal(
-          BN(constants.seller_deposit).mul(BN(constants.QTY_10)), 'Seller escrow not as expected');
+        ).to.be.equal(expectedSellerBalance, 'Seller escrow not as expected');
 
         const tx = await sellerInstance.withdrawTokensOnDisaster(
           contractBSNTokenDeposit.address
@@ -8610,7 +8595,7 @@ describe('Cashier withdrawals ', () => {
 
         await validateBalancesFromDepositToken({
           expectedBuyerDeposit,
-          expectedSellerDeposit
+          expectedSellerDeposit,
         });
 
         eventUtils.assertEventEmitted(
@@ -8637,8 +8622,7 @@ describe('Cashier withdrawals ', () => {
             contractBSNTokenDeposit.address,
             users.seller.address
           )
-        ).to.be.equal(
-          BN(constants.ZERO), 'Seller escrow should be zero');
+        ).to.be.equal(BN(constants.ZERO), 'Seller escrow should be zero');
       });
 
       it('[NEGATIVE][withdrawTokensOnDisaster] should not be executable before admin allows to', async () => {
