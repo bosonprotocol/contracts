@@ -6908,7 +6908,9 @@ describe('Cashier withdrawals ', () => {
             expectedSellerDeposit
           )
           .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
-          .withArgs(TOKEN_SUPPLY_ID, users.seller.address);
+          .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
+          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .withArgs(contractVoucherKernel.address, users.seller.address, constants.ZERO_ADDRESS, TOKEN_SUPPLY_ID, remQty);
       });
 
       describe('State after COF', () => {
@@ -7081,7 +7083,9 @@ describe('Cashier withdrawals ', () => {
               expectedSellerDeposit
             )
             .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
-            .withArgs(TOKEN_SUPPLY_ID, users.seller.address);
+            .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
+            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .withArgs(contractVoucherKernel.address, users.seller.address, constants.ZERO_ADDRESS, TOKEN_SUPPLY_ID, remQty);
         });
 
         describe('State after COF', () => {
@@ -7266,7 +7270,9 @@ describe('Cashier withdrawals ', () => {
               expectedSellerDeposit
             )
             .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
-            .withArgs(TOKEN_SUPPLY_ID, users.seller.address);
+            .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
+            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .withArgs(contractVoucherKernel.address, users.seller.address, constants.ZERO_ADDRESS, TOKEN_SUPPLY_ID, remQty);
         });
 
         describe('State after COF', () => {
@@ -7452,7 +7458,9 @@ describe('Cashier withdrawals ', () => {
               expectedSellerDeposit
             )
             .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
-            .withArgs(TOKEN_SUPPLY_ID, users.seller.address);
+            .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
+            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .withArgs(contractVoucherKernel.address, users.seller.address, constants.ZERO_ADDRESS, TOKEN_SUPPLY_ID, remQty);
         });
 
         describe('State after COF', () => {
@@ -7631,7 +7639,9 @@ describe('Cashier withdrawals ', () => {
               expectedSellerDeposit
             )
             .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
-            .withArgs(TOKEN_SUPPLY_ID, users.seller.address);
+            .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
+            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .withArgs(contractVoucherKernel.address, users.seller.address, constants.ZERO_ADDRESS, TOKEN_SUPPLY_ID, remQty);
         });
 
         describe('State after COF', () => {
