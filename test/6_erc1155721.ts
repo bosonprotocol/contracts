@@ -1748,6 +1748,21 @@ describe('ERC1155ERC721', () => {
         assert.equal(balanceOfBuyer.toString(), expectedBalance.toString());
       });
 
+      it('[NEGATIVE][mint] it should not be able to mint a token to a contract that cannot receive it', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        const tokenIdForMint = 123;
+        await expect(
+          contractERC1155ERC721.functions[fnSignatures.mint721](
+            contractCashier.address,
+            tokenIdForMint
+          )
+        ).to.be.revertedWith(revertReasons.FN_SELECTOR_NOT_RECOGNIZED);
+      });
+
       it('[NEGATIVE][mint] must fail: unauthorized minting ERC-721', async () => {
         await expect(
           contractERC1155ERC721.functions[fnSignatures.mint721](
