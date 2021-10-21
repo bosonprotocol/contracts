@@ -959,7 +959,7 @@ contract BosonRouter is
      * @param _tokensSent     tokens sent to cashier contract
      */
     function checkLimits(
-        uint256[] memory _metadata,
+        uint256[] calldata _metadata,
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent
