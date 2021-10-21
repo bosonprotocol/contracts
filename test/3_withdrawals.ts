@@ -7542,6 +7542,17 @@ describe('Cashier withdrawals ', () => {
           assert.isTrue(await contractCashier.isDisasterStateSet());
         });
 
+        it('[setDisasterState] Cannot unpause if setDisasterState is called already', async () => {
+          await contractBosonRouter.pause();
+
+          await contractCashier.setDisasterState();
+          assert.isTrue(await contractCashier.isDisasterStateSet());
+
+          await expect(
+            contractBosonRouter.unpause()
+          ).to.be.revertedWith(revertReasons.UNPAUSED_FORBIDDEN);
+        });
+
         it('[NEGATIVE][setDisasterState] Disaster state should not be set when contract is not paused', async () => {
           await expect(contractCashier.setDisasterState()).to.be.revertedWith(
             revertReasons.NOT_PAUSED
