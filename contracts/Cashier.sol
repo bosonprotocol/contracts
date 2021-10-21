@@ -114,7 +114,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      */
     function setDisasterState() external onlyOwner whenPaused {
         disasterState = true;
-        LogDisasterStateSet(disasterState, msg.sender);
+        emit LogDisasterStateSet(disasterState, msg.sender);
     }
 
     /**
@@ -129,7 +129,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         escrow[msg.sender] = 0;
         msg.sender.sendValue(amount);
 
-        LogWithdrawEthOnDisaster(amount, msg.sender);
+        emit LogWithdrawEthOnDisaster(amount, msg.sender);
     }
 
     /**
@@ -149,7 +149,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         escrowTokens[_token][msg.sender] = 0;
 
         SafeERC20.safeTransfer(IERC20(_token), msg.sender, amount);
-        LogWithdrawTokensOnDisaster(amount, _token, msg.sender);
+        emit LogWithdrawTokensOnDisaster(amount, _token, msg.sender);
     }
 
     /**
@@ -324,7 +324,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             _voucherDetails.tokenIdVoucher
         );
 
-        LogAmountDistribution(
+        emit LogAmountDistribution(
             _voucherDetails.tokenIdVoucher,
             _voucherDetails.issuer,
             _voucherDetails.price,
@@ -372,7 +372,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             _voucherDetails.tokenIdVoucher
         );
 
-        LogAmountDistribution(
+        emit LogAmountDistribution(
             _voucherDetails.tokenIdVoucher,
             _voucherDetails.holder,
             _voucherDetails.price,
@@ -464,19 +464,19 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 )
             ); //slashing the rest
 
-            LogAmountDistribution(
+            emit LogAmountDistribution(
                 _voucherDetails.tokenIdVoucher,
                 _voucherDetails.holder,
                 tFraction,
                 PaymentType.DEPOSIT_SELLER
             );
-            LogAmountDistribution(
+            emit LogAmountDistribution(
                 _voucherDetails.tokenIdVoucher,
                 _voucherDetails.issuer,
                 tFraction.div(CANCELFAULT_SPLIT),
                 PaymentType.DEPOSIT_SELLER
             );
-            LogAmountDistribution(
+            emit LogAmountDistribution(
                 _voucherDetails.tokenIdVoucher,
                 owner(),
                 (_voucherDetails.depositSe.sub(tFraction)).sub(
@@ -509,7 +509,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 _voucherDetails.depositSe
             );
 
-            LogAmountDistribution(
+            emit LogAmountDistribution(
                 _voucherDetails.tokenIdVoucher,
                 owner(),
                 _voucherDetails.depositSe,
@@ -561,14 +561,14 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             )
         );
 
-        LogAmountDistribution(
+        emit LogAmountDistribution(
             _voucherDetails.tokenIdVoucher,
             _voucherDetails.issuer,
             _voucherDetails.depositSe.div(CANCELFAULT_SPLIT),
             PaymentType.DEPOSIT_SELLER
         );
 
-        LogAmountDistribution(
+        emit LogAmountDistribution(
             _voucherDetails.tokenIdVoucher,
             _voucherDetails.holder,
             _voucherDetails.depositSe.sub(
@@ -615,7 +615,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             _voucherDetails.depositSe
         );
 
-        LogAmountDistribution(
+        emit LogAmountDistribution(
             _voucherDetails.tokenIdVoucher,
             _voucherDetails.issuer,
             _voucherDetails.depositSe,
@@ -660,7 +660,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             _voucherDetails.depositBu
         );
 
-        LogAmountDistribution(
+        emit LogAmountDistribution(
             _voucherDetails.tokenIdVoucher,
             _voucherDetails.holder,
             _voucherDetails.depositBu,
@@ -705,7 +705,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             _voucherDetails.depositBu
         );
 
-        LogAmountDistribution(
+        emit LogAmountDistribution(
             _voucherDetails.tokenIdVoucher,
             owner(),
             _voucherDetails.depositBu,
