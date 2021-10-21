@@ -566,13 +566,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         onlyVoucherOwner(_tokenIdVoucher, _messageSender)
     {
         require(
-            !isStatus(vouchersStatus[_tokenIdVoucher].status, IDX_COMPLAIN),
-            "ALREADY_COMPLAINED"
-        );
-        require(
             !isStatus(vouchersStatus[_tokenIdVoucher].status, IDX_FINAL),
             "ALREADY_FINALIZED"
         );
+        require(
+            !isStatus(vouchersStatus[_tokenIdVoucher].status, IDX_COMPLAIN),
+            "ALREADY_COMPLAINED"
+        );
+
 
         //check if still in the complain period
         Promise memory tPromise =
