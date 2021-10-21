@@ -365,7 +365,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
         uint256 _tokenIdSupply,
         address _issuer,
         address _holder
-    ) internal view {
+    ) internal view notZeroAddress(_holder) {
         require(_tokenIdSupply != 0, "UNSPECIFIED_ID");
 
         if (_holder.isContract()) {
@@ -376,7 +376,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, UsingHelpers {
 
         }
 
-        require(_holder != address(0), "UNSPECIFIED_ADDRESS");
+        
         require(
             IERC1155(tokensContract).balanceOf(_issuer, _tokenIdSupply) > 0,
             "OFFER_EMPTY"
