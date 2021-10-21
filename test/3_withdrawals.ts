@@ -6853,12 +6853,12 @@ describe('Cashier withdrawals ', () => {
   });
 
   describe('Seller cancels uncommitted voucher set', () => {
-    let remQty = 10;
-    let voucherToBuyBeforeBurn = 5;
+    const remQty = 5;
+    const voucherToBuyBeforeBurn = 5;
     let tokensToMintSeller, tokensToMintBuyer;
 
     describe('ETHETH', () => {
-      before(async () => {
+      beforeEach(async () => {
         await deployContracts();
         await setPeriods();
 
@@ -6889,13 +6889,103 @@ describe('Cashier withdrawals ', () => {
             constants.product_price,
             constants.buyer_deposit
           );
-          remQty--;
         }
       });
 
-      after(() => {
-        remQty = 10;
-        voucherToBuyBeforeBurn = 5;
+      it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
+        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
+        const expectedSellerDeposit = BN(constants.seller_deposit).mul(
+          BN(remQty)
+        );
+
+        expect(
+          await sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+        )
+          .to.emit(contractCashier, eventNames.LOG_WITHDRAWAL)
+          .withArgs(
+            contractBosonRouter.address,
+            users.seller.address,
+            expectedSellerDeposit
+          )
+          .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
+          .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
+          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .withArgs(
+            contractVoucherKernel.address,
+            users.seller.address,
+            constants.ZERO_ADDRESS,
+            TOKEN_SUPPLY_ID,
+            remQty
+          );
+      });
+
+      describe('State after COF', () => {
+        beforeEach(async () => {
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+          await sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID);
+        });
+
+        it('Escrow should have correct balance after burning the rest of the supply', async () => {
+          const expectedBalance = BN(constants.seller_deposit).mul(
+            BN(voucherToBuyBeforeBurn)
+          );
+          const escrowAmount = await contractCashier.getEscrowAmount(
+            users.seller.address
+          );
+
+          assert.isTrue(
+            escrowAmount.eq(expectedBalance),
+            'Escrow amount is incorrect'
+          );
+        });
+
+        it('Remaining QTY for Token Supply should be ZERO', async () => {
+          const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+            TOKEN_SUPPLY_ID,
+            users.seller.address
+          );
+
+          assert.isTrue(
+            remainingQtyInContract.eq(BN(0)),
+            'Escrow amount is incorrect'
+          );
+        });
+
+        it('ERC1155 balance should be correct', async () => {
+          const balance = await contractERC1155ERC721[
+            'balanceOf(address,uint256)'
+          ](users.seller.address, TOKEN_SUPPLY_ID);
+
+          assert.equal(
+            balance.toString(),
+            constants.ZERO.toString(),
+            'ERC1155ERC721 amount is incorrect'
+          );
+        });
+
+        it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
+          await expect(
+            utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              TOKEN_SUPPLY_ID,
+              constants.product_price,
+              constants.buyer_deposit
+            )
+          ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
+        });
+
+        it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
+          await expect(
+            sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
+        });
       });
 
       it('[NEGATIVE] should revert if not called from the seller', async () => {
@@ -6908,75 +6998,6 @@ describe('Cashier withdrawals ', () => {
         ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
       });
 
-      it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
-        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
-        const withdrawTx = await sellerInstance.requestCancelOrFaultVoucherSet(
-          TOKEN_SUPPLY_ID
-        );
-
-        const txReceipt = await withdrawTx.wait();
-
-        const expectedSellerDeposit = BN(constants.seller_deposit).mul(
-          BN(remQty)
-        );
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          Cashier_Factory,
-          eventNames.LOG_WITHDRAWAL,
-          (ev) => {
-            assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
-            assert.isTrue(ev._payment.eq(expectedSellerDeposit));
-          }
-        );
-      });
-
-      it('Escrow should have correct balance after burning the rest of the supply', async () => {
-        const expectedBalance = BN(constants.seller_deposit).mul(
-          BN(voucherToBuyBeforeBurn)
-        );
-        const escrowAmount = await contractCashier.getEscrowAmount(
-          users.seller.address
-        );
-
-        assert.isTrue(
-          escrowAmount.eq(expectedBalance),
-          'Escrow amount is incorrect'
-        );
-      });
-
-      it('Remaining QTY for Token Supply should be ZERO', async () => {
-        const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
-          TOKEN_SUPPLY_ID,
-          users.seller.address
-        );
-
-        assert.isTrue(
-          remainingQtyInContract.eq(BN(0)),
-          'Escrow amount is incorrect'
-        );
-      });
-
-      it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
-        await expect(
-          utils.commitToBuy(
-            users.buyer,
-            users.seller,
-            TOKEN_SUPPLY_ID,
-            constants.product_price,
-            constants.buyer_deposit
-          )
-        ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
-      });
-
-      it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
-        const sellerInstance = contractBosonRouter.connect(users.seller.signer);
-
-        await expect(
-          sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
-        ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
-      });
-
       it('[NEGATIVE] Should revert if called when contract is paused', async () => {
         const sellerInstance = contractBosonRouter.connect(users.seller.signer);
         await contractBosonRouter.pause();
@@ -6985,11 +7006,24 @@ describe('Cashier withdrawals ', () => {
           sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
         ).to.be.revertedWith(revertReasons.PAUSED);
       });
+
+      it('[NEGATIVE] should revert if router supplies wrong _messageSender', async () => {
+        // spoof boson router
+        await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+        await expect(
+          contractCashier.withdrawDepositsSe(
+            TOKEN_SUPPLY_ID,
+            remQty,
+            users.attacker.address
+          )
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
+      });
     });
 
     describe('[WITH PERMIT]', () => {
       describe('TKNTKN', () => {
-        before(async () => {
+        beforeEach(async () => {
           await deployContracts();
           await setPeriods();
           utils = await UtilsBuilder.create()
@@ -7046,13 +7080,123 @@ describe('Cashier withdrawals ', () => {
               constants.product_price,
               constants.buyer_deposit
             );
-            remQty--;
           }
         });
 
-        after(() => {
-          remQty = 10;
-          voucherToBuyBeforeBurn = 5;
+        it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
+          const expectedSellerDeposit = BN(constants.seller_deposit).mul(
+            BN(remQty)
+          );
+
+          expect(
+            await sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+          )
+            .to.emit(contractBSNTokenDeposit, eventNames.TRANSFER)
+            .withArgs(
+              contractCashier.address,
+              users.seller.address,
+              expectedSellerDeposit
+            )
+            .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
+            .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
+            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+            .withArgs(
+              contractVoucherKernel.address,
+              users.seller.address,
+              constants.ZERO_ADDRESS,
+              TOKEN_SUPPLY_ID,
+              remQty
+            );
+        });
+
+        describe('State after COF', () => {
+          beforeEach(async () => {
+            const sellerInstance = contractBosonRouter.connect(
+              users.seller.signer
+            );
+            await sellerInstance.requestCancelOrFaultVoucherSet(
+              TOKEN_SUPPLY_ID
+            );
+          });
+
+          it('Tokens should be returned to seller after burning the rest of the supply', async () => {
+            const expectedBalance = BN(constants.seller_deposit).mul(
+              BN(voucherToBuyBeforeBurn)
+            );
+            const escrowAmount = await contractBSNTokenDeposit.balanceOf(
+              users.seller.address
+            );
+
+            assert.isTrue(
+              escrowAmount.eq(expectedBalance),
+              'Escrow amount is incorrect'
+            );
+          });
+
+          it('Escrow should have correct balance after burning the rest of the supply', async () => {
+            const expectedBalance = BN(constants.seller_deposit).mul(
+              BN(voucherToBuyBeforeBurn)
+            );
+            const escrowAmount = await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.seller.address
+            );
+
+            assert.isTrue(
+              escrowAmount.eq(expectedBalance),
+              'Escrow amount is incorrect'
+            );
+          });
+
+          it('Remaining QTY for Token Supply should be ZERO', async () => {
+            const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+              TOKEN_SUPPLY_ID,
+              users.seller.address
+            );
+
+            assert.isTrue(
+              remainingQtyInContract.eq(BN(0)),
+              'Remaining supply is incorrect'
+            );
+          });
+
+          it('ERC1155 balance should be correct', async () => {
+            const balance = await contractERC1155ERC721[
+              'balanceOf(address,uint256)'
+            ](users.seller.address, TOKEN_SUPPLY_ID);
+
+            assert.equal(
+              balance.toString(),
+              constants.ZERO.toString(),
+              'ERC1155ERC721 amount is incorrect'
+            );
+          });
+
+          it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
+            await expect(
+              utils.commitToBuy(
+                users.buyer,
+                users.seller,
+                TOKEN_SUPPLY_ID,
+                constants.product_price,
+                constants.buyer_deposit
+              )
+            ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
+          });
+
+          it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
+            const sellerInstance = contractBosonRouter.connect(
+              users.seller.signer
+            );
+
+            await expect(
+              sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+            ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
+          });
         });
 
         it('[NEGATIVE] should revert if not called from the seller', async () => {
@@ -7065,93 +7209,210 @@ describe('Cashier withdrawals ', () => {
           ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
         });
 
-        it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
+        it('[NEGATIVE] Should revert if called when contract is paused', async () => {
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
           );
+          await contractBosonRouter.pause();
 
-          const withdrawTx = await sellerInstance.requestCancelOrFaultVoucherSet(
-            TOKEN_SUPPLY_ID
-          );
-
-          const txReceipt = await withdrawTx.wait();
-
-          const expectedSellerDeposit = BN(constants.seller_deposit).mul(
-            BN(remQty)
-          );
-
-          eventUtils.assertEventEmitted(
-            txReceipt,
-            MockERC20Permit_Factory,
-            eventNames.TRANSFER,
-            (ev) => {
-              assert.equal(ev.to, users.seller.address, 'Incorrect Payee');
-              assert.isTrue(ev.value.eq(expectedSellerDeposit));
-            }
-          );
-        });
-
-        it('Tokens should be returned to seller after burning the rest of the supply', async () => {
-          const expectedBalance = BN(constants.seller_deposit).mul(
-            BN(voucherToBuyBeforeBurn)
-          );
-          const escrowAmount = await contractBSNTokenDeposit.balanceOf(
-            users.seller.address
-          );
-
-          assert.isTrue(
-            escrowAmount.eq(expectedBalance),
-            'Escrow amount is incorrect'
-          );
-        });
-
-        it('Escrow should have correct balance after burning the rest of the supply', async () => {
-          const expectedBalance = BN(constants.seller_deposit).mul(
-            BN(voucherToBuyBeforeBurn)
-          );
-          const escrowAmount = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.seller.address
-          );
-
-          assert.isTrue(
-            escrowAmount.eq(expectedBalance),
-            'Escrow amount is incorrect'
-          );
-        });
-
-        it('Remaining QTY for Token Supply should be ZERO', async () => {
-          const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
-            TOKEN_SUPPLY_ID,
-            users.seller.address
-          );
-
-          assert.isTrue(
-            remainingQtyInContract.eq(BN(0)),
-            'Escrow amount is incorrect'
-          );
-        });
-
-        it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
           await expect(
-            utils.commitToBuy(
+            sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.PAUSED);
+        });
+
+        it('[NEGATIVE] should revert if router supplies wrong _messageSender', async () => {
+          // spoof boson router
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+          await expect(
+            contractCashier.withdrawDepositsSe(
+              TOKEN_SUPPLY_ID,
+              remQty,
+              users.attacker.address
+            )
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
+        });
+      });
+
+      describe('TKNTKN Same', () => {
+        beforeEach(async () => {
+          await deployContracts();
+          await setPeriods();
+          utils = await UtilsBuilder.create()
+            .ERC20withPermit()
+            .TKNTKNSame()
+            .buildAsync(
+              contractERC1155ERC721,
+              contractVoucherKernel,
+              contractCashier,
+              contractBosonRouter,
+              contractBSNTokenPrice,
+              contractBSNTokenDeposit
+            );
+
+          tokensToMintSeller = BN(constants.seller_deposit).mul(
+            BN(constants.QTY_10)
+          );
+          tokensToMintBuyer = BN(constants.product_price).mul(
+            BN(constants.QTY_10)
+          );
+
+          await utils.mintTokens(
+            'contractBSNTokenSame',
+            users.seller.address,
+            tokensToMintSeller
+          );
+          await utils.mintTokens(
+            'contractBSNTokenSame',
+            users.buyer.address,
+            tokensToMintBuyer
+          );
+
+          TOKEN_SUPPLY_ID = await utils.createOrder(
+            users.seller,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.product_price,
+            constants.seller_deposit,
+            constants.buyer_deposit,
+            constants.QTY_10
+          );
+
+          for (let i = 0; i < voucherToBuyBeforeBurn; i++) {
+            await utils.commitToBuy(
               users.buyer,
               users.seller,
               TOKEN_SUPPLY_ID,
               constants.product_price,
               constants.buyer_deposit
-            )
-          ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
+            );
+          }
         });
 
-        it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
+        it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
           );
 
+          const expectedSellerDeposit = BN(constants.seller_deposit).mul(
+            BN(remQty)
+          );
+
+          expect(
+            await sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+          )
+            .to.emit(utils.contractBSNTokenSame, eventNames.TRANSFER)
+            .withArgs(
+              contractCashier.address,
+              users.seller.address,
+              expectedSellerDeposit
+            )
+            .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
+            .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
+            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+            .withArgs(
+              contractVoucherKernel.address,
+              users.seller.address,
+              constants.ZERO_ADDRESS,
+              TOKEN_SUPPLY_ID,
+              remQty
+            );
+        });
+
+        describe('State after COF', () => {
+          beforeEach(async () => {
+            const sellerInstance = contractBosonRouter.connect(
+              users.seller.signer
+            );
+            await sellerInstance.requestCancelOrFaultVoucherSet(
+              TOKEN_SUPPLY_ID
+            );
+          });
+
+          it('Tokens should be returned to seller after burning the rest of the supply', async () => {
+            const expectedBalance = BN(constants.seller_deposit).mul(
+              BN(voucherToBuyBeforeBurn)
+            );
+            const escrowAmount = await utils.contractBSNTokenSame.balanceOf(
+              users.seller.address
+            );
+
+            assert.isTrue(
+              escrowAmount.eq(expectedBalance),
+              'Escrow amount is incorrect'
+            );
+          });
+
+          it('Escrow should have correct balance after burning the rest of the supply', async () => {
+            const expectedBalance = BN(constants.seller_deposit).mul(
+              BN(voucherToBuyBeforeBurn)
+            );
+            const escrowAmount = await contractCashier.getEscrowTokensAmount(
+              utils.contractBSNTokenSame.address,
+              users.seller.address
+            );
+
+            assert.isTrue(
+              escrowAmount.eq(expectedBalance),
+              'Escrow amount is incorrect'
+            );
+          });
+
+          it('Remaining QTY for Token Supply should be ZERO', async () => {
+            const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+              TOKEN_SUPPLY_ID,
+              users.seller.address
+            );
+
+            assert.isTrue(
+              remainingQtyInContract.eq(BN(0)),
+              'Remaining supply is incorrect'
+            );
+          });
+
+          it('ERC1155 balance should be correct', async () => {
+            const balance = await contractERC1155ERC721[
+              'balanceOf(address,uint256)'
+            ](users.seller.address, TOKEN_SUPPLY_ID);
+
+            assert.equal(
+              balance.toString(),
+              constants.ZERO.toString(),
+              'ERC1155ERC721 amount is incorrect'
+            );
+          });
+
+          it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
+            await expect(
+              utils.commitToBuy(
+                users.buyer,
+                users.seller,
+                TOKEN_SUPPLY_ID,
+                constants.product_price,
+                constants.buyer_deposit
+              )
+            ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
+          });
+
+          it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
+            const sellerInstance = contractBosonRouter.connect(
+              users.seller.signer
+            );
+
+            await expect(
+              sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+            ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
+          });
+        });
+
+        it('[NEGATIVE] should revert if not called from the seller', async () => {
+          const attackerInstance = contractBosonRouter.connect(
+            users.attacker.signer
+          );
+
           await expect(
-            sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
-          ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
+            attackerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
         });
 
         it('[NEGATIVE] Should revert if called when contract is paused', async () => {
@@ -7164,10 +7425,23 @@ describe('Cashier withdrawals ', () => {
             sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
           ).to.be.revertedWith(revertReasons.PAUSED);
         });
+
+        it('[NEGATIVE] should revert if router supplies wrong _messageSender', async () => {
+          // spoof boson router
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+          await expect(
+            contractCashier.withdrawDepositsSe(
+              TOKEN_SUPPLY_ID,
+              remQty,
+              users.attacker.address
+            )
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
+        });
       });
 
       describe('ETHTKN', () => {
-        before(async () => {
+        beforeEach(async () => {
           await deployContracts();
           await setPeriods();
 
@@ -7219,13 +7493,123 @@ describe('Cashier withdrawals ', () => {
               constants.product_price,
               constants.buyer_deposit
             );
-            remQty--;
           }
         });
 
-        after(() => {
-          remQty = 10;
-          voucherToBuyBeforeBurn = 5;
+        it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
+          const expectedSellerDeposit = BN(constants.seller_deposit).mul(
+            BN(remQty)
+          );
+
+          expect(
+            await sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+          )
+            .to.emit(contractBSNTokenDeposit, eventNames.TRANSFER)
+            .withArgs(
+              contractCashier.address,
+              users.seller.address,
+              expectedSellerDeposit
+            )
+            .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
+            .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
+            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+            .withArgs(
+              contractVoucherKernel.address,
+              users.seller.address,
+              constants.ZERO_ADDRESS,
+              TOKEN_SUPPLY_ID,
+              remQty
+            );
+        });
+
+        describe('State after COF', () => {
+          beforeEach(async () => {
+            const sellerInstance = contractBosonRouter.connect(
+              users.seller.signer
+            );
+            await sellerInstance.requestCancelOrFaultVoucherSet(
+              TOKEN_SUPPLY_ID
+            );
+          });
+
+          it('Tokens should be returned to seller after burning the rest of the supply', async () => {
+            const expectedBalance = BN(constants.seller_deposit).mul(
+              BN(voucherToBuyBeforeBurn)
+            );
+            const escrowAmount = await contractBSNTokenDeposit.balanceOf(
+              users.seller.address
+            );
+
+            assert.isTrue(
+              escrowAmount.eq(expectedBalance),
+              'Escrow amount is incorrect'
+            );
+          });
+
+          it('Escrow should have correct balance after burning the rest of the supply', async () => {
+            const expectedBalance = BN(constants.seller_deposit).mul(
+              BN(voucherToBuyBeforeBurn)
+            );
+            const escrowAmount = await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.seller.address
+            );
+
+            assert.isTrue(
+              escrowAmount.eq(expectedBalance),
+              'Escrow amount is incorrect'
+            );
+          });
+
+          it('Remaining QTY for Token Supply should be ZERO', async () => {
+            const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+              TOKEN_SUPPLY_ID,
+              users.seller.address
+            );
+
+            assert.isTrue(
+              remainingQtyInContract.eq(BN(0)),
+              'Remaining quantity is incorrect'
+            );
+          });
+
+          it('ERC1155 balance should be correct', async () => {
+            const balance = await contractERC1155ERC721[
+              'balanceOf(address,uint256)'
+            ](users.seller.address, TOKEN_SUPPLY_ID);
+
+            assert.equal(
+              balance.toString(),
+              constants.ZERO.toString(),
+              'ERC1155ERC721 amount is incorrect'
+            );
+          });
+
+          it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
+            await expect(
+              utils.commitToBuy(
+                users.buyer,
+                users.seller,
+                TOKEN_SUPPLY_ID,
+                constants.product_price,
+                constants.buyer_deposit
+              )
+            ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
+          });
+
+          it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
+            const sellerInstance = contractBosonRouter.connect(
+              users.seller.signer
+            );
+
+            await expect(
+              sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+            ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
+          });
         });
 
         it('[NEGATIVE] should revert if not called from the seller', async () => {
@@ -7236,95 +7620,6 @@ describe('Cashier withdrawals ', () => {
           await expect(
             attackerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
           ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
-        });
-
-        it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
-          const sellerInstance = contractBosonRouter.connect(
-            users.seller.signer
-          );
-
-          const withdrawTx = await sellerInstance.requestCancelOrFaultVoucherSet(
-            TOKEN_SUPPLY_ID
-          );
-
-          const expectedSellerDeposit = BN(constants.seller_deposit).mul(
-            BN(remQty)
-          );
-
-          const txReceipt = await withdrawTx.wait();
-
-          eventUtils.assertEventEmitted(
-            txReceipt,
-            MockERC20Permit_Factory,
-            eventNames.TRANSFER,
-            (ev) => {
-              assert.equal(ev.to, users.seller.address, 'Incorrect Payee');
-              assert.isTrue(ev.value.eq(expectedSellerDeposit));
-            }
-          );
-        });
-
-        it('Tokens should be returned to seller after burning the rest of the supply', async () => {
-          const expectedBalance = BN(constants.seller_deposit).mul(
-            BN(voucherToBuyBeforeBurn)
-          );
-          const escrowAmount = await contractBSNTokenDeposit.balanceOf(
-            users.seller.address
-          );
-
-          assert.isTrue(
-            escrowAmount.eq(expectedBalance),
-            'Escrow amount is incorrect'
-          );
-        });
-
-        it('Escrow should have correct balance after burning the rest of the supply', async () => {
-          const expectedBalance = BN(constants.seller_deposit).mul(
-            BN(voucherToBuyBeforeBurn)
-          );
-          const escrowAmount = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.seller.address
-          );
-
-          assert.isTrue(
-            escrowAmount.eq(expectedBalance),
-            'Escrow amount is incorrect'
-          );
-        });
-
-        it('Remaining QTY for Token Supply should be ZERO', async () => {
-          const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
-            TOKEN_SUPPLY_ID,
-            users.seller.address
-          );
-
-          assert.isTrue(
-            remainingQtyInContract.eq(BN(0)),
-            'Escrow amount is incorrect'
-          );
-        });
-
-        it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
-          await expect(
-            utils.commitToBuy(
-              users.buyer,
-              users.seller,
-              TOKEN_SUPPLY_ID,
-              constants.product_price,
-              constants.buyer_deposit
-            )
-          ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
-        });
-
-        it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
-          const sellerInstance = contractBosonRouter.connect(
-            users.seller.signer
-          );
-
-          await expect(
-            sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
-          ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
         });
 
         it('[NEGATIVE] Should revert if called when contract is paused', async () => {
@@ -7338,10 +7633,23 @@ describe('Cashier withdrawals ', () => {
             sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
           ).to.be.revertedWith(revertReasons.PAUSED);
         });
+
+        it('[NEGATIVE] should revert if router supplies wrong _messageSender', async () => {
+          // spoof boson router
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+          await expect(
+            contractCashier.withdrawDepositsSe(
+              TOKEN_SUPPLY_ID,
+              remQty,
+              users.attacker.address
+            )
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
+        });
       });
 
       describe('TKNETH', () => {
-        before(async () => {
+        beforeEach(async () => {
           await deployContracts();
           await setPeriods();
 
@@ -7385,13 +7693,108 @@ describe('Cashier withdrawals ', () => {
               constants.product_price,
               constants.buyer_deposit
             );
-            remQty--;
           }
         });
 
-        after(() => {
-          remQty = 10;
-          voucherToBuyBeforeBurn = 5;
+        it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          );
+
+          const expectedSellerDeposit = BN(constants.seller_deposit).mul(
+            BN(remQty)
+          );
+
+          expect(
+            await sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+          )
+            .to.emit(contractCashier, eventNames.LOG_WITHDRAWAL)
+            .withArgs(
+              contractBosonRouter.address,
+              users.seller.address,
+              expectedSellerDeposit
+            )
+            .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
+            .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
+            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+            .withArgs(
+              contractVoucherKernel.address,
+              users.seller.address,
+              constants.ZERO_ADDRESS,
+              TOKEN_SUPPLY_ID,
+              remQty
+            );
+        });
+
+        describe('State after COF', () => {
+          beforeEach(async () => {
+            const sellerInstance = contractBosonRouter.connect(
+              users.seller.signer
+            );
+            await sellerInstance.requestCancelOrFaultVoucherSet(
+              TOKEN_SUPPLY_ID
+            );
+          });
+
+          it('Escrow should have correct balance after burning the rest of the supply', async () => {
+            const expectedBalance = BN(constants.seller_deposit).mul(
+              BN(voucherToBuyBeforeBurn)
+            );
+            const escrowAmount = await contractCashier.getEscrowAmount(
+              users.seller.address
+            );
+
+            assert.isTrue(
+              escrowAmount.eq(expectedBalance),
+              'Escrow amount is incorrect'
+            );
+          });
+
+          it('Remaining QTY for Token Supply should be ZERO', async () => {
+            const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
+              TOKEN_SUPPLY_ID,
+              users.seller.address
+            );
+
+            assert.isTrue(
+              remainingQtyInContract.eq(BN(0)),
+              'Escrow amount is incorrect'
+            );
+          });
+
+          it('ERC1155 balance should be correct', async () => {
+            const balance = await contractERC1155ERC721[
+              'balanceOf(address,uint256)'
+            ](users.seller.address, TOKEN_SUPPLY_ID);
+
+            assert.equal(
+              balance.toString(),
+              constants.ZERO.toString(),
+              'ERC1155ERC721 amount is incorrect'
+            );
+          });
+
+          it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
+            await expect(
+              utils.commitToBuy(
+                users.buyer,
+                users.seller,
+                TOKEN_SUPPLY_ID,
+                constants.product_price,
+                constants.buyer_deposit
+              )
+            ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
+          });
+
+          it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
+            const sellerInstance = contractBosonRouter.connect(
+              users.seller.signer
+            );
+
+            await expect(
+              sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
+            ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
+          });
         });
 
         it('[NEGATIVE] should revert if not called from the seller', async () => {
@@ -7402,80 +7805,6 @@ describe('Cashier withdrawals ', () => {
           await expect(
             attackerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
           ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
-        });
-
-        it('Seller should be able to withdraw deposits for the remaining QTY in Token Supply', async () => {
-          const sellerInstance = contractBosonRouter.connect(
-            users.seller.signer
-          );
-
-          const withdrawTx = await sellerInstance.requestCancelOrFaultVoucherSet(
-            TOKEN_SUPPLY_ID
-          );
-
-          const txReceipt = await withdrawTx.wait();
-
-          const expectedSellerDeposit = BN(constants.seller_deposit).mul(
-            BN(remQty)
-          );
-
-          eventUtils.assertEventEmitted(
-            txReceipt,
-            Cashier_Factory,
-            eventNames.LOG_WITHDRAWAL,
-            (ev) => {
-              assert.equal(ev._payee, users.seller.address, 'Incorrect Payee');
-              assert.isTrue(ev._payment.eq(expectedSellerDeposit));
-            }
-          );
-        });
-
-        it('Escrow should have correct balance after burning the rest of the supply', async () => {
-          const expectedBalance = BN(constants.seller_deposit).mul(
-            BN(voucherToBuyBeforeBurn)
-          );
-          const escrowAmount = await contractCashier.getEscrowAmount(
-            users.seller.address
-          );
-
-          assert.isTrue(
-            escrowAmount.eq(expectedBalance),
-            'Escrow amount is incorrect'
-          );
-        });
-
-        it('Remaining QTY for Token Supply should be ZERO', async () => {
-          const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
-            TOKEN_SUPPLY_ID,
-            users.seller.address
-          );
-
-          assert.isTrue(
-            remainingQtyInContract.eq(BN(0)),
-            'Escrow amount is incorrect'
-          );
-        });
-
-        it('[NEGATIVE] Buyer should not be able to commit to buy anything from the burnt supply', async () => {
-          await expect(
-            utils.commitToBuy(
-              users.buyer,
-              users.seller,
-              TOKEN_SUPPLY_ID,
-              constants.product_price,
-              constants.buyer_deposit
-            )
-          ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
-        });
-
-        it('[NEGATIVE] Seller should not be able withdraw its deposit for the Token Supply twice', async () => {
-          const sellerInstance = contractBosonRouter.connect(
-            users.seller.signer
-          );
-
-          await expect(
-            sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
-          ).to.be.revertedWith(revertReasons.OFFER_EMPTY);
         });
 
         it('[NEGATIVE] Should revert if called when contract is paused', async () => {
@@ -7489,7 +7818,44 @@ describe('Cashier withdrawals ', () => {
             sellerInstance.requestCancelOrFaultVoucherSet(TOKEN_SUPPLY_ID)
           ).to.be.revertedWith(revertReasons.PAUSED);
         });
+
+        it('[NEGATIVE] should revert if router supplies wrong _messageSender', async () => {
+          // spoof boson router
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+          await expect(
+            contractCashier.withdrawDepositsSe(
+              TOKEN_SUPPLY_ID,
+              remQty,
+              users.attacker.address
+            )
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
+        });
       });
+    });
+
+    it('[NEGATIVE] should revert if not called via boson router', async () => {
+      await deployContracts();
+
+      const sellerInstance = contractVoucherKernel.connect(users.seller.signer);
+
+      const attackerInstance = contractVoucherKernel.connect(
+        users.attacker.signer
+      );
+
+      await expect(
+        sellerInstance.cancelOrFaultVoucherSet(
+          constants.ONE,
+          users.seller.address
+        )
+      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+
+      await expect(
+        attackerInstance.cancelOrFaultVoucherSet(
+          constants.ONE,
+          users.attacker.address
+        )
+      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
     });
   });
 
