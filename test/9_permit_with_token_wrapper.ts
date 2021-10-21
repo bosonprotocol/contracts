@@ -498,7 +498,9 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           );
 
           await mockDAI.mock.nonces.withArgs(users.seller.address).returns(0);
-          await mockDAI.mock.permit.returns();
+          await mockDAI.mock.permit.revertsWithReason(
+            revertReasons.DAI_PERMIT_EXPIRED
+          );
           await mockDAI.mock.name.returns('MockDAI');
 
           const digest = await getApprovalDigestDAI(
@@ -544,7 +546,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
                 from: users.seller.address,
               }
             )
-          ).to.be.revertedWith(revertReasons.PERMIT_EXPIRED);
+          ).to.be.revertedWith(revertReasons.DAI_PERMIT_EXPIRED);
         });
 
         it('[NEGATIVE] Should revert if token wrapper reverts because of invalid signature', async () => {
@@ -1816,7 +1818,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
               rPriceRequestVoucher,
               sPriceRequestVoucher
             )
-          ).to.be.revertedWith(revertReasons.INVALID_CALLER);
+          ).to.be.revertedWith(revertReasons.TOKENS_ARE_NOT_THE_SAME);
         });
       }); //TKNTKN Same
 
