@@ -509,8 +509,8 @@ contract BosonRouter is
         uint256 weiReceived = msg.value;
 
         //checks
-        (uint256 price, , uint256 depositBu) = IVoucherKernel(voucherKernel)
-            .getOrderCosts(_tokenIdSupply);
+        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
+            .getBuyerOrderCosts(_tokenIdSupply);
         require(price.add(depositBu) == weiReceived, "IF"); //invalid funds
 
         IVoucherKernel(voucherKernel).fillOrder(
@@ -622,7 +622,7 @@ contract BosonRouter is
         address tokenDepositAddress = IVoucherKernel(voucherKernel)
             .getVoucherDepositToken(_tokenIdSupply);
 
-        require(tokenPriceAddress == tokenDepositAddress, "IC"); //invalid caller
+        require(tokenPriceAddress == tokenDepositAddress, "TOKENS_ARE_NOT_THE_SAME"); //invalid caller
 
         // If tokenPriceAddress && tokenPriceAddress are the same
         // practically it's not of importance to each we are sending the funds
