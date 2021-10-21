@@ -3200,7 +3200,7 @@ describe('Cashier and VoucherKernel', () => {
               r,
               s
             )
-          ).to.be.revertedWith(revertReasons.INVALID_CALLER);
+          ).to.be.revertedWith(revertReasons.TOKENS_ARE_NOT_THE_SAME);
         });
       });
 
