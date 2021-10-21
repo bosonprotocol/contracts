@@ -1818,7 +1818,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
               rPriceRequestVoucher,
               sPriceRequestVoucher
             )
-          ).to.be.revertedWith(revertReasons.INVALID_CALLER);
+          ).to.be.revertedWith(revertReasons.TOKENS_ARE_NOT_THE_SAME);
         });
       }); //TKNTKN Same
 
