@@ -48,7 +48,7 @@ contract BosonRouter is
 
     event LogOrderCreated(
         uint256 indexed _tokenIdSupply,
-        address _seller,
+        address indexed _seller,
         uint256 _quantity,
         uint8 _paymentType
     );
