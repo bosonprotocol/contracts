@@ -265,8 +265,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 voucherDetails.tokenIdSupply
             );
         }
-
-        delete voucherDetails;
     }
 
     /**
@@ -487,7 +485,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
                 PaymentType.DEPOSIT_SELLER
             );
 
-            tFraction = 0;
         } else {
             //slash depositSe
             if (
