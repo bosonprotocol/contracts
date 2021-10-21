@@ -509,8 +509,8 @@ contract BosonRouter is
         uint256 weiReceived = msg.value;
 
         //checks
-        (uint256 price, , uint256 depositBu) = IVoucherKernel(voucherKernel)
-            .getOrderCosts(_tokenIdSupply);
+        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
+            .getBuyerOrderCosts(_tokenIdSupply);
         require(price.add(depositBu) == weiReceived, "IF"); //invalid funds
 
         IVoucherKernel(voucherKernel).fillOrder(
