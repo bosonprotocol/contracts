@@ -2,6 +2,7 @@
 
 pragma solidity 0.7.6;
 
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -17,7 +18,7 @@ import "./interfaces/ICashier.sol";
  * @title Multi-token contract, implementing ERC-1155 and ERC-721 hybrid
  *  Inspired by: https://github.com/pixowl/sandbox-smart-contracts
  */
-contract ERC1155ERC721 is IERC1155ERC721, Ownable {
+contract ERC1155ERC721 is IERC1155ERC721, Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     using Address for address;
 
@@ -78,7 +79,11 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         uint256 _tokenId,
         uint256 _value,
         bytes calldata _data
-    ) external override {
+    )
+    external
+    override
+    nonReentrant
+    {
         require(_to != address(0), "UNSPECIFIED_ADDRESS");
         require(
             _from == msg.sender || operatorApprovals[_from][msg.sender],
@@ -197,7 +202,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable {
         address _from,
         address _to,
         uint256 _tokenId
-    ) internal {
+    ) internal nonReentrant {
         require(ownerOf(_tokenId) == _from, "UNAUTHORIZED_T");
         require(_to != address(0), "UNSPECIFIED_ADDRESS");
 
