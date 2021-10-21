@@ -725,6 +725,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         uint256 _burnedQty,
         address payable _messageSender
     ) external override nonReentrant onlyFromRouter {
+        require(IVoucherKernel(voucherKernel).getSupplyHolder(_tokenIdSupply) == _messageSender, "UNAUTHORIZED_V");
+
         uint256 deposit =
             IVoucherKernel(voucherKernel).getSellerDeposit(_tokenIdSupply);
 
@@ -1037,13 +1039,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             _tokenSupplyId,
             _to
         );
-    }
-
-    /**
-     * @notice Only accept ETH via fallback from the BR Contract
-     */
-    receive() external payable {
-        require(msg.sender == bosonRouterAddress, "INVALID_PAYEE");
     }
 
     // // // // // // // //
