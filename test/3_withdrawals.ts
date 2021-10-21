@@ -468,7 +468,7 @@ describe('Cashier withdrawals ', () => {
           const withdrawsAfter = methods
             .map((m, ind) => (execTable[ind] ? m.m : ''))
             .filter((a) => a != '');
-            withdrawsAfter.push('finalize');
+          withdrawsAfter.push('finalize');
           assert.isTrue(
             distributedAmounts.buyerAmount.eq(
               expectedAmounts.expectedBuyerAmount
