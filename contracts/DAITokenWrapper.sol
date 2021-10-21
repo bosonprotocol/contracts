@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 pragma solidity 0.7.6;
 
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/ITokenWrapper.sol";
 import "./interfaces/IDAI.sol";
@@ -9,10 +10,7 @@ import "./interfaces/IDAI.sol";
  * @title DAITokenWrapper
  * @notice Contract for wrapping call to DAI token permit function because the DAI token permit function has a different signature from other tokens with which the protocol integrates
  */
-contract DAITokenWrapper is 
-    ITokenWrapper,
-    Ownable
-{
+contract DAITokenWrapper is ITokenWrapper, Ownable, ReentrancyGuard {
 
     address private daiTokenAddress;
 
@@ -54,10 +52,10 @@ contract DAITokenWrapper is
     ) 
         external
         override
+        nonReentrant
         notZeroAddress(_tokenOwner)
         notZeroAddress(_spender)
     {
-        require(_deadline == 0 || block.timestamp <= _deadline, "PERMIT_EXPIRED");
         require(_r != bytes32(0) && _s != bytes32(0), "INVALID_SIGNATURE_COMPONENTS");
         uint nonce =  IDAI(daiTokenAddress).nonces(_tokenOwner);
         IDAI(daiTokenAddress).permit(_tokenOwner, _spender, nonce, _deadline, true, _v, _r, _s);
