@@ -1806,17 +1806,11 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       );
 
       await expect(
-        sellerInstance.cancelOrFault(
-          constants.ONE,
-          users.seller.address
-        )
+        sellerInstance.cancelOrFault(constants.ONE, users.seller.address)
       ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
 
       await expect(
-        attackerInstance.cancelOrFault(
-          constants.ONE,
-          users.attacker.address
-        )
+        attackerInstance.cancelOrFault(constants.ONE, users.attacker.address)
       ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
     });
   });
