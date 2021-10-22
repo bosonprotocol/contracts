@@ -96,7 +96,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable, ReentrancyGuard {
         balances[_tokenId][_from] = balances[_tokenId][_from].sub(_value);
         balances[_tokenId][_to] = _value.add(balances[_tokenId][_to]);
 
-        ICashier(cashierAddress).onERC1155Transfer(
+        ICashier(cashierAddress).onVoucherSetTransfer(
             _from,
             _to,
             _tokenId,
@@ -215,7 +215,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable, ReentrancyGuard {
 
         require(IVoucherKernel(voucherKernelAddress).isVoucherTransferable(_tokenId), "FUNDS_RELEASED");
 
-        ICashier(cashierAddress).onERC721Transfer(
+        ICashier(cashierAddress).onVoucherTransfer(
             _from,
             _to,
             _tokenId
@@ -303,7 +303,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable, ReentrancyGuard {
             balances[tokenId][_from] = balances[tokenId][_from].sub(value);
             balances[tokenId][_to] = value.add(balances[tokenId][_to]);
 
-            ICashier(cashierAddress).onERC1155Transfer(
+            ICashier(cashierAddress).onVoucherSetTransfer(
                 _from,
                 _to,
                 tokenId,

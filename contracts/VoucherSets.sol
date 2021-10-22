@@ -92,7 +92,7 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
         balances[_tokenId][_from] = balances[_tokenId][_from].sub(_value);
         balances[_tokenId][_to] = _value.add(balances[_tokenId][_to]);
 
-        ICashier(cashierAddress).onERC1155Transfer(
+        ICashier(cashierAddress).onVoucherSetTransfer(
             _from,
             _to,
             _tokenId,
@@ -146,7 +146,7 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
             balances[tokenId][_from] = balances[tokenId][_from].sub(value);
             balances[tokenId][_to] = value.add(balances[tokenId][_to]);
 
-            ICashier(cashierAddress).onERC1155Transfer(
+            ICashier(cashierAddress).onVoucherSetTransfer(
                 _from,
                 _to,
                 tokenId,
@@ -548,6 +548,7 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
      */
     function setVoucherKernelAddress(address _voucherKernelAddress)
         external
+        override
         onlyOwner
         notZeroAddress(_voucherKernelAddress)
     {
@@ -562,6 +563,7 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
      */
     function setCashierAddress(address _cashierAddress)
         external
+        override
         onlyOwner
         notZeroAddress(_cashierAddress)
     {

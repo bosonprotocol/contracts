@@ -23,7 +23,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
     address private voucherKernel;
     address private bosonRouterAddress;
-    address private tokensContractAddress;
+    address private voucherSetsTokenAddress;   //ERC1155 contract representing voucher sets    
+    address private vouchersTokenAddress; //ERC721 contract representing vouchers;
     bool private disasterState;
 
     enum PaymentType {PAYMENT, DEPOSIT_SELLER, DEPOSIT_BUYER}
@@ -36,7 +37,9 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
     event LogBosonRouterSet(address _newBosonRouter, address _triggeredBy);
 
-    event LogTokenContractSet(address _newTokenContract, address _triggeredBy);
+    event LogVouchersTokenContractSet(address _newTokenContract, address _triggeredBy);
+
+    event LogVoucherSetsTokenContractSet(address _newTokenContract, address _triggeredBy);
 
     event LogWithdrawal(address _caller, address _payee, uint256 _payment);
 
@@ -67,10 +70,18 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice The only caller must be tokensContractAddress, otherwise reverts.
+     * @notice The caller must be the Vouchers token contract, otherwise reverts.
      */
-    modifier onlyTokensContract() {
-        require(msg.sender == tokensContractAddress, "UT"); // Unauthorized token address
+    modifier onlyVouchersTokenContract() {
+        require(msg.sender == vouchersTokenAddress, "UT"); // Unauthorized token address
+        _;
+    }
+
+     /**
+     * @notice The caller must be the Voucher Sets token contract, otherwise reverts.
+     */
+    modifier onlyVoucherSetsTokenContract() {
+        require(msg.sender == voucherSetsTokenAddress, "UT"); // Unauthorized token address
         _;
     }
 
@@ -858,18 +869,33 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Set the address of the ERC1155ERC721 contract
-     * @param _tokensContractAddress   The address of the ERC1155ERC721 contract
+     * @notice Set the address of the Vouchers token contract, an ERC721 contract
+     * @param _vouchersTokenAddress   The address of the Vouchers token contract
      */
-    function setTokenContractAddress(address _tokensContractAddress)
+    function setVouchersTokenAddress(address _vouchersTokenAddress)
         external
         override
         onlyOwner
     {
      
-        require(_tokensContractAddress != address(0), "UNSPECIFIED_ADDRESS");
-        tokensContractAddress = _tokensContractAddress;
-        emit LogTokenContractSet(_tokensContractAddress, msg.sender);
+        require(_vouchersTokenAddress != address(0), "UNSPECIFIED_ADDRESS");
+        vouchersTokenAddress = _vouchersTokenAddress;
+        emit LogVouchersTokenContractSet(_vouchersTokenAddress, msg.sender);
+    }
+
+   /**
+     * @notice Set the address of the Voucher Sets token contract, an ERC1155 contract
+     * @param _voucherSetsTokenAddress   The address of the Vouchers token contract
+     */
+    function setVoucherSetsTokenAddress(address _voucherSetsTokenAddress)
+        external
+        override
+        onlyOwner
+    {
+     
+        require(_voucherSetsTokenAddress != address(0), "UNSPECIFIED_ADDRESS");
+        voucherSetsTokenAddress = _voucherSetsTokenAddress;
+        emit LogVoucherSetsTokenContractSet(_voucherSetsTokenAddress, msg.sender);
     }
 
 
@@ -906,11 +932,11 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @param _to next owner of the _tokenIdVoucher
      * @param _tokenIdVoucher _tokenIdVoucher that has been transferred
      */
-    function onERC721Transfer(
+    function onVoucherTransfer(
         address _from,
         address _to,
         uint256 _tokenIdVoucher
-    ) external override nonReentrant onlyTokensContract {
+    ) external override nonReentrant onlyVouchersTokenContract {
         address tokenAddress;
 
         uint256 tokenSupplyId =
@@ -994,12 +1020,12 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      * @param _tokenSupplyId _tokenSupplyId for transfer
      * @param _value qty which has been transferred
      */
-    function onERC1155Transfer(
+    function onVoucherSetTransfer(
         address _from,
         address _to,
         uint256 _tokenSupplyId,
         uint256 _value
-    ) external override nonReentrant onlyTokensContract {
+    ) external override nonReentrant onlyVoucherSetsTokenContract {
         uint8 paymentType =
             IVoucherKernel(voucherKernel).getVoucherPaymentMethod(
                 _tokenSupplyId
@@ -1072,16 +1098,29 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Get the address of ERC1155ERC721 contract
-     * @return Address of ERC1155ERC721 contract
+     * @notice Get the address of the Vouchers token contract, an ERC721 contract
+     * @return Address of Vouchers contract
      */
-    function getTokensContractAddress() 
+    function getVouchersTokenAddress() 
         external 
         view 
         override
         returns (address)
     {
-        return tokensContractAddress;
+        return vouchersTokenAddress;
+    }
+
+    /**
+     * @notice Get the address of the VoucherSets token contract, an ERC155 contract
+     * @return Address of VoucherSets contract
+     */
+    function getVoucherSetsTokenAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return voucherSetsTokenAddress;
     }
 
     /**

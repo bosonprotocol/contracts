@@ -160,7 +160,7 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
 
         require(IVoucherKernel(voucherKernelAddress).isVoucherTransferable(_tokenId), "FUNDS_RELEASED");
 
-        ICashier(cashierAddress).onERC721Transfer(
+        ICashier(cashierAddress).onVoucherTransfer(
             _from,
             _to,
             _tokenId
@@ -370,6 +370,7 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
      */
     function setVoucherKernelAddress(address _voucherKernelAddress)
         external
+        override
         onlyOwner
         notZeroAddress(_voucherKernelAddress)
     {
@@ -384,6 +385,7 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
      */
     function setCashierAddress(address _cashierAddress)
         external
+        override
         onlyOwner
         notZeroAddress(_cashierAddress)
     {
