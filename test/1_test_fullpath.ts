@@ -1415,10 +1415,14 @@ describe('Voucher tests', () => {
         }
       );
 
-      const promiseKeyFromContract1 = await contractVoucherKernel.getPromiseKey(0);
+      const promiseKeyFromContract1 = await contractVoucherKernel.getPromiseKey(
+        0
+      );
       assert.equal(promiseKeyFromContract1, promisekey1, 'Wrong promise key 1');
 
-      const promiseKeyFromContract2 = await contractVoucherKernel_2.getPromiseKey(0);
+      const promiseKeyFromContract2 = await contractVoucherKernel_2.getPromiseKey(
+        0
+      );
       assert.equal(promiseKeyFromContract2, promisekey2, 'Wrong promise key 2');
     });
   });

@@ -8478,7 +8478,7 @@ describe('Cashier withdrawals ', () => {
 
     it('[NEGATIVE] should revert if voucher kernel returns payment method greater than 5', async () => {
       const {deployMockContract} = waffle;
-      let mockVoucherKernel = await deployMockContract(
+      const mockVoucherKernel = await deployMockContract(
         users.deployer.signer,
         IVK.abi
       ); //deploys mock
