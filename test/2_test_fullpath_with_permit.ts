@@ -8076,9 +8076,91 @@ describe('Cashier and VoucherKernel', () => {
     });
 
     describe('With normal deployment', () => {
+      function promiseKeyForVoucherKernel(contractAddress, seller, sellerNonce) {
+        return keccak256(
+          solidityPack(
+            ['address', 'uint256', 'uint256', 'uint256', 'address'],
+            [
+              seller.address,
+              sellerNonce,
+              constants.PROMISE_VALID_FROM,
+              constants.PROMISE_VALID_TO,
+              contractAddress,
+            ]
+          )
+        );
+      }
+
       beforeEach(async () => {
         await deployContracts();
       });
+
+      it('Should return correct promise keys', async () => {
+        await setPeriods();
+        utils = await UtilsBuilder.create()
+        .ETHETH()
+        .buildAsync(
+          contractERC1155ERC721,
+          contractVoucherKernel,
+          contractCashier,
+          contractBosonRouter
+        );
+
+        // create few orders
+        for (let i = 0; i < 5; i++) {
+        await utils.createOrder(
+          users.seller,
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITSE1,
+          constants.PROMISE_DEPOSITBU1,
+          constants.QTY_10
+        );
+      }
+      
+
+      // test that promise keys as expected
+      for (let i = 0; i < 5; i++) {
+      expect(await contractVoucherKernel.getPromiseKey(i)).to.equal(promiseKeyForVoucherKernel(contractVoucherKernel.address, users.seller, i),`Promise key ${i} mismatch`);
+        }
+
+      });
+
+      it('Should return correct type id', async () => {        await setPeriods();
+        utils = await UtilsBuilder.create()
+        .ETHETH()
+        .buildAsync(
+          contractERC1155ERC721,
+          contractVoucherKernel,
+          contractCashier,
+          contractBosonRouter
+        );
+
+        expect(await contractVoucherKernel.getTypeId()).to.equal(0,'Wrong type id');
+        
+        for (let i = 0; i < 5; i++) {
+          await utils.createOrder(
+            users.seller,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITSE1,
+            constants.PROMISE_DEPOSITBU1,
+            constants.QTY_10
+          );
+          expect(await contractVoucherKernel.getTypeId()).to.equal(i+1,`Wrong type id ${i+1}`);
+        }
+          
+       });  
+
+      it('Should return correct boson router address', async () => {
+       expect(await contractVoucherKernel.getBosonRouterAddress()).to.equal(contractBosonRouter.address,'Wrong boson router address');   
+      });
+
+      it('Should return correct cashier address', async () => {
+        expect(await contractVoucherKernel.getCashierAddress()).to.equal(contractCashier.address,'Wrong boson router address');   
+       });      
 
       it('[NEGATIVE] Should revert if fillOrder is called with wrong token Id Supply', async () => {
         // spoof boson router address
