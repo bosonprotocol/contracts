@@ -32,10 +32,6 @@ import * as eventUtils from '../testHelpers/events';
 const eventNames = eventUtils.eventNames;
 import fnSignatures from '../testHelpers/functionSignatures';
 
-import {waffle} from 'hardhat';
-import ERC721receiver from '../artifacts/contracts/mocks/MockERC721Receiver.sol/MockERC721Receiver.json';
-const {deployMockContract} = waffle;
-
 const BN = ethers.BigNumber.from;
 
 let utils: Utils;
@@ -141,13 +137,13 @@ describe('Cashier and VoucherKernel', () => {
 
     await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 
-      await contractVoucherKernel.setBosonRouterAddress(
-        contractBosonRouter.address
-      );
-      await contractVoucherKernel.setCashierAddress(contractCashier.address);
-      
-      await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-  
+    await contractVoucherKernel.setBosonRouterAddress(
+      contractBosonRouter.address
+    );
+    await contractVoucherKernel.setCashierAddress(contractCashier.address);
+
+    await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
+
     await contractCashier.setTokenContractAddress(
       contractERC1155ERC721.address
     );
@@ -5116,9 +5112,10 @@ describe('Cashier and VoucherKernel', () => {
         beforeEach(async () => {
           const timestamp = await Utils.getCurrTimestamp();
 
-          constants.PROMISE_VALID_FROM = timestamp + 10 * constants.SECONDS_IN_DAY;
-          constants.PROMISE_VALID_TO = constants.PROMISE_VALID_FROM  + 2 * constants.SECONDS_IN_DAY;
-
+          constants.PROMISE_VALID_FROM =
+            timestamp + 10 * constants.SECONDS_IN_DAY;
+          constants.PROMISE_VALID_TO =
+            constants.PROMISE_VALID_FROM + 2 * constants.SECONDS_IN_DAY;
 
           utils = await UtilsBuilder.create()
             .ETHETH()
@@ -8916,5 +8913,4 @@ describe('Cashier and VoucherKernel', () => {
       });
     });
   });
-
 });

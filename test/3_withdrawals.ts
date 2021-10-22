@@ -8543,20 +8543,21 @@ describe('Cashier withdrawals ', () => {
       // spoof boson router address
       await contractCashier.setBosonRouterAddress(users.deployer.address);
 
-      await expect(contractCashier.withdrawDepositsSe( constants.ONE,
-        1,
-        constants.ZERO_ADDRESS
-      )).to.be.revertedWith(
-  revertReasons.INVALID_PAYMENT_METHOD
-);
+      await expect(
+        contractCashier.withdrawDepositsSe(
+          constants.ONE,
+          1,
+          constants.ZERO_ADDRESS
+        )
+      ).to.be.revertedWith(revertReasons.INVALID_PAYMENT_METHOD);
     });
 
     it.only('[NEGATIVE] should revert if voucher kernel returns payment method greater than 5', async () => {
-      const tokenVoucherId = constants.ONE; 
+      const tokenVoucherId = constants.ONE;
       const tokenSupplyId = constants.TWO;
-      
+
       const {deployMockContract} = waffle;
-      
+
       const mockVoucherKernel = await deployMockContract(
         users.deployer.signer,
         IVK.abi
@@ -8582,19 +8583,20 @@ describe('Cashier withdrawals ', () => {
       await mockVoucherKernel.mock.getSupplyHolder
         .withArgs(tokenSupplyId)
         .returns(users.seller.address);
-        await mockVoucherKernel.mock.getSellerDeposit
+      await mockVoucherKernel.mock.getSellerDeposit
         .withArgs(tokenSupplyId)
         .returns(constants.seller_deposit);
 
-            // spoof boson router address
-            await contractCashier.setBosonRouterAddress(users.deployer.address);
+      // spoof boson router address
+      await contractCashier.setBosonRouterAddress(users.deployer.address);
 
-            await expect(contractCashier.withdrawDepositsSe( tokenSupplyId,
-              1,
-              users.seller.address
-            )).to.be.revertedWith(
-        revertReasons.INVALID_PAYMENT_METHOD
-      );
+      await expect(
+        contractCashier.withdrawDepositsSe(
+          tokenSupplyId,
+          1,
+          users.seller.address
+        )
+      ).to.be.revertedWith(revertReasons.INVALID_PAYMENT_METHOD);
     });
   });
 });

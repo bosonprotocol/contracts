@@ -5,7 +5,6 @@ import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
 import UtilsBuilder from '../testHelpers/utilsBuilder';
-import {toWei} from '../testHelpers/permitUtils';
 import {
   BosonRouter,
   ERC1155ERC721,
@@ -33,8 +32,6 @@ import fnSignatures from '../testHelpers/functionSignatures';
 import {waffle} from 'hardhat';
 import ERC721receiver from '../artifacts/contracts/mocks/MockERC721Receiver.sol/MockERC721Receiver.json';
 const {deployMockContract} = waffle;
-
-const BN = ethers.BigNumber.from;
 
 let utils: Utils;
 let users;
@@ -173,542 +170,539 @@ describe('VOUCHER KERNEL', () => {
     );
   }
 
-    it('[NEGATIVE] Should revert if boson router is not set', async () => {
-      await deployContracts(false);
-      await setPeriods();
+  it('[NEGATIVE] Should revert if boson router is not set', async () => {
+    await deployContracts(false);
+    await setPeriods();
 
-      await expect(contractVoucherKernel.pause()).to.be.revertedWith(
-        revertReasons.UNSET_ROUTER
+    await expect(contractVoucherKernel.pause()).to.be.revertedWith(
+      revertReasons.UNSET_ROUTER
+    );
+    await expect(contractVoucherKernel.unpause()).to.be.revertedWith(
+      revertReasons.UNSET_ROUTER
+    );
+    await expect(
+      contractVoucherKernel.createTokenSupplyId(
+        users.other1.address,
+        constants.PROMISE_VALID_FROM,
+        constants.PROMISE_VALID_TO,
+        constants.PROMISE_PRICE1,
+        constants.PROMISE_DEPOSITSE1,
+        constants.PROMISE_DEPOSITBU1,
+        constants.QTY_10
+      )
+    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+    await expect(
+      contractVoucherKernel.createPaymentMethod(
+        constants.ONE,
+        1,
+        constants.ZERO_ADDRESS,
+        constants.ZERO_ADDRESS
+      )
+    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+    await expect(
+      contractVoucherKernel.fillOrder(
+        constants.ONE,
+        users.seller.address,
+        users.buyer.address,
+        0
+      )
+    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+    await expect(
+      contractVoucherKernel.redeem(constants.ONE, users.buyer.address)
+    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+    await expect(
+      contractVoucherKernel.refund(constants.ONE, users.buyer.address)
+    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+    await expect(
+      contractVoucherKernel.complain(constants.ONE, users.buyer.address)
+    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+    // await expect(contractVoucherKernel.cancelOrFault(constants.ONE, users.seller.address)).to.be.revertedWith(revertReasons.UNSET_ROUTER); // should be uncommented after https://github.com/bosonprotocol/contracts/issues/195
+    await expect(
+      contractVoucherKernel.cancelOrFaultVoucherSet(
+        constants.ONE,
+        users.seller.address
+      )
+    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+  });
+
+  it('[NEGATIVE] Should revert if attacker tries to call method that should be called only from bosonRouter', async () => {
+    await deployContracts();
+
+    const attackerInstance = contractVoucherKernel.connect(
+      users.attacker.signer
+    );
+
+    await expect(attackerInstance.pause()).to.be.revertedWith(
+      revertReasons.ONLY_FROM_ROUTER
+    );
+    await expect(attackerInstance.unpause()).to.be.revertedWith(
+      revertReasons.ONLY_FROM_ROUTER
+    );
+    await expect(
+      attackerInstance.createTokenSupplyId(
+        users.other1.address,
+        constants.PROMISE_VALID_FROM,
+        constants.PROMISE_VALID_TO,
+        constants.PROMISE_PRICE1,
+        constants.PROMISE_DEPOSITSE1,
+        constants.PROMISE_DEPOSITBU1,
+        constants.QTY_10
+      )
+    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+    await expect(
+      attackerInstance.createPaymentMethod(
+        constants.ONE,
+        1,
+        constants.ZERO_ADDRESS,
+        constants.ZERO_ADDRESS
+      )
+    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+    await expect(
+      attackerInstance.fillOrder(
+        constants.ONE,
+        users.seller.address,
+        users.buyer.address,
+        1
+      )
+    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+    await expect(
+      attackerInstance.redeem(constants.ONE, users.buyer.address)
+    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+    await expect(
+      attackerInstance.refund(constants.ONE, users.buyer.address)
+    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+    await expect(
+      attackerInstance.complain(constants.ONE, users.buyer.address)
+    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+    // await expect(attackerInstance.cancelOrFault(constants.ONE, users.seller.address)).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER); // should be uncommented after https://github.com/bosonprotocol/contracts/issues/195
+    await expect(
+      attackerInstance.cancelOrFaultVoucherSet(
+        constants.ONE,
+        users.seller.address
+      )
+    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+  });
+
+  it('[NEGATIVE] Should revert if cashier address is not set', async () => {
+    await deployContracts(true, false);
+
+    await expect(
+      contractVoucherKernel.setPaymentReleased(constants.ONE)
+    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+    await expect(
+      contractVoucherKernel.setDepositsReleased(constants.ONE)
+    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+    await expect(
+      contractVoucherKernel.setSupplyHolderOnTransfer(
+        constants.ONE,
+        users.seller.address
+      )
+    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+
+    await contractBosonRouter.pause();
+
+    await expect(
+      contractVoucherKernel.burnSupplyOnPause(
+        users.seller.address,
+        constants.ONE,
+        constants.QTY_10
+      )
+    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+  });
+
+  it('[NEGATIVE] Should revert if attacker tries to call method that should be called only from cashier', async () => {
+    await deployContracts();
+
+    const attackerInstance = contractVoucherKernel.connect(
+      users.attacker.signer
+    );
+
+    await expect(
+      attackerInstance.setPaymentReleased(constants.ONE)
+    ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
+    await expect(
+      attackerInstance.setDepositsReleased(constants.ONE)
+    ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
+    await expect(
+      attackerInstance.setSupplyHolderOnTransfer(
+        constants.ONE,
+        users.seller.address
+      )
+    ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
+
+    await contractBosonRouter.pause();
+
+    await expect(
+      attackerInstance.burnSupplyOnPause(
+        users.seller.address,
+        constants.ONE,
+        constants.QTY_10
+      )
+    ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
+  });
+
+  describe('With normal deployment', () => {
+    function promiseKeyForVoucherKernel(contractAddress, seller, sellerNonce) {
+      return keccak256(
+        solidityPack(
+          ['address', 'uint256', 'uint256', 'uint256', 'address'],
+          [
+            seller.address,
+            sellerNonce,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            contractAddress,
+          ]
+        )
       );
-      await expect(contractVoucherKernel.unpause()).to.be.revertedWith(
-        revertReasons.UNSET_ROUTER
-      );
-      await expect(
-        contractVoucherKernel.createTokenSupplyId(
-          users.other1.address,
+    }
+
+    beforeEach(async () => {
+      await deployContracts();
+    });
+
+    it('Should return correct promise keys', async () => {
+      await setPeriods();
+      utils = await UtilsBuilder.create()
+        .ETHETH()
+        .buildAsync(
+          contractERC1155ERC721,
+          contractVoucherKernel,
+          contractCashier,
+          contractBosonRouter
+        );
+
+      // create few orders
+      for (let i = 0; i < 5; i++) {
+        await utils.createOrder(
+          users.seller,
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITSE1,
           constants.PROMISE_DEPOSITBU1,
           constants.QTY_10
-        )
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+        );
+      }
+
+      // test that promise keys as expected
+      for (let i = 0; i < 5; i++) {
+        expect(await contractVoucherKernel.getPromiseKey(i)).to.equal(
+          promiseKeyForVoucherKernel(
+            contractVoucherKernel.address,
+            users.seller,
+            i
+          ),
+          `Promise key ${i} mismatch`
+        );
+      }
+    });
+
+    it('Should return correct promise id from voucher ID', async () => {
+      await setPeriods();
+      utils = await UtilsBuilder.create()
+        .ETHETH()
+        .buildAsync(
+          contractERC1155ERC721,
+          contractVoucherKernel,
+          contractCashier,
+          contractBosonRouter
+        );
+
+      const tokenSupplyKey = await utils.createOrder(
+        users.seller,
+        constants.PROMISE_VALID_FROM,
+        constants.PROMISE_VALID_TO,
+        constants.PROMISE_PRICE1,
+        constants.PROMISE_DEPOSITSE1,
+        constants.PROMISE_DEPOSITBU1,
+        constants.QTY_10
+      );
+
+      // create few orders
+      for (let i = 0; i < 5; i++) {
+        const tokenVoucherId = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          tokenSupplyKey,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
+        );
+
+        expect(
+          await contractVoucherKernel.getPromiseIdFromVoucherId(tokenVoucherId)
+        ).to.equal(
+          promiseKeyForVoucherKernel(
+            contractVoucherKernel.address,
+            users.seller,
+            0
+          ),
+          `Promise key ${i} mismatch`
+        );
+      }
+    });
+
+    it('[NEGATIVE] Should revert for wrong token voucher id', async () => {
       await expect(
-        contractVoucherKernel.createPaymentMethod(
-          constants.ONE,
-          1,
-          constants.ZERO_ADDRESS,
-          constants.ZERO_ADDRESS
-        )
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+        contractVoucherKernel.getPromiseIdFromVoucherId(constants.ZERO)
+      ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
+    });
+
+    it('Should return correct type id', async () => {
+      await setPeriods();
+      utils = await UtilsBuilder.create()
+        .ETHETH()
+        .buildAsync(
+          contractERC1155ERC721,
+          contractVoucherKernel,
+          contractCashier,
+          contractBosonRouter
+        );
+
+      expect(await contractVoucherKernel.getTypeId()).to.equal(
+        0,
+        'Wrong type id'
+      );
+
+      for (let i = 0; i < 5; i++) {
+        await utils.createOrder(
+          users.seller,
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITSE1,
+          constants.PROMISE_DEPOSITBU1,
+          constants.QTY_10
+        );
+        expect(await contractVoucherKernel.getTypeId()).to.equal(
+          i + 1,
+          `Wrong type id ${i + 1}`
+        );
+      }
+    });
+
+    it('Should return correct boson router address', async () => {
+      expect(await contractVoucherKernel.getBosonRouterAddress()).to.equal(
+        contractBosonRouter.address,
+        'Wrong boson router address'
+      );
+    });
+
+    it('Should return correct cashier address', async () => {
+      expect(await contractVoucherKernel.getCashierAddress()).to.equal(
+        contractCashier.address,
+        'Wrong boson router address'
+      );
+    });
+
+    it('[NEGATIVE] Should revert if fillOrder is called with wrong token Id Supply', async () => {
+      // spoof boson router address
+      await contractVoucherKernel.setBosonRouterAddress(users.deployer.address);
+
       await expect(
         contractVoucherKernel.fillOrder(
-          constants.ONE,
+          constants.ZERO,
           users.seller.address,
           users.buyer.address,
           0
         )
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-      await expect(
-        contractVoucherKernel.redeem(constants.ONE, users.buyer.address)
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-      await expect(
-        contractVoucherKernel.refund(constants.ONE, users.buyer.address)
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-      await expect(
-        contractVoucherKernel.complain(constants.ONE, users.buyer.address)
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-      // await expect(contractVoucherKernel.cancelOrFault(constants.ONE, users.seller.address)).to.be.revertedWith(revertReasons.UNSET_ROUTER); // should be uncommented after https://github.com/bosonprotocol/contracts/issues/195
-      await expect(
-        contractVoucherKernel.cancelOrFaultVoucherSet(
-          constants.ONE,
-          users.seller.address
-        )
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+      ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
     });
 
-    it('[NEGATIVE] Should revert if attacker tries to call method that should be called only from bosonRouter', async () => {
-      await deployContracts();
-
-      const attackerInstance = contractVoucherKernel.connect(
-        users.attacker.signer
-      );
-
-      await expect(attackerInstance.pause()).to.be.revertedWith(
-        revertReasons.ONLY_FROM_ROUTER
-      );
-      await expect(attackerInstance.unpause()).to.be.revertedWith(
-        revertReasons.ONLY_FROM_ROUTER
-      );
+    it('[NEGATIVE] Should revert if triggerExpiration voucher id is zero', async () => {
       await expect(
-        attackerInstance.createTokenSupplyId(
-          users.other1.address,
+        contractVoucherKernel.triggerExpiration(constants.ZERO)
+      ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
+    });
+
+    it('[NEGATIVE] Should revert if triggerFinalizeVoucher voucher id is zero', async () => {
+      await expect(
+        contractVoucherKernel.triggerFinalizeVoucher(constants.ZERO)
+      ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
+    });
+
+    describe('Spoof boson router', () => {
+      let tokenSupplyId;
+      beforeEach(async () => {
+        await setPeriods();
+        utils = await UtilsBuilder.create()
+          .ETHETH()
+          .buildAsync(
+            contractERC1155ERC721,
+            contractVoucherKernel,
+            contractCashier,
+            contractBosonRouter
+          );
+
+        tokenSupplyId = await utils.createOrder(
+          users.seller,
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITSE1,
           constants.PROMISE_DEPOSITBU1,
           constants.QTY_10
-        )
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-      await expect(
-        attackerInstance.createPaymentMethod(
-          constants.ONE,
-          1,
-          constants.ZERO_ADDRESS,
-          constants.ZERO_ADDRESS
-        )
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-      await expect(
-        attackerInstance.fillOrder(
-          constants.ONE,
-          users.seller.address,
-          users.buyer.address,
-          1
-        )
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-      await expect(
-        attackerInstance.redeem(constants.ONE, users.buyer.address)
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-      await expect(
-        attackerInstance.refund(constants.ONE, users.buyer.address)
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-      await expect(
-        attackerInstance.complain(constants.ONE, users.buyer.address)
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-      // await expect(attackerInstance.cancelOrFault(constants.ONE, users.seller.address)).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER); // should be uncommented after https://github.com/bosonprotocol/contracts/issues/195
-      await expect(
-        attackerInstance.cancelOrFaultVoucherSet(
-          constants.ONE,
-          users.seller.address
-        )
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-    });
-
-    it('[NEGATIVE] Should revert if cashier address is not set', async () => {
-      await deployContracts(true, false);
-
-      await expect(
-        contractVoucherKernel.setPaymentReleased(constants.ONE)
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-      await expect(
-        contractVoucherKernel.setDepositsReleased(constants.ONE)
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-      await expect(
-        contractVoucherKernel.setSupplyHolderOnTransfer(
-          constants.ONE,
-          users.seller.address
-        )
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-
-      await contractBosonRouter.pause();
-
-      await expect(
-        contractVoucherKernel.burnSupplyOnPause(
-          users.seller.address,
-          constants.ONE,
-          constants.QTY_10
-        )
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-    });
-
-    it('[NEGATIVE] Should revert if attacker tries to call method that should be called only from cashier', async () => {
-      await deployContracts();
-
-      const attackerInstance = contractVoucherKernel.connect(
-        users.attacker.signer
-      );
-
-      await expect(
-        attackerInstance.setPaymentReleased(constants.ONE)
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
-      await expect(
-        attackerInstance.setDepositsReleased(constants.ONE)
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
-      await expect(
-        attackerInstance.setSupplyHolderOnTransfer(
-          constants.ONE,
-          users.seller.address
-        )
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
-
-      await contractBosonRouter.pause();
-
-      await expect(
-        attackerInstance.burnSupplyOnPause(
-          users.seller.address,
-          constants.ONE,
-          constants.QTY_10
-        )
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
-    });
-
-    describe('With normal deployment', () => {
-      function promiseKeyForVoucherKernel(
-        contractAddress,
-        seller,
-        sellerNonce
-      ) {
-        return keccak256(
-          solidityPack(
-            ['address', 'uint256', 'uint256', 'uint256', 'address'],
-            [
-              seller.address,
-              sellerNonce,
-              constants.PROMISE_VALID_FROM,
-              constants.PROMISE_VALID_TO,
-              contractAddress,
-            ]
-          )
-        );
-      }
-
-      beforeEach(async () => {
-        await deployContracts();
-      });      
-
-      it('Should return correct promise keys', async () => {
-        await setPeriods();
-        utils = await UtilsBuilder.create()
-          .ETHETH()
-          .buildAsync(
-            contractERC1155ERC721,
-            contractVoucherKernel,
-            contractCashier,
-            contractBosonRouter
-          );
-
-        // create few orders
-        for (let i = 0; i < 5; i++) {
-          await utils.createOrder(
-            users.seller,
-            constants.PROMISE_VALID_FROM,
-            constants.PROMISE_VALID_TO,
-            constants.PROMISE_PRICE1,
-            constants.PROMISE_DEPOSITSE1,
-            constants.PROMISE_DEPOSITBU1,
-            constants.QTY_10
-          );
-        }
-
-        // test that promise keys as expected
-        for (let i = 0; i < 5; i++) {
-          expect(await contractVoucherKernel.getPromiseKey(i)).to.equal(
-            promiseKeyForVoucherKernel(
-              contractVoucherKernel.address,
-              users.seller,
-              i
-            ),
-            `Promise key ${i} mismatch`
-          );
-        }
-      });
-
-      it('Should return correct promise id from voucher ID', async () => {
-        await setPeriods();
-        utils = await UtilsBuilder.create()
-          .ETHETH()
-          .buildAsync(
-            contractERC1155ERC721,
-            contractVoucherKernel,
-            contractCashier,
-            contractBosonRouter
-          );
-
-         let tokenSupplyKey = await utils.createOrder(
-            users.seller,
-            constants.PROMISE_VALID_FROM,
-            constants.PROMISE_VALID_TO,
-            constants.PROMISE_PRICE1,
-            constants.PROMISE_DEPOSITSE1,
-            constants.PROMISE_DEPOSITBU1,
-            constants.QTY_10
-          );
-
-        // create few orders
-        for (let i = 0; i < 5; i++) {
-          const tokenVoucherId = await utils.commitToBuy(
-            users.buyer,
-            users.seller,
-            tokenSupplyKey,
-            constants.PROMISE_PRICE1,
-            constants.PROMISE_DEPOSITBU1
-          );
-
-          expect(await contractVoucherKernel.getPromiseIdFromVoucherId(tokenVoucherId)).to.equal(
-            promiseKeyForVoucherKernel(
-              contractVoucherKernel.address,
-              users.seller,
-              0
-            ),
-            `Promise key ${i} mismatch`
-          );
-        }
-      });
-
-      it('[NEGATIVE] Should revert for wrong token voucher id', async () => {
-        await expect(contractVoucherKernel.getPromiseIdFromVoucherId(constants.ZERO)).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
-      });
-
-      it('Should return correct type id', async () => {
-        await setPeriods();
-        utils = await UtilsBuilder.create()
-          .ETHETH()
-          .buildAsync(
-            contractERC1155ERC721,
-            contractVoucherKernel,
-            contractCashier,
-            contractBosonRouter
-          );
-
-        expect(await contractVoucherKernel.getTypeId()).to.equal(
-          0,
-          'Wrong type id'
         );
 
-        for (let i = 0; i < 5; i++) {
-          await utils.createOrder(
-            users.seller,
-            constants.PROMISE_VALID_FROM,
-            constants.PROMISE_VALID_TO,
-            constants.PROMISE_PRICE1,
-            constants.PROMISE_DEPOSITSE1,
-            constants.PROMISE_DEPOSITBU1,
-            constants.QTY_10
-          );
-          expect(await contractVoucherKernel.getTypeId()).to.equal(
-            i + 1,
-            `Wrong type id ${i + 1}`
-          );
-        }
-      });
-
-      it('Should return correct boson router address', async () => {
-        expect(await contractVoucherKernel.getBosonRouterAddress()).to.equal(
-          contractBosonRouter.address,
-          'Wrong boson router address'
-        );
-      });
-
-      it('Should return correct cashier address', async () => {
-        expect(await contractVoucherKernel.getCashierAddress()).to.equal(
-          contractCashier.address,
-          'Wrong boson router address'
-        );
-      });
-
-      it('[NEGATIVE] Should revert if fillOrder is called with wrong token Id Supply', async () => {
         // spoof boson router address
         await contractVoucherKernel.setBosonRouterAddress(
           users.deployer.address
         );
+      });
+
+      it('[NEGATIVE] Should revert if fillOrder is called with wrong holder', async () => {
+        await expect(
+          contractVoucherKernel.fillOrder(
+            tokenSupplyId,
+            users.seller.address,
+            constants.ZERO_ADDRESS,
+            1
+          )
+        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+      });
+
+      it('[NEGATIVE] Should revert if fillOrder is called with holder contract that does not support ERC721 interface', async () => {
+        const mockERC721Receiver = await deployMockContract(
+          users.deployer.signer,
+          ERC721receiver.abi
+        ); //deploys mock
+
+        await mockERC721Receiver.mock.supportsInterface
+          .withArgs('0x150b7a02')
+          .returns(false);
 
         await expect(
           contractVoucherKernel.fillOrder(
-            constants.ZERO,
+            tokenSupplyId,
             users.seller.address,
-            users.buyer.address,
-            0
+            mockERC721Receiver.address,
+            1
           )
-        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
+        ).to.be.revertedWith(revertReasons.UNSUPPORTED_ERC721_RECEIVED);
       });
 
-      it('[NEGATIVE] Should revert if triggerExpiration voucher id is zero', async () => {
-        await expect(
-          contractVoucherKernel.triggerExpiration(constants.ZERO)
-        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
-      });
+      it('[NEGATIVE] Should revert if fillOrder is called with holder contract that does not implement onERC721Received', async () => {
+        const mockERC721Receiver = await deployMockContract(
+          users.deployer.signer,
+          ERC721receiver.abi
+        ); //deploys mock
 
-      it('[NEGATIVE] Should revert if triggerFinalizeVoucher voucher id is zero', async () => {
-        await expect(
-          contractVoucherKernel.triggerFinalizeVoucher(constants.ZERO)
-        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
-      });
-
-      describe('Spoof boson router', () => {
-        let tokenSupplyId;
-        beforeEach(async () => {
-          await setPeriods();
-          utils = await UtilsBuilder.create()
-            .ETHETH()
-            .buildAsync(
-              contractERC1155ERC721,
-              contractVoucherKernel,
-              contractCashier,
-              contractBosonRouter
-            );
-
-          tokenSupplyId = await utils.createOrder(
-            users.seller,
-            constants.PROMISE_VALID_FROM,
-            constants.PROMISE_VALID_TO,
-            constants.PROMISE_PRICE1,
-            constants.PROMISE_DEPOSITSE1,
-            constants.PROMISE_DEPOSITBU1,
-            constants.QTY_10
-          );
-
-          // spoof boson router address
-          await contractVoucherKernel.setBosonRouterAddress(
-            users.deployer.address
-          );
-        });
-
-        it('[NEGATIVE] Should revert if fillOrder is called with wrong holder', async () => {
-          await expect(
-            contractVoucherKernel.fillOrder(
-              tokenSupplyId,
-              users.seller.address,
-              constants.ZERO_ADDRESS,
-              1
-            )
-          ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
-        });
-
-        it('[NEGATIVE] Should revert if fillOrder is called with holder contract that does not support ERC721 interface', async () => {
-          const mockERC721Receiver = await deployMockContract(
-            users.deployer.signer,
-            ERC721receiver.abi
-          ); //deploys mock
-
-          await mockERC721Receiver.mock.supportsInterface
-            .withArgs('0x150b7a02')
-            .returns(false);
-
-          await expect(
-            contractVoucherKernel.fillOrder(
-              tokenSupplyId,
-              users.seller.address,
-              mockERC721Receiver.address,
-              1
-            )
-          ).to.be.revertedWith(revertReasons.UNSUPPORTED_ERC721_RECEIVED);
-        });
-
-        it('[NEGATIVE] Should revert if fillOrder is called with holder contract that does not implement onERC721Received', async () => {
-          const mockERC721Receiver = await deployMockContract(
-            users.deployer.signer,
-            ERC721receiver.abi
-          ); //deploys mock
-
-          await mockERC721Receiver.mock.supportsInterface
-            .withArgs('0x150b7a02')
-            .returns(true);
-          await mockERC721Receiver.mock.onERC721Received
-            .withArgs(
-              users.seller.address,
-              users.deployer.address,
-              tokenSupplyId,
-              '0x'
-            )
-            .returns('0x00000000');
-
-          await expect(
-            contractVoucherKernel.fillOrder(
-              tokenSupplyId,
-              users.seller.address,
-              mockERC721Receiver.address,
-              1
-            )
-          ).to.be.revertedWith(revertReasons.UNSUPPORTED_ERC721_RECEIVED);
-        });
-
-        it('Should be possible to call fillOrder with holder contract that cannot receive ERC721', async () => {
-          await expect(
-            contractVoucherKernel.fillOrder(
-              tokenSupplyId,
-              users.seller.address,
-              contractMockERC721Receiver.address,
-              1
-            )
-          ).to.not.be.reverted;
-        });
-      });
-
-      describe('Spoof cashier router', () => {
-        let tokenSupplyId;
-        beforeEach(async () => {
-          await setPeriods();
-          utils = await UtilsBuilder.create()
-            .ETHETH()
-            .buildAsync(
-              contractERC1155ERC721,
-              contractVoucherKernel,
-              contractCashier,
-              contractBosonRouter
-            );
-
-          tokenSupplyId = await utils.createOrder(
-            users.seller,
-            constants.PROMISE_VALID_FROM,
-            constants.PROMISE_VALID_TO,
-            constants.PROMISE_PRICE1,
-            constants.PROMISE_DEPOSITSE1,
-            constants.PROMISE_DEPOSITBU1,
-            constants.QTY_10
-          );
-
-          // spoof boson router address
-          await contractVoucherKernel.setCashierAddress(users.deployer.address);
-        });
-
-        it('Should be possible to call burnSupplyOnPause if kernel is paused and cashier is caller', async () => {
-          const supplyToBurn = 6;
-          await contractBosonRouter.pause();
-
-          await expect(
-            contractVoucherKernel.burnSupplyOnPause(
-              users.seller.address,
-              tokenSupplyId,
-              supplyToBurn
-            )
+        await mockERC721Receiver.mock.supportsInterface
+          .withArgs('0x150b7a02')
+          .returns(true);
+        await mockERC721Receiver.mock.onERC721Received
+          .withArgs(
+            users.seller.address,
+            users.deployer.address,
+            tokenSupplyId,
+            '0x'
           )
-            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
-            .withArgs(
-              contractVoucherKernel.address,
-              users.seller.address,
-              constants.ZERO_ADDRESS,
-              tokenSupplyId,
-              supplyToBurn
-            );
+          .returns('0x00000000');
 
-          const expectedBalance = constants.QTY_10 - supplyToBurn;
-          const balanceOfOwner = await contractERC1155ERC721.functions[
-            fnSignatures.balanceOf1155
-          ](users.seller.address, tokenSupplyId);
+        await expect(
+          contractVoucherKernel.fillOrder(
+            tokenSupplyId,
+            users.seller.address,
+            mockERC721Receiver.address,
+            1
+          )
+        ).to.be.revertedWith(revertReasons.UNSUPPORTED_ERC721_RECEIVED);
+      });
 
-          assert.equal(
-            balanceOfOwner.toString(),
-            expectedBalance.toString(),
-            'Balance after burn mismatch'
+      it('Should be possible to call fillOrder with holder contract that cannot receive ERC721', async () => {
+        await expect(
+          contractVoucherKernel.fillOrder(
+            tokenSupplyId,
+            users.seller.address,
+            contractMockERC721Receiver.address,
+            1
+          )
+        ).to.not.be.reverted;
+      });
+    });
+
+    describe('Spoof cashier router', () => {
+      let tokenSupplyId;
+      beforeEach(async () => {
+        await setPeriods();
+        utils = await UtilsBuilder.create()
+          .ETHETH()
+          .buildAsync(
+            contractERC1155ERC721,
+            contractVoucherKernel,
+            contractCashier,
+            contractBosonRouter
           );
-        });
 
-        it('[NEGATIVE]Should NOT be possible to call burnSupplyOnPause if kernel is not paused', async () => {
-          const supplyToBurn = 6;
+        tokenSupplyId = await utils.createOrder(
+          users.seller,
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITSE1,
+          constants.PROMISE_DEPOSITBU1,
+          constants.QTY_10
+        );
 
-          await expect(
-            contractVoucherKernel.burnSupplyOnPause(
-              users.seller.address,
-              tokenSupplyId,
-              supplyToBurn
-            )
-          ).to.be.revertedWith(revertReasons.NOT_PAUSED);
-        });
+        // spoof boson router address
+        await contractVoucherKernel.setCashierAddress(users.deployer.address);
+      });
 
-        it('[NEGATIVE] Should revert if setPaymentReleased voucher id is zero', async () => {
-          await expect(
-            contractVoucherKernel.setPaymentReleased(constants.ZERO)
-          ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
-        });
+      it('Should be possible to call burnSupplyOnPause if kernel is paused and cashier is caller', async () => {
+        const supplyToBurn = 6;
+        await contractBosonRouter.pause();
 
-        it('[NEGATIVE] Should revert if setDepositReleased voucher id is zero', async () => {
-          await expect(
-            contractVoucherKernel.setDepositsReleased(constants.ZERO)
-          ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
-        });
+        await expect(
+          contractVoucherKernel.burnSupplyOnPause(
+            users.seller.address,
+            tokenSupplyId,
+            supplyToBurn
+          )
+        )
+          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .withArgs(
+            contractVoucherKernel.address,
+            users.seller.address,
+            constants.ZERO_ADDRESS,
+            tokenSupplyId,
+            supplyToBurn
+          );
+
+        const expectedBalance = constants.QTY_10 - supplyToBurn;
+        const balanceOfOwner = await contractERC1155ERC721.functions[
+          fnSignatures.balanceOf1155
+        ](users.seller.address, tokenSupplyId);
+
+        assert.equal(
+          balanceOfOwner.toString(),
+          expectedBalance.toString(),
+          'Balance after burn mismatch'
+        );
+      });
+
+      it('[NEGATIVE]Should NOT be possible to call burnSupplyOnPause if kernel is not paused', async () => {
+        const supplyToBurn = 6;
+
+        await expect(
+          contractVoucherKernel.burnSupplyOnPause(
+            users.seller.address,
+            tokenSupplyId,
+            supplyToBurn
+          )
+        ).to.be.revertedWith(revertReasons.NOT_PAUSED);
+      });
+
+      it('[NEGATIVE] Should revert if setPaymentReleased voucher id is zero', async () => {
+        await expect(
+          contractVoucherKernel.setPaymentReleased(constants.ZERO)
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
+      });
+
+      it('[NEGATIVE] Should revert if setDepositReleased voucher id is zero', async () => {
+        await expect(
+          contractVoucherKernel.setDepositsReleased(constants.ZERO)
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
       });
     });
   });
-
+});
