@@ -154,17 +154,12 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable, ReentrancyGuard {
     ) public override {
         transferFrom(_from, _to, _tokenId);
 
-        if (_to.isContract()) {
-            require(
-                IERC721Receiver(_to).onERC721Received(
-                    _from,
-                    _to,
-                    _tokenId,
-                    _data
-                ) == IERC721Receiver(_to).onERC721Received.selector,
-                "UNSUPPORTED_ERC721_RECEIVED"
-            );
-        }
+        _doSafeTransferAcceptanceCheck(
+            address(0),
+            _to,
+            _tokenId,
+            _data
+        );
     }
 
     /**
@@ -343,16 +338,47 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable, ReentrancyGuard {
         bytes memory _data
     ) internal {
         if (_to.isContract()) {
-            require(
-                IERC1155Receiver(_to).onERC1155Received(
-                    _operator,
-                    _from,
-                    _tokenId,
-                    _value,
-                    _data
-                ) == IERC1155Receiver(_to).onERC1155Received.selector,
-                "NOT_SUPPORTED"
-            );
+            try IERC1155Receiver(_to).onERC1155Received(_operator, _from, _tokenId, _value, _data) returns (bytes4 response) {
+                if (response != IERC1155Receiver.onERC1155Received.selector) {
+                    revert("ERC1155: ERC1155Receiver rejected tokens");
+                }
+            } catch Error(string memory reason) {
+                revert(reason);
+            } catch {
+                revert("ERC1155: transfer to non ERC1155Receiver implementer");
+            }
+        }
+    }
+
+     /**
+     * @notice Check successful transfer if recipient is a contract
+     * @dev ERC-721
+     * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.4.0-rc.0/contracts/token/ERC721/ERC721.sol
+     * @param _from     Address of sender
+     * @param _to       Address of recipient
+     * @param _tokenId  ID of the token
+     * @param _data     Optional data
+     */
+    function _doSafeTransferAcceptanceCheck(
+        address _from,
+        address _to,
+        uint256 _tokenId,
+        bytes memory _data
+    ) internal returns (bool) {
+        if (_to.isContract()) {
+            try IERC721Receiver(_to).onERC721Received(_msgSender(), _from, _tokenId, _data) returns (bytes4 retval) {
+                return retval == IERC721Receiver.onERC721Received.selector;
+            } catch (bytes memory reason) {
+                if (reason.length == 0) {
+                    revert("ERC721: transfer to non ERC721Receiver implementer");
+                } else {
+                    assembly {
+                        revert(add(32, reason), mload(reason))
+                    }
+                }
+            }
+        } else {
+            return true;
         }
     }
 
@@ -375,16 +401,17 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable, ReentrancyGuard {
         bytes memory _data
     ) internal {
         if (_to.isContract()) {
-            require(
-                IERC1155Receiver(_to).onERC1155BatchReceived(
-                    _operator,
-                    _from,
-                    _tokenIds,
-                    _values,
-                    _data
-                ) == IERC1155Receiver(_to).onERC1155BatchReceived.selector,
-                "NOT_SUPPORTED"
-            );
+            try IERC1155Receiver(_to).onERC1155BatchReceived(_operator, _from, _tokenIds, _values, _data) returns (
+                bytes4 response
+            ) {
+                if (response != IERC1155Receiver.onERC1155BatchReceived.selector) {
+                    revert("ERC1155: ERC1155Receiver rejected tokens");
+                }
+            } catch Error(string memory reason) {
+                revert(reason);
+            } catch {
+                revert("ERC1155: transfer to non ERC1155Receiver implementer");
+            }
         }
     }
 
@@ -587,6 +614,13 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable, ReentrancyGuard {
         balance721[_to]++;
 
         emit Transfer(address(0), _to, _tokenId);
+
+        require(_doSafeTransferAcceptanceCheck(
+            address(0),
+            _to,
+            _tokenId,
+            ""
+        ), "ERC721: transfer to non ERC721Receiver implementer");
     }
 
     /**
