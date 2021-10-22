@@ -3973,6 +3973,19 @@ describe('Cashier and VoucherKernel', () => {
           utils.complain(voucherID, users.buyer.signer)
         ).to.be.revertedWith(revertReasons.COMPLAIN_PERIOD_EXPIRED);
       });
+
+      it('[COMMIT->!COMPLAIN] Buyer should not be able to complain directly after commit', async () => {
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
+        );   
+        await expect(
+          utils.complain(voucherID, users.buyer.signer)
+        ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
+          });
     });
   });
 
