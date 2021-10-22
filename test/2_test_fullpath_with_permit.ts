@@ -4059,6 +4059,7 @@ describe('Cashier and VoucherKernel', () => {
       }
 
       beforeEach(async () => {
+        await deployContracts();
         await setPeriods();
         utils = await UtilsBuilder.create()
           .ETHETH()
