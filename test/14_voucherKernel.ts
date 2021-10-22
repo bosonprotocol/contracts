@@ -216,7 +216,9 @@ describe('VOUCHER KERNEL', () => {
     await expect(
       contractVoucherKernel.complain(constants.ONE, users.buyer.address)
     ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-    // await expect(contractVoucherKernel.cancelOrFault(constants.ONE, users.seller.address)).to.be.revertedWith(revertReasons.UNSET_ROUTER); // should be uncommented after https://github.com/bosonprotocol/contracts/issues/195
+    await expect(
+      contractVoucherKernel.cancelOrFault(constants.ONE, users.seller.address)
+    ).to.be.revertedWith(revertReasons.UNSET_ROUTER); // should be uncommented after https://github.com/bosonprotocol/contracts/issues/195
     await expect(
       contractVoucherKernel.cancelOrFaultVoucherSet(
         constants.ONE,
@@ -274,7 +276,9 @@ describe('VOUCHER KERNEL', () => {
     await expect(
       attackerInstance.complain(constants.ONE, users.buyer.address)
     ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-    // await expect(attackerInstance.cancelOrFault(constants.ONE, users.seller.address)).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER); // should be uncommented after https://github.com/bosonprotocol/contracts/issues/195
+    await expect(
+      attackerInstance.cancelOrFault(constants.ONE, users.seller.address)
+    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER); // should be uncommented after https://github.com/bosonprotocol/contracts/issues/195
     await expect(
       attackerInstance.cancelOrFaultVoucherSet(
         constants.ONE,

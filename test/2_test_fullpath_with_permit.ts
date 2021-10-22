@@ -4019,8 +4019,9 @@ describe('Cashier and VoucherKernel', () => {
 
       it('[!CANCEL] It should not be possible to cancel voucher that does not exist yet', async () => {
         // spoof boson router address.
-        // TODO uncomment when modifier added
-        // await contractVoucherKernel.setBosonRouterAddress(users.deployer.address);
+        await contractVoucherKernel.setBosonRouterAddress(
+          users.deployer.address
+        );
 
         await expect(
           contractVoucherKernel.cancelOrFault(
@@ -5145,13 +5146,13 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it.only('[NEGATIVE] SHould not be possible to redeem before promise valid', async () => {
+        it('[NEGATIVE] Should not be possible to redeem before promise valid', async () => {
           await expect(
             utils.redeem(tokenVoucherId, users.buyer.signer)
           ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_FROM);
         });
 
-        it.only('[NEGATIVE] SHould not be possible to refund before promise valid', async () => {
+        it('[NEGATIVE] Should not be possible to refund before promise valid', async () => {
           await expect(
             utils.refund(tokenVoucherId, users.buyer.signer)
           ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_FROM);

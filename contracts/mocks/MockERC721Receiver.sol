@@ -10,7 +10,7 @@ contract MockERC721Receiver is ERC165, ERC721Holder {
     // which can be also obtained as `IERC721Receiver(0).onERC721Received.selector`
     bytes4 private constant _ERC721_RECEIVED = 0x150b7a02;
 
-        constructor () {
+    constructor() {
         _registerInterface(_ERC721_RECEIVED);
     }
 }

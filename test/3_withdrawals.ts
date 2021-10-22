@@ -8535,7 +8535,7 @@ describe('Cashier withdrawals ', () => {
       );
     });
 
-    it.only('[NEGATIVE] should revert if voucher kernel returns payment method 0', async () => {
+    it('[NEGATIVE] should revert if voucher kernel returns payment method 0', async () => {
       await expect(contractCashier.withdraw(constants.ONE)).to.be.revertedWith(
         revertReasons.INVALID_PAYMENT_METHOD
       );
@@ -8552,7 +8552,7 @@ describe('Cashier withdrawals ', () => {
       ).to.be.revertedWith(revertReasons.INVALID_PAYMENT_METHOD);
     });
 
-    it.only('[NEGATIVE] should revert if voucher kernel returns payment method greater than 5', async () => {
+    it('[NEGATIVE] should revert if voucher kernel returns payment method greater than 5', async () => {
       const tokenVoucherId = constants.ONE;
       const tokenSupplyId = constants.TWO;
 
