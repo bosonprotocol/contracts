@@ -7861,6 +7861,8 @@ describe('Cashier and VoucherKernel', () => {
       ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
     });
 
+
+
     describe('With normal deployment', () => {
       beforeEach(async () => {
         await deployContracts();
@@ -7890,6 +7892,7 @@ describe('Cashier and VoucherKernel', () => {
           )
         ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TOKEN_CONTRACT);
       });
+
     });
   });
 
@@ -8091,6 +8094,8 @@ describe('Cashier and VoucherKernel', () => {
         await deployContracts();
       });
 
+      
+
       it('Should return correct promise keys', async () => {
         await setPeriods();
         utils = await UtilsBuilder.create()
@@ -8126,6 +8131,52 @@ describe('Cashier and VoucherKernel', () => {
             `Promise key ${i} mismatch`
           );
         }
+      });
+
+      it('Should return correct promise id from voucher ID', async () => {
+        await setPeriods();
+        utils = await UtilsBuilder.create()
+          .ETHETH()
+          .buildAsync(
+            contractERC1155ERC721,
+            contractVoucherKernel,
+            contractCashier,
+            contractBosonRouter
+          );
+
+         let tokenSupplyKey = await utils.createOrder(
+            users.seller,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITSE1,
+            constants.PROMISE_DEPOSITBU1,
+            constants.QTY_10
+          );
+
+        // create few orders
+        for (let i = 0; i < 5; i++) {
+          const tokenVoucherId = await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            tokenSupplyKey,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
+          );
+
+          expect(await contractVoucherKernel.getPromiseIdFromVoucherId(tokenVoucherId)).to.equal(
+            promiseKeyForVoucherKernel(
+              contractVoucherKernel.address,
+              users.seller,
+              0
+            ),
+            `Promise key ${i} mismatch`
+          );
+        }
+      });
+
+      it('[NEGATIVE] Should revert for wrong token voucher id', async () => {
+        await expect(contractVoucherKernel.getPromiseIdFromVoucherId(constants.ZERO)).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
       });
 
       it('Should return correct type id', async () => {
@@ -9275,6 +9326,57 @@ describe('Cashier and VoucherKernel', () => {
                 `Wrong voucher status`
               );
             });
+          });
+        });
+
+        describe('BEFORE VALIDITY PERIOD', () => {
+          let tokenVoucherId;
+
+          beforeEach(async () => {
+            const timestamp = await Utils.getCurrTimestamp();
+
+            constants.PROMISE_VALID_FROM = timestamp + 10 * constants.SECONDS_IN_DAY;
+            constants.PROMISE_VALID_TO = constants.PROMISE_VALID_FROM  + 2 * constants.SECONDS_IN_DAY;
+
+
+            utils = await UtilsBuilder.create()
+              .ETHETH()
+              .buildAsync(
+                contractERC1155ERC721,
+                contractVoucherKernel,
+                contractCashier,
+                contractBosonRouter
+              );
+  
+            const tokenSupplyId = await utils.createOrder(
+              users.seller,
+              constants.PROMISE_VALID_FROM,
+              constants.PROMISE_VALID_TO,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITSE1,
+              constants.PROMISE_DEPOSITBU1,
+              constants.QTY_10
+            );
+
+            tokenVoucherId = await utils.commitToBuy(
+              users.buyer,
+              users.seller,
+              tokenSupplyId,
+              constants.PROMISE_PRICE1,
+              constants.PROMISE_DEPOSITBU1
+            );
+          });
+
+          it.only('[NEGATIVE] SHould not be possible to redeem before promise valid', async () => {
+            await expect(
+              utils.redeem(tokenVoucherId, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_FROM);
+          });
+
+          it.only('[NEGATIVE] SHould not be possible to refund before promise valid', async () => {
+            await expect(
+              utils.refund(tokenVoucherId, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_FROM);
           });
         });
       });
