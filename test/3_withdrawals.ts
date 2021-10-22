@@ -7019,6 +7019,19 @@ describe('Cashier withdrawals ', () => {
           )
         ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
       });
+
+      it('[NEGATIVE] should revert if router supplies burn quantity as zero', async () => {
+        // spoof boson router
+        await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+        await expect(
+          contractCashier.withdrawDepositsSe(
+            TOKEN_SUPPLY_ID,
+            0,
+            users.seller.address
+          )
+        ).to.be.revertedWith(revertReasons.NO_FUNDS_TO_WITHDRAW);
+      });
     });
 
     describe('[WITH PERMIT]', () => {
@@ -7232,6 +7245,19 @@ describe('Cashier withdrawals ', () => {
             )
           ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
         });
+
+        it('[NEGATIVE] should revert if router supplies burn quantity as zero', async () => {
+          // spoof boson router
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+          await expect(
+            contractCashier.withdrawDepositsSe(
+              TOKEN_SUPPLY_ID,
+              0,
+              users.seller.address
+            )
+          ).to.be.revertedWith(revertReasons.NO_FUNDS_TO_WITHDRAW);
+        });
       });
 
       describe('TKNTKN Same', () => {
@@ -7437,6 +7463,19 @@ describe('Cashier withdrawals ', () => {
               users.attacker.address
             )
           ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
+        });
+
+        it('[NEGATIVE] should revert if router supplies burn quantity as zero', async () => {
+          // spoof boson router
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+          await expect(
+            contractCashier.withdrawDepositsSe(
+              TOKEN_SUPPLY_ID,
+              0,
+              users.seller.address
+            )
+          ).to.be.revertedWith(revertReasons.NO_FUNDS_TO_WITHDRAW);
         });
       });
 
@@ -7646,6 +7685,19 @@ describe('Cashier withdrawals ', () => {
             )
           ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
         });
+
+        it('[NEGATIVE] should revert if router supplies burn quantity as zero', async () => {
+          // spoof boson router
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+          await expect(
+            contractCashier.withdrawDepositsSe(
+              TOKEN_SUPPLY_ID,
+              0,
+              users.seller.address
+            )
+          ).to.be.revertedWith(revertReasons.NO_FUNDS_TO_WITHDRAW);
+        });
       });
 
       describe('TKNETH', () => {
@@ -7830,6 +7882,19 @@ describe('Cashier withdrawals ', () => {
               users.attacker.address
             )
           ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VOUCHER_OWNER);
+        });
+
+        it('[NEGATIVE] should revert if router supplies burn quantity as zero', async () => {
+          // spoof boson router
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+          await expect(
+            contractCashier.withdrawDepositsSe(
+              TOKEN_SUPPLY_ID,
+              0,
+              users.seller.address
+            )
+          ).to.be.revertedWith(revertReasons.NO_FUNDS_TO_WITHDRAW);
         });
       });
     });

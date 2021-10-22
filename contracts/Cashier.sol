@@ -784,7 +784,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     ) internal
       notZeroAddress(_recipient)
     {
-        require(_amount > 0, "");
+        require(_amount > 0, "NO_FUNDS_TO_WITHDRAW");
 
         if (_paymentMethod == ETHETH || _paymentMethod == ETHTKN) {
             payable(_recipient).sendValue(_amount);
@@ -820,7 +820,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     ) internal    
       notZeroAddress(_recipient)
     {
-        require(_amount > 0, "");
+        require(_amount > 0, "NO_FUNDS_TO_WITHDRAW");
 
         if (_paymentMethod == ETHETH || _paymentMethod == TKNETH) {
             payable(_recipient).sendValue(_amount);
