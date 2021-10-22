@@ -54,4 +54,7 @@ export default {
   UNSUPPORTED_TOKEN: 'UNSUPPORTED_TOKEN',
   EOA: 'Transaction reverted: function call to a non-contract account',
   INVALID_VALUE: 'INVALID_VALUE',
+  NON_ERC721RECEIVER: 'ERC721: transfer to non ERC721Receiver implementer',
+  NON_ERC1155RECEIVER: 'ERC1155: transfer to non ERC1155Receiver implementer',
+  NO_FUNDS_TO_WITHDRAW: 'NO_FUNDS_TO_WITHDRAW',
 };

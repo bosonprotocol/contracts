@@ -677,6 +677,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
     function cancelOrFault(uint256 _tokenIdVoucher, address _messageSender)
         external
         override
+        onlyFromRouter
         whenNotPaused
     {
         uint256 tokenIdSupply = getIdSupplyFromVoucher(_tokenIdVoucher);

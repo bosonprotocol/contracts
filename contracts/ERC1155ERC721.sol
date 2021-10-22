@@ -322,6 +322,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable, ReentrancyGuard {
     /**
      * @notice Check successful transfer if recipient is a contract
      * @dev ERC-1155
+     * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.4.0-rc.0/contracts/token/ERC1155/ERC1155.sol
      * @param _operator The operator of the transfer
      * @param _from     Address of sender
      * @param _to       Address of recipient
@@ -350,8 +351,8 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable, ReentrancyGuard {
         }
     }
 
-     /**
-     * @notice Check successful transfer if recipient is a contract
+    /**
+     * @notice Check successful mint if recipient is a contract
      * @dev ERC-721
      * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.4.0-rc.0/contracts/token/ERC721/ERC721.sol
      * @param _from     Address of sender
@@ -385,6 +386,7 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable, ReentrancyGuard {
     /**
      * @notice Check successful transfer if recipient is a contract
      * @dev ERC-1155
+     * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.4.0-rc.0/contracts/token/ERC1155/ERC1155.sol
      * @param _operator The operator of the transfer
      * @param _from     Address of sender
      * @param _to       Address of recipient
@@ -609,7 +611,6 @@ contract ERC1155ERC721 is IERC1155ERC721, Ownable, ReentrancyGuard {
             owners721[_tokenId] == address(0),
             "ERC721: token already minted"
         );
-
         owners721[_tokenId] = _to;
         balance721[_to]++;
 
