@@ -534,7 +534,7 @@ describe('ERC1155ERC721', () => {
             constants.QTY_10,
             users.seller.signer
           )
-        ).to.be.revertedWith(revertReasons.FN_SELECTOR_NOT_RECOGNIZED);
+        ).to.be.revertedWith(revertReasons.NON_ERC1155RECEIVER);
       });
 
       it('[safeBatchTransfer1155] Should be able to safely batch transfer to EOA', async () => {
@@ -721,7 +721,7 @@ describe('ERC1155ERC721', () => {
             [constants.QTY_10],
             users.seller.signer
           )
-        ).to.be.revertedWith(revertReasons.FN_SELECTOR_NOT_RECOGNIZED);
+        ).to.be.revertedWith(revertReasons.NON_ERC1155RECEIVER);
       });
 
       it('[NEGATIVE][safeBatchTransfer1155] Should revert if attacker tries to transfer batch', async () => {
@@ -865,7 +865,7 @@ describe('ERC1155ERC721', () => {
             constants.QTY_10,
             ethers.utils.formatBytes32String('0x0')
           )
-        ).to.be.revertedWith(revertReasons.FN_SELECTOR_NOT_RECOGNIZED);
+        ).to.be.revertedWith(revertReasons.NON_ERC1155RECEIVER);
       });
 
       it('[NEGATIVE][mint] must fail: unauthorized minting ERC-1155', async () => {
@@ -1090,7 +1090,7 @@ describe('ERC1155ERC721', () => {
             [constants.QTY_10],
             ethers.utils.formatBytes32String('0x0')
           )
-        ).to.be.revertedWith(revertReasons.FN_SELECTOR_NOT_RECOGNIZED);
+        ).to.be.revertedWith(revertReasons.NON_ERC1155RECEIVER);
       });
 
       it('[NEGATIVE][mintBatch] Should revert when _account is a zero address', async () => {
@@ -1530,7 +1530,7 @@ describe('ERC1155ERC721', () => {
             erc721,
             users.buyer.signer
           )
-        ).to.be.revertedWith(revertReasons.FN_SELECTOR_NOT_RECOGNIZED);
+        ).to.be.revertedWith(revertReasons.NON_ERC721RECEIVER);
       });
 
       it('[NEGATIVE][safeTransfer721] Attacker should not be able to transfer erc721', async () => {
@@ -1800,6 +1800,21 @@ describe('ERC1155ERC721', () => {
         ](supportingContractAddress);
 
         assert.equal(balanceOfBuyer.toString(), expectedBalance.toString());
+      });
+
+      it('[NEGATIVE][mint] it should not be able to mint a token to a receiver that cannot receive it', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        const tokenIdForMint = 123;
+        await expect(
+          contractERC1155ERC721.functions[fnSignatures.mint721](
+            contractCashier.address,
+            tokenIdForMint
+          )
+        ).to.be.revertedWith(revertReasons.NON_ERC721RECEIVER);
       });
 
       it('[NEGATIVE][mint] must fail: unauthorized minting ERC-721', async () => {
