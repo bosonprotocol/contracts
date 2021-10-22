@@ -8096,9 +8096,23 @@ describe('Cashier and VoucherKernel', () => {
         ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
       });
 
-      
-      describe('action at wrong step', ()=>{
-        let tokenSupplyId;
+      it('[NEGATIVE] Should revert if triggerExpiration voucher id is zero', async () => {
+        await expect(
+          contractVoucherKernel.triggerExpiration(
+            constants.ZERO         
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID)
+      });
+  
+      it('[NEGATIVE] Should revert if triggerFinalizeVoucher voucher id is zero', async () => {
+        await expect(
+          contractVoucherKernel.triggerFinalizeVoucher(
+            constants.ZERO         
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID)
+      });
+
+      describe('action at wrong step', ()=>{      
         let tokenIdVoucherId;
         beforeEach(async ()=>{
           await setPeriods();
@@ -8111,7 +8125,7 @@ describe('Cashier and VoucherKernel', () => {
             contractBosonRouter
           );
 
-        tokenSupplyId = await utils.createOrder(
+        let tokenSupplyKey = await utils.createOrder(
           users.seller,
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
@@ -8633,7 +8647,7 @@ describe('Cashier and VoucherKernel', () => {
       });
 
 
-      describe('fillOrder', ()=>{
+      describe('Spoof boson router', ()=>{
         let tokenSupplyId;
         beforeEach(async()=>{
           await setPeriods();
@@ -8661,7 +8675,7 @@ describe('Cashier and VoucherKernel', () => {
           users.deployer.address
         );
 
-        })
+        });
 
       it('[NEGATIVE] Should revert if fillOrder is called with wrong holder', async () => {
         await expect(
@@ -8727,46 +8741,88 @@ describe('Cashier and VoucherKernel', () => {
           )
         ).to.not.be.reverted;
       });
-
-      it('Should be possible to call burnSupplyOnPause if kernel is paused and cashier is caller', async () => {
-        const supplyToBurn = 6;
-        await contractVoucherKernel.pause();
-        
-        // spoof cashier address
-        await contractVoucherKernel.setCashierAddress(users.deployer.address);
-        
-        await expect(
-          contractVoucherKernel.burnSupplyOnPause(
-            users.seller.address,
-            tokenSupplyId,
-            supplyToBurn            
-          )
-        ).to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
-        .withArgs(contractVoucherKernel.address, users.seller.address,constants.ZERO_ADDRESS, tokenSupplyId, supplyToBurn);
-
-        const expectedBalance = constants.QTY_10 - supplyToBurn;
-        const balanceOfOwner = await contractERC1155ERC721.functions[
-          fnSignatures.balanceOf1155
-        ](users.seller.address, tokenSupplyId);
-
-        assert.equal(balanceOfOwner.toString(), expectedBalance.toString(), 'Balance after burn mismatch');
-      });
-
-      it('[NEGATIVE]Should NOT be possible to call burnSupplyOnPause if kernel is not paused', async () => {
-        const supplyToBurn = 6;
-        
-        // spoof cashier address
-        await contractVoucherKernel.setCashierAddress(users.deployer.address);
-        
-        await expect(
-          contractVoucherKernel.burnSupplyOnPause(
-            users.seller.address,
-            tokenSupplyId,
-            supplyToBurn            
-          )
-        ).to.be.revertedWith(revertReasons.NOT_PAUSED)
-      });
     });
+
+    describe.only('Spoof cashier router', ()=>{
+      let tokenSupplyId;
+      beforeEach(async()=>{
+        await setPeriods();
+        utils = await UtilsBuilder.create()
+        .ETHETH()
+        .buildAsync(
+          contractERC1155ERC721,
+          contractVoucherKernel,
+          contractCashier,
+          contractBosonRouter
+        );
+
+      tokenSupplyId = await utils.createOrder(
+        users.seller,
+        constants.PROMISE_VALID_FROM,
+        constants.PROMISE_VALID_TO,
+        constants.PROMISE_PRICE1,
+        constants.PROMISE_DEPOSITSE1,
+        constants.PROMISE_DEPOSITBU1,
+        constants.QTY_10
+      );
+
+      // spoof boson router address
+      await contractVoucherKernel.setCashierAddress(
+        users.deployer.address
+      );
+
+      });
+
+
+    it('Should be possible to call burnSupplyOnPause if kernel is paused and cashier is caller', async () => {
+      const supplyToBurn = 6;
+      await contractBosonRouter.pause();  
+      
+      await expect(
+        contractVoucherKernel.burnSupplyOnPause(
+          users.seller.address,
+          tokenSupplyId,
+          supplyToBurn            
+        )
+      ).to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+      .withArgs(contractVoucherKernel.address, users.seller.address,constants.ZERO_ADDRESS, tokenSupplyId, supplyToBurn);
+
+      const expectedBalance = constants.QTY_10 - supplyToBurn;
+      const balanceOfOwner = await contractERC1155ERC721.functions[
+        fnSignatures.balanceOf1155
+      ](users.seller.address, tokenSupplyId);
+
+      assert.equal(balanceOfOwner.toString(), expectedBalance.toString(), 'Balance after burn mismatch');
+    });
+
+    it('[NEGATIVE]Should NOT be possible to call burnSupplyOnPause if kernel is not paused', async () => {
+      const supplyToBurn = 6;
+      
+      await expect(
+        contractVoucherKernel.burnSupplyOnPause(
+          users.seller.address,
+          tokenSupplyId,
+          supplyToBurn            
+        )
+      ).to.be.revertedWith(revertReasons.NOT_PAUSED)
+    });
+
+    it('[NEGATIVE] Should revert if setPaymentReleased voucher id is zero', async () => {
+      await expect(
+        contractVoucherKernel.setPaymentReleased(
+          constants.ZERO         
+        )
+      ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID)
+    });
+
+    it('[NEGATIVE] Should revert if setDepositReleased voucher id is zero', async () => {
+      await expect(
+        contractVoucherKernel.setDepositsReleased(
+          constants.ZERO         
+        )
+      ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID)
+    });
+  });
   });
   });
 });
