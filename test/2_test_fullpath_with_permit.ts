@@ -89,10 +89,7 @@ describe('Cashier and VoucherKernel', () => {
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
   }
 
-  async function deployContracts(
-    setBosonRouterAddress = true,
-    setCashierAddress = true
-  ) {
+  async function deployContracts() {
     const sixtySeconds = 60;
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
@@ -144,20 +141,13 @@ describe('Cashier and VoucherKernel', () => {
 
     await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 
-    if (setBosonRouterAddress) {
       await contractVoucherKernel.setBosonRouterAddress(
         contractBosonRouter.address
       );
-    }
-
-    if (setCashierAddress) {
       await contractVoucherKernel.setCashierAddress(contractCashier.address);
-    }
-
-    if (setBosonRouterAddress) {
+      
       await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-    }
-
+  
     await contractCashier.setTokenContractAddress(
       contractERC1155ERC721.address
     );
@@ -4044,6 +4034,1133 @@ describe('Cashier and VoucherKernel', () => {
         ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
       });
     });
+
+    describe('Action at wrong step', () => {
+      let tokenVoucherId;
+
+      const statuses = {
+        commit: 7,
+        redeem: 6,
+        refund: 5,
+        expire: 4,
+        complain: 3,
+        cancel: 2,
+        finalize: 1,
+      };
+
+      function determineStatus(_status, _changeIdx) {
+        return _status | (1 << _changeIdx);
+      }
+
+      function expectedVoucherStatus(path) {
+        let status = determineStatus(0, statuses.commit); // starting status == commit
+        for (const step of path) {
+          status = determineStatus(status, statuses[step]);
+        }
+
+        return status;
+      }
+
+      beforeEach(async () => {
+        await setPeriods();
+        utils = await UtilsBuilder.create()
+          .ETHETH()
+          .buildAsync(
+            contractERC1155ERC721,
+            contractVoucherKernel,
+            contractCashier,
+            contractBosonRouter
+          );
+
+        const tokenSupplyKey = await utils.createOrder(
+          users.seller,
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITSE1,
+          constants.PROMISE_DEPOSITBU1,
+          constants.QTY_10
+        );
+
+        tokenVoucherId = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          tokenSupplyKey,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
+        );
+      });
+
+      describe('REFUND', () => {
+        it('[NEGATIVE] REDEEM->!REFUND', async () => {
+          await utils.redeem(tokenVoucherId, users.buyer.signer);
+
+          await expect(
+            utils.refund(tokenVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
+        });
+
+        it('[NEGATIVE] CANCEL->!REFUND', async () => {
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+
+          await expect(
+            utils.refund(tokenVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
+        });
+
+        it('[NEGATIVE] EXPIRE->!REFUND', async () => {
+          await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+          await utils.expire(tokenVoucherId, users.seller.signer);
+
+          await expect(
+            utils.refund(tokenVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
+        });
+      });
+
+      describe('DOUBLE COMPLAIN', () => {
+        it('[NEGATIVE] CANCEL->COMPLAIN->!COMPLAIN', async () => {
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+
+          await expect(
+            utils.complain(tokenVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
+        });
+
+        it('[NEGATIVE] REDEEM->COMPLAIN->!COMPLAIN', async () => {
+          await utils.redeem(tokenVoucherId, users.buyer.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+
+          await expect(
+            utils.complain(tokenVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
+        });
+
+        it('[NEGATIVE] REDEEM->COMPLAIN->CANCEL->!COMPLAIN', async () => {
+          await utils.redeem(tokenVoucherId, users.buyer.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+
+          await expect(
+            utils.complain(tokenVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
+        });
+
+        it('[NEGATIVE] REDEEM->CANCEL->COMPLAIN->!COMPLAIN', async () => {
+          await utils.redeem(tokenVoucherId, users.buyer.signer);
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+
+          await expect(
+            utils.complain(tokenVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
+        });
+
+        it('[NEGATIVE] REFUND->COMPLAIN->!COMPLAIN', async () => {
+          await utils.refund(tokenVoucherId, users.buyer.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+
+          await expect(
+            utils.complain(tokenVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
+        });
+
+        it('[NEGATIVE] REFUND->COMPLAIN->CANCEL->!COMPLAIN', async () => {
+          await utils.refund(tokenVoucherId, users.buyer.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+
+          await expect(
+            utils.complain(tokenVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
+        });
+
+        it('[NEGATIVE] REFUND->CANCEL->COMPLAIN->!COMPLAIN', async () => {
+          await utils.refund(tokenVoucherId, users.buyer.signer);
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+
+          await expect(
+            utils.complain(tokenVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
+        });
+
+        it('[NEGATIVE] EXPIRE->COMPLAIN->!COMPLAIN', async () => {
+          await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+          await utils.expire(tokenVoucherId, users.seller.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+
+          await expect(
+            utils.complain(tokenVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
+        });
+
+        it('[NEGATIVE] EXPIRE->COMPLAIN->CANCEL->!COMPLAIN', async () => {
+          await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+          await utils.expire(tokenVoucherId, users.seller.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+
+          await expect(
+            utils.complain(tokenVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
+        });
+
+        it('[NEGATIVE] EXPIRE->COMPLAIN->CANCEL->!COMPLAIN', async () => {
+          await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+          await utils.expire(tokenVoucherId, users.seller.signer);
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+
+          await expect(
+            utils.complain(tokenVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
+        });
+      });
+
+      describe('DOUBLE COF', () => {
+        it('[NEGATIVE] COMMIT->CANCEL->COMPLAIN->!CANCEL', async () => {
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+
+          await expect(
+            utils.cancel(tokenVoucherId, users.seller.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
+        });
+
+        it('[NEGATIVE] COMMIT->CANCEL->!CANCEL', async () => {
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+
+          await expect(
+            utils.cancel(tokenVoucherId, users.seller.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
+        });
+
+        it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->CANCEL->!CANCEL', async () => {
+          await utils.redeem(tokenVoucherId, users.buyer.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+
+          await expect(
+            utils.cancel(tokenVoucherId, users.seller.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
+        });
+
+        it('[NEGATIVE] COMMIT->REDEEM->CANCEL->COMPLAIN->!CANCEL', async () => {
+          await utils.redeem(tokenVoucherId, users.buyer.signer);
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+
+          await expect(
+            utils.cancel(tokenVoucherId, users.seller.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
+        });
+
+        it('[NEGATIVE] COMMIT->REDEEM->CANCEL->!CANCEL', async () => {
+          await utils.redeem(tokenVoucherId, users.buyer.signer);
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+
+          await expect(
+            utils.cancel(tokenVoucherId, users.seller.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
+        });
+
+        it('[NEGATIVE] COMMIT->REFUND->COMPLAIN->CANCEL->!CANCEL', async () => {
+          await utils.refund(tokenVoucherId, users.buyer.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+
+          await expect(
+            utils.cancel(tokenVoucherId, users.seller.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
+        });
+
+        it('[NEGATIVE] COMMIT->REFUND->CANCEL->COMPLAIN->!CANCEL', async () => {
+          await utils.refund(tokenVoucherId, users.buyer.signer);
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+
+          await expect(
+            utils.cancel(tokenVoucherId, users.seller.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
+        });
+
+        it('[NEGATIVE] COMMIT->REFUND->CANCEL->!CANCEL', async () => {
+          await utils.refund(tokenVoucherId, users.buyer.signer);
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+
+          await expect(
+            utils.cancel(tokenVoucherId, users.seller.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
+        });
+
+        it('[NEGATIVE] COMMIT->EXPIRE->COMPLAIN->CANCEL->!CANCEL-', async () => {
+          await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+          await utils.expire(tokenVoucherId, users.seller.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+
+          await expect(
+            utils.cancel(tokenVoucherId, users.seller.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
+        });
+
+        it('[NEGATIVE] COMMIT->EXPIRE->CANCEL->COMPLAIN->!CANCEL', async () => {
+          await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+          await utils.expire(tokenVoucherId, users.seller.signer);
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+
+          await expect(
+            utils.cancel(tokenVoucherId, users.seller.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
+        });
+
+        it('[NEGATIVE] COMMIT->EXPIRE->CANCEL->!CANCEL', async () => {
+          await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+          await utils.expire(tokenVoucherId, users.seller.signer);
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+
+          await expect(
+            utils.cancel(tokenVoucherId, users.seller.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
+        });
+      });
+
+      describe('COMPLAIN/COF/FINALIZE after finalize', () => {
+        it('[NEGATIVE] COMMIT->CANCEL->COMPLAIN->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+          await advanceTimeSeconds(60);
+          await utils.finalize(tokenVoucherId, users.deployer.signer);
+
+          await expect(
+            utils.complain(tokenVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+          await expect(
+            utils.cancel(tokenVoucherId, users.seller.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+          await expect(
+            utils.finalize(tokenVoucherId, users.deployer.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+        });
+
+        it('[NEGATIVE] COMMIT->CANCEL->FINALIZE->!COMPLAIN/!COF/!FINALIZEV', async () => {
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+          await advanceTimeSeconds(60);
+          await utils.finalize(tokenVoucherId, users.deployer.signer);
+
+          await expect(
+            utils.complain(tokenVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+          await expect(
+            utils.cancel(tokenVoucherId, users.seller.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+          await expect(
+            utils.finalize(tokenVoucherId, users.deployer.signer)
+          ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+        });
+
+        describe('REDEEM', () => {
+          beforeEach(async () => {
+            await utils.redeem(tokenVoucherId, users.buyer.signer);
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->FINALIZE->!COMPLAIN/!COF/!FINALIZEV', async () => {
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+
+            await expect(
+              utils.complain(tokenVoucherId, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.cancel(tokenVoucherId, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+
+            await expect(
+              utils.complain(tokenVoucherId, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.cancel(tokenVoucherId, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+
+            await expect(
+              utils.complain(tokenVoucherId, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.cancel(tokenVoucherId, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+
+            await expect(
+              utils.complain(tokenVoucherId, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.cancel(tokenVoucherId, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->CANCEL->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+
+            await expect(
+              utils.complain(tokenVoucherId, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.cancel(tokenVoucherId, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+          });
+        });
+
+        describe('REFUND', () => {
+          beforeEach(async () => {
+            await utils.refund(tokenVoucherId, users.buyer.signer);
+          });
+
+          it('[NEGATIVE] COMMIT->REFUND->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+
+            await expect(
+              utils.complain(tokenVoucherId, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.cancel(tokenVoucherId, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+          });
+
+          it('[NEGATIVE] COMMIT->REFUND->COMPLAIN->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+
+            await expect(
+              utils.complain(tokenVoucherId, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.cancel(tokenVoucherId, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+          });
+
+          it('[NEGATIVE] COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+
+            await expect(
+              utils.complain(tokenVoucherId, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.cancel(tokenVoucherId, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+          });
+
+          it('[NEGATIVE] COMMIT->REFUND->CANCEL->COMPLAIN->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+
+            await expect(
+              utils.complain(tokenVoucherId, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.cancel(tokenVoucherId, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+          });
+
+          it('[NEGATIVE] COMMIT->REFUND->CANCEL->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+
+            await expect(
+              utils.complain(tokenVoucherId, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.cancel(tokenVoucherId, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+          });
+        });
+
+        describe('EXPIRE', () => {
+          beforeEach(async () => {
+            await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+            await utils.expire(tokenVoucherId, users.deployer.signer);
+          });
+
+          it('[NEGATIVE] COMMIT->EXPIRE->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+
+            await expect(
+              utils.complain(tokenVoucherId, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.cancel(tokenVoucherId, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+          });
+
+          it('[NEGATIVE] COMMIT->EXPIRE->COMPLAIN->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+
+            await expect(
+              utils.complain(tokenVoucherId, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.cancel(tokenVoucherId, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+          });
+
+          it('[NEGATIVE] COMMIT->EXPIRE->COMPLAIN->CANCEL->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+
+            await expect(
+              utils.complain(tokenVoucherId, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.cancel(tokenVoucherId, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+          });
+
+          it('[NEGATIVE] COMMIT->EXPIRE->CANCEL->COMPLAIN->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+
+            await expect(
+              utils.complain(tokenVoucherId, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.cancel(tokenVoucherId, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+          });
+
+          it('[NEGATIVE] COMMIT->EXPIRE->CANCEL->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+
+            await expect(
+              utils.complain(tokenVoucherId, users.buyer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.cancel(tokenVoucherId, users.seller.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
+          });
+        });
+      });
+
+      describe('EXPIRY after some other action', () => {
+        async function testTriggerExpiraton(path) {
+          // to try expiration we should go to the future, but then other methods might fail as well.
+          // therefore we revert to the state before advancing in the future
+          const snapshot = await ethers.provider.send('evm_snapshot', []);
+          await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+          expect(
+            await utils.expire(tokenVoucherId, users.deployer.signer)
+          ).to.not.emit(
+            contractVoucherKernel,
+            eventNames.LOG_EXPIRATION_TRIGGERED
+          );
+
+          const voucherStatus = (
+            await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
+          )[0];
+          assert.equal(
+            voucherStatus,
+            expectedVoucherStatus(path),
+            `Wrong voucher status after ${path}`
+          );
+
+          // revert to state before we advanced time
+          await ethers.provider.send('evm_revert', [snapshot]);
+        }
+
+        it('[NEGATIVE] EXPIRY before expiration time should have no effect', async () => {
+          await advanceTimeSeconds(constants.SECONDS_IN_DAY + 1);
+          const voucherStatus = (
+            await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
+          )[0];
+          assert.equal(
+            voucherStatus,
+            expectedVoucherStatus([]),
+            `Wrong voucher status`
+          );
+        });
+
+        it('[NEGATIVE] COMMIT->CANCEL->COMPLAIN->FINALIZE', async () => {
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+          await testTriggerExpiraton(['cancel']);
+          await utils.complain(tokenVoucherId, users.buyer.signer);
+          await testTriggerExpiraton(['cancel', 'complain']);
+          await advanceTimeSeconds(60);
+          await utils.finalize(tokenVoucherId, users.deployer.signer);
+          await testTriggerExpiraton(['cancel', 'complain', 'finalize']);
+        });
+
+        it('[NEGATIVE] COMMIT->CANCEL->FINALIZE', async () => {
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+          await advanceTimeSeconds(60);
+          await utils.finalize(tokenVoucherId, users.deployer.signer);
+          await testTriggerExpiraton(['cancel', 'finalize']);
+        });
+
+        describe('REDEEM', () => {
+          beforeEach(async () => {
+            await utils.redeem(tokenVoucherId, users.buyer.signer);
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->FINALIZE', async () => {
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+            await testTriggerExpiraton(['redeem', 'finalize']);
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->FINALIZE', async () => {
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await testTriggerExpiraton(['redeem', 'complain']);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+            await testTriggerExpiraton(['redeem', 'complain', 'finalize']);
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE', async () => {
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await testTriggerExpiraton(['redeem', 'complain', 'cancel']);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+            await testTriggerExpiraton([
+              'redeem',
+              'complain',
+              'cancel',
+              'finalize',
+            ]);
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE', async () => {
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await testTriggerExpiraton(['redeem', 'cancel', 'complain']);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+            await testTriggerExpiraton([
+              'redeem',
+              'cancel',
+              'complain',
+              'finalize',
+            ]);
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->CANCEL->FINALIZE', async () => {
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await testTriggerExpiraton(['redeem', 'cancel']);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+            await testTriggerExpiraton(['redeem', 'cancel', 'finalize']);
+          });
+        });
+
+        describe('REFUND', () => {
+          beforeEach(async () => {
+            await utils.refund(tokenVoucherId, users.buyer.signer);
+          });
+
+          it('[NEGATIVE] COMMIT->REFUND->FINALIZE', async () => {
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+            await testTriggerExpiraton(['refund', 'finalize']);
+          });
+
+          it('[NEGATIVE] COMMIT->REFUND->COMPLAIN->FINALIZEF', async () => {
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await testTriggerExpiraton(['refund', 'complain']);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+            await testTriggerExpiraton(['refund', 'complain', 'finalize']);
+          });
+
+          it('[NEGATIVE] COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE', async () => {
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await testTriggerExpiraton(['refund', 'complain', 'cancel']);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+            await testTriggerExpiraton([
+              'refund',
+              'complain',
+              'cancel',
+              'finalize',
+            ]);
+          });
+
+          it('[NEGATIVE] COMMIT->REFUND->CANCEL->COMPLAIN->FINALIZE', async () => {
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await testTriggerExpiraton(['refund', 'cancel', 'complain']);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+            await testTriggerExpiraton([
+              'refund',
+              'cancel',
+              'complain',
+              'finalize',
+            ]);
+          });
+
+          it('[NEGATIVE] COMMIT->REFUND->CANCEL->FINALIZE', async () => {
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await testTriggerExpiraton(['refund', 'cancel']);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+            await testTriggerExpiraton(['refund', 'cancel', 'finalize']);
+          });
+        });
+
+        describe('EXPIRE', () => {
+          beforeEach(async () => {
+            await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+            await utils.expire(tokenVoucherId, users.deployer.signer);
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->FINALIZE', async () => {
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+            await testTriggerExpiraton(['expire', 'finalize']);
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->FINALIZE', async () => {
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await testTriggerExpiraton(['expire', 'complain']);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+            await testTriggerExpiraton(['expire', 'complain', 'finalize']);
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE', async () => {
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await testTriggerExpiraton(['expire', 'complain', 'cancel']);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+            await testTriggerExpiraton([
+              'expire',
+              'complain',
+              'cancel',
+              'finalize',
+            ]);
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE', async () => {
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            await testTriggerExpiraton(['expire', 'cancel', 'complain']);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+            await testTriggerExpiraton([
+              'expire',
+              'cancel',
+              'complain',
+              'finalize',
+            ]);
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->CANCEL->FINALIZE', async () => {
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            await testTriggerExpiraton(['expire', 'cancel']);
+            await advanceTimeSeconds(60);
+            await utils.finalize(tokenVoucherId, users.deployer.signer);
+            await testTriggerExpiraton(['expire', 'cancel', 'finalize']);
+          });
+        });
+      });
+
+      describe('PREMATURE FINALIZE', () => {
+        it('[NEGATIVE] Finalize before complain period end should have no effect', async () => {
+          expect(
+            await utils.finalize(tokenVoucherId, users.deployer.signer)
+          ).to.not.emit(
+            contractVoucherKernel,
+            eventNames.LOG_FINALIZED_VOUCHER
+          );
+
+          const voucherStatus = (
+            await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
+          )[0];
+          assert.equal(
+            voucherStatus,
+            expectedVoucherStatus([]),
+            `Wrong voucher status`
+          );
+        });
+
+        it('[NEGATIVE] COMMIT->CANCEL->!FINALIZE', async () => {
+          await utils.cancel(tokenVoucherId, users.seller.signer);
+          expect(
+            await utils.finalize(tokenVoucherId, users.deployer.signer)
+          ).to.not.emit(
+            contractVoucherKernel,
+            eventNames.LOG_FINALIZED_VOUCHER
+          );
+
+          const voucherStatus = (
+            await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
+          )[0];
+          assert.equal(
+            voucherStatus,
+            expectedVoucherStatus(['cancel']),
+            `Wrong voucher status`
+          );
+        });
+
+        describe('REDEEM', () => {
+          beforeEach(async () => {
+            await utils.redeem(tokenVoucherId, users.buyer.signer);
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->FINALIZE', async () => {
+            expect(
+              await utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.not.emit(
+              contractVoucherKernel,
+              eventNames.LOG_FINALIZED_VOUCHER
+            );
+
+            const voucherStatus = (
+              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
+            )[0];
+            assert.equal(
+              voucherStatus,
+              expectedVoucherStatus(['redeem']),
+              `Wrong voucher status`
+            );
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->FINALIZE', async () => {
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            expect(
+              await utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.not.emit(
+              contractVoucherKernel,
+              eventNames.LOG_FINALIZED_VOUCHER
+            );
+
+            const voucherStatus = (
+              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
+            )[0];
+            assert.equal(
+              voucherStatus,
+              expectedVoucherStatus(['redeem', 'complain']),
+              `Wrong voucher status`
+            );
+          });
+
+          it('[NEGATIVE] COMMIT->REDEEM->CANCEL->FINALIZE', async () => {
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            expect(
+              await utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.not.emit(
+              contractVoucherKernel,
+              eventNames.LOG_FINALIZED_VOUCHER
+            );
+
+            const voucherStatus = (
+              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
+            )[0];
+            assert.equal(
+              voucherStatus,
+              expectedVoucherStatus(['redeem', 'cancel']),
+              `Wrong voucher status`
+            );
+          });
+        });
+
+        describe('REFUND', () => {
+          beforeEach(async () => {
+            await utils.refund(tokenVoucherId, users.buyer.signer);
+          });
+
+          it('[NEGATIVE] COMMIT->REFUND->FINALIZE', async () => {
+            expect(
+              await utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.not.emit(
+              contractVoucherKernel,
+              eventNames.LOG_FINALIZED_VOUCHER
+            );
+
+            const voucherStatus = (
+              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
+            )[0];
+            assert.equal(
+              voucherStatus,
+              expectedVoucherStatus(['refund']),
+              `Wrong voucher status`
+            );
+          });
+
+          it('[NEGATIVE] COMMIT->REFUND->COMPLAIN->FINALIZE', async () => {
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            expect(
+              await utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.not.emit(
+              contractVoucherKernel,
+              eventNames.LOG_FINALIZED_VOUCHER
+            );
+
+            const voucherStatus = (
+              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
+            )[0];
+            assert.equal(
+              voucherStatus,
+              expectedVoucherStatus(['refund', 'complain']),
+              `Wrong voucher status`
+            );
+          });
+
+          it('[NEGATIVE] COMMIT->REFUND->CANCEL->FINALIZE', async () => {
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            expect(
+              await utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.not.emit(
+              contractVoucherKernel,
+              eventNames.LOG_FINALIZED_VOUCHER
+            );
+
+            const voucherStatus = (
+              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
+            )[0];
+            assert.equal(
+              voucherStatus,
+              expectedVoucherStatus(['refund', 'cancel']),
+              `Wrong voucher status`
+            );
+          });
+        });
+
+        describe('EXPIRE', () => {
+          beforeEach(async () => {
+            await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+            await utils.expire(tokenVoucherId, users.deployer.signer);
+          });
+
+          it('[NEGATIVE] COMMIT->EXPIRE->FINALIZE', async () => {
+            expect(
+              await utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.not.emit(
+              contractVoucherKernel,
+              eventNames.LOG_FINALIZED_VOUCHER
+            );
+
+            const voucherStatus = (
+              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
+            )[0];
+            assert.equal(
+              voucherStatus,
+              expectedVoucherStatus(['expire']),
+              `Wrong voucher status`
+            );
+          });
+
+          it('[NEGATIVE] COMMIT->EXPIRE->COMPLAIN->FINALIZE', async () => {
+            await utils.complain(tokenVoucherId, users.buyer.signer);
+            expect(
+              await utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.not.emit(
+              contractVoucherKernel,
+              eventNames.LOG_FINALIZED_VOUCHER
+            );
+
+            const voucherStatus = (
+              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
+            )[0];
+            assert.equal(
+              voucherStatus,
+              expectedVoucherStatus(['expire', 'complain']),
+              `Wrong voucher status`
+            );
+          });
+
+          it('[NEGATIVE] COMMIT->EXPIRE->CANCEL->FINALIZE', async () => {
+            await utils.cancel(tokenVoucherId, users.seller.signer);
+            expect(
+              await utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.not.emit(
+              contractVoucherKernel,
+              eventNames.LOG_FINALIZED_VOUCHER
+            );
+
+            const voucherStatus = (
+              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
+            )[0];
+            assert.equal(
+              voucherStatus,
+              expectedVoucherStatus(['expire', 'cancel']),
+              `Wrong voucher status`
+            );
+          });
+        });
+      });
+
+      describe('BEFORE VALIDITY PERIOD', () => {
+        let tokenVoucherId;
+
+        beforeEach(async () => {
+          const timestamp = await Utils.getCurrTimestamp();
+
+          constants.PROMISE_VALID_FROM = timestamp + 10 * constants.SECONDS_IN_DAY;
+          constants.PROMISE_VALID_TO = constants.PROMISE_VALID_FROM  + 2 * constants.SECONDS_IN_DAY;
+
+
+          utils = await UtilsBuilder.create()
+            .ETHETH()
+            .buildAsync(
+              contractERC1155ERC721,
+              contractVoucherKernel,
+              contractCashier,
+              contractBosonRouter
+            );
+
+          const tokenSupplyId = await utils.createOrder(
+            users.seller,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITSE1,
+            constants.PROMISE_DEPOSITBU1,
+            constants.QTY_10
+          );
+
+          tokenVoucherId = await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            tokenSupplyId,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
+          );
+        });
+
+        it.only('[NEGATIVE] SHould not be possible to redeem before promise valid', async () => {
+          await expect(
+            utils.redeem(tokenVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_FROM);
+        });
+
+        it.only('[NEGATIVE] SHould not be possible to refund before promise valid', async () => {
+          await expect(
+            utils.refund(tokenVoucherId, users.buyer.signer)
+          ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_FROM);
+        });
+      });
+    });
   });
 
   describe('TOKEN SUPPLY TRANSFER', () => {
@@ -7800,1770 +8917,4 @@ describe('Cashier and VoucherKernel', () => {
     });
   });
 
-  describe('CASHIER', () => {
-    // TODO move?
-
-    it('[NEGATIVE] Should revert if boson router is not set', async () => {
-      await deployContracts(false);
-
-      await expect(contractCashier.pause()).to.be.revertedWith(
-        revertReasons.UNSET_ROUTER
-      );
-      await expect(contractCashier.unpause()).to.be.revertedWith(
-        revertReasons.UNSET_ROUTER
-      );
-      await expect(
-        contractCashier.withdrawDepositsSe(
-          constants.ONE,
-          constants.ONE,
-          users.other1.address
-        )
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-      await expect(
-        contractCashier.addEscrowAmount(users.other1.address)
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-      await expect(
-        contractCashier.addEscrowTokensAmount(
-          contractBSNTokenDeposit.address,
-          users.other1.address,
-          constants.buyer_deposit
-        )
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-    });
-
-    it('[NEGATIVE] Should revert if attacker tries to call method that should be called only from bosonRouter', async () => {
-      await deployContracts();
-
-      const attackerInstance = contractCashier.connect(users.attacker.signer);
-
-      await expect(attackerInstance.pause()).to.be.revertedWith(
-        revertReasons.ONLY_FROM_ROUTER
-      );
-      await expect(attackerInstance.unpause()).to.be.revertedWith(
-        revertReasons.ONLY_FROM_ROUTER
-      );
-      await expect(
-        attackerInstance.withdrawDepositsSe(
-          constants.ONE,
-          constants.ONE,
-          users.other1.address
-        )
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-      await expect(
-        attackerInstance.addEscrowAmount(users.other1.address)
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-      await expect(
-        attackerInstance.addEscrowTokensAmount(
-          contractBSNTokenDeposit.address,
-          users.other1.address,
-          constants.buyer_deposit
-        )
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-    });
-
-
-
-    describe('With normal deployment', () => {
-      beforeEach(async () => {
-        await deployContracts();
-      });
-
-      it('[NEGATIVE] Should revert if onERC721Transfer is called by the attacker', async () => {
-        const attackerInstance = contractCashier.connect(users.attacker.signer);
-
-        await expect(
-          attackerInstance.onERC721Transfer(
-            users.other1.address,
-            users.attacker.address,
-            constants.ONE
-          )
-        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TOKEN_CONTRACT);
-      });
-
-      it('[NEGATIVE] Should revert if onERC1155Transfer is called by the attacker', async () => {
-        const attackerInstance = contractCashier.connect(users.attacker.signer);
-
-        await expect(
-          attackerInstance.onERC1155Transfer(
-            users.other1.address,
-            users.attacker.address,
-            constants.ONE,
-            constants.ONE
-          )
-        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TOKEN_CONTRACT);
-      });
-
-    });
-  });
-
-  describe('VOUCHER KERNEL', () => {
-    // TODO move?
-
-    it('[NEGATIVE] Should revert if boson router is not set', async () => {
-      await deployContracts(false);
-      await setPeriods();
-
-      await expect(contractVoucherKernel.pause()).to.be.revertedWith(
-        revertReasons.UNSET_ROUTER
-      );
-      await expect(contractVoucherKernel.unpause()).to.be.revertedWith(
-        revertReasons.UNSET_ROUTER
-      );
-      await expect(
-        contractVoucherKernel.createTokenSupplyId(
-          users.other1.address,
-          constants.PROMISE_VALID_FROM,
-          constants.PROMISE_VALID_TO,
-          constants.PROMISE_PRICE1,
-          constants.PROMISE_DEPOSITSE1,
-          constants.PROMISE_DEPOSITBU1,
-          constants.QTY_10
-        )
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-      await expect(
-        contractVoucherKernel.createPaymentMethod(
-          constants.ONE,
-          1,
-          constants.ZERO_ADDRESS,
-          constants.ZERO_ADDRESS
-        )
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-      await expect(
-        contractVoucherKernel.fillOrder(
-          constants.ONE,
-          users.seller.address,
-          users.buyer.address,
-          0
-        )
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-      await expect(
-        contractVoucherKernel.redeem(constants.ONE, users.buyer.address)
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-      await expect(
-        contractVoucherKernel.refund(constants.ONE, users.buyer.address)
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-      await expect(
-        contractVoucherKernel.complain(constants.ONE, users.buyer.address)
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-      // await expect(contractVoucherKernel.cancelOrFault(constants.ONE, users.seller.address)).to.be.revertedWith(revertReasons.UNSET_ROUTER); // should be uncommented after https://github.com/bosonprotocol/contracts/issues/195
-      await expect(
-        contractVoucherKernel.cancelOrFaultVoucherSet(
-          constants.ONE,
-          users.seller.address
-        )
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-    });
-
-    it('[NEGATIVE] Should revert if attacker tries to call method that should be called only from bosonRouter', async () => {
-      await deployContracts();
-
-      const attackerInstance = contractVoucherKernel.connect(
-        users.attacker.signer
-      );
-
-      await expect(attackerInstance.pause()).to.be.revertedWith(
-        revertReasons.ONLY_FROM_ROUTER
-      );
-      await expect(attackerInstance.unpause()).to.be.revertedWith(
-        revertReasons.ONLY_FROM_ROUTER
-      );
-      await expect(
-        attackerInstance.createTokenSupplyId(
-          users.other1.address,
-          constants.PROMISE_VALID_FROM,
-          constants.PROMISE_VALID_TO,
-          constants.PROMISE_PRICE1,
-          constants.PROMISE_DEPOSITSE1,
-          constants.PROMISE_DEPOSITBU1,
-          constants.QTY_10
-        )
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-      await expect(
-        attackerInstance.createPaymentMethod(
-          constants.ONE,
-          1,
-          constants.ZERO_ADDRESS,
-          constants.ZERO_ADDRESS
-        )
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-      await expect(
-        attackerInstance.fillOrder(
-          constants.ONE,
-          users.seller.address,
-          users.buyer.address,
-          1
-        )
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-      await expect(
-        attackerInstance.redeem(constants.ONE, users.buyer.address)
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-      await expect(
-        attackerInstance.refund(constants.ONE, users.buyer.address)
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-      await expect(
-        attackerInstance.complain(constants.ONE, users.buyer.address)
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-      // await expect(attackerInstance.cancelOrFault(constants.ONE, users.seller.address)).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER); // should be uncommented after https://github.com/bosonprotocol/contracts/issues/195
-      await expect(
-        attackerInstance.cancelOrFaultVoucherSet(
-          constants.ONE,
-          users.seller.address
-        )
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-    });
-
-    it('[NEGATIVE] Should revert if cashier address is not set', async () => {
-      await deployContracts(true, false);
-
-      await expect(
-        contractVoucherKernel.setPaymentReleased(constants.ONE)
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-      await expect(
-        contractVoucherKernel.setDepositsReleased(constants.ONE)
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-      await expect(
-        contractVoucherKernel.setSupplyHolderOnTransfer(
-          constants.ONE,
-          users.seller.address
-        )
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-
-      await contractBosonRouter.pause();
-
-      await expect(
-        contractVoucherKernel.burnSupplyOnPause(
-          users.seller.address,
-          constants.ONE,
-          constants.QTY_10
-        )
-      ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-    });
-
-    it('[NEGATIVE] Should revert if attacker tries to call method that should be called only from cashier', async () => {
-      await deployContracts();
-
-      const attackerInstance = contractVoucherKernel.connect(
-        users.attacker.signer
-      );
-
-      await expect(
-        attackerInstance.setPaymentReleased(constants.ONE)
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
-      await expect(
-        attackerInstance.setDepositsReleased(constants.ONE)
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
-      await expect(
-        attackerInstance.setSupplyHolderOnTransfer(
-          constants.ONE,
-          users.seller.address
-        )
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
-
-      await contractBosonRouter.pause();
-
-      await expect(
-        attackerInstance.burnSupplyOnPause(
-          users.seller.address,
-          constants.ONE,
-          constants.QTY_10
-        )
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
-    });
-
-    describe('With normal deployment', () => {
-      function promiseKeyForVoucherKernel(
-        contractAddress,
-        seller,
-        sellerNonce
-      ) {
-        return keccak256(
-          solidityPack(
-            ['address', 'uint256', 'uint256', 'uint256', 'address'],
-            [
-              seller.address,
-              sellerNonce,
-              constants.PROMISE_VALID_FROM,
-              constants.PROMISE_VALID_TO,
-              contractAddress,
-            ]
-          )
-        );
-      }
-
-      beforeEach(async () => {
-        await deployContracts();
-      });
-
-      
-
-      it('Should return correct promise keys', async () => {
-        await setPeriods();
-        utils = await UtilsBuilder.create()
-          .ETHETH()
-          .buildAsync(
-            contractERC1155ERC721,
-            contractVoucherKernel,
-            contractCashier,
-            contractBosonRouter
-          );
-
-        // create few orders
-        for (let i = 0; i < 5; i++) {
-          await utils.createOrder(
-            users.seller,
-            constants.PROMISE_VALID_FROM,
-            constants.PROMISE_VALID_TO,
-            constants.PROMISE_PRICE1,
-            constants.PROMISE_DEPOSITSE1,
-            constants.PROMISE_DEPOSITBU1,
-            constants.QTY_10
-          );
-        }
-
-        // test that promise keys as expected
-        for (let i = 0; i < 5; i++) {
-          expect(await contractVoucherKernel.getPromiseKey(i)).to.equal(
-            promiseKeyForVoucherKernel(
-              contractVoucherKernel.address,
-              users.seller,
-              i
-            ),
-            `Promise key ${i} mismatch`
-          );
-        }
-      });
-
-      it('Should return correct promise id from voucher ID', async () => {
-        await setPeriods();
-        utils = await UtilsBuilder.create()
-          .ETHETH()
-          .buildAsync(
-            contractERC1155ERC721,
-            contractVoucherKernel,
-            contractCashier,
-            contractBosonRouter
-          );
-
-         let tokenSupplyKey = await utils.createOrder(
-            users.seller,
-            constants.PROMISE_VALID_FROM,
-            constants.PROMISE_VALID_TO,
-            constants.PROMISE_PRICE1,
-            constants.PROMISE_DEPOSITSE1,
-            constants.PROMISE_DEPOSITBU1,
-            constants.QTY_10
-          );
-
-        // create few orders
-        for (let i = 0; i < 5; i++) {
-          const tokenVoucherId = await utils.commitToBuy(
-            users.buyer,
-            users.seller,
-            tokenSupplyKey,
-            constants.PROMISE_PRICE1,
-            constants.PROMISE_DEPOSITBU1
-          );
-
-          expect(await contractVoucherKernel.getPromiseIdFromVoucherId(tokenVoucherId)).to.equal(
-            promiseKeyForVoucherKernel(
-              contractVoucherKernel.address,
-              users.seller,
-              0
-            ),
-            `Promise key ${i} mismatch`
-          );
-        }
-      });
-
-      it('[NEGATIVE] Should revert for wrong token voucher id', async () => {
-        await expect(contractVoucherKernel.getPromiseIdFromVoucherId(constants.ZERO)).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
-      });
-
-      it('Should return correct type id', async () => {
-        await setPeriods();
-        utils = await UtilsBuilder.create()
-          .ETHETH()
-          .buildAsync(
-            contractERC1155ERC721,
-            contractVoucherKernel,
-            contractCashier,
-            contractBosonRouter
-          );
-
-        expect(await contractVoucherKernel.getTypeId()).to.equal(
-          0,
-          'Wrong type id'
-        );
-
-        for (let i = 0; i < 5; i++) {
-          await utils.createOrder(
-            users.seller,
-            constants.PROMISE_VALID_FROM,
-            constants.PROMISE_VALID_TO,
-            constants.PROMISE_PRICE1,
-            constants.PROMISE_DEPOSITSE1,
-            constants.PROMISE_DEPOSITBU1,
-            constants.QTY_10
-          );
-          expect(await contractVoucherKernel.getTypeId()).to.equal(
-            i + 1,
-            `Wrong type id ${i + 1}`
-          );
-        }
-      });
-
-      it('Should return correct boson router address', async () => {
-        expect(await contractVoucherKernel.getBosonRouterAddress()).to.equal(
-          contractBosonRouter.address,
-          'Wrong boson router address'
-        );
-      });
-
-      it('Should return correct cashier address', async () => {
-        expect(await contractVoucherKernel.getCashierAddress()).to.equal(
-          contractCashier.address,
-          'Wrong boson router address'
-        );
-      });
-
-      it('[NEGATIVE] Should revert if fillOrder is called with wrong token Id Supply', async () => {
-        // spoof boson router address
-        await contractVoucherKernel.setBosonRouterAddress(
-          users.deployer.address
-        );
-
-        await expect(
-          contractVoucherKernel.fillOrder(
-            constants.ZERO,
-            users.seller.address,
-            users.buyer.address,
-            0
-          )
-        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
-      });
-
-      it('[NEGATIVE] Should revert if triggerExpiration voucher id is zero', async () => {
-        await expect(
-          contractVoucherKernel.triggerExpiration(constants.ZERO)
-        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
-      });
-
-      it('[NEGATIVE] Should revert if triggerFinalizeVoucher voucher id is zero', async () => {
-        await expect(
-          contractVoucherKernel.triggerFinalizeVoucher(constants.ZERO)
-        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
-      });
-
-      describe('action at wrong step', () => {
-        let tokenVoucherId;
-
-        const statuses = {
-          commit: 7,
-          redeem: 6,
-          refund: 5,
-          expire: 4,
-          complain: 3,
-          cancel: 2,
-          finalize: 1,
-        };
-
-        function determineStatus(_status, _changeIdx) {
-          return _status | (1 << _changeIdx);
-        }
-
-        function expectedVoucherStatus(path) {
-          let status = determineStatus(0, statuses.commit); // starting status == commit
-          for (const step of path) {
-            status = determineStatus(status, statuses[step]);
-          }
-
-          return status;
-        }
-
-        beforeEach(async () => {
-          await setPeriods();
-          utils = await UtilsBuilder.create()
-            .ETHETH()
-            .buildAsync(
-              contractERC1155ERC721,
-              contractVoucherKernel,
-              contractCashier,
-              contractBosonRouter
-            );
-
-          const tokenSupplyKey = await utils.createOrder(
-            users.seller,
-            constants.PROMISE_VALID_FROM,
-            constants.PROMISE_VALID_TO,
-            constants.PROMISE_PRICE1,
-            constants.PROMISE_DEPOSITSE1,
-            constants.PROMISE_DEPOSITBU1,
-            constants.QTY_10
-          );
-
-          tokenVoucherId = await utils.commitToBuy(
-            users.buyer,
-            users.seller,
-            tokenSupplyKey,
-            constants.PROMISE_PRICE1,
-            constants.PROMISE_DEPOSITBU1
-          );
-        });
-
-        describe('REFUND', () => {
-          it('[NEGATIVE] REDEEM->!REFUND', async () => {
-            await utils.redeem(tokenVoucherId, users.buyer.signer);
-
-            await expect(
-              utils.refund(tokenVoucherId, users.buyer.signer)
-            ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
-          });
-
-          it('[NEGATIVE] CANCEL->!REFUND', async () => {
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-
-            await expect(
-              utils.refund(tokenVoucherId, users.buyer.signer)
-            ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
-          });
-
-          it('[NEGATIVE] EXPIRE->!REFUND', async () => {
-            await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
-            await utils.expire(tokenVoucherId, users.seller.signer);
-
-            await expect(
-              utils.refund(tokenVoucherId, users.buyer.signer)
-            ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
-          });
-        });
-
-        describe('DOUBLE COMPLAIN', () => {
-          it('[NEGATIVE] CANCEL->COMPLAIN->!COMPLAIN', async () => {
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-
-            await expect(
-              utils.complain(tokenVoucherId, users.buyer.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
-          });
-
-          it('[NEGATIVE] REDEEM->COMPLAIN->!COMPLAIN', async () => {
-            await utils.redeem(tokenVoucherId, users.buyer.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-
-            await expect(
-              utils.complain(tokenVoucherId, users.buyer.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
-          });
-
-          it('[NEGATIVE] REDEEM->COMPLAIN->CANCEL->!COMPLAIN', async () => {
-            await utils.redeem(tokenVoucherId, users.buyer.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-
-            await expect(
-              utils.complain(tokenVoucherId, users.buyer.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
-          });
-
-          it('[NEGATIVE] REDEEM->CANCEL->COMPLAIN->!COMPLAIN', async () => {
-            await utils.redeem(tokenVoucherId, users.buyer.signer);
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-
-            await expect(
-              utils.complain(tokenVoucherId, users.buyer.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
-          });
-
-          it('[NEGATIVE] REFUND->COMPLAIN->!COMPLAIN', async () => {
-            await utils.refund(tokenVoucherId, users.buyer.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-
-            await expect(
-              utils.complain(tokenVoucherId, users.buyer.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
-          });
-
-          it('[NEGATIVE] REFUND->COMPLAIN->CANCEL->!COMPLAIN', async () => {
-            await utils.refund(tokenVoucherId, users.buyer.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-
-            await expect(
-              utils.complain(tokenVoucherId, users.buyer.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
-          });
-
-          it('[NEGATIVE] REFUND->CANCEL->COMPLAIN->!COMPLAIN', async () => {
-            await utils.refund(tokenVoucherId, users.buyer.signer);
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-
-            await expect(
-              utils.complain(tokenVoucherId, users.buyer.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
-          });
-
-          it('[NEGATIVE] EXPIRE->COMPLAIN->!COMPLAIN', async () => {
-            await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
-            await utils.expire(tokenVoucherId, users.seller.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-
-            await expect(
-              utils.complain(tokenVoucherId, users.buyer.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
-          });
-
-          it('[NEGATIVE] EXPIRE->COMPLAIN->CANCEL->!COMPLAIN', async () => {
-            await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
-            await utils.expire(tokenVoucherId, users.seller.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-
-            await expect(
-              utils.complain(tokenVoucherId, users.buyer.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
-          });
-
-          it('[NEGATIVE] EXPIRE->COMPLAIN->CANCEL->!COMPLAIN', async () => {
-            await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
-            await utils.expire(tokenVoucherId, users.seller.signer);
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-
-            await expect(
-              utils.complain(tokenVoucherId, users.buyer.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_COMPLAINED);
-          });
-        });
-
-        describe('DOUBLE COF', () => {
-          it('[NEGATIVE] COMMIT->CANCEL->COMPLAIN->!CANCEL', async () => {
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-
-            await expect(
-              utils.cancel(tokenVoucherId, users.seller.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
-          });
-
-          it('[NEGATIVE] COMMIT->CANCEL->!CANCEL', async () => {
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-
-            await expect(
-              utils.cancel(tokenVoucherId, users.seller.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
-          });
-
-          it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->CANCEL->!CANCEL', async () => {
-            await utils.redeem(tokenVoucherId, users.buyer.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-
-            await expect(
-              utils.cancel(tokenVoucherId, users.seller.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
-          });
-
-          it('[NEGATIVE] COMMIT->REDEEM->CANCEL->COMPLAIN->!CANCEL', async () => {
-            await utils.redeem(tokenVoucherId, users.buyer.signer);
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-
-            await expect(
-              utils.cancel(tokenVoucherId, users.seller.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
-          });
-
-          it('[NEGATIVE] COMMIT->REDEEM->CANCEL->!CANCEL', async () => {
-            await utils.redeem(tokenVoucherId, users.buyer.signer);
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-
-            await expect(
-              utils.cancel(tokenVoucherId, users.seller.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
-          });
-
-          it('[NEGATIVE] COMMIT->REFUND->COMPLAIN->CANCEL->!CANCEL', async () => {
-            await utils.refund(tokenVoucherId, users.buyer.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-
-            await expect(
-              utils.cancel(tokenVoucherId, users.seller.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
-          });
-
-          it('[NEGATIVE] COMMIT->REFUND->CANCEL->COMPLAIN->!CANCEL', async () => {
-            await utils.refund(tokenVoucherId, users.buyer.signer);
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-
-            await expect(
-              utils.cancel(tokenVoucherId, users.seller.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
-          });
-
-          it('[NEGATIVE] COMMIT->REFUND->CANCEL->!CANCEL', async () => {
-            await utils.refund(tokenVoucherId, users.buyer.signer);
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-
-            await expect(
-              utils.cancel(tokenVoucherId, users.seller.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
-          });
-
-          it('[NEGATIVE] COMMIT->EXPIRE->COMPLAIN->CANCEL->!CANCEL-', async () => {
-            await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
-            await utils.expire(tokenVoucherId, users.seller.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-
-            await expect(
-              utils.cancel(tokenVoucherId, users.seller.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
-          });
-
-          it('[NEGATIVE] COMMIT->EXPIRE->CANCEL->COMPLAIN->!CANCEL', async () => {
-            await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
-            await utils.expire(tokenVoucherId, users.seller.signer);
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-
-            await expect(
-              utils.cancel(tokenVoucherId, users.seller.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
-          });
-
-          it('[NEGATIVE] COMMIT->EXPIRE->CANCEL->!CANCEL', async () => {
-            await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
-            await utils.expire(tokenVoucherId, users.seller.signer);
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-
-            await expect(
-              utils.cancel(tokenVoucherId, users.seller.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_CANCELFAULT);
-          });
-        });
-
-        describe('COMPLAIN/COF/FINALIZE after finalize', () => {
-          it('[NEGATIVE] COMMIT->CANCEL->COMPLAIN->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-            await advanceTimeSeconds(60);
-            await utils.finalize(tokenVoucherId, users.deployer.signer);
-
-            await expect(
-              utils.complain(tokenVoucherId, users.buyer.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-            await expect(
-              utils.cancel(tokenVoucherId, users.seller.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-            await expect(
-              utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-          });
-
-          it('[NEGATIVE] COMMIT->CANCEL->FINALIZE->!COMPLAIN/!COF/!FINALIZEV', async () => {
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-            await advanceTimeSeconds(60);
-            await utils.finalize(tokenVoucherId, users.deployer.signer);
-
-            await expect(
-              utils.complain(tokenVoucherId, users.buyer.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-            await expect(
-              utils.cancel(tokenVoucherId, users.seller.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-            await expect(
-              utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-          });
-
-          describe('REDEEM', () => {
-            beforeEach(async () => {
-              await utils.redeem(tokenVoucherId, users.buyer.signer);
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->FINALIZE->!COMPLAIN/!COF/!FINALIZEV', async () => {
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-
-              await expect(
-                utils.complain(tokenVoucherId, users.buyer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.cancel(tokenVoucherId, users.seller.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-
-              await expect(
-                utils.complain(tokenVoucherId, users.buyer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.cancel(tokenVoucherId, users.seller.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-
-              await expect(
-                utils.complain(tokenVoucherId, users.buyer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.cancel(tokenVoucherId, users.seller.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-
-              await expect(
-                utils.complain(tokenVoucherId, users.buyer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.cancel(tokenVoucherId, users.seller.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->CANCEL->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-
-              await expect(
-                utils.complain(tokenVoucherId, users.buyer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.cancel(tokenVoucherId, users.seller.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-            });
-          });
-
-          describe('REFUND', () => {
-            beforeEach(async () => {
-              await utils.refund(tokenVoucherId, users.buyer.signer);
-            });
-
-            it('[NEGATIVE] COMMIT->REFUND->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-
-              await expect(
-                utils.complain(tokenVoucherId, users.buyer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.cancel(tokenVoucherId, users.seller.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-            });
-
-            it('[NEGATIVE] COMMIT->REFUND->COMPLAIN->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-
-              await expect(
-                utils.complain(tokenVoucherId, users.buyer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.cancel(tokenVoucherId, users.seller.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-            });
-
-            it('[NEGATIVE] COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-
-              await expect(
-                utils.complain(tokenVoucherId, users.buyer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.cancel(tokenVoucherId, users.seller.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-            });
-
-            it('[NEGATIVE] COMMIT->REFUND->CANCEL->COMPLAIN->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-
-              await expect(
-                utils.complain(tokenVoucherId, users.buyer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.cancel(tokenVoucherId, users.seller.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-            });
-
-            it('[NEGATIVE] COMMIT->REFUND->CANCEL->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-
-              await expect(
-                utils.complain(tokenVoucherId, users.buyer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.cancel(tokenVoucherId, users.seller.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-            });
-          });
-
-          describe('EXPIRE', () => {
-            beforeEach(async () => {
-              await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
-              await utils.expire(tokenVoucherId, users.deployer.signer);
-            });
-
-            it('[NEGATIVE] COMMIT->EXPIRE->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-
-              await expect(
-                utils.complain(tokenVoucherId, users.buyer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.cancel(tokenVoucherId, users.seller.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-            });
-
-            it('[NEGATIVE] COMMIT->EXPIRE->COMPLAIN->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-
-              await expect(
-                utils.complain(tokenVoucherId, users.buyer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.cancel(tokenVoucherId, users.seller.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-            });
-
-            it('[NEGATIVE] COMMIT->EXPIRE->COMPLAIN->CANCEL->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-
-              await expect(
-                utils.complain(tokenVoucherId, users.buyer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.cancel(tokenVoucherId, users.seller.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-            });
-
-            it('[NEGATIVE] COMMIT->EXPIRE->CANCEL->COMPLAIN->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-
-              await expect(
-                utils.complain(tokenVoucherId, users.buyer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.cancel(tokenVoucherId, users.seller.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-            });
-
-            it('[NEGATIVE] COMMIT->EXPIRE->CANCEL->FINALIZE->!COMPLAIN/!COF/!FINALIZE', async () => {
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-
-              await expect(
-                utils.complain(tokenVoucherId, users.buyer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.cancel(tokenVoucherId, users.seller.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-
-              await expect(
-                utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.be.revertedWith(revertReasons.ALREADY_FINALIZED);
-            });
-          });
-        });
-
-        describe('EXPIRY after some other action', () => {
-          async function testTriggerExpiraton(path) {
-            // to try expiration we should go to the future, but then other methods might fail as well.
-            // therefore we revert to the state before advancing in the future
-            const snapshot = await ethers.provider.send('evm_snapshot', []);
-            await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
-            expect(
-              await utils.expire(tokenVoucherId, users.deployer.signer)
-            ).to.not.emit(
-              contractVoucherKernel,
-              eventNames.LOG_EXPIRATION_TRIGGERED
-            );
-
-            const voucherStatus = (
-              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-            )[0];
-            assert.equal(
-              voucherStatus,
-              expectedVoucherStatus(path),
-              `Wrong voucher status after ${path}`
-            );
-
-            // revert to state before we advanced time
-            await ethers.provider.send('evm_revert', [snapshot]);
-          }
-
-          it('[NEGATIVE] EXPIRY before expiration time should have no effect', async () => {
-            await advanceTimeSeconds(constants.SECONDS_IN_DAY + 1);
-            const voucherStatus = (
-              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-            )[0];
-            assert.equal(
-              voucherStatus,
-              expectedVoucherStatus([]),
-              `Wrong voucher status`
-            );
-          });
-
-          it('[NEGATIVE] COMMIT->CANCEL->COMPLAIN->FINALIZE', async () => {
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-            await testTriggerExpiraton(['cancel']);
-            await utils.complain(tokenVoucherId, users.buyer.signer);
-            await testTriggerExpiraton(['cancel', 'complain']);
-            await advanceTimeSeconds(60);
-            await utils.finalize(tokenVoucherId, users.deployer.signer);
-            await testTriggerExpiraton(['cancel', 'complain', 'finalize']);
-          });
-
-          it('[NEGATIVE] COMMIT->CANCEL->FINALIZE', async () => {
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-            await advanceTimeSeconds(60);
-            await utils.finalize(tokenVoucherId, users.deployer.signer);
-            await testTriggerExpiraton(['cancel', 'finalize']);
-          });
-
-          describe('REDEEM', () => {
-            beforeEach(async () => {
-              await utils.redeem(tokenVoucherId, users.buyer.signer);
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->FINALIZE', async () => {
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-              await testTriggerExpiraton(['redeem', 'finalize']);
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->FINALIZE', async () => {
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await testTriggerExpiraton(['redeem', 'complain']);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-              await testTriggerExpiraton(['redeem', 'complain', 'finalize']);
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE', async () => {
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await testTriggerExpiraton(['redeem', 'complain', 'cancel']);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-              await testTriggerExpiraton([
-                'redeem',
-                'complain',
-                'cancel',
-                'finalize',
-              ]);
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE', async () => {
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await testTriggerExpiraton(['redeem', 'cancel', 'complain']);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-              await testTriggerExpiraton([
-                'redeem',
-                'cancel',
-                'complain',
-                'finalize',
-              ]);
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->CANCEL->FINALIZE', async () => {
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await testTriggerExpiraton(['redeem', 'cancel']);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-              await testTriggerExpiraton(['redeem', 'cancel', 'finalize']);
-            });
-          });
-
-          describe('REFUND', () => {
-            beforeEach(async () => {
-              await utils.refund(tokenVoucherId, users.buyer.signer);
-            });
-
-            it('[NEGATIVE] COMMIT->REFUND->FINALIZE', async () => {
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-              await testTriggerExpiraton(['refund', 'finalize']);
-            });
-
-            it('[NEGATIVE] COMMIT->REFUND->COMPLAIN->FINALIZEF', async () => {
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await testTriggerExpiraton(['refund', 'complain']);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-              await testTriggerExpiraton(['refund', 'complain', 'finalize']);
-            });
-
-            it('[NEGATIVE] COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE', async () => {
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await testTriggerExpiraton(['refund', 'complain', 'cancel']);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-              await testTriggerExpiraton([
-                'refund',
-                'complain',
-                'cancel',
-                'finalize',
-              ]);
-            });
-
-            it('[NEGATIVE] COMMIT->REFUND->CANCEL->COMPLAIN->FINALIZE', async () => {
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await testTriggerExpiraton(['refund', 'cancel', 'complain']);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-              await testTriggerExpiraton([
-                'refund',
-                'cancel',
-                'complain',
-                'finalize',
-              ]);
-            });
-
-            it('[NEGATIVE] COMMIT->REFUND->CANCEL->FINALIZE', async () => {
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await testTriggerExpiraton(['refund', 'cancel']);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-              await testTriggerExpiraton(['refund', 'cancel', 'finalize']);
-            });
-          });
-
-          describe('EXPIRE', () => {
-            beforeEach(async () => {
-              await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
-              await utils.expire(tokenVoucherId, users.deployer.signer);
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->FINALIZE', async () => {
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-              await testTriggerExpiraton(['expire', 'finalize']);
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->FINALIZE', async () => {
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await testTriggerExpiraton(['expire', 'complain']);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-              await testTriggerExpiraton(['expire', 'complain', 'finalize']);
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE', async () => {
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await testTriggerExpiraton(['expire', 'complain', 'cancel']);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-              await testTriggerExpiraton([
-                'expire',
-                'complain',
-                'cancel',
-                'finalize',
-              ]);
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE', async () => {
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              await testTriggerExpiraton(['expire', 'cancel', 'complain']);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-              await testTriggerExpiraton([
-                'expire',
-                'cancel',
-                'complain',
-                'finalize',
-              ]);
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->CANCEL->FINALIZE', async () => {
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              await testTriggerExpiraton(['expire', 'cancel']);
-              await advanceTimeSeconds(60);
-              await utils.finalize(tokenVoucherId, users.deployer.signer);
-              await testTriggerExpiraton(['expire', 'cancel', 'finalize']);
-            });
-          });
-        });
-
-        describe('PREMATURE FINALIZE', () => {
-          it('[NEGATIVE] Finalize before complain period end should have no effect', async () => {
-            expect(
-              await utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.not.emit(
-              contractVoucherKernel,
-              eventNames.LOG_FINALIZED_VOUCHER
-            );
-
-            const voucherStatus = (
-              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-            )[0];
-            assert.equal(
-              voucherStatus,
-              expectedVoucherStatus([]),
-              `Wrong voucher status`
-            );
-          });
-
-          it('[NEGATIVE] COMMIT->CANCEL->!FINALIZE', async () => {
-            await utils.cancel(tokenVoucherId, users.seller.signer);
-            expect(
-              await utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.not.emit(
-              contractVoucherKernel,
-              eventNames.LOG_FINALIZED_VOUCHER
-            );
-
-            const voucherStatus = (
-              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-            )[0];
-            assert.equal(
-              voucherStatus,
-              expectedVoucherStatus(['cancel']),
-              `Wrong voucher status`
-            );
-          });
-
-          describe('REDEEM', () => {
-            beforeEach(async () => {
-              await utils.redeem(tokenVoucherId, users.buyer.signer);
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->FINALIZE', async () => {
-              expect(
-                await utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.not.emit(
-                contractVoucherKernel,
-                eventNames.LOG_FINALIZED_VOUCHER
-              );
-
-              const voucherStatus = (
-                await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-              )[0];
-              assert.equal(
-                voucherStatus,
-                expectedVoucherStatus(['redeem']),
-                `Wrong voucher status`
-              );
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->FINALIZE', async () => {
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              expect(
-                await utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.not.emit(
-                contractVoucherKernel,
-                eventNames.LOG_FINALIZED_VOUCHER
-              );
-
-              const voucherStatus = (
-                await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-              )[0];
-              assert.equal(
-                voucherStatus,
-                expectedVoucherStatus(['redeem', 'complain']),
-                `Wrong voucher status`
-              );
-            });
-
-            it('[NEGATIVE] COMMIT->REDEEM->CANCEL->FINALIZE', async () => {
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              expect(
-                await utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.not.emit(
-                contractVoucherKernel,
-                eventNames.LOG_FINALIZED_VOUCHER
-              );
-
-              const voucherStatus = (
-                await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-              )[0];
-              assert.equal(
-                voucherStatus,
-                expectedVoucherStatus(['redeem', 'cancel']),
-                `Wrong voucher status`
-              );
-            });
-          });
-
-          describe('REFUND', () => {
-            beforeEach(async () => {
-              await utils.refund(tokenVoucherId, users.buyer.signer);
-            });
-
-            it('[NEGATIVE] COMMIT->REFUND->FINALIZE', async () => {
-              expect(
-                await utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.not.emit(
-                contractVoucherKernel,
-                eventNames.LOG_FINALIZED_VOUCHER
-              );
-
-              const voucherStatus = (
-                await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-              )[0];
-              assert.equal(
-                voucherStatus,
-                expectedVoucherStatus(['refund']),
-                `Wrong voucher status`
-              );
-            });
-
-            it('[NEGATIVE] COMMIT->REFUND->COMPLAIN->FINALIZE', async () => {
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              expect(
-                await utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.not.emit(
-                contractVoucherKernel,
-                eventNames.LOG_FINALIZED_VOUCHER
-              );
-
-              const voucherStatus = (
-                await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-              )[0];
-              assert.equal(
-                voucherStatus,
-                expectedVoucherStatus(['refund', 'complain']),
-                `Wrong voucher status`
-              );
-            });
-
-            it('[NEGATIVE] COMMIT->REFUND->CANCEL->FINALIZE', async () => {
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              expect(
-                await utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.not.emit(
-                contractVoucherKernel,
-                eventNames.LOG_FINALIZED_VOUCHER
-              );
-
-              const voucherStatus = (
-                await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-              )[0];
-              assert.equal(
-                voucherStatus,
-                expectedVoucherStatus(['refund', 'cancel']),
-                `Wrong voucher status`
-              );
-            });
-          });
-
-          describe('EXPIRE', () => {
-            beforeEach(async () => {
-              await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
-              await utils.expire(tokenVoucherId, users.deployer.signer);
-            });
-
-            it('[NEGATIVE] COMMIT->EXPIRE->FINALIZE', async () => {
-              expect(
-                await utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.not.emit(
-                contractVoucherKernel,
-                eventNames.LOG_FINALIZED_VOUCHER
-              );
-
-              const voucherStatus = (
-                await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-              )[0];
-              assert.equal(
-                voucherStatus,
-                expectedVoucherStatus(['expire']),
-                `Wrong voucher status`
-              );
-            });
-
-            it('[NEGATIVE] COMMIT->EXPIRE->COMPLAIN->FINALIZE', async () => {
-              await utils.complain(tokenVoucherId, users.buyer.signer);
-              expect(
-                await utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.not.emit(
-                contractVoucherKernel,
-                eventNames.LOG_FINALIZED_VOUCHER
-              );
-
-              const voucherStatus = (
-                await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-              )[0];
-              assert.equal(
-                voucherStatus,
-                expectedVoucherStatus(['expire', 'complain']),
-                `Wrong voucher status`
-              );
-            });
-
-            it('[NEGATIVE] COMMIT->EXPIRE->CANCEL->FINALIZE', async () => {
-              await utils.cancel(tokenVoucherId, users.seller.signer);
-              expect(
-                await utils.finalize(tokenVoucherId, users.deployer.signer)
-              ).to.not.emit(
-                contractVoucherKernel,
-                eventNames.LOG_FINALIZED_VOUCHER
-              );
-
-              const voucherStatus = (
-                await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-              )[0];
-              assert.equal(
-                voucherStatus,
-                expectedVoucherStatus(['expire', 'cancel']),
-                `Wrong voucher status`
-              );
-            });
-          });
-        });
-
-        describe('BEFORE VALIDITY PERIOD', () => {
-          let tokenVoucherId;
-
-          beforeEach(async () => {
-            const timestamp = await Utils.getCurrTimestamp();
-
-            constants.PROMISE_VALID_FROM = timestamp + 10 * constants.SECONDS_IN_DAY;
-            constants.PROMISE_VALID_TO = constants.PROMISE_VALID_FROM  + 2 * constants.SECONDS_IN_DAY;
-
-
-            utils = await UtilsBuilder.create()
-              .ETHETH()
-              .buildAsync(
-                contractERC1155ERC721,
-                contractVoucherKernel,
-                contractCashier,
-                contractBosonRouter
-              );
-  
-            const tokenSupplyId = await utils.createOrder(
-              users.seller,
-              constants.PROMISE_VALID_FROM,
-              constants.PROMISE_VALID_TO,
-              constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITSE1,
-              constants.PROMISE_DEPOSITBU1,
-              constants.QTY_10
-            );
-
-            tokenVoucherId = await utils.commitToBuy(
-              users.buyer,
-              users.seller,
-              tokenSupplyId,
-              constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITBU1
-            );
-          });
-
-          it.only('[NEGATIVE] SHould not be possible to redeem before promise valid', async () => {
-            await expect(
-              utils.redeem(tokenVoucherId, users.buyer.signer)
-            ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_FROM);
-          });
-
-          it.only('[NEGATIVE] SHould not be possible to refund before promise valid', async () => {
-            await expect(
-              utils.refund(tokenVoucherId, users.buyer.signer)
-            ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_FROM);
-          });
-        });
-      });
-
-      describe('Spoof boson router', () => {
-        let tokenSupplyId;
-        beforeEach(async () => {
-          await setPeriods();
-          utils = await UtilsBuilder.create()
-            .ETHETH()
-            .buildAsync(
-              contractERC1155ERC721,
-              contractVoucherKernel,
-              contractCashier,
-              contractBosonRouter
-            );
-
-          tokenSupplyId = await utils.createOrder(
-            users.seller,
-            constants.PROMISE_VALID_FROM,
-            constants.PROMISE_VALID_TO,
-            constants.PROMISE_PRICE1,
-            constants.PROMISE_DEPOSITSE1,
-            constants.PROMISE_DEPOSITBU1,
-            constants.QTY_10
-          );
-
-          // spoof boson router address
-          await contractVoucherKernel.setBosonRouterAddress(
-            users.deployer.address
-          );
-        });
-
-        it('[NEGATIVE] Should revert if fillOrder is called with wrong holder', async () => {
-          await expect(
-            contractVoucherKernel.fillOrder(
-              tokenSupplyId,
-              users.seller.address,
-              constants.ZERO_ADDRESS,
-              1
-            )
-          ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
-        });
-
-        it('[NEGATIVE] Should revert if fillOrder is called with holder contract that does not support ERC721 interface', async () => {
-          const mockERC721Receiver = await deployMockContract(
-            users.deployer.signer,
-            ERC721receiver.abi
-          ); //deploys mock
-
-          await mockERC721Receiver.mock.supportsInterface
-            .withArgs('0x150b7a02')
-            .returns(false);
-
-          await expect(
-            contractVoucherKernel.fillOrder(
-              tokenSupplyId,
-              users.seller.address,
-              mockERC721Receiver.address,
-              1
-            )
-          ).to.be.revertedWith(revertReasons.UNSUPPORTED_ERC721_RECEIVED);
-        });
-
-        it('[NEGATIVE] Should revert if fillOrder is called with holder contract that does not implement onERC721Received', async () => {
-          const mockERC721Receiver = await deployMockContract(
-            users.deployer.signer,
-            ERC721receiver.abi
-          ); //deploys mock
-
-          await mockERC721Receiver.mock.supportsInterface
-            .withArgs('0x150b7a02')
-            .returns(true);
-          await mockERC721Receiver.mock.onERC721Received
-            .withArgs(
-              users.seller.address,
-              users.deployer.address,
-              tokenSupplyId,
-              '0x'
-            )
-            .returns('0x00000000');
-
-          await expect(
-            contractVoucherKernel.fillOrder(
-              tokenSupplyId,
-              users.seller.address,
-              mockERC721Receiver.address,
-              1
-            )
-          ).to.be.revertedWith(revertReasons.UNSUPPORTED_ERC721_RECEIVED);
-        });
-
-        it('Should be possible to call fillOrder with holder contract that cannot receive ERC721', async () => {
-          await expect(
-            contractVoucherKernel.fillOrder(
-              tokenSupplyId,
-              users.seller.address,
-              contractMockERC721Receiver.address,
-              1
-            )
-          ).to.not.be.reverted;
-        });
-      });
-
-      describe('Spoof cashier router', () => {
-        let tokenSupplyId;
-        beforeEach(async () => {
-          await setPeriods();
-          utils = await UtilsBuilder.create()
-            .ETHETH()
-            .buildAsync(
-              contractERC1155ERC721,
-              contractVoucherKernel,
-              contractCashier,
-              contractBosonRouter
-            );
-
-          tokenSupplyId = await utils.createOrder(
-            users.seller,
-            constants.PROMISE_VALID_FROM,
-            constants.PROMISE_VALID_TO,
-            constants.PROMISE_PRICE1,
-            constants.PROMISE_DEPOSITSE1,
-            constants.PROMISE_DEPOSITBU1,
-            constants.QTY_10
-          );
-
-          // spoof boson router address
-          await contractVoucherKernel.setCashierAddress(users.deployer.address);
-        });
-
-        it('Should be possible to call burnSupplyOnPause if kernel is paused and cashier is caller', async () => {
-          const supplyToBurn = 6;
-          await contractBosonRouter.pause();
-
-          await expect(
-            contractVoucherKernel.burnSupplyOnPause(
-              users.seller.address,
-              tokenSupplyId,
-              supplyToBurn
-            )
-          )
-            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
-            .withArgs(
-              contractVoucherKernel.address,
-              users.seller.address,
-              constants.ZERO_ADDRESS,
-              tokenSupplyId,
-              supplyToBurn
-            );
-
-          const expectedBalance = constants.QTY_10 - supplyToBurn;
-          const balanceOfOwner = await contractERC1155ERC721.functions[
-            fnSignatures.balanceOf1155
-          ](users.seller.address, tokenSupplyId);
-
-          assert.equal(
-            balanceOfOwner.toString(),
-            expectedBalance.toString(),
-            'Balance after burn mismatch'
-          );
-        });
-
-        it('[NEGATIVE]Should NOT be possible to call burnSupplyOnPause if kernel is not paused', async () => {
-          const supplyToBurn = 6;
-
-          await expect(
-            contractVoucherKernel.burnSupplyOnPause(
-              users.seller.address,
-              tokenSupplyId,
-              supplyToBurn
-            )
-          ).to.be.revertedWith(revertReasons.NOT_PAUSED);
-        });
-
-        it('[NEGATIVE] Should revert if setPaymentReleased voucher id is zero', async () => {
-          await expect(
-            contractVoucherKernel.setPaymentReleased(constants.ZERO)
-          ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
-        });
-
-        it('[NEGATIVE] Should revert if setDepositReleased voucher id is zero', async () => {
-          await expect(
-            contractVoucherKernel.setDepositsReleased(constants.ZERO)
-          ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
-        });
-      });
-    });
-  });
 });
