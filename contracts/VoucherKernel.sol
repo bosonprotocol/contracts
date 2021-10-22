@@ -684,8 +684,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
 
         uint8 tStatus = vouchersStatus[_tokenIdVoucher].status;
 
-        require(!isStatus(tStatus, IDX_CANCEL_FAULT), "ALREADY_CANCELFAULT");
         require(!isStatus(tStatus, IDX_FINAL), "ALREADY_FINALIZED");
+        require(!isStatus(tStatus, IDX_CANCEL_FAULT), "ALREADY_CANCELFAULT");
 
         Promise memory tPromise =
             promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
