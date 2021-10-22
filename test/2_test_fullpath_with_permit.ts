@@ -3771,6 +3771,31 @@ describe('Cashier and VoucherKernel', () => {
         );
       });
 
+      it('[COMMIT->EXPIRY TRIGGERED->!CANCEL] Seller should not be able to cancel after cancel period has passed', async () => {
+        const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
+        await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
+        await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
+        );
+
+        await advanceTimeSeconds(ONE_WEEK);
+
+        await contractVoucherKernel.triggerExpiration(
+          voucherID
+        );
+
+        await advanceTimeSeconds(ONE_WEEK + TEN_MINUTES);
+
+        await expect(
+          utils.cancel(voucherID, users.seller.signer)
+        ).to.be.revertedWith(revertReasons.COF_PERIOD_EXPIRED);
+      });
+
       it('[COMMIT->EXPIRY TRIGGERED->COMPLAIN] Buyer should be able to complain within the complain period after expiry triggered', async () => {
         const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
         await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
@@ -3811,6 +3836,32 @@ describe('Cashier and VoucherKernel', () => {
             assert.equal(ev._tokenIdVoucher.toString(), voucherID);
           }
         );
+      });
+
+      it('[COMMIT->EXPIRY TRIGGERED->!COMPLAIN] Buyer should not be able to complain after complain period has passed', async () => {
+        const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
+        await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
+        await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
+
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
+        );
+
+        await advanceTimeSeconds(ONE_WEEK);
+
+        await contractVoucherKernel.triggerExpiration(
+          voucherID
+        );
+
+        await advanceTimeSeconds(ONE_WEEK +TEN_MINUTES + constants.ONE_MINUTE);
+
+        await expect(
+          utils.complain(voucherID, users.buyer.signer)
+        ).to.be.revertedWith(revertReasons.COMPLAIN_PERIOD_EXPIRED);
       });
 
       it('[COMMIT->EXPIRY TRIGGERED->CANCEL->COMPLAIN] Buyer should be able to complain within the complain period after expiry triggered and seller cancels', async () => {
@@ -3867,6 +3918,33 @@ describe('Cashier and VoucherKernel', () => {
         );
       });
 
+      it('[COMMIT->EXPIRY TRIGGERED->CANCEL->!COMPLAIN] Buyer should not be able to complain after complain period has passed', async () => {
+        const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
+        await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
+        await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
+
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
+        );
+
+        await advanceTimeSeconds(ONE_WEEK);
+
+        await contractVoucherKernel.triggerExpiration(
+          voucherID
+        );
+        await utils.cancel(voucherID, users.seller.signer);
+
+        await advanceTimeSeconds(ONE_WEEK + constants.ONE_MINUTE); // TEN_MINUTES is to get to the end of promise validity,
+
+        await expect(
+          utils.complain(voucherID, users.buyer.signer)
+        ).to.be.revertedWith(revertReasons.COMPLAIN_PERIOD_EXPIRED);
+      });
+
       it('[COMMIT->EXPIRY TRIGGERED->COMPLAIN->CANCEL] Seller should be able to cancel within the cancel period after expiry triggered and buyer complains', async () => {
         const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
         await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
@@ -3921,7 +3999,7 @@ describe('Cashier and VoucherKernel', () => {
         );
       });
 
-      it('[COMMIT->EXPIRY TRIGGERED->!COMPLAIN] Buyer should not be able to complain after complain period has passed', async () => {
+      it('[COMMIT->EXPIRY TRIGGERED->COMPLAIN->!CANCEL] Seller should not be able to cancel after cancel period has passed', async () => {
         const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
         await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
         await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
@@ -3936,43 +4014,18 @@ describe('Cashier and VoucherKernel', () => {
 
         await advanceTimeSeconds(ONE_WEEK);
 
-        await contractVoucherKernel.triggerExpiration(
+       await contractVoucherKernel.triggerExpiration(
           voucherID
         );
-
-        await advanceTimeSeconds(ONE_WEEK +TEN_MINUTES + constants.ONE_MINUTE);
-
-        await expect(
-          utils.complain(voucherID, users.buyer.signer)
-        ).to.be.revertedWith(revertReasons.COMPLAIN_PERIOD_EXPIRED);
-      });
-
-      it('[COMMIT->EXPIRY TRIGGERED->CANCEL->!COMPLAIN] Buyer should not be able to complain after complain period has passed', async () => {
-        const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
-        await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
-        await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
-
-        const voucherID = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.PROMISE_PRICE1,
-          constants.PROMISE_DEPOSITBU1
-        );
-
-        await advanceTimeSeconds(ONE_WEEK);
-
-        await contractVoucherKernel.triggerExpiration(
-          voucherID
-        );
-        await utils.cancel(voucherID, users.seller.signer);
-
-        await advanceTimeSeconds(ONE_WEEK + constants.ONE_MINUTE); // TEN_MINUTES is to get to the end of promise validity,
+       await utils.complain(voucherID, users.buyer.signer);
+       
+       await advanceTimeSeconds(ONE_WEEK);
 
         await expect(
-          utils.complain(voucherID, users.buyer.signer)
-        ).to.be.revertedWith(revertReasons.COMPLAIN_PERIOD_EXPIRED);
+          utils.cancel(voucherID, users.seller.signer)
+        ).to.be.revertedWith(revertReasons.COF_PERIOD_EXPIRED);      
       });
+ 
 
       it('[COMMIT->!COMPLAIN] Buyer should not be able to complain directly after commit', async () => {
         const voucherID = await utils.commitToBuy(
@@ -3986,6 +4039,16 @@ describe('Cashier and VoucherKernel', () => {
           utils.complain(voucherID, users.buyer.signer)
         ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
           });
+
+      it('[!CANCEL] It should not be possible to cancel voucher that does not exist yet', async () => {
+        // spoof boson router address. 
+        // TODO uncomment when modifier added
+        // await contractVoucherKernel.setBosonRouterAddress(users.deployer.address);
+
+            await expect(
+              contractVoucherKernel.cancelOrFault(constants.ONE, constants.ZERO_ADDRESS)
+            ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
+              });
     });
   });
 
