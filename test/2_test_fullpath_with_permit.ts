@@ -8685,7 +8685,13 @@ describe('Cashier and VoucherKernel', () => {
         await ethers.provider.send('evm_revert', [snapshot]);
       }
 
-      describe.only('EXPIRY after some other action', ()=>{
+      describe('EXPIRY after some other action', ()=>{
+        it('[NEGATIVE] EXPIRY before expiration time should have no effect', async () => {
+          await advanceTimeSeconds(constants.SECONDS_IN_DAY + 1);
+          const voucherStatus = (await contractVoucherKernel.getVoucherStatus(tokenVoucherId))[0];
+          assert.equal(voucherStatus, expectedVoucherStatus([]), `Wrong voucher status`);
+        });
+
         it('[NEGATIVE] COMMIT->CANCEL->COMPLAIN->FINALIZE->!COMPLAIN/!COF', async () => {
           await utils.cancel(tokenVoucherId, users.seller.signer);
           await testTriggerExpiraton(['cancel']);
@@ -8842,6 +8848,9 @@ describe('Cashier and VoucherKernel', () => {
       });
     });
       });
+
+
+
       });
 
       // describe('too soon expiry trigger', ()=>{
