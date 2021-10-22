@@ -38,7 +38,7 @@ let TOKEN_SUPPLY_ID;
 
 let users;
 
-describe('Cashier withdrawals ', () => {
+describe.only('Cashier withdrawals ', () => {
   before(async () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
@@ -7030,7 +7030,7 @@ describe('Cashier withdrawals ', () => {
             0,
             users.seller.address
           )
-        ).to.be.revertedWith(revertReasons.INVALID_AMOUNT);
+        ).to.be.revertedWith(revertReasons.NO_FUNDS_TO_WITHDRAW);
       });
     });
 
@@ -7256,7 +7256,7 @@ describe('Cashier withdrawals ', () => {
               0,
               users.seller.address
             )
-          ).to.be.revertedWith(revertReasons.INVALID_AMOUNT);
+          ).to.be.revertedWith(revertReasons.NO_FUNDS_TO_WITHDRAW);
         });
       });
 
@@ -7475,7 +7475,7 @@ describe('Cashier withdrawals ', () => {
               0,
               users.seller.address
             )
-          ).to.be.revertedWith(revertReasons.INVALID_AMOUNT);
+          ).to.be.revertedWith(revertReasons.NO_FUNDS_TO_WITHDRAW);
         });
       });
 
@@ -7696,7 +7696,7 @@ describe('Cashier withdrawals ', () => {
               0,
               users.seller.address
             )
-          ).to.be.revertedWith(revertReasons.INVALID_AMOUNT);
+          ).to.be.revertedWith(revertReasons.NO_FUNDS_TO_WITHDRAW);
         });
       });
 
@@ -7894,7 +7894,7 @@ describe('Cashier withdrawals ', () => {
               0,
               users.seller.address
             )
-          ).to.be.revertedWith(revertReasons.INVALID_AMOUNT);
+          ).to.be.revertedWith(revertReasons.NO_FUNDS_TO_WITHDRAW);
         });
       });
     });
