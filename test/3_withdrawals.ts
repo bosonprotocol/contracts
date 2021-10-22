@@ -38,7 +38,7 @@ let TOKEN_SUPPLY_ID;
 
 let users;
 
-describe.only('Cashier withdrawals ', () => {
+describe('Cashier withdrawals ', () => {
   before(async () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
