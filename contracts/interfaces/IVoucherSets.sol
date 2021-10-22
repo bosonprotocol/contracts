@@ -4,7 +4,6 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 interface IVoucherSets is IERC1155 {
-
     /**
      * @notice Mint an amount of a desired token
      * Currently no restrictions as to who is allowed to mint - so, it is external.

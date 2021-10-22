@@ -96,15 +96,13 @@ interface ICashier {
      */
     function getVoucherKernelAddress() external view returns (address);
 
-   
-
     /**
      * @notice Get the address of Boson Router contract
      * @return Address of Boson Router contract
      */
-    function getBosonRouterAddress() external view returns (address);    
+    function getBosonRouterAddress() external view returns (address);
 
-     /**
+    /**
      * @notice Get the address of the Vouchers contract, an ERC721 contract
      * @return Address of Vouchers contract
      */
@@ -149,5 +147,6 @@ interface ICashier {
      * @notice Set the address of the Voucher Sets token contract, an ERC1155 contract
      * @param _voucherSetsTokenAddress   The address of the Vouchers token contract
      */
-    function setVoucherSetsTokenAddress(address _voucherSetsTokenAddress) external;
+    function setVoucherSetsTokenAddress(address _voucherSetsTokenAddress)
+        external;
 }

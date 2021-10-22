@@ -4,7 +4,6 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 interface IVouchers is IERC721 {
-
     /**
      * @notice Function to mint tokens.
      * @dev ERC-721
@@ -37,5 +36,4 @@ interface IVouchers is IERC721 {
      * @return Address of Cashier address
      */
     function getCashierAddress() external view returns (address);
-
 }
