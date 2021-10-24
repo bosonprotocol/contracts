@@ -35,6 +35,11 @@ contract Gate is IGate, Ownable, Pausable {
         _;
     }
 
+    modifier onlyRouterOrOwner() {
+        require(msg.sender == bosonRouterAddress || msg.sender == owner(), "UNAUTHORIZED_O_BR"); 
+        _;
+    }
+
     /**
      * @notice  Checking if a non-zero address is provided, otherwise reverts.
      */
@@ -99,8 +104,8 @@ contract Gate is IGate, Ownable, Pausable {
         external
         override
         whenNotPaused
+        onlyRouterOrOwner
     {
-        require(msg.sender == bosonRouterAddress || msg.sender == owner(), "UNAUTHORIZED_O_BR"); 
         require(_nftTokenId != 0, "TOKEN_ID_0_NOT_ALLOWED");
         require(_tokenIdSupply != 0, "INVALID_TOKEN_SUPPLY");
 
