@@ -75,5 +75,5 @@ export default {
   SAFE_ERC20_FAIL:
     'SafeERC20WithPermit: ERC20WithPermit operation did not succeed',
   SAFE_ERC20_LOW_LEVEL_FAIL: 'SafeERC20WithPermit: low-level call failed',
-  ERC1155_REJECT:'ERC1155: ERC1155Receiver rejected tokens'
+  ERC1155_REJECT: 'ERC1155: ERC1155Receiver rejected tokens',
 };
