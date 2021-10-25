@@ -516,18 +516,6 @@ contract BosonRouter is
         addEscrowAmountAndFillOrder(_tokenIdSupply, _issuer, ETHETH);
     }
 
-    function addEscrowAmountAndFillOrder(uint256 _tokenIdSupply, address _issuer, uint8 _paymentMethod) internal {
-        IVoucherKernel(voucherKernel).fillOrder(
-            _tokenIdSupply,
-            _issuer,
-            msg.sender,
-            _paymentMethod
-        );
-
-        //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
-    }
-
     /**
      * @notice Buyer requests/commits to redeem a voucher and receives Voucher Token in return.
      * Price and deposit is specified in tokens.
@@ -874,6 +862,25 @@ contract BosonRouter is
             _r,
             _s
         );
+    }
+
+    /**
+     * @notice Add amount to escrow and fill order (only order, were ETH involved)
+     * @param _tokenIdSupply    ID of the supply token
+     * @param _issuer           Address of the issuer of the supply token
+     * * @param _paymentMethod  might be ETHETH, ETHTKN, TKNETH
+     */    
+    function addEscrowAmountAndFillOrder(uint256 _tokenIdSupply, address _issuer, uint8 _paymentMethod) internal {
+        //record funds in escrow ...
+        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
+
+        // fill order
+        IVoucherKernel(voucherKernel).fillOrder(
+            _tokenIdSupply,
+            _issuer,
+            msg.sender,
+            _paymentMethod
+        );        
     }
 
     /**
