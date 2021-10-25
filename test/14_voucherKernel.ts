@@ -227,66 +227,6 @@ describe('VOUCHER KERNEL', () => {
     ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
   });
 
-  it('[NEGATIVE] Should revert if attacker tries to call method that should be called only from bosonRouter', async () => {
-    await deployContracts();
-
-    const attackerInstance = contractVoucherKernel.connect(
-      users.attacker.signer
-    );
-
-    await expect(attackerInstance.pause()).to.be.revertedWith(
-      revertReasons.ONLY_FROM_ROUTER
-    );
-    await expect(attackerInstance.unpause()).to.be.revertedWith(
-      revertReasons.ONLY_FROM_ROUTER
-    );
-    await expect(
-      attackerInstance.createTokenSupplyId(
-        users.other1.address,
-        constants.PROMISE_VALID_FROM,
-        constants.PROMISE_VALID_TO,
-        constants.PROMISE_PRICE1,
-        constants.PROMISE_DEPOSITSE1,
-        constants.PROMISE_DEPOSITBU1,
-        constants.QTY_10
-      )
-    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-    await expect(
-      attackerInstance.createPaymentMethod(
-        constants.ONE,
-        1,
-        constants.ZERO_ADDRESS,
-        constants.ZERO_ADDRESS
-      )
-    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-    await expect(
-      attackerInstance.fillOrder(
-        constants.ONE,
-        users.seller.address,
-        users.buyer.address,
-        1
-      )
-    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-    await expect(
-      attackerInstance.redeem(constants.ONE, users.buyer.address)
-    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-    await expect(
-      attackerInstance.refund(constants.ONE, users.buyer.address)
-    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-    await expect(
-      attackerInstance.complain(constants.ONE, users.buyer.address)
-    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-    await expect(
-      attackerInstance.cancelOrFault(constants.ONE, users.seller.address)
-    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER); // should be uncommented after https://github.com/bosonprotocol/contracts/issues/195
-    await expect(
-      attackerInstance.cancelOrFaultVoucherSet(
-        constants.ONE,
-        users.seller.address
-      )
-    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-  });
-
   it('[NEGATIVE] Should revert if cashier address is not set', async () => {
     await deployContracts(true, false);
 
@@ -314,37 +254,6 @@ describe('VOUCHER KERNEL', () => {
     ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
   });
 
-  it('[NEGATIVE] Should revert if attacker tries to call method that should be called only from cashier', async () => {
-    await deployContracts();
-
-    const attackerInstance = contractVoucherKernel.connect(
-      users.attacker.signer
-    );
-
-    await expect(
-      attackerInstance.setPaymentReleased(constants.ONE)
-    ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
-    await expect(
-      attackerInstance.setDepositsReleased(constants.ONE)
-    ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
-    await expect(
-      attackerInstance.setSupplyHolderOnTransfer(
-        constants.ONE,
-        users.seller.address
-      )
-    ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
-
-    await contractBosonRouter.pause();
-
-    await expect(
-      attackerInstance.burnSupplyOnPause(
-        users.seller.address,
-        constants.ONE,
-        constants.QTY_10
-      )
-    ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
-  });
-
   describe('With normal deployment', () => {
     function promiseKeyForVoucherKernel(contractAddress, seller, sellerNonce) {
       return keccak256(
@@ -363,6 +272,93 @@ describe('VOUCHER KERNEL', () => {
 
     beforeEach(async () => {
       await deployContracts();
+    });
+
+    it('[NEGATIVE] Should revert if attacker tries to call method that should be called only from bosonRouter', async () => {
+      const attackerInstance = contractVoucherKernel.connect(
+        users.attacker.signer
+      );
+
+      await expect(attackerInstance.pause()).to.be.revertedWith(
+        revertReasons.ONLY_FROM_ROUTER
+      );
+      await expect(attackerInstance.unpause()).to.be.revertedWith(
+        revertReasons.ONLY_FROM_ROUTER
+      );
+      await expect(
+        attackerInstance.createTokenSupplyId(
+          users.other1.address,
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITSE1,
+          constants.PROMISE_DEPOSITBU1,
+          constants.QTY_10
+        )
+      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+      await expect(
+        attackerInstance.createPaymentMethod(
+          constants.ONE,
+          1,
+          constants.ZERO_ADDRESS,
+          constants.ZERO_ADDRESS
+        )
+      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+      await expect(
+        attackerInstance.fillOrder(
+          constants.ONE,
+          users.seller.address,
+          users.buyer.address,
+          1
+        )
+      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+      await expect(
+        attackerInstance.redeem(constants.ONE, users.buyer.address)
+      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+      await expect(
+        attackerInstance.refund(constants.ONE, users.buyer.address)
+      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+      await expect(
+        attackerInstance.complain(constants.ONE, users.buyer.address)
+      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+      await expect(
+        attackerInstance.cancelOrFault(constants.ONE, users.seller.address)
+      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER); // should be uncommented after https://github.com/bosonprotocol/contracts/issues/195
+      await expect(
+        attackerInstance.cancelOrFaultVoucherSet(
+          constants.ONE,
+          users.seller.address
+        )
+      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+    });
+
+    it('[NEGATIVE] Should revert if attacker tries to call method that should be called only from cashier', async () => {
+      const attackerInstance = contractVoucherKernel.connect(
+        users.attacker.signer
+      );
+
+      await expect(
+        attackerInstance.setPaymentReleased(constants.ONE)
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
+      await expect(
+        attackerInstance.setDepositsReleased(constants.ONE)
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
+      await expect(
+        attackerInstance.setSupplyHolderOnTransfer(
+          constants.ONE,
+          users.seller.address
+        )
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
+
+      await contractBosonRouter.pause();
+
+      await expect(
+        attackerInstance.burnSupplyOnPause(
+          users.seller.address,
+          constants.ONE,
+          constants.QTY_10
+        )
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
     });
 
     it('Should return correct promise keys', async () => {
@@ -613,7 +609,7 @@ describe('VOUCHER KERNEL', () => {
         ).to.be.revertedWith(revertReasons.UNSUPPORTED_ERC721_RECEIVED);
       });
 
-      it('Should be possible to call fillOrder with holder contract that cannot receive ERC721', async () => {
+      it('Should be possible to call fillOrder with holder contract that can receive ERC721', async () => {
         await expect(
           contractVoucherKernel.fillOrder(
             tokenSupplyId,
@@ -625,7 +621,7 @@ describe('VOUCHER KERNEL', () => {
       });
     });
 
-    describe('Spoof cashier router', () => {
+    describe('Spoof cashier', () => {
       let tokenSupplyId;
       beforeEach(async () => {
         await setPeriods();

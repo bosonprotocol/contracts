@@ -490,7 +490,7 @@ describe('Gate contract', async () => {
           .false;
       });
 
-      it('[NEGATIVE] Should revert of attacker tries to deactivate voucher set id', async () => {
+      it('[NEGATIVE] Should revert if attacker tries to deactivate voucher set id', async () => {
         const {
           tokenId,
           nftTokenID,

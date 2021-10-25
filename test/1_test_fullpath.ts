@@ -1326,15 +1326,6 @@ describe('Voucher tests', () => {
       ).to.not.be.reverted;
     });
 
-    it('safeTransferFrom will NOT revert the transaction if it succeeds', async () => {
-      await expect(
-        sellerInstance.transferFromAndAddEscrowTest(
-          contractBSNTokenPrice.address,
-          BN(0)
-        )
-      ).to.not.be.reverted;
-    });
-
     it('safeTransferFrom will NOT revert if token contract does not return anything', async () => {
       const MockERC20Permit = await deployMockContract(
         users.deployer.signer,

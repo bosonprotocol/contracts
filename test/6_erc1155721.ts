@@ -319,42 +319,6 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
       });
 
-      it('[setCashierAddress] Should set setCashierAddress to valid address', async () => {
-        const expectedCashierAddress = contractCashier.address;
-        const tx = await contractERC1155ERC721.setCashierAddress(
-          expectedCashierAddress
-        );
-
-        const txReceipt = await tx.wait();
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          ERC1155ERC721_Factory,
-          eventNames.LOG_CASHIER_SET,
-          (ev) => {
-            assert.equal(
-              ev._newCashier,
-              contractCashier.address,
-              'ev._newCashier not as expected!'
-            );
-            assert.equal(
-              ev._triggeredBy,
-              users.deployer.address,
-              'ev._triggeredBy not as expected!'
-            );
-          }
-        );
-
-        const cashierAddress = await contractERC1155ERC721.getCashierAddress();
-        assert.equal(cashierAddress, expectedCashierAddress);
-      });
-
-      it('[NEGATIVE][setCashierAddress] Should revert for zero address', async () => {
-        await expect(
-          contractERC1155ERC721.setVoucherKernelAddress(constants.ZERO_ADDRESS)
-        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
-      });
-
       it('[isApprovedForAll] Should return the approval status of an operator for a given account', async () => {
         const expectedApprovalStatus = true;
         await contractERC1155ERC721.setApprovalForAll(
