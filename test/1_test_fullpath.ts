@@ -17,6 +17,11 @@ const eventNames = eventUtils.eventNames;
 const {keccak256, solidityPack} = ethers.utils;
 import fnSignatures from '../testHelpers/functionSignatures';
 
+import {waffle} from 'hardhat';
+const {deployMockContract} = waffle;
+import IERC20 from '../artifacts/contracts/interfaces/IERC20WithPermit.sol/IERC20WithPermit.json';
+import IERC20Old from '../artifacts/contracts/mocks/IERC20old.sol/IERC20Old.json';
+
 import {
   BosonRouter,
   ERC1155ERC721,
@@ -1318,7 +1323,61 @@ describe('Voucher tests', () => {
           contractBSNTokenPrice.address,
           BN(0)
         )
-      ).to.not.be.revertedWith(revertReasons.PAUSED);
+      ).to.not.be.reverted;
+    });
+
+    it('safeTransferFrom will NOT revert the transaction if it succeeds', async () => {
+      await expect(
+        sellerInstance.transferFromAndAddEscrowTest(
+          contractBSNTokenPrice.address,
+          BN(0)
+        )
+      ).to.not.be.reverted;
+    });
+
+    it('safeTransferFrom will NOT revert if token contract does not return anything', async () => {
+      const MockERC20Permit = await deployMockContract(
+        users.deployer.signer,
+        IERC20Old.abi
+      ); //deploys mock
+
+      await MockERC20Permit.mock.transferFrom
+        .withArgs(users.seller.address, contractCashier.address, 0)
+        .returns();
+
+      await expect(
+        sellerInstance.transferFromAndAddEscrowTest(
+          MockERC20Permit.address,
+          BN(0)
+        )
+      ).to.not.be.reverted;
+    });
+
+    it('[NEGATIVE] safeTransferFrom will revert if token contract returns false', async () => {
+      const MockERC20Permit = await deployMockContract(
+        users.deployer.signer,
+        IERC20.abi
+      ); //deploys mock
+
+      await MockERC20Permit.mock.transferFrom
+        .withArgs(users.seller.address, contractCashier.address, 0)
+        .returns(false);
+
+      await expect(
+        sellerInstance.transferFromAndAddEscrowTest(
+          MockERC20Permit.address,
+          BN(0)
+        )
+      ).to.be.revertedWith(revertReasons.SAFE_ERC20_FAIL);
+    });
+
+    it('[NEGATIVE] safeTransferFrom will revert if contract does not support transfer from', async () => {
+      await expect(
+        sellerInstance.transferFromAndAddEscrowTest(
+          contractCashier.address,
+          BN(0)
+        )
+      ).to.be.revertedWith(revertReasons.SAFE_ERC20_LOW_LEVEL_FAIL);
     });
   });
 
