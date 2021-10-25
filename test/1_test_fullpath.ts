@@ -211,6 +211,115 @@ describe('Voucher tests', () => {
     await deployContracts();
   });
 
+  describe('Boson Router contract', function () {
+    beforeEach(
+      'Deploy and create another instance of the contracts',
+      async () => {
+        await deployContracts2();
+      }
+    );
+
+    it('[setVoucherKernelAddress] Should be able to set a new Voucher Kernel address', async () => {
+      const expectedNewVoucherKernelAddress = contractVoucherKernel_2.address;
+      const tx = await contractBosonRouter.setVoucherKernelAddress(
+        expectedNewVoucherKernelAddress
+      );
+
+      const txReceipt = await tx.wait();
+      eventUtils.assertEventEmitted(
+        txReceipt,
+        BosonRouter_Factory,
+        eventNames.LOG_VOUCHER_KERNEL_SET,
+        (ev) => {
+          assert.equal(ev._newVoucherKernel, expectedNewVoucherKernelAddress);
+          assert.equal(ev._triggeredBy, users.deployer.address);
+        }
+      );
+
+      expect(await contractBosonRouter.getVoucherKernelAddress()).to.equal(
+        expectedNewVoucherKernelAddress,
+        'Not expected Voucher kernel address'
+      );
+    });
+
+    it('[NEGATIVE][setVoucherKernelAddress] should revert if called by an attacker', async () => {
+      const attackerInstance = contractBosonRouter.connect(
+        users.attacker.signer
+      );
+      await expect(
+        attackerInstance.setVoucherKernelAddress(
+          contractVoucherKernel_2.address
+        )
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+
+    it('[setTokenRegistryAddress] Should be able to set a new Token Registry address', async () => {
+      const expectedNewTokenRegistryAddress = contractTokenRegistry_2.address;
+      const tx = await contractBosonRouter.setTokenRegistryAddress(
+        expectedNewTokenRegistryAddress
+      );
+
+      const txReceipt = await tx.wait();
+      eventUtils.assertEventEmitted(
+        txReceipt,
+        BosonRouter_Factory,
+        eventNames.LOG_TOKEN_REGISTRY_SET,
+        (ev) => {
+          assert.equal(ev._newTokenRegistry, expectedNewTokenRegistryAddress);
+          assert.equal(ev._triggeredBy, users.deployer.address);
+        }
+      );
+
+      expect(await contractBosonRouter.getTokenRegistryAddress()).to.equal(
+        expectedNewTokenRegistryAddress,
+        'Not expected Token Registry address'
+      );
+    });
+
+    it('[NEGATIVE][setTokenRegistryAddress] should revert if called by an attacker', async () => {
+      const attackerInstance = contractBosonRouter.connect(
+        users.attacker.signer
+      );
+      await expect(
+        attackerInstance.setTokenRegistryAddress(
+          contractTokenRegistry_2.address
+        )
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+
+    it('[setCashierAddress] Should be able to set a new Cashier address', async () => {
+      const expectedNewCashierAddress = contractCashier_2.address;
+      const tx = await contractBosonRouter.setCashierAddress(
+        expectedNewCashierAddress
+      );
+
+      const txReceipt = await tx.wait();
+      eventUtils.assertEventEmitted(
+        txReceipt,
+        BosonRouter_Factory,
+        eventNames.LOG_CASHIER_SET,
+        (ev) => {
+          assert.equal(ev._newCashier, expectedNewCashierAddress);
+          assert.equal(ev._triggeredBy, users.deployer.address);
+        }
+      );
+
+      expect(await contractBosonRouter.getCashierAddress()).to.equal(
+        expectedNewCashierAddress,
+        'Not expected Cashier address'
+      );
+    });
+
+    it('[NEGATIVE][setCashierAddress] should revert if called by an attacker', async () => {
+      const attackerInstance = contractBosonRouter.connect(
+        users.attacker.signer
+      );
+      await expect(
+        attackerInstance.setTokenRegistryAddress(contractCashier_2.address)
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+  });
+
   describe('Contract Addresses Getters', function () {
     it('Should have set contract addresses properly for Boson Router', async () => {
       const registry = await contractBosonRouter.getTokenRegistryAddress();
