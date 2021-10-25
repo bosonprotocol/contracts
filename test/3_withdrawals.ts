@@ -7984,6 +7984,15 @@ describe('Cashier withdrawals ', () => {
           );
         });
 
+        it('[NEGATIVE][setDisasterState] Disaster state cannot be set again when it is already set', async () => {
+          await contractBosonRouter.pause();
+
+          await contractCashier.setDisasterState();
+          await expect(contractCashier.setDisasterState()).to.be.revertedWith(
+            revertReasons.DISASTER_STATE_ALREADY_SET
+          );
+        });
+
         it('[NEGATIVE][setDisasterState] Disaster state should not be set when contract is not paused', async () => {
           await expect(contractCashier.setDisasterState()).to.be.revertedWith(
             revertReasons.NOT_PAUSED

@@ -57,4 +57,5 @@ export default {
   NON_ERC721RECEIVER: 'ERC721: transfer to non ERC721Receiver implementer',
   NON_ERC1155RECEIVER: 'ERC1155: transfer to non ERC1155Receiver implementer',
   NO_FUNDS_TO_WITHDRAW: 'NO_FUNDS_TO_WITHDRAW',
+  DISASTER_STATE_ALREADY_SET: 'Disaster state is already set',
 };
