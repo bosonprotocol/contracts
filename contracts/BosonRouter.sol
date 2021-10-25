@@ -698,7 +698,7 @@ contract BosonRouter is
         uint8 _v,
         bytes32 _r,
         bytes32 _s
-    ) external payable override nonReentrant whenNotPaused {
+    ) external payable virtual override nonReentrant whenNotPaused {
         // check if _tokenIdSupply mapped to gate contract
         // if yes, deactivate (user,_tokenIdSupply) to prevent double spending
         deactivateConditionalCommit(_tokenIdSupply);
@@ -709,9 +709,7 @@ contract BosonRouter is
         require(depositBu == msg.value, "ID"); // invalid deposit
 
         address tokenPriceAddress = IVoucherKernel(voucherKernel)
-            .getVoucherPriceToken(_tokenIdSupply);
-
-        addEscrowAmountAndFillOrder(_tokenIdSupply, _issuer, TKNETH);
+            .getVoucherPriceToken(_tokenIdSupply);        
 
         permitTransferFromAndAddEscrow(
             tokenPriceAddress,
@@ -721,6 +719,8 @@ contract BosonRouter is
             _r,
             _s
         );
+
+        addEscrowAmountAndFillOrder(_tokenIdSupply, _issuer, TKNETH);
     }
 
     /**
@@ -1120,6 +1120,15 @@ contract BosonRouter is
         address _tokenDepositAddress,
         uint256 _tokensSent
     ) internal returns (uint256) {
+        //record funds in escrow ...
+        if (_tokenDepositAddress == address(0)) {
+            ICashier(cashierAddress).addEscrowAmount{value: msg.value}(
+                msg.sender
+            );
+        } else {
+            transferFromAndAddEscrow(_tokenDepositAddress, _tokensSent);
+        }
+        
         uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
             .createTokenSupplyId(
                 msg.sender,
@@ -1136,16 +1145,7 @@ contract BosonRouter is
             _paymentMethod,
             _tokenPriceAddress,
             _tokenDepositAddress
-        );
-
-        //record funds in escrow ...
-        if (_tokenDepositAddress == address(0)) {
-            ICashier(cashierAddress).addEscrowAmount{value: msg.value}(
-                msg.sender
-            );
-        } else {
-            transferFromAndAddEscrow(_tokenDepositAddress, _tokensSent);
-        }
+        );              
 
         emit LogOrderCreated(
             tokenIdSupply,

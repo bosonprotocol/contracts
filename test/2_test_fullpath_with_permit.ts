@@ -14,6 +14,7 @@ import {
   VoucherKernel,
   Cashier,
   TokenRegistry,
+  MockBosonRouter,
   MockERC20Permit,
 } from '../typechain';
 const {keccak256, solidityPack} = ethers.utils;
@@ -23,6 +24,7 @@ let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
 let TokenRegistry_Factory: ContractFactory;
+let MockBosonRouter_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
 
 import revertReasons from '../testHelpers/revertReasons';
@@ -47,6 +49,9 @@ describe('Cashier and VoucherKernel', () => {
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
     TokenRegistry_Factory = await ethers.getContractFactory('TokenRegistry');
+    MockBosonRouter_Factory = await ethers.getContractFactory(
+      'MockBosonRouter'
+    );
     MockERC20Permit_Factory = await ethers.getContractFactory(
       'MockERC20Permit'
     );
@@ -60,6 +65,7 @@ describe('Cashier and VoucherKernel', () => {
     contractBosonRouter: BosonRouter,
     contractBSNTokenPrice: MockERC20Permit,
     contractBSNTokenDeposit: MockERC20Permit,
+    contractMockBosonRouter: MockBosonRouter,
     contractTokenRegistry: TokenRegistry;
 
   const deadline = toWei(1);
@@ -2016,6 +2022,23 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
+        contractMockBosonRouter = (await MockBosonRouter_Factory.deploy(
+          contractVoucherKernel.address,
+          contractTokenRegistry.address,
+          contractCashier.address
+        )) as Contract & MockBosonRouter;
+
+        await contractMockBosonRouter.deployed();
+
+        //Set mock so that passing wrong payment type from requestCreateOrderETHETH to createPaymentMethod can be tested
+        await contractVoucherKernel.setBosonRouterAddress(
+          contractMockBosonRouter.address
+        );
+
+        await contractCashier.setBosonRouterAddress(
+          contractMockBosonRouter.address
+        );
+
         const utilsTknEth = await UtilsBuilder.create()
           .ERC20withPermit()
           .TKNETH()
@@ -2023,7 +2046,7 @@ describe('Cashier and VoucherKernel', () => {
             contractERC1155ERC721,
             contractVoucherKernel,
             contractCashier,
-            contractBosonRouter,
+            contractMockBosonRouter,
             contractBSNTokenPrice,
             contractBSNTokenDeposit
           );
