@@ -513,11 +513,15 @@ contract BosonRouter is
             .getBuyerOrderCosts(_tokenIdSupply);
         require(price.add(depositBu) == weiReceived, "IF"); //invalid funds
 
+        addEscrowAmountAndFillOrder(_tokenIdSupply, _issuer, ETHETH);
+    }
+
+    function addEscrowAmountAndFillOrder(uint256 _tokenIdSupply, address _issuer, uint8 _paymentMethod) internal {
         IVoucherKernel(voucherKernel).fillOrder(
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            ETHETH
+            _paymentMethod
         );
 
         //record funds in escrow ...
@@ -684,15 +688,7 @@ contract BosonRouter is
             _s
         );
 
-        IVoucherKernel(voucherKernel).fillOrder(
-            _tokenIdSupply,
-            _issuer,
-            msg.sender,
-            ETHTKN
-        );
-
-        //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
+        addEscrowAmountAndFillOrder(_tokenIdSupply, _issuer, ETHTKN);
     }
 
     /**
@@ -727,12 +723,7 @@ contract BosonRouter is
         address tokenPriceAddress = IVoucherKernel(voucherKernel)
             .getVoucherPriceToken(_tokenIdSupply);
 
-        IVoucherKernel(voucherKernel).fillOrder(
-            _tokenIdSupply,
-            _issuer,
-            msg.sender,
-            TKNETH
-        );
+        addEscrowAmountAndFillOrder(_tokenIdSupply, _issuer, TKNETH);
 
         permitTransferFromAndAddEscrow(
             tokenPriceAddress,
@@ -742,9 +733,6 @@ contract BosonRouter is
             _r,
             _s
         );
-
-        //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
     }
 
     /**
