@@ -759,7 +759,7 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.MISMATCHED_ARRAY_LENGTHS);
       });
 
-      it('[NEGATIVE][safeBatchTransfer1155] Seller should not transfer batch to contract address', async () => {
+      it('[NEGATIVE][safeBatchTransfer1155] Seller should not transfer batch to contract address that cannot receive it', async () => {
         await expect(
           utils.safeBatchTransfer1155(
             users.seller.address,
@@ -769,6 +769,48 @@ describe('ERC1155ERC721', () => {
             users.seller.signer
           )
         ).to.be.revertedWith(revertReasons.NON_ERC1155RECEIVER);
+      });
+
+      it('[NEGATIVE][safeTransfer1155] it should revert if sent to contract that rejects them', async () => {
+        const mockERC1155Receiver = await deployMockContract(
+          users.deployer.signer,
+          ERC1155receiver.abi
+        ); //deploys mock
+
+        await mockERC1155Receiver.mock.onERC1155BatchReceived
+          .returns('0x00000000');
+
+          await expect(
+            utils.safeBatchTransfer1155(
+              users.seller.address,
+              mockERC1155Receiver.address,
+              [TOKEN_SUPPLY_ID],
+              [constants.QTY_10],
+              users.seller.signer
+            )
+          ).to.be.revertedWith(revertReasons.ERC1155_REJECT);
+      });
+
+      it('[NEGATIVE][safeTransfer1155] it should revert if sent to contract that reverts with arbitrary revert reason', async () => {
+        const mockERC1155Receiver = await deployMockContract(
+          users.deployer.signer,
+          ERC1155receiver.abi
+        ); //deploys mock
+
+          const arbitraryRevertReason = 'arbitrary revert reason'
+
+        await mockERC1155Receiver.mock.onERC1155BatchReceived
+          .revertsWithReason(arbitraryRevertReason);
+
+          await expect(
+            utils.safeBatchTransfer1155(
+              users.seller.address,
+              mockERC1155Receiver.address,
+              [TOKEN_SUPPLY_ID],
+              [constants.QTY_10],
+              users.seller.signer
+            )
+          ).to.be.revertedWith(arbitraryRevertReason);
       });
 
       it('[NEGATIVE][safeBatchTransfer1155] Should revert if attacker tries to transfer batch', async () => {
@@ -1561,7 +1603,7 @@ describe('ERC1155ERC721', () => {
         assert.equal(newTokenOwner, expectedNewOwnerAddress);
       });
 
-      it('[NEGATIVE][safeTransfer721] Should not be able to transfer to contract address', async () => {
+      it('[NEGATIVE][safeTransfer721] Should not be able to transfer to contract address that does not support ERC721', async () => {
         const erc721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
@@ -1578,6 +1620,35 @@ describe('ERC1155ERC721', () => {
             users.buyer.signer
           )
         ).to.be.revertedWith(revertReasons.NON_ERC721RECEIVER);
+      });
+
+      it('[NEGATIVE][safeTransfer721] it should revert if sent to contract that reverts with arbitrary revert reason', async () => {
+        const erc721 = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.product_price,
+          constants.buyer_deposit
+        );
+
+        const mockERC721Receiver = await deployMockContract(
+          users.deployer.signer,
+          ERC721receiver.abi
+        ); //deploys mock
+
+          const arbitraryRevertReason = 'arbitrary revert reason'
+
+        await mockERC721Receiver.mock.onERC721Received
+          .revertsWithReason(arbitraryRevertReason);
+
+          await expect(
+            utils.safeTransfer721(
+              users.buyer.address,
+              mockERC721Receiver.address,
+              erc721,
+              users.buyer.signer
+            )
+          ).to.be.revertedWith(arbitraryRevertReason);
       });
 
       it('[NEGATIVE][safeTransfer721] Attacker should not be able to transfer erc721', async () => {
