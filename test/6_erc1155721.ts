@@ -8,6 +8,11 @@ import Utils from '../testHelpers/utils';
 import UtilsBuilder from '../testHelpers/utilsBuilder';
 const BN = ethers.BigNumber.from;
 
+import {waffle} from 'hardhat';
+import ERC721receiver from '../artifacts/contracts/mocks/MockERC721Receiver.sol/MockERC721Receiver.json';
+import ERC1155receiver from '../artifacts/contracts/mocks/MockERC1155Receiver.sol/MockERC1155Receiver.json';
+const {deployMockContract} = waffle;
+
 import {
   BosonRouter,
   ERC1155ERC721,
@@ -535,6 +540,48 @@ describe('ERC1155ERC721', () => {
             users.seller.signer
           )
         ).to.be.revertedWith(revertReasons.NON_ERC1155RECEIVER);
+      });
+
+      it('[NEGATIVE][safeTransfer1155] it should revert if sent to contract that rejects them', async () => {
+        const mockERC1155Receiver = await deployMockContract(
+          users.deployer.signer,
+          ERC1155receiver.abi
+        ); //deploys mock
+
+        await mockERC1155Receiver.mock.onERC1155Received
+          .returns('0x00000000');
+
+          await expect(
+            utils.safeTransfer1155(
+              users.seller.address,
+              mockERC1155Receiver.address,
+              TOKEN_SUPPLY_ID,
+              constants.QTY_10,
+              users.seller.signer
+            )
+          ).to.be.revertedWith(revertReasons.ERC1155_REJECT);
+      });
+
+      it('[NEGATIVE][safeTransfer1155] it should revert if sent to contract that reverts with arbitrary revert reason', async () => {
+        const mockERC1155Receiver = await deployMockContract(
+          users.deployer.signer,
+          ERC1155receiver.abi
+        ); //deploys mock
+
+          const arbitraryRevertReason = 'arbitrary revert reason'
+
+        await mockERC1155Receiver.mock.onERC1155Received
+          .revertsWithReason(arbitraryRevertReason);
+
+          await expect(
+            utils.safeTransfer1155(
+              users.seller.address,
+              mockERC1155Receiver.address,
+              TOKEN_SUPPLY_ID,
+              constants.QTY_10,
+              users.seller.signer
+            )
+          ).to.be.revertedWith(arbitraryRevertReason);
       });
 
       it('[safeBatchTransfer1155] Should be able to safely batch transfer to EOA', async () => {
