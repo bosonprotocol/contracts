@@ -106,13 +106,13 @@ interface ICashier {
      * @notice Get the address of the Vouchers contract, an ERC721 contract
      * @return Address of Vouchers contract
      */
-    function getVouchersTokenAddress() external view returns (address);
+    function getVoucherTokenAddress() external view returns (address);
 
     /**
      * @notice Get the address of the VoucherSets token contract, an ERC155 contract
      * @return Address of VoucherSets contract
      */
-    function getVoucherSetsTokenAddress() external view returns (address);
+    function getVoucherSetTokenAddress() external view returns (address);
 
     /**
      * @notice Ensure whether or not contract has been set to disaster state
@@ -139,14 +139,14 @@ interface ICashier {
 
     /**
      * @notice Set the address of the Vouchers token contract, an ERC721 contract
-     * @param _vouchersTokenAddress   The address of the Vouchers token contract
+     * @param _voucherTokenAddress   The address of the Vouchers token contract
      */
-    function setVouchersTokenAddress(address _vouchersTokenAddress) external;
+    function setVoucherTokenAddress(address _voucherTokenAddress) external;
 
     /**
      * @notice Set the address of the Voucher Sets token contract, an ERC1155 contract
-     * @param _voucherSetsTokenAddress   The address of the Vouchers token contract
+     * @param _voucherSetTokenAddress   The address of the Voucher Sets token contract
      */
-    function setVoucherSetsTokenAddress(address _voucherSetsTokenAddress)
+    function setVoucherSetTokenAddress(address _voucherSetTokenAddress)
         external;
 }

@@ -31,9 +31,6 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
     address private cashierAddress; //address of the Cashier contract
     
     //standard reqs
-    //ERC-1155
-    mapping(uint256 => mapping(address => uint256)) private balances; //balance of token ids of an account
-
     //ERC-721
     mapping(address => uint256) private balance721;
     mapping(uint256 => address) private owners721;
