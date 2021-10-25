@@ -103,12 +103,6 @@ describe('Voucher tests', () => {
       contractCashier.address
     )) as Contract & BosonRouter;
 
-    contractMockBosonRouter = (await MockBosonRouter_Factory.deploy(
-      contractVoucherKernel.address,
-      contractTokenRegistry.address,
-      contractCashier.address
-    )) as Contract & MockBosonRouter;
-
     contractBSNTokenPrice = (await MockERC20Permit_Factory.deploy(
       'BosonTokenPrice',
       'BPRC'
@@ -119,7 +113,6 @@ describe('Voucher tests', () => {
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
     await contractBosonRouter.deployed();
-    await contractMockBosonRouter.deployed();
     await contractBSNTokenPrice.deployed();
 
     await contractERC1155ERC721.setApprovalForAll(
@@ -586,6 +579,45 @@ describe('Voucher tests', () => {
       )[0];
       assert.isTrue(sellerERC1155ERC721BalanceVoucherSet2.eq(constants.TWO));
     });
+
+    it('must fail: adding new order with incorrect payment method', async () => {
+      contractMockBosonRouter = (await MockBosonRouter_Factory.deploy(
+        contractVoucherKernel.address,
+        contractTokenRegistry.address,
+        contractCashier.address
+      )) as Contract & MockBosonRouter;
+
+      await contractMockBosonRouter.deployed();
+
+      //Set mock so that passing wrong payment type from requestCreateOrderETHETH to createPaymentMethod can be tested
+      await contractVoucherKernel.setBosonRouterAddress(
+        contractMockBosonRouter.address
+      );
+
+      await contractCashier.setBosonRouterAddress(
+        contractMockBosonRouter.address
+      );
+
+      const sellerInstance = contractMockBosonRouter.connect(
+        users.seller.signer
+      );
+
+      await expect(
+        sellerInstance.requestCreateOrderETHETH(
+          [
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITSE1,
+            constants.PROMISE_DEPOSITBU1,
+            constants.ORDER_QUANTITY1,
+          ],
+          {
+            value: constants.PROMISE_DEPOSITSE1,
+          }
+        )
+      ).to.be.revertedWith(revertReasons.INVALID_PAYMENT_METHOD);
+    });
   });
 
   describe('Commit to buy a voucher (ERC1155)', () => {
@@ -882,33 +914,6 @@ describe('Voucher tests', () => {
           }
         )
       ).to.be.revertedWith(revertReasons.INVALID_FUNDS);
-    });
-
-    it('must fail: adding new order with incorrect payment method', async () => {
-      //Set mock so that passing wrong payment type from requestCreateOrderETHETH to createPaymentMethod can be tested
-      await contractVoucherKernel.setBosonRouterAddress(
-        contractMockBosonRouter.address
-      );
-
-      const sellerInstance = contractMockBosonRouter.connect(
-        users.seller.signer
-      );
-
-      await expect(
-        sellerInstance.requestCreateOrderETHETH(
-          [
-            constants.PROMISE_VALID_FROM,
-            constants.PROMISE_VALID_TO,
-            constants.PROMISE_PRICE1,
-            constants.PROMISE_DEPOSITSE1,
-            constants.PROMISE_DEPOSITBU1,
-            constants.ORDER_QUANTITY1,
-          ],
-          {
-            value: constants.PROMISE_DEPOSITSE1,
-          }
-        )
-      ).to.be.revertedWith(revertReasons.INVALID_PAYMENT_METHOD);
     });
   }); //end describe
 
