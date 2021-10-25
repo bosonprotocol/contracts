@@ -1906,6 +1906,22 @@ describe('Voucher tests - UNHAPPY PATH', () => {
         revertReasons.ALREADY_PROCESSED
       );
     });
+
+    it('[NEGATIVE][cancelOrFault] should revert if not called via boson router', async () => {
+      const sellerInstance = contractVoucherKernel.connect(users.seller.signer);
+
+      const attackerInstance = contractVoucherKernel.connect(
+        users.attacker.signer
+      );
+
+      await expect(
+        sellerInstance.cancelOrFault(constants.ONE, users.seller.address)
+      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+
+      await expect(
+        attackerInstance.cancelOrFault(constants.ONE, users.attacker.address)
+      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+    });
   });
 
   describe('Expirations (one universal test) ...', () => {
