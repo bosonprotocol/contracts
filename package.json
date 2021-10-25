@@ -32,7 +32,7 @@
         "tests:format": "prettier --list-different test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
         "tests:format-fix": "prettier --write test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
         "tests:unit": "npx hardhat test",
-        "tests:coverage": "npx hardhat coverage",
+        "tests:coverage": "npx hardhat coverage --solcoverjs ./.solcover.js",
         "contracts:size": "hardhat size-contracts"
     },
     "repository": {

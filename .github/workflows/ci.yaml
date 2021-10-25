@@ -43,10 +43,20 @@ jobs:
         with:
           node-version: '12'
           cache: 'npm'
-      - run: npm install
-      - run: npm run contracts:compile
-      - run: npm run tests:unit
-      - run: npm run tests:coverage
+      - name: Install Dependencies
+        run: npm install
+      - name: Compile Contracts
+        run: npm run contracts:compile
+      - name: Run code coverage
+        run: npm run tests:coverage
+      - name: Check code coverage
+        shell: bash
+        run: |
+          MIN_COVERAGE=90.00
+          COVERAGE=`grep -a -m 1 -h -r '<span class="strong">' coverage/index.html | head -1 | sed 's/^[^>]*>//' | sed 's/%.*$//'`
+          echo "solidity code coverage is '$COVERAGE'"
+          if (( $(echo "$COVERAGE < $MIN_COVERAGE" | bc -l) )); then echo "Fail: code coverage '$COVERAGE' is lower than configured '$MIN_COVERAGE'" >&2; exit 1; fi
+
 
   snyk:
     runs-on: ubuntu-latest
