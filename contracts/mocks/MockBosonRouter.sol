@@ -60,4 +60,25 @@ contract MockBosonRouter is BosonRouter {
     ) external {
         transferFromAndAddEscrow(_tokenAddress, _amount);
     }
+
+    /**
+     * @notice Buyer requests/commits to redeem a voucher and receives Voucher Token in return.
+     * Price is specified in tokens and the deposit is specified in ETH
+ 
+    * @dev uses an invalid payment method for a test case
+
+     * @param _tokenIdSupply ID of the supply token
+     * @param _issuer address of the issuer of the supply token
+     */
+    function requestVoucherTKNETHWithPermit(
+        uint256 _tokenIdSupply,
+        address _issuer,
+        uint256,
+        uint256,
+        uint8,
+        bytes32,
+        bytes32
+    ) external payable override nonReentrant whenNotPaused {
+        addEscrowAmountAndFillOrder(_tokenIdSupply, _issuer, 5);
+    }
 }
