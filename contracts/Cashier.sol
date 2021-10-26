@@ -113,6 +113,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      * Only BR contract is in control of this function.
      */
     function setDisasterState() external onlyOwner whenPaused {
+        require(!disasterState, "Disaster state is already set");
         disasterState = true;
         emit LogDisasterStateSet(disasterState, msg.sender);
     }
