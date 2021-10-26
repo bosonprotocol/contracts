@@ -389,11 +389,11 @@ interface IVoucherKernel {
      * @notice Get the address of the Vouchers token contract, an ERC721 contract
      * @return Address of Vouchers contract
      */
-    function getVouchersTokenAddress() external view returns (address);
+    function getVoucherTokenAddress() external view returns (address);
 
     /**
      * @notice Get the address of the VoucherSets token contract, an ERC155 contract
      * @return Address of VoucherSets contract
      */
-    function getVoucherSetsTokenAddress() external view returns (address);
+    function getVoucherSetTokenAddress() external view returns (address);
 }

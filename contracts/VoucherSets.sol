@@ -53,14 +53,14 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
         _;
     }
 
-     /**
+    /**
      * @notice Construct and initialze the contract. 
-     * @param _newUri metadata uri
+     * @param _uri metadata uri
      */
-    constructor(string memory _newUri) {
-        require(bytes(_newUri).length != 0, "INVALID_VALUE");
-        metadataUri = _newUri;
-        emit LogUriSet(_newUri, _msgSender());
+    constructor(string memory _uri) {
+        require(bytes(_uri).length != 0, "INVALID_VALUE");
+        metadataUri = _uri;
+        emit LogUriSet(_uri, _msgSender());
     }
 
     /**
@@ -278,6 +278,7 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
     /**
      * @notice Approves or unapproves the operator.
      * will revert if the caller attempts to approve itself as it is redundant
+     * @dev ERC-1155
      * @param _operator to (un)approve
      * @param _approve flag to set or unset
      */
@@ -292,6 +293,7 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
 
     /**
         @notice Gets approval status of an operator for a given account.
+        @dev ERC-1155
         @param _account   token holder
         @param _operator  operator to check
         @return           True if the operator is approved, false if not

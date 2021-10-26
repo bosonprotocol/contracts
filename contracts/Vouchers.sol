@@ -38,11 +38,11 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
 
     
     mapping(address => mapping(address => bool)) private operatorApprovals; //approval of accounts of an operator
-    string internal metadataBase;
-    string internal metadata721Route;
+    string internal metadataUri;
 
     event LogVoucherKernelSet(address _newVoucherKernel, address _triggeredBy);
     event LogCashierSet(address _newCashier, address _triggeredBy);
+    event LogUriSet(string _newUri, address _triggeredBy);
 
     modifier onlyFromVoucherKernel() {
         require(
@@ -56,6 +56,16 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
     modifier notZeroAddress(address _address) {
         require(_address != address(0), "ZERO_ADDRESS");
         _;
+    }
+
+    /**
+     * @notice Construct and initialze the contract. 
+     * @param _uri metadata uri
+     */
+    constructor(string memory _uri) {
+        require(bytes(_uri).length != 0, "INVALID_VALUE");
+        metadataUri = _uri;
+        emit LogUriSet(_uri, _msgSender());
     }
 
     /**
@@ -237,6 +247,7 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
     /**
      * @notice Approves or unapproves the operator.
      * will revert if the caller attempts to approve itself as it is redundant
+     * @dev ERC-721
      * @param _operator to (un)approve
      * @param _approve flag to set or unset
      */
@@ -251,6 +262,7 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
 
     /**
         @notice Gets approval status of an operator for a given account.
+        @dev ERC-721
         @param _account   token holder
         @param _operator  operator to check
         @return           True if the operator is approved, false if not
@@ -327,19 +339,14 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
 
     /**
      * @notice Setting the URL prefix for tokens metadata
-     * @param _newBase   New prefix to be used
+     * @param _newUri   New prefix to be used
      */
-    function _setMetadataBase(string memory _newBase) external onlyOwner {
-        metadataBase = _newBase;
+    function setTokenURI(string memory _newUri) external onlyOwner {
+        require(bytes(_newUri).length != 0, "INVALID_VALUE");
+        metadataUri = _newUri;
+        emit LogUriSet(_newUri, _msgSender());
     }
 
-    /**
-     * @notice Setting the URL route for ERC721 tokens metadata
-     * @param _newRoute   New route to be used
-     */
-    function _set721Route(string memory _newRoute) external onlyOwner {
-        metadata721Route = _newRoute;
-    }
 
     /**
      * @notice A distinct Uniform Resource Identifier (URI) for a given asset.
@@ -351,7 +358,7 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
         require(owners721[_tokenId] != address(0), "INVALID_ID");
         return
             string(
-                abi.encodePacked(metadataBase, metadata721Route, _uint2str(_tokenId))
+                abi.encodePacked(metadataUri, _uint2str(_tokenId))
             );
     }
 

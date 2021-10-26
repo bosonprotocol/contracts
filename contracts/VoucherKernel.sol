@@ -1335,7 +1335,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
      * @notice Get the address of the Vouchers token contract, an ERC721 contract
      * @return Address of Vouchers contract
      */
-    function getVouchersTokenAddress() 
+    function getVoucherTokenAddress() 
         external 
         view 
         override
@@ -1348,7 +1348,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
      * @notice Get the address of the VoucherSets token contract, an ERC155 contract
      * @return Address of VoucherSets contract
      */
-    function getVoucherSetsTokenAddress() 
+    function getVoucherSetTokenAddress() 
         external 
         view 
         override
