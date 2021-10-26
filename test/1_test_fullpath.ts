@@ -17,6 +17,11 @@ const eventNames = eventUtils.eventNames;
 const {keccak256, solidityPack} = ethers.utils;
 import fnSignatures from '../testHelpers/functionSignatures';
 
+import {waffle} from 'hardhat';
+const {deployMockContract} = waffle;
+import IERC20 from '../artifacts/contracts/interfaces/IERC20WithPermit.sol/IERC20WithPermit.json';
+import IERC20Old from '../artifacts/contracts/mocks/IERC20old.sol/IERC20Old.json';
+
 import {
   BosonRouter,
   ERC1155ERC721,
@@ -1298,6 +1303,14 @@ describe('Voucher tests', () => {
   describe('TransferFrom: It is safe to interact with older ERC20 tokens', function () {
     let sellerInstance;
     beforeEach('set mock as boson router', async () => {
+      contractMockBosonRouter = (await MockBosonRouter_Factory.deploy(
+        contractVoucherKernel.address,
+        contractTokenRegistry.address,
+        contractCashier.address
+      )) as Contract & MockBosonRouter;
+
+      await contractMockBosonRouter.deployed();
+
       //Set mock so that failed transferFrom of tokens with no return value can be tested in transferFromAndAddEscrow
       await contractCashier.setBosonRouterAddress(
         contractMockBosonRouter.address
@@ -1323,7 +1336,52 @@ describe('Voucher tests', () => {
           contractBSNTokenPrice.address,
           BN(0)
         )
-      ).to.not.be.revertedWith(revertReasons.PAUSED);
+      ).to.not.be.reverted;
+    });
+
+    it('safeTransferFrom will NOT revert if token contract does not return anything', async () => {
+      const MockERC20Permit = await deployMockContract(
+        users.deployer.signer,
+        IERC20Old.abi
+      ); //deploys mock
+
+      await MockERC20Permit.mock.transferFrom
+        .withArgs(users.seller.address, contractCashier.address, 0)
+        .returns();
+
+      await expect(
+        sellerInstance.transferFromAndAddEscrowTest(
+          MockERC20Permit.address,
+          BN(0)
+        )
+      ).to.not.be.reverted;
+    });
+
+    it('[NEGATIVE] safeTransferFrom will revert if token contract returns false', async () => {
+      const MockERC20Permit = await deployMockContract(
+        users.deployer.signer,
+        IERC20.abi
+      ); //deploys mock
+
+      await MockERC20Permit.mock.transferFrom
+        .withArgs(users.seller.address, contractCashier.address, 0)
+        .returns(false);
+
+      await expect(
+        sellerInstance.transferFromAndAddEscrowTest(
+          MockERC20Permit.address,
+          BN(0)
+        )
+      ).to.be.revertedWith(revertReasons.SAFE_ERC20_FAIL);
+    });
+
+    it('[NEGATIVE] safeTransferFrom will revert if contract does not support transfer from', async () => {
+      await expect(
+        sellerInstance.transferFromAndAddEscrowTest(
+          contractCashier.address,
+          BN(0)
+        )
+      ).to.be.revertedWith(revertReasons.SAFE_ERC20_LOW_LEVEL_FAIL);
     });
   });
 
@@ -1419,6 +1477,16 @@ describe('Voucher tests', () => {
           assert.isTrue(ev._promiseId != promisekey1);
         }
       );
+
+      const promiseKeyFromContract1 = await contractVoucherKernel.getPromiseKey(
+        0
+      );
+      assert.equal(promiseKeyFromContract1, promisekey1, 'Wrong promise key 1');
+
+      const promiseKeyFromContract2 = await contractVoucherKernel_2.getPromiseKey(
+        0
+      );
+      assert.equal(promiseKeyFromContract2, promisekey2, 'Wrong promise key 2');
     });
   });
 }); //end of contract
