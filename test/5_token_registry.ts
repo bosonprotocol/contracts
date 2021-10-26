@@ -213,6 +213,15 @@ describe('TokenRegistry', () => {
           ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
         }
       );
+
+      it('[NEGATIVE] Should revert is setting token limit for zero address', async () => {
+        await expect(
+          contractTokenRegistry.setTokenLimit(
+            constants.ZERO_ADDRESS,
+            FIVE_TOKENS
+          )
+        ).to.be.revertedWith(revertReasons.INVALID_TOKEN_ADDRESS);
+      });
     });
   });
 
@@ -285,6 +294,19 @@ describe('TokenRegistry', () => {
       ); //get the token wrapper for other1
 
       assert.equal(newWrapperAddress, constants.ZERO_ADDRESS);
+    });
+
+    it('[NEGATIVE]Should revert if trying to set token wrapper for zero address', async () => {
+      const deployerInstance = contractTokenRegistry.connect(
+        users.deployer.signer
+      );
+
+      await expect(
+        deployerInstance.setTokenWrapperAddress(
+          constants.ZERO_ADDRESS,
+          users.other1.address
+        )
+      ).to.be.revertedWith(revertReasons.INVALID_TOKEN_ADDRESS);
     });
   });
 });
