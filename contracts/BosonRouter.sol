@@ -1205,7 +1205,7 @@ contract BosonRouter is
         external
         onlyOwner
     {
-        require(_voucherKernelAddress != address(0), "UNSPECIFIED_ADDRESS");
+        notZeroAddress(_voucherKernelAddress);
 
         voucherKernel = _voucherKernelAddress;
 
@@ -1220,7 +1220,7 @@ contract BosonRouter is
         external
         onlyOwner
     {
-        require(_tokenRegistryAddress != address(0), "UNSPECIFIED_ADDRESS");
+        notZeroAddress(_tokenRegistryAddress);
 
         tokenRegistry = _tokenRegistryAddress;
 
@@ -1235,7 +1235,7 @@ contract BosonRouter is
         external
         onlyOwner
     {
-        require(_cashierAddress != address(0), "UNSPECIFIED_ADDRESS");
+        notZeroAddress(_cashierAddress);
 
         cashierAddress = _cashierAddress;
 
