@@ -376,7 +376,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         uint256 _tokenIdSupply,
         address _issuer,
         address _holder
-    ) internal view {
+    ) internal view notZeroAddress(_holder) {
         require(_tokenIdSupply != 0, "UNSPECIFIED_ID");
 
         if (_holder.isContract()) {
@@ -387,7 +387,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
 
         }
 
-        require(_holder != address(0), "UNSPECIFIED_ADDRESS");
+        
         require(
             IERC1155(tokensContract).balanceOf(_issuer, _tokenIdSupply) > 0,
             "OFFER_EMPTY"
@@ -566,13 +566,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         onlyVoucherOwner(_tokenIdVoucher, _messageSender)
     {
         require(
-            !isStatus(vouchersStatus[_tokenIdVoucher].status, IDX_COMPLAIN),
-            "ALREADY_COMPLAINED"
-        );
-        require(
             !isStatus(vouchersStatus[_tokenIdVoucher].status, IDX_FINAL),
             "ALREADY_FINALIZED"
         );
+        require(
+            !isStatus(vouchersStatus[_tokenIdVoucher].status, IDX_COMPLAIN),
+            "ALREADY_COMPLAINED"
+        );
+
 
         //check if still in the complain period
         Promise memory tPromise =
@@ -684,8 +685,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
 
         uint8 tStatus = vouchersStatus[_tokenIdVoucher].status;
 
-        require(!isStatus(tStatus, IDX_CANCEL_FAULT), "ALREADY_CANCELFAULT");
         require(!isStatus(tStatus, IDX_FINAL), "ALREADY_FINALIZED");
+        require(!isStatus(tStatus, IDX_CANCEL_FAULT), "ALREADY_CANCELFAULT");
 
         Promise memory tPromise =
             promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];

@@ -524,6 +524,19 @@ describe('Gate contract', async () => {
         expect(await contractGate.check(users.buyer.address, tokenId)).to.be
           .false;
       });
+
+      it('[NEGATIVE] Should revert if attacker tries to deactivate voucher set id', async () => {
+        const {
+          tokenId,
+          nftTokenID,
+        } = await registerVoucherSetIdFromBosonProtocol(contractGate, 0);
+
+        await contractGate.registerVoucherSetId(tokenId, nftTokenID);
+
+        await expect(
+          contractGate.deactivate(users.buyer.address, tokenId)
+        ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
+      });
     });
   });
 });
