@@ -8,6 +8,11 @@ import Utils from '../testHelpers/utils';
 import UtilsBuilder from '../testHelpers/utilsBuilder';
 const BN = ethers.BigNumber.from;
 
+import {waffle} from 'hardhat';
+import ERC721receiver from '../artifacts/contracts/mocks/MockERC721Receiver.sol/MockERC721Receiver.json';
+import ERC1155receiver from '../artifacts/contracts/mocks/MockERC1155Receiver.sol/MockERC1155Receiver.json';
+const {deployMockContract} = waffle;
+
 import {
   BosonRouter,
   ERC1155ERC721,
@@ -71,7 +76,7 @@ describe('ERC1155ERC721', () => {
 
   let timestamp: number;
 
-  async function deployContracts() {
+  async function deployContracts(setVoucherKernelAddress = true) {
     const sixtySeconds = 60;
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
@@ -120,9 +125,12 @@ describe('ERC1155ERC721', () => {
       contractVoucherKernel.address,
       true
     );
-    await contractERC1155ERC721.setVoucherKernelAddress(
-      contractVoucherKernel.address
-    );
+
+    if (setVoucherKernelAddress) {
+      await contractERC1155ERC721.setVoucherKernelAddress(
+        contractVoucherKernel.address
+      );
+    }
 
     await contractERC1155ERC721.setCashierAddress(contractCashier.address);
 
@@ -266,40 +274,49 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
       });
 
-      it('[setCashierAddress] Should set setCashierAddress to valid address', async () => {
-        const expectedCashierAddress = contractCashier.address;
-        const tx = await contractERC1155ERC721.setCashierAddress(
-          expectedCashierAddress
-        );
+      it('[NEGATIVE] Should revert if voucher kernel address is not set', async () => {
+        await deployContracts(false);
 
-        const txReceipt = await tx.wait();
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          ERC1155ERC721_Factory,
-          eventNames.LOG_CASHIER_SET,
-          (ev) => {
-            assert.equal(
-              ev._newCashier,
-              contractCashier.address,
-              'ev._newCashier not as expected!'
-            );
-            assert.equal(
-              ev._triggeredBy,
-              users.deployer.address,
-              'ev._triggeredBy not as expected!'
-            );
-          }
-        );
-
-        const cashierAddress = await contractERC1155ERC721.getCashierAddress();
-        assert.equal(cashierAddress, expectedCashierAddress);
-      });
-
-      it('[NEGATIVE][setCashierAddress] Should revert for zero address', async () => {
         await expect(
-          contractERC1155ERC721.setVoucherKernelAddress(constants.ZERO_ADDRESS)
-        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
+          contractERC1155ERC721.functions[fnSignatures.mint1155](
+            users.deployer.address,
+            constants.ONE,
+            constants.ONE,
+            ethers.utils.formatBytes32String('0x0')
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
+
+        await expect(
+          contractERC1155ERC721.mintBatch(
+            users.deployer.address,
+            [BN(123), BN(456), BN(789)],
+            [BN(constants.QTY_10), BN(constants.QTY_15), BN(constants.QTY_20)],
+            ethers.utils.formatBytes32String('0x0')
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
+
+        await expect(
+          contractERC1155ERC721.functions[fnSignatures.mint721](
+            users.buyer.address,
+            123
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
+
+        await expect(
+          contractERC1155ERC721.functions[fnSignatures.burn1155](
+            users.seller.address,
+            constants.ONE,
+            constants.QTY_10
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
+
+        await expect(
+          contractERC1155ERC721.burnBatch(
+            users.seller.address,
+            [constants.ONE],
+            [constants.QTY_10]
+          )
+        ).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
       });
 
       it('[isApprovedForAll] Should return the approval status of an operator for a given account', async () => {
@@ -489,6 +506,48 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.NON_ERC1155RECEIVER);
       });
 
+      it('[NEGATIVE][safeTransfer1155] it should revert if sent to contract that rejects them', async () => {
+        const mockERC1155Receiver = await deployMockContract(
+          users.deployer.signer,
+          ERC1155receiver.abi
+        ); //deploys mock
+
+        await mockERC1155Receiver.mock.onERC1155Received.returns('0x00000000');
+
+        await expect(
+          utils.safeTransfer1155(
+            users.seller.address,
+            mockERC1155Receiver.address,
+            TOKEN_SUPPLY_ID,
+            constants.QTY_10,
+            users.seller.signer
+          )
+        ).to.be.revertedWith(revertReasons.ERC1155_REJECT);
+      });
+
+      it('[NEGATIVE][safeTransfer1155] it should revert if sent to contract that reverts with arbitrary revert reason', async () => {
+        const mockERC1155Receiver = await deployMockContract(
+          users.deployer.signer,
+          ERC1155receiver.abi
+        ); //deploys mock
+
+        const arbitraryRevertReason = 'arbitrary revert reason';
+
+        await mockERC1155Receiver.mock.onERC1155Received.revertsWithReason(
+          arbitraryRevertReason
+        );
+
+        await expect(
+          utils.safeTransfer1155(
+            users.seller.address,
+            mockERC1155Receiver.address,
+            TOKEN_SUPPLY_ID,
+            constants.QTY_10,
+            users.seller.signer
+          )
+        ).to.be.revertedWith(arbitraryRevertReason);
+      });
+
       it('[safeBatchTransfer1155] Should be able to safely batch transfer to EOA', async () => {
         const tokenIds = [BN(123), BN(456), BN(789)];
         const quantities = [
@@ -664,7 +723,7 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.MISMATCHED_ARRAY_LENGTHS);
       });
 
-      it('[NEGATIVE][safeBatchTransfer1155] Seller should not transfer batch to contract address', async () => {
+      it('[NEGATIVE][safeBatchTransfer1155] Seller should not transfer batch to contract address that cannot receive it', async () => {
         await expect(
           utils.safeBatchTransfer1155(
             users.seller.address,
@@ -674,6 +733,50 @@ describe('ERC1155ERC721', () => {
             users.seller.signer
           )
         ).to.be.revertedWith(revertReasons.NON_ERC1155RECEIVER);
+      });
+
+      it('[NEGATIVE][safeTransfer1155] it should revert if sent to contract that rejects them', async () => {
+        const mockERC1155Receiver = await deployMockContract(
+          users.deployer.signer,
+          ERC1155receiver.abi
+        ); //deploys mock
+
+        await mockERC1155Receiver.mock.onERC1155BatchReceived.returns(
+          '0x00000000'
+        );
+
+        await expect(
+          utils.safeBatchTransfer1155(
+            users.seller.address,
+            mockERC1155Receiver.address,
+            [TOKEN_SUPPLY_ID],
+            [constants.QTY_10],
+            users.seller.signer
+          )
+        ).to.be.revertedWith(revertReasons.ERC1155_REJECT);
+      });
+
+      it('[NEGATIVE][safeTransfer1155] it should revert if sent to contract that reverts with arbitrary revert reason', async () => {
+        const mockERC1155Receiver = await deployMockContract(
+          users.deployer.signer,
+          ERC1155receiver.abi
+        ); //deploys mock
+
+        const arbitraryRevertReason = 'arbitrary revert reason';
+
+        await mockERC1155Receiver.mock.onERC1155BatchReceived.revertsWithReason(
+          arbitraryRevertReason
+        );
+
+        await expect(
+          utils.safeBatchTransfer1155(
+            users.seller.address,
+            mockERC1155Receiver.address,
+            [TOKEN_SUPPLY_ID],
+            [constants.QTY_10],
+            users.seller.signer
+          )
+        ).to.be.revertedWith(arbitraryRevertReason);
       });
 
       it('[NEGATIVE][safeBatchTransfer1155] Should revert if attacker tries to transfer batch', async () => {
@@ -888,8 +991,8 @@ describe('ERC1155ERC721', () => {
 
         const expectedBalance = 0;
         const balanceOfOwner = await contractERC1155ERC721.functions[
-          fnSignatures.balanceOf721
-        ](users.seller.address);
+          fnSignatures.balanceOf1155
+        ](users.seller.address, tokenIdToBurn);
 
         assert.equal(balanceOfOwner.toString(), expectedBalance.toString());
       });
@@ -1466,7 +1569,7 @@ describe('ERC1155ERC721', () => {
         assert.equal(newTokenOwner, expectedNewOwnerAddress);
       });
 
-      it('[NEGATIVE][safeTransfer721] Should not be able to transfer to contract address', async () => {
+      it('[NEGATIVE][safeTransfer721] Should not be able to transfer to contract address that does not support ERC721', async () => {
         const erc721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
@@ -1483,6 +1586,36 @@ describe('ERC1155ERC721', () => {
             users.buyer.signer
           )
         ).to.be.revertedWith(revertReasons.NON_ERC721RECEIVER);
+      });
+
+      it('[NEGATIVE][safeTransfer721] it should revert if sent to contract that reverts with arbitrary revert reason', async () => {
+        const erc721 = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.product_price,
+          constants.buyer_deposit
+        );
+
+        const mockERC721Receiver = await deployMockContract(
+          users.deployer.signer,
+          ERC721receiver.abi
+        ); //deploys mock
+
+        const arbitraryRevertReason = 'arbitrary revert reason';
+
+        await mockERC721Receiver.mock.onERC721Received.revertsWithReason(
+          arbitraryRevertReason
+        );
+
+        await expect(
+          utils.safeTransfer721(
+            users.buyer.address,
+            mockERC721Receiver.address,
+            erc721,
+            users.buyer.signer
+          )
+        ).to.be.revertedWith(arbitraryRevertReason);
       });
 
       it('[NEGATIVE][safeTransfer721] Attacker should not be able to transfer erc721', async () => {
@@ -1656,6 +1789,12 @@ describe('ERC1155ERC721', () => {
         assert.equal(approvedAddress, expectedApprovedAddress);
       });
 
+      it('[NEGATIVE][getApproved] Should revert if token does not exist', async () => {
+        await expect(
+          contractERC1155ERC721.getApproved(constants.ONE)
+        ).to.be.revertedWith(revertReasons.NONEXISTENT_TOKEN);
+      });
+
       it('[mint] Should mint a token', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractERC1155ERC721.setVoucherKernelAddress(
@@ -1785,6 +1924,26 @@ describe('ERC1155ERC721', () => {
           )
         ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
       });
+
+      it('[NEGATIVE][mint] Should not be able to mint same token twice', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractERC1155ERC721.setVoucherKernelAddress(
+          users.deployer.address
+        );
+
+        const tokenIdForMint = 123;
+        await contractERC1155ERC721.functions[fnSignatures.mint721](
+          users.other1.address,
+          tokenIdForMint
+        );
+
+        await expect(
+          contractERC1155ERC721.functions[fnSignatures.mint721](
+            users.other1.address,
+            tokenIdForMint
+          )
+        ).to.be.revertedWith(revertReasons.TOKEN_ALREADY_MINTED);
+      });
     });
 
     describe('Metadata', () => {
@@ -1823,6 +1982,9 @@ describe('ERC1155ERC721', () => {
       it('[uri] Should return correct url for erc1155', async () => {
         const url = await contractERC1155ERC721.uri(TOKEN_SUPPLY_ID);
         assert.equal(url, metadataBase + metadata1155Route + TOKEN_SUPPLY_ID);
+
+        const urlZero = await contractERC1155ERC721.uri(0);
+        assert.equal(urlZero, metadataBase + metadata1155Route + '0');
       });
 
       it('[tokenURI] Should return correct url for erc721', async () => {
