@@ -466,12 +466,6 @@ describe('Admin functionality', async () => {
     });
 
     it('[NEGATIVE][setVoucherKernelAddress] should revert if called by an attacker', async () => {
-      await expect(
-        contractBosonRouter.setVoucherKernelAddress(constants.ZERO_ADDRESS)
-      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
-    });
-
-    it('[NEGATIVE][setVoucherKernelAddress] should revert when address is a zero address', async () => {
       const attackerInstance = contractBosonRouter.connect(
         users.attacker.signer
       );
@@ -480,6 +474,12 @@ describe('Admin functionality', async () => {
           contractVoucherKernel_2.address
         )
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+
+    it('[NEGATIVE][setVoucherKernelAddress] should revert when address is a zero address', async () => {
+      await expect(
+        contractBosonRouter.setVoucherKernelAddress(constants.ZERO_ADDRESS)
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
 
     it('[setTokenRegistryAddress] Should be able to set a new Token Registry address', async () => {
