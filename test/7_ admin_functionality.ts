@@ -270,13 +270,13 @@ describe('Admin functionality', async () => {
         );
       });
 
-      it('[NEGATIVE][setVoucherKernelAddress] should revert if called by an attacker', async () => {
+      it('[NEGATIVE][setVoucherKernelAddress] should revert when address is a zero address', async () => {
         await expect(
           contractCashier.setVoucherKernelAddress(constants.ZERO_ADDRESS)
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
       });
 
-      it('[NEGATIVE][setVoucherKernelAddress] should revert when address is a zero address', async () => {
+      it('[NEGATIVE][setVoucherKernelAddress] should revert if called by an attacker', async () => {
         const attackerInstance = contractCashier.connect(users.attacker.signer);
         await expect(
           attackerInstance.setVoucherKernelAddress(
