@@ -1,6 +1,6 @@
 {
-    "name": "@bosonprotocol/contracts",
-    "version": "1.0.0",
+    "name": "@bosonprotocol/core",
+    "version": "0.0.0",
     "description": "Repo for Boson Protocol prototype of the core exchange mechanism",
     "types": "typechain/index.ts",
     "directories": {
