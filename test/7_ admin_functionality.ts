@@ -550,13 +550,13 @@ describe('Admin functionality', async () => {
         users.attacker.signer
       );
       await expect(
-        attackerInstance.setTokenRegistryAddress(contractCashier_2.address)
+        attackerInstance.setCashierAddress(contractCashier_2.address)
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
     });
 
-    it('[NEGATIVE][setCashierAddress] should revert if called by an attacker', async () => {
+    it('[NEGATIVE][setCashierAddress] should revert when address is a zero address', async () => {
       await expect(
-        contractBosonRouter.setTokenRegistryAddress(constants.ZERO_ADDRESS)
+        contractBosonRouter.setCashierAddress(constants.ZERO_ADDRESS)
       ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
   });
