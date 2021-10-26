@@ -2,8 +2,9 @@
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Metadata.sol";
 
-interface IVouchers is IERC721 {
+interface IVouchers is IERC721, IERC721Metadata {
     /**
      * @notice Function to mint tokens.
      * @dev ERC-721

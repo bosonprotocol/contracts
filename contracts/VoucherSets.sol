@@ -30,19 +30,14 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
     //standard reqs
     //ERC-1155
     mapping(uint256 => mapping(address => uint256)) private balances; //balance of token ids of an account
-
-    //shared storage: ERC-1155 & ERC-721
     mapping(address => mapping(address => bool)) private operatorApprovals; //approval of accounts of an operator
-    //metadata is shared, too (but ERC-1155 and ERC-721 have different metadata extension reqs)
-    string internal metadataBase;
-    string internal metadata1155Route;
 
-    //ERC-1155 metadata event: URIs are defined in RFC 3986. The URI MUST point to a JSON file that conforms to the ERC-1155 Metadata URI JSON Schema.
-    //not used ATM
-    //event URI(string _value, uint256 indexed _id);
+    //metadata uri
+    string internal metadataUri;
 
     event LogVoucherKernelSet(address _newVoucherKernel, address _triggeredBy);
     event LogCashierSet(address _newCashier, address _triggeredBy);
+    event LogUriSet(string _newUri, address _triggeredBy);
 
     modifier onlyFromVoucherKernel() {
         require(
@@ -56,6 +51,16 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
     modifier notZeroAddress(address _address) {
         require(_address != address(0), "ZERO_ADDRESS");
         _;
+    }
+
+     /**
+     * @notice Construct and initialze the contract. 
+     * @param _newUri metadata uri
+     */
+    constructor(string memory _newUri) {
+        require(bytes(_newUri).length != 0, "INVALID_VALUE");
+        metadataUri = _newUri;
+        emit LogUriSet(_newUri, _msgSender());
     }
 
     /**
@@ -273,7 +278,6 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
     /**
      * @notice Approves or unapproves the operator.
      * will revert if the caller attempts to approve itself as it is redundant
-     * @dev ERC-1155 & ERC-721
      * @param _operator to (un)approve
      * @param _approve flag to set or unset
      */
@@ -288,7 +292,6 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
 
     /**
         @notice Gets approval status of an operator for a given account.
-        @dev ERC-1155 & ERC-721
         @param _account   token holder
         @param _operator  operator to check
         @return           True if the operator is approved, false if not
@@ -457,8 +460,6 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
         emit TransferSingle(msg.sender, _account, address(0), _tokenId, _value);
     }
 
-    /* Burning ERC-721 is not allowed, as a voucher (being an ERC-721 token) has a final state and shouldn't be destructed. */
-
     /**
      * @notice Batch burn an amounts of tokens
      * @dev ERC-1155
@@ -508,33 +509,43 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
     // // // // // // // //
 
     /**
-     * @notice Setting the URL prefix for tokens metadata
-     * @param _newBase   New prefix to be used
+     * @dev Sets a new URI for all token types, by relying on the token type ID
+     * substitution mechanism
+     * https://eips.ethereum.org/EIPS/eip-1155#metadata[defined in the EIP].
+     *
+     * By this mechanism, any occurrence of the `\{id\}` substring in either the
+     * URI or any of the amounts in the JSON file at said URI will be replaced by
+     * clients with the token type ID.
+     *
+     * For example, the `https://token-cdn-domain/\{id\}.json` URI would be
+     * interpreted by clients as
+     * `https://token-cdn-domain/000000000000000000000000000000000000000000000000000000000004cce0.json`
+     * for token type ID 0x4cce0.
+     *
+     * See {uri}.
+     *
+     * Because these URIs cannot be meaningfully represented by the {URI} event,
+     * this function emits no events.
+     * @param _newUri   New uri to be used
      */
-    function _setMetadataBase(string memory _newBase) external onlyOwner {
-        metadataBase = _newBase;
+    function setUri(string memory _newUri) external onlyOwner {
+        require(bytes(_newUri).length != 0, "INVALID_VALUE");
+        metadataUri = _newUri;
+        emit LogUriSet(_newUri, _msgSender());
     }
 
     /**
-     * @notice Setting the URL route for ERC1155 tokens metadata
-     * @param _newRoute   New route to be used
+     * @dev See {IERC1155MetadataURI-uri}.
+     *
+     * This implementation returns the same URI for *all* token types. It relies
+     * on the token type ID substitution mechanism
+     * https://eips.ethereum.org/EIPS/eip-1155#metadata[defined in the EIP].
+     *
+     * Clients calling this function must replace the `\{id\}` substring with the
+     * actual token type ID.
      */
-    function _set1155Route(string memory _newRoute) external onlyOwner {
-        metadata1155Route = _newRoute;
-    }
-
-    /**
-     * @notice A distinct Uniform Resource Identifier (URI) for a given token.
-     * @dev ERC-1155
-     * URIs are defined in RFC 3986. The URI MUST point to a JSON file that conforms to the "ERC-1155 Metadata URI JSON Schema".
-     * @param _tokenId  The ID of the token
-     * @return          Full URI string for metadata of the _tokenId
-     */
-    function uri(uint256 _tokenId) external view returns (string memory) {
-        return
-            string(
-                abi.encodePacked(metadataBase, metadata1155Route, _uint2str(_tokenId))
-            );
+    function uri(uint256 id) external view virtual override returns (string memory) {
+        return metadataUri;
     }
 
     // // // // // // // //

@@ -23,8 +23,8 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     using Address for address;
 
-    string public name = "Boson Smart Voucher";
-    string public symbol = "BSV";
+    string public override name = "Boson Smart Voucher";
+    string public override symbol = "BSV";
 
     //min security
     address private voucherKernelAddress; //address of the VoucherKernel contract
@@ -36,7 +36,7 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
     mapping(uint256 => address) private owners721;
     mapping(uint256 => address) private operator721;
 
-    //shared storage: ERC-1155 & ERC-721
+    
     mapping(address => mapping(address => bool)) private operatorApprovals; //approval of accounts of an operator
     string internal metadataBase;
     string internal metadata721Route;
@@ -237,7 +237,6 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
     /**
      * @notice Approves or unapproves the operator.
      * will revert if the caller attempts to approve itself as it is redundant
-     * @dev ERC-1155 & ERC-721
      * @param _operator to (un)approve
      * @param _approve flag to set or unset
      */
@@ -252,7 +251,6 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
 
     /**
         @notice Gets approval status of an operator for a given account.
-        @dev ERC-1155 & ERC-721
         @param _account   token holder
         @param _operator  operator to check
         @return           True if the operator is approved, false if not
@@ -321,7 +319,7 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
     }
 
 
-    /* Burning ERC-721 is not allowed, as a voucher (being an ERC-721 token) has a final state and shouldn't be destructed. */
+    /* Burning ERC-721 is not allowed, as a voucher (being an ERC-721 token) has a final state and shouldn't be destroyed. */
 
     // // // // // // // //
     // METADATA EXTENSIONS
@@ -349,7 +347,7 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
      * Throws if `_tokenId` is not a valid NFT. URIs are defined in RFC 3986. The URI may point to a JSON file that conforms to the "ERC721 Metadata JSON Schema".
      * @param _tokenId  ID of the token
      */
-    function tokenURI(uint256 _tokenId) external view returns (string memory) {
+    function tokenURI(uint256 _tokenId) external override view returns (string memory) {
         require(owners721[_tokenId] != address(0), "INVALID_ID");
         return
             string(
