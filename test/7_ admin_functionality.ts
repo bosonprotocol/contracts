@@ -238,6 +238,53 @@ describe('Admin functionality', async () => {
         Cashier_Factory.deploy(constants.ZERO_ADDRESS)
       ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
+
+    describe('[setVoucherKernelAddress]', function () {
+      beforeEach(
+        'Deploy and create another instance of the contracts',
+        async () => {
+          await deployContracts2();
+        }
+      );
+
+      it('[setVoucherKernelAddress] Should be able to set a new Voucher Kernel address', async () => {
+        const expectedNewVoucherKernelAddress = contractVoucherKernel_2.address;
+        const tx = await contractCashier.setVoucherKernelAddress(
+          expectedNewVoucherKernelAddress
+        );
+
+        const txReceipt = await tx.wait();
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          BosonRouter_Factory,
+          eventNames.LOG_VK_SET,
+          (ev) => {
+            assert.equal(ev._newVoucherKernel, expectedNewVoucherKernelAddress);
+            assert.equal(ev._triggeredBy, users.deployer.address);
+          }
+        );
+
+        expect(await contractCashier.getVoucherKernelAddress()).to.equal(
+          expectedNewVoucherKernelAddress,
+          'Not expected Voucher kernel address'
+        );
+      });
+
+      it('[NEGATIVE][setVoucherKernelAddress] should revert when address is a zero address', async () => {
+        await expect(
+          contractCashier.setVoucherKernelAddress(constants.ZERO_ADDRESS)
+        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+      });
+
+      it('[NEGATIVE][setVoucherKernelAddress] should revert if called by an attacker', async () => {
+        const attackerInstance = contractCashier.connect(users.attacker.signer);
+        await expect(
+          attackerInstance.setVoucherKernelAddress(
+            contractVoucherKernel_2.address
+          )
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+      });
+    });
   });
 
   describe('ERC1155721', () => {
