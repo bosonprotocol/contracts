@@ -203,6 +203,7 @@ class DeploymentExecutor {
     );
     this.daiTokenWrapper = await DAITokenWrapper.deploy(this.dai_token);
     this.gate = await Gate.deploy(this.br.address);
+    await this.br.setGateApproval(this.gate.address, true);
 
     //ERC1155NonTransferrable is a Conditional Commit token and should be deployed from a separate address
     this.erc1155NonTransferable = await ERC1155NonTransferableAsOtherSigner.deploy(
