@@ -1,6 +1,9 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
 
+import {waffle} from 'hardhat';
+import IVK from '../artifacts/contracts/interfaces/IVoucherKernel.sol/IVoucherKernel.json';
+
 import {assert, expect} from 'chai';
 import constants from '../testHelpers/constants';
 
@@ -8526,6 +8529,83 @@ describe('Cashier withdrawals ', () => {
           buyerInstance.withdrawTokensOnDisaster(constants.ZERO_ADDRESS)
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
       });
+    });
+  });
+
+  describe('General failing flows', () => {
+    before(async () => {
+      await deployContracts();
+      await setPeriods();
+    });
+
+    it('[NEGATIVE] should revert if specified voucher ID equals 0', async () => {
+      await expect(contractCashier.withdraw(constants.ZERO)).to.be.revertedWith(
+        revertReasons.UNSPECIFIED_ID
+      );
+    });
+
+    it('[NEGATIVE] should revert if voucher kernel returns payment method 0', async () => {
+      await expect(contractCashier.withdraw(constants.ONE)).to.be.revertedWith(
+        revertReasons.INVALID_PAYMENT_METHOD
+      );
+
+      // spoof boson router address
+      await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+      await expect(
+        contractCashier.withdrawDepositsSe(
+          constants.ONE,
+          1,
+          constants.ZERO_ADDRESS
+        )
+      ).to.be.revertedWith(revertReasons.INVALID_PAYMENT_METHOD);
+    });
+
+    it('[NEGATIVE] should revert if voucher kernel returns payment method greater than 5', async () => {
+      const tokenVoucherId = constants.ONE;
+      const tokenSupplyId = constants.TWO;
+
+      const {deployMockContract} = waffle;
+
+      const mockVoucherKernel = await deployMockContract(
+        users.deployer.signer,
+        IVK.abi
+      ); //deploys mock
+
+      contractCashier = (await Cashier_Factory.deploy(
+        mockVoucherKernel.address
+      )) as Contract & Cashier;
+
+      await contractCashier.deployed();
+
+      await mockVoucherKernel.mock.getIdSupplyFromVoucher
+        .withArgs(constants.ONE)
+        .returns(constants.TWO);
+      await mockVoucherKernel.mock.getVoucherPaymentMethod
+        .withArgs(tokenSupplyId)
+        .returns('5');
+
+      await expect(contractCashier.withdraw(tokenVoucherId)).to.be.revertedWith(
+        revertReasons.INVALID_PAYMENT_METHOD
+      );
+
+      await mockVoucherKernel.mock.getSupplyHolder
+        .withArgs(tokenSupplyId)
+        .returns(users.seller.address);
+      await mockVoucherKernel.mock.getSellerDeposit
+        .withArgs(tokenSupplyId)
+        .returns(constants.seller_deposit);
+
+      // spoof boson router address
+      await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+      await expect(
+        contractCashier.withdrawDepositsSe(
+          tokenSupplyId,
+          1,
+          users.seller.address
+        )
+      ).to.be.revertedWith(revertReasons.INVALID_PAYMENT_METHOD);
     });
   });
 });
