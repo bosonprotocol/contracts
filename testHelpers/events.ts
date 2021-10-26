@@ -35,6 +35,7 @@ export const eventNames = {
   UNPAUSED: 'Unpaused',
   LOG_NON_TRANSFERABLE_CONTRACT: 'LogNonTransferableContractSet',
   LOG_BOSON_ROUTER_SET: 'LogBosonRouterSet',
+  LOG_GATE_APPROVAL_CHANGED: 'LogGateApprovalChanged',
   LOG_VOUCHER_SET_REGISTERED: 'LogVoucherSetRegistered',
   LOG_USER_VOUCHER_DEACTIVATED: 'LogUserVoucherDeactivated',
   LOG_TOKEN_WRAPPER_CHANGED: 'LogTokenWrapperChanged',
