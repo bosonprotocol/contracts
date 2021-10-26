@@ -452,7 +452,7 @@ describe('Admin functionality', async () => {
       eventUtils.assertEventEmitted(
         txReceipt,
         BosonRouter_Factory,
-        eventNames.LOG_VOUCHER_KERNEL_SET,
+        eventNames.LOG_VK_SET,
         (ev) => {
           assert.equal(ev._newVoucherKernel, expectedNewVoucherKernelAddress);
           assert.equal(ev._triggeredBy, users.deployer.address);
