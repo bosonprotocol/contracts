@@ -4670,7 +4670,7 @@ describe('Cashier and VoucherKernel', () => {
         });
       });
 
-      describe.only('EXPIRY after some other action', () => {
+      describe('EXPIRY after some other action', () => {
         async function testTriggerExpiraton() {
           // to try expiration we should go to the future, but then other methods might fail as well.
           // therefore we revert to the state before advancing in the future
@@ -4846,39 +4846,19 @@ describe('Cashier and VoucherKernel', () => {
 
       describe('PREMATURE FINALIZE', () => {
         it('[NEGATIVE] Finalize before complain period end should have no effect', async () => {
-          expect(
-            await utils.finalize(tokenVoucherId, users.deployer.signer)
-          ).to.not.emit(
-            contractVoucherKernel,
-            eventNames.LOG_FINALIZED_VOUCHER
-          );
-
-          const voucherStatus = (
-            await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-          )[0];
-          assert.equal(
-            voucherStatus,
-            expectedVoucherStatus([]),
-            `Wrong voucher status`
+          await expect(
+            utils.finalize(tokenVoucherId, users.deployer.signer)
+          ).to.be.revertedWith(
+            revertReasons.INAPPLICABLE_STATUS
           );
         });
 
         it('[NEGATIVE] COMMIT->CANCEL->!FINALIZE', async () => {
           await utils.cancel(tokenVoucherId, users.seller.signer);
-          expect(
-            await utils.finalize(tokenVoucherId, users.deployer.signer)
-          ).to.not.emit(
-            contractVoucherKernel,
-            eventNames.LOG_FINALIZED_VOUCHER
-          );
-
-          const voucherStatus = (
-            await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-          )[0];
-          assert.equal(
-            voucherStatus,
-            expectedVoucherStatus(['cancel']),
-            `Wrong voucher status`
+          await expect(
+            utils.finalize(tokenVoucherId, users.deployer.signer)
+          ).to.be.revertedWith(
+            revertReasons.INAPPLICABLE_STATUS
           );
         });
 
@@ -4888,58 +4868,28 @@ describe('Cashier and VoucherKernel', () => {
           });
 
           it('[NEGATIVE] COMMIT->REDEEM->FINALIZE', async () => {
-            expect(
-              await utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.not.emit(
-              contractVoucherKernel,
-              eventNames.LOG_FINALIZED_VOUCHER
-            );
-
-            const voucherStatus = (
-              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-            )[0];
-            assert.equal(
-              voucherStatus,
-              expectedVoucherStatus(['redeem']),
-              `Wrong voucher status`
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(
+              revertReasons.INAPPLICABLE_STATUS
             );
           });
 
           it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->FINALIZE', async () => {
             await utils.complain(tokenVoucherId, users.buyer.signer);
-            expect(
-              await utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.not.emit(
-              contractVoucherKernel,
-              eventNames.LOG_FINALIZED_VOUCHER
-            );
-
-            const voucherStatus = (
-              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-            )[0];
-            assert.equal(
-              voucherStatus,
-              expectedVoucherStatus(['redeem', 'complain']),
-              `Wrong voucher status`
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(
+              revertReasons.INAPPLICABLE_STATUS
             );
           });
 
           it('[NEGATIVE] COMMIT->REDEEM->CANCEL->FINALIZE', async () => {
             await utils.cancel(tokenVoucherId, users.seller.signer);
-            expect(
-              await utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.not.emit(
-              contractVoucherKernel,
-              eventNames.LOG_FINALIZED_VOUCHER
-            );
-
-            const voucherStatus = (
-              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-            )[0];
-            assert.equal(
-              voucherStatus,
-              expectedVoucherStatus(['redeem', 'cancel']),
-              `Wrong voucher status`
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(
+              revertReasons.INAPPLICABLE_STATUS
             );
           });
         });
@@ -4950,58 +4900,28 @@ describe('Cashier and VoucherKernel', () => {
           });
 
           it('[NEGATIVE] COMMIT->REFUND->FINALIZE', async () => {
-            expect(
-              await utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.not.emit(
-              contractVoucherKernel,
-              eventNames.LOG_FINALIZED_VOUCHER
-            );
-
-            const voucherStatus = (
-              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-            )[0];
-            assert.equal(
-              voucherStatus,
-              expectedVoucherStatus(['refund']),
-              `Wrong voucher status`
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(
+              revertReasons.INAPPLICABLE_STATUS
             );
           });
 
           it('[NEGATIVE] COMMIT->REFUND->COMPLAIN->FINALIZE', async () => {
             await utils.complain(tokenVoucherId, users.buyer.signer);
-            expect(
-              await utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.not.emit(
-              contractVoucherKernel,
-              eventNames.LOG_FINALIZED_VOUCHER
-            );
-
-            const voucherStatus = (
-              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-            )[0];
-            assert.equal(
-              voucherStatus,
-              expectedVoucherStatus(['refund', 'complain']),
-              `Wrong voucher status`
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(
+              revertReasons.INAPPLICABLE_STATUS
             );
           });
 
           it('[NEGATIVE] COMMIT->REFUND->CANCEL->FINALIZE', async () => {
             await utils.cancel(tokenVoucherId, users.seller.signer);
-            expect(
-              await utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.not.emit(
-              contractVoucherKernel,
-              eventNames.LOG_FINALIZED_VOUCHER
-            );
-
-            const voucherStatus = (
-              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-            )[0];
-            assert.equal(
-              voucherStatus,
-              expectedVoucherStatus(['refund', 'cancel']),
-              `Wrong voucher status`
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(
+              revertReasons.INAPPLICABLE_STATUS
             );
           });
         });
@@ -5013,58 +4933,28 @@ describe('Cashier and VoucherKernel', () => {
           });
 
           it('[NEGATIVE] COMMIT->EXPIRE->FINALIZE', async () => {
-            expect(
-              await utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.not.emit(
-              contractVoucherKernel,
-              eventNames.LOG_FINALIZED_VOUCHER
-            );
-
-            const voucherStatus = (
-              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-            )[0];
-            assert.equal(
-              voucherStatus,
-              expectedVoucherStatus(['expire']),
-              `Wrong voucher status`
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(
+              revertReasons.INAPPLICABLE_STATUS
             );
           });
 
           it('[NEGATIVE] COMMIT->EXPIRE->COMPLAIN->FINALIZE', async () => {
             await utils.complain(tokenVoucherId, users.buyer.signer);
-            expect(
-              await utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.not.emit(
-              contractVoucherKernel,
-              eventNames.LOG_FINALIZED_VOUCHER
-            );
-
-            const voucherStatus = (
-              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-            )[0];
-            assert.equal(
-              voucherStatus,
-              expectedVoucherStatus(['expire', 'complain']),
-              `Wrong voucher status`
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(
+              revertReasons.INAPPLICABLE_STATUS
             );
           });
 
           it('[NEGATIVE] COMMIT->EXPIRE->CANCEL->FINALIZE', async () => {
             await utils.cancel(tokenVoucherId, users.seller.signer);
-            expect(
-              await utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.not.emit(
-              contractVoucherKernel,
-              eventNames.LOG_FINALIZED_VOUCHER
-            );
-
-            const voucherStatus = (
-              await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-            )[0];
-            assert.equal(
-              voucherStatus,
-              expectedVoucherStatus(['expire', 'cancel']),
-              `Wrong voucher status`
+            await expect(
+              utils.finalize(tokenVoucherId, users.deployer.signer)
+            ).to.be.revertedWith(
+              revertReasons.INAPPLICABLE_STATUS
             );
           });
         });

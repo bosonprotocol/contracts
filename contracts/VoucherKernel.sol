@@ -817,8 +817,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         Promise memory tPromise =
             promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
 
-        require(tPromise.validTo < block.timestamp &&
-        isStateCommitted(vouchersStatus[_tokenIdVoucher].status),'INAPPLICABLE_STATUS');
+        require(tPromise.validTo < block.timestamp && isStateCommitted(vouchersStatus[_tokenIdVoucher].status),'INAPPLICABLE_STATUS');
 
         vouchersStatus[_tokenIdVoucher].status = determineStatus(
             vouchersStatus[_tokenIdVoucher].status,
@@ -880,13 +879,13 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
             }
         }
 
-        if (mark) {
-            vouchersStatus[_tokenIdVoucher].status = determineStatus(
-                tStatus,
-                IDX_FINAL
-            );
-            emit LogFinalizeVoucher(_tokenIdVoucher, msg.sender);
-        }
+        require(mark, 'INAPPLICABLE_STATUS');
+
+        vouchersStatus[_tokenIdVoucher].status = determineStatus(
+            tStatus,
+            IDX_FINAL
+        );
+        emit LogFinalizeVoucher(_tokenIdVoucher, msg.sender);
     }
 
     /* solhint-enable */
