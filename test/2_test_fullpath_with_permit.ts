@@ -121,8 +121,9 @@ describe('Cashier and VoucherKernel', () => {
       'BDEP'
     )) as Contract & MockERC20Permit;
 
-    contractMockERC721Receiver = (await MockERC721Receiver_Factory.deploy()) as Contract &
-      MockERC721Receiver;
+    contractMockERC721Receiver =
+      (await MockERC721Receiver_Factory.deploy()) as Contract &
+        MockERC721Receiver;
 
     await contractTokenRegistry.deployed();
     await contractERC1155ERC721.deployed();
@@ -693,9 +694,8 @@ describe('Cashier and VoucherKernel', () => {
                 'Seller incorrect'
               );
 
-              const promiseOrderData = await contractVoucherKernel.getOrderCosts(
-                tokenSupplyKey
-              );
+              const promiseOrderData =
+                await contractVoucherKernel.getOrderCosts(tokenSupplyKey);
               assert.isTrue(
                 promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
                   BN(constants.PROMISE_PRICE1)
@@ -1164,9 +1164,8 @@ describe('Cashier and VoucherKernel', () => {
                 'Seller incorrect'
               );
 
-              const promiseOrderData = await contractVoucherKernel.getOrderCosts(
-                tokenSupplyKey
-              );
+              const promiseOrderData =
+                await contractVoucherKernel.getOrderCosts(tokenSupplyKey);
               assert.isTrue(
                 promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
                   BN(constants.PROMISE_PRICE1)
@@ -1535,9 +1534,8 @@ describe('Cashier and VoucherKernel', () => {
                 'Seller incorrect'
               );
 
-              const promiseOrderData = await contractVoucherKernel.getOrderCosts(
-                tokenSupplyKey
-              );
+              const promiseOrderData =
+                await contractVoucherKernel.getOrderCosts(tokenSupplyKey);
               assert.isTrue(
                 promiseOrderData[constants.PROMISE_ORDER_FIELDS.price].eq(
                   BN(constants.PROMISE_PRICE1)
@@ -5218,12 +5216,10 @@ describe('Cashier and VoucherKernel', () => {
           BN(constants.QTY_10)
         );
 
-        let actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-          users.other1.address
-        );
-        let actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-          users.other2.address
-        );
+        let actualOldOwnerBalanceFromEscrow =
+          await contractCashier.getEscrowAmount(users.other1.address);
+        let actualNewOwnerBalanceFromEscrow =
+          await contractCashier.getEscrowAmount(users.other2.address);
 
         assert.isTrue(
           actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
@@ -5341,9 +5337,8 @@ describe('Cashier and VoucherKernel', () => {
           BN(constants.QTY_10)
         );
 
-        let actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-          users.other1.address
-        );
+        let actualOldOwnerBalanceFromEscrow =
+          await contractCashier.getEscrowAmount(users.other1.address);
 
         assert.isTrue(
           actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
@@ -5460,12 +5455,10 @@ describe('Cashier and VoucherKernel', () => {
           ).to.equal(users.other1.address, 'Supply 2 before - holder mismatch');
 
           // balances before
-          let actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-            users.other1.address
-          );
-          let actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-            users.other2.address
-          );
+          let actualOldOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowAmount(users.other1.address);
+          let actualNewOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowAmount(users.other2.address);
 
           const expectedBalanceInEscrow = BN(constants.PROMISE_DEPOSITSE1)
             .mul(BN(constants.QTY_10))
@@ -5480,15 +5473,17 @@ describe('Cashier and VoucherKernel', () => {
             'New owner balance from escrow does not match'
           );
 
-          const user1BalanceBeforeTransfer = await contractERC1155ERC721.balanceOfBatch(
-            [users.other1.address, users.other1.address],
-            tokenSupplyBatch
-          );
+          const user1BalanceBeforeTransfer =
+            await contractERC1155ERC721.balanceOfBatch(
+              [users.other1.address, users.other1.address],
+              tokenSupplyBatch
+            );
 
-          const user2BalanceBeforeTransfer = await contractERC1155ERC721.balanceOfBatch(
-            [users.other2.address, users.other2.address],
-            tokenSupplyBatch
-          );
+          const user2BalanceBeforeTransfer =
+            await contractERC1155ERC721.balanceOfBatch(
+              [users.other2.address, users.other2.address],
+              tokenSupplyBatch
+            );
 
           assert.equal(
             JSON.stringify(user1BalanceBeforeTransfer),
@@ -5530,15 +5525,17 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           // balances after
-          const user1BalanceAfterTransfer = await contractERC1155ERC721.balanceOfBatch(
-            [users.other1.address, users.other1.address],
-            tokenSupplyBatch
-          );
+          const user1BalanceAfterTransfer =
+            await contractERC1155ERC721.balanceOfBatch(
+              [users.other1.address, users.other1.address],
+              tokenSupplyBatch
+            );
 
-          const user2BalanceAfterTransfer = await contractERC1155ERC721.balanceOfBatch(
-            [users.other2.address, users.other2.address],
-            tokenSupplyBatch
-          );
+          const user2BalanceAfterTransfer =
+            await contractERC1155ERC721.balanceOfBatch(
+              [users.other2.address, users.other2.address],
+              tokenSupplyBatch
+            );
 
           assert.equal(
             JSON.stringify(user1BalanceAfterTransfer),
@@ -5551,12 +5548,10 @@ describe('Cashier and VoucherKernel', () => {
             'User2 after balance mismatch'
           );
 
-          actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-            users.other1.address
-          );
-          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-            users.other2.address
-          );
+          actualOldOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowAmount(users.other1.address);
+          actualNewOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowAmount(users.other2.address);
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrow.eq(constants.ZERO),
@@ -5586,9 +5581,8 @@ describe('Cashier and VoucherKernel', () => {
           ).to.equal(users.other1.address, 'Supply 2 before - holder mismatch');
 
           // balances before
-          let actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-            users.other1.address
-          );
+          let actualOldOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowAmount(users.other1.address);
 
           const expectedBalanceInEscrow = BN(constants.PROMISE_DEPOSITSE1)
             .mul(BN(constants.QTY_10))
@@ -5599,10 +5593,11 @@ describe('Cashier and VoucherKernel', () => {
             'Old owner balance from escrow does not match'
           );
 
-          const balanceBeforeTransfer = await contractERC1155ERC721.balanceOfBatch(
-            [users.other1.address, users.other1.address],
-            tokenSupplyBatch
-          );
+          const balanceBeforeTransfer =
+            await contractERC1155ERC721.balanceOfBatch(
+              [users.other1.address, users.other1.address],
+              tokenSupplyBatch
+            );
 
           const transferTx = await utils.safeBatchTransfer1155(
             users.other1.address,
@@ -5612,10 +5607,11 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.signer
           );
 
-          const balanceAfterTransfer = await contractERC1155ERC721.balanceOfBatch(
-            [users.other1.address, users.other1.address],
-            tokenSupplyBatch
-          );
+          const balanceAfterTransfer =
+            await contractERC1155ERC721.balanceOfBatch(
+              [users.other1.address, users.other1.address],
+              tokenSupplyBatch
+            );
 
           assert.equal(
             JSON.stringify(balanceBeforeTransfer),
@@ -5643,9 +5639,8 @@ describe('Cashier and VoucherKernel', () => {
             }
           );
 
-          actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-            users.other1.address
-          );
+          actualOldOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowAmount(users.other1.address);
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
@@ -5722,12 +5717,10 @@ describe('Cashier and VoucherKernel', () => {
           BN(constants.QTY_1)
         );
 
-        let actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-          users.other1.address
-        );
-        let actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-          users.other2.address
-        );
+        let actualOldOwnerBalanceFromEscrow =
+          await contractCashier.getEscrowAmount(users.other1.address);
+        let actualNewOwnerBalanceFromEscrow =
+          await contractCashier.getEscrowAmount(users.other2.address);
 
         assert.isTrue(
           actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
@@ -6035,14 +6028,16 @@ describe('Cashier and VoucherKernel', () => {
             BN(constants.QTY_1)
           );
 
-          let actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.other1.address
-          );
-          let actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.other2.address
-          );
+          let actualOldOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other1.address
+            );
+          let actualNewOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other2.address
+            );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
@@ -6087,14 +6082,16 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           // balances after
-          actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.other1.address
-          );
-          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.other2.address
-          );
+          actualOldOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other1.address
+            );
+          actualNewOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other2.address
+            );
 
           const user1BalanceAfterTransfer = (
             await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
@@ -6250,21 +6247,22 @@ describe('Cashier and VoucherKernel', () => {
             }
           );
 
-          const balanceBuyerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-            users.buyer.address
-          );
-          const balanceSellerFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-            users.other2.address
-          );
-          const escrowBalanceFromDeposits = await utils.contractBSNTokenDeposit.balanceOf(
-            users.deployer.address
-          );
-          const cashierDepositLeft = await utils.contractBSNTokenDeposit.balanceOf(
-            utils.contractCashier.address
-          );
-          const cashierPaymentLeft = await utils.contractBSNTokenPrice.balanceOf(
-            utils.contractCashier.address
-          );
+          const balanceBuyerFromDeposits =
+            await utils.contractBSNTokenDeposit.balanceOf(users.buyer.address);
+          const balanceSellerFromDeposits =
+            await utils.contractBSNTokenDeposit.balanceOf(users.other2.address);
+          const escrowBalanceFromDeposits =
+            await utils.contractBSNTokenDeposit.balanceOf(
+              users.deployer.address
+            );
+          const cashierDepositLeft =
+            await utils.contractBSNTokenDeposit.balanceOf(
+              utils.contractCashier.address
+            );
+          const cashierPaymentLeft =
+            await utils.contractBSNTokenPrice.balanceOf(
+              utils.contractCashier.address
+            );
 
           //Deposits
           assert.isTrue(
@@ -6400,14 +6398,16 @@ describe('Cashier and VoucherKernel', () => {
             BN(constants.QTY_1)
           );
 
-          let actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.other1.address
-          );
-          let actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.other2.address
-          );
+          let actualOldOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other1.address
+            );
+          let actualNewOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other2.address
+            );
 
           const user1BalanceBeforeTransfer = (
             await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
@@ -6452,14 +6452,16 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           // balances after
-          actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.other1.address
-          );
-          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.other2.address
-          );
+          actualOldOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other1.address
+            );
+          actualNewOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other2.address
+            );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrow.eq(constants.ZERO),
@@ -6761,12 +6763,10 @@ describe('Cashier and VoucherKernel', () => {
             BN(constants.QTY_1)
           );
 
-          let actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-            users.other1.address
-          );
-          let actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-            users.other2.address
-          );
+          let actualOldOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowAmount(users.other1.address);
+          let actualNewOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowAmount(users.other2.address);
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
@@ -6811,12 +6811,10 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           // balances after
-          actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-            users.other1.address
-          );
-          actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-            users.other2.address
-          );
+          actualOldOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowAmount(users.other1.address);
+          actualNewOwnerBalanceFromEscrow =
+            await contractCashier.getEscrowAmount(users.other2.address);
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrow.eq(constants.ZERO),
@@ -7126,12 +7124,10 @@ describe('Cashier and VoucherKernel', () => {
           constants.PROMISE_PRICE1
         );
 
-        let actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-          users.other1.address
-        );
-        let actualNewOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-          users.other2.address
-        );
+        let actualOldOwnerBalanceFromEscrow =
+          await contractCashier.getEscrowAmount(users.other1.address);
+        let actualNewOwnerBalanceFromEscrow =
+          await contractCashier.getEscrowAmount(users.other2.address);
 
         assert.isTrue(
           actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
@@ -7209,9 +7205,8 @@ describe('Cashier and VoucherKernel', () => {
           constants.PROMISE_PRICE1
         );
 
-        let actualOldOwnerBalanceFromEscrow = await contractCashier.getEscrowAmount(
-          users.other1.address
-        );
+        let actualOldOwnerBalanceFromEscrow =
+          await contractCashier.getEscrowAmount(users.other1.address);
 
         assert.isTrue(
           actualOldOwnerBalanceFromEscrow.eq(expectedBalanceInEscrow),
@@ -7293,12 +7288,10 @@ describe('Cashier and VoucherKernel', () => {
           constants.PROMISE_DEPOSITBU1
         );
 
-        let actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
-          users.other1.address
-        );
-        let actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
-          users.other2.address
-        );
+        let actualOldOwnerBalanceFromEscrowEth =
+          await contractCashier.getEscrowAmount(users.other1.address);
+        let actualNewOwnerBalanceFromEscrowEth =
+          await contractCashier.getEscrowAmount(users.other2.address);
 
         assert.isTrue(
           actualOldOwnerBalanceFromEscrowEth.eq(expectedBalanceInEscrow),
@@ -7316,12 +7309,10 @@ describe('Cashier and VoucherKernel', () => {
           users.other1.signer
         );
 
-        actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
-          users.other1.address
-        );
-        actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
-          users.other2.address
-        );
+        actualOldOwnerBalanceFromEscrowEth =
+          await contractCashier.getEscrowAmount(users.other1.address);
+        actualNewOwnerBalanceFromEscrowEth =
+          await contractCashier.getEscrowAmount(users.other2.address);
 
         assert.isTrue(
           actualOldOwnerBalanceFromEscrowEth.eq(constants.ZERO),
@@ -7662,23 +7653,23 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_DEPOSITBU1
           );
 
-          let actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
-            users.other1.address
-          );
+          let actualOldOwnerBalanceFromEscrowEth =
+            await contractCashier.getEscrowAmount(users.other1.address);
 
-          let actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.other1.address
-          );
+          let actualOldOwnerBalanceFromEscrowTkn =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other1.address
+            );
 
-          let actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
-            users.other2.address
-          );
+          let actualNewOwnerBalanceFromEscrowEth =
+            await contractCashier.getEscrowAmount(users.other2.address);
 
-          let actualNewOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.other2.address
-          );
+          let actualNewOwnerBalanceFromEscrowTkn =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other2.address
+            );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrowEth.eq(expectedBalanceInEscrowEth),
@@ -7707,23 +7698,23 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.signer
           );
 
-          actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
-            users.other1.address
-          );
+          actualOldOwnerBalanceFromEscrowEth =
+            await contractCashier.getEscrowAmount(users.other1.address);
 
-          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.other1.address
-          );
+          actualOldOwnerBalanceFromEscrowTkn =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other1.address
+            );
 
-          actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
-            users.other2.address
-          );
+          actualNewOwnerBalanceFromEscrowEth =
+            await contractCashier.getEscrowAmount(users.other2.address);
 
-          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.other2.address
-          );
+          actualNewOwnerBalanceFromEscrowTkn =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other2.address
+            );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrowEth.eq(constants.ZERO),
@@ -8107,25 +8098,29 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_DEPOSITBU1
           );
 
-          let actualOldOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenPrice.address,
-            users.other1.address
-          );
+          let actualOldOwnerBalanceFromEscrowTknPrice =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenPrice.address,
+              users.other1.address
+            );
 
-          let actualOldOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.other1.address
-          );
+          let actualOldOwnerBalanceFromEscrowTknDeposit =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other1.address
+            );
 
-          let actualNewOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenPrice.address,
-            users.other2.address
-          );
+          let actualNewOwnerBalanceFromEscrowTknPrice =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenPrice.address,
+              users.other2.address
+            );
 
-          let actualNewOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.other2.address
-          );
+          let actualNewOwnerBalanceFromEscrowTknDeposit =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other2.address
+            );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrowTknPrice.eq(
@@ -8158,25 +8153,29 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.signer
           );
 
-          actualOldOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenPrice.address,
-            users.other1.address
-          );
+          actualOldOwnerBalanceFromEscrowTknPrice =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenPrice.address,
+              users.other1.address
+            );
 
-          actualOldOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.other1.address
-          );
+          actualOldOwnerBalanceFromEscrowTknDeposit =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other1.address
+            );
 
-          actualNewOwnerBalanceFromEscrowTknPrice = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenPrice.address,
-            users.other2.address
-          );
+          actualNewOwnerBalanceFromEscrowTknPrice =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenPrice.address,
+              users.other2.address
+            );
 
-          actualNewOwnerBalanceFromEscrowTknDeposit = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenDeposit.address,
-            users.other2.address
-          );
+          actualNewOwnerBalanceFromEscrowTknDeposit =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenDeposit.address,
+              users.other2.address
+            );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrowTknPrice.eq(constants.ZERO),
@@ -8526,23 +8525,23 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_DEPOSITBU1
           );
 
-          let actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
-            users.other1.address
-          );
+          let actualOldOwnerBalanceFromEscrowEth =
+            await contractCashier.getEscrowAmount(users.other1.address);
 
-          let actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenPrice.address,
-            users.other1.address
-          );
+          let actualOldOwnerBalanceFromEscrowTkn =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenPrice.address,
+              users.other1.address
+            );
 
-          let actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
-            users.other2.address
-          );
+          let actualNewOwnerBalanceFromEscrowEth =
+            await contractCashier.getEscrowAmount(users.other2.address);
 
-          let actualNewOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenPrice.address,
-            users.other2.address
-          );
+          let actualNewOwnerBalanceFromEscrowTkn =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenPrice.address,
+              users.other2.address
+            );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrowEth.eq(expectedBalanceInEscrowEth),
@@ -8571,23 +8570,23 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.signer
           );
 
-          actualOldOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
-            users.other1.address
-          );
+          actualOldOwnerBalanceFromEscrowEth =
+            await contractCashier.getEscrowAmount(users.other1.address);
 
-          actualOldOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenPrice.address,
-            users.other1.address
-          );
+          actualOldOwnerBalanceFromEscrowTkn =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenPrice.address,
+              users.other1.address
+            );
 
-          actualNewOwnerBalanceFromEscrowEth = await contractCashier.getEscrowAmount(
-            users.other2.address
-          );
+          actualNewOwnerBalanceFromEscrowEth =
+            await contractCashier.getEscrowAmount(users.other2.address);
 
-          actualNewOwnerBalanceFromEscrowTkn = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenPrice.address,
-            users.other2.address
-          );
+          actualNewOwnerBalanceFromEscrowTkn =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenPrice.address,
+              users.other2.address
+            );
 
           assert.isTrue(
             actualOldOwnerBalanceFromEscrowEth.eq(constants.ZERO),
