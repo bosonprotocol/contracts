@@ -344,7 +344,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
     onlyFromRouter
     nonReentrant
     {
-        require(_doERC721HolderCheck(_issuer, _holder, _tokenIdSupply, ""), "UNSUPPORTED_ERC721_RECEIVED");
+        require(_doERC721HolderCheck(_issuer, _holder, _tokenIdSupply), "UNSUPPORTED_ERC721_RECEIVED");
         uint8 paymentMethod = getVoucherPaymentMethod(_tokenIdSupply);
 
         //checks
@@ -370,16 +370,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
      * @param _from     Address of sender
      * @param _to       Address of recipient
      * @param _tokenId  ID of the token
-     * @param _data     Optional data
      */
     function _doERC721HolderCheck(
         address _from,
         address _to,
-        uint256 _tokenId,
-        bytes memory _data
+        uint256 _tokenId
     ) internal returns (bool) {
         if (_to.isContract()) {
-            try IERC721Receiver(_to).onERC721Received(_msgSender(), _from, _tokenId, _data) returns (bytes4 retval) {
+            try IERC721Receiver(_to).onERC721Received(_msgSender(), _from, _tokenId, "") returns (bytes4 retval) {
                 return retval == IERC721Receiver.onERC721Received.selector;
             } catch (bytes memory reason) {
                 if (reason.length == 0) {
