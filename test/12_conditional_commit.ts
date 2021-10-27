@@ -108,9 +108,10 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       'BosonTokenDeposit',
       'BDEP'
     )) as Contract & MockERC20Permit;
-    contractERC1155NonTransferable = (await ERC1155NonTransferable_Factory.deploy(
-      'https://token-cdn-domain/{id}.json'
-    )) as Contract & ERC1155NonTransferable;
+    contractERC1155NonTransferable =
+      (await ERC1155NonTransferable_Factory.deploy(
+        'https://token-cdn-domain/{id}.json'
+      )) as Contract & ERC1155NonTransferable;
     contractGate = (await Gate_Factory.deploy(
       contractBosonRouter.address
     )) as Contract & Gate;

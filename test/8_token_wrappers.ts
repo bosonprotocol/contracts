@@ -30,13 +30,8 @@ let contractDAITokenWrapper: DAITokenWrapper;
 
 describe('Token Wrappers', () => {
   before(async () => {
-    [
-      owner,
-      otherToken,
-      user1,
-      attacker,
-      contractBosonRouter,
-    ] = provider.getWallets();
+    [owner, otherToken, user1, attacker, contractBosonRouter] =
+      provider.getWallets();
 
     DAITokenWrapper_Factory = await ethers.getContractFactory(
       'DAITokenWrapper'

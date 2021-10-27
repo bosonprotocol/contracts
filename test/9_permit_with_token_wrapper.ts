@@ -224,25 +224,26 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             users.seller.signer
           ) as BosonRouter;
 
-          const txOrder = await sellerInstance.requestCreateOrderETHTKNWithPermit(
-            mockDAI.address,
-            txValue,
-            deadline,
-            v,
-            r,
-            s,
-            [
-              constants.PROMISE_VALID_FROM,
-              constants.PROMISE_VALID_TO,
-              constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITSE1,
-              constants.PROMISE_DEPOSITBU1,
-              constants.QTY_10,
-            ],
-            {
-              from: users.seller.address,
-            }
-          );
+          const txOrder =
+            await sellerInstance.requestCreateOrderETHTKNWithPermit(
+              mockDAI.address,
+              txValue,
+              deadline,
+              v,
+              r,
+              s,
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              {
+                from: users.seller.address,
+              }
+            );
 
           txReceipt = await txOrder.wait();
 
@@ -409,17 +410,14 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
         });
 
         it('Should create payment method ETHTKN', async () => {
-          const paymentMethod = await contractVoucherKernel.getVoucherPaymentMethod(
-            tokenSupplyKey
-          );
+          const paymentMethod =
+            await contractVoucherKernel.getVoucherPaymentMethod(tokenSupplyKey);
 
-          const addressTokenPrice = await contractVoucherKernel.getVoucherPriceToken(
-            tokenSupplyKey
-          );
+          const addressTokenPrice =
+            await contractVoucherKernel.getVoucherPriceToken(tokenSupplyKey);
 
-          const addressTokenDeposits = await contractVoucherKernel.getVoucherDepositToken(
-            tokenSupplyKey
-          );
+          const addressTokenDeposits =
+            await contractVoucherKernel.getVoucherDepositToken(tokenSupplyKey);
 
           assert.equal(
             paymentMethod.toString(),
@@ -637,26 +635,27 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             users.seller.signer
           ) as BosonRouter;
 
-          const txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermit(
-            mockDAI.address,
-            mockDAI.address,
-            txValue,
-            deadline,
-            v,
-            r,
-            s,
-            [
-              constants.PROMISE_VALID_FROM,
-              constants.PROMISE_VALID_TO,
-              constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITSE1,
-              constants.PROMISE_DEPOSITBU1,
-              constants.QTY_10,
-            ],
-            {
-              from: users.seller.address,
-            }
-          );
+          const txOrder =
+            await sellerInstance.requestCreateOrderTKNTKNWithPermit(
+              mockDAI.address,
+              mockDAI.address,
+              txValue,
+              deadline,
+              v,
+              r,
+              s,
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              {
+                from: users.seller.address,
+              }
+            );
 
           txReceipt = await txOrder.wait();
 
@@ -823,17 +822,14 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
         });
 
         it('Should create payment method TKNTKN', async () => {
-          const paymentMethod = await contractVoucherKernel.getVoucherPaymentMethod(
-            tokenSupplyKey
-          );
+          const paymentMethod =
+            await contractVoucherKernel.getVoucherPaymentMethod(tokenSupplyKey);
 
-          const addressTokenPrice = await contractVoucherKernel.getVoucherPriceToken(
-            tokenSupplyKey
-          );
+          const addressTokenPrice =
+            await contractVoucherKernel.getVoucherPriceToken(tokenSupplyKey);
 
-          const addressTokenDeposits = await contractVoucherKernel.getVoucherDepositToken(
-            tokenSupplyKey
-          );
+          const addressTokenDeposits =
+            await contractVoucherKernel.getVoucherDepositToken(tokenSupplyKey);
 
           assert.equal(
             paymentMethod.toString(),
@@ -900,25 +896,26 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           constants.PROMISE_VALID_FROM = timestamp;
           constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
-          const txOrder = await sellerInstance.requestCreateOrderETHTKNWithPermit(
-            mockDAI.address,
-            txValue,
-            deadline,
-            v,
-            r,
-            s,
-            [
-              constants.PROMISE_VALID_FROM,
-              constants.PROMISE_VALID_TO,
-              constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITSE1,
-              constants.PROMISE_DEPOSITBU1,
-              constants.QTY_10,
-            ],
-            {
-              from: users.seller.address,
-            }
-          );
+          const txOrder =
+            await sellerInstance.requestCreateOrderETHTKNWithPermit(
+              mockDAI.address,
+              txValue,
+              deadline,
+              v,
+              r,
+              s,
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              {
+                from: users.seller.address,
+              }
+            );
 
           txReceipt = await txOrder.wait();
 
@@ -970,16 +967,17 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
 
           const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
-          const txFillOrder = await buyerInstance.requestVoucherETHTKNWithPermit(
-            tokenSupplyKey,
-            users.seller.address,
-            constants.PROMISE_DEPOSITBU1,
-            deadline,
-            vDeposit,
-            rDeposit,
-            sDeposit,
-            {value: constants.PROMISE_PRICE1}
-          );
+          const txFillOrder =
+            await buyerInstance.requestVoucherETHTKNWithPermit(
+              tokenSupplyKey,
+              users.seller.address,
+              constants.PROMISE_DEPOSITBU1,
+              deadline,
+              vDeposit,
+              rDeposit,
+              sDeposit,
+              {value: constants.PROMISE_PRICE1}
+            );
 
           txReceiptFillOrder = await txFillOrder.wait();
 
@@ -1167,26 +1165,27 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             tokensToMintBuyer
           );
 
-          const txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermit(
-            contractBSNTokenPrice.address,
-            mockDAI.address,
-            txValue,
-            deadline,
-            v,
-            r,
-            s,
-            [
-              constants.PROMISE_VALID_FROM,
-              constants.PROMISE_VALID_TO,
-              constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITSE1,
-              constants.PROMISE_DEPOSITBU1,
-              constants.QTY_10,
-            ],
-            {
-              from: users.seller.address,
-            }
-          );
+          const txOrder =
+            await sellerInstance.requestCreateOrderTKNTKNWithPermit(
+              contractBSNTokenPrice.address,
+              mockDAI.address,
+              txValue,
+              deadline,
+              v,
+              r,
+              s,
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              {
+                from: users.seller.address,
+              }
+            );
 
           txReceipt = await txOrder.wait();
 
@@ -1265,18 +1264,19 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
 
           const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
-          const txFillOrder = await buyerInstance.requestVoucherTKNTKNWithPermit(
-            tokenSupplyKey,
-            users.seller.address,
-            tokensToSend,
-            deadline,
-            vPrice,
-            rPrice,
-            sPrice,
-            vDeposit,
-            rDeposit,
-            sDeposit
-          );
+          const txFillOrder =
+            await buyerInstance.requestVoucherTKNTKNWithPermit(
+              tokenSupplyKey,
+              users.seller.address,
+              tokensToSend,
+              deadline,
+              vPrice,
+              rPrice,
+              sPrice,
+              vDeposit,
+              rDeposit,
+              sDeposit
+            );
 
           txReceiptFillOrder = await txFillOrder.wait();
 
@@ -1398,9 +1398,8 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
 
         it("Should update Cashier contract's token balance correctly", async () => {
           //Can't check MockDAI
-          const cashierPriceTokenBalance = await contractBSNTokenPrice.balanceOf(
-            contractCashier.address
-          );
+          const cashierPriceTokenBalance =
+            await contractBSNTokenPrice.balanceOf(contractCashier.address);
 
           //Boson Token was only used as the price token
           const expectedDepositBalance = BN(constants.PROMISE_PRICE1);
@@ -1415,10 +1414,11 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           //Can't check MockDAI
           const buyerTknPriceSent = BN(constants.PROMISE_PRICE1);
 
-          const escrowBuyerTknPrice = await contractCashier.getEscrowTokensAmount(
-            contractBSNTokenPrice.address,
-            users.buyer.address
-          );
+          const escrowBuyerTknPrice =
+            await contractCashier.getEscrowTokensAmount(
+              contractBSNTokenPrice.address,
+              users.buyer.address
+            );
 
           assert.isTrue(
             BN(buyerTknPriceSent).eq(escrowBuyerTknPrice),
@@ -1465,26 +1465,27 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           constants.PROMISE_VALID_FROM = timestamp;
           constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
-          const txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermit(
-            mockDAI.address,
-            mockDAI.address,
-            txValue,
-            deadline,
-            v,
-            r,
-            s,
-            [
-              constants.PROMISE_VALID_FROM,
-              constants.PROMISE_VALID_TO,
-              constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITSE1,
-              constants.PROMISE_DEPOSITBU1,
-              constants.QTY_10,
-            ],
-            {
-              from: users.seller.address,
-            }
-          );
+          const txOrder =
+            await sellerInstance.requestCreateOrderTKNTKNWithPermit(
+              mockDAI.address,
+              mockDAI.address,
+              txValue,
+              deadline,
+              v,
+              r,
+              s,
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              {
+                from: users.seller.address,
+              }
+            );
 
           txReceipt = await txOrder.wait();
 
@@ -1545,15 +1546,16 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
 
           const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
-          const txFillOrder = await buyerInstance.requestVoucherTKNTKNSameWithPermit(
-            tokenSupplyKey,
-            users.seller.address,
-            tokensToSend,
-            deadline,
-            vPrice,
-            rPrice,
-            sPrice
-          );
+          const txFillOrder =
+            await buyerInstance.requestVoucherTKNTKNSameWithPermit(
+              tokenSupplyKey,
+              users.seller.address,
+              tokensToSend,
+              deadline,
+              vPrice,
+              rPrice,
+              sPrice
+            );
 
           txReceiptFillOrder = await txFillOrder.wait();
 
@@ -1682,10 +1684,11 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             BN(constants.PROMISE_DEPOSITBU1)
           );
 
-          const escrowSellerTknDeposit = await contractCashier.getEscrowTokensAmount(
-            mockDAI.address,
-            users.seller.address
-          );
+          const escrowSellerTknDeposit =
+            await contractCashier.getEscrowTokensAmount(
+              mockDAI.address,
+              users.seller.address
+            );
           const escrowBuyerTkn = await contractCashier.getEscrowTokensAmount(
             mockDAI.address,
             users.buyer.address
@@ -1741,26 +1744,27 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           constants.PROMISE_VALID_FROM = timestamp;
           constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
-          const txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermit(
-            contractBSNTokenPrice.address,
-            mockDAI.address,
-            txValue,
-            deadline,
-            vPriceCreate,
-            rPriceCreate,
-            sPriceCreate,
-            [
-              constants.PROMISE_VALID_FROM,
-              constants.PROMISE_VALID_TO,
-              constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITSE1,
-              constants.PROMISE_DEPOSITBU1,
-              constants.QTY_10,
-            ],
-            {
-              from: users.seller.address,
-            }
-          );
+          const txOrder =
+            await sellerInstance.requestCreateOrderTKNTKNWithPermit(
+              contractBSNTokenPrice.address,
+              mockDAI.address,
+              txValue,
+              deadline,
+              vPriceCreate,
+              rPriceCreate,
+              sPriceCreate,
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              {
+                from: users.seller.address,
+              }
+            );
 
           txReceipt = await txOrder.wait();
 
@@ -1906,16 +1910,17 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
 
           const buyerInstance = contractBosonRouter.connect(users.buyer.signer);
 
-          const txFillOrder = await buyerInstance.requestVoucherTKNETHWithPermit(
-            tokenSupplyKey,
-            users.seller.address,
-            constants.PROMISE_PRICE1,
-            deadline,
-            v,
-            r,
-            s,
-            {value: txValueCommit}
-          );
+          const txFillOrder =
+            await buyerInstance.requestVoucherTKNETHWithPermit(
+              tokenSupplyKey,
+              users.seller.address,
+              constants.PROMISE_PRICE1,
+              deadline,
+              v,
+              r,
+              s,
+              {value: txValueCommit}
+            );
 
           txReceiptFillOrder = await txFillOrder.wait();
 
