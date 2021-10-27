@@ -77,4 +77,5 @@ export default {
   SAFE_ERC20_LOW_LEVEL_FAIL: 'SafeERC20WithPermit: low-level call failed',
   ERC1155_REJECT: 'ERC1155: ERC1155Receiver rejected tokens',
   DISASTER_STATE_ALREADY_SET: 'Disaster state is already set',
+  NO_WITHDRAWALS: 'NO_WITHDRAWALS'
 };
