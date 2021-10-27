@@ -12,6 +12,7 @@ node_modules
 /artifacts
 /cache
 /typechain
+/abi
 
 # Secrets
 .secret

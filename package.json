@@ -1,8 +1,8 @@
 {
-    "name": "y",
-    "version": "1.0.0",
+    "name": "@bosonprotocol/core",
+    "version": "0.0.0",
     "description": "Repo for Boson Protocol prototype of the core exchange mechanism",
-    "main": "hardhat.config.js",
+    "types": "typechain/index.ts",
     "directories": {
         "test": "test"
     },
@@ -10,6 +10,32 @@
         "node": ">=12.20.0",
         "npm": ">=7.15.1"
     },
+    "files": [
+        "typechain",
+        "contracts/interfaces",
+        "abi/contracts/interfaces",
+        "contracts/libs",
+        "artifacts/contracts/BosonRouter.sol/BosonRouter.json",
+        "abi/contracts/BosonRouter.sol/BosonRouter.json",
+        "artifacts/contracts/Cashier.sol/Cashier.json",
+        "abi/contracts/Cashier.sol/Cashier.json",
+        "artifacts/contracts/DAITokenWrapper.sol/DAITokenWrapper.json",
+        "abi/contracts/DAITokenWrapper.sol/DAITokenWrapper.json",
+        "artifacts/contracts/ERC1155ERC721.sol/ERC1155ERC721.json",
+        "abi/contracts/ERC1155ERC721.sol/ERC1155ERC721.json",
+        "artifacts/contracts/ERC1155NonTransferable.sol/ERC1155NonTransferable.json",
+        "abi/contracts/ERC1155NonTransferable.sol/ERC1155NonTransferable.json",
+        "artifacts/contracts/Gate.sol/Gate.json",
+        "abi/contracts/Gate.sol/Gate.json",
+        "artifacts/contracts/MetaTransactionReceiver.sol/MetaTransactionReceiver.json",
+        "abi/contracts/MetaTransactionReceiver.sol/MetaTransactionReceiver.json",
+        "artifacts/contracts/TokenRegistry.sol/TokenRegistry.json",
+        "abi/contracts/TokenRegistry.sol/TokenRegistry.json",
+        "artifacts/contracts/VoucherKernel.sol/VoucherKernel.json",
+        "abi/contracts/VoucherKernel.sol/VoucherKernel.json",
+        "artifacts/contracts/interfaces/**/*.json",
+        "!artifacts/contracts/interfaces/**/*.dbg.json"
+    ],
     "scripts": {
         "contracts:run": "hardhat compile && hardhat deploy",
         "contracts:compile": "hardhat compile --force",
@@ -33,7 +59,8 @@
         "tests:format-fix": "prettier --write test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
         "tests:unit": "npx hardhat test",
         "tests:coverage": "npx hardhat coverage",
-        "contracts:size": "hardhat size-contracts"
+        "contracts:size": "hardhat size-contracts",
+        "prepublishOnly": "npm run contracts:lint && npm run contracts:compile && npm run tests:unit"
     },
     "repository": {
         "type": "git",
@@ -45,12 +72,20 @@
         "url": "https://github.com/bosonprotocol/contracts/issues"
     },
     "homepage": "https://github.com/bosonprotocol/contracts#readme",
-    "dependencies": {
+    "devDependencies": {
         "@nomiclabs/hardhat-ethers": "^2.0.2",
         "@nomiclabs/hardhat-etherscan": "^2.1.1",
         "@nomiclabs/hardhat-waffle": "2.0.1",
         "@openzeppelin/contracts": "3.4.2-solc-0.7",
+        "@typechain/ethers-v5": "^7.0.0",
+        "@typechain/hardhat": "^2.0.1",
+        "@types/chai": "^4.2.18",
+        "@types/mocha": "^8.2.2",
+        "@types/node": "^15.9.0",
+        "@typescript-eslint/eslint-plugin": "^4.26.0",
+        "@typescript-eslint/parser": "^4.26.0",
         "axios": "^0.21.1",
+        "chai": "^4.3.4",
         "dotenv": "^8.6.0",
         "elliptic": "^6.5.4",
         "eslint": "^7.32.0",
@@ -59,23 +94,14 @@
         "ethereumjs-util": "^7.1.2",
         "ethers": "^5.4.3",
         "hardhat": "^2.1.2",
+        "hardhat-abi-exporter": "^2.3.0",
         "hardhat-contract-sizer": "^2.0.3",
         "mocha": "^8.2.1",
         "node-fetch": "^2.6.1",
         "prettier": "^2.2.1",
         "prettier-plugin-solidity": "^1.0.0-beta.3",
         "solhint": "^3.3.2",
-        "solidity-coverage": "^0.7.12"
-    },
-    "devDependencies": {
-        "@typechain/ethers-v5": "^7.0.0",
-        "@typechain/hardhat": "^2.0.1",
-        "@types/chai": "^4.2.18",
-        "@types/mocha": "^8.2.2",
-        "@types/node": "^15.9.0",
-        "@typescript-eslint/eslint-plugin": "^4.26.0",
-        "@typescript-eslint/parser": "^4.26.0",
-        "chai": "^4.3.4",
+        "solidity-coverage": "^0.7.12",
         "ts-node": "^10.0.0",
         "typechain": "^5.0.0",
         "typescript": "^4.3.2"
