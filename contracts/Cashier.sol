@@ -27,7 +27,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     bool private disasterState;
 
     enum PaymentType {PAYMENT, DEPOSIT_SELLER, DEPOSIT_BUYER}
-    enum Role{ISSUER, HOLDER}
+    enum Role {ISSUER, HOLDER}
 
     mapping(address => uint256) private escrow; // both types of deposits AND payments >> can be released token-by-token if checks pass
     // slashedDepositPool can be obtained through getEscrowAmount(poolAddress)
@@ -288,7 +288,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     }
 
     /**
-     * @notice Following function `releasePayments`, if certain conditions for the voucher status are met, the voucher price will be sent to the seller in others to the buyer
+     * @notice Following function `releasePayments`, if certain conditions for the voucher status are met, the voucher price will be sent to the seller or the buyer
      * @param _voucherDetails keeps all required information of the voucher which the payment should be released for.
      */
     function releasePayment(VoucherDetails memory _voucherDetails, Role _role) internal {
