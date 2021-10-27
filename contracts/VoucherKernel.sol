@@ -312,7 +312,9 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         bytes32 _promiseId,
         uint256 _quantity
     ) private returns (uint256) {
-        uint256 tokenIdSupply = generateTokenType(true); //create & assign a new non-fungible type
+        //create & assign a new non-fungible type
+        typeId++;
+        uint256 tokenIdSupply = TYPE_NF_BIT | (typeId << 128); //upper bit is 1, followed by sequence, leaving lower 128-bits as 0;
 
         ordersPromise[tokenIdSupply] = _promiseId;
 
@@ -459,25 +461,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         IERC1155ERC721(tokensContract).burn(_issuer, _tokenIdSupply, _qty);
     }
 
-    /**
-     * @notice Creating a new token type, serving as the base for tokenID generation for NFTs, and a de facto ID for FTs.
-     * @param _isNonFungible   Flag for generating NFT or FT
-     * @return _tokenType   Returns a newly generated token type
-     */
-    function generateTokenType(bool _isNonFungible)
-        internal
-        returns (uint256 _tokenType)
-    {
-        typeId++;
-
-        if (_isNonFungible) {
-            _tokenType = TYPE_NF_BIT | (typeId << 128); //upper bit is 1, followed by sequence, leaving lower 128-bits as 0
-        } else {
-            _tokenType = typeId << 128; //upper bit is not set, followed by sequence, leaving lower 128-bits as 0
-        }
-
-        return _tokenType;
-    }
 
     /* solhint-disable */
 
