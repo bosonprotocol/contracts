@@ -2,11 +2,12 @@ import {ethers} from 'hardhat';
 import Utils from './utils';
 
 import {
-  ERC1155ERC721,
   VoucherKernel,
   Cashier,
   BosonRouter,
   MockERC20Permit,
+  VoucherSets,
+  Vouchers,
 } from '../typechain';
 
 class UtilsBuilder {
@@ -45,7 +46,9 @@ class UtilsBuilder {
       VoucherKernel: await ethers.getContractFactory('VoucherKernel'),
       Cashier: await ethers.getContractFactory('Cashier'),
       BosonRouter: await ethers.getContractFactory('BosonRouter'),
-      ERC1155ERC721: await ethers.getContractFactory('ERC1155ERC721'),
+      //ERC1155ERC721: await ethers.getContractFactory('ERC1155ERC721'),
+      VoucherSets: await ethers.getContractFactory('VoucherSets'),
+      Vouchers: await ethers.getContractFactory('Vouchers'),
       TokenRegistry: await ethers.getContractFactory('TokenRegistry'),
       MockERC20Permit: await ethers.getContractFactory('MockERC20Permit'),
     };
@@ -54,7 +57,8 @@ class UtilsBuilder {
   }
 
   async buildAsync(
-    erc1155721: ERC1155ERC721,
+    voucherSets: VoucherSets,
+    vouchers: Vouchers,
     voucherKernel: VoucherKernel,
     cashier: Cashier,
     bsnRouter: BosonRouter,
@@ -62,7 +66,8 @@ class UtilsBuilder {
     bsnTokenDeposit?: MockERC20Permit
   ): Promise<Utils> {
     this.utils.setContracts(
-      erc1155721,
+      voucherSets,
+      vouchers,
       voucherKernel,
       cashier,
       bsnRouter,

@@ -10,7 +10,9 @@ import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
 const BN = ethers.BigNumber.from;
 
 import {
-  ERC1155ERC721__factory,
+  //ERC1155ERC721__factory,
+  VoucherSets__factory,
+  Vouchers__factory,
   VoucherKernel__factory,
   Cashier__factory,
   BosonRouter__factory,
@@ -19,7 +21,9 @@ import {
 } from '../typechain';
 
 import {
-  ERC1155ERC721,
+  //ERC1155ERC721,
+  VoucherSets,
+  Vouchers,
   VoucherKernel,
   Cashier,
   BosonRouter,
@@ -58,15 +62,18 @@ class Utils {
     returnTx?
   ) => any;
   factories?: {
-    ERC1155ERC721: ERC1155ERC721__factory | any;
+    VoucherSets: VoucherSets__factory | any;
+    Vouchers: Vouchers__factory | any;
     VoucherKernel: VoucherKernel__factory | any;
     Cashier: Cashier__factory | any;
     BosonRouter: BosonRouter__factory | any;
     TokenRegistry: TokenRegistry__factory | any;
     MockERC20Permit: MockERC20Permit__factory | any;
   };
+
   deadline: any;
-  contractERC1155ERC721?: ERC1155ERC721;
+  contractVoucherSets?: VoucherSets;
+  contractVouchers?: Vouchers;
   contractVoucherKernel?: VoucherKernel;
   contractCashier?: Cashier;
   contractBSNRouter?: BosonRouter;
@@ -79,14 +86,18 @@ class Utils {
   }
 
   setContracts(
-    erc1155721: ERC1155ERC721,
+    //erc1155721: ERC1155ERC721,
+    voucherSets: VoucherSets,
+    vouchers: Vouchers,
     voucherKernel: VoucherKernel,
     cashier: Cashier,
     bsnRouter: BosonRouter,
     bsnTokenPrice?: MockERC20Permit,
     bsnTokenDeposit?: MockERC20Permit
   ): void {
-    this.contractERC1155ERC721 = erc1155721;
+    //this.contractERC1155ERC721 = erc1155721;
+    this.contractVoucherSets = voucherSets;
+    this.contractVouchers = vouchers;
     this.contractVoucherKernel = voucherKernel;
     this.contractCashier = cashier;
     this.contractBSNRouter = bsnRouter;
@@ -774,9 +785,9 @@ class Utils {
     signer: Signer
   ): Promise<ContractTransaction> {
     const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
-    const fromInstance = this.contractERC1155ERC721.connect(
+    const fromInstance = this.contractVouchers.connect(
       signer
-    ) as ERC1155ERC721;
+    ) as Vouchers;
 
     const method = fromInstance.functions[fnSignatures.safeTransfer721];
 
@@ -794,9 +805,9 @@ class Utils {
     voucherID: string,
     signer: Signer
   ): Promise<ContractTransaction> {
-    const fromInstance = this.contractERC1155ERC721.connect(
+    const fromInstance = this.contractVouchers.connect(
       signer
-    ) as ERC1155ERC721;
+    ) as Vouchers;
 
     const method =
       fromInstance.functions[fnSignatures.safeTransfer721WithNoData];
@@ -812,9 +823,9 @@ class Utils {
     signer: Signer
   ): Promise<ContractTransaction> {
     const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
-    const fromInstance = this.contractERC1155ERC721.connect(
+    const fromInstance = this.contractVoucherSets.connect(
       signer
-    ) as ERC1155ERC721;
+    ) as VoucherSets;
 
     const method = fromInstance.functions[fnSignatures.safeTransfer1155];
 
@@ -835,9 +846,9 @@ class Utils {
     signer: Signer
   ): Promise<ContractTransaction> {
     const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
-    const fromInstance = this.contractERC1155ERC721.connect(
+    const fromInstance = this.contractVoucherSets.connect(
       signer
-    ) as ERC1155ERC721;
+    ) as VoucherSets;
 
     const method = fromInstance.functions[fnSignatures.safeBatchTransfer1155];
 
@@ -856,9 +867,9 @@ class Utils {
     voucherID: string,
     signer: Signer
   ): Promise<ContractTransaction> {
-    const fromInstance = this.contractERC1155ERC721.connect(
+    const fromInstance = this.contractVouchers.connect(
       signer
-    ) as ERC1155ERC721;
+    ) as Vouchers;
 
     const method = fromInstance.functions[fnSignatures.transfer721];
 
