@@ -4053,30 +4053,6 @@ describe('Cashier and VoucherKernel', () => {
 
     describe('Action at wrong step', () => {
       let tokenVoucherId;
-
-      const statuses = {
-        commit: 7,
-        redeem: 6,
-        refund: 5,
-        expire: 4,
-        complain: 3,
-        cancel: 2,
-        finalize: 1,
-      };
-
-      function determineStatus(_status, _changeIdx) {
-        return _status | (1 << _changeIdx);
-      }
-
-      function expectedVoucherStatus(path) {
-        let status = determineStatus(0, statuses.commit); // starting status == commit
-        for (const step of path) {
-          status = determineStatus(status, statuses[step]);
-        }
-
-        return status;
-      }
-
       beforeEach(async () => {
         await deployContracts();
         await setPeriods();
@@ -4678,9 +4654,7 @@ describe('Cashier and VoucherKernel', () => {
           await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
           await expect(
             utils.expire(tokenVoucherId, users.deployer.signer)
-          ).to.be.revertedWith(
-            revertReasons.INAPPLICABLE_STATUS
-          );
+          ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
 
           // revert to state before we advanced time
           await ethers.provider.send('evm_revert', [snapshot]);
@@ -4689,9 +4663,7 @@ describe('Cashier and VoucherKernel', () => {
         it('[NEGATIVE] EXPIRY before expiration time should be reverted', async () => {
           await expect(
             utils.expire(tokenVoucherId, users.deployer.signer)
-          ).to.be.revertedWith(
-            revertReasons.INAPPLICABLE_STATUS
-          );
+          ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
         });
 
         it('[NEGATIVE] COMMIT->CANCEL->COMPLAIN->FINALIZE', async () => {
@@ -4848,18 +4820,14 @@ describe('Cashier and VoucherKernel', () => {
         it('[NEGATIVE] Finalize before complain period end should have no effect', async () => {
           await expect(
             utils.finalize(tokenVoucherId, users.deployer.signer)
-          ).to.be.revertedWith(
-            revertReasons.INAPPLICABLE_STATUS
-          );
+          ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
         });
 
         it('[NEGATIVE] COMMIT->CANCEL->!FINALIZE', async () => {
           await utils.cancel(tokenVoucherId, users.seller.signer);
           await expect(
             utils.finalize(tokenVoucherId, users.deployer.signer)
-          ).to.be.revertedWith(
-            revertReasons.INAPPLICABLE_STATUS
-          );
+          ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
         });
 
         describe('REDEEM', () => {
@@ -4870,27 +4838,21 @@ describe('Cashier and VoucherKernel', () => {
           it('[NEGATIVE] COMMIT->REDEEM->FINALIZE', async () => {
             await expect(
               utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.be.revertedWith(
-              revertReasons.INAPPLICABLE_STATUS
-            );
+            ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
           });
 
           it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->FINALIZE', async () => {
             await utils.complain(tokenVoucherId, users.buyer.signer);
             await expect(
               utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.be.revertedWith(
-              revertReasons.INAPPLICABLE_STATUS
-            );
+            ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
           });
 
           it('[NEGATIVE] COMMIT->REDEEM->CANCEL->FINALIZE', async () => {
             await utils.cancel(tokenVoucherId, users.seller.signer);
             await expect(
               utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.be.revertedWith(
-              revertReasons.INAPPLICABLE_STATUS
-            );
+            ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
           });
         });
 
@@ -4902,27 +4864,21 @@ describe('Cashier and VoucherKernel', () => {
           it('[NEGATIVE] COMMIT->REFUND->FINALIZE', async () => {
             await expect(
               utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.be.revertedWith(
-              revertReasons.INAPPLICABLE_STATUS
-            );
+            ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
           });
 
           it('[NEGATIVE] COMMIT->REFUND->COMPLAIN->FINALIZE', async () => {
             await utils.complain(tokenVoucherId, users.buyer.signer);
             await expect(
               utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.be.revertedWith(
-              revertReasons.INAPPLICABLE_STATUS
-            );
+            ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
           });
 
           it('[NEGATIVE] COMMIT->REFUND->CANCEL->FINALIZE', async () => {
             await utils.cancel(tokenVoucherId, users.seller.signer);
             await expect(
               utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.be.revertedWith(
-              revertReasons.INAPPLICABLE_STATUS
-            );
+            ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
           });
         });
 
@@ -4935,27 +4891,21 @@ describe('Cashier and VoucherKernel', () => {
           it('[NEGATIVE] COMMIT->EXPIRE->FINALIZE', async () => {
             await expect(
               utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.be.revertedWith(
-              revertReasons.INAPPLICABLE_STATUS
-            );
+            ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
           });
 
           it('[NEGATIVE] COMMIT->EXPIRE->COMPLAIN->FINALIZE', async () => {
             await utils.complain(tokenVoucherId, users.buyer.signer);
             await expect(
               utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.be.revertedWith(
-              revertReasons.INAPPLICABLE_STATUS
-            );
+            ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
           });
 
           it('[NEGATIVE] COMMIT->EXPIRE->CANCEL->FINALIZE', async () => {
             await utils.cancel(tokenVoucherId, users.seller.signer);
             await expect(
               utils.finalize(tokenVoucherId, users.deployer.signer)
-            ).to.be.revertedWith(
-              revertReasons.INAPPLICABLE_STATUS
-            );
+            ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
           });
         });
       });

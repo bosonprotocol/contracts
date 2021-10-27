@@ -159,7 +159,7 @@ describe('Cashier withdrawals ', () => {
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
   }
 
-  describe.only('Withdraw scenarios', () => {
+  describe('Withdraw scenarios', () => {
     const paymentType = {
       PAYMENT: 0,
       DEPOSIT_SELLER: 1,
@@ -378,10 +378,11 @@ describe('Cashier withdrawals ', () => {
               }
               paymentWithdrawn = true;
             } else {
-              await expect(utils.withdraw(voucherID, users.deployer.signer))
-              .to.be.revertedWith(revertReasons.NO_WITHDRAWALS);
+              await expect(
+                utils.withdraw(voucherID, users.deployer.signer)
+              ).to.be.revertedWith(revertReasons.NO_WITHDRAWALS);
             }
-            
+
             await checkEscrowAmounts('betweenPaymentAndDepositRelease');
             if (checkTokenBalances)
               await checkTokenBalances(
