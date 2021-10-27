@@ -29,10 +29,6 @@ import * as eventUtils from '../testHelpers/events';
 const eventNames = eventUtils.eventNames;
 import fnSignatures from '../testHelpers/functionSignatures';
 
-import {waffle} from 'hardhat';
-import ERC721receiver from '../artifacts/contracts/mocks/MockERC721Receiver.sol/MockERC721Receiver.json';
-const {deployMockContract} = waffle;
-
 let utils: Utils;
 let users;
 
@@ -561,49 +557,13 @@ describe('VOUCHER KERNEL', () => {
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
       });
 
-      it('[NEGATIVE] Should revert if fillOrder is called with holder contract that does not support ERC721 interface', async () => {
-        const mockERC721Receiver = await deployMockContract(
-          users.deployer.signer,
-          ERC721receiver.abi
-        ); //deploys mock
-
-        await mockERC721Receiver.mock.supportsInterface
-          .withArgs('0x150b7a02')
-          .returns(false);
-
+      it('[NEGATIVE] Should revert if fillOrder is called with holder contract that does not support ERC721', async () => {
+        const nonERC721SupportingContract = contractCashier;
         await expect(
           contractVoucherKernel.fillOrder(
             tokenSupplyId,
             users.seller.address,
-            mockERC721Receiver.address,
-            1
-          )
-        ).to.be.revertedWith(revertReasons.UNSUPPORTED_ERC721_RECEIVED);
-      });
-
-      it('[NEGATIVE] Should revert if fillOrder is called with holder contract that does not implement onERC721Received', async () => {
-        const mockERC721Receiver = await deployMockContract(
-          users.deployer.signer,
-          ERC721receiver.abi
-        ); //deploys mock
-
-        await mockERC721Receiver.mock.supportsInterface
-          .withArgs('0x150b7a02')
-          .returns(true);
-        await mockERC721Receiver.mock.onERC721Received
-          .withArgs(
-            users.seller.address,
-            users.deployer.address,
-            tokenSupplyId,
-            '0x'
-          )
-          .returns('0x00000000');
-
-        await expect(
-          contractVoucherKernel.fillOrder(
-            tokenSupplyId,
-            users.seller.address,
-            mockERC721Receiver.address,
+            nonERC721SupportingContract.address,
             1
           )
         ).to.be.revertedWith(revertReasons.UNSUPPORTED_ERC721_RECEIVED);
