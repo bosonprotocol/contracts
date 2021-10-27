@@ -300,21 +300,22 @@ class Utils {
     const sellerInstance = this.contractBSNRouter.connect(
       seller.signer
     ) as BosonRouter;
-    const txOrder = await sellerInstance.requestCreateOrderTKNTKNWithPermitConditional(
-      this.contractBSNTokenPrice.address,
-      this.contractBSNTokenDeposit.address,
-      txValue,
-      this.deadline,
-      v,
-      r,
-      s,
-      [from, to, promisePrice, sellerDeposit, buyerDeposit, qty],
-      gateContract.address,
-      nftTokenId || '0',
-      {
-        from: seller.address,
-      }
-    );
+    const txOrder =
+      await sellerInstance.requestCreateOrderTKNTKNWithPermitConditional(
+        this.contractBSNTokenPrice.address,
+        this.contractBSNTokenDeposit.address,
+        txValue,
+        this.deadline,
+        v,
+        r,
+        s,
+        [from, to, promisePrice, sellerDeposit, buyerDeposit, qty],
+        gateContract.address,
+        nftTokenId || '0',
+        {
+          from: seller.address,
+        }
+      );
 
     if (returnTx) return txOrder;
 

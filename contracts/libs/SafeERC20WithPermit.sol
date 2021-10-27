@@ -47,11 +47,10 @@ library SafeERC20WithPermit {
         // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
         // the target address contains contract code and also asserts for success in the low-level call.
 
-        bytes memory returndata =
-            address(_token).functionCall(
-                _data,
-                "SafeERC20WithPermit: low-level call failed"
-            );
+        bytes memory returndata = address(_token).functionCall(
+            _data,
+            "SafeERC20WithPermit: low-level call failed"
+        );
         if (returndata.length > 0) {
             // Return data is optional
             // solhint-disable-next-line max-line-length
