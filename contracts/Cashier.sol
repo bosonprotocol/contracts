@@ -787,8 +787,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     ) internal
       notZeroAddress(_recipient)
     {
-        require(_amount > 0, "NO_FUNDS_TO_WITHDRAW");
-
         if (_paymentMethod == ETHETH || _paymentMethod == ETHTKN) {
             payable(_recipient).sendValue(_amount);
             emit LogWithdrawal(msg.sender, _recipient, _amount);
