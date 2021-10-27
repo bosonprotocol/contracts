@@ -231,6 +231,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
     nonReentrant
     onlyFromRouter
     returns (uint256) {
+        require(_quantity > 0, "INVALID_QUANTITY");
         require(_validFrom <= _validTo, "INVALID_VALIDITY_FROM");
         // solhint-disable-next-line not-rely-on-time
         require(_validTo >= block.timestamp + 5 minutes, "INVALID_VALIDITY_TO");
@@ -311,10 +312,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         bytes32 _promiseId,
         uint256 _quantity
     ) private returns (uint256) {
-        require(_promiseId != bytes32(0), "UNSPECIFIED_PROMISE");
-        require(promises[_promiseId].seller == _seller, "UNAUTHORIZED_CO");
-        require(_quantity > 0, "INVALID_QUANTITY");
-
         uint256 tokenIdSupply = generateTokenType(true); //create & assign a new non-fungible type
 
         ordersPromise[tokenIdSupply] = _promiseId;
