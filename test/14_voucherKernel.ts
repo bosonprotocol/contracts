@@ -105,8 +105,9 @@ describe('VOUCHER KERNEL', () => {
       'BDEP'
     )) as Contract & MockERC20Permit;
 
-    contractMockERC721Receiver = (await MockERC721Receiver_Factory.deploy()) as Contract &
-      MockERC721Receiver;
+    contractMockERC721Receiver =
+      (await MockERC721Receiver_Factory.deploy()) as Contract &
+        MockERC721Receiver;
 
     await contractTokenRegistry.deployed();
     await contractERC1155ERC721.deployed();

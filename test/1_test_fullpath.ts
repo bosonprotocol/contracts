@@ -153,10 +153,10 @@ describe('Voucher tests', () => {
 
     const sixtySeconds = 60;
 
-    contractTokenRegistry_2 = (await TokenRegistry_Factory2.deploy()) as Contract &
-      TokenRegistry;
-    contractERC1155ERC721_2 = (await ERC1155ERC721_Factory2.deploy()) as Contract &
-      ERC1155ERC721;
+    contractTokenRegistry_2 =
+      (await TokenRegistry_Factory2.deploy()) as Contract & TokenRegistry;
+    contractERC1155ERC721_2 =
+      (await ERC1155ERC721_Factory2.deploy()) as Contract & ERC1155ERC721;
     contractVoucherKernel_2 = (await VoucherKernel_Factory2.deploy(
       contractERC1155ERC721_2.address
     )) as Contract & VoucherKernel;
@@ -221,7 +221,8 @@ describe('Voucher tests', () => {
     });
 
     it('Should have set contract addresses properly for ERC1155ERC721', async () => {
-      const voucherKernel = await contractERC1155ERC721.getVoucherKernelAddress();
+      const voucherKernel =
+        await contractERC1155ERC721.getVoucherKernelAddress();
       const cashier = await contractERC1155ERC721.getCashierAddress();
 
       assert.equal(voucherKernel, contractVoucherKernel.address);
@@ -229,7 +230,8 @@ describe('Voucher tests', () => {
     });
 
     it('Should have set contract addresses properly for VoucherKernel', async () => {
-      const tokensContract = await contractVoucherKernel.getTokensContractAddress();
+      const tokensContract =
+        await contractVoucherKernel.getTokensContractAddress();
 
       assert.equal(tokensContract, contractERC1155ERC721.address);
     });
@@ -1483,9 +1485,8 @@ describe('Voucher tests', () => {
       );
       assert.equal(promiseKeyFromContract1, promisekey1, 'Wrong promise key 1');
 
-      const promiseKeyFromContract2 = await contractVoucherKernel_2.getPromiseKey(
-        0
-      );
+      const promiseKeyFromContract2 =
+        await contractVoucherKernel_2.getPromiseKey(0);
       assert.equal(promiseKeyFromContract2, promisekey2, 'Wrong promise key 2');
     });
   });
@@ -1673,7 +1674,8 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       );
 
       //Check VoucherKernel state
-      const newCancelOrFaultPeriod = await contractVoucherKernel.getCancelFaultPeriod();
+      const newCancelOrFaultPeriod =
+        await contractVoucherKernel.getCancelFaultPeriod();
       assert.isTrue(newCancelOrFaultPeriod.eq(BN(cancelFaultPeriodSeconds)));
     });
 
