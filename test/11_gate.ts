@@ -70,9 +70,10 @@ describe('Gate contract', async () => {
     contractBSNTokenDeposit: MockERC20Permit;
 
   async function deployContracts() {
-    contractERC1155NonTransferable = (await ERC1155NonTransferable_Factory.deploy(
-      'https://token-cdn-domain/{id}.json'
-    )) as Contract & ERC1155NonTransferable;
+    contractERC1155NonTransferable =
+      (await ERC1155NonTransferable_Factory.deploy(
+        'https://token-cdn-domain/{id}.json'
+      )) as Contract & ERC1155NonTransferable;
     const routerAddress =
       (contractBosonRouter && contractBosonRouter.address) ||
       users.other1.address; // if router is not initalized use mock address
@@ -468,10 +469,8 @@ describe('Gate contract', async () => {
 
     describe('Voucher set registered by Boson protocol', () => {
       it('Boson router should be able to deactivate voucher set id', async () => {
-        const {
-          tokenId,
-          nftTokenID,
-        } = await registerVoucherSetIdFromBosonProtocol(contractGate, 0);
+        const {tokenId, nftTokenID} =
+          await registerVoucherSetIdFromBosonProtocol(contractGate, 0);
 
         await contractGate.registerVoucherSetId(tokenId, nftTokenID);
 
@@ -491,10 +490,8 @@ describe('Gate contract', async () => {
       });
 
       it('[NEGATIVE] Should revert if attacker tries to deactivate voucher set id', async () => {
-        const {
-          tokenId,
-          nftTokenID,
-        } = await registerVoucherSetIdFromBosonProtocol(contractGate, 0);
+        const {tokenId, nftTokenID} =
+          await registerVoucherSetIdFromBosonProtocol(contractGate, 0);
 
         await contractGate.registerVoucherSetId(tokenId, nftTokenID);
 

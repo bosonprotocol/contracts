@@ -27,6 +27,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     bool private disasterState;
 
     enum PaymentType {PAYMENT, DEPOSIT_SELLER, DEPOSIT_BUYER}
+    enum Role {ISSUER, HOLDER}
 
     mapping(address => uint256) private escrow; // both types of deposits AND payments >> can be released token-by-token if checks pass
     // slashedDepositPool can be obtained through getEscrowAmount(poolAddress)
@@ -277,71 +278,22 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      */
     function releasePayments(VoucherDetails memory _voucherDetails) internal {
         if (isStatus(_voucherDetails.currStatus.status, IDX_REDEEM)) {
-            releasePaymentToSeller(_voucherDetails);
+            releasePayment(_voucherDetails, Role.ISSUER);
         } else if (
             isStatus(_voucherDetails.currStatus.status, IDX_REFUND) ||
             isStatus(_voucherDetails.currStatus.status, IDX_EXPIRE) ||
             (isStatus(_voucherDetails.currStatus.status, IDX_CANCEL_FAULT) &&
                 !isStatus(_voucherDetails.currStatus.status, IDX_REDEEM))
-        ) {
-            releasePaymentToBuyer(_voucherDetails);
+        ) { 
+            releasePayment(_voucherDetails, Role.HOLDER);
         }
     }
 
     /**
-     * @notice Following function `releasePayments`, if certain conditions for the voucher status are met, the voucher price will be sent to the seller
+     * @notice Following function `releasePayments`, if certain conditions for the voucher status are met, the voucher price will be sent to the seller or the buyer
      * @param _voucherDetails keeps all required information of the voucher which the payment should be released for.
      */
-    function releasePaymentToSeller(VoucherDetails memory _voucherDetails)
-        internal
-    {
-        if (
-            _voucherDetails.paymentMethod == ETHETH ||
-            _voucherDetails.paymentMethod == ETHTKN
-        ) {
-            escrow[_voucherDetails.holder] = escrow[_voucherDetails.holder].sub(
-                _voucherDetails.price
-            );
-        }
-        if (
-            _voucherDetails.paymentMethod == TKNETH ||
-            _voucherDetails.paymentMethod == TKNTKN
-        ) {
-            address addressTokenPrice =
-                IVoucherKernel(voucherKernel).getVoucherPriceToken(
-                    _voucherDetails.tokenIdSupply
-                );
-
-            escrowTokens[addressTokenPrice][
-                _voucherDetails.holder
-            ] = escrowTokens[addressTokenPrice][_voucherDetails.holder].sub(
-                _voucherDetails.price
-            );
-        }
-
-        _voucherDetails.price2issuer = _voucherDetails.price2issuer.add(
-            _voucherDetails.price
-        );
-
-        IVoucherKernel(voucherKernel).setPaymentReleased(
-            _voucherDetails.tokenIdVoucher
-        );
-
-        emit LogAmountDistribution(
-            _voucherDetails.tokenIdVoucher,
-            _voucherDetails.issuer,
-            _voucherDetails.price,
-            PaymentType.PAYMENT
-        );
-    }
-
-    /**
-     * @notice Following function `releasePayments`, if certain conditions for the voucher status are met, the voucher price will be sent to the buyer
-     * @param _voucherDetails keeps all required information of the voucher, which the payment should be released for.
-     */
-    function releasePaymentToBuyer(VoucherDetails memory _voucherDetails)
-        internal
-    {
+    function releasePayment(VoucherDetails memory _voucherDetails, Role _role) internal {
         if (
             _voucherDetails.paymentMethod == ETHETH ||
             _voucherDetails.paymentMethod == ETHTKN
@@ -367,9 +319,15 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             );
         }
 
-        _voucherDetails.price2holder = _voucherDetails.price2holder.add(
+        if (_role == Role.ISSUER) {
+            _voucherDetails.price2issuer = _voucherDetails.price2issuer.add(
             _voucherDetails.price
         );
+        } else {
+            _voucherDetails.price2holder = _voucherDetails.price2holder.add(
+            _voucherDetails.price
+        ); 
+        }
 
         IVoucherKernel(voucherKernel).setPaymentReleased(
             _voucherDetails.tokenIdVoucher
@@ -377,7 +335,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
         emit LogAmountDistribution(
             _voucherDetails.tokenIdVoucher,
-            _voucherDetails.holder,
+            _role == Role.ISSUER ? _voucherDetails.issuer : _voucherDetails.holder,
             _voucherDetails.price,
             PaymentType.PAYMENT
         );

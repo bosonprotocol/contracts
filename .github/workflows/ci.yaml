@@ -1,0 +1,75 @@
+name: Contracts CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PROTOCOL_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
+      CC_TOKEN_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
+    name: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '12'
+          cache: 'npm'
+      - run: npm install
+      - run: npm run contracts:compile
+      - run: npm run contracts:lint
+      - run: npm run contracts:format
+      - run: npm run tests:lint
+      - run: npm run tests:format
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      PROTOCOL_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
+      CC_TOKEN_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
+    name: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '12'
+          cache: 'npm'
+      - name: Install Dependencies
+        run: npm install
+      - name: Compile Contracts
+        run: npm run contracts:compile
+      - name: Run code coverage
+        run: npm run tests:coverage
+      - name: Check code coverage
+        shell: bash
+        run: |
+          MIN_COVERAGE=90.00
+          COVERAGE=`grep -a -m 1 -h -r '<span class="strong">' coverage/index.html | head -1 | sed 's/^[^>]*>//' | sed 's/%.*$//'`
+          echo "solidity code coverage is '$COVERAGE'"
+          if (( $(echo "$COVERAGE < $MIN_COVERAGE" | bc -l) )); then echo "Fail: code coverage '$COVERAGE' is lower than configured '$MIN_COVERAGE'" >&2; exit 1; fi
+
+
+  snyk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
+        continue-on-error: true # To make sure that SARIF upload gets called
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --sarif-file-output=snyk.sarif
+      - name: Upload result to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: snyk.sarif
