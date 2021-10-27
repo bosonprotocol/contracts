@@ -704,5 +704,24 @@ describe('VOUCHER KERNEL', () => {
         ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
       });
     });
+
+    it('[NEGATIVE][createTokenSupplyId] Should revert if quantity is zero', async () => {
+      await deployContracts();
+
+      // spoof boson router address
+      await contractVoucherKernel.setBosonRouterAddress(users.deployer.address);
+
+      await expect(
+        contractVoucherKernel.createTokenSupplyId(
+          users.other1.address,
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITSE1,
+          constants.PROMISE_DEPOSITBU1,
+          constants.ZERO
+        )
+      ).to.be.revertedWith(revertReasons.INVALID_QUANTITY_LONG);
+    });
   });
 });

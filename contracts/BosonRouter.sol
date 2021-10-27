@@ -58,6 +58,10 @@ contract BosonRouter is
         address indexed _gateAddress
     );
 
+    event LogVoucherKernelSet(address _newVoucherKernel, address _triggeredBy);
+    event LogTokenRegistrySet(address _newTokenRegistry, address _triggeredBy);
+    event LogCashierSet(address _newCashier, address _triggeredBy);
+
     /**
      * @notice Acts as a modifier, but it's cheaper. Checking if a non-zero address is provided, otherwise reverts.
      */
@@ -1191,5 +1195,50 @@ contract BosonRouter is
             require(gateContract.check(msg.sender, _tokenIdSupply),"NE"); // not eligible
             gateContract.deactivate(msg.sender, _tokenIdSupply);
         }
+    }
+
+    /**
+     * @notice Set the address of the VoucherKernel contract
+     * @param _voucherKernelAddress   The address of the VoucherKernel contract
+     */
+    function setVoucherKernelAddress(address _voucherKernelAddress)
+        external
+        onlyOwner
+    {
+        notZeroAddress(_voucherKernelAddress);
+
+        voucherKernel = _voucherKernelAddress;
+
+        emit LogVoucherKernelSet(_voucherKernelAddress, msg.sender);
+    }
+
+    /**
+     * @notice Set the address of the TokenRegistry contract
+     * @param _tokenRegistryAddress   The address of the TokenRegistry contract
+     */
+    function setTokenRegistryAddress(address _tokenRegistryAddress)
+        external
+        onlyOwner
+    {
+        notZeroAddress(_tokenRegistryAddress);
+
+        tokenRegistry = _tokenRegistryAddress;
+
+        emit LogTokenRegistrySet(_tokenRegistryAddress, msg.sender);
+    }
+
+    /**
+     * @notice Set the address of the Cashier contract
+     * @param _cashierAddress   The address of the Cashier contract
+     */
+    function setCashierAddress(address _cashierAddress)
+        external
+        onlyOwner
+    {
+        notZeroAddress(_cashierAddress);
+
+        cashierAddress = _cashierAddress;
+
+        emit LogCashierSet(_cashierAddress, msg.sender);
     }
 }
