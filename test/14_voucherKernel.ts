@@ -29,6 +29,10 @@ import * as eventUtils from '../testHelpers/events';
 const eventNames = eventUtils.eventNames;
 import fnSignatures from '../testHelpers/functionSignatures';
 
+import {waffle} from 'hardhat';
+import ERC721receiver from '../artifacts/contracts/mocks/MockERC721Receiver.sol/MockERC721Receiver.json';
+const {deployMockContract} = waffle;
+
 let utils: Utils;
 let users;
 
@@ -567,6 +571,46 @@ describe('VOUCHER KERNEL', () => {
             1
           )
         ).to.be.revertedWith(revertReasons.UNSUPPORTED_ERC721_RECEIVED);
+      });
+
+      it('[NEGATIVE] Should revert if fillOrder is called with holder contract that does not implement onERC721Received', async () => {
+        const mockERC721Receiver = await deployMockContract(
+          users.deployer.signer,
+          ERC721receiver.abi
+        ); //deploys mock
+
+        await mockERC721Receiver.mock.onERC721Received.returns('0x00000000');
+
+        await expect(
+          contractVoucherKernel.fillOrder(
+            tokenSupplyId,
+            users.seller.address,
+            mockERC721Receiver.address,
+            1
+          )
+        ).to.be.revertedWith(revertReasons.UNSUPPORTED_ERC721_RECEIVED);
+      });
+
+      it('[NEGATIVE] Should revert with same revert reason as any arbitrary revert reason of the holder contract', async () => {
+        const mockERC721Receiver = await deployMockContract(
+          users.deployer.signer,
+          ERC721receiver.abi
+        ); //deploys mock
+
+        const arbitraryRevertReason = 'arbitrary revert reason';
+
+        await mockERC721Receiver.mock.onERC721Received.revertsWithReason(
+          arbitraryRevertReason
+        );
+
+        await expect(
+          contractVoucherKernel.fillOrder(
+            tokenSupplyId,
+            users.seller.address,
+            mockERC721Receiver.address,
+            1
+          )
+        ).to.be.revertedWith(arbitraryRevertReason);
       });
 
       it('Should be possible to call fillOrder with holder contract that can receive ERC721', async () => {
