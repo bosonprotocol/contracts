@@ -95,10 +95,10 @@ describe('Admin functionality', async () => {
 
     const sixtySeconds = 60;
 
-    contractTokenRegistry_2 = (await TokenRegistry_Factory2.deploy()) as Contract &
-      TokenRegistry;
-    contractERC1155ERC721_2 = (await ERC1155ERC721_Factory2.deploy()) as Contract &
-      ERC1155ERC721;
+    contractTokenRegistry_2 =
+      (await TokenRegistry_Factory2.deploy()) as Contract & TokenRegistry;
+    contractERC1155ERC721_2 =
+      (await ERC1155ERC721_Factory2.deploy()) as Contract & ERC1155ERC721;
     contractVoucherKernel_2 = (await VoucherKernel_Factory2.deploy(
       contractERC1155ERC721_2.address
     )) as Contract & VoucherKernel;

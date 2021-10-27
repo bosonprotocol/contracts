@@ -126,23 +126,22 @@ contract ERC20WithPermit is IERC20WithPermit, Pausable {
         // solhint-disable-next-line
         require(_deadline >= block.timestamp, "ERC20WithPermit: EXPIRED");
 
-        bytes32 digest =
-            keccak256(
-                abi.encodePacked(
-                    "\x19\x01",
-                    DOMAIN_SEPARATOR,
-                    keccak256(
-                        abi.encode(
-                            PERMIT_TYPEHASH,
-                            _owner,
-                            _spender,
-                            _value,
-                            nonces[_owner]++,
-                            _deadline
-                        )
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                DOMAIN_SEPARATOR,
+                keccak256(
+                    abi.encode(
+                        PERMIT_TYPEHASH,
+                        _owner,
+                        _spender,
+                        _value,
+                        nonces[_owner]++,
+                        _deadline
                     )
                 )
-            );
+            )
+        );
 
         address recoveredAddress = ecrecover(digest, _v, _r, _s);
         require(
