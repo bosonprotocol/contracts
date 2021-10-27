@@ -210,8 +210,9 @@ describe('ERC1155 non transferable functionality', async () => {
       ).to.equal(newUri);
     });
 
-    it('Tokens are non-transferable', async () => {
+    it('[NEGATIVE] Regular users cannot execute transfer', async () => {
       const nftTokenID = BN('2');
+
       await contractERC1155NonTransferable.mint(
         users.other1.address,
         nftTokenID,
@@ -219,13 +220,33 @@ describe('ERC1155 non transferable functionality', async () => {
         constants.ZERO_BYTES
       );
 
-      const ownerInstance = contractERC1155NonTransferable.connect(
+      const tokenOwnerInstance = contractERC1155NonTransferable.connect(
         users.other1.signer
       );
 
       await expect(
-        ownerInstance.safeTransferFrom(
+        tokenOwnerInstance.safeTransferFrom(
           users.other1.address,
+          users.other2.address,
+          nftTokenID,
+          constants.ONE,
+          constants.ZERO_BYTES
+        )
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+
+    it('[NEGATIVE] Tokens are non-transferable', async () => {
+      const nftTokenID = BN('2');
+      await contractERC1155NonTransferable.mint(
+        users.deployer.address,
+        nftTokenID,
+        constants.ONE,
+        constants.ZERO_BYTES
+      );
+
+      await expect(
+        contractERC1155NonTransferable.safeTransferFrom(
+          users.deployer.address,
           users.other2.address,
           nftTokenID,
           constants.ONE,
@@ -235,7 +256,7 @@ describe('ERC1155 non transferable functionality', async () => {
 
       expect(
         await contractERC1155NonTransferable.balanceOf(
-          users.other1.address,
+          users.deployer.address,
           nftTokenID
         )
       ).to.equal(constants.ONE);
