@@ -817,17 +817,15 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         Promise memory tPromise =
             promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
 
-        if (
-            tPromise.validTo < block.timestamp &&
-            isStateCommitted(vouchersStatus[_tokenIdVoucher].status)
-        ) {
-            vouchersStatus[_tokenIdVoucher].status = determineStatus(
-                vouchersStatus[_tokenIdVoucher].status,
-                IDX_EXPIRE
-            );
+        require(tPromise.validTo < block.timestamp &&
+        isStateCommitted(vouchersStatus[_tokenIdVoucher].status),'INAPPLICABLE_STATUS');
 
-            emit LogExpirationTriggered(_tokenIdVoucher, msg.sender);
-        }
+        vouchersStatus[_tokenIdVoucher].status = determineStatus(
+            vouchersStatus[_tokenIdVoucher].status,
+            IDX_EXPIRE
+        );
+
+        emit LogExpirationTriggered(_tokenIdVoucher, msg.sender);
     }
 
     /**

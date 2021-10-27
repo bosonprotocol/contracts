@@ -4670,59 +4670,44 @@ describe('Cashier and VoucherKernel', () => {
         });
       });
 
-      describe('EXPIRY after some other action', () => {
-        async function testTriggerExpiraton(path) {
+      describe.only('EXPIRY after some other action', () => {
+        async function testTriggerExpiraton() {
           // to try expiration we should go to the future, but then other methods might fail as well.
           // therefore we revert to the state before advancing in the future
           const snapshot = await ethers.provider.send('evm_snapshot', []);
           await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
-          expect(
-            await utils.expire(tokenVoucherId, users.deployer.signer)
-          ).to.not.emit(
-            contractVoucherKernel,
-            eventNames.LOG_EXPIRATION_TRIGGERED
-          );
-
-          const voucherStatus = (
-            await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-          )[0];
-          assert.equal(
-            voucherStatus,
-            expectedVoucherStatus(path),
-            `Wrong voucher status after ${path}`
+          await expect(
+            utils.expire(tokenVoucherId, users.deployer.signer)
+          ).to.be.revertedWith(
+            revertReasons.INAPPLICABLE_STATUS
           );
 
           // revert to state before we advanced time
           await ethers.provider.send('evm_revert', [snapshot]);
         }
 
-        it('[NEGATIVE] EXPIRY before expiration time should have no effect', async () => {
-          await advanceTimeSeconds(constants.SECONDS_IN_DAY + 1);
-          const voucherStatus = (
-            await contractVoucherKernel.getVoucherStatus(tokenVoucherId)
-          )[0];
-          assert.equal(
-            voucherStatus,
-            expectedVoucherStatus([]),
-            `Wrong voucher status`
+        it('[NEGATIVE] EXPIRY before expiration time should be reverted', async () => {
+          await expect(
+            utils.expire(tokenVoucherId, users.deployer.signer)
+          ).to.be.revertedWith(
+            revertReasons.INAPPLICABLE_STATUS
           );
         });
 
         it('[NEGATIVE] COMMIT->CANCEL->COMPLAIN->FINALIZE', async () => {
           await utils.cancel(tokenVoucherId, users.seller.signer);
-          await testTriggerExpiraton(['cancel']);
+          await testTriggerExpiraton();
           await utils.complain(tokenVoucherId, users.buyer.signer);
-          await testTriggerExpiraton(['cancel', 'complain']);
-          // await advanceTimeSeconds(60);
+          await testTriggerExpiraton();
           await utils.finalize(tokenVoucherId, users.deployer.signer);
-          await testTriggerExpiraton(['cancel', 'complain', 'finalize']);
+          await testTriggerExpiraton();
         });
 
         it('[NEGATIVE] COMMIT->CANCEL->FINALIZE', async () => {
           await utils.cancel(tokenVoucherId, users.seller.signer);
           await advanceTimeSeconds(60);
           await utils.finalize(tokenVoucherId, users.deployer.signer);
-          await testTriggerExpiraton(['cancel', 'finalize']);
+          await testTriggerExpiraton();
         });
 
         describe('REDEEM', () => {
@@ -4733,49 +4718,39 @@ describe('Cashier and VoucherKernel', () => {
           it('[NEGATIVE] COMMIT->REDEEM->FINALIZE', async () => {
             await advanceTimeSeconds(60);
             await utils.finalize(tokenVoucherId, users.deployer.signer);
-            await testTriggerExpiraton(['redeem', 'finalize']);
+            await testTriggerExpiraton();
           });
 
           it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->FINALIZE', async () => {
             await utils.complain(tokenVoucherId, users.buyer.signer);
-            await testTriggerExpiraton(['redeem', 'complain']);
+            await testTriggerExpiraton();
             await advanceTimeSeconds(60);
             await utils.finalize(tokenVoucherId, users.deployer.signer);
-            await testTriggerExpiraton(['redeem', 'complain', 'finalize']);
+            await testTriggerExpiraton();
           });
 
           it('[NEGATIVE] COMMIT->REDEEM->COMPLAIN->CANCEL->FINALIZE', async () => {
             await utils.complain(tokenVoucherId, users.buyer.signer);
             await utils.cancel(tokenVoucherId, users.seller.signer);
-            await testTriggerExpiraton(['redeem', 'complain', 'cancel']);
+            await testTriggerExpiraton();
             await utils.finalize(tokenVoucherId, users.deployer.signer);
-            await testTriggerExpiraton([
-              'redeem',
-              'complain',
-              'cancel',
-              'finalize',
-            ]);
+            await testTriggerExpiraton();
           });
 
           it('[NEGATIVE] COMMIT->REDEEM->CANCEL->COMPLAIN->FINALIZE', async () => {
             await utils.cancel(tokenVoucherId, users.seller.signer);
             await utils.complain(tokenVoucherId, users.buyer.signer);
-            await testTriggerExpiraton(['redeem', 'cancel', 'complain']);
+            await testTriggerExpiraton();
             await utils.finalize(tokenVoucherId, users.deployer.signer);
-            await testTriggerExpiraton([
-              'redeem',
-              'cancel',
-              'complain',
-              'finalize',
-            ]);
+            await testTriggerExpiraton();
           });
 
           it('[NEGATIVE] COMMIT->REDEEM->CANCEL->FINALIZE', async () => {
             await utils.cancel(tokenVoucherId, users.seller.signer);
-            await testTriggerExpiraton(['redeem', 'cancel']);
+            await testTriggerExpiraton();
             await advanceTimeSeconds(60);
             await utils.finalize(tokenVoucherId, users.deployer.signer);
-            await testTriggerExpiraton(['redeem', 'cancel', 'finalize']);
+            await testTriggerExpiraton();
           });
         });
 
@@ -4787,49 +4762,39 @@ describe('Cashier and VoucherKernel', () => {
           it('[NEGATIVE] COMMIT->REFUND->FINALIZE', async () => {
             await advanceTimeSeconds(60);
             await utils.finalize(tokenVoucherId, users.deployer.signer);
-            await testTriggerExpiraton(['refund', 'finalize']);
+            await testTriggerExpiraton();
           });
 
           it('[NEGATIVE] COMMIT->REFUND->COMPLAIN->FINALIZEF', async () => {
             await utils.complain(tokenVoucherId, users.buyer.signer);
-            await testTriggerExpiraton(['refund', 'complain']);
+            await testTriggerExpiraton();
             await advanceTimeSeconds(60);
             await utils.finalize(tokenVoucherId, users.deployer.signer);
-            await testTriggerExpiraton(['refund', 'complain', 'finalize']);
+            await testTriggerExpiraton();
           });
 
           it('[NEGATIVE] COMMIT->REFUND->COMPLAIN->CANCEL->FINALIZE', async () => {
             await utils.complain(tokenVoucherId, users.buyer.signer);
             await utils.cancel(tokenVoucherId, users.seller.signer);
-            await testTriggerExpiraton(['refund', 'complain', 'cancel']);
+            await testTriggerExpiraton();
             await utils.finalize(tokenVoucherId, users.deployer.signer);
-            await testTriggerExpiraton([
-              'refund',
-              'complain',
-              'cancel',
-              'finalize',
-            ]);
+            await testTriggerExpiraton();
           });
 
           it('[NEGATIVE] COMMIT->REFUND->CANCEL->COMPLAIN->FINALIZE', async () => {
             await utils.cancel(tokenVoucherId, users.seller.signer);
             await utils.complain(tokenVoucherId, users.buyer.signer);
-            await testTriggerExpiraton(['refund', 'cancel', 'complain']);
+            await testTriggerExpiraton();
             await utils.finalize(tokenVoucherId, users.deployer.signer);
-            await testTriggerExpiraton([
-              'refund',
-              'cancel',
-              'complain',
-              'finalize',
-            ]);
+            await testTriggerExpiraton();
           });
 
           it('[NEGATIVE] COMMIT->REFUND->CANCEL->FINALIZE', async () => {
             await utils.cancel(tokenVoucherId, users.seller.signer);
-            await testTriggerExpiraton(['refund', 'cancel']);
+            await testTriggerExpiraton();
             await advanceTimeSeconds(60);
             await utils.finalize(tokenVoucherId, users.deployer.signer);
-            await testTriggerExpiraton(['refund', 'cancel', 'finalize']);
+            await testTriggerExpiraton();
           });
         });
 
@@ -4842,49 +4807,39 @@ describe('Cashier and VoucherKernel', () => {
           it('[NEGATIVE] COMMIT->EXPIRE->FINALIZE', async () => {
             await advanceTimeSeconds(60);
             await utils.finalize(tokenVoucherId, users.deployer.signer);
-            await testTriggerExpiraton(['expire', 'finalize']);
+            await testTriggerExpiraton();
           });
 
           it('[NEGATIVE] COMMIT->EXPIRE->COMPLAIN->FINALIZE', async () => {
             await utils.complain(tokenVoucherId, users.buyer.signer);
-            await testTriggerExpiraton(['expire', 'complain']);
+            await testTriggerExpiraton();
             await advanceTimeSeconds(60);
             await utils.finalize(tokenVoucherId, users.deployer.signer);
-            await testTriggerExpiraton(['expire', 'complain', 'finalize']);
+            await testTriggerExpiraton();
           });
 
           it('[NEGATIVE] COMMIT->EXPIRE->COMPLAIN->CANCEL->FINALIZE', async () => {
             await utils.complain(tokenVoucherId, users.buyer.signer);
             await utils.cancel(tokenVoucherId, users.seller.signer);
-            await testTriggerExpiraton(['expire', 'complain', 'cancel']);
+            await testTriggerExpiraton();
             await utils.finalize(tokenVoucherId, users.deployer.signer);
-            await testTriggerExpiraton([
-              'expire',
-              'complain',
-              'cancel',
-              'finalize',
-            ]);
+            await testTriggerExpiraton();
           });
 
           it('[NEGATIVE] COMMIT->EXPIRE->CANCEL->COMPLAIN->FINALIZE', async () => {
             await utils.cancel(tokenVoucherId, users.seller.signer);
             await utils.complain(tokenVoucherId, users.buyer.signer);
-            await testTriggerExpiraton(['expire', 'cancel', 'complain']);
+            await testTriggerExpiraton();
             await utils.finalize(tokenVoucherId, users.deployer.signer);
-            await testTriggerExpiraton([
-              'expire',
-              'cancel',
-              'complain',
-              'finalize',
-            ]);
+            await testTriggerExpiraton();
           });
 
           it('[NEGATIVE] COMMIT->EXPIRE->CANCEL->FINALIZE', async () => {
             await utils.cancel(tokenVoucherId, users.seller.signer);
-            await testTriggerExpiraton(['expire', 'cancel']);
+            await testTriggerExpiraton();
             await advanceTimeSeconds(60);
             await utils.finalize(tokenVoucherId, users.deployer.signer);
-            await testTriggerExpiraton(['expire', 'cancel', 'finalize']);
+            await testTriggerExpiraton();
           });
         });
       });
