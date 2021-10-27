@@ -3469,7 +3469,7 @@ describe('Cashier and VoucherKernel', () => {
       });
     });
 
-    describe.only('Common voucher interactions after expiry', () => {
+    describe('Common voucher interactions after expiry', () => {
       const TEN_MINUTES = 10 * constants.ONE_MINUTE;
       const cancelPeriod = constants.ONE_MINUTE;
       const complainPeriod = constants.ONE_MINUTE;
@@ -3503,7 +3503,7 @@ describe('Cashier and VoucherKernel', () => {
 
       it('[!COMMIT] Buyer should not be able to commit after expiry date has passed', async () => {
         await advanceTimeSeconds(
-          TEN_MINUTES + constants.ONE_MINUTE // block.timestamp > tpromise.validTo  
+          TEN_MINUTES + constants.ONE_MINUTE // block.timestamp > tpromise.validTo
         );
 
         await expect(
@@ -3562,7 +3562,7 @@ describe('Cashier and VoucherKernel', () => {
         );
 
         await advanceTimeSeconds(
-          TEN_MINUTES + constants.ONE_MINUTE  // block.timestamp > tpromise.validTo
+          TEN_MINUTES + constants.ONE_MINUTE // block.timestamp > tpromise.validTo
         );
 
         await expect(
@@ -3580,7 +3580,7 @@ describe('Cashier and VoucherKernel', () => {
         );
 
         await advanceTimeSeconds(
-          TEN_MINUTES+ constants.ONE_MINUTE // block.timestamp > tpromise.validTo
+          TEN_MINUTES + constants.ONE_MINUTE // block.timestamp > tpromise.validTo
         );
 
         await expect(
@@ -3599,7 +3599,7 @@ describe('Cashier and VoucherKernel', () => {
         await utils.redeem(voucherID, users.buyer.signer);
 
         await advanceTimeSeconds(
-          complainPeriod + constants.ONE_MINUTE  // block.timestamp > complainPeriodStart + complainPeriod
+          complainPeriod + constants.ONE_MINUTE // block.timestamp > complainPeriodStart + complainPeriod
         );
 
         await expect(
@@ -3618,7 +3618,7 @@ describe('Cashier and VoucherKernel', () => {
         await utils.redeem(voucherID, users.buyer.signer);
 
         await advanceTimeSeconds(
-          cancelPeriod + constants.ONE_MINUTE   // block.timestamp > cancelFaultPeriodStart + cancelPeriod
+          cancelPeriod + constants.ONE_MINUTE // block.timestamp > cancelFaultPeriodStart + cancelPeriod
         );
 
         await expect(
@@ -3636,7 +3636,7 @@ describe('Cashier and VoucherKernel', () => {
         );
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.cancel(voucherID, users.seller.signer);
-        await advanceTimeSeconds(complainPeriod + constants.ONE_MINUTE);  // block.timestamp > complainPeriodStart + complainPeriod
+        await advanceTimeSeconds(complainPeriod + constants.ONE_MINUTE); // block.timestamp > complainPeriodStart + complainPeriod
 
         await expect(
           utils.complain(voucherID, users.buyer.signer)
@@ -3654,7 +3654,7 @@ describe('Cashier and VoucherKernel', () => {
 
         await utils.redeem(voucherID, users.buyer.signer);
         await utils.complain(voucherID, users.buyer.signer);
-        await advanceTimeSeconds(cancelPeriod + constants.ONE_MINUTE);   // block.timestamp > cancelFaultPeriodStart + cancelPeriod
+        await advanceTimeSeconds(cancelPeriod + constants.ONE_MINUTE); // block.timestamp > cancelFaultPeriodStart + cancelPeriod
 
         await expect(
           utils.cancel(voucherID, users.seller.signer)
@@ -3693,7 +3693,7 @@ describe('Cashier and VoucherKernel', () => {
         await utils.refund(voucherID, users.buyer.signer);
 
         await advanceTimeSeconds(
-          complainPeriod + constants.ONE_MINUTE  // block.timestamp > complainPeriodStart + complainPeriod
+          complainPeriod + constants.ONE_MINUTE // block.timestamp > complainPeriodStart + complainPeriod
         );
 
         await expect(
@@ -3896,7 +3896,7 @@ describe('Cashier and VoucherKernel', () => {
             assert.equal(ev._triggeredBy, users.deployer.address);
           }
         );
-        
+
         const cancelTx = await utils.cancel(voucherID, users.seller.signer);
         txReceipt = await cancelTx.wait();
 
