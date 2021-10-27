@@ -564,27 +564,13 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
             isStateRedemptionSigned(vouchersStatus[_tokenIdVoucher].status) ||
             isStateRefunded(vouchersStatus[_tokenIdVoucher].status)
         ) {
-            if (
-                !isStatus(
-                    vouchersStatus[_tokenIdVoucher].status,
-                    IDX_CANCEL_FAULT
-                )
-            ) {
-                require(
-                    block.timestamp <=
-                        vouchersStatus[_tokenIdVoucher].complainPeriodStart +
-                            complainPeriod +
-                            cancelFaultPeriod,
-                    "COMPLAINPERIOD_EXPIRED"
-                );
-            } else {
-                require(
-                    block.timestamp <=
-                        vouchersStatus[_tokenIdVoucher].complainPeriodStart +
-                            complainPeriod,
-                    "COMPLAINPERIOD_EXPIRED"
-                );
-            }
+            require(
+                block.timestamp <=
+                    vouchersStatus[_tokenIdVoucher].complainPeriodStart +
+                        complainPeriod +
+                        cancelFaultPeriod,
+                "COMPLAINPERIOD_EXPIRED"
+            );            
 
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block
                 .timestamp;
@@ -597,23 +583,11 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
 
             //if expired
         } else if (isStateExpired(vouchersStatus[_tokenIdVoucher].status)) {
-            if (
-                !isStatus(
-                    vouchersStatus[_tokenIdVoucher].status,
-                    IDX_CANCEL_FAULT
-                )
-            ) {
-                require(
-                    block.timestamp <=
-                        tPromise.validTo + complainPeriod + cancelFaultPeriod,
-                    "COMPLAINPERIOD_EXPIRED"
-                );
-            } else {
-                require(
-                    block.timestamp <= tPromise.validTo + complainPeriod,
-                    "COMPLAINPERIOD_EXPIRED"
-                );
-            }
+            require(
+                block.timestamp <=
+                    tPromise.validTo + complainPeriod + cancelFaultPeriod,
+                "COMPLAINPERIOD_EXPIRED"
+            );
 
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block
                 .timestamp;

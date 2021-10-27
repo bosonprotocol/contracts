@@ -3846,23 +3846,22 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('[COMMIT->EXPIRY TRIGGERED->!COMPLAIN] Buyer should not be able to complain after complain period has passed', async () => {
-        // TODO: SHOULD CONTRACT BE CHANGED?
-        // const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
-        // await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
-        // await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
-        // const voucherID = await utils.commitToBuy(
-        //   users.buyer,
-        //   users.seller,
-        //   TOKEN_SUPPLY_ID,
-        //   constants.PROMISE_PRICE1,
-        //   constants.PROMISE_DEPOSITBU1
-        // );
-        // await advanceTimeSeconds(TEN_MINUTES + constants.ONE_MINUTE);
-        // await contractVoucherKernel.triggerExpiration(voucherID);
-        // await advanceTimeSeconds(ONE_WEEK);
-        // await expect(
-        //   utils.complain(voucherID, users.buyer.signer)
-        // ).to.be.revertedWith(revertReasons.COMPLAIN_PERIOD_EXPIRED);
+        const ONE_WEEK = 7 * constants.SECONDS_IN_DAY;
+        await contractVoucherKernel.setComplainPeriod(ONE_WEEK);
+        await contractVoucherKernel.setCancelFaultPeriod(ONE_WEEK);
+        const voucherID = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITBU1
+        );
+        await advanceTimeSeconds(TEN_MINUTES + constants.ONE_MINUTE);  // tpromise.validTo < block.timestamp < tpromise.validTo + complainPeriod + cancelFaultPeriod
+        await contractVoucherKernel.triggerExpiration(voucherID);
+        await advanceTimeSeconds(ONE_WEEK + ONE_WEEK);                 // block.timestamp > tpromise.validTo + complainPeriod + cancelFaultPeriod
+        await expect(
+          utils.complain(voucherID, users.buyer.signer)
+        ).to.be.revertedWith(revertReasons.COMPLAIN_PERIOD_EXPIRED);
       });
 
       it('[COMMIT->EXPIRY TRIGGERED->CANCEL->COMPLAIN] Buyer should be able to complain within the complain period after expiry triggered and seller cancels', async () => {
