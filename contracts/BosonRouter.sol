@@ -58,7 +58,7 @@ contract BosonRouter is
         uint256 indexed _tokenIdSupply,
         address indexed _gateAddress
     );
-    
+
     event LogVoucherKernelSet(address _newVoucherKernel, address _triggeredBy);
     event LogTokenRegistrySet(address _newTokenRegistry, address _triggeredBy);
     event LogCashierSet(address _newCashier, address _triggeredBy);
@@ -73,7 +73,7 @@ contract BosonRouter is
      * @param _gateAddress - the address to validate approval for
      */
     modifier onlyApprovedGate(address _gateAddress) {
-        require(approvedGates[_gateAddress] == true, "INVALID_GATE");
+        require(approvedGates[_gateAddress], "INVALID_GATE");
         _;
     }
 
@@ -143,11 +143,11 @@ contract BosonRouter is
      * @param _approved - approval status for the gate
      */
     function setGateApproval(address _gateAddress, bool _approved)
-    external
-    onlyOwner
+        external
+        onlyOwner
     {
         notZeroAddress(_gateAddress);
-        require(approvedGates[_gateAddress] != _approved, "No change to approval state");
+        require(approvedGates[_gateAddress] != _approved, "NO_CHANGE");
         approvedGates[_gateAddress] = _approved;
         emit LogGateApprovalChanged(_gateAddress, _approved);
     }

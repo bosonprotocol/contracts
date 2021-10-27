@@ -494,10 +494,20 @@ describe('Gate contract', async () => {
         ).to.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
       });
 
-      it('[NEGATIVE] gate approval should revert if owner sends zero address', async () => {
+      it('[NEGATIVE] gate approval should revert if no change is represented', async () => {
         await expect(
-          contractBosonRouter.setGateApproval(constants.ZERO_ADDRESS, true)
-        ).to.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+          contractBosonRouter
+            .connect(users.attacker.signer)
+            .setGateApproval(users.other1.address, true)
+        ).to.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+      });
+
+      it('[NEGATIVE] gate approval should revert if owner sends zero address', async () => {
+        await contractBosonRouter.setGateApproval(users.other1.address, true);
+
+        await expect(
+          contractBosonRouter.setGateApproval(users.other1.address, true)
+        ).to.revertedWith(revertReasons.NO_CHANGE);
       });
     });
 
