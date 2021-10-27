@@ -105,7 +105,7 @@ contract ERC1155NonTransferable is
         uint256[] memory _ids,
         uint256[] memory _amounts,
         bytes memory _data
-    ) internal virtual override {
+    ) internal virtual override onlyOwner {
         require(
             _from == address(0) || _to == address(0),
             "ERC1155NonTransferable: Tokens are non transferable"
