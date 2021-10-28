@@ -199,9 +199,8 @@ class DeploymentExecutor {
     );
 
     //ERC1155NonTransferrable is a Conditional Commit token and should be deployed from a separate address
-    const ERC1155NonTransferableAsOtherSigner = ERC1155NonTransferable.connect(
-      ccTokenDeployer
-    );
+    const ERC1155NonTransferableAsOtherSigner =
+      ERC1155NonTransferable.connect(ccTokenDeployer);
 
     this.tokenRegistry = await TokenRegistry.deploy();
     this.erc1155erc721 = await ERC1155ERC721.deploy();
@@ -216,9 +215,10 @@ class DeploymentExecutor {
     this.gate = await Gate.deploy(this.br.address);
 
     //ERC1155NonTransferrable is a Conditional Commit token and should be deployed from a separate address
-    this.erc1155NonTransferable = await ERC1155NonTransferableAsOtherSigner.deploy(
-      process.env.CONDITIONAL_COMMIT_TOKEN_METADATA_URI
-    );
+    this.erc1155NonTransferable =
+      await ERC1155NonTransferableAsOtherSigner.deploy(
+        process.env.CONDITIONAL_COMMIT_TOKEN_METADATA_URI
+      );
 
     await this.tokenRegistry.deployed();
     await this.erc1155erc721.deployed();

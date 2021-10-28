@@ -6,6 +6,7 @@ import 'hardhat-contract-sizer'
 import "@nomiclabs/hardhat-etherscan"
 import "@nomiclabs/hardhat-waffle"
 import '@typechain/hardhat'
+import 'hardhat-abi-exporter'
 import { HardhatUserConfig } from "hardhat/config";
 
 const { task } = require("hardhat/config");
@@ -13,6 +14,10 @@ const testMnemonic = 'inhale wood champion certain immense wash pepper enact enr
 const INFURA_KEY = process.env.INFURA_API_KEY;
 const PROTOCOL_DEPLOYER_PRIVATE_KEY = process.env.PROTOCOL_DEPLOYER_PRIVATE_KEY;
 const CC_TOKEN_DEPLOYER_PRIVATE_KEY = process.env.CC_TOKEN_DEPLOYER_PRIVATE_KEY;
+const ACCOUNTS =
+  PROTOCOL_DEPLOYER_PRIVATE_KEY && CC_TOKEN_DEPLOYER_PRIVATE_KEY
+    ? [PROTOCOL_DEPLOYER_PRIVATE_KEY, CC_TOKEN_DEPLOYER_PRIVATE_KEY]
+    : [];
 
 const lazyImport = async (module) => {
 	return await import(module);
@@ -50,17 +55,11 @@ const config: HardhatUserConfig = {
 		},
 		rinkeby: {
 			url: `https://rinkeby.infura.io/v3/${INFURA_KEY}`,
-			accounts: [
-				PROTOCOL_DEPLOYER_PRIVATE_KEY,
-				CC_TOKEN_DEPLOYER_PRIVATE_KEY //this one MUST remain in the second spont (account[1])
-			]
+			accounts: ACCOUNTS
 		},
 		ropsten: {
 			url: `https://ropsten.infura.io/v3/${INFURA_KEY}`,
-			accounts: [
-				PROTOCOL_DEPLOYER_PRIVATE_KEY,
-				CC_TOKEN_DEPLOYER_PRIVATE_KEY
-			]
+			accounts: ACCOUNTS
 		},
 	},
 	etherscan: {

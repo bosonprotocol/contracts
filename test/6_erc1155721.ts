@@ -105,11 +105,13 @@ describe('ERC1155ERC721', () => {
       'BDEP'
     )) as Contract & MockERC20Permit;
 
-    contractMockERC721Receiver = (await MockERC721Receiver_Factory.deploy()) as Contract &
-      MockERC721Receiver;
+    contractMockERC721Receiver =
+      (await MockERC721Receiver_Factory.deploy()) as Contract &
+        MockERC721Receiver;
 
-    contractMockERC1155Receiver = (await MockERC1155Receiver_Factory.deploy()) as Contract &
-      MockERC1155Receiver;
+    contractMockERC1155Receiver =
+      (await MockERC1155Receiver_Factory.deploy()) as Contract &
+        MockERC1155Receiver;
 
     await contractTokenRegistry.deployed();
     await contractERC1155ERC721.deployed();
@@ -264,7 +266,8 @@ describe('ERC1155ERC721', () => {
           }
         );
 
-        const voucherKernelAddress = await contractERC1155ERC721.getVoucherKernelAddress();
+        const voucherKernelAddress =
+          await contractERC1155ERC721.getVoucherKernelAddress();
         assert.equal(voucherKernelAddress, expectedVoucherKernelAddress);
       });
 
