@@ -660,15 +660,19 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
                 IDX_STATUS
             );
 
-          if (_newStatus == ComplainOrCOF.COMPLAIN) {
+        if (_newStatus == ComplainOrCOF.COMPLAIN) {
+            if (!isStatus(tStatus, IDX_CANCEL_FAULT)) {
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block
                 .timestamp;  //COF period starts
-            emit LogVoucherComplain(_tokenIdVoucher);
-            } else {
-                vouchersStatus[_tokenIdVoucher].complainPeriodStart = block
-                .timestamp; //complain period starts
-                emit LogVoucherFaultCancel(_tokenIdVoucher);
             }
+            emit LogVoucherComplain(_tokenIdVoucher);
+        } else {
+            if (!isStatus(tStatus, IDX_COMPLAIN)) {
+            vouchersStatus[_tokenIdVoucher].complainPeriodStart = block
+            .timestamp; //complain period starts
+            }
+            emit LogVoucherFaultCancel(_tokenIdVoucher);
+        }
     }
 
     /**
