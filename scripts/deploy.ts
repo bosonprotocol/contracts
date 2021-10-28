@@ -155,15 +155,26 @@ class DeploymentExecutor {
       event.args._nonTransferableTokenContractAddress
     );
 
+    tx = await this.br.setGateApproval(this.gate.address, true);
+
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log(
+      '$ BosonRouter',
+      event.event,
+      'at:',
+      event.args._gateAddress,
+      ' = ',
+      event.args._approved
+    );
+
     await this.erc1155erc721._setMetadataBase(process.env.METADATA_BASE);
-
     console.log('$ MetadataBase', 'set to :', process.env.METADATA_BASE);
-    await this.erc1155erc721._set1155Route(process.env.ERC1155_ROUTE);
 
+    await this.erc1155erc721._set1155Route(process.env.ERC1155_ROUTE);
     console.log('$ ERC1155Route ', 'set to :', process.env.ERC1155_ROUTE);
 
     await this.erc1155erc721._set721Route(process.env.ERC721_ROUTE);
-
     console.log('$ ERC721Route ', 'set to :', process.env.ERC721_ROUTE);
 
     console.log(
@@ -203,7 +214,6 @@ class DeploymentExecutor {
     );
     this.daiTokenWrapper = await DAITokenWrapper.deploy(this.dai_token);
     this.gate = await Gate.deploy(this.br.address);
-    await this.br.setGateApproval(this.gate.address, true);
 
     //ERC1155NonTransferrable is a Conditional Commit token and should be deployed from a separate address
     this.erc1155NonTransferable = await ERC1155NonTransferableAsOtherSigner.deploy(
@@ -305,7 +315,9 @@ class ProdExecutor extends DeploymentExecutor {
   async setDefaults() {
     await super.setDefaults();
     await this.tokenRegistry.setTokenLimit(this.boson_token, this.TOKEN_LIMIT);
+    console.log(`Set Boson token limit: ${this.TOKEN_LIMIT}`);
     await this.tokenRegistry.setTokenLimit(this.dai_token, this.TOKEN_LIMIT);
+    console.log(`Set Dai token limit: ${this.TOKEN_LIMIT}`);
   }
 }
 
