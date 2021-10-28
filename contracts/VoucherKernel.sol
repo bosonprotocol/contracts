@@ -317,7 +317,9 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         bytes32 _promiseId,
         uint256 _quantity
     ) private returns (uint256) {
-        uint256 tokenIdSupply = generateTokenType(true); //create & assign a new non-fungible type
+        //create & assign a new non-fungible type
+        typeId++;
+        uint256 tokenIdSupply = TYPE_NF_BIT | (typeId << 128); //upper bit is 1, followed by sequence, leaving lower 128-bits as 0;
 
         ordersPromise[tokenIdSupply] = _promiseId;
 
@@ -349,6 +351,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
     onlyFromRouter
     nonReentrant
     {
+        require(_doERC721HolderCheck(_issuer, _holder, _tokenIdSupply), "UNSUPPORTED_ERC721_RECEIVED");
         uint8 paymentMethod = getVoucherPaymentMethod(_tokenIdSupply);
 
         //checks
@@ -368,6 +371,36 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
     }
 
     /**
+     * @notice Check if holder is a contract that supports ERC721
+     * @dev ERC-721
+     * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.4.0-rc.0/contracts/token/ERC721/ERC721.sol
+     * @param _from     Address of sender
+     * @param _to       Address of recipient
+     * @param _tokenId  ID of the token
+     */
+    function _doERC721HolderCheck(
+        address _from,
+        address _to,
+        uint256 _tokenId
+    ) internal returns (bool) {
+        if (_to.isContract()) {
+            try IERC721Receiver(_to).onERC721Received(_msgSender(), _from, _tokenId, "") returns (bytes4 retval) {
+                return retval == IERC721Receiver.onERC721Received.selector;
+            } catch (bytes memory reason) {
+                if (reason.length == 0) {
+                    revert("UNSUPPORTED_ERC721_RECEIVED");
+                } else {
+                    assembly {
+                        revert(add(32, reason), mload(reason))
+                    }
+                }
+            }
+        } else {
+            return true;
+        }
+    }
+
+    /**
      * @notice Check order is fillable
      * @dev Will throw if checks don't pass
      * @param _tokenIdSupply  ID of the supply token
@@ -381,15 +414,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
     ) internal view notZeroAddress(_holder) {
         require(_tokenIdSupply != 0, "UNSPECIFIED_ID");
 
-        if (_holder.isContract()) {
-            require(
-                IERC165(_holder).supportsInterface(0x150b7a02),
-                "UNSUPPORTED_ERC721_RECEIVED"
-            );
-
-        }
-
-        
         require(
             IVoucherSets(voucherSetsTokenAddress).balanceOf(_issuer, _tokenIdSupply) > 0,
             "OFFER_EMPTY"
@@ -416,18 +440,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         address _to,
         uint256 _tokenIdSupply
     ) internal returns (uint256) {
-        if (_to.isContract()) {
-            require(
-                IERC721Receiver(_to).onERC721Received(
-                    _issuer,
-                    msg.sender,
-                    _tokenIdSupply,
-                    ""
-                ) == IERC721Receiver(_to).onERC721Received.selector,
-                "UNSUPPORTED_ERC721_RECEIVED"
-            );
-        }
-
         IVoucherSets(voucherSetsTokenAddress).burn(_issuer, _tokenIdSupply, 1); // This is hardcoded as 1 on purpose
 
         //calculate tokenId
@@ -463,25 +475,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         IVoucherSets(voucherSetsTokenAddress).burn(_issuer, _tokenIdSupply, _qty);
     }
 
-    /**
-     * @notice Creating a new token type, serving as the base for tokenID generation for NFTs, and a de facto ID for FTs.
-     * @param _isNonFungible   Flag for generating NFT or FT
-     * @return _tokenType   Returns a newly generated token type
-     */
-    function generateTokenType(bool _isNonFungible)
-        internal
-        returns (uint256 _tokenType)
-    {
-        typeId++;
-
-        if (_isNonFungible) {
-            _tokenType = TYPE_NF_BIT | (typeId << 128); //upper bit is 1, followed by sequence, leaving lower 128-bits as 0
-        } else {
-            _tokenType = typeId << 128; //upper bit is not set, followed by sequence, leaving lower 128-bits as 0
-        }
-
-        return _tokenType;
-    }
 
     /* solhint-disable */
 
@@ -585,27 +578,13 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
             isStateRedemptionSigned(vouchersStatus[_tokenIdVoucher].status) ||
             isStateRefunded(vouchersStatus[_tokenIdVoucher].status)
         ) {
-            if (
-                !isStatus(
-                    vouchersStatus[_tokenIdVoucher].status,
-                    IDX_CANCEL_FAULT
-                )
-            ) {
-                require(
-                    block.timestamp <=
-                        vouchersStatus[_tokenIdVoucher].complainPeriodStart +
-                            complainPeriod +
-                            cancelFaultPeriod,
-                    "COMPLAINPERIOD_EXPIRED"
-                );
-            } else {
-                require(
-                    block.timestamp <=
-                        vouchersStatus[_tokenIdVoucher].complainPeriodStart +
-                            complainPeriod,
-                    "COMPLAINPERIOD_EXPIRED"
-                );
-            }
+            require(
+                block.timestamp <=
+                    vouchersStatus[_tokenIdVoucher].complainPeriodStart +
+                        complainPeriod +
+                        cancelFaultPeriod,
+                "COMPLAINPERIOD_EXPIRED"
+            );            
 
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block
                 .timestamp;
@@ -618,23 +597,11 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
 
             //if expired
         } else if (isStateExpired(vouchersStatus[_tokenIdVoucher].status)) {
-            if (
-                !isStatus(
-                    vouchersStatus[_tokenIdVoucher].status,
-                    IDX_CANCEL_FAULT
-                )
-            ) {
-                require(
-                    block.timestamp <=
-                        tPromise.validTo + complainPeriod + cancelFaultPeriod,
-                    "COMPLAINPERIOD_EXPIRED"
-                );
-            } else {
-                require(
-                    block.timestamp <= tPromise.validTo + complainPeriod,
-                    "COMPLAINPERIOD_EXPIRED"
-                );
-            }
+            require(
+                block.timestamp <=
+                    tPromise.validTo + complainPeriod + cancelFaultPeriod,
+                "COMPLAINPERIOD_EXPIRED"
+            );
 
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block
                 .timestamp;
