@@ -106,17 +106,12 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
     ) public override {
         transferFrom(_from, _to, _tokenId);
 
-        if (_to.isContract()) {
-            require(
-                IERC721Receiver(_to).onERC721Received(
-                    _from,
-                    _to,
-                    _tokenId,
-                    _data
-                ) == IERC721Receiver(_to).onERC721Received.selector,
-                "UNSUPPORTED_ERC721_RECEIVED"
-            );
-        }
+        _doSafeTransferAcceptanceCheck(
+            address(0),
+            _to,
+            _tokenId,
+            _data
+        );
     }
 
     /**
@@ -328,6 +323,13 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
         balance721[_to]++;
 
         emit Transfer(address(0), _to, _tokenId);
+
+        require(_doSafeTransferAcceptanceCheck(
+            address(0),
+            _to,
+            _tokenId,
+            ""
+        ), "ERC721: transfer to non ERC721Receiver implementer");
     }
 
 
@@ -449,5 +451,36 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
     {
         return cashierAddress;
     }
-    
+
+    /**
+     * @notice Check successful transfer if recipient is a contract
+     * @dev ERC-721
+     * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.4.0-rc.0/contracts/token/ERC721/ERC721.sol
+     * @param _from     Address of sender
+     * @param _to       Address of recipient
+     * @param _tokenId  ID of the token
+     * @param _data     Optional data
+     */
+    function _doSafeTransferAcceptanceCheck(
+        address _from,
+        address _to,
+        uint256 _tokenId,
+        bytes memory _data
+    ) internal returns (bool) {
+        if (_to.isContract()) {
+            try IERC721Receiver(_to).onERC721Received(_msgSender(), _from, _tokenId, _data) returns (bytes4 retval) {
+                return retval == IERC721Receiver.onERC721Received.selector;
+            } catch (bytes memory reason) {
+                if (reason.length == 0) {
+                    revert("ERC721: transfer to non ERC721Receiver implementer");
+                } else {
+                    assembly {
+                        revert(add(32, reason), mload(reason))
+                    }
+                }
+            }
+        } else {
+            return true;
+        }
+    }
 }
