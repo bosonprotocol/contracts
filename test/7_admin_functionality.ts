@@ -9,23 +9,19 @@ import Utils from '../testHelpers/utils';
 
 import {
   BosonRouter,
-  ERC1155ERC721,
+  VoucherSets,
+  Vouchers,
   VoucherKernel,
   Cashier,
   TokenRegistry,
 } from '../typechain';
 
-let ERC1155ERC721_Factory: ContractFactory;
+let VoucherSets_Factory: ContractFactory;
+let Vouchers_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
 let TokenRegistry_Factory: ContractFactory;
-
-let ERC1155ERC721_Factory2: ContractFactory;
-let VoucherKernel_Factory2: ContractFactory;
-let Cashier_Factory2: ContractFactory;
-let BosonRouter_Factory2: ContractFactory;
-let TokenRegistry_Factory2: ContractFactory;
 
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
@@ -38,23 +34,25 @@ describe('Admin functionality', async () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
 
-    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherSets_Factory = await ethers.getContractFactory('VoucherSets');
+    Vouchers_Factory = await ethers.getContractFactory('Vouchers');
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
     TokenRegistry_Factory = await ethers.getContractFactory('TokenRegistry');
   });
 
-  let contractERC1155ERC721: ERC1155ERC721,
+  let contractVoucherSets: VoucherSets,
+    contractVouchers: Vouchers,
     contractVoucherKernel: VoucherKernel,
     contractCashier: Cashier,
     contractBosonRouter: BosonRouter,
     contractTokenRegistry: TokenRegistry;
 
-  let contractERC1155ERC721_2: ERC1155ERC721,
+  let contractVoucherSets_2: VoucherSets,
+    contractVouchers_2: Vouchers,
     contractVoucherKernel_2: VoucherKernel,
     contractCashier_2: Cashier,
-    contractBosonRouter_2: BosonRouter,
     contractTokenRegistry_2: TokenRegistry;
 
   async function deployContracts() {
@@ -65,10 +63,15 @@ describe('Admin functionality', async () => {
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
-    contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
-      ERC1155ERC721;
+    contractVoucherSets = (await VoucherSets_Factory.deploy(
+      'https://token-cdn-domain/{id}.json'
+    )) as Contract & VoucherSets;
+    contractVouchers = (await Vouchers_Factory.deploy(
+      'https://token-cdn-domain//orders/metadata/'
+    )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
-      contractERC1155ERC721.address
+      contractVoucherSets.address,
+      contractVouchers.address
     )) as Contract & VoucherKernel;
     contractCashier = (await Cashier_Factory.deploy(
       contractVoucherKernel.address
@@ -80,67 +83,35 @@ describe('Admin functionality', async () => {
     )) as Contract & BosonRouter;
 
     await contractTokenRegistry.deployed();
-    await contractERC1155ERC721.deployed();
+    await contractVoucherSets.deployed();
+    await contractVouchers.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
     await contractBosonRouter.deployed();
   }
 
   async function deployContracts2() {
-    ERC1155ERC721_Factory2 = await ethers.getContractFactory('ERC1155ERC721');
-    VoucherKernel_Factory2 = await ethers.getContractFactory('VoucherKernel');
-    Cashier_Factory2 = await ethers.getContractFactory('Cashier');
-    BosonRouter_Factory2 = await ethers.getContractFactory('BosonRouter');
-    TokenRegistry_Factory2 = await ethers.getContractFactory('TokenRegistry');
-
-    const sixtySeconds = 60;
-
     contractTokenRegistry_2 =
-      (await TokenRegistry_Factory2.deploy()) as Contract & TokenRegistry;
-    contractERC1155ERC721_2 =
-      (await ERC1155ERC721_Factory2.deploy()) as Contract & ERC1155ERC721;
-    contractVoucherKernel_2 = (await VoucherKernel_Factory2.deploy(
-      contractERC1155ERC721_2.address
+      (await TokenRegistry_Factory.deploy()) as Contract & TokenRegistry;
+    contractVoucherSets_2 = (await VoucherSets_Factory.deploy(
+      'https://token-cdn-domain/{id}.json'
+    )) as Contract & VoucherSets;
+    contractVouchers_2 = (await Vouchers_Factory.deploy(
+      'https://token-cdn-domain//orders/metadata/'
+    )) as Contract & Vouchers;
+    contractVoucherKernel_2 = (await VoucherKernel_Factory.deploy(
+      contractVoucherSets_2.address,
+      contractVouchers_2.address
     )) as Contract & VoucherKernel;
-    contractCashier_2 = (await Cashier_Factory2.deploy(
+    contractCashier_2 = (await Cashier_Factory.deploy(
       contractVoucherKernel_2.address
     )) as Contract & Cashier;
-    contractBosonRouter_2 = (await BosonRouter_Factory2.deploy(
-      contractVoucherKernel_2.address,
-      contractTokenRegistry_2.address,
-      contractCashier_2.address
-    )) as Contract & BosonRouter;
 
     await contractTokenRegistry_2.deployed();
-    await contractERC1155ERC721_2.deployed();
+    await contractVoucherSets_2.deployed();
+    await contractVouchers_2.deployed();
     await contractVoucherKernel_2.deployed();
     await contractCashier_2.deployed();
-    await contractBosonRouter_2.deployed();
-
-    await contractERC1155ERC721_2.setApprovalForAll(
-      contractVoucherKernel_2.address,
-      true
-    );
-    await contractERC1155ERC721_2.setVoucherKernelAddress(
-      contractVoucherKernel_2.address
-    );
-
-    await contractERC1155ERC721_2.setCashierAddress(contractCashier_2.address);
-
-    await contractVoucherKernel_2.setBosonRouterAddress(
-      contractBosonRouter_2.address
-    );
-    await contractVoucherKernel_2.setCashierAddress(contractCashier_2.address);
-
-    await contractCashier_2.setBosonRouterAddress(
-      contractBosonRouter_2.address
-    );
-    await contractCashier_2.setTokenContractAddress(
-      contractERC1155ERC721_2.address
-    );
-
-    await contractVoucherKernel_2.setComplainPeriod(sixtySeconds);
-    await contractVoucherKernel_2.setCancelFaultPeriod(sixtySeconds);
   }
 
   describe('Cashier', () => {
@@ -194,9 +165,9 @@ describe('Admin functionality', async () => {
       ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
     });
 
-    it('Owner should be able to set token contract address', async () => {
-      const tx = await contractCashier.setTokenContractAddress(
-        contractERC1155ERC721.address
+    it('Owner should be able to set voucherSet token contract address', async () => {
+      const tx = await contractCashier.setVoucherSetTokenAddress(
+        contractVoucherSets.address
       );
 
       const txReceipt = await tx.wait();
@@ -204,11 +175,11 @@ describe('Admin functionality', async () => {
       eventUtils.assertEventEmitted(
         txReceipt,
         Cashier_Factory,
-        eventNames.LOG_ERC1155_ERC721_SET,
+        eventNames.LOG_VOUCHER_SET_TOKEN_SET,
         (ev) => {
           assert.equal(
             ev._newTokenContract,
-            contractERC1155ERC721.address,
+            contractVoucherSets.address,
             'Token contract not as expected!'
           );
           assert.equal(
@@ -220,16 +191,55 @@ describe('Admin functionality', async () => {
       );
     });
 
-    it('[NEGATIVE][setTokenContractAddress] Should revert if executed by attacker', async () => {
+    it('[NEGATIVE][setVoucherSetTokenAddress] Should revert if executed by attacker', async () => {
       const attackerInstance = contractCashier.connect(users.attacker.signer);
       await expect(
-        attackerInstance.setTokenContractAddress(contractERC1155ERC721.address)
+        attackerInstance.setVoucherSetTokenAddress(contractVoucherSets.address)
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
     });
 
-    it('[NEGATIVE][setTokenContractAddress] Should revert if ZERO address is provided', async () => {
+    it('[NEGATIVE][setVoucherSetTokenAddress] Should revert if ZERO address is provided', async () => {
       await expect(
-        contractCashier.setTokenContractAddress(constants.ZERO_ADDRESS)
+        contractCashier.setVoucherSetTokenAddress(constants.ZERO_ADDRESS)
+      ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
+    });
+
+    it('Owner should be able to set voucher token contract address', async () => {
+      const tx = await contractCashier.setVoucherTokenAddress(
+        contractVouchers.address
+      );
+
+      const txReceipt = await tx.wait();
+
+      eventUtils.assertEventEmitted(
+        txReceipt,
+        Cashier_Factory,
+        eventNames.LOG_VOUCHER_TOKEN_SET,
+        (ev) => {
+          assert.equal(
+            ev._newTokenContract,
+            contractVouchers.address,
+            'Token contract not as expected!'
+          );
+          assert.equal(
+            ev._triggeredBy,
+            users.deployer.address,
+            'LogTokenContractSet not triggered by owner!'
+          );
+        }
+      );
+    });
+
+    it('[NEGATIVE][setVoucherTokenAddress] Should revert if executed by attacker', async () => {
+      const attackerInstance = contractCashier.connect(users.attacker.signer);
+      await expect(
+        attackerInstance.setVoucherTokenAddress(contractVouchers.address)
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+
+    it('[NEGATIVE][setVoucherTokenAddress] Should revert if ZERO address is provided', async () => {
+      await expect(
+        contractCashier.setVoucherTokenAddress(constants.ZERO_ADDRESS)
       ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
     });
 
@@ -287,20 +297,20 @@ describe('Admin functionality', async () => {
     });
   });
 
-  describe('ERC1155721', () => {
+  describe('VoucherSets', () => {
     before(async () => {
       await deployContracts();
     });
 
     it('Owner should be the deployer', async () => {
       const expectedOwner = users.deployer.address;
-      const owner = await contractERC1155ERC721.owner();
+      const owner = await contractVoucherSets.owner();
 
       assert.equal(owner, expectedOwner, 'Owner is not as expected');
     });
 
     it('Owner should be able to set VK address', async () => {
-      const tx = await contractERC1155ERC721.setVoucherKernelAddress(
+      const tx = await contractVoucherSets.setVoucherKernelAddress(
         contractVoucherKernel.address
       );
 
@@ -308,7 +318,7 @@ describe('Admin functionality', async () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        ERC1155ERC721_Factory,
+        VoucherSets_Factory,
         eventNames.LOG_VK_SET,
         (ev) => {
           assert.equal(
@@ -326,7 +336,7 @@ describe('Admin functionality', async () => {
     });
 
     it('[NEGATIVE][setVoucherKernelAddress] Should revert if executed by attacker', async () => {
-      const attackerInstance = contractERC1155ERC721.connect(
+      const attackerInstance = contractVoucherSets.connect(
         users.attacker.signer
       );
       await expect(
@@ -336,19 +346,19 @@ describe('Admin functionality', async () => {
 
     it('[NEGATIVE][setVoucherKernelAddress] Should revert if ZERO address is provided', async () => {
       await expect(
-        contractERC1155ERC721.setVoucherKernelAddress(constants.ZERO_ADDRESS)
+        contractVoucherSets.setVoucherKernelAddress(constants.ZERO_ADDRESS)
       ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
     });
 
     it('Owner should be able to set Cashier address', async () => {
-      const tx = await contractERC1155ERC721.setCashierAddress(
+      const tx = await contractVoucherSets.setCashierAddress(
         contractCashier.address
       );
 
       const txReceipt = await tx.wait();
       eventUtils.assertEventEmitted(
         txReceipt,
-        ERC1155ERC721_Factory,
+        VoucherSets_Factory,
         eventNames.LOG_CASHIER_SET,
         (ev) => {
           assert.equal(
@@ -366,7 +376,7 @@ describe('Admin functionality', async () => {
     });
 
     it('[NEGATIVE][setCashierAddress] Attacker should not be able to set Cashier address', async () => {
-      const attackerInstance = contractERC1155ERC721.connect(
+      const attackerInstance = contractVoucherSets.connect(
         users.attacker.signer
       );
 
@@ -377,7 +387,98 @@ describe('Admin functionality', async () => {
 
     it('[NEGATIVE][setCashierAddress] Owner should not be able to set ZERO Cashier address', async () => {
       await expect(
-        contractERC1155ERC721.setCashierAddress(constants.ZERO_ADDRESS)
+        contractVoucherSets.setCashierAddress(constants.ZERO_ADDRESS)
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
+    });
+  });
+
+  describe('Vouchers', () => {
+    before(async () => {
+      await deployContracts();
+    });
+
+    it('Owner should be the deployer', async () => {
+      const expectedOwner = users.deployer.address;
+      const owner = await contractVouchers.owner();
+
+      assert.equal(owner, expectedOwner, 'Owner is not as expected');
+    });
+
+    it('Owner should be able to set VK address', async () => {
+      const tx = await contractVouchers.setVoucherKernelAddress(
+        contractVoucherKernel.address
+      );
+
+      const txReceipt = await tx.wait();
+
+      eventUtils.assertEventEmitted(
+        txReceipt,
+        Vouchers_Factory,
+        eventNames.LOG_VK_SET,
+        (ev) => {
+          assert.equal(
+            ev._newVoucherKernel,
+            contractVoucherKernel.address,
+            'VK not as expected!'
+          );
+          assert.equal(
+            ev._triggeredBy,
+            users.deployer.address,
+            'LogVoucherKernelSet not triggered by owner!'
+          );
+        }
+      );
+    });
+
+    it('[NEGATIVE][setVoucherKernelAddress] Should revert if executed by attacker', async () => {
+      const attackerInstance = contractVouchers.connect(users.attacker.signer);
+      await expect(
+        attackerInstance.setVoucherKernelAddress(contractVoucherKernel.address)
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+
+    it('[NEGATIVE][setVoucherKernelAddress] Should revert if ZERO address is provided', async () => {
+      await expect(
+        contractVouchers.setVoucherKernelAddress(constants.ZERO_ADDRESS)
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
+    });
+
+    it('Owner should be able to set Cashier address', async () => {
+      const tx = await contractVouchers.setCashierAddress(
+        contractCashier.address
+      );
+
+      const txReceipt = await tx.wait();
+      eventUtils.assertEventEmitted(
+        txReceipt,
+        Vouchers_Factory,
+        eventNames.LOG_CASHIER_SET,
+        (ev) => {
+          assert.equal(
+            ev._newCashier,
+            contractCashier.address,
+            'Cashier not as expected!'
+          );
+          assert.equal(
+            ev._triggeredBy,
+            users.deployer.address,
+            'LogCashierSet not triggered by owner!'
+          );
+        }
+      );
+    });
+
+    it('[NEGATIVE][setCashierAddress] Attacker should not be able to set Cashier address', async () => {
+      const attackerInstance = contractVouchers.connect(users.attacker.signer);
+
+      await expect(
+        attackerInstance.setCashierAddress(contractCashier.address)
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+
+    it('[NEGATIVE][setCashierAddress] Owner should not be able to set ZERO Cashier address', async () => {
+      await expect(
+        contractVouchers.setCashierAddress(constants.ZERO_ADDRESS)
       ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
     });
   });
@@ -476,9 +577,21 @@ describe('Admin functionality', async () => {
       ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
     });
 
-    it('[NEGATIVE][setBosonRouterAddress] Should revert if ZERO address is provided at deployment', async () => {
+    it('[NEGATIVE][setBosonRouterAddress] Should revert if ZERO address is provided at deployment for voucherSets', async () => {
       await expect(
-        VoucherKernel_Factory.deploy(constants.ZERO_ADDRESS)
+        VoucherKernel_Factory.deploy(
+          constants.ZERO_ADDRESS,
+          contractVouchers.address
+        )
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+    });
+
+    it('[NEGATIVE][setBosonRouterAddress] Should revert if ZERO address is provided at deployment for vouchers', async () => {
+      await expect(
+        VoucherKernel_Factory.deploy(
+          contractVoucherSets.address,
+          constants.ZERO_ADDRESS
+        )
       ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
   });

@@ -44,6 +44,8 @@ export const eventNames = {
   USED_NONCE: 'UsedNonce',
   EXECUTED_META_TX: 'ExecutedMetaTransaction',
   LOG_TOKEN_REGISTRY_SET: 'LogTokenRegistrySet',
+  LOG_VOUCHER_SET_TOKEN_SET: 'LogVoucherSetTokenContractSet',
+  LOG_VOUCHER_TOKEN_SET: 'LogVoucherTokenContractSet',
 };
 
 import {ContractFactory, ContractReceipt} from 'ethers';
