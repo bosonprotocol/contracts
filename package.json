@@ -95,7 +95,7 @@
         "ethers": "5.4.3",
         "hardhat": "^2.1.2",
         "hardhat-abi-exporter": "^2.3.0",
-        "hardhat-contract-sizer": "^2.0.3",
+        "hardhat-contract-sizer": "^2.1.1",
         "mocha": "^8.2.1",
         "node-fetch": "^2.6.1",
         "prettier": "^2.2.1",
