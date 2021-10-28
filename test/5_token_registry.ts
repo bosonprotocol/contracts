@@ -61,7 +61,7 @@ describe('TokenRegistry', () => {
     const sixtySeconds = 60;
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
-    TokenRegistry;
+      TokenRegistry;
     contractVoucherSets = (await VoucherSets_Factory.deploy(
       'https://token-cdn-domain/{id}.json'
     )) as Contract & VoucherSets;
@@ -87,7 +87,7 @@ describe('TokenRegistry', () => {
     )) as Contract & MockERC20Permit;
 
     await contractTokenRegistry.deployed();
-    await contractVoucherSets.deployed(); 
+    await contractVoucherSets.deployed();
     await contractVouchers.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
@@ -121,9 +121,7 @@ describe('TokenRegistry', () => {
     await contractCashier.setVoucherSetTokenAddress(
       contractVoucherSets.address
     );
-    await contractCashier.setVoucherTokenAddress(
-      contractVouchers.address
-    );
+    await contractCashier.setVoucherTokenAddress(contractVouchers.address);
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
