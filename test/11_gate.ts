@@ -497,8 +497,7 @@ describe('Gate contract', async () => {
 
       it('[NEGATIVE] gate approval should revert if owner sends zero address', async () => {
         await expect(
-          contractBosonRouter
-            .setGateApproval(constants.ZERO_ADDRESS, true)
+          contractBosonRouter.setGateApproval(constants.ZERO_ADDRESS, true)
         ).to.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
       });
 
