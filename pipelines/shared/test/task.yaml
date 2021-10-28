@@ -1,9 +1,0 @@
----
-platform: linux
-
-inputs:
-  - name: source
-
-run:
-  dir: /source
-  path: ./pipelines/shared/test/task.sh

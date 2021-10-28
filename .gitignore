@@ -1,23 +1,14 @@
-# See https://help.github.com/ignore-files/ for more about ignoring files.
-
 # Node / NPM / Yarn
 node_modules
 
 # Build
-/build
-.etherlime-store
-/localDeploy
-/run
-/vendor
 /artifacts
 /cache
 /typechain
 /abi
 
 # Secrets
-.secret
 .env
-.env.*
 
 # OS
 .DS_Store
@@ -28,10 +19,9 @@ node_modules
 *.ipr
 .idea/
 
+# Code IDE
+.vscode/
+
 # Test Coverage
 coverage*
-
-# Personal Preferences
-.vscode
-*.txt
 
