@@ -468,18 +468,14 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
         bytes memory _data
     ) internal {
         if (_to.isContract()) {
-            try IERC721Receiver(_to).onERC721Received(_msgSender(), _from, _tokenId, _data) returns (bytes4 retval) {
-                if (retval != IERC721Receiver.onERC721Received.selector) {
+            try IERC721Receiver(_to).onERC721Received(_msgSender(), _from, _tokenId, _data) returns (bytes4 response) {
+                if (response != IERC721Receiver.onERC721Received.selector) {
                     revert("ERC721: transfer to non ERC721Receiver implementer");
                 }
-            } catch (bytes memory reason) {
-                if (reason.length == 0) {
-                    revert("ERC721: transfer to non ERC721Receiver implementer");
-                } else {
-                    assembly {
-                        revert(add(32, reason), mload(reason))
-                    }
-                }
+            } catch Error(string memory reason) {
+                revert(reason);
+            } catch {
+                revert("ERC721: transfer to non ERC721Receiver implementer");
             }
         }
     }
