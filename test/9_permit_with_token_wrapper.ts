@@ -547,7 +547,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           ).to.be.revertedWith(revertReasons.DAI_PERMIT_EXPIRED);
         });
 
-        it('[NEGATIVE] Should revert if token wrapper reverts because of invalid signature', async () => {
+        it('[NEGATIVE] Should revert if signature component s is invalid', async () => {
           const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
             BN(constants.QTY_10)
           );
@@ -565,10 +565,14 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             deadline
           );
 
-          const {v, s} = ecsign(
+          const {v, r} = ecsign(
             Buffer.from(digest.slice(2), 'hex'),
             Buffer.from(users.seller.privateKey.slice(2), 'hex')
           );
+
+          // to revert, s must be greater than 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0
+          const abiCoder = new ethers.utils.AbiCoder();
+          const s = abiCoder.encode(['bytes32'], [ethers.constants.MaxUint256]);
 
           const sellerInstance = contractBosonRouter.connect(
             users.seller.signer
@@ -580,7 +584,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
               txValue,
               deadline,
               v,
-              ethers.constants.HashZero,
+              r,
               s,
               [
                 constants.PROMISE_VALID_FROM,
@@ -594,7 +598,61 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
                 from: users.seller.address,
               }
             )
-          ).to.be.revertedWith(revertReasons.INVALID_SIGNATURE_COMPONENTS);
+          ).to.be.revertedWith(revertReasons.INVALID_SIG_S);
+        });
+
+        it('[NEGATIVE] Should revert if signature component v is invalid', async () => {
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(constants.QTY_10)
+          );
+
+          await mockDAI.mock.nonces.withArgs(users.seller.address).returns(0);
+          await mockDAI.mock.permit.returns();
+          await mockDAI.mock.name.returns('MockDAI');
+
+          const digest = await getApprovalDigestDAI(
+            mockDAI,
+            users.seller.address,
+            contractBosonRouter.address,
+            txValue,
+            0,
+            deadline
+          );
+
+          const {r, s} = ecsign(
+            Buffer.from(digest.slice(2), 'hex'),
+            Buffer.from(users.seller.privateKey.slice(2), 'hex')
+          );
+
+          // to revert, v must NOT be 27 or 28
+          const abiCoder = new ethers.utils.AbiCoder();
+          const v = abiCoder.encode(['uint8'], [ethers.constants.HashZero]);
+
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          ) as BosonRouter;
+
+          await expect(
+            sellerInstance.requestCreateOrderETHTKNWithPermit(
+              mockDAI.address,
+              txValue,
+              deadline,
+              v,
+              r,
+              s,
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              {
+                from: users.seller.address,
+              }
+            )
+          ).to.be.revertedWith(revertReasons.INVALID_SIG_V);
         });
       });
 
