@@ -174,6 +174,7 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
     /**
      * @notice Check successful transfer if recipient is a contract
      * @dev ERC-1155
+     * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.4.0-rc.0/contracts/token/ERC1155/ERC1155.sol
      * @param _operator The operator of the transfer
      * @param _from     Address of sender
      * @param _to       Address of recipient
@@ -190,22 +191,22 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
         bytes memory _data
     ) internal {
         if (_to.isContract()) {
-            require(
-                IERC1155Receiver(_to).onERC1155Received(
-                    _operator,
-                    _from,
-                    _tokenId,
-                    _value,
-                    _data
-                ) == IERC1155Receiver(_to).onERC1155Received.selector,
-                "NOT_SUPPORTED"
-            );
+            try IERC1155Receiver(_to).onERC1155Received(_operator, _from, _tokenId, _value, _data) returns (bytes4 response) {
+                if (response != IERC1155Receiver.onERC1155Received.selector) {
+                    revert("ERC1155: ERC1155Receiver rejected tokens");
+                }
+            } catch Error(string memory reason) {
+                revert(reason);
+            } catch {
+                revert("ERC1155: transfer to non ERC1155Receiver implementer");
+            }
         }
     }
 
     /**
      * @notice Check successful transfer if recipient is a contract
      * @dev ERC-1155
+     * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.4.0-rc.0/contracts/token/ERC1155/ERC1155.sol
      * @param _operator The operator of the transfer
      * @param _from     Address of sender
      * @param _to       Address of recipient
@@ -222,16 +223,17 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
         bytes memory _data
     ) internal {
         if (_to.isContract()) {
-            require(
-                IERC1155Receiver(_to).onERC1155BatchReceived(
-                    _operator,
-                    _from,
-                    _tokenIds,
-                    _values,
-                    _data
-                ) == IERC1155Receiver(_to).onERC1155BatchReceived.selector,
-                "NOT_SUPPORTED"
-            );
+            try IERC1155Receiver(_to).onERC1155BatchReceived(_operator, _from, _tokenIds, _values, _data) returns (
+                bytes4 response
+            ) {
+                if (response != IERC1155Receiver.onERC1155BatchReceived.selector) {
+                    revert("ERC1155: ERC1155Receiver rejected tokens");
+                }
+            } catch Error(string memory reason) {
+                revert(reason);
+            } catch {
+                revert("ERC1155: transfer to non ERC1155Receiver implementer");
+            }
         }
     }
 
@@ -617,10 +619,10 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
      * @return Address of Voucher Kernel contract
      */
     function getVoucherKernelAddress()
-    external
-    view
-    override
-    returns (address)
+        external
+        view
+        override
+        returns (address)
     {
         return voucherKernelAddress;
     }
@@ -630,10 +632,10 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
      * @return Address of Cashier address
      */
     function getCashierAddress()
-    external
-    view
-    override
-    returns (address)
+        external
+        view
+        override
+        returns (address)
     {
         return cashierAddress;
     }
