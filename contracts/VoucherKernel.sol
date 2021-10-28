@@ -457,22 +457,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         return voucherTokenId;
     }
 
-    /**
-     * @notice Extract a standard non-fungible tokens ERC-721 from a supply stored in ERC-1155
-     * @dev Token ID is derived following the same principles for both ERC-1155 and ERC-721
-     * @param _issuer          The address of the token issuer
-     * @param _tokenIdSupply   ID of the token type
-     * @param _qty   qty that should be burned
-     */
-    function burnSupplyOnPause(
-        address _issuer,
-        uint256 _tokenIdSupply,
-        uint256 _qty
-    ) external override whenPaused onlyFromCashier {
-        IERC1155ERC721(tokensContract).burn(_issuer, _tokenIdSupply, _qty);
-    }
-
-
     /* solhint-disable */
 
     /**
