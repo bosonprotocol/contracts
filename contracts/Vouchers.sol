@@ -107,7 +107,7 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
         transferFrom(_from, _to, _tokenId);
 
         _doSafeTransferAcceptanceCheck(
-            address(0),
+            _from,
             _to,
             _tokenId,
             _data
