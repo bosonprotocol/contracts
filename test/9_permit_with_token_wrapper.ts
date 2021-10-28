@@ -11,7 +11,8 @@ import {getApprovalDigestDAI} from '../testHelpers/permitUtilsDAI';
 import {advanceTimeSeconds} from '../testHelpers/timemachine';
 import {
   BosonRouter,
-  ERC1155ERC721,
+  VoucherSets,
+  Vouchers,
   VoucherKernel,
   Cashier,
   TokenRegistry,
@@ -28,7 +29,8 @@ const provider = waffle.provider;
 const {deployMockContract} = waffle;
 const BN = ethers.BigNumber.from;
 
-let ERC1155ERC721_Factory: ContractFactory;
+let VoucherSets_Factory: ContractFactory;
+let Vouchers_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
@@ -47,7 +49,8 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
 
-    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherSets_Factory = await ethers.getContractFactory('VoucherSets');
+    Vouchers_Factory = await ethers.getContractFactory('Vouchers');
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
@@ -60,7 +63,8 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
     );
   });
 
-  let contractERC1155ERC721: ERC1155ERC721,
+  let contractVoucherSets: VoucherSets,
+    contractVouchers: Vouchers,
     contractVoucherKernel: VoucherKernel,
     contractCashier: Cashier,
     contractBosonRouter: BosonRouter,
@@ -80,10 +84,15 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
-    contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
-      ERC1155ERC721;
+    contractVoucherSets = (await VoucherSets_Factory.deploy(
+      'https://token-cdn-domain/{id}.json'
+    )) as Contract & VoucherSets;
+    contractVouchers = (await Vouchers_Factory.deploy(
+      'https://token-cdn-domain//orders/metadata/'
+    )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
-      contractERC1155ERC721.address
+      contractVoucherSets.address,
+      contractVouchers.address
     )) as Contract & VoucherKernel;
     contractCashier = (await Cashier_Factory.deploy(
       contractVoucherKernel.address
@@ -117,22 +126,31 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
     )) as Contract & DAITokenWrapper;
 
     await contractTokenRegistry.deployed();
-    await contractERC1155ERC721.deployed();
+    await contractVoucherSets.deployed();
+    await contractVouchers.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
     await contractBosonRouter.deployed();
     await contractBSNTokenPrice.deployed();
     await contractBSNTokenDeposit.deployed();
 
-    await contractERC1155ERC721.setApprovalForAll(
+    await contractVoucherSets.setApprovalForAll(
       contractVoucherKernel.address,
       true
     );
-    await contractERC1155ERC721.setVoucherKernelAddress(
+    await contractVouchers.setApprovalForAll(
+      contractVoucherKernel.address,
+      true
+    );
+    await contractVoucherSets.setVoucherKernelAddress(
+      contractVoucherKernel.address
+    );
+    await contractVouchers.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
 
-    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
+    await contractVoucherSets.setCashierAddress(contractCashier.address);
+    await contractVouchers.setCashierAddress(contractCashier.address);
 
     await contractVoucherKernel.setBosonRouterAddress(
       contractBosonRouter.address
@@ -140,9 +158,10 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
     await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-    await contractCashier.setTokenContractAddress(
-      contractERC1155ERC721.address
+    await contractCashier.setVoucherSetTokenAddress(
+      contractVoucherSets.address
     );
+    await contractCashier.setVoucherTokenAddress(contractVouchers.address);
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
@@ -291,14 +310,14 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            ERC1155ERC721_Factory,
+            VoucherSets_Factory,
             eventNames.TRANSFER_SINGLE,
             (ev) => {
-              assert.isTrue(ev._operator === contractVoucherKernel.address);
-              assert.isTrue(ev._from === constants.ZERO_ADDRESS);
-              assert.isTrue(ev._to === users.seller.address);
-              assert.isTrue(ev._id.eq(tokenSupplyKey));
-              assert.isTrue(ev._value.eq(constants.QTY_10));
+              assert.isTrue(ev.operator === contractVoucherKernel.address);
+              assert.isTrue(ev.from === constants.ZERO_ADDRESS);
+              assert.isTrue(ev.to === users.seller.address);
+              assert.isTrue(ev.id.eq(tokenSupplyKey));
+              assert.isTrue(ev.value.eq(constants.QTY_10));
             }
           );
 
@@ -382,15 +401,15 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             await contractVoucherKernel.getPromiseIdFromSupplyId(tokenSupplyKey)
           );
 
-          //Check ERC1155ERC721 state
-          const sellerERC1155ERC721Balance = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          //Check VoucherSets state
+          const sellerVoucherSetsBalance = (
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.seller.address,
               tokenSupplyKey
             )
           )[0];
 
-          assert.isTrue(sellerERC1155ERC721Balance.eq(constants.QTY_10));
+          assert.isTrue(sellerVoucherSetsBalance.eq(constants.QTY_10));
         });
 
         it('Should update escrow correctly', async () => {
@@ -703,14 +722,14 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            ERC1155ERC721_Factory,
+            VoucherSets_Factory,
             eventNames.TRANSFER_SINGLE,
             (ev) => {
-              assert.isTrue(ev._operator === contractVoucherKernel.address);
-              assert.isTrue(ev._from === constants.ZERO_ADDRESS);
-              assert.isTrue(ev._to === users.seller.address);
-              assert.isTrue(ev._id.eq(tokenSupplyKey));
-              assert.isTrue(ev._value.eq(constants.QTY_10));
+              assert.isTrue(ev.operator === contractVoucherKernel.address);
+              assert.isTrue(ev.from === constants.ZERO_ADDRESS);
+              assert.isTrue(ev.to === users.seller.address);
+              assert.isTrue(ev.id.eq(tokenSupplyKey));
+              assert.isTrue(ev.value.eq(constants.QTY_10));
             }
           );
 
@@ -794,15 +813,15 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             await contractVoucherKernel.getPromiseIdFromSupplyId(tokenSupplyKey)
           );
 
-          //Check ERC1155ERC721 state
-          const sellerERC1155ERC721Balance = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          //Check VoucherSets state
+          const sellerVoucherSetsBalance = (
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.seller.address,
               tokenSupplyKey
             )
           )[0];
 
-          assert.isTrue(sellerERC1155ERC721Balance.eq(constants.QTY_10));
+          assert.isTrue(sellerVoucherSetsBalance.eq(constants.QTY_10));
         });
 
         it('Should update escrow correctly', async () => {
@@ -1008,25 +1027,25 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
 
           eventUtils.assertEventEmitted(
             txReceiptFillOrder,
-            ERC1155ERC721_Factory,
+            VoucherSets_Factory,
             eventNames.TRANSFER_SINGLE,
             (ev) => {
-              assert.isTrue(ev._operator === contractVoucherKernel.address);
-              assert.isTrue(ev._from === users.seller.address);
-              assert.isTrue(ev._to === constants.ZERO_ADDRESS);
-              assert.isTrue(ev._id.eq(tokenSupplyKey));
-              assert.isTrue(ev._value.eq(constants.ONE));
+              assert.isTrue(ev.operator === contractVoucherKernel.address);
+              assert.isTrue(ev.from === users.seller.address);
+              assert.isTrue(ev.to === constants.ZERO_ADDRESS);
+              assert.isTrue(ev.id.eq(tokenSupplyKey));
+              assert.isTrue(ev.value.eq(constants.ONE));
             }
           );
 
           eventUtils.assertEventEmitted(
             txReceiptFillOrder,
-            ERC1155ERC721_Factory,
+            Vouchers_Factory,
             eventNames.TRANSFER,
             (ev) => {
-              assert.isTrue(ev._from === constants.ZERO_ADDRESS);
-              assert.isTrue(ev._to === users.buyer.address);
-              assert.isTrue(ev._tokenId.eq(tokenVoucherKey));
+              assert.isTrue(ev.from === constants.ZERO_ADDRESS);
+              assert.isTrue(ev.to === users.buyer.address);
+              assert.isTrue(ev.tokenId.eq(tokenVoucherKey));
             }
           );
 
@@ -1060,26 +1079,27 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             'Deposit released not false'
           );
 
-          //Check ERC1155ERC721 state
-          const sellerERC1155ERC721Balance = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          //Check VoucherSets state
+          const sellerVoucherSetsBalance = (
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.seller.address,
               tokenSupplyKey
             )
           )[0];
 
-          assert.isTrue(sellerERC1155ERC721Balance.eq(constants.NINE));
+          assert.isTrue(sellerVoucherSetsBalance.eq(constants.NINE));
 
-          const buyerERC721Balance = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf721](
+          //Check Vouchers state
+          const buyerVouchersBalance = (
+            await contractVouchers.functions[fnSignatures.balanceOf721](
               users.buyer.address
             )
           )[0];
-          const erc721TokenOwner = await contractERC1155ERC721.ownerOf(
+          const voucherTokenOwner = await contractVouchers.ownerOf(
             tokenVoucherKey
           );
-          assert.isTrue(buyerERC721Balance.eq(constants.ONE));
-          assert.strictEqual(users.buyer.address, erc721TokenOwner);
+          assert.isTrue(buyerVouchersBalance.eq(constants.ONE));
+          assert.strictEqual(users.buyer.address, voucherTokenOwner);
         });
 
         it('Should update escrow correctly', async () => {
@@ -1307,14 +1327,14 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
 
           eventUtils.assertEventEmitted(
             txReceiptFillOrder,
-            ERC1155ERC721_Factory,
+            VoucherSets_Factory,
             eventNames.TRANSFER_SINGLE,
             (ev) => {
-              assert.isTrue(ev._operator === contractVoucherKernel.address);
-              assert.isTrue(ev._from === users.seller.address);
-              assert.isTrue(ev._to === constants.ZERO_ADDRESS);
-              assert.isTrue(ev._id.eq(tokenSupplyKey));
-              assert.isTrue(ev._value.eq(constants.ONE));
+              assert.isTrue(ev.operator === contractVoucherKernel.address);
+              assert.isTrue(ev.from === users.seller.address);
+              assert.isTrue(ev.to === constants.ZERO_ADDRESS);
+              assert.isTrue(ev.id.eq(tokenSupplyKey));
+              assert.isTrue(ev.value.eq(constants.ONE));
             }
           );
 
@@ -1334,7 +1354,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           /*
           eventUtils.assertEventEmitted(
             txReceiptFillOrder,
-            ERC1155ERC721_Factory,
+            Vouchers_Factory,
             eventNames.TRANSFER,
             (ev) => {
               assert.isTrue(ev._from === constants.ZERO_ADDRESS);
@@ -1342,7 +1362,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
               assert.isTrue(ev._tokenId.eq(tokenVoucherKey));
             }
           );
-
     
           eventUtils.assertEventEmitted(
             txReceiptFillOrder,
@@ -1374,26 +1393,27 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             'Deposit released not false'
           );
 
-          //Check ERC1155ERC721 state
-          const sellerERC1155ERC721Balance = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          //Check VoucherSets state
+          const sellerVoucherSetsBalance = (
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.seller.address,
               tokenSupplyKey
             )
           )[0];
 
-          assert.isTrue(sellerERC1155ERC721Balance.eq(constants.NINE));
+          assert.isTrue(sellerVoucherSetsBalance.eq(constants.NINE));
 
-          const buyerERC721Balance = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf721](
+          //Check Vouchers state
+          const buyerVouchersBalance = (
+            await contractVouchers.functions[fnSignatures.balanceOf721](
               users.buyer.address
             )
           )[0];
-          const erc721TokenOwner = await contractERC1155ERC721.ownerOf(
+          const voucherTokenOwner = await contractVouchers.ownerOf(
             tokenVoucherKey
           );
-          assert.isTrue(buyerERC721Balance.eq(constants.ONE));
-          assert.strictEqual(users.buyer.address, erc721TokenOwner);
+          assert.isTrue(buyerVouchersBalance.eq(constants.ONE));
+          assert.strictEqual(users.buyer.address, voucherTokenOwner);
         });
 
         it("Should update Cashier contract's token balance correctly", async () => {
@@ -1587,14 +1607,14 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
 
           eventUtils.assertEventEmitted(
             txReceiptFillOrder,
-            ERC1155ERC721_Factory,
+            VoucherSets_Factory,
             eventNames.TRANSFER_SINGLE,
             (ev) => {
-              assert.isTrue(ev._operator === contractVoucherKernel.address);
-              assert.isTrue(ev._from === users.seller.address);
-              assert.isTrue(ev._to === constants.ZERO_ADDRESS);
-              assert.isTrue(ev._id.eq(tokenSupplyKey));
-              assert.isTrue(ev._value.eq(constants.ONE));
+              assert.isTrue(ev.operator === contractVoucherKernel.address);
+              assert.isTrue(ev.from === users.seller.address);
+              assert.isTrue(ev.to === constants.ZERO_ADDRESS);
+              assert.isTrue(ev.id.eq(tokenSupplyKey));
+              assert.isTrue(ev.value.eq(constants.ONE));
             }
           );
 
@@ -1611,10 +1631,10 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           );
 
           //Throws data out-of-bounds error. Doesn't seem to be able to filter events properly if two events with the same signature are emitted
-          /*  
+          /*
           eventUtils.assertEventEmitted(
             txReceiptFillOrder,
-            ERC1155ERC721_Factory,
+            Vouchers_Factory,
             eventNames.TRANSFER,
             (ev) => {
               assert.isTrue(ev._from === constants.ZERO_ADDRESS);
@@ -1622,7 +1642,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
               assert.isTrue(ev._tokenId.eq(tokenVoucherKey));
             }
           );
-
   
           eventUtils.assertEventEmitted(
             txReceiptFillOrder,
@@ -1654,26 +1673,27 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             'Deposit released not false'
           );
 
-          //Check ERC1155ERC721 state
-          const sellerERC1155ERC721Balance = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          //Check VoucherSets state
+          const sellerVoucherSetsBalance = (
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.seller.address,
               tokenSupplyKey
             )
           )[0];
 
-          assert.isTrue(sellerERC1155ERC721Balance.eq(constants.NINE));
+          assert.isTrue(sellerVoucherSetsBalance.eq(constants.NINE));
 
-          const buyerERC721Balance = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf721](
+          //Check Vouchers state
+          const buyerVouchersBalance = (
+            await contractVouchers.functions[fnSignatures.balanceOf721](
               users.buyer.address
             )
           )[0];
-          const erc721TokenOwner = await contractERC1155ERC721.ownerOf(
+          const voucherTokenOwner = await contractVouchers.ownerOf(
             tokenVoucherKey
           );
-          assert.isTrue(buyerERC721Balance.eq(constants.ONE));
-          assert.strictEqual(users.buyer.address, erc721TokenOwner);
+          assert.isTrue(buyerVouchersBalance.eq(constants.ONE));
+          assert.strictEqual(users.buyer.address, voucherTokenOwner);
         });
 
         it('Should update escrow correctly', async () => {
@@ -1952,14 +1972,14 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
 
           eventUtils.assertEventEmitted(
             txReceiptFillOrder,
-            ERC1155ERC721_Factory,
+            VoucherSets_Factory,
             eventNames.TRANSFER_SINGLE,
             (ev) => {
-              assert.isTrue(ev._operator === contractVoucherKernel.address);
-              assert.isTrue(ev._from === users.seller.address);
-              assert.isTrue(ev._to === constants.ZERO_ADDRESS);
-              assert.isTrue(ev._id.eq(tokenSupplyKey));
-              assert.isTrue(ev._value.eq(constants.ONE));
+              assert.isTrue(ev.operator === contractVoucherKernel.address);
+              assert.isTrue(ev.from === users.seller.address);
+              assert.isTrue(ev.to === constants.ZERO_ADDRESS);
+              assert.isTrue(ev.id.eq(tokenSupplyKey));
+              assert.isTrue(ev.value.eq(constants.ONE));
             }
           );
 
@@ -1976,10 +1996,10 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           );
 
           //Throws data out-of-bounds error. Doesn't seem to be able to filter events properly if two events with the same signature are emitted
-          /*  
+          /*    
           eventUtils.assertEventEmitted(
             txReceiptFillOrder,
-            ERC1155ERC721_Factory,
+            Vouchers_Factory,
             eventNames.TRANSFER,
             (ev) => {
               assert.isTrue(ev._from === constants.ZERO_ADDRESS);
@@ -1987,7 +2007,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
               assert.isTrue(ev._tokenId.eq(tokenVoucherKey));
             }
           );
-
   
           eventUtils.assertEventEmitted(
             txReceiptFillOrder,
@@ -2019,26 +2038,27 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
             'Deposit released not false'
           );
 
-          //Check ERC1155ERC721 state
-          const sellerERC1155ERC721Balance = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          //Check VoucherSets state
+          const sellerVoucherSetsBalance = (
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.seller.address,
               tokenSupplyKey
             )
           )[0];
 
-          assert.isTrue(sellerERC1155ERC721Balance.eq(constants.NINE));
+          assert.isTrue(sellerVoucherSetsBalance.eq(constants.NINE));
 
-          const buyerERC721Balance = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf721](
+          //Check Vouchers state
+          const buyerVouchersBalance = (
+            await contractVouchers.functions[fnSignatures.balanceOf721](
               users.buyer.address
             )
           )[0];
-          const erc721TokenOwner = await contractERC1155ERC721.ownerOf(
+          const voucherTokenOwner = await contractVouchers.ownerOf(
             tokenVoucherKey
           );
-          assert.isTrue(buyerERC721Balance.eq(constants.ONE));
-          assert.strictEqual(users.buyer.address, erc721TokenOwner);
+          assert.isTrue(buyerVouchersBalance.eq(constants.ONE));
+          assert.strictEqual(users.buyer.address, voucherTokenOwner);
         });
 
         it('Should update escrow correctly', async () => {
