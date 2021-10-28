@@ -548,7 +548,7 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
      * Clients calling this function must replace the `\{id\}` substring with the
      * actual token type ID.
      */
-    function uri(uint256 id) external view virtual override returns (string memory) {
+    function uri(uint256) external view virtual override returns (string memory) {
         return metadataUri;
     }
 
