@@ -83,7 +83,7 @@ describe('Voucher Sets', () => {
     const sixtySeconds = 60;
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
-    TokenRegistry;
+      TokenRegistry;
     contractVoucherSets = (await VoucherSets_Factory.deploy(
       'https://token-cdn-domain/{id}.json'
     )) as Contract & VoucherSets;
@@ -124,7 +124,7 @@ describe('Voucher Sets', () => {
         MockERC1155Receiver;
 
     await contractTokenRegistry.deployed();
-    await contractVoucherSets.deployed(); 
+    await contractVoucherSets.deployed();
     await contractVouchers.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
@@ -148,8 +148,7 @@ describe('Voucher Sets', () => {
         contractVoucherKernel.address
       );
     }
-    
-  
+
     await contractVouchers.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
@@ -166,9 +165,7 @@ describe('Voucher Sets', () => {
     await contractCashier.setVoucherSetTokenAddress(
       contractVoucherSets.address
     );
-    await contractCashier.setVoucherTokenAddress(
-      contractVouchers.address
-    );
+    await contractCashier.setVoucherTokenAddress(contractVouchers.address);
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
@@ -211,44 +208,10 @@ describe('Voucher Sets', () => {
   }
 
   describe('Voucher Sets contract', function () {
-    describe('Common', () => {
+    describe('General', () => {
       beforeEach(async () => {
         await deployContracts();
         utils = await prepareUtils();
-      });
-
-      it('[setApprovalForAll] Should emit ApprovalForAll', async () => {
-        const tx = await contractVoucherSets.setApprovalForAll(
-          contractVoucherKernel.address,
-          true
-        );
-
-        const txReceipt = await tx.wait();
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          VoucherSets_Factory,
-          eventNames.APPROVAL_FOR_ALL,
-          (ev) => {
-            assert.equal(
-              ev.account,
-              users.deployer.address,
-              'ev.account not expected!'
-            );
-            assert.equal(
-              ev.operator,
-              contractVoucherKernel.address,
-              'ev.operator not expected!'
-            );
-            assert.equal(ev.approved, true, 'ev.approved not expected!');
-          }
-        );
-      });
-
-      it('[NEGATIVE][setApprovalForAll] Should revert if tries to set self as an operator', async () => {
-        await expect(
-          contractVoucherSets.setApprovalForAll(users.deployer.address, true)
-        ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
       });
 
       it('[setVoucherKernelAddress] Should set setVoucherKernelAddress to valid address', async () => {
@@ -325,21 +288,6 @@ describe('Voucher Sets', () => {
         ).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
       });
 
-      it('[isApprovedForAll] Should return the approval status of an operator for a given account', async () => {
-        const expectedApprovalStatus = true;
-        await contractVoucherSets.setApprovalForAll(
-          contractVoucherKernel.address,
-          expectedApprovalStatus
-        );
-
-        assert.isTrue(
-          await contractVoucherSets.isApprovedForAll(
-            users.deployer.address,
-            contractVoucherKernel.address
-          )
-        );
-      });
-
       describe('[supportsInterface]', () => {
         it('Should return True for supported _interfaceId', async () => {
           const supportedInterfaceIds = [
@@ -362,9 +310,7 @@ describe('Voucher Sets', () => {
           const unSupportedInterfaceId = '0x150b7a02';
 
           assert.isFalse(
-            await contractVoucherSets.supportsInterface(
-              unSupportedInterfaceId
-            )
+            await contractVoucherSets.supportsInterface(unSupportedInterfaceId)
           );
         });
       });
@@ -383,6 +329,55 @@ describe('Voucher Sets', () => {
           constants.seller_deposit,
           constants.buyer_deposit,
           constants.QTY_10
+        );
+      });
+
+      it('[setApprovalForAll] Should emit ApprovalForAll', async () => {
+        const tx = await contractVoucherSets.setApprovalForAll(
+          contractVoucherKernel.address,
+          true
+        );
+
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          VoucherSets_Factory,
+          eventNames.APPROVAL_FOR_ALL,
+          (ev) => {
+            assert.equal(
+              ev.account,
+              users.deployer.address,
+              'ev.account not expected!'
+            );
+            assert.equal(
+              ev.operator,
+              contractVoucherKernel.address,
+              'ev.operator not expected!'
+            );
+            assert.equal(ev.approved, true, 'ev.approved not expected!');
+          }
+        );
+      });
+
+      it('[NEGATIVE][setApprovalForAll] Should revert if tries to set self as an operator', async () => {
+        await expect(
+          contractVoucherSets.setApprovalForAll(users.deployer.address, true)
+        ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
+      });
+
+      it('[isApprovedForAll] Should return the approval status of an operator for a given account', async () => {
+        const expectedApprovalStatus = true;
+        await contractVoucherSets.setApprovalForAll(
+          contractVoucherKernel.address,
+          expectedApprovalStatus
+        );
+
+        assert.isTrue(
+          await contractVoucherSets.isApprovedForAll(
+            users.deployer.address,
+            contractVoucherKernel.address
+          )
         );
       });
 
@@ -599,11 +594,7 @@ describe('Voucher Sets', () => {
               users.deployer.address,
               'ev.from not as expected!'
             );
-            assert.equal(
-              ev.to,
-              users.other1.address,
-              'ev.to not as expected!'
-            );
+            assert.equal(ev.to, users.other1.address, 'ev.to not as expected!');
             assert.equal(
               ev.ids.toString(),
               tokenIds.toString(),
@@ -856,11 +847,7 @@ describe('Voucher Sets', () => {
               constants.ZERO_ADDRESS,
               'ev.from not as expected!'
             );
-            assert.equal(
-              ev.to,
-              users.other1.address,
-              'ev.to not as expected!'
-            );
+            assert.equal(ev.to, users.other1.address, 'ev.to not as expected!');
             assert.equal(ev.id, tokenIdForMint, 'ev.id not as expected!');
             assert.equal(
               ev.value,
@@ -1079,11 +1066,7 @@ describe('Voucher Sets', () => {
               constants.ZERO_ADDRESS,
               'ev.from not as expected!'
             );
-            assert.equal(
-              ev.to,
-              users.seller.address,
-              'ev.to not as expected!'
-            );
+            assert.equal(ev.to, users.seller.address, 'ev.to not as expected!');
             assert.equal(
               ev.ids.toString(),
               tokenIds.toString(),
@@ -1301,11 +1284,8 @@ describe('Voucher Sets', () => {
       });
     });
 
-  
     describe('Metadata', () => {
-      let erc721;
-      const metadataUri = ' https://token-cdn-domain/{id}.json';
-
+      const metadataUri = ' https://token-cdn-domain-new/{id}.json';
 
       beforeEach(async () => {
         await deployContracts();
@@ -1321,14 +1301,6 @@ describe('Voucher Sets', () => {
           constants.QTY_10
         );
 
-        erc721 = await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          TOKEN_SUPPLY_ID,
-          constants.product_price,
-          constants.buyer_deposit
-        );
-
         await contractVoucherSets.setUri(metadataUri);
       });
 
@@ -1337,15 +1309,14 @@ describe('Voucher Sets', () => {
         assert.equal(url, metadataUri);
       });
 
-
-      it('[NEGATIVE][setUri] Should revert if attacker tries to set metadataBase', async () => {
+      it('[NEGATIVE][setUri] Should revert if attacker tries to set uri', async () => {
         const attackerInstance = contractVoucherSets.connect(
           users.attacker.signer
         );
 
-        await expect(
-          attackerInstance.setUri(metadataUri)
-        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+        await expect(attackerInstance.setUri(metadataUri)).to.be.revertedWith(
+          revertReasons.UNAUTHORIZED_OWNER
+        );
       });
     });
   });
