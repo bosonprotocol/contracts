@@ -134,7 +134,7 @@ describe('Cashier and VoucherKernel', () => {
         MockERC721Receiver;
 
     await contractTokenRegistry.deployed();
-    await contractVoucherSets.deployed(); 
+    await contractVoucherSets.deployed();
     await contractVouchers.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
@@ -169,9 +169,7 @@ describe('Cashier and VoucherKernel', () => {
     await contractCashier.setVoucherSetTokenAddress(
       contractVoucherSets.address
     );
-    await contractCashier.setVoucherTokenAddress(
-      contractVouchers.address
-    );
+    await contractCashier.setVoucherTokenAddress(contractVouchers.address);
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
@@ -790,7 +788,7 @@ describe('Cashier and VoucherKernel', () => {
                 tokenSupplyKey
               )
             )[0];
-  
+
             assert.isTrue(
               sellerERC1155ERC721Balance.eq(constants.QTY_10),
               'Voucher Set token seller balance mismatch'
@@ -1261,7 +1259,7 @@ describe('Cashier and VoucherKernel', () => {
                 tokenSupplyKey
               )
             )[0];
-  
+
             assert.isTrue(
               sellerERC1155ERC721Balance.eq(constants.QTY_10),
               'Voucher Set token seller balance mismatch'
@@ -1632,7 +1630,7 @@ describe('Cashier and VoucherKernel', () => {
                 tokenSupplyKey
               )
             )[0];
-  
+
             assert.isTrue(
               sellerERC1155ERC721Balance.eq(constants.QTY_10),
               'Voucher Set token seller balance mismatch'
@@ -2446,23 +2444,23 @@ describe('Cashier and VoucherKernel', () => {
                 TOKEN_SUPPLY_ID
               )
             )[0];
-  
+
             assert.isTrue(
               sellerERC1155ERC721Balance.eq(ORDER_QTY - 1),
               'Voucher Set token seller balance mismatch'
             );
-  
+
             const buyerERC721Balance = (
               await contractVouchers.functions[fnSignatures.balanceOf721](
                 users.buyer.address
               )
             )[0];
-  
+
             assert.isTrue(
               buyerERC721Balance.eq(constants.ONE),
               'Buyer 721 balance mismatch'
             );
-  
+
             expect(await contractVouchers.ownerOf(voucherTokenId)).to.equal(
               users.buyer.address,
               'Owner address mismatch'
@@ -2739,23 +2737,23 @@ describe('Cashier and VoucherKernel', () => {
                 TOKEN_SUPPLY_ID
               )
             )[0];
-  
+
             assert.isTrue(
               sellerERC1155ERC721Balance.eq(ORDER_QTY - 1),
               'Voucher Set token seller balance mismatch'
             );
-  
+
             const buyerERC721Balance = (
               await contractVouchers.functions[fnSignatures.balanceOf721](
                 users.buyer.address
               )
             )[0];
-  
+
             assert.isTrue(
               buyerERC721Balance.eq(constants.ONE),
               'Buyer 721 balance mismatch'
             );
-  
+
             expect(await contractVouchers.ownerOf(voucherTokenId)).to.equal(
               users.buyer.address,
               'Owner address mismatch'
@@ -3019,23 +3017,23 @@ describe('Cashier and VoucherKernel', () => {
                 TOKEN_SUPPLY_ID
               )
             )[0];
-  
+
             assert.isTrue(
               sellerERC1155ERC721Balance.eq(ORDER_QTY - 1),
               'Voucher Set token seller balance mismatch'
             );
-  
+
             const buyerERC721Balance = (
               await contractVouchers.functions[fnSignatures.balanceOf721](
                 users.buyer.address
               )
             )[0];
-  
+
             assert.isTrue(
               buyerERC721Balance.eq(constants.ONE),
               'Buyer 721 balance mismatch'
             );
-  
+
             expect(await contractVouchers.ownerOf(voucherTokenId)).to.equal(
               users.buyer.address,
               'Owner address mismatch'
@@ -3362,23 +3360,23 @@ describe('Cashier and VoucherKernel', () => {
                 TOKEN_SUPPLY_ID
               )
             )[0];
-  
+
             assert.isTrue(
               sellerERC1155ERC721Balance.eq(ORDER_QTY - 1),
               'Voucher Set token seller balance mismatch'
             );
-  
+
             const buyerERC721Balance = (
               await contractVouchers.functions[fnSignatures.balanceOf721](
                 users.buyer.address
               )
             )[0];
-  
+
             assert.isTrue(
               buyerERC721Balance.eq(constants.ONE),
               'Buyer 721 balance mismatch'
             );
-  
+
             expect(await contractVouchers.ownerOf(voucherTokenId)).to.equal(
               users.buyer.address,
               'Owner address mismatch'
@@ -5520,15 +5518,17 @@ describe('Cashier and VoucherKernel', () => {
             'New owner balance from escrow does not match'
           );
 
-          const user1BalanceBeforeTransfer = await contractVoucherSets.balanceOfBatch(
-            [users.other1.address, users.other1.address],
-            tokenSupplyBatch
-          );
+          const user1BalanceBeforeTransfer =
+            await contractVoucherSets.balanceOfBatch(
+              [users.other1.address, users.other1.address],
+              tokenSupplyBatch
+            );
 
-          const user2BalanceBeforeTransfer = await contractVoucherSets.balanceOfBatch(
-            [users.other2.address, users.other2.address],
-            tokenSupplyBatch
-          );
+          const user2BalanceBeforeTransfer =
+            await contractVoucherSets.balanceOfBatch(
+              [users.other2.address, users.other2.address],
+              tokenSupplyBatch
+            );
 
           assert.equal(
             JSON.stringify(user1BalanceBeforeTransfer),
@@ -5570,15 +5570,17 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           // balances after
-          const user1BalanceAfterTransfer = await contractVoucherSets.balanceOfBatch(
-            [users.other1.address, users.other1.address],
-            tokenSupplyBatch
-          );
+          const user1BalanceAfterTransfer =
+            await contractVoucherSets.balanceOfBatch(
+              [users.other1.address, users.other1.address],
+              tokenSupplyBatch
+            );
 
-          const user2BalanceAfterTransfer = await contractVoucherSets.balanceOfBatch(
-            [users.other2.address, users.other2.address],
-            tokenSupplyBatch
-          );
+          const user2BalanceAfterTransfer =
+            await contractVoucherSets.balanceOfBatch(
+              [users.other2.address, users.other2.address],
+              tokenSupplyBatch
+            );
 
           assert.equal(
             JSON.stringify(user1BalanceAfterTransfer),
@@ -5636,10 +5638,11 @@ describe('Cashier and VoucherKernel', () => {
             'Old owner balance from escrow does not match'
           );
 
-          const balanceBeforeTransfer = await contractVoucherSets.balanceOfBatch(
-            [users.other1.address, users.other1.address],
-            tokenSupplyBatch
-          );
+          const balanceBeforeTransfer =
+            await contractVoucherSets.balanceOfBatch(
+              [users.other1.address, users.other1.address],
+              tokenSupplyBatch
+            );
 
           const transferTx = await utils.safeBatchTransfer1155(
             users.other1.address,
@@ -6846,7 +6849,6 @@ describe('Cashier and VoucherKernel', () => {
             0,
             'User2 before balance mismatch'
           );
-        
 
           await utils.safeTransfer1155(
             users.other1.address,
@@ -6899,7 +6901,7 @@ describe('Cashier and VoucherKernel', () => {
           // Check supply holder after
           expect(
             await contractVoucherKernel.getSupplyHolder(tokenSupplyKey)
-          ).to.equal(users.other2.address, 'Supply 1 after - holder mismatch'); 
+          ).to.equal(users.other2.address, 'Supply 1 after - holder mismatch');
         });
 
         it('Should finalize 1 voucher to ensure payments are sent to the new owner', async () => {
@@ -7229,21 +7231,15 @@ describe('Cashier and VoucherKernel', () => {
           'New owner balance from escrow does not match'
         );
 
-        expect(
-          (
-            await contractVouchers.balanceOf(
-              users.other1.address
-            )
-          )
-        ).to.equal(0, 'User1 after balance mismatch');
+        expect(await contractVouchers.balanceOf(users.other1.address)).to.equal(
+          0,
+          'User1 after balance mismatch'
+        );
 
-        expect(
-          (
-            await contractVouchers.balanceOf(
-              users.other2.address
-            )
-          )
-        ).to.equal(1, 'User2 after balance mismatch');
+        expect(await contractVouchers.balanceOf(users.other2.address)).to.equal(
+          1,
+          'User2 after balance mismatch'
+        );
       });
 
       it('Should transfer voucher to self and balance should be the same', async () => {
@@ -7260,8 +7256,7 @@ describe('Cashier and VoucherKernel', () => {
           'Old owner balance from escrow does not match'
         );
 
-        const balanceOf =
-          contractVouchers.functions[fnSignatures.balanceOf721];
+        const balanceOf = contractVouchers.functions[fnSignatures.balanceOf721];
 
         const balanceBeforeTransfer = (
           await balanceOf(users.other1.address)

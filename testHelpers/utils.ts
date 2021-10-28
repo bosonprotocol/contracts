@@ -786,9 +786,7 @@ class Utils {
     signer: Signer
   ): Promise<ContractTransaction> {
     const arbitraryBytes = ethers.utils.formatBytes32String('0x0');
-    const fromInstance = this.contractVouchers.connect(
-      signer
-    ) as Vouchers;
+    const fromInstance = this.contractVouchers.connect(signer) as Vouchers;
 
     const method = fromInstance.functions[fnSignatures.safeTransfer721];
 
@@ -806,9 +804,7 @@ class Utils {
     voucherID: string,
     signer: Signer
   ): Promise<ContractTransaction> {
-    const fromInstance = this.contractVouchers.connect(
-      signer
-    ) as Vouchers;
+    const fromInstance = this.contractVouchers.connect(signer) as Vouchers;
 
     const method =
       fromInstance.functions[fnSignatures.safeTransfer721WithNoData];
@@ -868,9 +864,7 @@ class Utils {
     voucherID: string,
     signer: Signer
   ): Promise<ContractTransaction> {
-    const fromInstance = this.contractVouchers.connect(
-      signer
-    ) as Vouchers;
+    const fromInstance = this.contractVouchers.connect(signer) as Vouchers;
 
     const method = fromInstance.functions[fnSignatures.transfer721];
 
