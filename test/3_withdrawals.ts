@@ -6966,7 +6966,7 @@ describe('Cashier withdrawals ', () => {
           );
         });
 
-        it('ERC1155 balance should be correct', async () => {
+        it('VoucherSets balance should be correct', async () => {
           const balance = await contractVoucherSets[
             'balanceOf(address,uint256)'
           ](users.seller.address, TOKEN_SUPPLY_ID);
@@ -6974,7 +6974,7 @@ describe('Cashier withdrawals ', () => {
           assert.equal(
             balance.toString(),
             constants.ZERO.toString(),
-            'ERC1155ERC721 amount is incorrect'
+            'VoucherSets amount is incorrect'
           );
         });
 
@@ -7192,7 +7192,7 @@ describe('Cashier withdrawals ', () => {
             );
           });
 
-          it('ERC1155 balance should be correct', async () => {
+          it('VoucherSets balance should be correct', async () => {
             const balance = await contractVoucherSets[
               'balanceOf(address,uint256)'
             ](users.seller.address, TOKEN_SUPPLY_ID);
@@ -7200,7 +7200,7 @@ describe('Cashier withdrawals ', () => {
             assert.equal(
               balance.toString(),
               constants.ZERO.toString(),
-              'ERC1155ERC721 amount is incorrect'
+              'VoucherSets amount is incorrect'
             );
           });
 
@@ -7413,7 +7413,7 @@ describe('Cashier withdrawals ', () => {
             );
           });
 
-          it('ERC1155 balance should be correct', async () => {
+          it('VoucherSets balance should be correct', async () => {
             const balance = await contractVoucherSets[
               'balanceOf(address,uint256)'
             ](users.seller.address, TOKEN_SUPPLY_ID);
@@ -7421,7 +7421,7 @@ describe('Cashier withdrawals ', () => {
             assert.equal(
               balance.toString(),
               constants.ZERO.toString(),
-              'ERC1155ERC721 amount is incorrect'
+              'VoucherSets amount is incorrect'
             );
           });
 
@@ -7635,7 +7635,7 @@ describe('Cashier withdrawals ', () => {
             );
           });
 
-          it('ERC1155 balance should be correct', async () => {
+          it('VoucherSets balance should be correct', async () => {
             const balance = await contractVoucherSets[
               'balanceOf(address,uint256)'
             ](users.seller.address, TOKEN_SUPPLY_ID);
@@ -7643,7 +7643,7 @@ describe('Cashier withdrawals ', () => {
             assert.equal(
               balance.toString(),
               constants.ZERO.toString(),
-              'ERC1155ERC721 amount is incorrect'
+              'VoucherSets amount is incorrect'
             );
           });
 
@@ -7835,7 +7835,7 @@ describe('Cashier withdrawals ', () => {
             );
           });
 
-          it('ERC1155 balance should be correct', async () => {
+          it('VoucherSets balance should be correct', async () => {
             const balance = await contractVoucherSets[
               'balanceOf(address,uint256)'
             ](users.seller.address, TOKEN_SUPPLY_ID);
@@ -7843,7 +7843,7 @@ describe('Cashier withdrawals ', () => {
             assert.equal(
               balance.toString(),
               constants.ZERO.toString(),
-              'ERC1155ERC721 amount is incorrect'
+              'VoucherSets amount is incorrect'
             );
           });
 
