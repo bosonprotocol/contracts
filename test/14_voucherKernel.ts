@@ -25,9 +25,6 @@ let MockERC20Permit_Factory: ContractFactory;
 let MockERC721Receiver_Factory: ContractFactory;
 
 import revertReasons from '../testHelpers/revertReasons';
-import * as eventUtils from '../testHelpers/events';
-const eventNames = eventUtils.eventNames;
-import fnSignatures from '../testHelpers/functionSignatures';
 
 import {waffle} from 'hardhat';
 import ERC721receiver from '../artifacts/contracts/mocks/MockERC721Receiver.sol/MockERC721Receiver.json';
