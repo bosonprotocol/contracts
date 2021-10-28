@@ -1,16 +1,12 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
 import {assert, expect} from 'chai';
-
 import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
 import UtilsBuilder from '../testHelpers/utilsBuilder';
-const BN = ethers.BigNumber.from;
-
 import {waffle} from 'hardhat';
 import ERC721receiver from '../artifacts/contracts/mocks/MockERC721Receiver.sol/MockERC721Receiver.json';
-import ERC1155receiver from '../artifacts/contracts/mocks/MockERC1155Receiver.sol/MockERC1155Receiver.json';
 const {deployMockContract} = waffle;
 
 import {
@@ -84,7 +80,7 @@ describe('ERC1155ERC721', () => {
     const sixtySeconds = 60;
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
-    TokenRegistry;
+      TokenRegistry;
     contractVoucherSets = (await VoucherSets_Factory.deploy(
       'https://token-cdn-domain/{id}.json'
     )) as Contract & VoucherSets;
@@ -123,7 +119,7 @@ describe('ERC1155ERC721', () => {
         MockERC1155Receiver;
 
     await contractTokenRegistry.deployed();
-    await contractVoucherSets.deployed(); 
+    await contractVoucherSets.deployed();
     await contractVouchers.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
@@ -142,11 +138,9 @@ describe('ERC1155ERC721', () => {
       true
     );
 
-    
     await contractVoucherSets.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
-   
 
     if (setVoucherKernelAddress) {
       await contractVouchers.setVoucherKernelAddress(
@@ -166,9 +160,7 @@ describe('ERC1155ERC721', () => {
     await contractCashier.setVoucherSetTokenAddress(
       contractVoucherSets.address
     );
-    await contractCashier.setVoucherTokenAddress(
-      contractVouchers.address
-    );
+    await contractCashier.setVoucherTokenAddress(contractVouchers.address);
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
@@ -211,31 +203,10 @@ describe('ERC1155ERC721', () => {
   }
 
   describe('Vouchers contract', function () {
-    describe('Common', () => {
+    describe('General', () => {
       beforeEach(async () => {
         await deployContracts();
         utils = await prepareUtils();
-      });
-
-      it('[name] Should have correct name on deploy', async () => {
-        const expectedName = 'Boson Smart Voucher';
-        const actual = await contractVouchers.name();
-
-        assert.equal(actual, expectedName, 'name not set correctly!');
-      });
-
-      it('[symbol] Should have correct symbol on deploy', async () => {
-        const expectedSymbol = 'BSV';
-
-        const actual = await contractVouchers.symbol();
-
-        assert.equal(actual, expectedSymbol, 'symbol not set correctly!');
-      });
-
-      it('[NEGATIVE][setApprovalForAll] Should revert if tries to set self as an operator', async () => {
-        await expect(
-          contractVouchers.setApprovalForAll(users.deployer.address, true)
-        ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
       });
 
       it('[setVoucherKernelAddress] Should set setVoucherKernelAddress to valid address', async () => {
@@ -283,22 +254,6 @@ describe('ERC1155ERC721', () => {
             123
           )
         ).to.be.revertedWith(revertReasons.UNSPECIFIED_VOUCHERKERNEL);
-
-      });
-
-      it('[isApprovedForAll] Should return the approval status of an operator for a given account', async () => {
-        const expectedApprovalStatus = true;
-        await contractVouchers.setApprovalForAll(
-          contractVoucherKernel.address,
-          expectedApprovalStatus
-        );
-
-        assert.isTrue(
-          await contractVouchers.isApprovedForAll(
-            users.deployer.address,
-            contractVoucherKernel.address
-          )
-        );
       });
 
       describe('[supportsInterface]', () => {
@@ -323,9 +278,7 @@ describe('ERC1155ERC721', () => {
           const unSupportedInterfaceId = '0x150b7a02';
 
           assert.isFalse(
-            await contractVouchers.supportsInterface(
-              unSupportedInterfaceId
-            )
+            await contractVouchers.supportsInterface(unSupportedInterfaceId)
           );
         });
       });
@@ -347,6 +300,55 @@ describe('ERC1155ERC721', () => {
         );
       });
 
+      it('[setApprovalForAll] Should emit ApprovalForAll', async () => {
+        const tx = await contractVouchers.setApprovalForAll(
+          contractVoucherKernel.address,
+          true
+        );
+
+        const txReceipt = await tx.wait();
+
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Vouchers_Factory,
+          eventNames.APPROVAL_FOR_ALL,
+          (ev) => {
+            assert.equal(
+              ev.owner,
+              users.deployer.address,
+              'ev.account not expected!'
+            );
+            assert.equal(
+              ev.operator,
+              contractVoucherKernel.address,
+              'ev.operator not expected!'
+            );
+            assert.equal(ev.approved, true, 'ev.approved not expected!');
+          }
+        );
+      });
+
+      it('[NEGATIVE][setApprovalForAll] Should revert if tries to set self as an operator', async () => {
+        await expect(
+          contractVouchers.setApprovalForAll(users.deployer.address, true)
+        ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
+      });
+
+      it('[isApprovedForAll] Should return the approval status of an operator for a given account', async () => {
+        const expectedApprovalStatus = true;
+        await contractVouchers.setApprovalForAll(
+          contractVoucherKernel.address,
+          expectedApprovalStatus
+        );
+
+        assert.isTrue(
+          await contractVouchers.isApprovedForAll(
+            users.deployer.address,
+            contractVoucherKernel.address
+          )
+        );
+      });
+
       it('[approve] Owner should approve transfer of erc721', async () => {
         const token721 = await utils.commitToBuy(
           users.buyer,
@@ -356,9 +358,7 @@ describe('ERC1155ERC721', () => {
           constants.buyer_deposit
         );
 
-        const owner721Instance = contractVouchers.connect(
-          users.buyer.signer
-        );
+        const owner721Instance = contractVouchers.connect(users.buyer.signer);
         const tx = await owner721Instance.approve(
           users.other1.address,
           token721
@@ -388,9 +388,7 @@ describe('ERC1155ERC721', () => {
           }
         );
 
-        const approvedAddress = await contractVouchers.getApproved(
-          token721
-        );
+        const approvedAddress = await contractVouchers.getApproved(token721);
         assert.equal(approvedAddress, users.other1.address);
       });
 
@@ -431,9 +429,7 @@ describe('ERC1155ERC721', () => {
         const tokenIdsForMint = 123;
 
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
-        await contractVouchers.setVoucherKernelAddress(
-          users.deployer.address
-        );
+        await contractVouchers.setVoucherKernelAddress(users.deployer.address);
 
         await contractVouchers.functions[fnSignatures.mint721](
           expectedOwner,
@@ -446,9 +442,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[NEGATIVE][ownerOf] should revert if incorrect id provided', async () => {
-        const sellerInstance = contractVouchers.connect(
-          users.seller.signer
-        );
+        const sellerInstance = contractVouchers.connect(users.seller.signer);
         await expect(sellerInstance.ownerOf(1)).to.be.revertedWith(
           revertReasons.UNDEFINED_OWNER
         );
@@ -490,8 +484,7 @@ describe('ERC1155ERC721', () => {
       });
 
       it('[NEGATIVE][balanceOf] should revert if ZERO address is provided', async () => {
-        const balanceOf =
-        contractVouchers.functions[fnSignatures.balanceOf721];
+        const balanceOf = contractVouchers.functions[fnSignatures.balanceOf721];
 
         await expect(balanceOf(constants.ZERO_ADDRESS)).to.be.revertedWith(
           revertReasons.UNSPECIFIED_ADDRESS
@@ -524,16 +517,8 @@ describe('ERC1155ERC721', () => {
           Vouchers_Factory,
           eventNames.TRANSFER,
           (ev) => {
-            assert.equal(
-              ev.from,
-              oldOwner.address,
-              'ev.from not as expected!'
-            );
-            assert.equal(
-              ev.to,
-              users.other2.address,
-              'ev.to not as expected!'
-            );
+            assert.equal(ev.from, oldOwner.address, 'ev.from not as expected!');
+            assert.equal(ev.to, users.other2.address, 'ev.to not as expected!');
             assert.equal(
               ev.tokenId.toString(),
               erc721.toString(),
@@ -573,16 +558,8 @@ describe('ERC1155ERC721', () => {
           Vouchers_Factory,
           eventNames.TRANSFER,
           (ev) => {
-            assert.equal(
-              ev.from,
-              oldOwner.address,
-              'ev.from not as expected!'
-            );
-            assert.equal(
-              ev.to,
-              users.other2.address,
-              'ev.to not as expected!'
-            );
+            assert.equal(ev.from, oldOwner.address, 'ev.from not as expected!');
+            assert.equal(ev.to, users.other2.address, 'ev.to not as expected!');
             assert.equal(
               ev.tokenId.toString(),
               erc721.toString(),
@@ -622,11 +599,7 @@ describe('ERC1155ERC721', () => {
           Vouchers_Factory,
           eventNames.TRANSFER,
           (ev) => {
-            assert.equal(
-              ev.from,
-              oldOwner.address,
-              'ev.from not as expected!'
-            );
+            assert.equal(ev.from, oldOwner.address, 'ev.from not as expected!');
             assert.equal(
               ev.to,
               expectedNewOwnerAddress,
@@ -779,16 +752,8 @@ describe('ERC1155ERC721', () => {
           Vouchers_Factory,
           eventNames.TRANSFER,
           (ev) => {
-            assert.equal(
-              ev.from,
-              oldOwner.address,
-              'ev.from not as expected!'
-            );
-            assert.equal(
-              ev.to,
-              users.other2.address,
-              'ev.to not as expected!'
-            );
+            assert.equal(ev.from, oldOwner.address, 'ev.from not as expected!');
+            assert.equal(ev.to, users.other2.address, 'ev.to not as expected!');
             assert.equal(
               ev.tokenId.toString(),
               erc721.toString(),
@@ -825,9 +790,7 @@ describe('ERC1155ERC721', () => {
 
       it('[getApproved] Should return zero address if no address set', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
-        await contractVouchers.setVoucherKernelAddress(
-          users.deployer.address
-        );
+        await contractVouchers.setVoucherKernelAddress(users.deployer.address);
 
         const tokenIdForMint = 123;
         await contractVouchers.functions[fnSignatures.mint721](
@@ -845,9 +808,7 @@ describe('ERC1155ERC721', () => {
         const expectedApprovedAddress = users.other1.address;
 
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
-        await contractVouchers.setVoucherKernelAddress(
-          users.deployer.address
-        );
+        await contractVouchers.setVoucherKernelAddress(users.deployer.address);
 
         const tokenIdForMint = 123;
         await contractVouchers.functions[fnSignatures.mint721](
@@ -855,10 +816,7 @@ describe('ERC1155ERC721', () => {
           tokenIdForMint
         );
 
-        await contractVouchers.approve(
-          expectedApprovedAddress,
-          tokenIdForMint
-        );
+        await contractVouchers.approve(expectedApprovedAddress, tokenIdForMint);
         const approvedAddress = await contractVouchers.getApproved(
           tokenIdForMint
         );
@@ -873,9 +831,7 @@ describe('ERC1155ERC721', () => {
 
       it('[mint] Should mint a token', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
-        await contractVouchers.setVoucherKernelAddress(
-          users.deployer.address
-        );
+        await contractVouchers.setVoucherKernelAddress(users.deployer.address);
 
         const tokenIdForMint = 123;
         const tx = await contractVouchers.functions[fnSignatures.mint721](
@@ -895,11 +851,7 @@ describe('ERC1155ERC721', () => {
               constants.ZERO_ADDRESS,
               'ev.from not as expected!'
             );
-            assert.equal(
-              ev.to,
-              users.other1.address,
-              'ev.to not as expected!'
-            );
+            assert.equal(ev.to, users.other1.address, 'ev.to not as expected!');
             assert.equal(
               ev.tokenId,
               tokenIdForMint,
@@ -920,9 +872,7 @@ describe('ERC1155ERC721', () => {
         const supportingContractAddress = contractMockERC721Receiver.address;
 
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
-        await contractVouchers.setVoucherKernelAddress(
-          users.deployer.address
-        );
+        await contractVouchers.setVoucherKernelAddress(users.deployer.address);
 
         const tokenIdForMint = 123;
         const tx = await contractVouchers.functions[fnSignatures.mint721](
@@ -965,9 +915,7 @@ describe('ERC1155ERC721', () => {
 
       it('[NEGATIVE][mint] it should not be able to mint a token to a receiver that cannot receive it', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
-        await contractVouchers.setVoucherKernelAddress(
-          users.deployer.address
-        );
+        await contractVouchers.setVoucherKernelAddress(users.deployer.address);
 
         const tokenIdForMint = 123;
         await expect(
@@ -989,9 +937,7 @@ describe('ERC1155ERC721', () => {
 
       it('[NEGATIVE][mint] Should revert when to is a zero address', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
-        await contractVouchers.setVoucherKernelAddress(
-          users.deployer.address
-        );
+        await contractVouchers.setVoucherKernelAddress(users.deployer.address);
 
         await expect(
           contractVouchers.functions[fnSignatures.mint721](
@@ -1003,9 +949,7 @@ describe('ERC1155ERC721', () => {
 
       it('[NEGATIVE][mint] Should not be able to mint same token twice', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
-        await contractVouchers.setVoucherKernelAddress(
-          users.deployer.address
-        );
+        await contractVouchers.setVoucherKernelAddress(users.deployer.address);
 
         const tokenIdForMint = 123;
         await contractVouchers.functions[fnSignatures.mint721](
@@ -1049,7 +993,6 @@ describe('ERC1155ERC721', () => {
         );
 
         await contractVouchers.setTokenURI(metadataUri);
-      
       });
 
       it('[tokenURI] Should return correct url for erc721', async () => {
@@ -1074,6 +1017,20 @@ describe('ERC1155ERC721', () => {
         ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
       });
 
+      it('[name] Should have correct name on deploy', async () => {
+        const expectedName = 'Boson Smart Voucher';
+        const actual = await contractVouchers.name();
+
+        assert.equal(actual, expectedName, 'name not set correctly!');
+      });
+
+      it('[symbol] Should have correct symbol on deploy', async () => {
+        const expectedSymbol = 'BSV';
+
+        const actual = await contractVouchers.symbol();
+
+        assert.equal(actual, expectedSymbol, 'symbol not set correctly!');
+      });
     });
   });
 });
