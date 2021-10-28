@@ -7,7 +7,8 @@ import Utils from '../testHelpers/utils';
 import UtilsBuilder from '../testHelpers/utilsBuilder';
 import {
   BosonRouter,
-  ERC1155ERC721,
+  VoucherSets,
+  Vouchers,
   VoucherKernel,
   Cashier,
   TokenRegistry,
@@ -16,7 +17,8 @@ import {
 } from '../typechain';
 const {keccak256, solidityPack} = ethers.utils;
 
-let ERC1155ERC721_Factory: ContractFactory;
+let VoucherSets_Factory: ContractFactory;
+let Vouchers_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
@@ -41,7 +43,8 @@ describe('VOUCHER KERNEL', () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
 
-    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherSets_Factory = await ethers.getContractFactory('VoucherSets');
+    Vouchers_Factory = await ethers.getContractFactory('Vouchers');
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
@@ -56,7 +59,8 @@ describe('VOUCHER KERNEL', () => {
     await setPeriods();
   });
 
-  let contractERC1155ERC721: ERC1155ERC721,
+  let contractVoucherSets: VoucherSets,
+    contractVouchers: Vouchers,
     contractVoucherKernel: VoucherKernel,
     contractCashier: Cashier,
     contractBosonRouter: BosonRouter,
@@ -80,10 +84,15 @@ describe('VOUCHER KERNEL', () => {
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
-    contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
-      ERC1155ERC721;
+    contractVoucherSets = (await VoucherSets_Factory.deploy(
+      'https://token-cdn-domain/{id}.json'
+    )) as Contract & VoucherSets;
+    contractVouchers = (await Vouchers_Factory.deploy(
+      'https://token-cdn-domain//orders/metadata/'
+    )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
-      contractERC1155ERC721.address
+      contractVoucherSets.address,
+      contractVouchers.address
     )) as Contract & VoucherKernel;
     contractCashier = (await Cashier_Factory.deploy(
       contractVoucherKernel.address
@@ -110,7 +119,8 @@ describe('VOUCHER KERNEL', () => {
         MockERC721Receiver;
 
     await contractTokenRegistry.deployed();
-    await contractERC1155ERC721.deployed();
+    await contractVoucherSets.deployed();
+    await contractVouchers.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
     await contractBosonRouter.deployed();
@@ -118,15 +128,23 @@ describe('VOUCHER KERNEL', () => {
     await contractBSNTokenDeposit.deployed();
     await contractMockERC721Receiver.deployed();
 
-    await contractERC1155ERC721.setApprovalForAll(
+    await contractVoucherSets.setApprovalForAll(
       contractVoucherKernel.address,
       true
     );
-    await contractERC1155ERC721.setVoucherKernelAddress(
+    await contractVouchers.setApprovalForAll(
+      contractVoucherKernel.address,
+      true
+    );
+    await contractVoucherSets.setVoucherKernelAddress(
+      contractVoucherKernel.address
+    );
+    await contractVouchers.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
 
-    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
+    await contractVoucherSets.setCashierAddress(contractCashier.address);
+    await contractVouchers.setCashierAddress(contractCashier.address);
 
     if (setBosonRouterAddress) {
       await contractVoucherKernel.setBosonRouterAddress(
@@ -142,9 +160,10 @@ describe('VOUCHER KERNEL', () => {
       await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
     }
 
-    await contractCashier.setTokenContractAddress(
-      contractERC1155ERC721.address
+    await contractCashier.setVoucherSetTokenAddress(
+      contractVoucherSets.address
     );
+    await contractCashier.setVoucherTokenAddress(contractVouchers.address);
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
@@ -367,7 +386,8 @@ describe('VOUCHER KERNEL', () => {
       utils = await UtilsBuilder.create()
         .ETHETH()
         .buildAsync(
-          contractERC1155ERC721,
+          contractVoucherSets,
+          contractVouchers,
           contractVoucherKernel,
           contractCashier,
           contractBosonRouter
@@ -404,7 +424,8 @@ describe('VOUCHER KERNEL', () => {
       utils = await UtilsBuilder.create()
         .ETHETH()
         .buildAsync(
-          contractERC1155ERC721,
+          contractVoucherSets,
+          contractVouchers,
           contractVoucherKernel,
           contractCashier,
           contractBosonRouter
@@ -454,7 +475,8 @@ describe('VOUCHER KERNEL', () => {
       utils = await UtilsBuilder.create()
         .ETHETH()
         .buildAsync(
-          contractERC1155ERC721,
+          contractVoucherSets,
+          contractVouchers,
           contractVoucherKernel,
           contractCashier,
           contractBosonRouter
@@ -529,7 +551,8 @@ describe('VOUCHER KERNEL', () => {
         utils = await UtilsBuilder.create()
           .ETHETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
@@ -633,7 +656,8 @@ describe('VOUCHER KERNEL', () => {
         utils = await UtilsBuilder.create()
           .ETHETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
@@ -664,7 +688,7 @@ describe('VOUCHER KERNEL', () => {
             supplyToBurn
           )
         )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
           .withArgs(
             contractVoucherKernel.address,
             users.seller.address,
@@ -674,7 +698,7 @@ describe('VOUCHER KERNEL', () => {
           );
 
         const expectedBalance = constants.QTY_10 - supplyToBurn;
-        const balanceOfOwner = await contractERC1155ERC721.functions[
+        const balanceOfOwner = await contractVoucherSets.functions[
           fnSignatures.balanceOf1155
         ](users.seller.address, tokenSupplyId);
 
