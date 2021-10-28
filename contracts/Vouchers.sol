@@ -324,12 +324,12 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
 
         emit Transfer(address(0), _to, _tokenId);
 
-        require(_doSafeTransferAcceptanceCheck(
+        _doSafeTransferAcceptanceCheck(
             address(0),
             _to,
             _tokenId,
             ""
-        ), "ERC721: transfer to non ERC721Receiver implementer");
+        );
     }
 
 
@@ -466,10 +466,12 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
         address _to,
         uint256 _tokenId,
         bytes memory _data
-    ) internal returns (bool) {
+    ) internal {
         if (_to.isContract()) {
             try IERC721Receiver(_to).onERC721Received(_msgSender(), _from, _tokenId, _data) returns (bytes4 retval) {
-                return retval == IERC721Receiver.onERC721Received.selector;
+                if (retval != IERC721Receiver.onERC721Received.selector) {
+                    revert("ERC721: transfer to non ERC721Receiver implementer");
+                }
             } catch (bytes memory reason) {
                 if (reason.length == 0) {
                     revert("ERC721: transfer to non ERC721Receiver implementer");
@@ -479,8 +481,6 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
                     }
                 }
             }
-        } else {
-            return true;
         }
     }
 }
