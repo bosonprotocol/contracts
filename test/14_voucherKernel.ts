@@ -1,6 +1,6 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
-import {assert, expect} from 'chai';
+import {expect} from 'chai';
 import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
@@ -604,7 +604,6 @@ describe('VOUCHER KERNEL', () => {
     });
 
     describe('Spoof cashier', () => {
-      let tokenSupplyId;
       beforeEach(async () => {
         await setPeriods();
         utils = await UtilsBuilder.create()
@@ -616,7 +615,7 @@ describe('VOUCHER KERNEL', () => {
             contractBosonRouter
           );
 
-        tokenSupplyId = await utils.createOrder(
+        await utils.createOrder(
           users.seller,
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
