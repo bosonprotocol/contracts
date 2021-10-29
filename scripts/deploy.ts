@@ -218,8 +218,8 @@ class DeploymentExecutor {
       ERC1155NonTransferable.connect(ccTokenDeployer);
 
     this.tokenRegistry = await TokenRegistry.deploy();
-    this.voucherSets = await VoucherSets.deploy(process.env.METADATA_BASE + process.env.ERC1155_ROUTE);
-    this.vouchers = await Vouchers.deploy(process.env.METADATA_BASE + process.env.ERC721_ROUTE);
+    this.voucherSets = await VoucherSets.deploy(process.env.VOUCHERSETS_METADATA_URI);
+    this.vouchers = await Vouchers.deploy(process.env.VOUCHERS_METADATA_URI);
     this.voucherKernel = await VoucherKernel.deploy(this.voucherSets.address, this.vouchers.address);
     this.cashier = await Cashier.deploy(this.voucherKernel.address);
     this.br = await BosonRouter.deploy(
