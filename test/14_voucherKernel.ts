@@ -528,13 +528,13 @@ describe('VOUCHER KERNEL', () => {
         );
       });
 
-      it('[NEGATIVE] Should revert if fillOrder is called with wrong holder', async () => {
+      it.only('[NEGATIVE] Should revert if fillOrder is called with wrong holder', async () => {
         await expect(
           contractVoucherKernel.fillOrder(
             tokenSupplyId,
             users.seller.address,
             constants.ZERO_ADDRESS,
-            1
+            constants.ZERO
           )
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
       });
@@ -591,13 +591,13 @@ describe('VOUCHER KERNEL', () => {
         ).to.be.revertedWith(arbitraryRevertReason);
       });
 
-      it('Should be possible to call fillOrder with holder contract that can receive ERC721', async () => {
+      it.only('Should be possible to call fillOrder with holder contract that can receive ERC721', async () => {
         await expect(
           contractVoucherKernel.fillOrder(
             tokenSupplyId,
             users.seller.address,
             contractMockERC721Receiver.address,
-            1
+            constants.ZERO
           )
         ).to.not.be.reverted;
       });

@@ -180,10 +180,10 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
 
   describe('TOKEN SUPPLY CREATION WITH TOKEN WRAPPER (Create Voucher Set)', () => {
     const paymentMethods = {
-      ETHETH: 1,
-      ETHTKN: 2,
-      TKNETH: 3,
-      TKNTKN: 4,
+      ETHETH: 0,
+      ETHTKN: 1,
+      TKNETH: 2,
+      TKNTKN: 3,
     };
 
     describe('[WITH PERMIT]', () => {
