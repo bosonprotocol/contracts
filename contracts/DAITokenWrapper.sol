@@ -56,7 +56,10 @@ contract DAITokenWrapper is ITokenWrapper, Ownable, ReentrancyGuard {
         notZeroAddress(_tokenOwner)
         notZeroAddress(_spender)
     {
-        require(_r != bytes32(0) && _s != bytes32(0), "INVALID_SIGNATURE_COMPONENTS");
+        // Ensure signature is unique
+        // See https://github.com/OpenZeppelin/openzeppelin-contracts/blob/04695aecbd4d17dddfd55de766d10e3805d6f42f/contracts/cryptography/ECDSA.sol#L5
+        require(uint256(_s) <= 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0, "INVALID_SIG_S");
+        require(_v == 27 || _v == 28, "INVALID_SIG_V");
         uint nonce =  IDAI(daiTokenAddress).nonces(_tokenOwner);
         IDAI(daiTokenAddress).permit(_tokenOwner, _spender, nonce, _deadline, true, _v, _r, _s);
         emit LogPermitCalledOnToken(daiTokenAddress, _tokenOwner, _spender, 0);

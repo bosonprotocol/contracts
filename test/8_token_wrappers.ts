@@ -268,38 +268,7 @@ describe('Token Wrappers', () => {
       ).to.be.revertedWith(revertReasons.DAI_PERMIT_EXPIRED);
     });
 
-    it('Should revert if signatue portion r is invalid', async () => {
-      await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
-      await mockDAI.mock.permit.returns();
-
-      digest = await getApprovalDigestDAI(
-        mockDAI,
-        user1.address,
-        contractBosonRouter.address,
-        txValue,
-        0,
-        deadline
-      );
-
-      const {v, s} = ecsign(
-        Buffer.from(digest.slice(2), 'hex'),
-        Buffer.from(user1.privateKey.slice(2), 'hex')
-      );
-
-      await expect(
-        contractDAITokenWrapper.permit(
-          user1.address,
-          contractBosonRouter.address,
-          txValue,
-          deadline,
-          v,
-          ethers.constants.HashZero,
-          s
-        )
-      ).to.be.revertedWith(revertReasons.INVALID_SIGNATURE_COMPONENTS);
-    });
-
-    it('Should revert if signatue portion s is invalid', async () => {
+    it('Should revert if signature component s is invalid', async () => {
       await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
       await mockDAI.mock.permit.returns();
 
@@ -317,6 +286,10 @@ describe('Token Wrappers', () => {
         Buffer.from(user1.privateKey.slice(2), 'hex')
       );
 
+      // to revert, s must be greater than 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0
+      const abiCoder = new ethers.utils.AbiCoder();
+      const s = abiCoder.encode(['bytes32'], [ethers.constants.MaxUint256]);
+
       await expect(
         contractDAITokenWrapper.permit(
           user1.address,
@@ -325,9 +298,44 @@ describe('Token Wrappers', () => {
           deadline,
           v,
           r,
-          ethers.constants.HashZero
+          s
         )
-      ).to.be.revertedWith(revertReasons.INVALID_SIGNATURE_COMPONENTS);
+      ).to.be.revertedWith(revertReasons.INVALID_SIG_S);
+    });
+
+    it('Should revert if signature component v is invalid', async () => {
+      await mockDAI.mock.nonces.withArgs(user1.address).returns(0);
+      await mockDAI.mock.permit.returns();
+
+      digest = await getApprovalDigestDAI(
+        mockDAI,
+        user1.address,
+        contractBosonRouter.address,
+        txValue,
+        0,
+        deadline
+      );
+
+      const {r, s} = ecsign(
+        Buffer.from(digest.slice(2), 'hex'),
+        Buffer.from(user1.privateKey.slice(2), 'hex')
+      );
+
+      // to revert, v must NOT be 27 or 28
+      const abiCoder = new ethers.utils.AbiCoder();
+      const v = abiCoder.encode(['uint8'], [ethers.constants.HashZero]);
+
+      await expect(
+        contractDAITokenWrapper.permit(
+          user1.address,
+          contractBosonRouter.address,
+          txValue,
+          deadline,
+          v,
+          r,
+          s
+        )
+      ).to.be.revertedWith(revertReasons.INVALID_SIG_V);
     });
 
     it('Should revert if the DAI token reverts', async () => {
