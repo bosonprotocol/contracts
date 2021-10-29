@@ -13,7 +13,7 @@ import "./interfaces/IBosonRouter.sol";
 import "./interfaces/ICashier.sol";
 import "./interfaces/IGate.sol";
 import "./interfaces/ITokenWrapper.sol";
-import "./UsingHelpers.sol";
+import {PaymentMethod} from "./UsingHelpers.sol";
 import "./libs/SafeERC20WithPermit.sol";
 
 /**

@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IVoucherKernel.sol";
 import "./interfaces/ICashier.sol";
-import "./UsingHelpers.sol";
+import {PaymentMethod, IDX_REDEEM, IDX_REFUND, IDX_EXPIRE, IDX_COMPLAIN, IDX_CANCEL_FAULT, IDX_FINAL, VoucherDetails, isStatus, determineStatus} from "./UsingHelpers.sol";
 
 /**
  * @title Contract for managing funds

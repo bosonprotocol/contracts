@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./interfaces/IERC1155ERC721.sol";
 import "./interfaces/IVoucherKernel.sol";
-import "./UsingHelpers.sol";
+import {PaymentMethod, IDX_COMMIT, IDX_REDEEM, IDX_REFUND, IDX_EXPIRE, IDX_COMPLAIN, IDX_CANCEL_FAULT, IDX_FINAL, VoucherStatus, isStateCommitted, isStateRedemptionSigned, isStateRefunded, isStateExpired, isStatus, determineStatus} from "./UsingHelpers.sol";
 
 //preparing for ERC-1066, ERC-1444, EIP-838
 
