@@ -32,9 +32,10 @@ describe('ERC1155 non transferable functionality', async () => {
   let contractERC1155NonTransferable: ERC1155NonTransferable;
 
   async function deployContracts() {
-    contractERC1155NonTransferable = (await ERC1155NonTransferable_Factory.deploy(
-      'https://token-cdn-domain/{id}.json'
-    )) as Contract & ERC1155NonTransferable;
+    contractERC1155NonTransferable =
+      (await ERC1155NonTransferable_Factory.deploy(
+        'https://token-cdn-domain/{id}.json'
+      )) as Contract & ERC1155NonTransferable;
 
     await contractERC1155NonTransferable.deployed();
   }
@@ -479,15 +480,13 @@ describe('ERC1155 non transferable functionality', async () => {
         const nftTokenID = BN('2');
         const nonce = getRandomNonce();
 
-        const mintData = contractERC1155NonTransferable.interface.encodeFunctionData(
-          'mint',
-          [
+        const mintData =
+          contractERC1155NonTransferable.interface.encodeFunctionData('mint', [
             users.other1.address,
             nftTokenID,
             constants.ONE,
             constants.ZERO_BYTES,
-          ]
-        );
+          ]);
 
         const sig = signData(users.deployer.signer, mintData, nonce);
 
@@ -532,10 +531,11 @@ describe('ERC1155 non transferable functionality', async () => {
           constants.ONE,
         ];
 
-        const mintBatchData = contractERC1155NonTransferable.interface.encodeFunctionData(
-          'mintBatch',
-          [users.other1.address, nftTokenIDs, balances, constants.ZERO_BYTES]
-        );
+        const mintBatchData =
+          contractERC1155NonTransferable.interface.encodeFunctionData(
+            'mintBatch',
+            [users.other1.address, nftTokenIDs, balances, constants.ZERO_BYTES]
+          );
 
         const sig = signData(users.deployer.signer, mintBatchData, nonce);
 
@@ -581,10 +581,12 @@ describe('ERC1155 non transferable functionality', async () => {
         const nonce = getRandomNonce();
         const nftTokenID = BN('2');
 
-        const burnData = contractERC1155NonTransferable.interface.encodeFunctionData(
-          'burn',
-          [users.other1.address, nftTokenID, constants.ONE]
-        );
+        const burnData =
+          contractERC1155NonTransferable.interface.encodeFunctionData('burn', [
+            users.other1.address,
+            nftTokenID,
+            constants.ONE,
+          ]);
 
         const sig = signData(users.deployer.signer, burnData, nonce);
 
@@ -642,10 +644,11 @@ describe('ERC1155 non transferable functionality', async () => {
           constants.ZERO,
         ];
 
-        const burnBatchData = contractERC1155NonTransferable.interface.encodeFunctionData(
-          'burnBatch',
-          [users.other1.address, nftTokenIDs, balances]
-        );
+        const burnBatchData =
+          contractERC1155NonTransferable.interface.encodeFunctionData(
+            'burnBatch',
+            [users.other1.address, nftTokenIDs, balances]
+          );
 
         const sig = signData(users.deployer.signer, burnBatchData, nonce);
 
@@ -698,10 +701,11 @@ describe('ERC1155 non transferable functionality', async () => {
         const nonce = getRandomNonce();
         const newUri = 'https://new.domain/{id}.json';
 
-        const setUriData = contractERC1155NonTransferable.interface.encodeFunctionData(
-          'setUri',
-          [newUri]
-        );
+        const setUriData =
+          contractERC1155NonTransferable.interface.encodeFunctionData(
+            'setUri',
+            [newUri]
+          );
 
         const sig = signData(users.deployer.signer, setUriData, nonce);
 
@@ -729,9 +733,8 @@ describe('ERC1155 non transferable functionality', async () => {
 
       it('Self should be able to pause', async () => {
         const nonce = getRandomNonce();
-        const pauseData = contractERC1155NonTransferable.interface.encodeFunctionData(
-          'pause'
-        );
+        const pauseData =
+          contractERC1155NonTransferable.interface.encodeFunctionData('pause');
 
         const sig = signData(users.deployer.signer, pauseData, nonce);
 
@@ -759,9 +762,10 @@ describe('ERC1155 non transferable functionality', async () => {
         const nonce = getRandomNonce();
         await contractERC1155NonTransferable.pause();
 
-        const unpauseData = contractERC1155NonTransferable.interface.encodeFunctionData(
-          'unpause'
-        );
+        const unpauseData =
+          contractERC1155NonTransferable.interface.encodeFunctionData(
+            'unpause'
+          );
 
         const sig = signData(users.deployer.signer, unpauseData, nonce);
 
@@ -788,15 +792,13 @@ describe('ERC1155 non transferable functionality', async () => {
       it('[Negative][mint] Attacker should not be able to mint', async () => {
         const nftTokenID = BN('2');
 
-        const mintData = contractERC1155NonTransferable.interface.encodeFunctionData(
-          'mint',
-          [
+        const mintData =
+          contractERC1155NonTransferable.interface.encodeFunctionData('mint', [
             users.other1.address,
             nftTokenID,
             constants.ONE,
             constants.ZERO_BYTES,
-          ]
-        );
+          ]);
 
         const sig = signData(users.other1.signer, mintData);
 
@@ -812,15 +814,13 @@ describe('ERC1155 non transferable functionality', async () => {
       it('[Negative][mint] Owner should not be able to replay', async () => {
         const nftTokenID = BN('2');
 
-        const mintData = contractERC1155NonTransferable.interface.encodeFunctionData(
-          'mint',
-          [
+        const mintData =
+          contractERC1155NonTransferable.interface.encodeFunctionData('mint', [
             users.other1.address,
             nftTokenID,
             constants.ONE,
             constants.ZERO_BYTES,
-          ]
-        );
+          ]);
 
         const sig = signData(users.deployer.signer, mintData);
 

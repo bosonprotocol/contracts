@@ -1921,9 +1921,8 @@ describe('Cashier withdrawals ', () => {
           const expectedEscrowAmountDeposit = BN(0);
           const expectedEscrowAmountPrice = BN(0);
 
-          const expectedBuyerAmount = expectedBuyerPrice.add(
-            expectedBuyerDeposit
-          );
+          const expectedBuyerAmount =
+            expectedBuyerPrice.add(expectedBuyerDeposit);
           const expectedSellerAmount = expectedSellerPrice.add(
             expectedSellerDeposit
           );
@@ -1986,9 +1985,8 @@ describe('Cashier withdrawals ', () => {
           const expectedEscrowAmountPrice = BN(0);
           const expectedEscrowAmountDeposit = BN(constants.seller_deposit); // 0.05
 
-          const expectedBuyerAmount = expectedBuyerPrice.add(
-            expectedBuyerDeposit
-          );
+          const expectedBuyerAmount =
+            expectedBuyerPrice.add(expectedBuyerDeposit);
           const expectedSellerAmount = expectedSellerPrice.add(
             expectedSellerDeposit
           );
@@ -2180,9 +2178,8 @@ describe('Cashier withdrawals ', () => {
           const expectedEscrowAmountPrice = BN(0);
           const expectedEscrowAmountDeposit = BN(0);
 
-          const expectedBuyerAmount = expectedBuyerPrice.add(
-            expectedBuyerDeposit
-          );
+          const expectedBuyerAmount =
+            expectedBuyerPrice.add(expectedBuyerDeposit);
           const expectedSellerAmount = expectedSellerPrice.add(
             expectedSellerDeposit
           );
@@ -2547,9 +2544,8 @@ describe('Cashier withdrawals ', () => {
           const expectedEscrowAmountDeposit = BN(constants.buyer_deposit); // 0.04
           const expectedEscrowAmountPrice = BN(0);
 
-          const expectedBuyerAmount = expectedBuyerPrice.add(
-            expectedBuyerDeposit
-          );
+          const expectedBuyerAmount =
+            expectedBuyerPrice.add(expectedBuyerDeposit);
           const expectedSellerAmount = expectedSellerPrice.add(
             expectedSellerDeposit
           );
@@ -2614,9 +2610,8 @@ describe('Cashier withdrawals ', () => {
           ); // 0.09
           const expectedEscrowAmountPrice = BN(0);
 
-          const expectedBuyerAmount = expectedBuyerPrice.add(
-            expectedBuyerDeposit
-          );
+          const expectedBuyerAmount =
+            expectedBuyerPrice.add(expectedBuyerDeposit);
           const expectedSellerAmount = expectedSellerPrice.add(
             expectedSellerDeposit
           );
@@ -2686,9 +2681,8 @@ describe('Cashier withdrawals ', () => {
           ); // 0.0125
           const expectedEscrowAmountPrice = BN(0);
 
-          const expectedBuyerAmount = expectedBuyerPrice.add(
-            expectedBuyerDeposit
-          );
+          const expectedBuyerAmount =
+            expectedBuyerPrice.add(expectedBuyerDeposit);
           const expectedSellerAmount = expectedSellerPrice.add(
             expectedSellerDeposit
           );
@@ -2763,9 +2757,8 @@ describe('Cashier withdrawals ', () => {
           ); // 0.0125
           const expectedEscrowAmountPrice = BN(0);
 
-          const expectedBuyerAmount = expectedBuyerPrice.add(
-            expectedBuyerDeposit
-          );
+          const expectedBuyerAmount =
+            expectedBuyerPrice.add(expectedBuyerDeposit);
           const expectedSellerAmount = expectedSellerPrice.add(
             expectedSellerDeposit
           );
@@ -2838,9 +2831,8 @@ describe('Cashier withdrawals ', () => {
           const expectedEscrowAmountDeposit = BN(0);
           const expectedEscrowAmountPrice = BN(0);
 
-          const expectedBuyerAmount = expectedBuyerPrice.add(
-            expectedBuyerDeposit
-          );
+          const expectedBuyerAmount =
+            expectedBuyerPrice.add(expectedBuyerDeposit);
           const expectedSellerAmount = expectedSellerPrice.add(
             expectedSellerDeposit
           );
@@ -3238,9 +3230,8 @@ describe('Cashier withdrawals ', () => {
           const expectedEscrowAmountDeposit = BN(0);
           const expectedEscrowAmountPrice = BN(0);
 
-          const expectedBuyerAmount = expectedBuyerPrice.add(
-            expectedBuyerDeposit
-          );
+          const expectedBuyerAmount =
+            expectedBuyerPrice.add(expectedBuyerDeposit);
           const expectedSellerAmount = expectedSellerPrice.add(
             expectedSellerDeposit
           );
@@ -3303,9 +3294,8 @@ describe('Cashier withdrawals ', () => {
           const expectedEscrowAmountPrice = BN(0);
           const expectedEscrowAmountDeposit = BN(constants.seller_deposit); // 0.05
 
-          const expectedBuyerAmount = expectedBuyerPrice.add(
-            expectedBuyerDeposit
-          );
+          const expectedBuyerAmount =
+            expectedBuyerPrice.add(expectedBuyerDeposit);
           const expectedSellerAmount = expectedSellerPrice.add(
             expectedSellerDeposit
           );
@@ -3497,9 +3487,8 @@ describe('Cashier withdrawals ', () => {
           const expectedEscrowAmountPrice = BN(0);
           const expectedEscrowAmountDeposit = BN(0);
 
-          const expectedBuyerAmount = expectedBuyerPrice.add(
-            expectedBuyerDeposit
-          );
+          const expectedBuyerAmount =
+            expectedBuyerPrice.add(expectedBuyerDeposit);
           const expectedSellerAmount = expectedSellerPrice.add(
             expectedSellerDeposit
           );
@@ -3864,9 +3853,8 @@ describe('Cashier withdrawals ', () => {
           const expectedEscrowAmountDeposit = BN(constants.buyer_deposit); // 0.04
           const expectedEscrowAmountPrice = BN(0);
 
-          const expectedBuyerAmount = expectedBuyerPrice.add(
-            expectedBuyerDeposit
-          );
+          const expectedBuyerAmount =
+            expectedBuyerPrice.add(expectedBuyerDeposit);
           const expectedSellerAmount = expectedSellerPrice.add(
             expectedSellerDeposit
           );
@@ -3931,9 +3919,8 @@ describe('Cashier withdrawals ', () => {
           ); // 0.09
           const expectedEscrowAmountPrice = BN(0);
 
-          const expectedBuyerAmount = expectedBuyerPrice.add(
-            expectedBuyerDeposit
-          );
+          const expectedBuyerAmount =
+            expectedBuyerPrice.add(expectedBuyerDeposit);
           const expectedSellerAmount = expectedSellerPrice.add(
             expectedSellerDeposit
           );
@@ -4003,9 +3990,8 @@ describe('Cashier withdrawals ', () => {
           ); // 0.0125
           const expectedEscrowAmountPrice = BN(0);
 
-          const expectedBuyerAmount = expectedBuyerPrice.add(
-            expectedBuyerDeposit
-          );
+          const expectedBuyerAmount =
+            expectedBuyerPrice.add(expectedBuyerDeposit);
           const expectedSellerAmount = expectedSellerPrice.add(
             expectedSellerDeposit
           );
@@ -4080,9 +4066,8 @@ describe('Cashier withdrawals ', () => {
           ); // 0.0125
           const expectedEscrowAmountPrice = BN(0);
 
-          const expectedBuyerAmount = expectedBuyerPrice.add(
-            expectedBuyerDeposit
-          );
+          const expectedBuyerAmount =
+            expectedBuyerPrice.add(expectedBuyerDeposit);
           const expectedSellerAmount = expectedSellerPrice.add(
             expectedSellerDeposit
           );
@@ -4155,9 +4140,8 @@ describe('Cashier withdrawals ', () => {
           const expectedEscrowAmountDeposit = BN(0);
           const expectedEscrowAmountPrice = BN(0);
 
-          const expectedBuyerAmount = expectedBuyerPrice.add(
-            expectedBuyerDeposit
-          );
+          const expectedBuyerAmount =
+            expectedBuyerPrice.add(expectedBuyerDeposit);
           const expectedSellerAmount = expectedSellerPrice.add(
             expectedSellerDeposit
           );
@@ -6942,10 +6926,11 @@ describe('Cashier withdrawals ', () => {
         });
 
         it('Remaining QTY for Token Supply should be ZERO', async () => {
-          const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
-            TOKEN_SUPPLY_ID,
-            users.seller.address
-          );
+          const remainingQtyInContract =
+            await contractVoucherKernel.getRemQtyForSupply(
+              TOKEN_SUPPLY_ID,
+              users.seller.address
+            );
 
           assert.isTrue(
             remainingQtyInContract.eq(BN(0)),
@@ -7166,10 +7151,11 @@ describe('Cashier withdrawals ', () => {
           });
 
           it('Remaining QTY for Token Supply should be ZERO', async () => {
-            const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
-              TOKEN_SUPPLY_ID,
-              users.seller.address
-            );
+            const remainingQtyInContract =
+              await contractVoucherKernel.getRemQtyForSupply(
+                TOKEN_SUPPLY_ID,
+                users.seller.address
+              );
 
             assert.isTrue(
               remainingQtyInContract.eq(BN(0)),
@@ -7385,10 +7371,11 @@ describe('Cashier withdrawals ', () => {
           });
 
           it('Remaining QTY for Token Supply should be ZERO', async () => {
-            const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
-              TOKEN_SUPPLY_ID,
-              users.seller.address
-            );
+            const remainingQtyInContract =
+              await contractVoucherKernel.getRemQtyForSupply(
+                TOKEN_SUPPLY_ID,
+                users.seller.address
+              );
 
             assert.isTrue(
               remainingQtyInContract.eq(BN(0)),
@@ -7605,10 +7592,11 @@ describe('Cashier withdrawals ', () => {
           });
 
           it('Remaining QTY for Token Supply should be ZERO', async () => {
-            const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
-              TOKEN_SUPPLY_ID,
-              users.seller.address
-            );
+            const remainingQtyInContract =
+              await contractVoucherKernel.getRemQtyForSupply(
+                TOKEN_SUPPLY_ID,
+                users.seller.address
+              );
 
             assert.isTrue(
               remainingQtyInContract.eq(BN(0)),
@@ -7803,10 +7791,11 @@ describe('Cashier withdrawals ', () => {
           });
 
           it('Remaining QTY for Token Supply should be ZERO', async () => {
-            const remainingQtyInContract = await contractVoucherKernel.getRemQtyForSupply(
-              TOKEN_SUPPLY_ID,
-              users.seller.address
-            );
+            const remainingQtyInContract =
+              await contractVoucherKernel.getRemQtyForSupply(
+                TOKEN_SUPPLY_ID,
+                users.seller.address
+              );
 
             assert.isTrue(
               remainingQtyInContract.eq(BN(0)),

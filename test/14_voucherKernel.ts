@@ -25,9 +25,6 @@ let MockERC20Permit_Factory: ContractFactory;
 let MockERC721Receiver_Factory: ContractFactory;
 
 import revertReasons from '../testHelpers/revertReasons';
-import * as eventUtils from '../testHelpers/events';
-const eventNames = eventUtils.eventNames;
-import fnSignatures from '../testHelpers/functionSignatures';
 
 import {waffle} from 'hardhat';
 import ERC721receiver from '../artifacts/contracts/mocks/MockERC721Receiver.sol/MockERC721Receiver.json';
@@ -105,8 +102,9 @@ describe('VOUCHER KERNEL', () => {
       'BDEP'
     )) as Contract & MockERC20Permit;
 
-    contractMockERC721Receiver = (await MockERC721Receiver_Factory.deploy()) as Contract &
-      MockERC721Receiver;
+    contractMockERC721Receiver =
+      (await MockERC721Receiver_Factory.deploy()) as Contract &
+        MockERC721Receiver;
 
     await contractTokenRegistry.deployed();
     await contractERC1155ERC721.deployed();
@@ -242,16 +240,6 @@ describe('VOUCHER KERNEL', () => {
         users.seller.address
       )
     ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-
-    await contractBosonRouter.pause();
-
-    await expect(
-      contractVoucherKernel.burnSupplyOnPause(
-        users.seller.address,
-        constants.ONE,
-        constants.QTY_10
-      )
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
   });
 
   describe('With normal deployment', () => {
@@ -347,16 +335,6 @@ describe('VOUCHER KERNEL', () => {
         attackerInstance.setSupplyHolderOnTransfer(
           constants.ONE,
           users.seller.address
-        )
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
-
-      await contractBosonRouter.pause();
-
-      await expect(
-        attackerInstance.burnSupplyOnPause(
-          users.seller.address,
-          constants.ONE,
-          constants.QTY_10
         )
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
     });
@@ -561,21 +539,13 @@ describe('VOUCHER KERNEL', () => {
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
       });
 
-      it('[NEGATIVE] Should revert if fillOrder is called with holder contract that does not support ERC721 interface', async () => {
-        const mockERC721Receiver = await deployMockContract(
-          users.deployer.signer,
-          ERC721receiver.abi
-        ); //deploys mock
-
-        await mockERC721Receiver.mock.supportsInterface
-          .withArgs('0x150b7a02')
-          .returns(false);
-
+      it('[NEGATIVE] Should revert if fillOrder is called with holder contract that does not support ERC721', async () => {
+        const nonERC721SupportingContract = contractCashier;
         await expect(
           contractVoucherKernel.fillOrder(
             tokenSupplyId,
             users.seller.address,
-            mockERC721Receiver.address,
+            nonERC721SupportingContract.address,
             1
           )
         ).to.be.revertedWith(revertReasons.UNSUPPORTED_ERC721_RECEIVED);
@@ -587,17 +557,7 @@ describe('VOUCHER KERNEL', () => {
           ERC721receiver.abi
         ); //deploys mock
 
-        await mockERC721Receiver.mock.supportsInterface
-          .withArgs('0x150b7a02')
-          .returns(true);
-        await mockERC721Receiver.mock.onERC721Received
-          .withArgs(
-            users.seller.address,
-            users.deployer.address,
-            tokenSupplyId,
-            '0x'
-          )
-          .returns('0x00000000');
+        await mockERC721Receiver.mock.onERC721Received.returns('0x00000000');
 
         await expect(
           contractVoucherKernel.fillOrder(
@@ -607,6 +567,28 @@ describe('VOUCHER KERNEL', () => {
             1
           )
         ).to.be.revertedWith(revertReasons.UNSUPPORTED_ERC721_RECEIVED);
+      });
+
+      it('[NEGATIVE] Should revert with same revert reason as any arbitrary revert reason of the holder contract', async () => {
+        const mockERC721Receiver = await deployMockContract(
+          users.deployer.signer,
+          ERC721receiver.abi
+        ); //deploys mock
+
+        const arbitraryRevertReason = 'arbitrary revert reason';
+
+        await mockERC721Receiver.mock.onERC721Received.revertsWithReason(
+          arbitraryRevertReason
+        );
+
+        await expect(
+          contractVoucherKernel.fillOrder(
+            tokenSupplyId,
+            users.seller.address,
+            mockERC721Receiver.address,
+            1
+          )
+        ).to.be.revertedWith(arbitraryRevertReason);
       });
 
       it('Should be possible to call fillOrder with holder contract that can receive ERC721', async () => {
@@ -646,50 +628,6 @@ describe('VOUCHER KERNEL', () => {
 
         // spoof boson router address
         await contractVoucherKernel.setCashierAddress(users.deployer.address);
-      });
-
-      it('Should be possible to call burnSupplyOnPause if kernel is paused and cashier is caller', async () => {
-        const supplyToBurn = 6;
-        await contractBosonRouter.pause();
-
-        await expect(
-          contractVoucherKernel.burnSupplyOnPause(
-            users.seller.address,
-            tokenSupplyId,
-            supplyToBurn
-          )
-        )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
-          .withArgs(
-            contractVoucherKernel.address,
-            users.seller.address,
-            constants.ZERO_ADDRESS,
-            tokenSupplyId,
-            supplyToBurn
-          );
-
-        const expectedBalance = constants.QTY_10 - supplyToBurn;
-        const balanceOfOwner = await contractERC1155ERC721.functions[
-          fnSignatures.balanceOf1155
-        ](users.seller.address, tokenSupplyId);
-
-        assert.equal(
-          balanceOfOwner.toString(),
-          expectedBalance.toString(),
-          'Balance after burn mismatch'
-        );
-      });
-
-      it('[NEGATIVE]Should NOT be possible to call burnSupplyOnPause if kernel is not paused', async () => {
-        const supplyToBurn = 6;
-
-        await expect(
-          contractVoucherKernel.burnSupplyOnPause(
-            users.seller.address,
-            tokenSupplyId,
-            supplyToBurn
-          )
-        ).to.be.revertedWith(revertReasons.NOT_PAUSED);
       });
 
       it('[NEGATIVE] Should revert if setPaymentReleased voucher id is zero', async () => {

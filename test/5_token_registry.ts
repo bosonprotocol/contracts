@@ -289,9 +289,10 @@ describe('TokenRegistry', () => {
     });
 
     it('Should return the zero address for a token that is not mapped to a wrapper', async () => {
-      const newWrapperAddress = await contractTokenRegistry.getTokenWrapperAddress(
-        users.other1.address
-      ); //get the token wrapper for other1
+      const newWrapperAddress =
+        await contractTokenRegistry.getTokenWrapperAddress(
+          users.other1.address
+        ); //get the token wrapper for other1
 
       assert.equal(newWrapperAddress, constants.ZERO_ADDRESS);
     });
