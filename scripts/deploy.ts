@@ -84,12 +84,7 @@ class DeploymentExecutor {
     tx = await this.voucherSets.setCashierAddress(this.cashier.address);
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
-    console.log(
-      '$ VoucherSets: ',
-      event.event,
-      'at:',
-      event.args._newCashier
-    );
+    console.log('$ VoucherSets: ', event.event, 'at:', event.args._newCashier);
 
     tx = await this.vouchers.setApprovalForAll(
       this.voucherKernel.address,
@@ -119,12 +114,7 @@ class DeploymentExecutor {
     tx = await this.vouchers.setCashierAddress(this.cashier.address);
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
-    console.log(
-      '$ Vouchers: ',
-      event.event,
-      'at:',
-      event.args._newCashier
-    );
+    console.log('$ Vouchers: ', event.event, 'at:', event.args._newCashier);
 
     tx = await this.voucherKernel.setBosonRouterAddress(this.br.address);
     txReceipt = await tx.wait();
@@ -218,9 +208,14 @@ class DeploymentExecutor {
       ERC1155NonTransferable.connect(ccTokenDeployer);
 
     this.tokenRegistry = await TokenRegistry.deploy();
-    this.voucherSets = await VoucherSets.deploy(process.env.VOUCHERSETS_METADATA_URI);
+    this.voucherSets = await VoucherSets.deploy(
+      process.env.VOUCHERSETS_METADATA_URI
+    );
     this.vouchers = await Vouchers.deploy(process.env.VOUCHERS_METADATA_URI);
-    this.voucherKernel = await VoucherKernel.deploy(this.voucherSets.address, this.vouchers.address);
+    this.voucherKernel = await VoucherKernel.deploy(
+      this.voucherSets.address,
+      this.vouchers.address
+    );
     this.cashier = await Cashier.deploy(this.voucherKernel.address);
     this.br = await BosonRouter.deploy(
       this.voucherKernel.address,

@@ -35,14 +35,14 @@ export async function verifyContracts(env: string): Promise<void> {
     logError('VoucherSets', error.message);
   }
 
-    //verify Vouchers
-    try {
-      await hre.run('verify:verify', {
-        address: contracts.vouchers,
-      });
-    } catch (error) {
-      logError('Vouchers', error.message);
-    }
+  //verify Vouchers
+  try {
+    await hre.run('verify:verify', {
+      address: contracts.vouchers,
+    });
+  } catch (error) {
+    logError('Vouchers', error.message);
+  }
 
   //verify VoucherKernel
   try {
