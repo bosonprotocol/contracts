@@ -660,5 +660,57 @@ describe('VOUCHER KERNEL', () => {
         )
       ).to.be.revertedWith(revertReasons.INVALID_QUANTITY_LONG);
     });
+
+    it('[createTokenSupplyId] Should not revert if validFrom is at least 5 minutes less than validTo', async () => {
+      await deployContracts();
+
+      // spoof boson router address
+      await contractVoucherKernel.setBosonRouterAddress(users.deployer.address);
+
+      const timestamp = await Utils.getCurrTimestamp();
+      const validFrom = timestamp + constants.SECONDS_IN_DAY;
+
+      // Difference of at least 5 minutes between valid from and valid to
+      const validTo =
+        timestamp + constants.SECONDS_IN_DAY + 5 * constants.ONE_MINUTE;
+      await expect(
+        contractVoucherKernel.createTokenSupplyId(
+          users.other1.address,
+          validFrom,
+          validTo,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITSE1,
+          constants.PROMISE_DEPOSITBU1,
+          constants.QTY_10
+        )
+      ).to.not.be.reverted;
+    });
+
+    it('[NEGATIVE][createTokenSupplyId] Should revert if validFrom is not at least 5 minutes less than validTo', async () => {
+      await deployContracts();
+
+      // spoof boson router address
+      await contractVoucherKernel.setBosonRouterAddress(users.deployer.address);
+
+      const timestamp = await Utils.getCurrTimestamp();
+      const validFrom = timestamp + constants.SECONDS_IN_DAY;
+
+      // Difference of less than 5 minutes between valid from and valid to
+      const validTo =
+        timestamp + constants.SECONDS_IN_DAY + 4 * constants.ONE_MINUTE;
+      await expect(
+        contractVoucherKernel.createTokenSupplyId(
+          users.other1.address,
+          validFrom,
+          validTo,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITSE1,
+          constants.PROMISE_DEPOSITBU1,
+          constants.QTY_10
+        )
+      ).to.be.revertedWith(
+        revertReasons.VALID_FROM_NOT_LESS_THAN_VALID_TO_BY_AT_LEAST_5_MINUTES
+      );
+    });
   });
 });
