@@ -47,6 +47,8 @@ jobs:
         run: npm install
       - name: Compile Contracts
         run: npm run contracts:compile
+      - name: Gas Reporting 
+        run: npm run contracts:gas-report
       - name: Contract Sizing
         run: npm run contracts:size
       - name: Code Coverage
