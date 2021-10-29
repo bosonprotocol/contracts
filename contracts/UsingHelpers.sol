@@ -2,10 +2,12 @@
 
 pragma solidity 0.7.6;
 
+import "./interfaces/IUsingHelpers.sol";
+
 /**
  * @title Utility contract to enable access to common structures
  */
-contract UsingHelpers {
+contract UsingHelpers is IUsingHelpers {
     uint8 internal constant ONE = 1;
     uint8 internal constant IDX_COMMIT = 7;
     uint8 internal constant IDX_REDEEM = 6;
@@ -21,10 +23,12 @@ contract UsingHelpers {
 
     // Those are the payment methods we are using throughout the system.
     // Depending on how to user choose to interact with it's funds we store the method, so we could distribute its tokens afterwise
-    uint8 internal constant ETHETH = 1;
-    uint8 internal constant ETHTKN = 2;
-    uint8 internal constant TKNETH = 3;
-    uint8 internal constant TKNTKN = 4;
+    // uint8 internal constant ETHETH = 1;
+    // uint8 internal constant ETHTKN = 2;
+    // uint8 internal constant TKNETH = 3;
+    // uint8 internal constant TKNTKN = 4;
+
+    // enum PaymentMethod {ETHETH, ETHTKN, TKNETH, TKNTKN} 
 
     struct VoucherDetails {
         uint256 tokenIdSupply;
@@ -40,7 +44,7 @@ contract UsingHelpers {
         uint256 deposit2issuer;
         uint256 price2holder;
         uint256 deposit2holder;
-        uint8 paymentMethod;
+        PaymentMethod paymentMethod;
         VoucherStatus currStatus;
     }
 

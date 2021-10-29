@@ -50,7 +50,7 @@ contract BosonRouter is
         uint256 indexed _tokenIdSupply,
         address indexed _seller,
         uint256 _quantity,
-        uint8 _paymentType
+        PaymentMethod _paymentType
     );
 
     event LogConditionalOrderCreated(
@@ -173,7 +173,7 @@ contract BosonRouter is
         whenNotPaused
     {
         checkLimits(_metadata, address(0), address(0), 0);
-        requestCreateOrder(_metadata, ETHETH, address(0), address(0), 0);
+        requestCreateOrder(_metadata, PaymentMethod.ETHETH, address(0), address(0), 0);
     }
 
     /**
@@ -208,7 +208,7 @@ contract BosonRouter is
     {
         notZeroAddress(_gateAddress);
         checkLimits(_metadata, address(0), address(0), 0);
-        uint256 _tokenIdSupply = requestCreateOrder(_metadata, ETHETH, address(0), address(0), 0);
+        uint256 _tokenIdSupply = requestCreateOrder(_metadata, PaymentMethod.ETHETH, address(0), address(0), 0);
         finalizeConditionalOrder(_tokenIdSupply, _gateAddress, _nftTokenId);
     }
 
@@ -517,7 +517,7 @@ contract BosonRouter is
             .getBuyerOrderCosts(_tokenIdSupply);
         require(price.add(depositBu) == weiReceived, "IF"); //invalid funds
 
-        addEscrowAmountAndFillOrder(_tokenIdSupply, _issuer, ETHETH);
+        addEscrowAmountAndFillOrder(_tokenIdSupply, _issuer, PaymentMethod.ETHETH);
     }
 
     /**
@@ -581,7 +581,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            TKNTKN
+            PaymentMethod.TKNTKN
         );
     }
 
@@ -635,7 +635,7 @@ contract BosonRouter is
             _tokenIdSupply,
             _issuer,
             msg.sender,
-            TKNTKN
+            PaymentMethod.TKNTKN
         );
     }
 
@@ -680,7 +680,7 @@ contract BosonRouter is
             _s
         );
 
-        addEscrowAmountAndFillOrder(_tokenIdSupply, _issuer, ETHTKN);
+        addEscrowAmountAndFillOrder(_tokenIdSupply, _issuer, PaymentMethod.ETHTKN);
     }
 
     /**
@@ -724,7 +724,7 @@ contract BosonRouter is
             _s
         );
 
-        addEscrowAmountAndFillOrder(_tokenIdSupply, _issuer, TKNETH);
+        addEscrowAmountAndFillOrder(_tokenIdSupply, _issuer, PaymentMethod.TKNETH);
     }
 
     /**
@@ -874,7 +874,7 @@ contract BosonRouter is
      * @param _issuer           Address of the issuer of the supply token
      * * @param _paymentMethod  might be ETHETH, ETHTKN, TKNETH
      */    
-    function addEscrowAmountAndFillOrder(uint256 _tokenIdSupply, address _issuer, uint8 _paymentMethod) internal {
+    function addEscrowAmountAndFillOrder(uint256 _tokenIdSupply, address _issuer, PaymentMethod _paymentMethod) internal {
         //record funds in escrow ...
         ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
 
@@ -1046,7 +1046,7 @@ contract BosonRouter is
         return
             requestCreateOrder(
                 _metadata,
-                TKNTKN,
+                PaymentMethod.TKNTKN,
                 _tokenPriceAddress,
                 _tokenDepositAddress,
                 _tokensSent
@@ -1078,7 +1078,7 @@ contract BosonRouter is
 
         return requestCreateOrder(
             _metadata,
-            ETHTKN,
+            PaymentMethod.ETHTKN,
             address(0),
             _tokenDepositAddress,
             _tokensSent
@@ -1092,7 +1092,7 @@ contract BosonRouter is
         notZeroAddress(_tokenPriceAddress);
         checkLimits(_metadata, _tokenPriceAddress, address(0), 0);
 
-        return requestCreateOrder(_metadata, TKNETH, _tokenPriceAddress, address(0), 0);
+        return requestCreateOrder(_metadata, PaymentMethod.TKNETH, _tokenPriceAddress, address(0), 0);
     }
 
     /**
@@ -1119,7 +1119,7 @@ contract BosonRouter is
      */
     function requestCreateOrder(
         uint256[] calldata _metadata,
-        uint8 _paymentMethod,
+        PaymentMethod _paymentMethod,
         address _tokenPriceAddress,
         address _tokenDepositAddress,
         uint256 _tokensSent

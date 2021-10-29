@@ -2,7 +2,9 @@
 
 pragma solidity 0.7.6;
 
-interface IBosonRouter {
+import "./IUsingHelpers.sol";
+
+interface IBosonRouter is IUsingHelpers {
     function pause() external;
 
     function unpause() external;

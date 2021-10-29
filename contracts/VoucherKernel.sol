@@ -45,7 +45,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
     }
 
     struct VoucherPaymentMethod {
-        uint8 paymentMethod;
+        PaymentMethod paymentMethod;
         address addressTokenPrice;
         address addressTokenDeposits;
     }
@@ -285,15 +285,15 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
      */
     function createPaymentMethod(
         uint256 _tokenIdSupply,
-        uint8 _paymentMethod,
+        PaymentMethod _paymentMethod,
         address _tokenPrice,
         address _tokenDeposits
     ) external override onlyFromRouter {
-        require(
-            _paymentMethod > 0 &&
-                _paymentMethod <= 4,
-            "INVALID PAYMENT METHOD"
-        );
+        // require(
+        //     _paymentMethod > 0 &&
+        //         _paymentMethod <= 4,
+        //     "INVALID PAYMENT METHOD"
+        // );
         
         paymentDetails[_tokenIdSupply] = VoucherPaymentMethod({
             paymentMethod: _paymentMethod,
@@ -341,7 +341,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         uint256 _tokenIdSupply,
         address _issuer,
         address _holder,
-        uint8 _paymentMethod
+        PaymentMethod _paymentMethod
     )
     external
     override
@@ -349,7 +349,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
     nonReentrant
     {
         require(_doERC721HolderCheck(_issuer, _holder, _tokenIdSupply), "UNSUPPORTED_ERC721_RECEIVED");
-        uint8 paymentMethod = getVoucherPaymentMethod(_tokenIdSupply);
+        PaymentMethod paymentMethod = getVoucherPaymentMethod(_tokenIdSupply);
 
         //checks
         require(paymentMethod == _paymentMethod, "Incorrect Payment Method");
@@ -1105,7 +1105,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         public
         view
         override
-        returns (uint8)
+        returns (PaymentMethod)
     {
         return paymentDetails[_tokenIdSupply].paymentMethod;
     }

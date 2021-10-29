@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
-
 pragma solidity 0.7.6;
 
-interface IVoucherKernel {
+import "./IUsingHelpers.sol";
+
+interface IVoucherKernel is IUsingHelpers {
+    // enum PaymentMethod {ETHETH, ETHTKN, TKNETH, TKNTKN} 
+
     /**
      * @notice Pause the process of interaction with voucherID's (ERC-721), in case of emergency.
      * Only Cashier contract is in control of this function.
@@ -44,7 +47,7 @@ interface IVoucherKernel {
      */
     function createPaymentMethod(
         uint256 _tokenIdSupply,
-        uint8 _paymentMethod,
+        PaymentMethod _paymentMethod,
         address _tokenPrice,
         address _tokenDeposits
     ) external;
@@ -110,7 +113,7 @@ interface IVoucherKernel {
         uint256 _tokenIdSupply,
         address _issuer,
         address _holder,
-        uint8 _paymentMethod
+        PaymentMethod _paymentMethod
     ) external;
 
     /**
@@ -253,7 +256,7 @@ interface IVoucherKernel {
     function getVoucherPaymentMethod(uint256 _tokenIdSupply)
         external
         view
-        returns (uint8);
+        returns (PaymentMethod);
 
     /**
      * @notice Get the current status of a voucher
