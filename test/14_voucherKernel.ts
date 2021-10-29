@@ -639,6 +639,16 @@ describe('VOUCHER KERNEL', () => {
             contractBosonRouter
           );
 
+        await utils.createOrder(
+          users.seller,
+          constants.PROMISE_VALID_FROM,
+          constants.PROMISE_VALID_TO,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITSE1,
+          constants.PROMISE_DEPOSITBU1,
+          constants.QTY_10
+        );
+
         // spoof boson router address
         await contractVoucherKernel.setCashierAddress(users.deployer.address);
       });
