@@ -3,5 +3,10 @@
 pragma solidity 0.7.6;
 
 interface IUsingHelpers {
-    enum PaymentMethod {ETHETH, ETHTKN, TKNETH, TKNTKN} 
+    enum PaymentMethod {
+        ETHETH,
+        ETHTKN,
+        TKNETH,
+        TKNTKN
+    }
 }

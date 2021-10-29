@@ -50,7 +50,13 @@ contract MockBosonRouter is BosonRouter {
         whenNotPaused
     {
         checkLimits(_metadata, address(0), address(0), 0);
-        requestCreateOrder(_metadata, PaymentMethod(5), address(0), address(0), 0);
+        requestCreateOrder(
+            _metadata,
+            PaymentMethod(5),
+            address(0),
+            address(0),
+            0
+        );
     }
 
     // only for test

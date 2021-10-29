@@ -4,7 +4,7 @@ pragma solidity 0.7.6;
 import "./IUsingHelpers.sol";
 
 interface IVoucherKernel is IUsingHelpers {
-    // enum PaymentMethod {ETHETH, ETHTKN, TKNETH, TKNTKN} 
+    // enum PaymentMethod {ETHETH, ETHTKN, TKNETH, TKNTKN}
 
     /**
      * @notice Pause the process of interaction with voucherID's (ERC-721), in case of emergency.
