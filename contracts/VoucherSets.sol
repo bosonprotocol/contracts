@@ -586,35 +586,6 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Convert UINT to string
-     *  Thank you, Oraclize (aka Provable)!
-     *      https://github.com/provable-things/ethereum-api/blob/master/provableAPI_0.5.sol
-     * @param _i    uint parameter
-     */
-    function _uint2str(uint256 _i)
-        internal
-        pure
-        returns (string memory _uintAsString)
-    {
-        if (_i == 0) {
-            return "0";
-        }
-        uint256 j = _i;
-        uint256 len;
-        while (j != 0) {
-            len++;
-            j /= 10;
-        }
-        bytes memory bstr = new bytes(len);
-        uint256 k = len - 1;
-        while (_i != 0) {
-            bstr[k--] = bytes1(uint8(48 + (_i % 10)));
-            _i /= 10;
-        }
-        return string(bstr);
-    }
-
-    /**
      * @notice Get the address of Voucher Kernel contract
      * @return Address of Voucher Kernel contract
      */
