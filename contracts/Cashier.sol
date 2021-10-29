@@ -178,12 +178,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         voucherDetails.paymentMethod = IVoucherKernel(voucherKernel)
             .getVoucherPaymentMethod(voucherDetails.tokenIdSupply);
 
-        // require(
-        //     voucherDetails.paymentMethod > 0 &&
-        //         voucherDetails.paymentMethod <= 4,
-        //     "INVALID PAYMENT METHOD"
-        // );
-
         (
             voucherDetails.currStatus.status,
             voucherDetails.currStatus.isPaymentReleased,
@@ -698,11 +692,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             IVoucherKernel(voucherKernel).getVoucherPaymentMethod(
                 _tokenIdSupply
             );
-
-        // require(
-        //     paymentMethod > 0 && paymentMethod <= 4,
-        //     "INVALID PAYMENT METHOD"
-        // );
 
         if (paymentMethod == PaymentMethod.ETHETH || paymentMethod == PaymentMethod.TKNETH) {
             escrow[_messageSender] = escrow[_messageSender].sub(depositAmount);

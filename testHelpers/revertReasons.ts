@@ -79,5 +79,5 @@ export default {
   ERC1155_REJECT: 'ERC1155: ERC1155Receiver rejected tokens',
   DISASTER_STATE_ALREADY_SET: 'Disaster state is already set',
   RUNTIME_ERROR_INVALID_OPCODE: '', // testing for invalid opcode cannot be done with exact error message
-  INEXISTING_SUPPLY: 'INEXISTING_SUPPLY'
+  INEXISTING_SUPPLY: 'INEXISTING_SUPPLY',
 };
