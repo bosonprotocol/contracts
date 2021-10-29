@@ -237,6 +237,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         require(_validFrom <= _validTo, "INVALID_VALIDITY_FROM");
         // solhint-disable-next-line not-rely-on-time
         require(_validTo >= block.timestamp + 5 minutes, "INVALID_VALIDITY_TO");
+        require(_validTo >= _validFrom + 5 minutes, "VALID_FROM_NOT_LESS_THAN_VALID_TO_BY_AT_LEAST_5_MINUTES");
 
         bytes32 key;
         key = keccak256(
