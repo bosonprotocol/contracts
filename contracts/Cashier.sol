@@ -227,7 +227,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
             released = true;
         }
 
-        require (released, "NO_WITHDRAWALS");
+        require (released, "NOTHING_TO_WITHDRAW");
 
         if (voucherDetails.deposit2pool > 0) {
             _withdrawDeposits(

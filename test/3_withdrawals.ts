@@ -380,7 +380,7 @@ describe('Cashier withdrawals ', () => {
             } else {
               await expect(
                 utils.withdraw(voucherID, users.deployer.signer)
-              ).to.be.revertedWith(revertReasons.NO_WITHDRAWALS);
+              ).to.be.revertedWith(revertReasons.NOTHING_TO_WITHDRAW);
             }
 
             await checkEscrowAmounts('betweenPaymentAndDepositRelease');
