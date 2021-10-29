@@ -67,7 +67,14 @@ const config: HardhatUserConfig = {
 	},
 	mocha: {
 		timeout: 120000
-	}
+	},
+        contractSizer: {
+                alphaSort: true,
+                disambiguatePaths: false,
+                runOnCompile: false,
+                strict: true
+        }
+
 };
 
 export default config;
