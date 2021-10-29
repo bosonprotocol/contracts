@@ -2,20 +2,29 @@
 
 pragma solidity 0.7.6;
 
-import "./interfaces/IUsingHelpers.sol";
+// import "./interfaces/IUsingHelpers.sol";
 
-/**
- * @title Utility contract to enable access to common structures
- */
-contract UsingHelpers is IUsingHelpers {
-    uint8 internal constant ONE = 1;
-    uint8 internal constant IDX_COMMIT = 7;
-    uint8 internal constant IDX_REDEEM = 6;
-    uint8 internal constant IDX_REFUND = 5;
-    uint8 internal constant IDX_EXPIRE = 4;
-    uint8 internal constant IDX_COMPLAIN = 3;
-    uint8 internal constant IDX_CANCEL_FAULT = 2;
-    uint8 internal constant IDX_FINAL = 1;
+
+// Those are the payment methods we are using throughout the system.
+// Depending on how to user choose to interact with it's funds we store the method, so we could distribute its tokens afterwise
+enum PaymentMethod {
+    ETHETH,
+    ETHTKN,
+    TKNETH,
+    TKNTKN
+}
+
+
+
+// contract UsingHelpers is IUsingHelpers {
+    uint8 constant ONE = 1;
+    uint8 constant IDX_COMMIT = 7;
+    uint8 constant IDX_REDEEM = 6;
+    uint8 constant IDX_REFUND = 5;
+    uint8 constant IDX_EXPIRE = 4;
+    uint8 constant IDX_COMPLAIN = 3;
+    uint8 constant IDX_CANCEL_FAULT = 2;
+    uint8 constant IDX_FINAL = 1;
 
     /*  Status of the voucher in 8 bits:
         [7:COMMITTED] [6:REDEEMED] [5:REFUNDED] [4:EXPIRED] [3:COMPLAINED] [2:CANCELORFAULT] [1:FINAL] [1:/]
@@ -51,7 +60,7 @@ contract UsingHelpers is IUsingHelpers {
      * @notice Based on its lifecycle, voucher can have many different statuses. Checks whether a voucher is in Committed state.
      * @param _status current status of a voucher.
      */
-    function isStateCommitted(uint8 _status) internal pure returns (bool) {
+    function isStateCommitted(uint8 _status) pure returns (bool) {
         return _status == determineStatus(0, IDX_COMMIT);
     }
 
@@ -60,7 +69,6 @@ contract UsingHelpers is IUsingHelpers {
      * @param _status current status of a voucher.
      */
     function isStateRedemptionSigned(uint8 _status)
-        internal
         pure
         returns (bool)
     {
@@ -71,7 +79,7 @@ contract UsingHelpers is IUsingHelpers {
      * @notice Based on its lifecycle, voucher can have many different statuses. Checks whether a voucher is in Refunded state.
      * @param _status current status of a voucher.
      */
-    function isStateRefunded(uint8 _status) internal pure returns (bool) {
+    function isStateRefunded(uint8 _status) pure returns (bool) {
         return _status == determineStatus(determineStatus(0, IDX_COMMIT), IDX_REFUND);
     }
 
@@ -79,7 +87,7 @@ contract UsingHelpers is IUsingHelpers {
      * @notice Based on its lifecycle, voucher can have many different statuses. Checks whether a voucher is in Expired state.
      * @param _status current status of a voucher.
      */
-    function isStateExpired(uint8 _status) internal pure returns (bool) {
+    function isStateExpired(uint8 _status) pure returns (bool) {
         return _status == determineStatus(determineStatus(0, IDX_COMMIT), IDX_EXPIRE);
     }
 
@@ -88,7 +96,7 @@ contract UsingHelpers is IUsingHelpers {
      * @param _status current status of a voucher.
      * @param _idx status to compare.
      */
-    function isStatus(uint8 _status, uint8 _idx) internal pure returns (bool) {
+    function isStatus(uint8 _status, uint8 _idx) pure returns (bool) {
         return (_status >> _idx) & ONE == 1;
     }
 
@@ -98,10 +106,9 @@ contract UsingHelpers is IUsingHelpers {
      * @param _changeIdx next status.
      */
     function determineStatus(uint8 _status, uint8 _changeIdx)
-        internal
         pure
         returns (uint8)
     {
         return _status | (ONE << _changeIdx);
     }
-}
+// }

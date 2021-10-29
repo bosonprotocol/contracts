@@ -32,7 +32,6 @@ import "./libs/SafeERC20WithPermit.sol";
  */
 contract BosonRouter is
     IBosonRouter,
-    UsingHelpers,
     Pausable,
     ReentrancyGuard,
     Ownable

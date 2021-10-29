@@ -16,7 +16,7 @@ import "./UsingHelpers.sol";
  * @title Contract for managing funds
  * Roughly following OpenZeppelin's Escrow at https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/payment/
  */
-contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
+contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
     using SafeERC20 for IERC20;
     using Address for address payable;
     using SafeMath for uint256;

@@ -2,9 +2,9 @@
 
 pragma solidity 0.7.6;
 
-import "./IUsingHelpers.sol";
+import "./../UsingHelpers.sol";
 
-interface ICashier is IUsingHelpers {
+interface ICashier {
     /**
      * @notice Pause the Cashier && the Voucher Kernel contracts in case of emergency.
      * All functions related to creating new batch, requestVoucher or withdraw will be paused, hence cannot be executed.

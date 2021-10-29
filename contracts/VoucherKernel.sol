@@ -23,7 +23,7 @@ import "./UsingHelpers.sol";
  *      See: https://ethereum.stackexchange.com/questions/5924/how-do-ethereum-mining-nodes-maintain-a-time-consistent-with-the-network/5931#5931
  */
 // solhint-disable-next-line
-contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, UsingHelpers {
+contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
     using Address for address;
     using SafeMath for uint256;
 
