@@ -41,7 +41,7 @@ let utils: Utils;
 let TOKEN_SUPPLY_ID;
 let users;
 
-describe('ERC1155ERC721', () => {
+describe('Vouchers', () => {
   beforeEach(async () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
@@ -618,7 +618,7 @@ describe('ERC1155ERC721', () => {
         assert.equal(newTokenOwner, expectedNewOwnerAddress);
       });
 
-      it('[NEGATIVE][safeTransfer721] Should not be able to transfer to contract address that does not support ERC721', async () => {
+      it('[NEGATIVE][safeTransfer721] Should not be able to transfer to contract address that does not implement onERC721Received', async () => {
         const erc721 = await utils.commitToBuy(
           users.buyer,
           users.seller,
@@ -631,6 +631,32 @@ describe('ERC1155ERC721', () => {
           utils.safeTransfer721(
             users.buyer.address,
             contractCashier.address,
+            erc721,
+            users.buyer.signer
+          )
+        ).to.be.revertedWith(revertReasons.NON_ERC721RECEIVER);
+      });
+
+      it('[NEGATIVE][safeTransfer721] Should not be able to transfer to contract address that does not support ERC721 for some other reason', async () => {
+        const erc721 = await utils.commitToBuy(
+          users.buyer,
+          users.seller,
+          TOKEN_SUPPLY_ID,
+          constants.product_price,
+          constants.buyer_deposit
+        );
+
+        const mockERC721Receiver = await deployMockContract(
+          users.deployer.signer,
+          ERC721receiver.abi
+        ); //deploys mock
+
+        await mockERC721Receiver.mock.onERC721Received.returns(0xd9b67a26); //0xd9b67a26 = ERC-1155 interface
+
+        await expect(
+          utils.safeTransfer721(
+            users.buyer.address,
+            mockERC721Receiver.address,
             erc721,
             users.buyer.signer
           )
@@ -913,7 +939,28 @@ describe('ERC1155ERC721', () => {
         assert.equal(balanceOfBuyer.toString(), expectedBalance.toString());
       });
 
-      it('[NEGATIVE][mint] it should not be able to mint a token to a receiver that cannot receive it', async () => {
+      it('[NEGATIVE][mint] it should not be able to mint a token to a receiver whose onERC721Received rfunction eturns the wrong value', async () => {
+        // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVouchers.setVoucherKernelAddress(users.deployer.address);
+
+        const tokenIdForMint = 123;
+
+        const mockERC721Receiver = await deployMockContract(
+          users.deployer.signer,
+          ERC721receiver.abi
+        ); //deploys mock
+
+        await mockERC721Receiver.mock.onERC721Received.returns(0xd9b67a26); //0xd9b67a26 = ERC-1155 interface
+
+        await expect(
+          contractVouchers.functions[fnSignatures.mint721](
+            mockERC721Receiver.address,
+            tokenIdForMint
+          )
+        ).to.be.revertedWith(revertReasons.NON_ERC721RECEIVER);
+      });
+
+      it('[NEGATIVE][mint] it should not be able to mint a token to a receiver that cannot receive it because it does not have onERC721Received function', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractVouchers.setVoucherKernelAddress(users.deployer.address);
 

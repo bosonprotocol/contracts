@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "./interfaces/IVoucherKernel.sol";
 import "./interfaces/ICashier.sol";
 import "./interfaces/IVouchers.sol";
@@ -22,6 +23,7 @@ import "./interfaces/IVouchers.sol";
 contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     using Address for address;
+    using Strings for uint256;
 
     string public override name = "Boson Smart Voucher";
     string public override symbol = "BSV";
@@ -360,7 +362,7 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
         require(owners721[_tokenId] != address(0), "INVALID_ID");
         return
             string(
-                abi.encodePacked(metadataUri, _uint2str(_tokenId))
+                abi.encodePacked(metadataUri, _tokenId.toString())
             );
     }
 
@@ -395,35 +397,6 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
     {
         cashierAddress = _cashierAddress;
         emit LogCashierSet(_cashierAddress, msg.sender);
-    }
-
-    /**
-     * @notice Convert UINT to string
-     *  Thank you, Oraclize (aka Provable)!
-     *      https://github.com/provable-things/ethereum-api/blob/master/provableAPI_0.5.sol
-     * @param _i    uint parameter
-     */
-    function _uint2str(uint256 _i)
-        internal
-        pure
-        returns (string memory _uintAsString)
-    {
-        if (_i == 0) {
-            return "0";
-        }
-        uint256 j = _i;
-        uint256 len;
-        while (j != 0) {
-            len++;
-            j /= 10;
-        }
-        bytes memory bstr = new bytes(len);
-        uint256 k = len - 1;
-        while (_i != 0) {
-            bstr[k--] = bytes1(uint8(48 + (_i % 10)));
-            _i /= 10;
-        }
-        return string(bstr);
     }
 
     /**
@@ -470,7 +443,7 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
         if (_to.isContract()) {
             try IERC721Receiver(_to).onERC721Received(_msgSender(), _from, _tokenId, _data) returns (bytes4 response) {
                 if (response != IERC721Receiver.onERC721Received.selector) {
-                    revert("ERC721: transfer to non ERC721Receiver implementer");
+                    revert("ERC721: transfer to non ERC721Receiver implementer -- test");
                 }
             } catch Error(string memory reason) {
                 revert(reason);
