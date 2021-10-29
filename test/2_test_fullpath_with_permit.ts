@@ -4654,7 +4654,8 @@ describe('Cashier and VoucherKernel', () => {
           // to try expiration we should go to the future, but then other methods might fail as well.
           // therefore we revert to the state before advancing in the future
           const snapshot = await ethers.provider.send('evm_snapshot', []);
-          if (advanceTime) await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
+          if (advanceTime)
+            await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY + 1);
           await expect(
             utils.expire(tokenVoucherId, users.deployer.signer)
           ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
