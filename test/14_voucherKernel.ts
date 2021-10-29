@@ -1,6 +1,6 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
-import {assert, expect} from 'chai';
+import {expect} from 'chai';
 import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
@@ -27,9 +27,6 @@ let MockERC20Permit_Factory: ContractFactory;
 let MockERC721Receiver_Factory: ContractFactory;
 
 import revertReasons from '../testHelpers/revertReasons';
-import * as eventUtils from '../testHelpers/events';
-const eventNames = eventUtils.eventNames;
-import fnSignatures from '../testHelpers/functionSignatures';
 
 import {waffle} from 'hardhat';
 import ERC721receiver from '../artifacts/contracts/mocks/MockERC721Receiver.sol/MockERC721Receiver.json';
@@ -262,16 +259,6 @@ describe('VOUCHER KERNEL', () => {
         users.seller.address
       )
     ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-
-    await contractBosonRouter.pause();
-
-    await expect(
-      contractVoucherKernel.burnSupplyOnPause(
-        users.seller.address,
-        constants.ONE,
-        constants.QTY_10
-      )
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
   });
 
   describe('With normal deployment', () => {
@@ -367,16 +354,6 @@ describe('VOUCHER KERNEL', () => {
         attackerInstance.setSupplyHolderOnTransfer(
           constants.ONE,
           users.seller.address
-        )
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
-
-      await contractBosonRouter.pause();
-
-      await expect(
-        attackerInstance.burnSupplyOnPause(
-          users.seller.address,
-          constants.ONE,
-          constants.QTY_10
         )
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
     });
@@ -650,7 +627,6 @@ describe('VOUCHER KERNEL', () => {
     });
 
     describe('Spoof cashier', () => {
-      let tokenSupplyId;
       beforeEach(async () => {
         await setPeriods();
         utils = await UtilsBuilder.create()
@@ -663,62 +639,8 @@ describe('VOUCHER KERNEL', () => {
             contractBosonRouter
           );
 
-        tokenSupplyId = await utils.createOrder(
-          users.seller,
-          constants.PROMISE_VALID_FROM,
-          constants.PROMISE_VALID_TO,
-          constants.PROMISE_PRICE1,
-          constants.PROMISE_DEPOSITSE1,
-          constants.PROMISE_DEPOSITBU1,
-          constants.QTY_10
-        );
-
         // spoof boson router address
         await contractVoucherKernel.setCashierAddress(users.deployer.address);
-      });
-
-      it('Should be possible to call burnSupplyOnPause if kernel is paused and cashier is caller', async () => {
-        const supplyToBurn = 6;
-        await contractBosonRouter.pause();
-
-        await expect(
-          contractVoucherKernel.burnSupplyOnPause(
-            users.seller.address,
-            tokenSupplyId,
-            supplyToBurn
-          )
-        )
-          .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
-          .withArgs(
-            contractVoucherKernel.address,
-            users.seller.address,
-            constants.ZERO_ADDRESS,
-            tokenSupplyId,
-            supplyToBurn
-          );
-
-        const expectedBalance = constants.QTY_10 - supplyToBurn;
-        const balanceOfOwner = await contractVoucherSets.functions[
-          fnSignatures.balanceOf1155
-        ](users.seller.address, tokenSupplyId);
-
-        assert.equal(
-          balanceOfOwner.toString(),
-          expectedBalance.toString(),
-          'Balance after burn mismatch'
-        );
-      });
-
-      it('[NEGATIVE]Should NOT be possible to call burnSupplyOnPause if kernel is not paused', async () => {
-        const supplyToBurn = 6;
-
-        await expect(
-          contractVoucherKernel.burnSupplyOnPause(
-            users.seller.address,
-            tokenSupplyId,
-            supplyToBurn
-          )
-        ).to.be.revertedWith(revertReasons.NOT_PAUSED);
       });
 
       it('[NEGATIVE] Should revert if setPaymentReleased voucher id is zero', async () => {

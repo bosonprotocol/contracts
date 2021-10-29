@@ -186,6 +186,25 @@ class DeploymentExecutor {
       'at:',
       event.args._nonTransferableTokenContractAddress
     );
+
+    tx = await this.br.setGateApproval(this.gate.address, true);
+
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log(
+      '$ BosonRouter',
+      event.event,
+      'at:',
+      event.args._gateAddress,
+      ' = ',
+      event.args._approved
+    );
+
+    console.log(
+      '$ ERC1155NonTransferable URI ',
+      'set to :',
+      await this.erc1155NonTransferable.uri(1)
+    );
   }
 
   async deployContracts() {
@@ -333,7 +352,9 @@ class ProdExecutor extends DeploymentExecutor {
   async setDefaults() {
     await super.setDefaults();
     await this.tokenRegistry.setTokenLimit(this.boson_token, this.TOKEN_LIMIT);
+    console.log(`Set Boson token limit: ${this.TOKEN_LIMIT}`);
     await this.tokenRegistry.setTokenLimit(this.dai_token, this.TOKEN_LIMIT);
+    console.log(`Set Dai token limit: ${this.TOKEN_LIMIT}`);
   }
 }
 

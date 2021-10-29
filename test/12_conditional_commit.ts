@@ -140,6 +140,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       contractVoucherKernel.address,
       true
     );
+
     await contractVouchers.setApprovalForAll(
       contractVoucherKernel.address,
       true
@@ -193,6 +194,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     await contractGate.setNonTransferableTokenContract(
       contractERC1155NonTransferable.address
     );
+
+    await contractBosonRouter.setGateApproval(contractGate.address, true);
   }
 
   let timestamp, tokenSupplyKey: BigNumber, promiseId: string;
@@ -446,7 +449,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.NFT_TOKEN_ID,
                 {value: txValue}
               )
-          ).to.be.revertedWith(revertReasons.EOA);
+          ).to.be.revertedWith(revertReasons.INVALID_GATE);
         });
       });
 
@@ -502,7 +505,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         ).to.equal(constants.ZERO_ADDRESS);
       });
 
-      it('[NEGATIVE]Supplying invalid gate address should revert', async () => {
+      it('[NEGATIVE] Supplying invalid gate address should revert', async () => {
         const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
           BN(constants.QTY_10)
         );
@@ -522,7 +525,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.EMPTY_NFT_TOKEN_ID,
               {value: txValue}
             )
-        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+        ).to.be.revertedWith(revertReasons.INVALID_GATE);
       });
     });
 
@@ -771,7 +774,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 users.other1.address, /// gate address that maps to EOA
                 constants.NFT_TOKEN_ID
               )
-          ).to.be.revertedWith(revertReasons.EOA);
+          ).to.be.revertedWith(revertReasons.INVALID_GATE);
         });
       });
 
@@ -845,7 +848,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         ).to.equal(constants.ZERO_ADDRESS);
       });
 
-      it('[NEGATIVE]Supplying invalid gate address should revert', async () => {
+      it('[NEGATIVE] Supplying invalid gate address should revert', async () => {
         const {txValue, v, r, s} = await generateInputs(
           users.seller,
           constants.PROMISE_DEPOSITSE1,
@@ -874,7 +877,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.ZERO_ADDRESS,
               constants.EMPTY_NFT_TOKEN_ID
             )
-        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+        ).to.be.revertedWith(revertReasons.INVALID_GATE);
       });
     });
 
@@ -1120,7 +1123,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 users.other1.address, /// gate address that maps to EOA
                 constants.NFT_TOKEN_ID
               )
-          ).to.be.revertedWith(revertReasons.EOA);
+          ).to.be.revertedWith(revertReasons.INVALID_GATE);
         });
       });
 
@@ -1220,7 +1223,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.ZERO_ADDRESS,
               constants.EMPTY_NFT_TOKEN_ID
             )
-        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+        ).to.be.revertedWith(revertReasons.INVALID_GATE);
       });
     });
 
@@ -1422,7 +1425,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.NFT_TOKEN_ID,
                 {value: txValue}
               )
-          ).to.be.revertedWith(revertReasons.EOA);
+          ).to.be.revertedWith(revertReasons.INVALID_GATE);
         });
       });
 
@@ -1480,7 +1483,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         ).to.equal(constants.ZERO_ADDRESS);
       });
 
-      it('[NEGATIVE]Supplying invalid gate address should revert', async () => {
+      it('[NEGATIVE] Supplying invalid gate address should revert', async () => {
         const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
           BN(constants.QTY_10)
         );
@@ -1501,7 +1504,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.EMPTY_NFT_TOKEN_ID,
               {value: txValue}
             )
-        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+        ).to.be.revertedWith(revertReasons.INVALID_GATE);
       });
     });
   });
@@ -1669,41 +1672,30 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         ).to.be.revertedWith(revertReasons.NOT_ELIGIBLE);
       });
 
-      it('[NEGATIVE] Should revert if specified gate contract does not exist', async () => {
+      it('[NEGATIVE] Should revert if specified gate contract is not approved', async () => {
         const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
           BN(constants.QTY_10)
         );
 
-        await contractBosonRouter
-          .connect(users.seller.signer)
-          .requestCreateOrderETHETHConditional(
-            [
-              constants.PROMISE_VALID_FROM,
-              constants.PROMISE_VALID_TO,
-              constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITSE1,
-              constants.PROMISE_DEPOSITBU1,
-              constants.QTY_10,
-            ],
-            users.other1.address, /// gate address that maps to EOA
-            constants.EMPTY_NFT_TOKEN_ID,
-            {value: txValue}
-          );
+        await contractBosonRouter.setGateApproval(contractGate.address, false);
 
-        const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);
-
-        const buyerInstance = contractBosonRouter.connect(
-          users.other1.signer
-        ) as BosonRouter;
         await expect(
-          buyerInstance.requestVoucherETHETH(
-            tokenSupplyKey,
-            users.seller.address,
-            {
-              value: txValue,
-            }
-          )
-        ).to.be.revertedWith(revertReasons.EOA);
+          contractBosonRouter
+            .connect(users.seller.signer)
+            .requestCreateOrderETHETHConditional(
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              contractGate.address,
+              constants.EMPTY_NFT_TOKEN_ID,
+              {value: txValue}
+            )
+        ).to.be.revertedWith(revertReasons.INVALID_GATE);
       });
 
       it('[NEGATIVE] Should revert if mapping between voucherset and nfttoken does not exist', async () => {
@@ -2028,50 +2020,19 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       });
 
       it('[NEGATIVE] Should revert if specified gate contract does not exist', async () => {
-        await utils.createOrderConditional(
-          users.seller,
-          timestamp,
-          timestamp + constants.SECONDS_IN_DAY,
-          constants.product_price,
-          constants.seller_deposit,
-          constants.buyer_deposit,
-          constants.QTY_10,
-          users.other1, /// gate address that maps to EOA
-          0
-        );
-
-        const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);
-
-        const {txValue, DEPOSIT, PRICE} = await generateInputs(
-          users.buyer,
-          constants.buyer_deposit,
-          constants.product_price
-        );
-
-        const vDeposit = DEPOSIT.v;
-        const rDeposit = DEPOSIT.r;
-        const sDeposit = DEPOSIT.s;
-        const vPrice = PRICE.v;
-        const rPrice = PRICE.r;
-        const sPrice = PRICE.s;
-
-        const buyerInstance = contractBosonRouter.connect(
-          users.other1.signer
-        ) as BosonRouter;
         await expect(
-          buyerInstance.requestVoucherTKNTKNWithPermit(
-            tokenSupplyKey,
-            users.seller.address,
-            txValue,
-            deadline,
-            vPrice,
-            rPrice,
-            sPrice,
-            vDeposit,
-            rDeposit,
-            sDeposit
+          utils.createOrderConditional(
+            users.seller,
+            timestamp,
+            timestamp + constants.SECONDS_IN_DAY,
+            constants.product_price,
+            constants.seller_deposit,
+            constants.buyer_deposit,
+            constants.QTY_10,
+            users.other1, /// gate address that maps to EOA
+            0
           )
-        ).to.be.revertedWith(revertReasons.EOA);
+        ).to.be.revertedWith(revertReasons.INVALID_GATE);
       });
 
       it('[NEGATIVE] Should revert if mapping between voucherset and nfttoken does not exist', async () => {
@@ -2350,40 +2311,19 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       });
 
       it('[NEGATIVE] Should revert if specified gate contract does not exist', async () => {
-        await utils.createOrderConditional(
-          users.seller,
-          timestamp,
-          timestamp + constants.SECONDS_IN_DAY,
-          constants.product_price,
-          constants.seller_deposit,
-          constants.buyer_deposit,
-          constants.QTY_10,
-          users.other1, /// gate address that maps to EOA
-          0
-        );
-
-        const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);
-
-        const {txValue, v, r, s} = await generateInputs(
-          users.buyer,
-          constants.buyer_deposit,
-          constants.product_price
-        );
-
-        const buyerInstance = contractBosonRouter.connect(
-          users.other1.signer
-        ) as BosonRouter;
         await expect(
-          buyerInstance.requestVoucherTKNTKNSameWithPermit(
-            tokenSupplyKey,
-            users.seller.address,
-            txValue,
-            deadline,
-            v,
-            r,
-            s
+          utils.createOrderConditional(
+            users.seller,
+            timestamp,
+            timestamp + constants.SECONDS_IN_DAY,
+            constants.product_price,
+            constants.seller_deposit,
+            constants.buyer_deposit,
+            constants.QTY_10,
+            users.other1, /// gate address that maps to EOA
+            0
           )
-        ).to.be.revertedWith(revertReasons.EOA);
+        ).to.be.revertedWith(revertReasons.INVALID_GATE);
       });
 
       it('[NEGATIVE] Should revert if mapping between voucherset and nfttoken not exist', async () => {
@@ -2703,60 +2643,28 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           Buffer.from(users.seller.privateKey.slice(2), 'hex')
         );
 
-        const txOrder = await contractBosonRouter
-          .connect(users.seller.signer)
-          .requestCreateOrderETHTKNWithPermitConditional(
-            contractBSNTokenDeposit.address,
-            txValue,
-            deadline,
-            sellerSignature.v,
-            sellerSignature.r,
-            sellerSignature.s,
-            [
-              constants.PROMISE_VALID_FROM,
-              constants.PROMISE_VALID_TO,
-              constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITSE1,
-              constants.PROMISE_DEPOSITBU1,
-              constants.QTY_10,
-            ],
-            users.other1.address, /// gate address that maps to EOA
-            constants.EMPTY_NFT_TOKEN_ID
-          );
-
-        const txReceipt = await txOrder.wait();
-
-        let eventArgs;
-
-        eventUtils.assertEventEmitted(
-          txReceipt,
-          BosonRouter_Factory,
-          eventNames.LOG_ORDER_CREATED,
-          (e) => (eventArgs = e)
-        );
-
-        const tokenSupplyKey = eventArgs._tokenIdSupply;
-
-        const {v, r, s} = await generateInputs(
-          users.buyer,
-          constants.PROMISE_DEPOSITBU1
-        );
-
-        const buyerInstance = contractBosonRouter.connect(
-          users.other1.signer
-        ) as BosonRouter;
         await expect(
-          buyerInstance.requestVoucherETHTKNWithPermit(
-            tokenSupplyKey,
-            users.seller.address,
-            constants.PROMISE_DEPOSITBU1,
-            deadline,
-            v,
-            r,
-            s,
-            {value: constants.PROMISE_PRICE1}
-          )
-        ).to.be.revertedWith(revertReasons.EOA);
+          contractBosonRouter
+            .connect(users.seller.signer)
+            .requestCreateOrderETHTKNWithPermitConditional(
+              contractBSNTokenDeposit.address,
+              txValue,
+              deadline,
+              sellerSignature.v,
+              sellerSignature.r,
+              sellerSignature.s,
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              users.other1.address, /// gate address that maps to EOA
+              constants.EMPTY_NFT_TOKEN_ID
+            )
+        ).to.be.revertedWith(revertReasons.INVALID_GATE);
       });
 
       it('[NEGATIVE] Should revert if mapping between voucherset and nfttoken does not exist', async () => {
@@ -3071,46 +2979,24 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
           BN(constants.QTY_10)
         );
-
-        await contractBosonRouter
-          .connect(users.seller.signer)
-          .requestCreateOrderTKNETHConditional(
-            contractBSNTokenDeposit.address,
-            [
-              constants.PROMISE_VALID_FROM,
-              constants.PROMISE_VALID_TO,
-              constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITSE1,
-              constants.PROMISE_DEPOSITBU1,
-              constants.QTY_10,
-            ],
-            users.other1.address, /// gate address that maps to EOA
-            constants.EMPTY_NFT_TOKEN_ID,
-            {value: txValue}
-          );
-
-        const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);
-
-        const {v, r, s} = await generateInputs(
-          users.buyer,
-          constants.PROMISE_PRICE1
-        );
-
-        const buyerInstance = contractBosonRouter.connect(
-          users.other1.signer
-        ) as BosonRouter;
         await expect(
-          buyerInstance.requestVoucherTKNETHWithPermit(
-            tokenSupplyKey,
-            users.seller.address,
-            constants.PROMISE_PRICE1,
-            deadline,
-            v,
-            r,
-            s,
-            {value: constants.PROMISE_DEPOSITBU1}
-          )
-        ).to.be.revertedWith(revertReasons.EOA);
+          contractBosonRouter
+            .connect(users.seller.signer)
+            .requestCreateOrderTKNETHConditional(
+              contractBSNTokenDeposit.address,
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              users.other1.address, /// gate address that maps to EOA
+              constants.EMPTY_NFT_TOKEN_ID,
+              {value: txValue}
+            )
+        ).to.be.revertedWith(revertReasons.INVALID_GATE);
       });
 
       it('[NEGATIVE] Should revert if mapping between voucherset and nfttoken does not exist', async () => {

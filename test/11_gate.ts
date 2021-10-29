@@ -451,6 +451,7 @@ describe('Gate contract', async () => {
     beforeEach(async () => {
       await deployBosonRouterContracts();
       await deployContracts();
+      await contractBosonRouter.setGateApproval(contractGate.address, true);
     });
 
     describe('Setting a boson router address', () => {
@@ -480,6 +481,48 @@ describe('Gate contract', async () => {
             .connect(users.attacker.signer)
             .setBosonRouterAddress(contractBosonRouter.address)
         ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+      });
+    });
+
+    describe('Setting gate approval status', () => {
+      it('Owner should be able to approve a gate', async () => {
+        await expect(
+          contractBosonRouter.setGateApproval(users.other1.address, true)
+        )
+          .to.emit(contractBosonRouter, eventNames.LOG_GATE_APPROVAL_CHANGED)
+          .withArgs(users.other1.address, true);
+      });
+
+      it('Owner should be able to un-approve a gate', async () => {
+        await contractBosonRouter.setGateApproval(users.other1.address, true);
+
+        await expect(
+          contractBosonRouter.setGateApproval(users.other1.address, false)
+        )
+          .to.emit(contractBosonRouter, eventNames.LOG_GATE_APPROVAL_CHANGED)
+          .withArgs(users.other1.address, false);
+      });
+
+      it('[NEGATIVE] gate approval should revert if not called by owner', async () => {
+        await expect(
+          contractBosonRouter
+            .connect(users.attacker.signer)
+            .setGateApproval(users.other1.address, true)
+        ).to.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+      });
+
+      it('[NEGATIVE] gate approval should revert if owner sends zero address', async () => {
+        await expect(
+          contractBosonRouter.setGateApproval(constants.ZERO_ADDRESS, true)
+        ).to.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+      });
+
+      it('[NEGATIVE] gate approval should revert if no change is represented', async () => {
+        await contractBosonRouter.setGateApproval(users.other1.address, true);
+
+        await expect(
+          contractBosonRouter.setGateApproval(users.other1.address, true)
+        ).to.revertedWith(revertReasons.NO_CHANGE);
       });
     });
 
