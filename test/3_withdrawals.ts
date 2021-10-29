@@ -8533,12 +8533,7 @@ describe('Cashier withdrawals ', () => {
       );
     });
 
-    it.only('[NEGATIVE] should revert if voucher kernel returns payment method 0', async () => {
-      // what to do?
-      await expect(contractCashier.withdraw(constants.ONE)).to.be.revertedWith(
-        revertReasons.INVALID_PAYMENT_METHOD
-      );
-
+    it('[NEGATIVE] should revert if withdrawDepositsSe is called with zero address message sender', async () => {
       // spoof boson router address
       await contractCashier.setBosonRouterAddress(users.deployer.address);
 
@@ -8548,55 +8543,60 @@ describe('Cashier withdrawals ', () => {
           1,
           constants.ZERO_ADDRESS
         )
-      ).to.be.revertedWith(revertReasons.INVALID_PAYMENT_METHOD);
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
 
-    // it('[NEGATIVE] should revert if voucher kernel returns payment method greater than 5', async () => {
-    // TODO DIFFERENT REVERT REASON!
-    //   const tokenVoucherId = constants.ONE;
-    //   const tokenSupplyId = constants.TWO;
+    it('[NEGATIVE] should revert if voucherId does not map to any supply', async () => {
+      await expect(contractCashier.withdraw(constants.ONE)).to.be.revertedWith(
+        revertReasons.INEXISTING_SUPPLY
+      );
+    });
 
-    //   const {deployMockContract} = waffle;
+    it('[NEGATIVE] should revert if voucher kernel returns payment method greater than 5', async () => {
+      const tokenVoucherId = constants.ONE;
+      const tokenSupplyId = constants.TWO;
 
-    //   const mockVoucherKernel = await deployMockContract(
-    //     users.deployer.signer,
-    //     IVK.abi
-    //   ); //deploys mock
+      const {deployMockContract} = waffle;
 
-    //   contractCashier = (await Cashier_Factory.deploy(
-    //     mockVoucherKernel.address
-    //   )) as Contract & Cashier;
+      const mockVoucherKernel = await deployMockContract(
+        users.deployer.signer,
+        IVK.abi
+      ); //deploys mock
 
-    //   await contractCashier.deployed();
+      contractCashier = (await Cashier_Factory.deploy(
+        mockVoucherKernel.address
+      )) as Contract & Cashier;
 
-    //   await mockVoucherKernel.mock.getIdSupplyFromVoucher
-    //     .withArgs(constants.ONE)
-    //     .returns(constants.TWO);
-    //   await mockVoucherKernel.mock.getVoucherPaymentMethod
-    //     .withArgs(tokenSupplyId)
-    //     .returns('5');
+      await contractCashier.deployed();
 
-    //   await expect(contractCashier.withdraw(tokenVoucherId)).to.be.revertedWith(
-    //     revertReasons.INVALID_PAYMENT_METHOD
-    //   );
+      await mockVoucherKernel.mock.getIdSupplyFromVoucher
+        .withArgs(constants.ONE)
+        .returns(constants.TWO);
+      await mockVoucherKernel.mock.getVoucherPaymentMethod
+        .withArgs(tokenSupplyId)
+        .returns('5');
 
-    //   await mockVoucherKernel.mock.getSupplyHolder
-    //     .withArgs(tokenSupplyId)
-    //     .returns(users.seller.address);
-    //   await mockVoucherKernel.mock.getSellerDeposit
-    //     .withArgs(tokenSupplyId)
-    //     .returns(constants.seller_deposit);
+      await expect(contractCashier.withdraw(tokenVoucherId)).to.be.revertedWith(
+        revertReasons.RUNTIME_ERROR_INVALID_OPCODE
+      );
 
-    //   // spoof boson router address
-    //   await contractCashier.setBosonRouterAddress(users.deployer.address);
+      await mockVoucherKernel.mock.getSupplyHolder
+        .withArgs(tokenSupplyId)
+        .returns(users.seller.address);
+      await mockVoucherKernel.mock.getSellerDeposit
+        .withArgs(tokenSupplyId)
+        .returns(constants.seller_deposit);
 
-    //   await expect(
-    //     contractCashier.withdrawDepositsSe(
-    //       tokenSupplyId,
-    //       1,
-    //       users.seller.address
-    //     )
-    //   ).to.be.revertedWith(revertReasons.INVALID_PAYMENT_METHOD);
-    // });
+      // spoof boson router address
+      await contractCashier.setBosonRouterAddress(users.deployer.address);
+
+      await expect(
+        contractCashier.withdrawDepositsSe(
+          tokenSupplyId,
+          1,
+          users.seller.address
+        )
+      ).to.be.revertedWith(revertReasons.RUNTIME_ERROR_INVALID_OPCODE);
+    });
   });
 });

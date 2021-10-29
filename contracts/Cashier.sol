@@ -685,7 +685,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         uint256 _tokenIdSupply,
         uint256 _burnedQty,
         address payable _messageSender
-    ) external override nonReentrant onlyFromRouter {
+    ) external override nonReentrant onlyFromRouter notZeroAddress(_messageSender) {
+        // notZeroAddress(_messageSender);
         require(IVoucherKernel(voucherKernel).getSupplyHolder(_tokenIdSupply) == _messageSender, "UNAUTHORIZED_V");
 
         uint256 deposit =

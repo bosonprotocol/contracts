@@ -2223,47 +2223,46 @@ describe('Cashier and VoucherKernel', () => {
         );
       });
 
-      // it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
-        // TODO DIFFERENT REASON
-      //   contractMockBosonRouter = (await MockBosonRouter_Factory.deploy(
-      //     contractVoucherKernel.address,
-      //     contractTokenRegistry.address,
-      //     contractCashier.address
-      //   )) as Contract & MockBosonRouter;
+      it('[NEGATIVE] Should not create order from a wrong payment type', async () => {
+        contractMockBosonRouter = (await MockBosonRouter_Factory.deploy(
+          contractVoucherKernel.address,
+          contractTokenRegistry.address,
+          contractCashier.address
+        )) as Contract & MockBosonRouter;
 
-      //   await contractMockBosonRouter.deployed();
+        await contractMockBosonRouter.deployed();
 
-      //   //Set mock so that passing wrong payment type from requestCreateOrderETHETH to createPaymentMethod can be tested
-      //   await contractVoucherKernel.setBosonRouterAddress(
-      //     contractMockBosonRouter.address
-      //   );
+        //Set mock so that passing wrong payment type from requestCreateOrderETHETH to createPaymentMethod can be tested
+        await contractVoucherKernel.setBosonRouterAddress(
+          contractMockBosonRouter.address
+        );
 
-      //   await contractCashier.setBosonRouterAddress(
-      //     contractMockBosonRouter.address
-      //   );
+        await contractCashier.setBosonRouterAddress(
+          contractMockBosonRouter.address
+        );
 
-      //   const utilsTknEth = await UtilsBuilder.create()
-      //     .ERC20withPermit()
-      //     .TKNETH()
-      //     .buildAsync(
-      //       contractERC1155ERC721,
-      //       contractVoucherKernel,
-      //       contractCashier,
-      //       contractMockBosonRouter,
-      //       contractBSNTokenPrice,
-      //       contractBSNTokenDeposit
-      //     );
+        const utilsTknEth = await UtilsBuilder.create()
+          .ERC20withPermit()
+          .TKNETH()
+          .buildAsync(
+            contractERC1155ERC721,
+            contractVoucherKernel,
+            contractCashier,
+            contractMockBosonRouter,
+            contractBSNTokenPrice,
+            contractBSNTokenDeposit
+          );
 
-      //   await expect(
-      //     utilsTknEth.commitToBuy(
-      //       users.buyer,
-      //       users.seller,
-      //       TOKEN_SUPPLY_ID,
-      //       constants.PROMISE_PRICE1,
-      //       constants.PROMISE_DEPOSITBU1
-      //     )
-      //   ).to.be.revertedWith(revertReasons.INCORRECT_PAYMENT_METHOD);
-      // });
+        await expect(
+          utilsTknEth.commitToBuy(
+            users.buyer,
+            users.seller,
+            TOKEN_SUPPLY_ID,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
+          )
+        ).to.be.revertedWith(revertReasons.RUNTIME_ERROR_INVALID_OPCODE);
+      });
 
       it('[NEGATIVE] Should not create order with incorrect price', async () => {
         await expect(

@@ -910,7 +910,9 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         override
         returns (uint256)
     {
-        return _tokenIdVoucher & MASK_TYPE;
+        uint256 tokenIdSupply = _tokenIdVoucher & MASK_TYPE;
+        require(tokenIdSupply !=0, "INEXISTING_SUPPLY");
+        return tokenIdSupply;
     }
 
     /**
