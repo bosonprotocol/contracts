@@ -92,7 +92,7 @@
         "eslint-config-prettier": "^7.2.0",
         "ethereum-waffle": "^3.3.0",
         "ethereumjs-util": "^7.0.7",
-        "ethers": "5.4.3",
+        "ethers": "5.4.7",
         "hardhat": "^2.1.2",
         "hardhat-abi-exporter": "^2.3.0",
         "hardhat-contract-sizer": "^2.0.3",
