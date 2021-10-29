@@ -37,7 +37,7 @@
         "!artifacts/contracts/interfaces/**/*.dbg.json"
     ],
     "scripts": {
-        "contracts:run": "hardhat compile && hardhat deploy",
+        "contracts:run": "hardhat compile --force && hardhat deploy",
         "contracts:compile": "hardhat compile --force",
         "contracts:lint": "solhint contracts/**/*.sol -w 0",
         "contracts:lint-fix": "solhint contracts/**/*.sol -w 0 --fix",
