@@ -39,7 +39,6 @@
     "scripts": {
         "contracts:run": "hardhat compile && hardhat deploy",
         "contracts:compile": "hardhat compile --force",
-        "contracts:gas-report": "hardhat gas-reporter",
         "contracts:format": "prettier --list-different contracts/**/*.sol",
         "contracts:format-fix": "prettier --write contracts/**/*.sol",
         "contracts:lint": "solhint contracts/**/*.sol -w 0",
