@@ -12,32 +12,23 @@ import "./interfaces/IVoucherKernel.sol";
 import "./interfaces/IVoucherSets.sol";
 import "./interfaces/ICashier.sol";
 
+import "hardhat/console.sol";
+
 //preparing for ERC-1066, ERC-1444, EIP-838
 
 /**
  * @title Voucher sets implemented as ERC-1155
  */
-// TODO: inherit from OZ ERC1155 and remove state vars and local implementations of IERC1155
-// taking care to be sure that no "special" stuff happening in this implementation gets lost
-contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
+contract VoucherSets is IVoucherSets, ERC1155, Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     using Address for address;
 
-    //min security
     address private voucherKernelAddress; //address of the VoucherKernel contract
     address private cashierAddress; //address of the Cashier contract
     
-    //standard reqs
-    //ERC-1155
-    mapping(uint256 => mapping(address => uint256)) private balances; //balance of token ids of an account
-    mapping(address => mapping(address => bool)) private operatorApprovals; //approval of accounts of an operator
-
-    //metadata uri
-    string internal metadataUri;
 
     event LogVoucherKernelSet(address _newVoucherKernel, address _triggeredBy);
     event LogCashierSet(address _newCashier, address _triggeredBy);
-    event LogUriSet(string _newUri, address _triggeredBy);
 
     modifier onlyFromVoucherKernel() {
         require(
@@ -57,11 +48,7 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
      * @notice Construct and initialze the contract. 
      * @param _uri metadata uri
      */
-    constructor(string memory _uri) {
-        require(bytes(_uri).length != 0, "INVALID_VALUE");
-        metadataUri = _uri;
-        emit LogUriSet(_uri, _msgSender());
-    }
+    constructor(string memory _uri) ERC1155(_uri) {}
 
     /**
      * @notice Transfers amount of _tokenId from-to addresses with safety call.
@@ -80,39 +67,17 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
         uint256 _value,
         bytes calldata _data
     )
-    external
-    override
+    public
+    override (ERC1155, IERC1155)
     nonReentrant
     {
-        require(_to != address(0), "UNSPECIFIED_ADDRESS");
-        require(
-            _from == msg.sender || operatorApprovals[_from][msg.sender],
-            "UNAUTHORIZED_ST"
-        );
-
-        require(balances[_tokenId][_from] == _value, "IQ"); //invalid qty
-
-        // SafeMath throws with insufficient funds or if _id is not valid (balance will be 0)
-        balances[_tokenId][_from] = balances[_tokenId][_from].sub(_value);
-        balances[_tokenId][_to] = _value.add(balances[_tokenId][_to]);
-
+        require(balanceOf(_from, _tokenId) == _value, "IQ"); //invalid qty
+        super.safeTransferFrom(_from, _to, _tokenId, _value, _data);
         ICashier(cashierAddress).onVoucherSetTransfer(
             _from,
             _to,
             _tokenId,
             _value
-        );
-
-        emit TransferSingle(msg.sender, _from, _to, _tokenId, _value);
-
-        //make sure the tx was accepted - in case of a revert below, the event above is reverted, too
-        _doSafeTransferAcceptanceCheck(
-            msg.sender,
-            _from,
-            _to,
-            _tokenId,
-            _value,
-            _data
         );
     }
 
@@ -132,23 +97,34 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
         uint256[] calldata _tokenIds,
         uint256[] calldata _values,
         bytes calldata _data
-    ) external override {
-        require(_to != address(0), "UNSPECIFIED_ADDRESS");
-        require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTHS");
+    )  
+        public
+        override (ERC1155, IERC1155) 
+        nonReentrant
+    {
+
+        //Thes checks need to be called first. Code is duplicated, but super.safeBatchTransferFrom
+        //must be called at the end because otherwise the balance check in the loop will always fail
+        require(_tokenIds.length == _values.length, "ERC1155: ids and amounts length mismatch");
+        require(_to != address(0), "ERC1155: transfer to the zero address");
         require(
-            _from == msg.sender || operatorApprovals[_from][msg.sender],
-            "UNAUTHORIZED_SB"
+            _from == _msgSender() || isApprovedForAll(_from, _msgSender()),
+            "ERC1155: transfer caller is not owner nor approved"
         );
+   
+       
+
+        //This is inefficient because it repeats the loop in ERC1155.safeBatchTransferFrom. However,
+        //there is no other good way to call the Boson Protocol cashier contract inside the loop.
+        //Doing a full override by copying the ERC1155 code doesn't work because the _balances mapping
+        //is private instead of internal and can't be accesssed from this child contract
 
         for (uint256 i = 0; i < _tokenIds.length; ++i) {
             uint256 tokenId = _tokenIds[i];
             uint256 value = _values[i];
 
-            require(balances[tokenId][_from] == value, "IQ"); //invalid qty
-
-            // SafeMath throws with insufficient funds or if _id is not valid (balance will be 0)
-            balances[tokenId][_from] = balances[tokenId][_from].sub(value);
-            balances[tokenId][_to] = value.add(balances[tokenId][_to]);
+            //A voucher set's quantity cannot be partionally transferred. It's all or nothing
+            require(balanceOf(_from, tokenId) == value, "IQ"); //invalid qty
 
             ICashier(cashierAddress).onVoucherSetTransfer(
                 _from,
@@ -158,172 +134,7 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
             );
         }
 
-        emit TransferBatch(msg.sender, _from, _to, _tokenIds, _values);
-
-        //make sure the tx was accepted - in case of a revert below, the event above is reverted, too
-        _doSafeBatchTransferAcceptanceCheck(
-            msg.sender,
-            _from,
-            _to,
-            _tokenIds,
-            _values,
-            _data
-        );
-    }
-
-    /**
-     * @notice Check successful transfer if recipient is a contract
-     * @dev ERC-1155
-     * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.4.0-rc.0/contracts/token/ERC1155/ERC1155.sol
-     * @param _operator The operator of the transfer
-     * @param _from     Address of sender
-     * @param _to       Address of recipient
-     * @param _tokenId  ID of the token
-     * @param _value    Value transferred
-     * @param _data     Optional data
-     */
-    function _doSafeTransferAcceptanceCheck(
-        address _operator,
-        address _from,
-        address _to,
-        uint256 _tokenId,
-        uint256 _value,
-        bytes memory _data
-    ) internal {
-        if (_to.isContract()) {
-            try IERC1155Receiver(_to).onERC1155Received(_operator, _from, _tokenId, _value, _data) returns (bytes4 response) {
-                if (response != IERC1155Receiver.onERC1155Received.selector) {
-                    revert("ERC1155: ERC1155Receiver rejected tokens");
-                }
-            } catch Error(string memory reason) {
-                revert(reason);
-            } catch {
-                revert("ERC1155: transfer to non ERC1155Receiver implementer");
-            }
-        }
-    }
-
-    /**
-     * @notice Check successful transfer if recipient is a contract
-     * @dev ERC-1155
-     * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.4.0-rc.0/contracts/token/ERC1155/ERC1155.sol
-     * @param _operator The operator of the transfer
-     * @param _from     Address of sender
-     * @param _to       Address of recipient
-     * @param _tokenIds Array of IDs of tokens
-     * @param _values   Array of values transferred
-     * @param _data     Optional data
-     */
-    function _doSafeBatchTransferAcceptanceCheck(
-        address _operator,
-        address _from,
-        address _to,
-        uint256[] memory _tokenIds,
-        uint256[] memory _values,
-        bytes memory _data
-    ) internal {
-        if (_to.isContract()) {
-            try IERC1155Receiver(_to).onERC1155BatchReceived(_operator, _from, _tokenIds, _values, _data) returns (
-                bytes4 response
-            ) {
-                if (response != IERC1155Receiver.onERC1155BatchReceived.selector) {
-                    revert("ERC1155: ERC1155Receiver rejected tokens");
-                }
-            } catch Error(string memory reason) {
-                revert(reason);
-            } catch {
-                revert("ERC1155: transfer to non ERC1155Receiver implementer");
-            }
-        }
-    }
-
-    /**
-        @notice Get the balance of tokens of an account
-        @dev ERC-1155
-        @param _account The address of the token holder
-        @param _tokenId ID of the token
-        @return         balance
-     */
-    function balanceOf(address _account, uint256 _tokenId)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        return balances[_tokenId][_account];
-    }
-
-    /**
-        @notice Get the balance of account-token pairs.
-        @dev ERC-1155
-        @param _accounts The addresses of the token holders
-        @param _tokenIds IDs of the tokens
-        @return         balances
-     */
-    function balanceOfBatch(
-        address[] calldata _accounts,
-        uint256[] calldata _tokenIds
-    ) external view override returns (uint256[] memory) {
-        require(
-            _accounts.length == _tokenIds.length,
-            "MISMATCHED_ARRAY_LENGTHS"
-        );
-        uint256[] memory batchBalances = new uint256[](_accounts.length);
-
-        for (uint256 i = 0; i < _accounts.length; ++i) {
-            batchBalances[i] = balances[_tokenIds[i]][_accounts[i]];
-        }
-
-        return batchBalances;
-    }
-
-    /**
-     * @notice Approves or unapproves the operator.
-     * will revert if the caller attempts to approve itself as it is redundant
-     * @dev ERC-1155
-     * @param _operator to (un)approve
-     * @param _approve flag to set or unset
-     */
-    function setApprovalForAll(address _operator, bool _approve)
-        external
-        override
-    {
-        require(msg.sender != _operator, "REDUNDANT_CALL");
-        operatorApprovals[msg.sender][_operator] = _approve;
-        emit ApprovalForAll(msg.sender, _operator, _approve);
-    }
-
-    /**
-        @notice Gets approval status of an operator for a given account.
-        @dev ERC-1155
-        @param _account   token holder
-        @param _operator  operator to check
-        @return           True if the operator is approved, false if not
-    */
-    function isApprovedForAll(address _account, address _operator)
-        external
-        view
-        override
-        returns (bool)
-    {
-        return operatorApprovals[_account][_operator];
-    }
-
-    /**
-     * @notice Returns true if this contract implements the interface defined by _interfaceId_.
-     * This function call must use less than 30 000 gas. ATM not enforced.
-     */
-    function supportsInterface(bytes4 _interfaceId)
-        external
-        pure
-        override
-        returns (bool)
-    {
-        return
-            //check matching against ERC-165 identifiers
-            _interfaceId == 0x01ffc9a7 || //ERC-165
-            _interfaceId == 0xd9b67a26 || //ERC-1155
-            _interfaceId == 0x0e89341c;   //ERC-1155 metadata extension
+        super.safeBatchTransferFrom(_from, _to, _tokenIds, _values, _data);
     }
 
     // // // // // // // //
@@ -348,35 +159,6 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Internal function to mint an amount of a desired token
-     * @dev ERC-1155
-     * @param _to       owner of the minted token
-     * @param _tokenId  ID of the token to be minted
-     * @param _value    Amount of the token to be minted
-     * @param _data     Additional data forwarded to onERC1155BatchReceived if _to is a contract
-     */
-    function _mint(
-        address _to,
-        uint256 _tokenId,
-        uint256 _value,
-        bytes memory _data
-    ) internal {
-        require(_to != address(0), "UNSPECIFIED_ADDRESS");
-
-        balances[_tokenId][_to] = balances[_tokenId][_to].add(_value);
-        emit TransferSingle(msg.sender, address(0), _to, _tokenId, _value);
-
-        _doSafeTransferAcceptanceCheck(
-            msg.sender,
-            address(0),
-            _to,
-            _tokenId,
-            _value,
-            _data
-        );
-    }
-
-    /**
      * @notice Batch minting of tokens
      * Currently no restrictions as to who is allowed to mint - so, it is public.
      * @dev ERC-1155
@@ -397,41 +179,6 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Internal function for batch minting of tokens\
-     * @dev ERC-1155
-     * @param _to The address that will own the minted token
-     * @param _tokenIds IDs of the tokens to be minted
-     * @param _values Amounts of the tokens to be minted
-     * @param _data Additional data forwarded to onERC1155BatchReceived if _to is a contract
-     */
-    function _mintBatch(
-        address _to,
-        uint256[] memory _tokenIds,
-        uint256[] memory _values,
-        bytes memory _data
-    ) internal {
-        require(_to != address(0), "UNSPECIFIED_ADDRESS");
-        require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTHS");
-
-        for (uint256 i = 0; i < _tokenIds.length; i++) {
-            balances[_tokenIds[i]][_to] = _values[i].add(
-                balances[_tokenIds[i]][_to]
-            );
-        }
-
-        emit TransferBatch(msg.sender, address(0), _to, _tokenIds, _values);
-
-        _doSafeBatchTransferAcceptanceCheck(
-            msg.sender,
-            address(0),
-            _to,
-            _tokenIds,
-            _values,
-            _data
-        );
-    }
-
-    /**
      * @notice Burn an amount of tokens with the given ID
      * @dev ERC-1155
      * @param _account  Account which owns the token
@@ -446,23 +193,6 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
         _burn(_account, _tokenId, _value);
     }
 
-    /**
-     * @notice Burn an amount of tokens with the given ID
-     * @dev ERC-1155
-     * @param _account  Account which owns the token
-     * @param _tokenId  ID of the token
-     * @param _value    Amount of the token
-     */
-    function _burn(
-        address _account,
-        uint256 _tokenId,
-        uint256 _value
-    ) internal {
-        require(_account != address(0), "UNSPECIFIED_ADDRESS");
-
-        balances[_tokenId][_account] = balances[_tokenId][_account].sub(_value);
-        emit TransferSingle(msg.sender, _account, address(0), _tokenId, _value);
-    }
 
     /**
      * @notice Batch burn an amounts of tokens
@@ -477,35 +207,6 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
         uint256[] memory _values
     ) external onlyFromVoucherKernel {
         _burnBatch(_account, _tokenIds, _values);
-    }
-
-    /**
-     * @notice Internal function to batch burn an amounts of tokens
-     * @dev ERC-1155
-     * @param _account Account which owns the token
-     * @param _tokenIds IDs of the tokens
-     * @param _values Amounts of the tokens
-     */
-    function _burnBatch(
-        address _account,
-        uint256[] memory _tokenIds,
-        uint256[] memory _values
-    ) internal {
-        require(_account != address(0), "UNSPECIFIED_ADDRESS");
-        require(_tokenIds.length == _values.length, "MISMATCHED_ARRAY_LENGTHS");
-
-        for (uint256 i = 0; i < _tokenIds.length; i++) {
-            balances[_tokenIds[i]][_account] = balances[_tokenIds[i]][_account]
-                .sub(_values[i]);
-        }
-
-        emit TransferBatch(
-            msg.sender,
-            _account,
-            address(0),
-            _tokenIds,
-            _values
-        );
     }
 
     // // // // // // // //
@@ -533,23 +234,7 @@ contract VoucherSets is IVoucherSets, Ownable, ReentrancyGuard {
      * @param _newUri   New uri to be used
      */
     function setUri(string memory _newUri) external onlyOwner {
-        require(bytes(_newUri).length != 0, "INVALID_VALUE");
-        metadataUri = _newUri;
-        emit LogUriSet(_newUri, _msgSender());
-    }
-
-    /**
-     * @dev See {IERC1155MetadataURI-uri}.
-     *
-     * This implementation returns the same URI for *all* token types. It relies
-     * on the token type ID substitution mechanism
-     * https://eips.ethereum.org/EIPS/eip-1155#metadata[defined in the EIP].
-     *
-     * Clients calling this function must replace the `\{id\}` substring with the
-     * actual token type ID.
-     */
-    function uri(uint256) external view virtual override returns (string memory) {
-        return metadataUri;
+        _setURI(_newUri);
     }
 
     // // // // // // // //

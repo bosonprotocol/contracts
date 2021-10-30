@@ -492,7 +492,7 @@ describe('Voucher Sets', () => {
             constants.QTY_10,
             users.seller.signer
           )
-        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
+        ).to.be.revertedWith(revertReasons.TRANSFER_ZERO_ADDRESS_1155);
       });
 
       it('[NEGATIVE][safeTransfer1155] it should not be transferred to a contract that cannot receive it', async () => {
@@ -715,7 +715,7 @@ describe('Voucher Sets', () => {
             [constants.QTY_10],
             users.seller.signer
           )
-        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
+        ).to.be.revertedWith(revertReasons.TRANSFER_ZERO_ADDRESS_1155);
       });
 
       it('[NEGATIVE][safeBatchTransfer1155] Should revert if array lengths mismatch', async () => {
@@ -727,7 +727,7 @@ describe('Voucher Sets', () => {
             [constants.QTY_10, 2],
             users.seller.signer
           )
-        ).to.be.revertedWith(revertReasons.MISMATCHED_ARRAY_LENGTHS);
+        ).to.be.revertedWith(revertReasons.MISMATCHED_ARRAY_LENGTHS_1155);
       });
 
       it('[NEGATIVE][safeBatchTransfer1155] Seller should not transfer batch to contract address that cannot receive it', async () => {
@@ -813,7 +813,7 @@ describe('Voucher Sets', () => {
             [users.seller.address],
             [TOKEN_SUPPLY_ID, 2]
           )
-        ).to.be.revertedWith(revertReasons.MISMATCHED_ARRAY_LENGTHS);
+        ).to.be.revertedWith(revertReasons.BALANCE_BATCH_MISMATCHED_ARRAY_LENGTHS_1155);
       });
 
       it('[mint] Should mint a desired token', async () => {
@@ -960,7 +960,7 @@ describe('Voucher Sets', () => {
             constants.QTY_10,
             ethers.utils.formatBytes32String('0x0')
           )
-        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
+        ).to.be.revertedWith(revertReasons.MINT_ZERO_ADDRESS_1155);
       });
 
       it('[burn] Should burn an amount of tokens with the given ID', async () => {
@@ -1027,7 +1027,7 @@ describe('Voucher Sets', () => {
             TOKEN_SUPPLY_ID,
             constants.QTY_10
           )
-        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
+        ).to.be.revertedWith(revertReasons.BURN_ZERO_ADDRESS_1155);
       });
 
       it('[mintBatch] Should do batch minting of tokens', async () => {
@@ -1185,7 +1185,7 @@ describe('Voucher Sets', () => {
             [constants.QTY_10],
             ethers.utils.formatBytes32String('0x0')
           )
-        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
+        ).to.be.revertedWith(revertReasons. MINT_ZERO_ADDRESS_1155);
       });
 
       it('[NEGATIVE][mintBatch] Should revert if array lengths mismatch', async () => {
@@ -1201,7 +1201,7 @@ describe('Voucher Sets', () => {
             [constants.QTY_10, constants.QTY_1],
             ethers.utils.formatBytes32String('0x0')
           )
-        ).to.be.revertedWith(revertReasons.MISMATCHED_ARRAY_LENGTHS);
+        ).to.be.revertedWith(revertReasons.MISMATCHED_ARRAY_LENGTHS_1155);
       });
 
       it('[burnBatch] Should do batch minting of tokens', async () => {
@@ -1265,7 +1265,7 @@ describe('Voucher Sets', () => {
             [TOKEN_SUPPLY_ID],
             [constants.QTY_10]
           )
-        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
+        ).to.be.revertedWith(revertReasons.BURN_ZERO_ADDRESS_1155);
       });
 
       it('[NEGATIVE][burnBatch] Should revert if array lengths mismatch', async () => {
@@ -1280,7 +1280,7 @@ describe('Voucher Sets', () => {
             [TOKEN_SUPPLY_ID],
             [constants.QTY_10, constants.QTY_1]
           )
-        ).to.be.revertedWith(revertReasons.MISMATCHED_ARRAY_LENGTHS);
+        ).to.be.revertedWith(revertReasons.MISMATCHED_ARRAY_LENGTHS_1155);
       });
     });
 
