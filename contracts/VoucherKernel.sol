@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./interfaces/IERC1155ERC721.sol";
 import "./interfaces/IVoucherKernel.sol";
-import {PaymentMethod, IDX_COMMIT, IDX_REDEEM, IDX_REFUND, IDX_EXPIRE, IDX_COMPLAIN, IDX_CANCEL_FAULT, IDX_FINAL, VoucherStatus, isStateCommitted, isStateRedemptionSigned, isStateRefunded, isStateExpired, isStatus, determineStatus} from "./UsingHelpers.sol";
+import {PaymentMethod, VoucherState, VoucherStatus, isStateCommitted, isStateRedemptionSigned, isStateRefunded, isStateExpired, isStatus, determineStatus} from "./UsingHelpers.sol";
 
 //preparing for ERC-1066, ERC-1444, EIP-838
 
@@ -440,7 +440,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         //set status
         vouchersStatus[voucherTokenId].status = determineStatus(
             vouchersStatus[voucherTokenId].status,
-            IDX_COMMIT
+            VoucherState.COMMIT
         );
         vouchersStatus[voucherTokenId].isPaymentReleased = false;
         vouchersStatus[voucherTokenId].isDepositsReleased = false;
@@ -479,7 +479,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;
         vouchersStatus[_tokenIdVoucher].status = determineStatus(
             vouchersStatus[_tokenIdVoucher].status,
-            IDX_REDEEM
+            VoucherState.REDEEM
         );
 
         emit LogVoucherRedeemed(
@@ -516,7 +516,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;
         vouchersStatus[_tokenIdVoucher].status = determineStatus(
             vouchersStatus[_tokenIdVoucher].status,
-            IDX_REFUND
+            VoucherState.REFUND
         );
 
         emit LogVoucherRefunded(_tokenIdVoucher);
@@ -568,11 +568,11 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         uint8 tStatus = vouchersStatus[_tokenIdVoucher].status;
 
         require(
-            !isStatus(tStatus, IDX_FINAL),
+            !isStatus(tStatus, VoucherState.FINAL),
             "ALREADY_FINALIZED"
         );
 
-        uint8 IDX_STATUS = uint8(_newStatus) + 2; // making it IDX_CANCEL_FAULT or IDX_COMPLAIN (same as new status)
+        VoucherState IDX_STATUS = VoucherState(uint8(_newStatus) + 2); // making it VoucherState.CANCEL_FAULT or VoucherState.COMPLAIN (same as new status)
         string memory revertReasonAlready; 
         string memory revertReasonExpired;
 
@@ -613,7 +613,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
             );            
         } else if (
             //if the opposite of what is the desired new state
-            isStatus(vouchersStatus[_tokenIdVoucher].status, (1-uint8(_newStatus)) + 2) // making it IDX_COMPLAIN or IDX_CANCEL_FAULT (opposite to new status) 
+            isStatus(vouchersStatus[_tokenIdVoucher].status, VoucherState((1-uint8(_newStatus)) + 2)) // making it VoucherState.COMPLAIN or VoucherState.CANCEL_FAULT (opposite to new status) 
         ) {
             uint256 waitPeriod = _newStatus == ComplainOrCOF.COMPLAIN ? vouchersStatus[_tokenIdVoucher].complainPeriodStart +
                         complainPeriod : vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart + cancelFaultPeriod;
@@ -639,13 +639,13 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
             );
 
         if (_newStatus == ComplainOrCOF.COMPLAIN) {
-            if (!isStatus(tStatus, IDX_CANCEL_FAULT)) {
+            if (!isStatus(tStatus, VoucherState.CANCEL_FAULT)) {
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block
                 .timestamp;  //COF period starts
             }
             emit LogVoucherComplain(_tokenIdVoucher);
         } else {
-            if (!isStatus(tStatus, IDX_COMPLAIN)) {
+            if (!isStatus(tStatus, VoucherState.COMPLAIN)) {
             vouchersStatus[_tokenIdVoucher].complainPeriodStart = block
             .timestamp; //complain period starts
             }
@@ -729,7 +729,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         ) {
             vouchersStatus[_tokenIdVoucher].status = determineStatus(
                 vouchersStatus[_tokenIdVoucher].status,
-                IDX_EXPIRE
+                VoucherState.EXPIRE
             );
 
             emit LogExpirationTriggered(_tokenIdVoucher, msg.sender);
@@ -745,14 +745,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
 
         uint8 tStatus = vouchersStatus[_tokenIdVoucher].status;
 
-        require(!isStatus(tStatus, IDX_FINAL), "ALREADY_FINALIZED");
+        require(!isStatus(tStatus, VoucherState.FINAL), "ALREADY_FINALIZED");
 
         bool mark;
         Promise memory tPromise =
             promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
 
-        if (isStatus(tStatus, IDX_COMPLAIN)) {
-            if (isStatus(tStatus, IDX_CANCEL_FAULT)) {
+        if (isStatus(tStatus, VoucherState.COMPLAIN)) {
+            if (isStatus(tStatus, VoucherState.CANCEL_FAULT)) {
                 //if COMPLAIN && COF: then final
                 mark = true;
             } else if (
@@ -764,7 +764,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
                 mark = true;
             }
         } else if (
-            isStatus(tStatus, IDX_CANCEL_FAULT) &&
+            isStatus(tStatus, VoucherState.CANCEL_FAULT) &&
             block.timestamp >=
             vouchersStatus[_tokenIdVoucher].complainPeriodStart + complainPeriod
         ) {
@@ -791,7 +791,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         if (mark) {
             vouchersStatus[_tokenIdVoucher].status = determineStatus(
                 tStatus,
-                IDX_FINAL
+                VoucherState.FINAL
             );
             emit LogFinalizeVoucher(_tokenIdVoucher, msg.sender);
         }

@@ -4,7 +4,6 @@ pragma solidity 0.7.6;
 import "./../UsingHelpers.sol";
 
 interface IVoucherKernel {
-
     /**
      * @notice Pause the process of interaction with voucherID's (ERC-721), in case of emergency.
      * Only Cashier contract is in control of this function.

@@ -11,18 +11,12 @@ enum PaymentMethod {
     TKNTKN
 }
 
-uint8 constant ONE = 1;
-uint8 constant IDX_COMMIT = 7;
-uint8 constant IDX_REDEEM = 6;
-uint8 constant IDX_REFUND = 5;
-uint8 constant IDX_EXPIRE = 4;
-uint8 constant IDX_COMPLAIN = 3;
-uint8 constant IDX_CANCEL_FAULT = 2;
-uint8 constant IDX_FINAL = 1;
-
+enum VoucherState {NULL, FINAL, CANCEL_FAULT, COMPLAIN, EXPIRE, REFUND, REDEEM, COMMIT}
 /*  Status of the voucher in 8 bits:
     [7:COMMITTED] [6:REDEEMED] [5:REFUNDED] [4:EXPIRED] [3:COMPLAINED] [2:CANCELORFAULT] [1:FINAL] [1:/]
 */
+
+uint8 constant ONE = 1;
 
 struct VoucherDetails {
     uint256 tokenIdSupply;
@@ -55,7 +49,7 @@ struct VoucherStatus {
     * @param _status current status of a voucher.
     */
 function isStateCommitted(uint8 _status) pure returns (bool) {
-    return _status == determineStatus(0, IDX_COMMIT);
+    return _status == determineStatus(0, VoucherState.COMMIT);
 }
 
 /**
@@ -66,7 +60,7 @@ function isStateRedemptionSigned(uint8 _status)
     pure
     returns (bool)
 {
-    return _status == determineStatus(determineStatus(0, IDX_COMMIT), IDX_REDEEM);
+    return _status == determineStatus(determineStatus(0, VoucherState.COMMIT), VoucherState.REDEEM);
 }
 
 /**
@@ -74,7 +68,7 @@ function isStateRedemptionSigned(uint8 _status)
     * @param _status current status of a voucher.
     */
 function isStateRefunded(uint8 _status) pure returns (bool) {
-    return _status == determineStatus(determineStatus(0, IDX_COMMIT), IDX_REFUND);
+    return _status == determineStatus(determineStatus(0, VoucherState.COMMIT), VoucherState.REFUND);
 }
 
 /**
@@ -82,7 +76,7 @@ function isStateRefunded(uint8 _status) pure returns (bool) {
     * @param _status current status of a voucher.
     */
 function isStateExpired(uint8 _status) pure returns (bool) {
-    return _status == determineStatus(determineStatus(0, IDX_COMMIT), IDX_EXPIRE);
+    return _status == determineStatus(determineStatus(0, VoucherState.COMMIT), VoucherState.EXPIRE);
 }
 
 /**
@@ -90,8 +84,8 @@ function isStateExpired(uint8 _status) pure returns (bool) {
     * @param _status current status of a voucher.
     * @param _idx status to compare.
     */
-function isStatus(uint8 _status, uint8 _idx) pure returns (bool) {
-    return (_status >> _idx) & ONE == 1;
+function isStatus(uint8 _status, VoucherState _idx) pure returns (bool) {
+    return (_status >> uint8(_idx)) & ONE == 1;
 }
 
 /**
@@ -99,10 +93,10 @@ function isStatus(uint8 _status, uint8 _idx) pure returns (bool) {
     * @param _status previous status.
     * @param _changeIdx next status.
     */
-function determineStatus(uint8 _status, uint8 _changeIdx)
+function determineStatus(uint8 _status, VoucherState _changeIdx)
     pure
     returns (uint8)
 {
-    return _status | (ONE << _changeIdx);
+    return _status | (ONE << uint8(_changeIdx));
 }
 

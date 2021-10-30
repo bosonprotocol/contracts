@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IVoucherKernel.sol";
 import "./interfaces/ICashier.sol";
-import {PaymentMethod, IDX_REDEEM, IDX_REFUND, IDX_EXPIRE, IDX_COMPLAIN, IDX_CANCEL_FAULT, IDX_FINAL, VoucherDetails, isStatus, determineStatus} from "./UsingHelpers.sol";
+import {PaymentMethod, VoucherState, VoucherDetails, isStatus, determineStatus} from "./UsingHelpers.sol";
 
 /**
  * @title Contract for managing funds
@@ -214,7 +214,7 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
         //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status
         if (
             !voucherDetails.currStatus.isDepositsReleased &&
-            isStatus(voucherDetails.currStatus.status, IDX_FINAL)
+            isStatus(voucherDetails.currStatus.status, VoucherState.FINAL)
         ) {
             releaseDeposits(voucherDetails);
         }
@@ -271,13 +271,13 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
      * @param _voucherDetails keeps all required information of the voucher which the payment should be released for.
      */
     function releasePayments(VoucherDetails memory _voucherDetails) internal {
-        if (isStatus(_voucherDetails.currStatus.status, IDX_REDEEM)) {
+        if (isStatus(_voucherDetails.currStatus.status, VoucherState.REDEEM)) {
             releasePayment(_voucherDetails, Role.ISSUER);
         } else if (
-            isStatus(_voucherDetails.currStatus.status, IDX_REFUND) ||
-            isStatus(_voucherDetails.currStatus.status, IDX_EXPIRE) ||
-            (isStatus(_voucherDetails.currStatus.status, IDX_CANCEL_FAULT) &&
-                !isStatus(_voucherDetails.currStatus.status, IDX_REDEEM))
+            isStatus(_voucherDetails.currStatus.status, VoucherState.REFUND) ||
+            isStatus(_voucherDetails.currStatus.status, VoucherState.EXPIRE) ||
+            (isStatus(_voucherDetails.currStatus.status, VoucherState.CANCEL_FAULT) &&
+                !isStatus(_voucherDetails.currStatus.status, VoucherState.REDEEM))
         ) { 
             releasePayment(_voucherDetails, Role.HOLDER);
         }
@@ -343,11 +343,11 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
      */
     function releaseDeposits(VoucherDetails memory _voucherDetails) internal {
         //first, depositSe
-        if (isStatus(_voucherDetails.currStatus.status, IDX_COMPLAIN)) {
+        if (isStatus(_voucherDetails.currStatus.status, VoucherState.COMPLAIN)) {
             //slash depositSe
             distributeIssuerDepositOnHolderComplain(_voucherDetails);
         } else {
-            if (isStatus(_voucherDetails.currStatus.status, IDX_CANCEL_FAULT)) {
+            if (isStatus(_voucherDetails.currStatus.status, VoucherState.CANCEL_FAULT)) {
                 //slash depositSe
                 distributeIssuerDepositOnIssuerCancel(_voucherDetails);
             } else {
@@ -358,8 +358,8 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
 
         //second, depositBu
         if (
-            isStatus(_voucherDetails.currStatus.status, IDX_REDEEM) ||
-            isStatus(_voucherDetails.currStatus.status, IDX_CANCEL_FAULT)
+            isStatus(_voucherDetails.currStatus.status, VoucherState.REDEEM) ||
+            isStatus(_voucherDetails.currStatus.status, VoucherState.CANCEL_FAULT)
         ) {
             //release depositBu
             distributeFullHolderDeposit(_voucherDetails);
@@ -381,7 +381,7 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
     function distributeIssuerDepositOnHolderComplain(
         VoucherDetails memory _voucherDetails
     ) internal {
-        if (isStatus(_voucherDetails.currStatus.status, IDX_CANCEL_FAULT)) {
+        if (isStatus(_voucherDetails.currStatus.status, VoucherState.CANCEL_FAULT)) {
             //appease the conflict three-ways
             if (
                 _voucherDetails.paymentMethod == PaymentMethod.ETHETH ||
