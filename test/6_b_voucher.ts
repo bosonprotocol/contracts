@@ -85,7 +85,9 @@ describe('Vouchers', () => {
       'https://token-cdn-domain/{id}.json'
     )) as Contract & VoucherSets;
     contractVouchers = (await Vouchers_Factory.deploy(
-      'https://token-cdn-domain//orders/metadata/'
+      'https://token-cdn-domain/orders/metadata/',
+      'Boson Smart Voucher',
+      'BSV'
     )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
       contractVoucherSets.address,
@@ -331,7 +333,7 @@ describe('Vouchers', () => {
       it('[NEGATIVE][setApprovalForAll] Should revert if tries to set self as an operator', async () => {
         await expect(
           contractVouchers.setApprovalForAll(users.deployer.address, true)
-        ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
+        ).to.be.revertedWith(revertReasons.APPROVE_TO_CALLER_721);
       });
 
       it('[isApprovedForAll] Should return the approval status of an operator for a given account', async () => {
@@ -407,7 +409,7 @@ describe('Vouchers', () => {
 
         await expect(
           attackerInstance.approve(users.other1.address, token721)
-        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_APPROVAL);
+        ).to.be.revertedWith(revertReasons.UNATHORIZED_APPROVE_721);
       });
 
       it('[NEGATIVE][approve] Should revert if buyer tries to approve to self', async () => {
@@ -421,7 +423,7 @@ describe('Vouchers', () => {
 
         await expect(
           contractVouchers.approve(users.buyer.address, token721)
-        ).to.be.revertedWith(revertReasons.REDUNDANT_CALL);
+        ).to.be.revertedWith(revertReasons.APPROVAL_TO_CURRENT_OWNER_721);
       });
 
       it('[ownerOf] should return the token owner address for valid token', async () => {
@@ -444,7 +446,7 @@ describe('Vouchers', () => {
       it('[NEGATIVE][ownerOf] should revert if incorrect id provided', async () => {
         const sellerInstance = contractVouchers.connect(users.seller.signer);
         await expect(sellerInstance.ownerOf(1)).to.be.revertedWith(
-          revertReasons.UNDEFINED_OWNER
+          revertReasons.OWNER_QUERY_NONEXISTENT_ID_721
         );
       });
 
@@ -487,7 +489,7 @@ describe('Vouchers', () => {
         const balanceOf = contractVouchers.functions[fnSignatures.balanceOf721];
 
         await expect(balanceOf(constants.ZERO_ADDRESS)).to.be.revertedWith(
-          revertReasons.UNSPECIFIED_ADDRESS
+          revertReasons.BALANCE_OF_ZERO_ADDRESS_721
         );
       });
 
@@ -709,7 +711,7 @@ describe('Vouchers', () => {
             erc721,
             users.attacker.signer
           )
-        ).to.be.revertedWith(revertReasons.NOT_OWNER_NOR_APPROVED);
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_721);
       });
 
       it('[NEGATIVE][safeTransfer721] Should not be able to transfer erc721 to ZERO address', async () => {
@@ -728,7 +730,7 @@ describe('Vouchers', () => {
             erc721,
             users.buyer.signer
           )
-        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
+        ).to.be.revertedWith(revertReasons.TRANSFER_ZERO_ADDRESS_721);
       });
 
       it('[NEGATIVE][safeTransfer721] Should not be able to transfer erc721 if address from is not authorized', async () => {
@@ -939,7 +941,7 @@ describe('Vouchers', () => {
         assert.equal(balanceOfBuyer.toString(), expectedBalance.toString());
       });
 
-      it('[NEGATIVE][mint] it should not be able to mint a token to a receiver whose onERC721Received rfunction eturns the wrong value', async () => {
+      it('[NEGATIVE][mint] it should not be able to mint a token to a receiver whose onERC721Received function eturns the wrong value', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
         await contractVouchers.setVoucherKernelAddress(users.deployer.address);
 
@@ -991,7 +993,7 @@ describe('Vouchers', () => {
             constants.ZERO_ADDRESS,
             666
           )
-        ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
+        ).to.be.revertedWith(revertReasons.MINT_ZERO_ADDRESS_721);
       });
 
       it('[NEGATIVE][mint] Should not be able to mint same token twice', async () => {

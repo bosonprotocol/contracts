@@ -101,7 +101,9 @@ describe('Voucher tests', () => {
       'https://token-cdn-domain/{id}.json'
     )) as Contract & VoucherSets;
     contractVouchers = (await Vouchers_Factory.deploy(
-      'https://token-cdn-domain//orders/metadata/'
+      'https://token-cdn-domain/orders/metadata/',
+      'Boson Smart Voucher',
+      'BSV'
     )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
       contractVoucherSets.address,
@@ -178,7 +180,9 @@ describe('Voucher tests', () => {
       'https://token-cdn-domain/{id}.json'
     )) as Contract & VoucherSets;
     contractVouchers_2 = (await Vouchers_Factory.deploy(
-      'https://token-cdn-domain//orders/metadata/'
+      'https://token-cdn-domain/orders/metadata/',
+      'Boson Smart Voucher',
+      'BSV'
     )) as Contract & Vouchers;
     contractVoucherKernel_2 = (await VoucherKernel_Factory.deploy(
       contractVoucherSets_2.address,
@@ -1551,7 +1555,9 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       'https://token-cdn-domain/{id}.json'
     )) as Contract & VoucherSets;
     contractVouchers = (await Vouchers_Factory.deploy(
-      'https://token-cdn-domain//orders/metadata/'
+      'https://token-cdn-domain/orders/metadata/',
+      'Boson Smart Voucher',
+      'BSV'
     )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
       contractVoucherSets.address,

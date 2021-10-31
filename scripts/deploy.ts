@@ -230,7 +230,7 @@ class DeploymentExecutor {
     this.voucherSets = await VoucherSets.deploy(
       process.env.VOUCHERSETS_METADATA_URI
     );
-    this.vouchers = await Vouchers.deploy(process.env.VOUCHERS_METADATA_URI);
+    this.vouchers = await Vouchers.deploy(process.env.VOUCHERS_METADATA_URI, 'Boson Smart Voucher', 'BSV');
     this.voucherKernel = await VoucherKernel.deploy(
       this.voucherSets.address,
       this.vouchers.address

@@ -66,7 +66,9 @@ describe('TokenRegistry', () => {
       'https://token-cdn-domain/{id}.json'
     )) as Contract & VoucherSets;
     contractVouchers = (await Vouchers_Factory.deploy(
-      'https://token-cdn-domain//orders/metadata/'
+      'https://token-cdn-domain/orders/metadata/',
+      'Boson Smart Voucher',
+      'BSV'
     )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
       contractVoucherSets.address,

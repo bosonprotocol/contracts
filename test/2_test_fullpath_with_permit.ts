@@ -104,7 +104,9 @@ describe('Cashier and VoucherKernel', () => {
       'https://token-cdn-domain/{id}.json'
     )) as Contract & VoucherSets;
     contractVouchers = (await Vouchers_Factory.deploy(
-      'https://token-cdn-domain//orders/metadata/'
+      'https://token-cdn-domain/orders/metadata/',
+      'Boson Smart Voucher',
+      'BSV'
     )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
       contractVoucherSets.address,
@@ -7423,7 +7425,7 @@ describe('Cashier and VoucherKernel', () => {
             voucherID,
             users.attacker.signer
           )
-        ).to.be.revertedWith(revertReasons.NOT_OWNER_NOR_APPROVED);
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_721);
       });
     });
 
@@ -7872,7 +7874,7 @@ describe('Cashier and VoucherKernel', () => {
               voucherID,
               users.attacker.signer
             )
-          ).to.be.revertedWith(revertReasons.NOT_OWNER_NOR_APPROVED);
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_721);
         });
       });
 
@@ -8317,7 +8319,7 @@ describe('Cashier and VoucherKernel', () => {
               voucherID,
               users.attacker.signer
             )
-          ).to.be.revertedWith(revertReasons.NOT_OWNER_NOR_APPROVED);
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_721);
         });
       });
 
@@ -8758,7 +8760,7 @@ describe('Cashier and VoucherKernel', () => {
               voucherID,
               users.attacker.signer
             )
-          ).to.be.revertedWith(revertReasons.NOT_OWNER_NOR_APPROVED);
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_721);
         });
       });
     });

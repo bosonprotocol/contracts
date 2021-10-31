@@ -20,27 +20,14 @@ import "./interfaces/IVouchers.sol";
  */
 // TODO: inherit from OZ ERC721 and remove state vars and local implementations of IERC721
 // taking care to be sure that no "special" stuff happening in this implementation gets lost
-contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
+contract Vouchers is IVouchers, ERC721, Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     using Address for address;
     using Strings for uint256;
 
-    string public override name = "Boson Smart Voucher";
-    string public override symbol = "BSV";
-
     //min security
     address private voucherKernelAddress; //address of the VoucherKernel contract
     address private cashierAddress; //address of the Cashier contract
-    
-    //standard reqs
-    //ERC-721
-    mapping(address => uint256) private balance721;
-    mapping(uint256 => address) private owners721;
-    mapping(uint256 => address) private operator721;
-
-    
-    mapping(address => mapping(address => bool)) private operatorApprovals; //approval of accounts of an operator
-    string internal metadataUri;
 
     event LogVoucherKernelSet(address _newVoucherKernel, address _triggeredBy);
     event LogCashierSet(address _newCashier, address _triggeredBy);
@@ -62,12 +49,14 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
 
     /**
      * @notice Construct and initialze the contract. 
-     * @param _uri metadata uri
+     * @param baseURI_ base metadata uri
+     * @param name_ token name
+     * @param symbol_ token symbol
      */
-    constructor(string memory _uri) {
-        require(bytes(_uri).length != 0, "INVALID_VALUE");
-        metadataUri = _uri;
-        emit LogUriSet(_uri, _msgSender());
+    constructor(string memory baseURI_, string memory name_, string memory symbol_) 
+        ERC721(name_, symbol_) 
+    {
+        _setBaseURI(baseURI_);
     }
 
     /**
@@ -86,7 +75,8 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
         address _from,
         address _to,
         uint256 _tokenId
-    ) external override {
+    ) public override (ERC721, IERC721) 
+    {
         safeTransferFrom(_from, _to, _tokenId, "");
     }
 
@@ -100,12 +90,13 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
      * @param _tokenId uint256 ID of the token to be transferred
      * @param _data bytes data to send along with a safe transfer check
      */
-    function safeTransferFrom(
+     function safeTransferFrom(
         address _from,
         address _to,
         uint256 _tokenId,
         bytes memory _data
-    ) public override {
+    ) public override (ERC721, IERC721)  
+    {
         transferFrom(_from, _to, _tokenId);
 
         _doSafeTransferAcceptanceCheck(
@@ -115,7 +106,6 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
             _data
         );
     }
-
     /**
      * @notice Transfers the ownership of a given token ID to another address.
      * Usage of this method is discouraged, use `safeTransferFrom` whenever possible.
@@ -129,39 +119,10 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
         address _from,
         address _to,
         uint256 _tokenId
-    ) public override {
-        require(
-            operator721[_tokenId] == msg.sender ||
-                ownerOf(_tokenId) == msg.sender,
-            "NOT_OWNER_NOR_APPROVED"
-        );
-
-        _transferFrom(_from, _to, _tokenId);
-    }
-
-    /**
-     * @notice Internal function to transfer ownership of a given token ID to another address.
-     * As opposed to transferFrom, this imposes no restrictions on msg.sender.
-     * @dev ERC-721
-     * @param _from current owner of the token
-     * @param _to address to receive the ownership of the given token ID
-     * @param _tokenId uint256 ID of the token to be transferred
-     */
-    function _transferFrom(
-        address _from,
-        address _to,
-        uint256 _tokenId
-    ) internal nonReentrant {
-        require(ownerOf(_tokenId) == _from, "UNAUTHORIZED_T");
-        require(_to != address(0), "UNSPECIFIED_ADDRESS");
-
-        operator721[_tokenId] = address(0);
-
-        balance721[_from]--;
-        balance721[_to]++;
-
-        owners721[_tokenId] = _to;
-
+    ) public 
+      override (ERC721, IERC721) 
+    {
+        super.transferFrom(_from, _to, _tokenId);
         require(IVoucherKernel(voucherKernelAddress).isVoucherTransferable(_tokenId), "FUNDS_RELEASED");
 
         ICashier(cashierAddress).onVoucherTransfer(
@@ -169,125 +130,6 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
             _to,
             _tokenId
         );
-
-        emit Transfer(_from, _to, _tokenId);
-    }
-
-    /**
-     * @notice Approves another address to transfer the given token ID
-     * The zero address indicates there is no approved address.
-     * There can only be one approved address per token at a given time.
-     * Can only be called by the token owner or an approved operator.
-     * @dev ERC-721
-     * @param _to address to be approved for the given token ID
-     * @param _tokenId uint256 ID of the token to be approved
-     */
-    function approve(address _to, uint256 _tokenId) external override {
-        address tokenOwner = ownerOf(_tokenId);
-        require(_to != tokenOwner, "REDUNDANT_CALL");
-
-        require(
-            msg.sender == tokenOwner ||
-                operatorApprovals[tokenOwner][msg.sender], // isApprovedForAll(owner, msg.sender),
-            "UNAUTHORIZED_A"
-        );
-        //"ERC721: approve caller is not owner nor approved for all"
-
-        operator721[_tokenId] = _to;
-        emit Approval(tokenOwner, _to, _tokenId);
-    }
-
-    /**
-     * @notice Gets the approved address for a token ID, or zero if no address set
-     * Reverts if the token ID does not exist.
-     * @dev ERC-721
-     * @param _tokenId uint256 ID of the token to query the approval of
-     * @return address currently approved for the given token ID
-     */
-    function getApproved(uint256 _tokenId)
-        external
-        view
-        override
-        returns (address)
-    {
-        require(
-            owners721[_tokenId] != address(0),
-            "ERC721: approved query for nonexistent token"
-        );
-
-        return operator721[_tokenId];
-    }
-
-    /// @notice Count all NFTs assigned to an owner
-    /// @dev ERC-721
-    /// @param _tokenOwner An address for whom to query the balance
-    /// @return The number of NFTs owned by `_owner`, possibly zero
-    function balanceOf(address _tokenOwner) external view override returns (uint256) {
-        require(_tokenOwner != address(0), "UNSPECIFIED_ADDRESS");
-
-        return balance721[_tokenOwner];
-    }
-
-    /**
-     * @notice Gets the owner of the specified token ID.
-     * @dev ERC-721
-     * @param _tokenId uint256 ID of the token to query the owner of
-     * @return address currently marked as the owner of the given token ID
-     */
-    function ownerOf(uint256 _tokenId) public view override returns (address) {
-        address tokenOwner = owners721[_tokenId];
-        require(tokenOwner != address(0), "UNDEFINED_OWNER");
-
-        return tokenOwner;
-    }
-
-    /**
-     * @notice Approves or unapproves the operator.
-     * will revert if the caller attempts to approve itself as it is redundant
-     * @dev ERC-721
-     * @param _operator to (un)approve
-     * @param _approve flag to set or unset
-     */
-    function setApprovalForAll(address _operator, bool _approve)
-        external
-        override
-    {
-        require(msg.sender != _operator, "REDUNDANT_CALL");
-        operatorApprovals[msg.sender][_operator] = _approve;
-        emit ApprovalForAll(msg.sender, _operator, _approve);
-    }
-
-    /**
-        @notice Gets approval status of an operator for a given account.
-        @dev ERC-721
-        @param _account   token holder
-        @param _operator  operator to check
-        @return           True if the operator is approved, false if not
-    */
-    function isApprovedForAll(address _account, address _operator)
-        external
-        view
-        override
-        returns (bool)
-    {
-        return operatorApprovals[_account][_operator];
-    }
-
-    /**
-     * @notice Returns true if this contract implements the interface defined by _interfaceId_.
-     * This function call must use less than 30 000 gas. ATM not enforced.
-     */
-    function supportsInterface(bytes4 _interfaceId)
-        external
-        pure
-        override
-        returns (bool)
-    {
-        return
-            //check matching against ERC-165 identifiers
-            _interfaceId == 0x01ffc9a7 || //ERC-165
-            _interfaceId == 0x80ac58cd || //ERC-721
-            _interfaceId == 0x5b5e139f;   //ERC-721 metadata extension
     }
 
     /**
@@ -303,37 +145,15 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
         onlyFromVoucherKernel
         returns (bool)
     {
-        _mint(_to, _tokenId);
-        return true;
-    }
-
-    /**
-     * @notice Internal function to mint a new token.
-     * Reverts if the given token ID already exists.
-     * @dev ERC-721
-     * @param _to The address that will own the minted token
-     * @param _tokenId uint256 ID of the token to be minted
-     */
-    function _mint(address _to, uint256 _tokenId) internal {
-        require(_to != address(0), "UNSPECIFIED_ADDRESS");
-        require(
-            owners721[_tokenId] == address(0),
-            "ERC721: token already minted"
-        );
-
-        owners721[_tokenId] = _to;
-        balance721[_to]++;
-
-        emit Transfer(address(0), _to, _tokenId);
-
+        super._mint(_to, _tokenId);
         _doSafeTransferAcceptanceCheck(
             address(0),
             _to,
             _tokenId,
             ""
         );
+        return true;
     }
-
 
     /* Burning ERC-721 is not allowed, as a voucher (being an ERC-721 token) has a final state and shouldn't be destroyed. */
 
@@ -345,25 +165,11 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
      * @notice Setting the URL prefix for tokens metadata
      * @param _newUri   New prefix to be used
      */
+
     function setTokenURI(string memory _newUri) external onlyOwner {
         require(bytes(_newUri).length != 0, "INVALID_VALUE");
-        metadataUri = _newUri;
+        super._setBaseURI(_newUri);
         emit LogUriSet(_newUri, _msgSender());
-    }
-
-
-    /**
-     * @notice A distinct Uniform Resource Identifier (URI) for a given asset.
-     * @dev ERC-721
-     * Throws if `_tokenId` is not a valid NFT. URIs are defined in RFC 3986. The URI may point to a JSON file that conforms to the "ERC721 Metadata JSON Schema".
-     * @param _tokenId  ID of the token
-     */
-    function tokenURI(uint256 _tokenId) external override view returns (string memory) {
-        require(owners721[_tokenId] != address(0), "INVALID_ID");
-        return
-            string(
-                abi.encodePacked(metadataUri, _tokenId.toString())
-            );
     }
 
     // // // // // // // //
@@ -452,4 +258,5 @@ contract Vouchers is IVouchers, Ownable, ReentrancyGuard {
             }
         }
     }
+
 }

@@ -39,6 +39,7 @@ export async function verifyContracts(env: string): Promise<void> {
   try {
     await hre.run('verify:verify', {
       address: contracts.vouchers,
+      constructorArguments: ['Boson Smart Voucher', 'BSV'],
     });
   } catch (error) {
     logError('Vouchers', error.message);
