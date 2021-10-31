@@ -815,7 +815,9 @@ describe('Voucher Sets', () => {
             [users.seller.address],
             [TOKEN_SUPPLY_ID, 2]
           )
-        ).to.be.revertedWith(revertReasons.BALANCE_BATCH_MISMATCHED_ARRAY_LENGTHS_1155);
+        ).to.be.revertedWith(
+          revertReasons.BALANCE_BATCH_MISMATCHED_ARRAY_LENGTHS_1155
+        );
       });
 
       it('[mint] Should mint a desired token', async () => {
@@ -1187,7 +1189,7 @@ describe('Voucher Sets', () => {
             [constants.QTY_10],
             ethers.utils.formatBytes32String('0x0')
           )
-        ).to.be.revertedWith(revertReasons. MINT_ZERO_ADDRESS_1155);
+        ).to.be.revertedWith(revertReasons.MINT_ZERO_ADDRESS_1155);
       });
 
       it('[NEGATIVE][mintBatch] Should revert if array lengths mismatch', async () => {

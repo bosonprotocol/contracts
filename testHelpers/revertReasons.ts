@@ -20,17 +20,22 @@ export default {
   INVALID_QUANTITY: 'IQ',
   INVALID_QUANTITY_LONG: 'INVALID_QUANTITY',
   UNAUTHORIZED_TRANSFER_1155: 'ERC1155: caller is not owner nor approved',
-  UNAUTHORIZED_TRANSFER_BATCH_1155: 'ERC1155: transfer caller is not owner nor approved',
+  UNAUTHORIZED_TRANSFER_BATCH_1155:
+    'ERC1155: transfer caller is not owner nor approved',
   TRANSFER_ZERO_ADDRESS_1155: 'ERC1155: transfer to the zero address',
   MINT_ZERO_ADDRESS_1155: 'ERC1155: mint to the zero address',
   BURN_ZERO_ADDRESS_1155: 'ERC1155: burn from the zero address',
   MISMATCHED_ARRAY_LENGTHS_1155: 'ERC1155: ids and amounts length mismatch',
-  BALANCE_BATCH_MISMATCHED_ARRAY_LENGTHS_1155: 'ERC1155: accounts and ids length mismatch',
+  BALANCE_BATCH_MISMATCHED_ARRAY_LENGTHS_1155:
+    'ERC1155: accounts and ids length mismatch',
   MINT_ZERO_ADDRESS_721: 'ERC721: mint to the zero address',
-  TRANSFER_721_ADDRESS_FROM_NOT_AUTHORIZED: 'ERC721: transfer of token that is not own',
+  TRANSFER_721_ADDRESS_FROM_NOT_AUTHORIZED:
+    'ERC721: transfer of token that is not own',
   TRANSFER_ZERO_ADDRESS_721: 'ERC721: transfer to the zero address',
-  UNAUTHORIZED_TRANSFER_721: 'ERC721: transfer caller is not owner nor approved',
-  UNATHORIZED_APPROVE_721: 'ERC721: approve caller is not owner nor approved for all',
+  UNAUTHORIZED_TRANSFER_721:
+    'ERC721: transfer caller is not owner nor approved',
+  UNATHORIZED_APPROVE_721:
+    'ERC721: approve caller is not owner nor approved for all',
   APPROVE_TO_CALLER_721: 'ERC721: approve to caller',
   BALANCE_OF_ZERO_ADDRESS_721: 'ERC721: balance query for the zero address',
   OWNER_QUERY_NONEXISTENT_ID_721: 'ERC721: owner query for nonexistent token',
