@@ -70,17 +70,17 @@ const config: HardhatUserConfig = {
 	mocha: {
 		timeout: 120000
 	},
-        contractSizer: {
-                alphaSort: true,
-                disambiguatePaths: false,
-                runOnCompile: false,
-                strict: true
-        },
-        gasReporter: {
-                currency: 'USD',
-                coinmarketcap: CMC_API_KEY,
-                excludeContracts: ['mocks/']
-        }
+	contractSizer: {
+		alphaSort: true,
+		disambiguatePaths: false,
+		runOnCompile: false,
+		strict: true
+	},
+	gasReporter: {
+		currency: 'USD',
+		coinmarketcap: CMC_API_KEY,
+		excludeContracts: ['mocks/']
+	}
 };
 
 export default config;
