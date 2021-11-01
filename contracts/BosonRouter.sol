@@ -1228,6 +1228,7 @@ contract BosonRouter is
         external
         onlyOwner
         notZeroAddress(_voucherKernelAddress)
+        whenPaused
     {
         voucherKernel = _voucherKernelAddress;
 
@@ -1242,6 +1243,7 @@ contract BosonRouter is
         external
         onlyOwner
         notZeroAddress(_tokenRegistryAddress)
+        whenPaused
     {
         tokenRegistry = _tokenRegistryAddress;
 
@@ -1256,6 +1258,7 @@ contract BosonRouter is
         external
         onlyOwner
         notZeroAddress(_cashierAddress)
+        whenPaused
     {
         cashierAddress = _cashierAddress;
 

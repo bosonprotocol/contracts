@@ -835,6 +835,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
     function setBosonRouterAddress(address _bosonRouterAddress)
         external
         onlyOwner
+        whenPaused
     {
         require(_bosonRouterAddress != address(0), "UNSPECIFIED_ADDRESS");
 
@@ -851,6 +852,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         external
         override
         onlyOwner
+        whenPaused
     {
         require(_cashierAddress != address(0), "UNSPECIFIED_ADDRESS");
 
