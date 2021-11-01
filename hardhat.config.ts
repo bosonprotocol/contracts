@@ -3,6 +3,7 @@ dotEnvConfig.config();
 
 import "solidity-coverage"
 import 'hardhat-contract-sizer'
+import "hardhat-gas-reporter"
 import "@nomiclabs/hardhat-etherscan"
 import "@nomiclabs/hardhat-waffle"
 import '@typechain/hardhat'
@@ -14,6 +15,7 @@ const testMnemonic = 'inhale wood champion certain immense wash pepper enact enr
 const INFURA_KEY = process.env.INFURA_API_KEY;
 const PROTOCOL_DEPLOYER_PRIVATE_KEY = process.env.PROTOCOL_DEPLOYER_PRIVATE_KEY;
 const CC_TOKEN_DEPLOYER_PRIVATE_KEY = process.env.CC_TOKEN_DEPLOYER_PRIVATE_KEY;
+const CMC_API_KEY = process.env.CMS_API_KEY;
 const ACCOUNTS =
   PROTOCOL_DEPLOYER_PRIVATE_KEY && CC_TOKEN_DEPLOYER_PRIVATE_KEY
     ? [PROTOCOL_DEPLOYER_PRIVATE_KEY, CC_TOKEN_DEPLOYER_PRIVATE_KEY]
@@ -68,13 +70,17 @@ const config: HardhatUserConfig = {
 	mocha: {
 		timeout: 120000
 	},
-        contractSizer: {
-                alphaSort: true,
-                disambiguatePaths: false,
-                runOnCompile: false,
-                strict: true
-        }
-
+	contractSizer: {
+		alphaSort: true,
+		disambiguatePaths: false,
+		runOnCompile: false,
+		strict: true
+	},
+	gasReporter: {
+		currency: 'USD',
+		coinmarketcap: CMC_API_KEY,
+		excludeContracts: ['mocks/']
+	}
 };
 
 export default config;

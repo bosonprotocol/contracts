@@ -1,6 +1,5 @@
 # Smart Contracts - Deployment
 
-
 v0.1.0 Contracts are deployed on Rinkeby testnet at addresses:
   
 FundLimitsOracle Contract Address: 0x4d827187dD0df5bF02575d24E5586e765511596e
@@ -12,4 +11,3 @@ Boson Router Contract Address: 0x29C9361920785F4B2175Ba61c177cEdC6A99542A
 Boson Token instance that can be used for testing:
 $BOSON Token Contract Address: 0x1b48e27D7ABaDf2f5A5f14975Cb9D4E457dF5111 
 
-v0.2.0 Contracts are deployed on Rinkeby testnet at addresses:
