@@ -46,7 +46,6 @@ class UtilsBuilder {
       VoucherKernel: await ethers.getContractFactory('VoucherKernel'),
       Cashier: await ethers.getContractFactory('Cashier'),
       BosonRouter: await ethers.getContractFactory('BosonRouter'),
-      //ERC1155ERC721: await ethers.getContractFactory('ERC1155ERC721'),
       VoucherSets: await ethers.getContractFactory('VoucherSets'),
       Vouchers: await ethers.getContractFactory('Vouchers'),
       TokenRegistry: await ethers.getContractFactory('TokenRegistry'),

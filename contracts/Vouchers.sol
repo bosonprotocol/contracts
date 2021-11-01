@@ -2,8 +2,6 @@
 
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -18,10 +16,7 @@ import "./interfaces/IVouchers.sol";
 /**
  * @title Vouchers implemented as ERC-721
  */
-// TODO: inherit from OZ ERC721 and remove state vars and local implementations of IERC721
-// taking care to be sure that no "special" stuff happening in this implementation gets lost
-contract Vouchers is IVouchers, ERC721, Ownable, ReentrancyGuard {
-    using SafeMath for uint256;
+contract Vouchers is IVouchers, ERC721, Ownable {
     using Address for address;
     using Strings for uint256;
 
@@ -57,27 +52,6 @@ contract Vouchers is IVouchers, ERC721, Ownable, ReentrancyGuard {
         ERC721(name_, symbol_) 
     {
         _setBaseURI(baseURI_);
-    }
-
-    /**
-     * @notice Safely transfers the ownership of a given token ID to another address
-     * If the target address is a contract, it must implement `onERC721Received`,
-     * which is called upon a safe transfer, and return the magic value
-     * `bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))`; otherwise,
-     * the transfer is reverted.
-     * Requires the msg.sender to be the owner, approved, or operator
-     * @dev ERC-721
-     * @param _from current owner of the token
-     * @param _to address to receive the ownership of the given token ID
-     * @param _tokenId uint256 ID of the token to be transferred
-     */
-    function safeTransferFrom(
-        address _from,
-        address _to,
-        uint256 _tokenId
-    ) public override (ERC721, IERC721) 
-    {
-        safeTransferFrom(_from, _to, _tokenId, "");
     }
 
     /**

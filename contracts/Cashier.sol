@@ -840,9 +840,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         external
         override
         onlyOwner
+        notZeroAddress(_voucherTokenAddress)
     {
-     
-        require(_voucherTokenAddress != address(0), "UNSPECIFIED_ADDRESS");
         voucherTokenAddress = _voucherTokenAddress;
         emit LogVoucherTokenContractSet(_voucherTokenAddress, msg.sender);
     }
@@ -855,9 +854,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         external
         override
         onlyOwner
+        notZeroAddress(_voucherSetTokenAddress)
     {
-     
-        require(_voucherSetTokenAddress != address(0), "UNSPECIFIED_ADDRESS");
         voucherSetTokenAddress = _voucherSetTokenAddress;
         emit LogVoucherSetTokenContractSet(_voucherSetTokenAddress, msg.sender);
     }

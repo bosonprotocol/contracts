@@ -406,7 +406,7 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Voucher Sets token state is correct', async () => {
-          const sellerERC1155ERC721Balance = (
+          const sellerVoucherSetTokenBalance = (
             await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.seller.address,
               tokenSupplyKey
@@ -414,7 +414,7 @@ describe('Cashier and VoucherKernel', () => {
           )[0];
 
           assert.isTrue(
-            sellerERC1155ERC721Balance.eq(constants.QTY_10),
+            sellerVoucherSetTokenBalance.eq(constants.QTY_10),
             'Voucher Set token seller balance mismatch'
           );
         });
@@ -784,7 +784,7 @@ describe('Cashier and VoucherKernel', () => {
           });
 
           it('Voucher Sets token state is correct', async () => {
-            const sellerERC1155ERC721Balance = (
+            const sellerVoucherSetTokenBalance = (
               await contractVoucherSets.functions[fnSignatures.balanceOf1155](
                 users.seller.address,
                 tokenSupplyKey
@@ -792,7 +792,7 @@ describe('Cashier and VoucherKernel', () => {
             )[0];
 
             assert.isTrue(
-              sellerERC1155ERC721Balance.eq(constants.QTY_10),
+              sellerVoucherSetTokenBalance.eq(constants.QTY_10),
               'Voucher Set token seller balance mismatch'
             );
           });
@@ -1255,7 +1255,7 @@ describe('Cashier and VoucherKernel', () => {
           });
 
           it('Voucher Sets token state is correct', async () => {
-            const sellerERC1155ERC721Balance = (
+            const sellerVoucherSetTokenBalance = (
               await contractVoucherSets.functions[fnSignatures.balanceOf1155](
                 users.seller.address,
                 tokenSupplyKey
@@ -1263,7 +1263,7 @@ describe('Cashier and VoucherKernel', () => {
             )[0];
 
             assert.isTrue(
-              sellerERC1155ERC721Balance.eq(constants.QTY_10),
+              sellerVoucherSetTokenBalance.eq(constants.QTY_10),
               'Voucher Set token seller balance mismatch'
             );
           });
@@ -1626,7 +1626,7 @@ describe('Cashier and VoucherKernel', () => {
           });
 
           it('Voucher Sets token state is correct', async () => {
-            const sellerERC1155ERC721Balance = (
+            const sellerVoucherSetTokenBalance = (
               await contractVoucherSets.functions[fnSignatures.balanceOf1155](
                 users.seller.address,
                 tokenSupplyKey
@@ -1634,7 +1634,7 @@ describe('Cashier and VoucherKernel', () => {
             )[0];
 
             assert.isTrue(
-              sellerERC1155ERC721Balance.eq(constants.QTY_10),
+              sellerVoucherSetTokenBalance.eq(constants.QTY_10),
               'Voucher Set token seller balance mismatch'
             );
           });
@@ -2152,7 +2152,7 @@ describe('Cashier and VoucherKernel', () => {
         });
 
         it('Voucher Sets and Vouchers token state is correct', async () => {
-          const sellerERC1155ERC721Balance = (
+          const sellerVoucherSetTokenBalance = (
             await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.seller.address,
               TOKEN_SUPPLY_ID
@@ -2160,7 +2160,7 @@ describe('Cashier and VoucherKernel', () => {
           )[0];
 
           assert.isTrue(
-            sellerERC1155ERC721Balance.eq(constants.QTY_10 - 1),
+            sellerVoucherSetTokenBalance.eq(constants.QTY_10 - 1),
             'Voucher Set token seller balance mismatch'
           );
 
@@ -2440,7 +2440,7 @@ describe('Cashier and VoucherKernel', () => {
           });
 
           it('Voucher Sets and Vouchers token state are correct', async () => {
-            const sellerERC1155ERC721Balance = (
+            const sellerVoucherSetTokenBalance = (
               await contractVoucherSets.functions[fnSignatures.balanceOf1155](
                 users.seller.address,
                 TOKEN_SUPPLY_ID
@@ -2448,7 +2448,7 @@ describe('Cashier and VoucherKernel', () => {
             )[0];
 
             assert.isTrue(
-              sellerERC1155ERC721Balance.eq(ORDER_QTY - 1),
+              sellerVoucherSetTokenBalance.eq(ORDER_QTY - 1),
               'Voucher Set token seller balance mismatch'
             );
 
@@ -2733,7 +2733,7 @@ describe('Cashier and VoucherKernel', () => {
           });
 
           it('Voucher Sets and Vouchers token state are correct', async () => {
-            const sellerERC1155ERC721Balance = (
+            const sellerVoucherSetTokenBalance = (
               await contractVoucherSets.functions[fnSignatures.balanceOf1155](
                 users.seller.address,
                 TOKEN_SUPPLY_ID
@@ -2741,7 +2741,7 @@ describe('Cashier and VoucherKernel', () => {
             )[0];
 
             assert.isTrue(
-              sellerERC1155ERC721Balance.eq(ORDER_QTY - 1),
+              sellerVoucherSetTokenBalance.eq(ORDER_QTY - 1),
               'Voucher Set token seller balance mismatch'
             );
 
@@ -3013,7 +3013,7 @@ describe('Cashier and VoucherKernel', () => {
           });
 
           it('Voucher Sets and Vouchers token state are correct', async () => {
-            const sellerERC1155ERC721Balance = (
+            const sellerVoucherSetTokenBalance = (
               await contractVoucherSets.functions[fnSignatures.balanceOf1155](
                 users.seller.address,
                 TOKEN_SUPPLY_ID
@@ -3021,7 +3021,7 @@ describe('Cashier and VoucherKernel', () => {
             )[0];
 
             assert.isTrue(
-              sellerERC1155ERC721Balance.eq(ORDER_QTY - 1),
+              sellerVoucherSetTokenBalance.eq(ORDER_QTY - 1),
               'Voucher Set token seller balance mismatch'
             );
 
@@ -3356,7 +3356,7 @@ describe('Cashier and VoucherKernel', () => {
           });
 
           it('Voucher Sets and Vouchers token state are correct', async () => {
-            const sellerERC1155ERC721Balance = (
+            const sellerVoucherSetTokenBalance = (
               await contractVoucherSets.functions[fnSignatures.balanceOf1155](
                 users.seller.address,
                 TOKEN_SUPPLY_ID
@@ -3364,7 +3364,7 @@ describe('Cashier and VoucherKernel', () => {
             )[0];
 
             assert.isTrue(
-              sellerERC1155ERC721Balance.eq(ORDER_QTY - 1),
+              sellerVoucherSetTokenBalance.eq(ORDER_QTY - 1),
               'Voucher Set token seller balance mismatch'
             );
 

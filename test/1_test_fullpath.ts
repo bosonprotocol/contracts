@@ -447,13 +447,13 @@ describe('Voucher tests', () => {
         await contractVoucherKernel.getPromiseIdFromSupplyId(tokenSupplyKey1)
       );
 
-      //Check ERC1155ERC721 state
-      const sellerERC1155ERC721Balance = await contractVoucherSets.balanceOf(
+      //Check Voucher Sets token state
+      const sellerVoucherSetTokenBalance = await contractVoucherSets.balanceOf(
         users.seller.address,
         tokenSupplyKey1
       );
 
-      assert.isTrue(sellerERC1155ERC721Balance.eq(constants.ONE));
+      assert.isTrue(sellerVoucherSetTokenBalance.eq(constants.ONE));
     });
 
     it('adding two new orders / promises', async () => {
@@ -611,7 +611,7 @@ describe('Voucher tests', () => {
       );
       assert.isTrue(tokenNonce.eq(constants.TWO));
 
-      //Check ERC1155ERC721 state
+      //Check Voucher Sets token state
       const sellerERC1155ERC721BalanceVoucherSet1 =
         await contractVoucherSets.balanceOf(
           users.seller.address,
@@ -818,13 +818,13 @@ describe('Voucher tests', () => {
         'Deposit released not false'
       );
 
-      //Check ERC1155ERC721 state
-      const sellerERC1155ERC721Balance = await contractVoucherSets.balanceOf(
+      //Check Voucher Sets token state
+      const sellerVoucherSetTokenBalance = await contractVoucherSets.balanceOf(
         users.seller.address,
         tokenSupplyKey1
       );
 
-      assert.isTrue(sellerERC1155ERC721Balance.eq(constants.ZERO));
+      assert.isTrue(sellerVoucherSetTokenBalance.eq(constants.ZERO));
 
       const buyerERC721Balance = await contractVouchers.balanceOf(
         users.buyer.address
@@ -903,13 +903,13 @@ describe('Voucher tests', () => {
         'Deposit released not false'
       );
 
-      //Check ERC1155ERC721 state
-      const sellerERC1155ERC721Balance = await contractVoucherSets.balanceOf(
+      //Check Voucher Sets token state
+      const sellerVoucherSetTokenBalance = await contractVoucherSets.balanceOf(
         users.seller.address,
         tokenSupplyKey2
       );
 
-      assert.isTrue(sellerERC1155ERC721Balance.eq(constants.ONE));
+      assert.isTrue(sellerVoucherSetTokenBalance.eq(constants.ONE));
 
       const buyerERC721Balance = await contractVouchers.balanceOf(
         users.buyer.address

@@ -205,7 +205,7 @@ describe('Admin functionality', async () => {
     it('[NEGATIVE][setVoucherSetTokenAddress] Should revert if ZERO address is provided', async () => {
       await expect(
         contractCashier.setVoucherSetTokenAddress(constants.ZERO_ADDRESS)
-      ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
 
     it('Owner should be able to set voucher token contract address', async () => {
@@ -244,7 +244,7 @@ describe('Admin functionality', async () => {
     it('[NEGATIVE][setVoucherTokenAddress] Should revert if ZERO address is provided', async () => {
       await expect(
         contractCashier.setVoucherTokenAddress(constants.ZERO_ADDRESS)
-      ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
 
     it('[NEGATIVE][setBosonRouterAddress] Should revert if ZERO address is provided at deployment', async () => {

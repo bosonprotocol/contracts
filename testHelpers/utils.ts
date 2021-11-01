@@ -10,7 +10,6 @@ import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
 const BN = ethers.BigNumber.from;
 
 import {
-  //ERC1155ERC721__factory,
   VoucherSets__factory,
   Vouchers__factory,
   VoucherKernel__factory,
@@ -21,7 +20,6 @@ import {
 } from '../typechain';
 
 import {
-  //ERC1155ERC721,
   VoucherSets,
   Vouchers,
   VoucherKernel,
@@ -86,7 +84,6 @@ class Utils {
   }
 
   setContracts(
-    //erc1155721: ERC1155ERC721,
     voucherSets: VoucherSets,
     vouchers: Vouchers,
     voucherKernel: VoucherKernel,
@@ -95,7 +92,6 @@ class Utils {
     bsnTokenPrice?: MockERC20Permit,
     bsnTokenDeposit?: MockERC20Permit
   ): void {
-    //this.contractERC1155ERC721 = erc1155721;
     this.contractVoucherSets = voucherSets;
     this.contractVouchers = vouchers;
     this.contractVoucherKernel = voucherKernel;

@@ -2,9 +2,6 @@
 
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
@@ -19,10 +16,8 @@ import "hardhat/console.sol";
 /**
  * @title Voucher sets implemented as ERC-1155
  */
-contract VoucherSets is IVoucherSets, ERC1155, Ownable, ReentrancyGuard {
-    using SafeMath for uint256;
-    using Address for address;
-
+contract VoucherSets is IVoucherSets, ERC1155, Ownable {
+ 
     address private voucherKernelAddress; //address of the VoucherKernel contract
     address private cashierAddress; //address of the Cashier contract
     
@@ -69,7 +64,6 @@ contract VoucherSets is IVoucherSets, ERC1155, Ownable, ReentrancyGuard {
     )
     public
     override (ERC1155, IERC1155)
-    nonReentrant
     {
         require(balanceOf(_from, _tokenId) == _value, "IQ"); //invalid qty
         super.safeTransferFrom(_from, _to, _tokenId, _value, _data);
@@ -99,8 +93,7 @@ contract VoucherSets is IVoucherSets, ERC1155, Ownable, ReentrancyGuard {
         bytes calldata _data
     )  
         public
-        override (ERC1155, IERC1155) 
-        nonReentrant
+        override (ERC1155, IERC1155)
     {
 
         //Thes checks need to be called first. Code is duplicated, but super.safeBatchTransferFrom
