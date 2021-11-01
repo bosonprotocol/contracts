@@ -206,9 +206,11 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
             )
         );
 
+        bool released;
         //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
         if (!voucherDetails.currStatus.isPaymentReleased) {
             releasePayments(voucherDetails);
+            released = true;
         }
 
         //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status
@@ -217,7 +219,10 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
             isStatus(voucherDetails.currStatus.status, VoucherState.FINAL)
         ) {
             releaseDeposits(voucherDetails);
+            released = true;
         }
+
+        require (released, "NOTHING_TO_WITHDRAW");
 
         if (voucherDetails.deposit2pool > 0) {
             _withdrawDeposits(
@@ -262,7 +267,7 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
                 voucherDetails.paymentMethod,
                 voucherDetails.tokenIdSupply
             );
-        }
+        }        
     }
 
     /**

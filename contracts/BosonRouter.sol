@@ -43,6 +43,7 @@ contract BosonRouter is
     address private voucherKernel;
     address private tokenRegistry;
 
+    mapping (address => bool) private approvedGates;
     mapping(uint256 => address) private voucherSetToGateContract;
 
     event LogOrderCreated(
@@ -60,6 +61,20 @@ contract BosonRouter is
     event LogVoucherKernelSet(address _newVoucherKernel, address _triggeredBy);
     event LogTokenRegistrySet(address _newTokenRegistry, address _triggeredBy);
     event LogCashierSet(address _newCashier, address _triggeredBy);
+
+    event LogGateApprovalChanged(
+        address indexed _gateAddress,
+        bool _approved
+    );
+
+    /**
+     * @notice Make sure the given gate address is approved
+     * @param _gateAddress - the address to validate approval for
+     */
+    modifier onlyApprovedGate(address _gateAddress) {
+        require(approvedGates[_gateAddress], "INVALID_GATE");
+        _;
+    }
 
     /**
      * @notice Acts as a modifier, but it's cheaper. Checking if a non-zero address is provided, otherwise reverts.
@@ -119,6 +134,21 @@ contract BosonRouter is
         voucherKernel = _voucherKernel;
         tokenRegistry = _tokenRegistry;
         cashierAddress = _cashierAddress;
+    }
+
+    /**
+     * @notice Set the approval status for a given Gate contract
+     * @param _gateAddress - the address of the gate contract
+     * @param _approved - approval status for the gate
+     */
+    function setGateApproval(address _gateAddress, bool _approved)
+        external
+        onlyOwner
+    {
+        notZeroAddress(_gateAddress);
+        require(approvedGates[_gateAddress] != _approved, "NO_CHANGE");
+        approvedGates[_gateAddress] = _approved;
+        emit LogGateApprovalChanged(_gateAddress, _approved);
     }
 
     /**
@@ -204,8 +234,8 @@ contract BosonRouter is
         override
         nonReentrant
         whenNotPaused
+        onlyApprovedGate(_gateAddress)
     {
-        notZeroAddress(_gateAddress);
         checkLimits(_metadata, address(0), address(0), 0);
         uint256 _tokenIdSupply = requestCreateOrder(_metadata, PaymentMethod.ETHETH, address(0), address(0), 0);
         finalizeConditionalOrder(_tokenIdSupply, _gateAddress, _nftTokenId);
@@ -304,9 +334,8 @@ contract BosonRouter is
     external
     override
     nonReentrant
+    onlyApprovedGate(_gateAddress)
     {
-        notZeroAddress(_gateAddress);
-
         uint256 tokenIdSupply = requestCreateOrderTKNTKNWithPermitInternal(
             _tokenPriceAddress,
             _tokenDepositAddress,
@@ -407,9 +436,8 @@ contract BosonRouter is
     external
     override
     nonReentrant
+    onlyApprovedGate(_gateAddress)
     {
-        notZeroAddress(_gateAddress);
-
         uint256 tokenIdSupply = requestCreateOrderETHTKNWithPermitInternal( _tokenDepositAddress,
          _tokensSent,
          _deadline,
@@ -471,7 +499,7 @@ contract BosonRouter is
      * uint256 _depositBu = _metadata[4];
      * uint256 _quantity = _metadata[5];
      *
-     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferable NFT,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
      * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
@@ -486,8 +514,8 @@ contract BosonRouter is
     payable
     override
     nonReentrant
+    onlyApprovedGate(_gateAddress)
     {
-        notZeroAddress(_gateAddress);
         uint256 tokenIdSupply = requestCreateOrderTKNETHInternal(_tokenPriceAddress, _metadata);
         finalizeConditionalOrder(tokenIdSupply, _gateAddress, _nftTokenId);
     }

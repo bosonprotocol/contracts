@@ -1,6 +1,6 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
-import {assert, expect} from 'chai';
+import {expect} from 'chai';
 import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
@@ -604,7 +604,6 @@ describe('VOUCHER KERNEL', () => {
     });
 
     describe('Spoof cashier', () => {
-      let tokenSupplyId;
       beforeEach(async () => {
         await setPeriods();
         utils = await UtilsBuilder.create()
@@ -616,7 +615,7 @@ describe('VOUCHER KERNEL', () => {
             contractBosonRouter
           );
 
-        tokenSupplyId = await utils.createOrder(
+        await utils.createOrder(
           users.seller,
           constants.PROMISE_VALID_FROM,
           constants.PROMISE_VALID_TO,
@@ -660,6 +659,73 @@ describe('VOUCHER KERNEL', () => {
           constants.ZERO
         )
       ).to.be.revertedWith(revertReasons.INVALID_QUANTITY_LONG);
+    });
+
+    describe('createTokenSupplyId', async () => {
+      beforeEach(async () => {
+        await deployContracts();
+
+        // spoof boson router address
+        await contractVoucherKernel.setBosonRouterAddress(
+          users.deployer.address
+        );
+      });
+
+      it('[createTokenSupplyId] Should not revert if validFrom is 5 minutes or more than ValidTo', async () => {
+        const timestamp = await Utils.getCurrTimestamp();
+        const validFrom = timestamp + constants.SECONDS_IN_DAY;
+
+        // Difference of at least 5 minutes between valid from and valid to
+        const validTo1 =
+          timestamp + constants.SECONDS_IN_DAY + 5 * constants.ONE_MINUTE;
+        await expect(
+          contractVoucherKernel.createTokenSupplyId(
+            users.other1.address,
+            validFrom,
+            validTo1,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITSE1,
+            constants.PROMISE_DEPOSITBU1,
+            constants.QTY_10
+          )
+        ).to.not.be.reverted;
+
+        const validTo2 =
+          timestamp + constants.SECONDS_IN_DAY + 6 * constants.ONE_MINUTE;
+        await expect(
+          contractVoucherKernel.createTokenSupplyId(
+            users.other1.address,
+            validFrom,
+            validTo2,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITSE1,
+            constants.PROMISE_DEPOSITBU1,
+            constants.QTY_10
+          )
+        ).to.not.be.reverted;
+      });
+
+      it('[NEGATIVE][createTokenSupplyId] Should revert if validFrom is less than 5 minutes than validTo', async () => {
+        const timestamp = await Utils.getCurrTimestamp();
+        const validFrom = timestamp + constants.SECONDS_IN_DAY;
+
+        // Difference of less than 5 minutes between valid from and valid to
+        const validTo =
+          timestamp + constants.SECONDS_IN_DAY + 4 * constants.ONE_MINUTE;
+        await expect(
+          contractVoucherKernel.createTokenSupplyId(
+            users.other1.address,
+            validFrom,
+            validTo,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITSE1,
+            constants.PROMISE_DEPOSITBU1,
+            constants.QTY_10
+          )
+        ).to.be.revertedWith(
+          revertReasons.VALID_FROM_MUST_BE_AT_LEAST_5_MINUTES_LESS_THAN_VALID_TO
+        );
+      });
     });
   });
 });

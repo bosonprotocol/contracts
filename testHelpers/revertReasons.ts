@@ -57,6 +57,8 @@ export default {
   DAI_INVALID_PERMIT: 'Dai/invalid-permit',
   UNSUPPORTED_TOKEN: 'UNSUPPORTED_TOKEN',
   EOA: 'Transaction reverted: function call to a non-contract account',
+  NO_CHANGE: 'NO_CHANGE',
+  INVALID_GATE: 'INVALID_GATE',
   INVALID_VALUE: 'INVALID_VALUE',
   UNAUTHORIZED_TOKEN_CONTRACT: 'UT',
   UNSPECIFIED_ID: 'UNSPECIFIED_ID',
@@ -80,4 +82,7 @@ export default {
   DISASTER_STATE_ALREADY_SET: 'Disaster state is already set',
   RUNTIME_ERROR_INVALID_OPCODE: '', // testing for invalid opcode cannot be done with exact error message
   INEXISTING_SUPPLY: 'INEXISTING_SUPPLY',
+  NOTHING_TO_WITHDRAW: 'NOTHING_TO_WITHDRAW',
+  VALID_FROM_MUST_BE_AT_LEAST_5_MINUTES_LESS_THAN_VALID_TO:
+    'VALID_FROM_MUST_BE_AT_LEAST_5_MINUTES_LESS_THAN_VALID_TO',
 };

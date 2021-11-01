@@ -378,14 +378,11 @@ describe('Cashier withdrawals ', () => {
               }
               paymentWithdrawn = true;
             } else {
-              // already withdrawn in this subscenario, no changes expected
-              expect(await utils.withdraw(voucherID, users.deployer.signer))
-                .to.not.emit(contractCashier, eventNames.LOG_WITHDRAWAL)
-                .to.not.emit(
-                  contractCashier,
-                  eventNames.LOG_AMOUNT_DISTRIBUTION
-                );
+              await expect(
+                utils.withdraw(voucherID, users.deployer.signer)
+              ).to.be.revertedWith(revertReasons.NOTHING_TO_WITHDRAW);
             }
+
             await checkEscrowAmounts('betweenPaymentAndDepositRelease');
             if (checkTokenBalances)
               await checkTokenBalances(
@@ -4801,7 +4798,7 @@ describe('Cashier withdrawals ', () => {
           );
         });
 
-        it('COMMIT->REDEEM->CANCEL->FINALIZEW', async () => {
+        it('COMMIT->REDEEM->CANCEL->FINALIZE', async () => {
           const expectedBuyerDeposit = BN(constants.buyer_deposit).add(
             BN(constants.seller_deposit).div(BN(2))
           ); // 0.065
