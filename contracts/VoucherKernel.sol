@@ -572,7 +572,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
             "ALREADY_FINALIZED"
         );
 
-        VoucherState IDX_STATUS = VoucherState(uint8(_newStatus) + 2); // making it VoucherState.CANCEL_FAULT or VoucherState.COMPLAIN (same as new status)
+        VoucherState IDX_STATUS = VoucherState(uint8(_newStatus) + 1); // making it VoucherState.CANCEL_FAULT or VoucherState.COMPLAIN (same as new status)
         string memory revertReasonAlready; 
         string memory revertReasonExpired;
 
@@ -613,7 +613,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
             );            
         } else if (
             //if the opposite of what is the desired new state
-            isStatus(vouchersStatus[_tokenIdVoucher].status, VoucherState((1-uint8(_newStatus)) + 2)) // making it VoucherState.COMPLAIN or VoucherState.CANCEL_FAULT (opposite to new status) 
+            isStatus(vouchersStatus[_tokenIdVoucher].status, VoucherState((1-uint8(_newStatus)) + 1)) // making it VoucherState.COMPLAIN or VoucherState.CANCEL_FAULT (opposite to new status) 
         ) {
             uint256 waitPeriod = _newStatus == ComplainOrCOF.COMPLAIN ? vouchersStatus[_tokenIdVoucher].complainPeriodStart +
                         complainPeriod : vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart + cancelFaultPeriod;

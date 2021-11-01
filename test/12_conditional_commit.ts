@@ -1581,7 +1581,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           voucherTokenId
         );
 
-        const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+        const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
         assert.equal(
           voucherStatus[0],
@@ -1913,7 +1913,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           voucherTokenId
         );
 
-        const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+        const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
         assert.equal(
           voucherStatus[0],
@@ -2244,7 +2244,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           voucherTokenId
         );
 
-        const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+        const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
         assert.equal(
           voucherStatus[0],
@@ -2574,7 +2574,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           voucherTokenId
         );
 
-        const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+        const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
         assert.equal(
           voucherStatus[0],
@@ -2960,7 +2960,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           voucherTokenId
         );
 
-        const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+        const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
         assert.equal(
           voucherStatus[0],

@@ -1106,8 +1106,8 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           );
 
           assert.isTrue(
-            voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] == 128
-          ); //128 = COMMITTED
+            voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] == 64
+          ); //64 = COMMITTED
 
           assert.isFalse(
             voucherStatus[constants.VOUCHER_STATUS_FIELDS.isPaymentReleased],
@@ -1420,8 +1420,8 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           );
 
           assert.isTrue(
-            voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] == 128
-          ); //128 = COMMITTED
+            voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] == 64
+          ); //64 = COMMITTED
 
           assert.isFalse(
             voucherStatus[constants.VOUCHER_STATUS_FIELDS.isPaymentReleased],
@@ -1700,8 +1700,8 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           );
 
           assert.isTrue(
-            voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] == 128
-          ); //128 = COMMITTED
+            voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] == 64
+          ); //64 = COMMITTED
 
           assert.isFalse(
             voucherStatus[constants.VOUCHER_STATUS_FIELDS.isPaymentReleased],
@@ -2065,8 +2065,8 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           );
 
           assert.isTrue(
-            voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] == 128
-          ); //128 = COMMITTED
+            voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] == 64
+          ); //64 = COMMITTED
 
           assert.isFalse(
             voucherStatus[constants.VOUCHER_STATUS_FIELDS.isPaymentReleased],

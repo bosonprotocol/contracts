@@ -2108,7 +2108,7 @@ describe('Cashier and VoucherKernel', () => {
             voucherTokenId
           );
 
-          const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
           assert.equal(
             voucherStatus[0],
@@ -2214,7 +2214,7 @@ describe('Cashier and VoucherKernel', () => {
           voucherTokenId
         );
 
-        const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+        const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
         assert.equal(
           voucherStatus[0],
@@ -2394,7 +2394,7 @@ describe('Cashier and VoucherKernel', () => {
               voucherTokenId
             );
 
-            const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+            const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
             assert.equal(
               voucherStatus[0],
@@ -2520,7 +2520,7 @@ describe('Cashier and VoucherKernel', () => {
             voucherTokenId
           );
 
-          const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
           assert.equal(
             voucherStatus[0],
@@ -2684,7 +2684,7 @@ describe('Cashier and VoucherKernel', () => {
               voucherTokenId
             );
 
-            const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+            const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
             assert.equal(
               voucherStatus[0],
@@ -2807,7 +2807,7 @@ describe('Cashier and VoucherKernel', () => {
             voucherTokenId
           );
 
-          const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
           assert.equal(
             voucherStatus[0],
@@ -2961,7 +2961,7 @@ describe('Cashier and VoucherKernel', () => {
               voucherTokenId
             );
 
-            const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+            const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
             assert.equal(
               voucherStatus[0],
@@ -3074,7 +3074,7 @@ describe('Cashier and VoucherKernel', () => {
             voucherTokenId
           );
 
-          const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
           assert.equal(
             voucherStatus[0],
@@ -3300,7 +3300,7 @@ describe('Cashier and VoucherKernel', () => {
               voucherTokenId
             );
 
-            const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+            const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
             assert.equal(
               voucherStatus[0],
@@ -3408,7 +3408,7 @@ describe('Cashier and VoucherKernel', () => {
             voucherTokenId
           );
 
-          const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
           assert.equal(
             voucherStatus[0],
@@ -4072,13 +4072,13 @@ describe('Cashier and VoucherKernel', () => {
       let tokenVoucherId;
 
       const statuses = {
-        commit: 7,
-        redeem: 6,
-        refund: 5,
-        expire: 4,
-        complain: 3,
-        cancel: 2,
-        finalize: 1,
+        commit: 6,
+        redeem: 5,
+        refund: 4,
+        expire: 3,
+        complain: 2,
+        cancel: 1,
+        finalize: 0,
       };
 
       function determineStatus(_status, _changeIdx) {

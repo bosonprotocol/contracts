@@ -764,8 +764,8 @@ describe('Voucher tests', () => {
       );
 
       assert.isTrue(
-        voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] == 128
-      ); //128 = COMMITTED
+        voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] == 64
+      ); //64 = COMMITTED
 
       assert.isFalse(
         voucherStatus[constants.VOUCHER_STATUS_FIELDS.isPaymentReleased],
@@ -855,8 +855,8 @@ describe('Voucher tests', () => {
       );
 
       assert.isTrue(
-        voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] == 128
-      ); //128 = COMMITTED
+        voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] == 64
+      ); //64 = COMMITTED
       assert.isFalse(
         voucherStatus[constants.VOUCHER_STATUS_FIELDS.isPaymentReleased],
         'Payment released not false'
@@ -1056,8 +1056,8 @@ describe('Voucher tests', () => {
         tokenVoucherKey1
       );
       assert.isTrue(
-        voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] == 192
-      );
+        voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] == 64 + 32
+      ); // COMMITED(64) + REDEEMED(32)
 
       const transactionBlock = await ethers.provider.getBlock(
         txRedeem.blockNumber
@@ -1075,12 +1075,12 @@ describe('Voucher tests', () => {
         tokenVoucherKey2
       );
 
-      // [1000.0000] = hex"80" = 128 = COMMITTED
+      // [0100.0000] = 64 = COMMITTED
       assert.equal(
         ethers.utils.hexlify(
           statusBefore[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
-        ethers.utils.hexlify(128),
+        ethers.utils.hexlify(64),
         'initial voucher status not as expected (COMMITTED)'
       );
 
@@ -1106,12 +1106,12 @@ describe('Voucher tests', () => {
         tokenVoucherKey2
       );
 
-      //[1001.0000] = hex"90" = 144 = EXPIRED
+      //[0100.1000] = 72 = EXPIRED
       assert.equal(
         ethers.utils.hexlify(
           voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
-        ethers.utils.hexlify(144),
+        ethers.utils.hexlify(72),
         'end voucher status not as expected (EXPIRED)'
       );
     });
@@ -1142,8 +1142,8 @@ describe('Voucher tests', () => {
         tokenVoucherKey1
       );
       assert.isTrue(
-        voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] == 194
-      );
+        voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] == 97
+      ); // COMMITED(64) + REDEEMED(32) + FINALIZED(1)
     });
 
     it('must fail: unauthorized redemption', async () => {
@@ -1721,12 +1721,12 @@ describe('Voucher tests - UNHAPPY PATH', () => {
         transactionBlock.timestamp.toString()
       );
 
-      // [1010.0000] = hex"A0" = 160 = REFUND
+      // [0101.0000] = 80 = REFUND
       assert.equal(
         ethers.utils.hexlify(
           voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
-        ethers.utils.hexlify(160),
+        ethers.utils.hexlify(80),
         'end voucher status not as expected (REFUNDED)'
       );
     });
@@ -1761,12 +1761,12 @@ describe('Voucher tests - UNHAPPY PATH', () => {
         transactionBlock.timestamp.toString()
       );
 
-      // [1010.1000] = hex"A8" = 168 = REFUND_COMPLAIN
+      // [0101.0100] = 84 = REFUND_COMPLAIN
       assert.equal(
         ethers.utils.hexlify(
           voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
-        ethers.utils.hexlify(168),
+        ethers.utils.hexlify(84),
         'end voucher status not as expected (REFUNDED_COMPLAINED)'
       );
     });
@@ -1823,12 +1823,12 @@ describe('Voucher tests - UNHAPPY PATH', () => {
         ].toString()
       );
 
-      // [1010.1100] = hex"AC" = 172 = REFUND_COMPLAIN_COF
+      // [0101.0110] = hex"AC" = 86 = REFUND_COMPLAIN_COF
       assert.equal(
         ethers.utils.hexlify(
           voucherStatusAfter[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
-        ethers.utils.hexlify(172),
+        ethers.utils.hexlify(86),
         'end voucher status not as expected ' +
           '(REFUNDED_COMPLAINED_CANCELORFAULT)'
       );
@@ -1853,12 +1853,12 @@ describe('Voucher tests - UNHAPPY PATH', () => {
         tokenVoucherKey1
       );
 
-      // [1000.0100] = hex"84" = 132 = CANCELORFAULT
+      // [0100.0010] = 66 = CANCELORFAULT
       assert.equal(
         ethers.utils.hexlify(
           voucherStatus[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
-        ethers.utils.hexlify(132),
+        ethers.utils.hexlify(66),
         'end voucher status not as expected (CANCELORFAULT)'
       );
     });
@@ -1902,12 +1902,12 @@ describe('Voucher tests - UNHAPPY PATH', () => {
         tokenVoucherKey1
       );
 
-      // [1001.0000] = hex"90" = 144 = EXPIRED
+      // [0100.1000] = 72 = EXPIRED
       assert.equal(
         ethers.utils.hexlify(
           statusAfter[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
-        ethers.utils.hexlify(144),
+        ethers.utils.hexlify(72),
         'end voucher status not as expected (EXPIRED)'
       );
 
@@ -1928,12 +1928,12 @@ describe('Voucher tests - UNHAPPY PATH', () => {
         tokenVoucherKey1
       );
 
-      // [1001.1000] = hex"98" = 152 = EXPIRED_COMPLAIN
+      // [0100.1100] = 76 = EXPIRED_COMPLAIN
       assert.equal(
         ethers.utils.hexlify(
           statusAfter[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
-        ethers.utils.hexlify(152),
+        ethers.utils.hexlify(76),
         'end voucher status not as expected (EXPIRED_COMPLAINED)'
       );
 
@@ -1955,12 +1955,12 @@ describe('Voucher tests - UNHAPPY PATH', () => {
         tokenVoucherKey1
       );
 
-      // [1001.1000] = hex"9C" = 156 = EXPIRED_COMPLAINED_CANCELORFAULT
+      // [0100.1100] = 78 = EXPIRED_COMPLAINED_CANCELORFAULT
       assert.equal(
         ethers.utils.hexlify(
           statusAfter[constants.VOUCHER_STATUS_FIELDS.status] as number
         ),
-        ethers.utils.hexlify(156),
+        ethers.utils.hexlify(78),
         'end voucher status not as expected ' +
           '(EXPIRED_COMPLAINED_CANCELORFAULT)'
       );

@@ -11,9 +11,9 @@ enum PaymentMethod {
     TKNTKN
 }
 
-enum VoucherState {NULL, FINAL, CANCEL_FAULT, COMPLAIN, EXPIRE, REFUND, REDEEM, COMMIT}
+enum VoucherState {FINAL, CANCEL_FAULT, COMPLAIN, EXPIRE, REFUND, REDEEM, COMMIT}
 /*  Status of the voucher in 8 bits:
-    [7:COMMITTED] [6:REDEEMED] [5:REFUNDED] [4:EXPIRED] [3:COMPLAINED] [2:CANCELORFAULT] [1:FINAL] [1:/]
+    [6:COMMITTED] [5:REDEEMED] [4:REFUNDED] [3:EXPIRED] [2:COMPLAINED] [1:CANCELORFAULT] [0:FINAL]
 */
 
 uint8 constant ONE = 1;
@@ -99,4 +99,3 @@ function determineStatus(uint8 _status, VoucherState _changeIdx)
 {
     return _status | (ONE << uint8(_changeIdx));
 }
-
