@@ -510,20 +510,6 @@ describe('Cashier and VoucherKernel', () => {
         ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
       });
 
-      it('[NEGATIVE] Should revert if validFrom is greater than validTo', async () => {
-        await expect(
-          utils.createOrder(
-            users.seller,
-            constants.PROMISE_VALID_TO,
-            constants.PROMISE_VALID_FROM,
-            constants.PROMISE_PRICE1,
-            constants.PROMISE_DEPOSITSE1,
-            constants.PROMISE_DEPOSITBU1,
-            constants.QTY_10
-          )
-        ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_FROM);
-      });
-
       it('[NEGATIVE] Should not create a supply if price is above the limit', async () => {
         await expect(
           utils.createOrder(
@@ -897,20 +883,6 @@ describe('Cashier and VoucherKernel', () => {
               constants.QTY_10
             )
           ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
-        });
-
-        it('[NEGATIVE] Should revert if validFrom is greater than validTo', async () => {
-          await expect(
-            utils.createOrder(
-              users.seller,
-              constants.PROMISE_VALID_TO,
-              constants.PROMISE_VALID_FROM,
-              constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITSE1,
-              constants.PROMISE_DEPOSITBU1,
-              constants.QTY_10
-            )
-          ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_FROM);
         });
 
         it('[NEGATIVE] Should revert if token deposit contract address is constants.ZERO address', async () => {
@@ -1739,20 +1711,6 @@ describe('Cashier and VoucherKernel', () => {
               constants.QTY_10
             )
           ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
-        });
-
-        it('[NEGATIVE] Should revert if validFrom is greater than validTo', async () => {
-          await expect(
-            utils.createOrder(
-              users.seller,
-              constants.PROMISE_VALID_TO,
-              constants.PROMISE_VALID_FROM,
-              constants.PROMISE_PRICE1,
-              constants.PROMISE_DEPOSITSE1,
-              constants.PROMISE_DEPOSITBU1,
-              constants.QTY_10
-            )
-          ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_FROM);
         });
 
         it('[NEGATIVE] Should revert if token price contract address is constants.ZERO address', async () => {

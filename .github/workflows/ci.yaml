@@ -19,7 +19,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v2
         with:
-          node-version: '12'
+          node-version: '12.20.x'
           cache: 'npm'
       - run: npm install
       - run: npm run contracts:compile
@@ -41,7 +41,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v2
         with:
-          node-version: '12'
+          node-version: '12.20.x'
           cache: 'npm'
       - name: Install Dependencies
         run: npm install
@@ -49,6 +49,8 @@ jobs:
         run: npm run contracts:compile
       - name: Contract Sizing
         run: npm run contracts:size
+      - name: Unit tests + Gas Reporter
+        run: npm run tests:unit
       - name: Code Coverage
         run: npm run tests:coverage
       - name: Check Code Coverage
