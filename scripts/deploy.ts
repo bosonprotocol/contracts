@@ -24,6 +24,8 @@ class DeploymentExecutor {
   dai_token;
   gate;
   erc1155NonTransferable;
+  maxTip;
+  txOptions;
 
   constructor() {
     if (this.constructor == DeploymentExecutor) {
@@ -47,6 +49,15 @@ class DeploymentExecutor {
     this.dai_token = process.env.DAI_TOKEN;
     this.gate;
     this.erc1155NonTransferable;
+
+    this.maxTip = ethers.utils.parseUnits(
+      process.env.MAX_TIP
+        ? String(process.env.MAX_TIP)
+        : "1"
+      ,"gwei");
+
+    this.txOptions = {maxPriorityFeePerGas: this.maxTip};
+    
   }
 
   async setDefaults() {
@@ -202,17 +213,18 @@ class DeploymentExecutor {
     const ERC1155NonTransferableAsOtherSigner =
       ERC1155NonTransferable.connect(ccTokenDeployer);
 
-    this.tokenRegistry = await TokenRegistry.deploy();
-    this.erc1155erc721 = await ERC1155ERC721.deploy();
-    this.voucherKernel = await VoucherKernel.deploy(this.erc1155erc721.address);
-    this.cashier = await Cashier.deploy(this.voucherKernel.address);
+    this.tokenRegistry = await TokenRegistry.deploy(this.txOptions);
+    this.erc1155erc721 = await ERC1155ERC721.deploy(this.txOptions);
+    this.voucherKernel = await VoucherKernel.deploy(this.erc1155erc721.address, this.txOptions);
+    this.cashier = await Cashier.deploy(this.voucherKernel.address, this.txOptions);
     this.br = await BosonRouter.deploy(
       this.voucherKernel.address,
       this.tokenRegistry.address,
-      this.cashier.address
+      this.cashier.address,
+      this.txOptions
     );
-    this.daiTokenWrapper = await DAITokenWrapper.deploy(this.dai_token);
-    this.gate = await Gate.deploy(this.br.address);
+    this.daiTokenWrapper = await DAITokenWrapper.deploy(this.dai_token, this.txOptions);
+    this.gate = await Gate.deploy(this.br.address, this.txOptions);
 
     //ERC1155NonTransferrable is a Conditional Commit token and should be deployed from a separate address
     this.erc1155NonTransferable =
@@ -314,9 +326,9 @@ class ProdExecutor extends DeploymentExecutor {
 
   async setDefaults() {
     await super.setDefaults();
-    await this.tokenRegistry.setTokenLimit(this.boson_token, this.TOKEN_LIMIT);
+    await this.tokenRegistry.setTokenLimit(this.boson_token, this.TOKEN_LIMIT, this.txOptions);
     console.log(`Set Boson token limit: ${this.TOKEN_LIMIT}`);
-    await this.tokenRegistry.setTokenLimit(this.dai_token, this.TOKEN_LIMIT);
+    await this.tokenRegistry.setTokenLimit(this.dai_token, this.TOKEN_LIMIT, this.txOptions);
     console.log(`Set Dai token limit: ${this.TOKEN_LIMIT}`);
   }
 }
@@ -336,10 +348,10 @@ class NonProdExecutor extends DeploymentExecutor {
 
   async setDefaults() {
     await super.setDefaults();
-    await this.voucherKernel.setComplainPeriod(2 * this.SIXTY_SECONDS);
-    await this.voucherKernel.setCancelFaultPeriod(2 * this.SIXTY_SECONDS);
-    await this.tokenRegistry.setTokenLimit(this.boson_token, this.TOKEN_LIMIT);
-    await this.tokenRegistry.setTokenLimit(this.dai_token, this.TOKEN_LIMIT);
+    await this.voucherKernel.setComplainPeriod(2 * this.SIXTY_SECONDS, this.txOptions);
+    await this.voucherKernel.setCancelFaultPeriod(2 * this.SIXTY_SECONDS, this.txOptions);
+    await this.tokenRegistry.setTokenLimit(this.boson_token, this.TOKEN_LIMIT, this.txOptions);
+    await this.tokenRegistry.setTokenLimit(this.dai_token, this.TOKEN_LIMIT, this.txOptions);
   }
 }
 
