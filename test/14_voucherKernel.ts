@@ -661,7 +661,7 @@ describe('VOUCHER KERNEL', () => {
       ).to.be.revertedWith(revertReasons.INVALID_QUANTITY_LONG);
     });
 
-    it('[createTokenSupplyId] Should not revert if validFrom is at least 5 minutes less than validTo', async () => {
+    it('[createTokenSupplyId] Should not revert if validFrom is 5 minutes or more than ValidTo', async () => {
       await deployContracts();
 
       // spoof boson router address
@@ -671,13 +671,27 @@ describe('VOUCHER KERNEL', () => {
       const validFrom = timestamp + constants.SECONDS_IN_DAY;
 
       // Difference of at least 5 minutes between valid from and valid to
-      const validTo =
+      const validTo1 =
         timestamp + constants.SECONDS_IN_DAY + 5 * constants.ONE_MINUTE;
       await expect(
         contractVoucherKernel.createTokenSupplyId(
           users.other1.address,
           validFrom,
-          validTo,
+          validTo1,
+          constants.PROMISE_PRICE1,
+          constants.PROMISE_DEPOSITSE1,
+          constants.PROMISE_DEPOSITBU1,
+          constants.QTY_10
+        )
+      ).to.not.be.reverted;
+
+      const validTo2 =
+        timestamp + constants.SECONDS_IN_DAY + 6 * constants.ONE_MINUTE;
+      await expect(
+        contractVoucherKernel.createTokenSupplyId(
+          users.other1.address,
+          validFrom,
+          validTo2,
           constants.PROMISE_PRICE1,
           constants.PROMISE_DEPOSITSE1,
           constants.PROMISE_DEPOSITBU1,
@@ -686,7 +700,7 @@ describe('VOUCHER KERNEL', () => {
       ).to.not.be.reverted;
     });
 
-    it('[NEGATIVE][createTokenSupplyId] Should revert if validFrom is not at least 5 minutes less than validTo', async () => {
+    it('[NEGATIVE][createTokenSupplyId] Should revert if validFrom is less than 5 minutes than validTo', async () => {
       await deployContracts();
 
       // spoof boson router address
