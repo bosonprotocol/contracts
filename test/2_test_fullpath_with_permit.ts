@@ -502,7 +502,7 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_DEPOSITBU1,
             constants.QTY_10
           )
-        ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_FROM);
+        ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
       });
 
       it('[NEGATIVE] Should not create a supply if price is above the limit', async () => {
@@ -890,7 +890,7 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_DEPOSITBU1,
               constants.QTY_10
             )
-          ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_FROM);
+          ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
         });
 
         it('[NEGATIVE] Should revert if token deposit contract address is constants.ZERO address', async () => {
@@ -1730,7 +1730,7 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_DEPOSITBU1,
               constants.QTY_10
             )
-          ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_FROM);
+          ).to.be.revertedWith(revertReasons.INVALID_VALIDITY_TO);
         });
 
         it('[NEGATIVE] Should revert if token price contract address is constants.ZERO address', async () => {
