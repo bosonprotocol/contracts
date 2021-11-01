@@ -32,9 +32,9 @@ it, please see the [documentation site](https://docs.bosonprotocol.io/).
 For local development of the contracts, your development machine will need a few
 tools installed.
 
-At a minimum, you'll need:
-* Node (12.20)
-* NPM (7.15)
+You'll need:
+* Node (12.20.x)
+* NPM (7.15.x)
 * Git
 
 For instructions on how to get set up with these specific versions:
@@ -68,7 +68,7 @@ npm run contracts:compile
 ### Run
 
 ```shell
-./go contracts:run
+npm run contracts:run
 ```
 
 *Note that*: This command starts up built-in Hardhat Network and migrates all contracts to the Hardhat Network instance. The `.env` file has a hard-coded value for the `BOSON_TOKEN` address, which points to account #9 of the local hardhat network. This isn't an actual BOSON token address but just a valid address that will allow the deployment scripts to work. It's not necessary to deploy a BOSON token to run the unit tests locally (see Unit Tests section), as the unit tests deploy their own contract instances.
@@ -77,8 +77,10 @@ If preferred by those who are familiar with Hardhat, the standard Hardhat comman
 
 In a separate terminal, contracts can be deployed using
 ```shell
-  npx hardhat --network localhost deploy
+npx hardhat deploy
 ```
+The above command deploys to the built-in hardhat EVM. 
+
 
 #### Forking Rinkeby to localnode
 
@@ -131,7 +133,7 @@ To check the test coverage:
 npm run tests:coverage
 ```
 
-`solidity-coverage` runs its own instance of Ganache internally, as well as instrumenting contracts before running.
+`solidity-coverage` runs its own instance of the hardhatEVM internally, as well as instrumenting contracts before running, note that the contracts are not run through an optimiser when calculating the code coverage, so please do ignore any warnings about contract size when calculating the code coverage. 
 
 ---
 ### Code Linting & Formatting

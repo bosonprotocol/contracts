@@ -7,8 +7,8 @@
         "test": "test"
     },
     "engines": {
-        "node": ">=12.20.0",
-        "npm": ">=7.15.1"
+        "node": "12.20.x",
+        "npm": "7.15.x"
     },
     "files": [
         "typechain",
@@ -37,17 +37,18 @@
         "!artifacts/contracts/interfaces/**/*.dbg.json"
     ],
     "scripts": {
-        "contracts:run": "hardhat compile --force && hardhat deploy",
+        "contracts:run": "hardhat clean && hardhat compile --force && hardhat deploy",
         "contracts:compile": "hardhat compile --force",
+        "contracts:clean": "hardhat clean",
         "contracts:lint": "solhint contracts/**/*.sol -w 0",
         "contracts:lint-fix": "solhint contracts/**/*.sol -w 0 --fix",
         "contracts:format": "prettier --list-different contracts/**/*.sol",
         "contracts:format-fix": "prettier --write contracts/**/*.sol",
-        "contracts:migrate:dev": "npx hardhat deploy --network rinkeby --env dev",
-        "contracts:migrate:dev:ropsten": "npx hardhat deploy --network ropsten --env dev",
-        "contracts:migrate:demo": "npx hardhat deploy --network rinkeby --env demo",
-        "contracts:migrate:demo:ropsten": "npx hardhat deploy --network ropsten --env demo",
-        "contracts:migrate:prod": "npx hardhat deploy --network rinkeby --env prod",
+        "contracts:migrate:dev": "hardhat clean && hardhat compile --force && hardhat deploy --network rinkeby --env dev",
+        "contracts:migrate:dev:ropsten": "hardhat clean && hardhat compile --force && hardhat deploy --network ropsten --env dev",
+        "contracts:migrate:demo": "hardhat clean && hardhat compile --force && hardhat deploy --network rinkeby --env demo",
+        "contracts:migrate:demo:ropsten": "hardhat clean && hardhat compile --force && hardhat deploy --network ropsten --env demo",
+        "contracts:migrate:prod": "hardhat clean && hardhat compile --force && hardhat deploy --network rinkeby --env prod",
         "contracts:verify:dev": "npx hardhat contracts-verify --network rinkeby --env dev",
         "contracts:verify:dev:ropsten": "npx hardhat contracts-verify --network ropsten --env dev",
         "contracts:verify:demo": "npx hardhat contracts-verify --network rinkeby --env demo",
