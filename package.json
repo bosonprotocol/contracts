@@ -7,8 +7,8 @@
         "test": "test"
     },
     "engines": {
-        "node": ">=12.20.0",
-        "npm": ">=7.15.1"
+        "node": "12.20.x",
+        "npm": "7.15.x"
     },
     "files": [
         "typechain",
@@ -37,29 +37,30 @@
         "!artifacts/contracts/interfaces/**/*.dbg.json"
     ],
     "scripts": {
-        "contracts:run": "hardhat compile && hardhat deploy",
+        "contracts:run": "npm run contracts:clean && npm run contracts:compile && hardhat deploy",
         "contracts:compile": "hardhat compile --force",
-        "contracts:format": "prettier --list-different contracts/**/*.sol",
-        "contracts:format-fix": "prettier --write contracts/**/*.sol",
+        "contracts:clean": "hardhat clean",
         "contracts:lint": "solhint contracts/**/*.sol -w 0",
         "contracts:lint-fix": "solhint contracts/**/*.sol -w 0 --fix",
-        "contracts:migrate:dev": "npx hardhat deploy --network rinkeby --env dev",
-        "contracts:migrate:dev:ropsten": "npx hardhat deploy --network ropsten --env dev",
-        "contracts:migrate:demo": "npx hardhat deploy --network rinkeby --env demo",
-        "contracts:migrate:demo:ropsten": "npx hardhat deploy --network ropsten --env demo",
-        "contracts:migrate:prod": "npx hardhat deploy --network rinkeby --env prod",
-        "contracts:size": "npx hardhat size-contracts",
-        "contracts:verify:dev": "npx hardhat contracts-verify --network rinkeby --env dev",
-        "contracts:verify:dev:ropsten": "npx hardhat contracts-verify --network ropsten --env dev",
-        "contracts:verify:demo": "npx hardhat contracts-verify --network rinkeby --env demo",
-        "contracts:verify:demo:ropsten": "npx hardhat contracts-verify --network ropsten --env demo",
-        "contracts:verify:prod": "npx hardhat contracts-verify --network rinkeby --env prod",
+        "contracts:format": "prettier --list-different contracts/**/*.sol",
+        "contracts:format-fix": "prettier --write contracts/**/*.sol",
+        "contracts:migrate:dev": "npm run contracts:clean && npm run contracts:compile && hardhat deploy --network rinkeby --env dev",
+        "contracts:migrate:dev:ropsten": "npm run contracts:clean && npm run contracts:compile && hardhat deploy --network ropsten --env dev",
+        "contracts:migrate:demo": "npm run contracts:clean && npm run contracts:compile && hardhat deploy --network rinkeby --env demo",
+        "contracts:migrate:demo:ropsten": "npm run contracts:clean && npm run contracts:compile && hardhat deploy --network ropsten --env demo",
+        "contracts:migrate:prod": "npm run contracts:clean && npm run contracts:compile && hardhat deploy --network rinkeby --env prod",
+        "contracts:size": "hardhat size-contracts",
+        "contracts:verify:dev": "hardhat contracts-verify --network rinkeby --env dev",
+        "contracts:verify:dev:ropsten": "hardhat contracts-verify --network ropsten --env dev",
+        "contracts:verify:demo": "hardhat contracts-verify --network rinkeby --env demo",
+        "contracts:verify:demo:ropsten": "hardhat contracts-verify --network ropsten --env demo",
+        "contracts:verify:prod": "hardhat contracts-verify --network rinkeby --env prod",
         "tests:lint": "eslint test/**/*.ts testHelpers/**/*.ts",
         "tests:lint-fix": "eslint --fix test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
         "tests:format": "prettier --list-different test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
         "tests:format-fix": "prettier --write test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
-        "tests:unit": "npx hardhat test",
-        "tests:coverage": "npx hardhat coverage --solcoverjs ./.solcover.js",
+        "tests:unit": "hardhat test",
+        "tests:coverage": "hardhat coverage --solcoverjs ./.solcover.js",
         "prepublishOnly": "npm run contracts:lint && npm run contracts:compile && npm run tests:unit"
     },
     "repository": {
