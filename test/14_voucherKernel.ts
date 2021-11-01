@@ -709,7 +709,7 @@ describe('VOUCHER KERNEL', () => {
           constants.QTY_10
         )
       ).to.be.revertedWith(
-        revertReasons.VALID_FROM_NOT_LESS_THAN_VALID_TO_BY_AT_LEAST_5_MINUTES
+        revertReasons.VALID_FROM_MUST_BE_AT_LEAST_5_MINUTES_LESS_THAN_VALID_TO
       );
     });
   });
