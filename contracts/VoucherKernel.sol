@@ -89,8 +89,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
     uint256 private complainPeriod;
     uint256 private cancelFaultPeriod;
 
-    enum ComplainOrCOF {COF, COMPLAIN}
-
     event LogPromiseCreated(
         bytes32 indexed _promiseId,
         uint256 indexed _nonce,
@@ -534,7 +532,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         onlyFromRouter
         onlyVoucherOwner(_tokenIdVoucher, _messageSender)
     {
-        checkIfApplicableAndResetPeriod(_tokenIdVoucher, ComplainOrCOF.COMPLAIN);
+        checkIfApplicableAndResetPeriod(_tokenIdVoucher, VoucherState.COMPLAIN);
     }   
 
     /**
@@ -554,7 +552,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
             "UNAUTHORIZED_COF"
         );
 
-        checkIfApplicableAndResetPeriod(_tokenIdVoucher, ComplainOrCOF.COF);
+        checkIfApplicableAndResetPeriod(_tokenIdVoucher, VoucherState.CANCEL_FAULT);
     }
 
     /**
@@ -562,7 +560,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
      * @param _tokenIdVoucher   ID of the voucher
      * @param _newStatus   desired new status, can be {COF, COMPLAIN}
      */
-    function checkIfApplicableAndResetPeriod(uint256 _tokenIdVoucher, ComplainOrCOF _newStatus)
+    function checkIfApplicableAndResetPeriod(uint256 _tokenIdVoucher, VoucherState _newStatus)
         internal
     {
         uint8 tStatus = vouchersStatus[_tokenIdVoucher].status;
@@ -572,11 +570,10 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
             "ALREADY_FINALIZED"
         );
 
-        VoucherState IDX_STATUS = VoucherState(uint8(_newStatus) + 1); // making it VoucherState.CANCEL_FAULT or VoucherState.COMPLAIN (same as new status)
         string memory revertReasonAlready; 
         string memory revertReasonExpired;
 
-        if (_newStatus == ComplainOrCOF.COMPLAIN) {
+        if (_newStatus == VoucherState.COMPLAIN) {
             revertReasonAlready = "ALREADY_COMPLAINED";
             revertReasonExpired = "COMPLAINPERIOD_EXPIRED";
         } else {
@@ -585,7 +582,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         }
 
         require(
-            !isStatus(tStatus, IDX_STATUS),
+            !isStatus(tStatus, _newStatus),
             revertReasonAlready
         );
 
@@ -613,15 +610,15 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
             );            
         } else if (
             //if the opposite of what is the desired new state
-            isStatus(vouchersStatus[_tokenIdVoucher].status, VoucherState((1-uint8(_newStatus)) + 1)) // making it VoucherState.COMPLAIN or VoucherState.CANCEL_FAULT (opposite to new status) 
+            isStatus(vouchersStatus[_tokenIdVoucher].status, VoucherState((uint8(_newStatus) % 2 + 1))) // making it VoucherState.COMPLAIN or VoucherState.CANCEL_FAULT (opposite to new status) 
         ) {
-            uint256 waitPeriod = _newStatus == ComplainOrCOF.COMPLAIN ? vouchersStatus[_tokenIdVoucher].complainPeriodStart +
+            uint256 waitPeriod = _newStatus == VoucherState.COMPLAIN ? vouchersStatus[_tokenIdVoucher].complainPeriodStart +
                         complainPeriod : vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart + cancelFaultPeriod;
             require(
                 block.timestamp <= waitPeriod,
                 revertReasonExpired
             );
-        } else if (_newStatus != ComplainOrCOF.COMPLAIN && isStateCommitted(tStatus)) {
+        } else if (_newStatus != VoucherState.COMPLAIN && isStateCommitted(tStatus)) {
             //if committed only (applicable only in COF)
             require(
                 block.timestamp <=
@@ -635,10 +632,10 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         
             vouchersStatus[_tokenIdVoucher].status = determineStatus(
                 tStatus,
-                IDX_STATUS
+                _newStatus
             );
 
-        if (_newStatus == ComplainOrCOF.COMPLAIN) {
+        if (_newStatus == VoucherState.COMPLAIN) {
             if (!isStatus(tStatus, VoucherState.CANCEL_FAULT)) {
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block
                 .timestamp;  //COF period starts
