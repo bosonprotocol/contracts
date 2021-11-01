@@ -49,6 +49,8 @@ jobs:
         run: npm run contracts:compile
       - name: Contract Sizing
         run: npm run contracts:size
+      - name: Unit tests + Gas Reporter
+        run: npm run tests:unit
       - name: Code Coverage
         run: npm run tests:coverage
       - name: Check Code Coverage
