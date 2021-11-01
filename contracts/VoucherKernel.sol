@@ -234,9 +234,9 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
     onlyFromRouter
     returns (uint256) {
         require(_quantity > 0, "INVALID_QUANTITY");
-        require(_validFrom <= _validTo, "INVALID_VALIDITY_FROM");
         // solhint-disable-next-line not-rely-on-time
         require(_validTo >= block.timestamp + 5 minutes, "INVALID_VALIDITY_TO");
+        require(_validTo >= _validFrom.add(5 minutes), "VALID_FROM_MUST_BE_AT_LEAST_5_MINUTES_LESS_THAN_VALID_TO");
 
         bytes32 key;
         key = keccak256(
@@ -729,17 +729,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         Promise memory tPromise =
             promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
 
-        if (
-            tPromise.validTo < block.timestamp &&
-            isStateCommitted(vouchersStatus[_tokenIdVoucher].status)
-        ) {
-            vouchersStatus[_tokenIdVoucher].status = determineStatus(
-                vouchersStatus[_tokenIdVoucher].status,
-                IDX_EXPIRE
-            );
+        require(tPromise.validTo < block.timestamp && isStateCommitted(vouchersStatus[_tokenIdVoucher].status),'INAPPLICABLE_STATUS');
 
-            emit LogExpirationTriggered(_tokenIdVoucher, msg.sender);
-        }
+        vouchersStatus[_tokenIdVoucher].status = determineStatus(
+            vouchersStatus[_tokenIdVoucher].status,
+            IDX_EXPIRE
+        );
+
+        emit LogExpirationTriggered(_tokenIdVoucher, msg.sender);
     }
 
     /**
@@ -794,13 +791,13 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
             }
         }
 
-        if (mark) {
-            vouchersStatus[_tokenIdVoucher].status = determineStatus(
-                tStatus,
-                IDX_FINAL
-            );
-            emit LogFinalizeVoucher(_tokenIdVoucher, msg.sender);
-        }
+        require(mark, 'INAPPLICABLE_STATUS');
+
+        vouchersStatus[_tokenIdVoucher].status = determineStatus(
+            tStatus,
+            IDX_FINAL
+        );
+        emit LogFinalizeVoucher(_tokenIdVoucher, msg.sender);
     }
 
     /* solhint-enable */

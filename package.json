@@ -37,7 +37,7 @@
         "!artifacts/contracts/interfaces/**/*.dbg.json"
     ],
     "scripts": {
-        "contracts:run": "hardhat clean && hardhat compile --force && hardhat deploy",
+        "contracts:run": "npm run contracts:clean && hardhat compile --force && hardhat deploy",
         "contracts:compile": "hardhat compile --force",
         "contracts:clean": "hardhat clean",
         "contracts:lint": "solhint contracts/**/*.sol -w 0",
@@ -49,6 +49,7 @@
         "contracts:migrate:demo": "hardhat clean && hardhat compile --force && hardhat deploy --network rinkeby --env demo",
         "contracts:migrate:demo:ropsten": "hardhat clean && hardhat compile --force && hardhat deploy --network ropsten --env demo",
         "contracts:migrate:prod": "hardhat clean && hardhat compile --force && hardhat deploy --network rinkeby --env prod",
+        "contracts:size": "npx hardhat size-contracts",
         "contracts:verify:dev": "npx hardhat contracts-verify --network rinkeby --env dev",
         "contracts:verify:dev:ropsten": "npx hardhat contracts-verify --network ropsten --env dev",
         "contracts:verify:demo": "npx hardhat contracts-verify --network rinkeby --env demo",
@@ -60,7 +61,6 @@
         "tests:format-fix": "prettier --write test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
         "tests:unit": "npx hardhat test",
         "tests:coverage": "npx hardhat coverage --solcoverjs ./.solcover.js",
-        "contracts:size": "hardhat size-contracts",
         "prepublishOnly": "npm run contracts:lint && npm run contracts:compile && npm run tests:unit"
     },
     "repository": {
@@ -96,7 +96,8 @@
         "ethers": "5.4.3",
         "hardhat": "^2.1.2",
         "hardhat-abi-exporter": "^2.3.0",
-        "hardhat-contract-sizer": "^2.0.3",
+        "hardhat-contract-sizer": "^2.1.1",
+        "hardhat-gas-reporter": "^1.0.4",
         "mocha": "^8.2.1",
         "node-fetch": "^2.6.1",
         "prettier": "^2.2.1",
