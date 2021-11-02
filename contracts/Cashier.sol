@@ -833,9 +833,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         external
         override
         onlyOwner
+        notZeroAddress(_bosonRouterAddress)
     {
-        require(_bosonRouterAddress != address(0), "UNSPECIFIED_ADDRESS");
-
         bosonRouterAddress = _bosonRouterAddress;
 
         emit LogBosonRouterSet(_bosonRouterAddress, msg.sender);

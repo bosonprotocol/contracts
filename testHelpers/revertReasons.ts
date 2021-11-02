@@ -58,7 +58,6 @@ export default {
   UNPAUSED_FORBIDDEN: 'UF',
   REDUNDANT_CALL: 'ERC1155: setting approval status for self',
   UNAUTHORIZED_APPROVAL: 'UNAUTHORIZED_A',
-  UNSPECIFIED_ADDRESS: 'UNSPECIFIED_ADDRESS',
   FN_SELECTOR_NOT_RECOGNIZED: `function selector was not recognized and there's no fallback function`,
   INVALID_ID: 'ERC721Metadata: URI query for nonexistent token',
   INVALID_PAYMENT_METHOD: 'INVALID PAYMENT METHOD',
