@@ -224,7 +224,7 @@ contract Vouchers is IVouchers, ERC721, Ownable {
         if (_to.isContract()) {
             try IERC721Receiver(_to).onERC721Received(_msgSender(), _from, _tokenId, _data) returns (bytes4 response) {
                 if (response != IERC721Receiver.onERC721Received.selector) {
-                    revert("ERC721: transfer to non ERC721Receiver implementer -- test");
+                    revert("ERC721: transfer to non ERC721Receiver implementer");
                 }
             } catch Error(string memory reason) {
                 revert(reason);

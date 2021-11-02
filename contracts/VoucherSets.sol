@@ -9,8 +9,6 @@ import "./interfaces/IVoucherKernel.sol";
 import "./interfaces/IVoucherSets.sol";
 import "./interfaces/ICashier.sol";
 
-import "hardhat/console.sol";
-
 //preparing for ERC-1066, ERC-1444, EIP-838
 
 /**
