@@ -345,9 +345,15 @@ class ProdExecutor extends DeploymentExecutor {
     // The lines below are otherwise called also in another setDefaults
     await this.tokenRegistry.setETHLimit(this.eth_limit);
     console.log(`Set ETH limit: ${this.eth_limit}`);
-    await this.tokenRegistry.setTokenLimit(this.boson_token, this.boson_token_limit);
+    await this.tokenRegistry.setTokenLimit(
+      this.boson_token,
+      this.boson_token_limit
+    );
     console.log(`Set Boson token limit: ${this.boson_token_limit}`);
-    await this.tokenRegistry.setTokenLimit(this.dai_token, this.dai_token_limit);
+    await this.tokenRegistry.setTokenLimit(
+      this.dai_token,
+      this.dai_token_limit
+    );
     console.log(`Set Dai token limit: ${this.dai_token_limit}`);
   }
 }
@@ -370,8 +376,14 @@ class NonProdExecutor extends DeploymentExecutor {
     await this.voucherKernel.setComplainPeriod(this.complainPeriod);
     await this.voucherKernel.setCancelFaultPeriod(this.cancelFaultPeriod);
     await this.tokenRegistry.setETHLimit(this.eth_limit);
-    await this.tokenRegistry.setTokenLimit(this.boson_token, this.boson_token_limit);
-    await this.tokenRegistry.setTokenLimit(this.dai_token, this.dai_token_limit);
+    await this.tokenRegistry.setTokenLimit(
+      this.boson_token,
+      this.boson_token_limit
+    );
+    await this.tokenRegistry.setTokenLimit(
+      this.dai_token,
+      this.dai_token_limit
+    );
   }
 }
 
