@@ -67,7 +67,8 @@ class DeploymentExecutor {
 
     tx = await this.erc1155erc721.setApprovalForAll(
       this.voucherKernel.address,
-      'true'
+      'true',
+      this.txOptions
     );
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
@@ -79,7 +80,8 @@ class DeploymentExecutor {
     );
 
     tx = await this.erc1155erc721.setVoucherKernelAddress(
-      this.voucherKernel.address
+      this.voucherKernel.address,
+      this.txOptions
     );
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
@@ -90,7 +92,10 @@ class DeploymentExecutor {
       event.args._newVoucherKernel
     );
 
-    tx = await this.erc1155erc721.setCashierAddress(this.cashier.address);
+    tx = await this.erc1155erc721.setCashierAddress(
+      this.cashier.address,
+      this.txOptions
+    );
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
     console.log(
@@ -100,7 +105,10 @@ class DeploymentExecutor {
       event.args._newCashier
     );
 
-    tx = await this.voucherKernel.setBosonRouterAddress(this.br.address);
+    tx = await this.voucherKernel.setBosonRouterAddress(
+      this.br.address,
+      this.txOptions
+    );
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
     console.log(
@@ -110,24 +118,34 @@ class DeploymentExecutor {
       event.args._newBosonRouter
     );
 
-    tx = await this.voucherKernel.setCashierAddress(this.cashier.address);
+    tx = await this.voucherKernel.setCashierAddress(
+      this.cashier.address,
+      this.txOptions
+    );
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
     console.log('$ VoucherKernel', event.event, 'at:', event.args._newCashier);
 
-    tx = await this.cashier.setBosonRouterAddress(this.br.address);
+    tx = await this.cashier.setBosonRouterAddress(
+      this.br.address,
+      this.txOptions
+    );
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
     console.log('\n$ Cashier', event.event, 'at:', event.args._newBosonRouter);
 
-    tx = await this.cashier.setTokenContractAddress(this.erc1155erc721.address);
+    tx = await this.cashier.setTokenContractAddress(
+      this.erc1155erc721.address,
+      this.txOptions
+    );
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
     console.log('$ Cashier', event.event, 'at:', event.args._newTokenContract);
 
     tx = await this.tokenRegistry.setTokenWrapperAddress(
       this.dai_token,
-      this.daiTokenWrapper.address
+      this.daiTokenWrapper.address,
+      this.txOptions
     );
 
     txReceipt = await tx.wait();
@@ -141,7 +159,8 @@ class DeploymentExecutor {
 
     tx = await this.tokenRegistry.setTokenWrapperAddress(
       this.boson_token,
-      this.boson_token
+      this.boson_token,
+      this.txOptions
     );
 
     txReceipt = await tx.wait();
@@ -154,7 +173,8 @@ class DeploymentExecutor {
     );
 
     tx = await this.gate.setNonTransferableTokenContract(
-      this.erc1155NonTransferable.address
+      this.erc1155NonTransferable.address,
+      this.txOptions
     );
 
     txReceipt = await tx.wait();
@@ -166,7 +186,11 @@ class DeploymentExecutor {
       event.args._nonTransferableTokenContractAddress
     );
 
-    tx = await this.br.setGateApproval(this.gate.address, true);
+    tx = await this.br.setGateApproval(
+      this.gate.address,
+      true,
+      this.txOptions
+    );
 
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
@@ -179,13 +203,22 @@ class DeploymentExecutor {
       event.args._approved
     );
 
-    await this.erc1155erc721._setMetadataBase(process.env.METADATA_BASE);
+    await this.erc1155erc721._setMetadataBase(
+      process.env.METADATA_BASE,
+      this.txOptions
+    );
     console.log('$ MetadataBase', 'set to :', process.env.METADATA_BASE);
 
-    await this.erc1155erc721._set1155Route(process.env.ERC1155_ROUTE);
+    await this.erc1155erc721._set1155Route(
+      process.env.ERC1155_ROUTE,
+      this.txOptions
+    );
     console.log('$ ERC1155Route ', 'set to :', process.env.ERC1155_ROUTE);
 
-    await this.erc1155erc721._set721Route(process.env.ERC721_ROUTE);
+    await this.erc1155erc721._set721Route(
+      process.env.ERC721_ROUTE,
+      this.txOptions
+    );
     console.log('$ ERC721Route ', 'set to :', process.env.ERC721_ROUTE);
 
     console.log(
@@ -229,7 +262,8 @@ class DeploymentExecutor {
     //ERC1155NonTransferrable is a Conditional Commit token and should be deployed from a separate address
     this.erc1155NonTransferable =
       await ERC1155NonTransferableAsOtherSigner.deploy(
-        process.env.CONDITIONAL_COMMIT_TOKEN_METADATA_URI
+        process.env.CONDITIONAL_COMMIT_TOKEN_METADATA_URI,
+        this.txOptions
       );
 
     await this.tokenRegistry.deployed();
@@ -246,7 +280,7 @@ class DeploymentExecutor {
     console.log(
       '\nToken Registry Contract Address  %s from deployer address %s: ',
       this.tokenRegistry.address,
-      this.tokenRegistry.deployTransaction.from
+      this.tokenRegistry.deployTransaction.from, this.txOptions
     );
     console.log(
       'ERC1155ERC721 Contract Address  %s from deployer address %s: ',
