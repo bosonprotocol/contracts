@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./interfaces/IVoucherSets.sol";
 import "./interfaces/IVouchers.sol";
 import "./interfaces/IVoucherKernel.sol";
-import "./UsingHelpers.sol";
+import {PaymentMethod, VoucherState, VoucherStatus, isStateCommitted, isStateRedemptionSigned, isStateRefunded, isStateExpired, isStatus, determineStatus} from "./UsingHelpers.sol";
 
 //preparing for ERC-1066, ERC-1444, EIP-838
 
@@ -22,7 +22,7 @@ import "./UsingHelpers.sol";
  *      See: https://ethereum.stackexchange.com/questions/5924/how-do-ethereum-mining-nodes-maintain-a-time-consistent-with-the-network/5931#5931
  */
 // solhint-disable-next-line
-contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, UsingHelpers {
+contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
     using Address for address;
     using SafeMath for uint256;
 
@@ -47,7 +47,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
     }
 
     struct VoucherPaymentMethod {
-        uint8 paymentMethod;
+        PaymentMethod paymentMethod;
         address addressTokenPrice;
         address addressTokenDeposits;
     }
@@ -90,8 +90,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
 
     uint256 private complainPeriod;
     uint256 private cancelFaultPeriod;
-
-    enum ComplainOrCOF {COF, COMPLAIN}
 
     event LogPromiseCreated(
         bytes32 indexed _promiseId,
@@ -294,16 +292,10 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
      */
     function createPaymentMethod(
         uint256 _tokenIdSupply,
-        uint8 _paymentMethod,
+        PaymentMethod _paymentMethod,
         address _tokenPrice,
         address _tokenDeposits
-    ) external override onlyFromRouter {
-        require(
-            _paymentMethod > 0 &&
-                _paymentMethod <= 4,
-            "INVALID PAYMENT METHOD"
-        );
-        
+    ) external override onlyFromRouter {       
         paymentDetails[_tokenIdSupply] = VoucherPaymentMethod({
             paymentMethod: _paymentMethod,
             addressTokenPrice: _tokenPrice,
@@ -350,7 +342,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         uint256 _tokenIdSupply,
         address _issuer,
         address _holder,
-        uint8 _paymentMethod
+        PaymentMethod _paymentMethod
     )
     external
     override
@@ -358,7 +350,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
     nonReentrant
     {
         require(_doERC721HolderCheck(_issuer, _holder, _tokenIdSupply), "UNSUPPORTED_ERC721_RECEIVED");
-        uint8 paymentMethod = getVoucherPaymentMethod(_tokenIdSupply);
+        PaymentMethod paymentMethod = getVoucherPaymentMethod(_tokenIdSupply);
 
         //checks
         require(paymentMethod == _paymentMethod, "Incorrect Payment Method");
@@ -455,7 +447,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         //set status
         vouchersStatus[voucherTokenId].status = determineStatus(
             vouchersStatus[voucherTokenId].status,
-            IDX_COMMIT
+            VoucherState.COMMIT
         );
         vouchersStatus[voucherTokenId].isPaymentReleased = false;
         vouchersStatus[voucherTokenId].isDepositsReleased = false;
@@ -494,7 +486,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;
         vouchersStatus[_tokenIdVoucher].status = determineStatus(
             vouchersStatus[_tokenIdVoucher].status,
-            IDX_REDEEM
+            VoucherState.REDEEM
         );
 
         emit LogVoucherRedeemed(
@@ -531,7 +523,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         vouchersStatus[_tokenIdVoucher].complainPeriodStart = block.timestamp;
         vouchersStatus[_tokenIdVoucher].status = determineStatus(
             vouchersStatus[_tokenIdVoucher].status,
-            IDX_REFUND
+            VoucherState.REFUND
         );
 
         emit LogVoucherRefunded(_tokenIdVoucher);
@@ -549,7 +541,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         onlyFromRouter
         onlyVoucherOwner(_tokenIdVoucher, _messageSender)
     {
-        checkIfApplicableAndResetPeriod(_tokenIdVoucher, ComplainOrCOF.COMPLAIN);
+        checkIfApplicableAndResetPeriod(_tokenIdVoucher, VoucherState.COMPLAIN);
     }   
 
     /**
@@ -569,7 +561,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
             "UNAUTHORIZED_COF"
         );
 
-        checkIfApplicableAndResetPeriod(_tokenIdVoucher, ComplainOrCOF.COF);
+        checkIfApplicableAndResetPeriod(_tokenIdVoucher, VoucherState.CANCEL_FAULT);
     }
 
     /**
@@ -577,21 +569,20 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
      * @param _tokenIdVoucher   ID of the voucher
      * @param _newStatus   desired new status, can be {COF, COMPLAIN}
      */
-    function checkIfApplicableAndResetPeriod(uint256 _tokenIdVoucher, ComplainOrCOF _newStatus)
+    function checkIfApplicableAndResetPeriod(uint256 _tokenIdVoucher, VoucherState _newStatus)
         internal
     {
         uint8 tStatus = vouchersStatus[_tokenIdVoucher].status;
 
         require(
-            !isStatus(tStatus, IDX_FINAL),
+            !isStatus(tStatus, VoucherState.FINAL),
             "ALREADY_FINALIZED"
         );
 
-        uint8 IDX_STATUS = uint8(_newStatus) + 2; // making it IDX_CANCEL_FAULT or IDX_COMPLAIN (same as new status)
         string memory revertReasonAlready; 
         string memory revertReasonExpired;
 
-        if (_newStatus == ComplainOrCOF.COMPLAIN) {
+        if (_newStatus == VoucherState.COMPLAIN) {
             revertReasonAlready = "ALREADY_COMPLAINED";
             revertReasonExpired = "COMPLAINPERIOD_EXPIRED";
         } else {
@@ -600,7 +591,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         }
 
         require(
-            !isStatus(tStatus, IDX_STATUS),
+            !isStatus(tStatus, _newStatus),
             revertReasonAlready
         );
 
@@ -627,16 +618,17 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
                 revertReasonExpired
             );            
         } else if (
-            //if the opposite of what is the desired new state
-            isStatus(vouchersStatus[_tokenIdVoucher].status, (1-uint8(_newStatus)) + 2) // making it IDX_COMPLAIN or IDX_CANCEL_FAULT (opposite to new status) 
+            //if the opposite of what is the desired new state. When doing COMPLAIN we need to check if already in COF (and vice versa), since the waiting periods are different.
+            // VoucherState.COMPLAIN has enum index value 2, while VoucherState.CANCEL_FAULT has enum index value 1. To check the opposite status we use transformation "% 2 + 1" which maps 2 to 1 and 1 to 2 
+            isStatus(vouchersStatus[_tokenIdVoucher].status, VoucherState((uint8(_newStatus) % 2 + 1))) // making it VoucherState.COMPLAIN or VoucherState.CANCEL_FAULT (opposite to new status) 
         ) {
-            uint256 waitPeriod = _newStatus == ComplainOrCOF.COMPLAIN ? vouchersStatus[_tokenIdVoucher].complainPeriodStart +
+            uint256 waitPeriod = _newStatus == VoucherState.COMPLAIN ? vouchersStatus[_tokenIdVoucher].complainPeriodStart +
                         complainPeriod : vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart + cancelFaultPeriod;
             require(
                 block.timestamp <= waitPeriod,
                 revertReasonExpired
             );
-        } else if (_newStatus != ComplainOrCOF.COMPLAIN && isStateCommitted(tStatus)) {
+        } else if (_newStatus != VoucherState.COMPLAIN && isStateCommitted(tStatus)) {
             //if committed only (applicable only in COF)
             require(
                 block.timestamp <=
@@ -650,17 +642,17 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         
             vouchersStatus[_tokenIdVoucher].status = determineStatus(
                 tStatus,
-                IDX_STATUS
+                _newStatus
             );
 
-        if (_newStatus == ComplainOrCOF.COMPLAIN) {
-            if (!isStatus(tStatus, IDX_CANCEL_FAULT)) {
+        if (_newStatus == VoucherState.COMPLAIN) {
+            if (!isStatus(tStatus, VoucherState.CANCEL_FAULT)) {
             vouchersStatus[_tokenIdVoucher].cancelFaultPeriodStart = block
                 .timestamp;  //COF period starts
             }
             emit LogVoucherComplain(_tokenIdVoucher);
         } else {
-            if (!isStatus(tStatus, IDX_COMPLAIN)) {
+            if (!isStatus(tStatus, VoucherState.COMPLAIN)) {
             vouchersStatus[_tokenIdVoucher].complainPeriodStart = block
             .timestamp; //complain period starts
             }
@@ -742,7 +734,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
 
         vouchersStatus[_tokenIdVoucher].status = determineStatus(
             vouchersStatus[_tokenIdVoucher].status,
-            IDX_EXPIRE
+            VoucherState.EXPIRE
         );
 
         emit LogExpirationTriggered(_tokenIdVoucher, msg.sender);
@@ -757,14 +749,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
 
         uint8 tStatus = vouchersStatus[_tokenIdVoucher].status;
 
-        require(!isStatus(tStatus, IDX_FINAL), "ALREADY_FINALIZED");
+        require(!isStatus(tStatus, VoucherState.FINAL), "ALREADY_FINALIZED");
 
         bool mark;
         Promise memory tPromise =
             promises[getPromiseIdFromVoucherId(_tokenIdVoucher)];
 
-        if (isStatus(tStatus, IDX_COMPLAIN)) {
-            if (isStatus(tStatus, IDX_CANCEL_FAULT)) {
+        if (isStatus(tStatus, VoucherState.COMPLAIN)) {
+            if (isStatus(tStatus, VoucherState.CANCEL_FAULT)) {
                 //if COMPLAIN && COF: then final
                 mark = true;
             } else if (
@@ -776,7 +768,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
                 mark = true;
             }
         } else if (
-            isStatus(tStatus, IDX_CANCEL_FAULT) &&
+            isStatus(tStatus, VoucherState.CANCEL_FAULT) &&
             block.timestamp >=
             vouchersStatus[_tokenIdVoucher].complainPeriodStart + complainPeriod
         ) {
@@ -804,7 +796,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
 
         vouchersStatus[_tokenIdVoucher].status = determineStatus(
             tStatus,
-            IDX_FINAL
+            VoucherState.FINAL
         );
         emit LogFinalizeVoucher(_tokenIdVoucher, msg.sender);
     }
@@ -915,7 +907,9 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         override
         returns (uint256)
     {
-        return _tokenIdVoucher & MASK_TYPE;
+        uint256 tokenIdSupply = _tokenIdVoucher & MASK_TYPE;
+        require(tokenIdSupply !=0, "INEXISTENT_SUPPLY");
+        return tokenIdSupply;
     }
 
     /**
@@ -1110,7 +1104,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         public
         view
         override
-        returns (uint8)
+        returns (PaymentMethod)
     {
         return paymentDetails[_tokenIdSupply].paymentMethod;
     }

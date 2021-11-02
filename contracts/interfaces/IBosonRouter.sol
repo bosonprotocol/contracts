@@ -2,6 +2,8 @@
 
 pragma solidity 0.7.6;
 
+import "./../UsingHelpers.sol";
+
 interface IBosonRouter {
     function pause() external;
 
