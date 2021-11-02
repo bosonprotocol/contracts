@@ -63,6 +63,10 @@ const config: HardhatUserConfig = {
 			url: `https://ropsten.infura.io/v3/${INFURA_KEY}`,
 			accounts: ACCOUNTS
 		},
+		mainnet: {
+			url: `https://mainnet.infura.io/v3/${INFURA_KEY}`,
+			accounts: ACCOUNTS
+		},
 	},
 	etherscan: {
 		apiKey: process.env.ETHERSCAN_API_KEY
