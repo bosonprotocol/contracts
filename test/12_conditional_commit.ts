@@ -92,7 +92,10 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       'Vouchers',
       'VoucherKernel',
       'Cashier',
-      'BosonRouter'
+      'BosonRouter',
+      'contractBSNTokenPrice',
+      'contractBSNTokenDeposit',
+      'contractERC1155NonTransferable'
     ]);
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
@@ -141,7 +144,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         'https://token-cdn-domain/{id}.json'
       )) as Contract & ERC1155NonTransferable;
     contractGate = (await Gate_Factory.deploy(
-      contractBosonRouter.address
+      contractAddresses.BosonRouter,
+      contractAddresses.contractERC1155NonTransferable 
     )) as Contract & Gate;
 
     await contractTokenRegistry.deployed();
@@ -188,10 +192,6 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     await contractTokenRegistry.setTokenWrapperAddress(
       contractBSNTokenDeposit.address,
       contractBSNTokenDeposit.address
-    );
-
-    await contractGate.setNonTransferableTokenContract(
-      contractERC1155NonTransferable.address // TODO IN CONSTRUCTOR
     );
 
     await contractBosonRouter.setGateApproval(contractGate.address, true);
