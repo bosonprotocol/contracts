@@ -4,6 +4,8 @@
 import hre from 'hardhat';
 import fs from 'fs';
 import {isValidEnv} from './env-validator';
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress'
+
 const ethers = hre.ethers;
 
 /**
@@ -69,23 +71,6 @@ class DeploymentExecutor {
       event.args._approved
     );
 
-    tx = await this.voucherSets.setVoucherKernelAddress(
-      this.voucherKernel.address
-    );
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log(
-      '$ VoucherSets: ',
-      event.event,
-      'at:',
-      event.args._newVoucherKernel
-    );
-
-    tx = await this.voucherSets.setCashierAddress(this.cashier.address);
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log('$ VoucherSets: ', event.event, 'at:', event.args._newCashier);
-
     tx = await this.vouchers.setApprovalForAll(
       this.voucherKernel.address,
       'true'
@@ -98,53 +83,6 @@ class DeploymentExecutor {
       'approved VoucherKernel:',
       event.args._approved
     );
-
-    tx = await this.vouchers.setVoucherKernelAddress(
-      this.voucherKernel.address
-    );
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log(
-      '$ Vouchers: ',
-      event.event,
-      'at:',
-      event.args._newVoucherKernel
-    );
-
-    tx = await this.vouchers.setCashierAddress(this.cashier.address);
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log('$ Vouchers: ', event.event, 'at:', event.args._newCashier);
-
-    tx = await this.voucherKernel.setBosonRouterAddress(this.br.address);
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log(
-      '\n$ VoucherKernel',
-      event.event,
-      'at:',
-      event.args._newBosonRouter
-    );
-
-    tx = await this.voucherKernel.setCashierAddress(this.cashier.address);
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log('$ VoucherKernel', event.event, 'at:', event.args._newCashier);
-
-    tx = await this.cashier.setBosonRouterAddress(this.br.address);
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log('\n$ Cashier', event.event, 'at:', event.args._newBosonRouter);
-
-    tx = await this.cashier.setVoucherSetTokenAddress(this.voucherSets.address);
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log('$ Cashier', event.event, 'at:', event.args._newTokenContract);
-
-    tx = await this.cashier.setVoucherTokenAddress(this.vouchers.address);
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log('$ Cashier', event.event, 'at:', event.args._newTokenContract);
 
     tx = await this.tokenRegistry.setTokenWrapperAddress(
       this.dai_token,
@@ -174,19 +112,6 @@ class DeploymentExecutor {
       event.args._newWrapperAddress
     );
 
-    tx = await this.gate.setNonTransferableTokenContract(
-      this.erc1155NonTransferable.address
-    );
-
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log(
-      '$ Gate',
-      event.event,
-      'at:',
-      event.args._nonTransferableTokenContractAddress
-    );
-
     tx = await this.br.setGateApproval(this.gate.address, true);
 
     txReceipt = await tx.wait();
@@ -208,7 +133,22 @@ class DeploymentExecutor {
   }
 
   async deployContracts() {
-    const [, ccTokenDeployer] = await ethers.getSigners();
+    const [primaryDeployer, ccTokenDeployer] = await ethers.getSigners();
+    
+    let contractList = ['tokenRegistry',
+    'voucherSets',
+    'vouchers',
+    'voucherKernel',
+    'cashier',
+    'br',
+    'daiTokenWrapper'
+    ]
+
+    const contractAddresses = await calculateDeploymentAddresses(primaryDeployer.address, contractList);
+
+    const ccContractAddresses = await calculateDeploymentAddresses(ccTokenDeployer.address, [
+      'erc1155NonTransferable'
+    ]);
 
     const VoucherSets = await ethers.getContractFactory('VoucherSets');
     const Vouchers = await ethers.getContractFactory('Vouchers');
@@ -228,25 +168,38 @@ class DeploymentExecutor {
 
     this.tokenRegistry = await TokenRegistry.deploy();
     this.voucherSets = await VoucherSets.deploy(
-      process.env.VOUCHERSETS_METADATA_URI
+      process.env.VOUCHERSETS_METADATA_URI,
+      contractAddresses.cashier,
+      contractAddresses.voucherKernel
     );
     this.vouchers = await Vouchers.deploy(
       process.env.VOUCHERS_METADATA_URI,
       'Boson Smart Voucher',
-      'BSV'
+      'BSV',
+      contractAddresses.cashier,
+      contractAddresses.voucherKernel
     );
     this.voucherKernel = await VoucherKernel.deploy(
-      this.voucherSets.address,
-      this.vouchers.address
+      contractAddresses.br,
+      contractAddresses.cashier,
+      contractAddresses.voucherSets,
+      contractAddresses.vouchers
     );
-    this.cashier = await Cashier.deploy(this.voucherKernel.address);
+    this.cashier = await Cashier.deploy(
+      contractAddresses.br,
+      contractAddresses.voucherKernel,
+      contractAddresses.voucherSets,
+      contractAddresses.vouchers
+    );
     this.br = await BosonRouter.deploy(
-      this.voucherKernel.address,
-      this.tokenRegistry.address,
-      this.cashier.address
+      contractAddresses.voucherKernel,
+      contractAddresses.tokenRegistry,
+      contractAddresses.cashier
     );
     this.daiTokenWrapper = await DAITokenWrapper.deploy(this.dai_token);
-    this.gate = await Gate.deploy(this.br.address);
+    this.gate = await Gate.deploy(
+      contractAddresses.br,
+      ccContractAddresses.erc1155NonTransferable );
 
     //ERC1155NonTransferrable is a Conditional Commit token and should be deployed from a separate address
     this.erc1155NonTransferable =
@@ -263,6 +216,17 @@ class DeploymentExecutor {
     await this.daiTokenWrapper.deployed();
     await this.gate.deployed();
     await this.erc1155NonTransferable.deployed();
+
+    // check that expected and actual addresses match 
+    for (const contract of contractList) {
+      if (this[contract].address.toLowerCase() !== contractAddresses[contract].toLowerCase()) {
+        console.log(`${contract} address mismatch. Expected ${contractAddresses[contract]}, actual ${this[contract].address}`)
+      }
+    }
+
+    if (this.erc1155NonTransferable.address.toLowerCase() !== ccContractAddresses.erc1155NonTransferable.toLowerCase()) {
+      console.log(`erc1155NonTransferable address mismatch. Expected ${ccContractAddresses.erc1155NonTransferable}, actual ${this.erc1155NonTransferable.address}`)
+    }
   }
 
   logContracts() {
