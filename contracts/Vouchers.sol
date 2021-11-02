@@ -47,11 +47,16 @@ contract Vouchers is IVouchers, ERC721, Ownable {
      * @param baseURI_ base metadata uri
      * @param name_ token name
      * @param symbol_ token symbol
+     * @param _cashierAddress address of the associated Cashier contract
+     * @param _voucherKernelAddress address of the associated Voucher Kernel contract
      */
-    constructor(string memory baseURI_, string memory name_, string memory symbol_) 
-        ERC721(name_, symbol_) 
+    constructor(string memory baseURI_, string memory name_, string memory symbol_, address _cashierAddress, address _voucherKernelAddress) 
+        ERC721(name_, symbol_) notZeroAddress(_cashierAddress) notZeroAddress(_voucherKernelAddress)
     {
         _setBaseURI(baseURI_);
+
+        cashierAddress = _cashierAddress;
+        voucherKernelAddress = _voucherKernelAddress;
     }
 
     /**

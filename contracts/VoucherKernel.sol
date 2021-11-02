@@ -184,13 +184,19 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
 
     /**
      * @notice Construct and initialze the contract. Iniialises associated contract addresses, the complain period, and the cancel or fault period
+     * @param _bosonRouterAddress address of the associated BosonRouter contract
+     * @param _cashierAddress address of the associated Cashier contract
      * @param _voucherSetsTokenAddress address of the associated ERC1155 contract instance
      * @param _vouchersTokenAddress address of the associated ERC721 contract instance
-     */
-    constructor(address _voucherSetsTokenAddress, address _vouchersTokenAddress)
+      */
+    constructor(address _bosonRouterAddress, address _cashierAddress, address _voucherSetsTokenAddress, address _vouchersTokenAddress)
+    notZeroAddress(_bosonRouterAddress)
+    notZeroAddress(_cashierAddress)
     notZeroAddress(_voucherSetsTokenAddress)
     notZeroAddress(_vouchersTokenAddress)
     {
+        bosonRouterAddress = _bosonRouterAddress;
+        cashierAddress = _cashierAddress;
         voucherSetsTokenAddress = _voucherSetsTokenAddress;
         vouchersTokenAddress = _vouchersTokenAddress;
 
@@ -841,7 +847,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
 
     /**
      * @notice Set the address of the Cashier contract
-     * @param _cashierAddress   The address of the BR contract
+     * @param _cashierAddress   The address of the Cashier contract
      */
     function setCashierAddress(address _cashierAddress)
         external
