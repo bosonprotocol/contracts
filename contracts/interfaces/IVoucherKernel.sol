@@ -374,8 +374,14 @@ interface IVoucherKernel {
         returns (bytes32);
 
     /**
-     * @notice Get the address of ERC1155ERC721 contract
-     * @return Address of ERC1155ERC721 contract
+     * @notice Get the address of the Vouchers token contract, an ERC721 contract
+     * @return Address of Vouchers contract
      */
-    function getTokensContractAddress() external view returns (address);
+    function getVoucherTokenAddress() external view returns (address);
+
+    /**
+     * @notice Get the address of the VoucherSets token contract, an ERC155 contract
+     * @return Address of VoucherSets contract
+     */
+    function getVoucherSetTokenAddress() external view returns (address);
 }

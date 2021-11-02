@@ -26,20 +26,30 @@ export async function verifyContracts(env: string): Promise<void> {
     logError('Token Registry', error.message);
   }
 
-  //verify ERC1155ERC721
+  //verify VoucherSets
   try {
     await hre.run('verify:verify', {
-      address: contracts.erc1155erc721,
+      address: contracts.voucherSets,
     });
   } catch (error) {
-    logError('ERC1155ERC721', error.message);
+    logError('VoucherSets', error.message);
+  }
+
+  //verify Vouchers
+  try {
+    await hre.run('verify:verify', {
+      address: contracts.vouchers,
+      constructorArguments: ['Boson Smart Voucher', 'BSV'],
+    });
+  } catch (error) {
+    logError('Vouchers', error.message);
   }
 
   //verify VoucherKernel
   try {
     await hre.run('verify:verify', {
       address: contracts.voucherKernel,
-      constructorArguments: [contracts.erc1155erc721],
+      constructorArguments: [contracts.voucherSets, contracts.vouchers],
     });
   } catch (error) {
     logError('VoucherKernel', error.message);

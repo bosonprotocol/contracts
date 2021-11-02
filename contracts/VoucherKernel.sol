@@ -7,10 +7,9 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "./interfaces/IERC1155ERC721.sol";
+import "./interfaces/IVoucherSets.sol";
+import "./interfaces/IVouchers.sol";
 import "./interfaces/IVoucherKernel.sol";
 import {PaymentMethod, VoucherState, VoucherStatus, isStateCommitted, isStateRedemptionSigned, isStateRefunded, isStateExpired, isStatus, determineStatus} from "./UsingHelpers.sol";
 
@@ -27,8 +26,11 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
     using Address for address;
     using SafeMath for uint256;
 
-    //AssetRegistry assetRegistry;
-    address private tokensContract;
+    //ERC1155 contract representing voucher sets
+    address private voucherSetsTokenAddress;
+
+    //ERC721 contract representing vouchers;
+    address private vouchersTokenAddress;
 
     //promise for an asset could be reusable, but simplified here for brevity
     struct Promise {
@@ -59,7 +61,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
 
     bytes32[] private promiseKeys;
 
-    mapping(uint256 => bytes32) private ordersPromise; //mapping between an order (supply a.k.a. VoucherSet token) and a promise
+    mapping(uint256 => bytes32) private ordersPromise; //mapping between an order (supply a.k.a. VoucherSet) and a promise
 
     mapping(uint256 => VoucherStatus) private vouchersStatus; //recording the vouchers evolution
 
@@ -167,7 +169,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
     modifier onlyVoucherOwner(uint256 _tokenIdVoucher, address _sender) {
         //check authorization
         require(
-            IERC721(tokensContract).ownerOf(_tokenIdVoucher) == _sender,
+            IVouchers(vouchersTokenAddress).ownerOf(_tokenIdVoucher) == _sender,
             "UNAUTHORIZED_V"
         );
         _;
@@ -180,12 +182,15 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
 
     /**
      * @notice Construct and initialze the contract. Iniialises associated contract addresses, the complain period, and the cancel or fault period
-     * @param _tokensContract address of the associated ERC1155ERC721 contract instance
+     * @param _voucherSetsTokenAddress address of the associated ERC1155 contract instance
+     * @param _vouchersTokenAddress address of the associated ERC721 contract instance
      */
-    constructor(address _tokensContract)
-    notZeroAddress(_tokensContract)
+    constructor(address _voucherSetsTokenAddress, address _vouchersTokenAddress)
+    notZeroAddress(_voucherSetsTokenAddress)
+    notZeroAddress(_vouchersTokenAddress)
     {
-        tokensContract = _tokensContract;
+        voucherSetsTokenAddress = _voucherSetsTokenAddress;
+        vouchersTokenAddress = _vouchersTokenAddress;
 
         complainPeriod = 7 * 1 days;
         cancelFaultPeriod = 7 * 1 days;
@@ -312,7 +317,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
 
         ordersPromise[tokenIdSupply] = _promiseId;
 
-        IERC1155ERC721(tokensContract).mint(
+        IVoucherSets(voucherSetsTokenAddress).mint(
             _seller,
             tokenIdSupply,
             _quantity,
@@ -404,7 +409,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         require(_tokenIdSupply != 0, "UNSPECIFIED_ID");
 
         require(
-            IERC1155(tokensContract).balanceOf(_issuer, _tokenIdSupply) > 0,
+            IVoucherSets(voucherSetsTokenAddress).balanceOf(_issuer, _tokenIdSupply) > 0,
             "OFFER_EMPTY"
         );
 
@@ -429,7 +434,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         address _to,
         uint256 _tokenIdSupply
     ) internal returns (uint256) {
-        IERC1155ERC721(tokensContract).burn(_issuer, _tokenIdSupply, 1); // This is hardcoded as 1 on purpose
+        IVoucherSets(voucherSetsTokenAddress).burn(_issuer, _tokenIdSupply, 1); // This is hardcoded as 1 on purpose
 
         //calculate tokenId
         uint256 voucherTokenId =
@@ -444,7 +449,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         vouchersStatus[voucherTokenId].isDepositsReleased = false;
 
         //mint voucher NFT as ERC-721
-        IERC1155ERC721(tokensContract).mint(_to, voucherTokenId);
+        IVouchers(vouchersTokenAddress).mint(_to, voucherTokenId);
 
         return voucherTokenId;
     }
@@ -669,7 +674,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
 
         require(remQty > 0, "OFFER_EMPTY");
 
-        IERC1155ERC721(tokensContract).burn(_issuer, _tokenIdSupply, remQty);
+        IVoucherSets(voucherSetsTokenAddress).burn(_issuer, _tokenIdSupply, remQty);
 
         emit LogVoucherSetFaultCancel(_tokenIdSupply, _issuer);
 
@@ -932,7 +937,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         override
         returns (uint256)
     {
-        return IERC1155(tokensContract).balanceOf(_tokenSupplyOwner, _tokenSupplyId);
+        return IVoucherSets(voucherSetsTokenAddress).balanceOf(_tokenSupplyOwner, _tokenSupplyId);
     }
 
     /**
@@ -1055,7 +1060,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         override
         returns (address)
     {
-        return IERC721(tokensContract).ownerOf(_tokenIdVoucher);
+        return IVouchers(vouchersTokenAddress).ownerOf(_tokenIdVoucher);
     }
 
     /**
@@ -1228,15 +1233,28 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
     }
 
     /**
-     * @notice Get the address of ERC1155ERC721 contract
-     * @return Address of ERC1155ERC721 contract
+     * @notice Get the address of the Vouchers token contract, an ERC721 contract
+     * @return Address of Vouchers contract
      */
-    function getTokensContractAddress() 
+    function getVoucherTokenAddress() 
         external 
         view 
         override
         returns (address)
     {
-        return tokensContract;
+        return vouchersTokenAddress;
+    }
+
+    /**
+     * @notice Get the address of the VoucherSets token contract, an ERC155 contract
+     * @return Address of VoucherSets contract
+     */
+    function getVoucherSetTokenAddress() 
+        external 
+        view 
+        override
+        returns (address)
+    {
+        return voucherSetsTokenAddress;
     }
 }

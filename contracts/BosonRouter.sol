@@ -77,17 +77,19 @@ contract BosonRouter is
     }
 
     /**
-     * @notice Acts as a modifier, but it's cheaper. Checking if a non-zero address is provided, otherwise reverts.
+     * @notice Checking if a non-zero address is provided, otherwise reverts.
      */
-    function notZeroAddress(address _tokenAddress) private pure {
+    modifier notZeroAddress(address _tokenAddress) {
         require(_tokenAddress != address(0), "0A"); //zero address
+        _;
     }
 
     /**
-     * @notice Acts as a modifier, but it's cheaper. Replacement of onlyOwner modifier. If the caller is not the owner of the contract, reverts.
+     * @notice Replacement of onlyOwner modifier. If the caller is not the owner of the contract, reverts.
      */
-    function onlyRouterOwner() internal view {
+    modifier onlyRouterOwner() {
         require(owner() == _msgSender(), "NO"); //not owner
+        _;
     }
 
     /**
@@ -126,11 +128,10 @@ contract BosonRouter is
         address _voucherKernel,
         address _tokenRegistry,
         address _cashierAddress
-    ) {
-        notZeroAddress(_voucherKernel);
-        notZeroAddress(_tokenRegistry);
-        notZeroAddress(_cashierAddress);
-
+    )   notZeroAddress(_voucherKernel)
+        notZeroAddress(_tokenRegistry)
+        notZeroAddress(_cashierAddress)
+    {
         voucherKernel = _voucherKernel;
         tokenRegistry = _tokenRegistry;
         cashierAddress = _cashierAddress;
@@ -144,8 +145,8 @@ contract BosonRouter is
     function setGateApproval(address _gateAddress, bool _approved)
         external
         onlyOwner
+        notZeroAddress(_gateAddress)
     {
-        notZeroAddress(_gateAddress);
         require(approvedGates[_gateAddress] != _approved, "NO_CHANGE");
         approvedGates[_gateAddress] = _approved;
         emit LogGateApprovalChanged(_gateAddress, _approved);
@@ -157,8 +158,7 @@ contract BosonRouter is
      * cancelOrFaultVoucherSet, or withdraw will be paused and cannot be executed.
      * The withdrawEthOnDisaster function is a special function in the Cashier contract for withdrawing funds if contract is paused.
      */
-    function pause() external override {
-        onlyRouterOwner();
+    function pause() external override onlyRouterOwner() {
         _pause();
         IVoucherKernel(voucherKernel).pause();
         ICashier(cashierAddress).pause();
@@ -169,8 +169,7 @@ contract BosonRouter is
      * All functions related to creating requestCreateOrder, requestVoucher, redeem, refund, complain, cancelOrFault,
      * cancelOrFaultVoucherSet, or withdraw will be unpaused.
      */
-    function unpause() external override {
-        onlyRouterOwner();
+    function unpause() external override onlyRouterOwner() {
         require(ICashier(cashierAddress).canUnpause(), "UF"); //unpaused forbidden
 
         _unpause();
@@ -1049,9 +1048,7 @@ contract BosonRouter is
         bytes32 _r,
         bytes32 _s,
         uint256[] calldata _metadata
-    ) internal whenNotPaused returns (uint256) {
-        notZeroAddress(_tokenPriceAddress);
-        notZeroAddress(_tokenDepositAddress);
+    ) internal whenNotPaused notZeroAddress(_tokenPriceAddress) notZeroAddress(_tokenDepositAddress) returns (uint256) {
         checkLimits(
             _metadata,
             _tokenPriceAddress,
@@ -1088,8 +1085,7 @@ contract BosonRouter is
         bytes32 _r,
         bytes32 _s,
         uint256[] calldata _metadata
-    ) internal whenNotPaused returns (uint256) {
-        notZeroAddress(_tokenDepositAddress);
+    ) internal whenNotPaused notZeroAddress(_tokenDepositAddress) returns (uint256) {
         checkLimits(_metadata, address(0), _tokenDepositAddress, _tokensSent);
 
         _permit(
@@ -1115,8 +1111,7 @@ contract BosonRouter is
     function requestCreateOrderTKNETHInternal(
         address _tokenPriceAddress,
         uint256[] calldata _metadata
-    ) internal whenNotPaused returns (uint256) {
-        notZeroAddress(_tokenPriceAddress);
+    ) internal whenNotPaused notZeroAddress(_tokenPriceAddress) returns (uint256) {
         checkLimits(_metadata, _tokenPriceAddress, address(0), 0);
 
         return requestCreateOrder(_metadata, PaymentMethod.TKNETH, _tokenPriceAddress, address(0), 0);
@@ -1231,9 +1226,8 @@ contract BosonRouter is
     function setVoucherKernelAddress(address _voucherKernelAddress)
         external
         onlyOwner
+        notZeroAddress(_voucherKernelAddress)
     {
-        notZeroAddress(_voucherKernelAddress);
-
         voucherKernel = _voucherKernelAddress;
 
         emit LogVoucherKernelSet(_voucherKernelAddress, msg.sender);
@@ -1246,9 +1240,8 @@ contract BosonRouter is
     function setTokenRegistryAddress(address _tokenRegistryAddress)
         external
         onlyOwner
+        notZeroAddress(_tokenRegistryAddress)
     {
-        notZeroAddress(_tokenRegistryAddress);
-
         tokenRegistry = _tokenRegistryAddress;
 
         emit LogTokenRegistrySet(_tokenRegistryAddress, msg.sender);
@@ -1261,9 +1254,8 @@ contract BosonRouter is
     function setCashierAddress(address _cashierAddress)
         external
         onlyOwner
+        notZeroAddress(_cashierAddress)
     {
-        notZeroAddress(_cashierAddress);
-
         cashierAddress = _cashierAddress;
 
         emit LogCashierSet(_cashierAddress, msg.sender);

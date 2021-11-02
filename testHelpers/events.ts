@@ -45,6 +45,8 @@ export const eventNames = {
   USED_NONCE: 'UsedNonce',
   EXECUTED_META_TX: 'ExecutedMetaTransaction',
   LOG_TOKEN_REGISTRY_SET: 'LogTokenRegistrySet',
+  LOG_VOUCHER_SET_TOKEN_SET: 'LogVoucherSetTokenContractSet',
+  LOG_VOUCHER_TOKEN_SET: 'LogVoucherTokenContractSet',
 };
 
 import {ContractFactory, ContractReceipt} from 'ethers';
@@ -87,38 +89,19 @@ export function assertEventEmitted(
   );
   const iface = new ethers.utils.Interface(eventFragment);
 
-  //console.log("receipt.logs in assertEventEmitted ", receipt.logs);
-
   for (const log in receipt.logs) {
     const topics = receipt.logs[log].topics;
 
-    //console.group("topics in assertEventEmitted ", topics);
-
     for (const index in topics) {
       const encodedTopic = topics[index];
-
-      //console.group("encodedTopic in assertEventEmitted ", encodedTopic);
 
       try {
         // CHECK IF TOPIC CORRESPONDS TO THE EVENT GIVEN TO FN
         const event = iface.getEvent(encodedTopic);
 
-        //console.log("event.name in assertEventEmitted ", event.name);
-
         if (event.name == eventName) {
-          /*
-          console.group("event.name == eventName ");
-          console.group("event.name iface.getEvent(encodedTopic) ", event.name);
-          console.group("eventName parameter  ", eventName);
-          console.log("log ", log);
-          console.log("receipt.logs[log] ", receipt.logs[log])
-          console.log("iface.parseLog(receipt.logs[log]) ", iface.parseLog(receipt.logs[log]).args);
-        */
           found = true;
           const eventArgs = iface.parseLog(receipt.logs[log]).args;
-
-          //console.log("eventArgs  ", eventArgs);
-
           callback(eventArgs);
         }
       } catch (e) {
