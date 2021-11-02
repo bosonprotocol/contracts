@@ -95,6 +95,8 @@ export default {
   SAFE_ERC20_LOW_LEVEL_FAIL: 'SafeERC20WithPermit: low-level call failed',
   ERC1155_REJECT: 'ERC1155: ERC1155Receiver rejected tokens',
   DISASTER_STATE_ALREADY_SET: 'Disaster state is already set',
+  RUNTIME_ERROR_INVALID_OPCODE: '', // testing for invalid opcode cannot be done with exact error message
+  INEXISTENT_SUPPLY: 'INEXISTENT_SUPPLY',
   NOTHING_TO_WITHDRAW: 'NOTHING_TO_WITHDRAW',
   VALID_FROM_MUST_BE_AT_LEAST_5_MINUTES_LESS_THAN_VALID_TO:
     'VALID_FROM_MUST_BE_AT_LEAST_5_MINUTES_LESS_THAN_VALID_TO',
