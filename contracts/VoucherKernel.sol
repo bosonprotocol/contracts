@@ -151,7 +151,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
      * @notice Checks that only the BosonRouter contract can call a function
     */
     modifier onlyFromRouter() {
-        require(bosonRouterAddress != address(0), "UNSPECIFIED_BR");
         require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR");
         _;
     }
@@ -160,7 +159,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
      * @notice Checks that only the Cashier contract can call a function
     */
     modifier onlyFromCashier() {
-        require(cashierAddress != address(0), "UNSPECIFIED_BR");
         require(msg.sender == cashierAddress, "UNAUTHORIZED_C");
         _;
     }

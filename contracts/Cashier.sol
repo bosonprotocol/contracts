@@ -62,7 +62,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     );
 
     modifier onlyFromRouter() {
-        require(bosonRouterAddress != address(0), "UNSPECIFIED_BR");
         require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR");
         _;
     }

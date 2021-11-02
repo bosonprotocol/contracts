@@ -29,10 +29,6 @@ contract Vouchers is IVouchers, ERC721, Ownable {
     event LogUriSet(string _newUri, address _triggeredBy);
 
     modifier onlyFromVoucherKernel() {
-        require(
-            voucherKernelAddress != address(0),
-            "UNSPECIFIED_VOUCHERKERNEL"
-        );
         require(msg.sender == voucherKernelAddress, "UNAUTHORIZED_VK");
         _;
     }

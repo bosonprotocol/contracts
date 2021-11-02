@@ -26,10 +26,6 @@ contract VoucherSets is IVoucherSets, ERC1155, Ownable {
     event LogCashierSet(address _newCashier, address _triggeredBy);
 
     modifier onlyFromVoucherKernel() {
-        require(
-            voucherKernelAddress != address(0),
-            "UNSPECIFIED_VOUCHERKERNEL"
-        );
         require(msg.sender == voucherKernelAddress, "UNAUTHORIZED_VK");
         _;
     }
