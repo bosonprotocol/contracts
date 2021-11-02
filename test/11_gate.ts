@@ -289,11 +289,6 @@ describe('Gate contract', async () => {
     });
 
     it('One should be able get ERC1155 contract address', async () => {
-      // await contractGate.pause();
-      // await contractGate.setNonTransferableTokenContract(
-      //   contractERC1155NonTransferable.address
-      // );
-
       expect(await contractGate.getNonTransferableTokenContract()).to.equal(
         contractERC1155NonTransferable.address
       );
@@ -325,10 +320,6 @@ describe('Gate contract', async () => {
         constants.VOUCHER_SET_ID,
         constants.NFT_TOKEN_ID
       );
-
-      // await contractGate.setNonTransferableTokenContract(
-      //   contractERC1155NonTransferable.address
-      // );
 
       expect(
         await contractGate.check(users.other1.address, constants.VOUCHER_SET_ID)
@@ -435,10 +426,6 @@ describe('Gate contract', async () => {
     });
 
     it('[NEGATIVE][check] Should return false if constants.VOUCHER_SET_ID is not registered', async () => {
-      // await contractGate.setNonTransferableTokenContract(
-      //   contractERC1155NonTransferable.address
-      // );
-
       await contractERC1155NonTransferable.mint(
         users.other1.address,
         constants.NFT_TOKEN_ID,
