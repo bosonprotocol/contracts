@@ -1,13 +1,15 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
 import {expect} from 'chai';
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
 import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
 import UtilsBuilder from '../testHelpers/utilsBuilder';
 import {
   BosonRouter,
-  ERC1155ERC721,
+  VoucherSets,
+  Vouchers,
   VoucherKernel,
   Cashier,
   TokenRegistry,
@@ -16,7 +18,8 @@ import {
 } from '../typechain';
 const {keccak256, solidityPack} = ethers.utils;
 
-let ERC1155ERC721_Factory: ContractFactory;
+let VoucherSets_Factory: ContractFactory;
+let Vouchers_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
@@ -38,7 +41,8 @@ describe('VOUCHER KERNEL', () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
 
-    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherSets_Factory = await ethers.getContractFactory('VoucherSets');
+    Vouchers_Factory = await ethers.getContractFactory('Vouchers');
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
@@ -53,7 +57,8 @@ describe('VOUCHER KERNEL', () => {
     await setPeriods();
   });
 
-  let contractERC1155ERC721: ERC1155ERC721,
+  let contractVoucherSets: VoucherSets,
+    contractVouchers: Vouchers,
     contractVoucherKernel: VoucherKernel,
     contractCashier: Cashier,
     contractBosonRouter: BosonRouter,
@@ -69,27 +74,50 @@ describe('VOUCHER KERNEL', () => {
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
   }
 
-  async function deployContracts(
-    setBosonRouterAddress = true,
-    setCashierAddress = true
-  ) {
+  async function deployContracts() {
     const sixtySeconds = 60;
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+      ]
+    );
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
-    contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
-      ERC1155ERC721;
+    contractVoucherSets = (await VoucherSets_Factory.deploy(
+      'https://token-cdn-domain/{id}.json',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
+    )) as Contract & VoucherSets;
+    contractVouchers = (await Vouchers_Factory.deploy(
+      'https://token-cdn-domain/orders/metadata/',
+      'Boson Smart Voucher',
+      'BSV',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
+    )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
-      contractERC1155ERC721.address
+      contractAddresses.BosonRouter,
+      contractAddresses.Cashier,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & VoucherKernel;
     contractCashier = (await Cashier_Factory.deploy(
-      contractVoucherKernel.address
+      contractAddresses.BosonRouter,
+      contractAddresses.VoucherKernel,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & Cashier;
-
     contractBosonRouter = (await BosonRouter_Factory.deploy(
-      contractVoucherKernel.address,
-      contractTokenRegistry.address,
-      contractCashier.address
+      contractAddresses.VoucherKernel,
+      contractAddresses.TokenRegistry,
+      contractAddresses.Cashier
     )) as Contract & BosonRouter;
 
     contractBSNTokenPrice = (await MockERC20Permit_Factory.deploy(
@@ -107,7 +135,8 @@ describe('VOUCHER KERNEL', () => {
         MockERC721Receiver;
 
     await contractTokenRegistry.deployed();
-    await contractERC1155ERC721.deployed();
+    await contractVoucherSets.deployed();
+    await contractVouchers.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
     await contractBosonRouter.deployed();
@@ -115,32 +144,13 @@ describe('VOUCHER KERNEL', () => {
     await contractBSNTokenDeposit.deployed();
     await contractMockERC721Receiver.deployed();
 
-    await contractERC1155ERC721.setApprovalForAll(
+    await contractVoucherSets.setApprovalForAll(
       contractVoucherKernel.address,
       true
     );
-    await contractERC1155ERC721.setVoucherKernelAddress(
-      contractVoucherKernel.address
-    );
-
-    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
-
-    if (setBosonRouterAddress) {
-      await contractVoucherKernel.setBosonRouterAddress(
-        contractBosonRouter.address
-      );
-    }
-
-    if (setCashierAddress) {
-      await contractVoucherKernel.setCashierAddress(contractCashier.address);
-    }
-
-    if (setBosonRouterAddress) {
-      await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-    }
-
-    await contractCashier.setTokenContractAddress(
-      contractERC1155ERC721.address
+    await contractVouchers.setApprovalForAll(
+      contractVoucherKernel.address,
+      true
     );
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
@@ -167,80 +177,6 @@ describe('VOUCHER KERNEL', () => {
       contractBSNTokenDeposit.address
     );
   }
-
-  it('[NEGATIVE] Should revert if boson router is not set', async () => {
-    await deployContracts(false);
-    await setPeriods();
-
-    await expect(contractVoucherKernel.pause()).to.be.revertedWith(
-      revertReasons.UNSET_ROUTER
-    );
-    await expect(contractVoucherKernel.unpause()).to.be.revertedWith(
-      revertReasons.UNSET_ROUTER
-    );
-    await expect(
-      contractVoucherKernel.createTokenSupplyId(
-        users.other1.address,
-        constants.PROMISE_VALID_FROM,
-        constants.PROMISE_VALID_TO,
-        constants.PROMISE_PRICE1,
-        constants.PROMISE_DEPOSITSE1,
-        constants.PROMISE_DEPOSITBU1,
-        constants.QTY_10
-      )
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-    await expect(
-      contractVoucherKernel.createPaymentMethod(
-        constants.ONE,
-        1,
-        constants.ZERO_ADDRESS,
-        constants.ZERO_ADDRESS
-      )
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-    await expect(
-      contractVoucherKernel.fillOrder(
-        constants.ONE,
-        users.seller.address,
-        users.buyer.address,
-        0
-      )
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-    await expect(
-      contractVoucherKernel.redeem(constants.ONE, users.buyer.address)
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-    await expect(
-      contractVoucherKernel.refund(constants.ONE, users.buyer.address)
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-    await expect(
-      contractVoucherKernel.complain(constants.ONE, users.buyer.address)
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-    await expect(
-      contractVoucherKernel.cancelOrFault(constants.ONE, users.seller.address)
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER); // should be uncommented after https://github.com/bosonprotocol/contracts/issues/195
-    await expect(
-      contractVoucherKernel.cancelOrFaultVoucherSet(
-        constants.ONE,
-        users.seller.address
-      )
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-  });
-
-  it('[NEGATIVE] Should revert if cashier address is not set', async () => {
-    await deployContracts(true, false);
-
-    await expect(
-      contractVoucherKernel.setPaymentReleased(constants.ONE)
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-    await expect(
-      contractVoucherKernel.setDepositsReleased(constants.ONE)
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-    await expect(
-      contractVoucherKernel.setSupplyHolderOnTransfer(
-        constants.ONE,
-        users.seller.address
-      )
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-  });
 
   describe('With normal deployment', () => {
     function promiseKeyForVoucherKernel(contractAddress, seller, sellerNonce) {
@@ -344,7 +280,8 @@ describe('VOUCHER KERNEL', () => {
       utils = await UtilsBuilder.create()
         .ETHETH()
         .buildAsync(
-          contractERC1155ERC721,
+          contractVoucherSets,
+          contractVouchers,
           contractVoucherKernel,
           contractCashier,
           contractBosonRouter
@@ -381,7 +318,8 @@ describe('VOUCHER KERNEL', () => {
       utils = await UtilsBuilder.create()
         .ETHETH()
         .buildAsync(
-          contractERC1155ERC721,
+          contractVoucherSets,
+          contractVouchers,
           contractVoucherKernel,
           contractCashier,
           contractBosonRouter
@@ -431,7 +369,8 @@ describe('VOUCHER KERNEL', () => {
       utils = await UtilsBuilder.create()
         .ETHETH()
         .buildAsync(
-          contractERC1155ERC721,
+          contractVoucherSets,
+          contractVouchers,
           contractVoucherKernel,
           contractCashier,
           contractBosonRouter
@@ -506,7 +445,8 @@ describe('VOUCHER KERNEL', () => {
         utils = await UtilsBuilder.create()
           .ETHETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
@@ -609,7 +549,8 @@ describe('VOUCHER KERNEL', () => {
         utils = await UtilsBuilder.create()
           .ETHETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter

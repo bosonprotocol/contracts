@@ -3,6 +3,7 @@ import {Signer, ContractFactory, Contract} from 'ethers';
 
 import {assert, expect} from 'chai';
 
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
 import constants from '../testHelpers/constants';
 import {advanceTimeSeconds} from '../testHelpers/timemachine';
 import Users from '../testHelpers/users';
@@ -11,14 +12,16 @@ import UtilsBuilder from '../testHelpers/utilsBuilder';
 
 import {
   BosonRouter,
-  ERC1155ERC721,
+  VoucherSets,
+  Vouchers,
   VoucherKernel,
   Cashier,
   TokenRegistry,
   MockERC20Permit,
 } from '../typechain';
 
-let ERC1155ERC721_Factory: ContractFactory;
+let VoucherSets_Factory: ContractFactory;
+let Vouchers_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
@@ -43,7 +46,8 @@ describe('Cashier && VK', () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
 
-    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherSets_Factory = await ethers.getContractFactory('VoucherSets');
+    Vouchers_Factory = await ethers.getContractFactory('Vouchers');
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
@@ -53,7 +57,8 @@ describe('Cashier && VK', () => {
     );
   });
 
-  let contractERC1155ERC721: ERC1155ERC721,
+  let contractVoucherSets: VoucherSets,
+    contractVouchers: Vouchers,
     contractVoucherKernel: VoucherKernel,
     contractCashier: Cashier,
     contractBosonRouter: BosonRouter,
@@ -66,21 +71,48 @@ describe('Cashier && VK', () => {
 
   async function deployContracts() {
     const sixtySeconds = 60;
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+      ]
+    );
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
-    contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
-      ERC1155ERC721;
+    contractVoucherSets = (await VoucherSets_Factory.deploy(
+      'https://token-cdn-domain/{id}.json',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
+    )) as Contract & VoucherSets;
+    contractVouchers = (await Vouchers_Factory.deploy(
+      'https://token-cdn-domain/orders/metadata/',
+      'Boson Smart Voucher',
+      'BSV',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
+    )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
-      contractERC1155ERC721.address
+      contractAddresses.BosonRouter,
+      contractAddresses.Cashier,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & VoucherKernel;
     contractCashier = (await Cashier_Factory.deploy(
-      contractVoucherKernel.address
+      contractAddresses.BosonRouter,
+      contractAddresses.VoucherKernel,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & Cashier;
     contractBosonRouter = (await BosonRouter_Factory.deploy(
-      contractVoucherKernel.address,
-      contractTokenRegistry.address,
-      contractCashier.address
+      contractAddresses.VoucherKernel,
+      contractAddresses.TokenRegistry,
+      contractAddresses.Cashier
     )) as Contract & BosonRouter;
 
     contractBSNTokenPrice = (await MockERC20Permit_Factory.deploy(
@@ -94,31 +126,21 @@ describe('Cashier && VK', () => {
     )) as Contract & MockERC20Permit;
 
     await contractTokenRegistry.deployed();
-    await contractERC1155ERC721.deployed();
+    await contractVoucherSets.deployed();
+    await contractVouchers.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
     await contractBosonRouter.deployed();
     await contractBSNTokenPrice.deployed();
     await contractBSNTokenDeposit.deployed();
 
-    await contractERC1155ERC721.setApprovalForAll(
-      contractVoucherKernel.address,
+    await contractVoucherSets.setApprovalForAll(
+      contractAddresses.VoucherKernel,
       true
     );
-    await contractERC1155ERC721.setVoucherKernelAddress(
-      contractVoucherKernel.address
-    );
-
-    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
-
-    await contractVoucherKernel.setBosonRouterAddress(
-      contractBosonRouter.address
-    );
-    await contractVoucherKernel.setCashierAddress(contractCashier.address);
-
-    await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-    await contractCashier.setTokenContractAddress(
-      contractERC1155ERC721.address
+    await contractVouchers.setApprovalForAll(
+      contractAddresses.VoucherKernel,
+      true
     );
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
@@ -148,7 +170,8 @@ describe('Cashier && VK', () => {
     utils = await UtilsBuilder.create()
       .ETHETH()
       .buildAsync(
-        contractERC1155ERC721,
+        contractVoucherSets,
+        contractVouchers,
         contractVoucherKernel,
         contractCashier,
         contractBosonRouter
@@ -211,7 +234,8 @@ describe('Cashier && VK', () => {
           utils = await UtilsBuilder.create()
             .ETHETH()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter
@@ -282,7 +306,8 @@ describe('Cashier && VK', () => {
               .ERC20withPermit()
               .ETHTKN()
               .buildAsync(
-                contractERC1155ERC721,
+                contractVoucherSets,
+                contractVouchers,
                 contractVoucherKernel,
                 contractCashier,
                 contractBosonRouter,
@@ -368,7 +393,8 @@ describe('Cashier && VK', () => {
               .ERC20withPermit()
               .TKNETH()
               .buildAsync(
-                contractERC1155ERC721,
+                contractVoucherSets,
+                contractVouchers,
                 contractVoucherKernel,
                 contractCashier,
                 contractBosonRouter,
@@ -461,7 +487,8 @@ describe('Cashier && VK', () => {
               .ERC20withPermit()
               .TKNTKN()
               .buildAsync(
-                contractERC1155ERC721,
+                contractVoucherSets,
+                contractVouchers,
                 contractVoucherKernel,
                 contractCashier,
                 contractBosonRouter,
@@ -596,7 +623,8 @@ describe('Cashier && VK', () => {
           utils = await UtilsBuilder.create()
             .ETHETH()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter
@@ -691,7 +719,8 @@ describe('Cashier && VK', () => {
               .ERC20withPermit()
               .ETHTKN()
               .buildAsync(
-                contractERC1155ERC721,
+                contractVoucherSets,
+                contractVouchers,
                 contractVoucherKernel,
                 contractCashier,
                 contractBosonRouter,
@@ -802,7 +831,8 @@ describe('Cashier && VK', () => {
               .ERC20withPermit()
               .TKNETH()
               .buildAsync(
-                contractERC1155ERC721,
+                contractVoucherSets,
+                contractVouchers,
                 contractVoucherKernel,
                 contractCashier,
                 contractBosonRouter,
@@ -908,7 +938,8 @@ describe('Cashier && VK', () => {
               .ERC20withPermit()
               .TKNTKN()
               .buildAsync(
-                contractERC1155ERC721,
+                contractVoucherSets,
+                contractVouchers,
                 contractVoucherKernel,
                 contractCashier,
                 contractBosonRouter,
@@ -1024,7 +1055,8 @@ describe('Cashier && VK', () => {
               .ERC20withPermit()
               .TKNTKNSame()
               .buildAsync(
-                contractERC1155ERC721,
+                contractVoucherSets,
+                contractVouchers,
                 contractVoucherKernel,
                 contractCashier,
                 contractBosonRouter,
@@ -1196,7 +1228,8 @@ describe('Cashier && VK', () => {
           utils = await UtilsBuilder.create()
             .ETHETH()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter
@@ -1243,7 +1276,8 @@ describe('Cashier && VK', () => {
               .ERC20withPermit()
               .ETHTKN()
               .buildAsync(
-                contractERC1155ERC721,
+                contractVoucherSets,
+                contractVouchers,
                 contractVoucherKernel,
                 contractCashier,
                 contractBosonRouter,
@@ -1305,7 +1339,8 @@ describe('Cashier && VK', () => {
               .ERC20withPermit()
               .TKNETH()
               .buildAsync(
-                contractERC1155ERC721,
+                contractVoucherSets,
+                contractVouchers,
                 contractVoucherKernel,
                 contractCashier,
                 contractBosonRouter,
@@ -1362,7 +1397,8 @@ describe('Cashier && VK', () => {
               .ERC20withPermit()
               .TKNTKN()
               .buildAsync(
-                contractERC1155ERC721,
+                contractVoucherSets,
+                contractVouchers,
                 contractVoucherKernel,
                 contractCashier,
                 contractBosonRouter,

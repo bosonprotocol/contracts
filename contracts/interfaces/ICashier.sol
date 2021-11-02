@@ -70,7 +70,7 @@ interface ICashier {
      * @param _to next owner of the _tokenIdVoucher
      * @param _tokenIdVoucher _tokenIdVoucher that has been transferred
      */
-    function onERC721Transfer(
+    function onVoucherTransfer(
         address _from,
         address _to,
         uint256 _tokenIdVoucher
@@ -83,7 +83,7 @@ interface ICashier {
      * @param _tokenSupplyId _tokenSupplyId for transfer
      * @param _value qty which has been transferred
      */
-    function onERC1155Transfer(
+    function onVoucherSetTransfer(
         address _from,
         address _to,
         uint256 _tokenSupplyId,
@@ -103,10 +103,16 @@ interface ICashier {
     function getBosonRouterAddress() external view returns (address);
 
     /**
-     * @notice Get the address of ERC1155ERC721 contract
-     * @return Address of ERC1155ERC721 contract
+     * @notice Get the address of the Vouchers contract, an ERC721 contract
+     * @return Address of Vouchers contract
      */
-    function getTokensContractAddress() external view returns (address);
+    function getVoucherTokenAddress() external view returns (address);
+
+    /**
+     * @notice Get the address of the VoucherSets token contract, an ERC155 contract
+     * @return Address of VoucherSets contract
+     */
+    function getVoucherSetTokenAddress() external view returns (address);
 
     /**
      * @notice Ensure whether or not contract has been set to disaster state
@@ -132,8 +138,21 @@ interface ICashier {
     function setBosonRouterAddress(address _bosonRouterAddress) external;
 
     /**
-     * @notice Set the address of the ERC1155ERC721 contract
-     * @param _tokensContractAddress   The address of the ERC1155ERC721 contract
+     * @notice Set the address of the VoucherKernel contract
+     * @param _voucherKernelAddress   The address of the VoucherKernel contract
      */
-    function setTokenContractAddress(address _tokensContractAddress) external;
+    function setVoucherKernelAddress(address _voucherKernelAddress) external;
+
+    /**
+     * @notice Set the address of the Vouchers token contract, an ERC721 contract
+     * @param _voucherTokenAddress   The address of the Vouchers token contract
+     */
+    function setVoucherTokenAddress(address _voucherTokenAddress) external;
+
+    /**
+     * @notice Set the address of the Voucher Sets token contract, an ERC1155 contract
+     * @param _voucherSetTokenAddress   The address of the Voucher Sets token contract
+     */
+    function setVoucherSetTokenAddress(address _voucherSetTokenAddress)
+        external;
 }

@@ -5,28 +5,29 @@ import {waffle} from 'hardhat';
 import IVK from '../artifacts/contracts/interfaces/IVoucherKernel.sol/IVoucherKernel.json';
 
 import {assert, expect} from 'chai';
+
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
 import constants from '../testHelpers/constants';
-
 import {advanceTimeSeconds} from '../testHelpers/timemachine';
-
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
 import UtilsBuilder from '../testHelpers/utilsBuilder';
-
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
 const eventNames = eventUtils.eventNames;
 
 import {
   BosonRouter,
-  ERC1155ERC721,
+  VoucherSets,
+  Vouchers,
   VoucherKernel,
   Cashier,
   TokenRegistry,
   MockERC20Permit,
 } from '../typechain';
 
-let ERC1155ERC721_Factory: ContractFactory;
+let VoucherSets_Factory: ContractFactory;
+let Vouchers_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
@@ -46,7 +47,8 @@ describe('Cashier withdrawals ', () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
 
-    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherSets_Factory = await ethers.getContractFactory('VoucherSets');
+    Vouchers_Factory = await ethers.getContractFactory('Vouchers');
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
@@ -56,7 +58,8 @@ describe('Cashier withdrawals ', () => {
     );
   });
 
-  let contractERC1155ERC721: ERC1155ERC721,
+  let contractVoucherSets: VoucherSets,
+    contractVouchers: Vouchers,
     contractVoucherKernel: VoucherKernel,
     contractCashier: Cashier,
     contractBosonRouter: BosonRouter,
@@ -72,21 +75,48 @@ describe('Cashier withdrawals ', () => {
 
   async function deployContracts() {
     const sixtySeconds = 60;
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+      ]
+    );
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
-    contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
-      ERC1155ERC721;
+    contractVoucherSets = (await VoucherSets_Factory.deploy(
+      'https://token-cdn-domain/{id}.json',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
+    )) as Contract & VoucherSets;
+    contractVouchers = (await Vouchers_Factory.deploy(
+      'https://token-cdn-domain/orders/metadata/',
+      'Boson Smart Voucher',
+      'BSV',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
+    )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
-      contractERC1155ERC721.address
+      contractAddresses.BosonRouter,
+      contractAddresses.Cashier,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & VoucherKernel;
     contractCashier = (await Cashier_Factory.deploy(
-      contractVoucherKernel.address
+      contractAddresses.BosonRouter,
+      contractAddresses.VoucherKernel,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & Cashier;
     contractBosonRouter = (await BosonRouter_Factory.deploy(
-      contractVoucherKernel.address,
-      contractTokenRegistry.address,
-      contractCashier.address
+      contractAddresses.VoucherKernel,
+      contractAddresses.TokenRegistry,
+      contractAddresses.Cashier
     )) as Contract & BosonRouter;
 
     contractBSNTokenPrice = (await MockERC20Permit_Factory.deploy(
@@ -100,31 +130,21 @@ describe('Cashier withdrawals ', () => {
     )) as Contract & MockERC20Permit;
 
     await contractTokenRegistry.deployed();
-    await contractERC1155ERC721.deployed();
+    await contractVoucherSets.deployed();
+    await contractVouchers.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
     await contractBosonRouter.deployed();
     await contractBSNTokenPrice.deployed();
     await contractBSNTokenDeposit.deployed();
 
-    await contractERC1155ERC721.setApprovalForAll(
+    await contractVoucherSets.setApprovalForAll(
       contractVoucherKernel.address,
       true
     );
-    await contractERC1155ERC721.setVoucherKernelAddress(
-      contractVoucherKernel.address
-    );
-
-    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
-
-    await contractVoucherKernel.setBosonRouterAddress(
-      contractBosonRouter.address
-    );
-    await contractVoucherKernel.setCashierAddress(contractCashier.address);
-
-    await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-    await contractCashier.setTokenContractAddress(
-      contractERC1155ERC721.address
+    await contractVouchers.setApprovalForAll(
+      contractVoucherKernel.address,
+      true
     );
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
@@ -554,7 +574,8 @@ describe('Cashier withdrawals ', () => {
         utils = await UtilsBuilder.create()
           .ETHETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
@@ -1750,7 +1771,8 @@ describe('Cashier withdrawals ', () => {
           .ERC20withPermit()
           .TKNTKN()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter,
@@ -3059,7 +3081,8 @@ describe('Cashier withdrawals ', () => {
           .ERC20withPermit()
           .TKNTKNSame()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter,
@@ -4383,7 +4406,8 @@ describe('Cashier withdrawals ', () => {
           .ERC20withPermit()
           .ETHTKN()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter,
@@ -5670,7 +5694,8 @@ describe('Cashier withdrawals ', () => {
           .ERC20withPermit()
           .TKNETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter,
@@ -6849,7 +6874,8 @@ describe('Cashier withdrawals ', () => {
         utils = await UtilsBuilder.create()
           .ETHETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
@@ -6893,7 +6919,7 @@ describe('Cashier withdrawals ', () => {
           )
           .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
           .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
           .withArgs(
             contractVoucherKernel.address,
             users.seller.address,
@@ -6938,15 +6964,15 @@ describe('Cashier withdrawals ', () => {
           );
         });
 
-        it('ERC1155 balance should be correct', async () => {
-          const balance = await contractERC1155ERC721[
+        it('VoucherSets balance should be correct', async () => {
+          const balance = await contractVoucherSets[
             'balanceOf(address,uint256)'
           ](users.seller.address, TOKEN_SUPPLY_ID);
 
           assert.equal(
             balance.toString(),
             constants.ZERO.toString(),
-            'ERC1155ERC721 amount is incorrect'
+            'VoucherSets amount is incorrect'
           );
         });
 
@@ -7028,7 +7054,8 @@ describe('Cashier withdrawals ', () => {
             .ERC20withPermit()
             .TKNTKN()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -7101,7 +7128,7 @@ describe('Cashier withdrawals ', () => {
             )
             .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
             .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
-            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+            .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
             .withArgs(
               contractVoucherKernel.address,
               users.seller.address,
@@ -7163,15 +7190,15 @@ describe('Cashier withdrawals ', () => {
             );
           });
 
-          it('ERC1155 balance should be correct', async () => {
-            const balance = await contractERC1155ERC721[
+          it('VoucherSets balance should be correct', async () => {
+            const balance = await contractVoucherSets[
               'balanceOf(address,uint256)'
             ](users.seller.address, TOKEN_SUPPLY_ID);
 
             assert.equal(
               balance.toString(),
               constants.ZERO.toString(),
-              'ERC1155ERC721 amount is incorrect'
+              'VoucherSets amount is incorrect'
             );
           });
 
@@ -7254,7 +7281,8 @@ describe('Cashier withdrawals ', () => {
             .ERC20withPermit()
             .TKNTKNSame()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -7321,7 +7349,7 @@ describe('Cashier withdrawals ', () => {
             )
             .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
             .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
-            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+            .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
             .withArgs(
               contractVoucherKernel.address,
               users.seller.address,
@@ -7383,15 +7411,15 @@ describe('Cashier withdrawals ', () => {
             );
           });
 
-          it('ERC1155 balance should be correct', async () => {
-            const balance = await contractERC1155ERC721[
+          it('VoucherSets balance should be correct', async () => {
+            const balance = await contractVoucherSets[
               'balanceOf(address,uint256)'
             ](users.seller.address, TOKEN_SUPPLY_ID);
 
             assert.equal(
               balance.toString(),
               constants.ZERO.toString(),
-              'ERC1155ERC721 amount is incorrect'
+              'VoucherSets amount is incorrect'
             );
           });
 
@@ -7475,7 +7503,8 @@ describe('Cashier withdrawals ', () => {
             .ERC20withPermit()
             .ETHTKN()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -7542,7 +7571,7 @@ describe('Cashier withdrawals ', () => {
             )
             .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
             .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
-            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+            .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
             .withArgs(
               contractVoucherKernel.address,
               users.seller.address,
@@ -7604,15 +7633,15 @@ describe('Cashier withdrawals ', () => {
             );
           });
 
-          it('ERC1155 balance should be correct', async () => {
-            const balance = await contractERC1155ERC721[
+          it('VoucherSets balance should be correct', async () => {
+            const balance = await contractVoucherSets[
               'balanceOf(address,uint256)'
             ](users.seller.address, TOKEN_SUPPLY_ID);
 
             assert.equal(
               balance.toString(),
               constants.ZERO.toString(),
-              'ERC1155ERC721 amount is incorrect'
+              'VoucherSets amount is incorrect'
             );
           });
 
@@ -7697,7 +7726,8 @@ describe('Cashier withdrawals ', () => {
             .ERC20withPermit()
             .TKNETH()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -7756,7 +7786,7 @@ describe('Cashier withdrawals ', () => {
             )
             .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
             .withArgs(TOKEN_SUPPLY_ID, users.seller.address)
-            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+            .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
             .withArgs(
               contractVoucherKernel.address,
               users.seller.address,
@@ -7803,15 +7833,15 @@ describe('Cashier withdrawals ', () => {
             );
           });
 
-          it('ERC1155 balance should be correct', async () => {
-            const balance = await contractERC1155ERC721[
+          it('VoucherSets balance should be correct', async () => {
+            const balance = await contractVoucherSets[
               'balanceOf(address,uint256)'
             ](users.seller.address, TOKEN_SUPPLY_ID);
 
             assert.equal(
               balance.toString(),
               constants.ZERO.toString(),
-              'ERC1155ERC721 amount is incorrect'
+              'VoucherSets amount is incorrect'
             );
           });
 
@@ -7924,7 +7954,8 @@ describe('Cashier withdrawals ', () => {
         utils = await UtilsBuilder.create()
           .ETHETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
@@ -8038,7 +8069,8 @@ describe('Cashier withdrawals ', () => {
         utils = await UtilsBuilder.create()
           .ETHETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
@@ -8187,7 +8219,8 @@ describe('Cashier withdrawals ', () => {
           .ERC20withPermit()
           .TKNTKN()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter,
@@ -8559,7 +8592,10 @@ describe('Cashier withdrawals ', () => {
       ); //deploys mock
 
       contractCashier = (await Cashier_Factory.deploy(
-        mockVoucherKernel.address
+        contractBosonRouter.address,
+        mockVoucherKernel.address,
+        contractVoucherSets.address,
+        contractVouchers.address
       )) as Contract & Cashier;
 
       await contractCashier.deployed();

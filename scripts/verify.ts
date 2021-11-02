@@ -26,20 +26,46 @@ export async function verifyContracts(env: string): Promise<void> {
     logError('Token Registry', error.message);
   }
 
-  //verify ERC1155ERC721
+  //verify VoucherSets
   try {
     await hre.run('verify:verify', {
-      address: contracts.erc1155erc721,
+      address: contracts.voucherSets,
+      constructorArguments: [
+        process.env.VOUCHERSETS_METADATA_URI,
+        contracts.cashier,
+        contracts.voucherKernel,
+      ],
     });
   } catch (error) {
-    logError('ERC1155ERC721', error.message);
+    logError('VoucherSets', error.message);
+  }
+
+  //verify Vouchers
+  try {
+    await hre.run('verify:verify', {
+      address: contracts.vouchers,
+      constructorArguments: [
+        process.env.VOUCHERS_METADATA_URI,
+        'Boson Smart Voucher',
+        'BSV',
+        contracts.cashier,
+        contracts.voucherKernel,
+      ],
+    });
+  } catch (error) {
+    logError('Vouchers', error.message);
   }
 
   //verify VoucherKernel
   try {
     await hre.run('verify:verify', {
       address: contracts.voucherKernel,
-      constructorArguments: [contracts.erc1155erc721],
+      constructorArguments: [
+        contracts.br,
+        contracts.cashier,
+        contracts.voucherSets,
+        contracts.vouchers,
+      ],
     });
   } catch (error) {
     logError('VoucherKernel', error.message);
@@ -49,7 +75,12 @@ export async function verifyContracts(env: string): Promise<void> {
   try {
     await hre.run('verify:verify', {
       address: contracts.cashier,
-      constructorArguments: [contracts.voucherKernel],
+      constructorArguments: [
+        contracts.br,
+        contracts.voucherKernel,
+        contracts.voucherSets,
+        contracts.vouchers,
+      ],
     });
   } catch (error) {
     logError('Cashier', error.message);
@@ -73,7 +104,7 @@ export async function verifyContracts(env: string): Promise<void> {
   try {
     await hre.run('verify:verify', {
       address: contracts.gate,
-      constructorArguments: [contracts.br],
+      constructorArguments: [contracts.br, contracts.erc1155NonTransferable],
     });
   } catch (error) {
     logError('Gate', error.message);

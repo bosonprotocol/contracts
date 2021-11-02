@@ -4,6 +4,8 @@
 import hre from 'hardhat';
 import fs from 'fs';
 import {isValidEnv} from './env-validator';
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
+
 const ethers = hre.ethers;
 
 /**
@@ -14,7 +16,8 @@ const ethers = hre.ethers;
 class DeploymentExecutor {
   env;
   tokenRegistry;
-  erc1155erc721;
+  voucherSets;
+  vouchers;
   voucherKernel;
   cashier;
   br;
@@ -35,7 +38,8 @@ class DeploymentExecutor {
     this.env;
 
     this.tokenRegistry;
-    this.erc1155erc721;
+    this.voucherSets;
+    this.vouchers;
     this.voucherKernel;
     this.cashier;
     this.br;
@@ -63,65 +67,31 @@ class DeploymentExecutor {
 
     console.log('$ Setting initial values ...');
 
-    tx = await this.erc1155erc721.setApprovalForAll(
+    tx = await this.voucherSets.setApprovalForAll(
       this.voucherKernel.address,
       'true'
     );
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
     console.log(
-      '\n$ ERC1155ERC721: ',
+      '\n$ VoucherSets: ',
       event.event,
       'approved VoucherKernel:',
       event.args._approved
     );
 
-    tx = await this.erc1155erc721.setVoucherKernelAddress(
-      this.voucherKernel.address
+    tx = await this.vouchers.setApprovalForAll(
+      this.voucherKernel.address,
+      'true'
     );
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
     console.log(
-      '$ ERC1155ERC721: ',
+      '\n$ Vouchers: ',
       event.event,
-      'at:',
-      event.args._newVoucherKernel
+      'approved VoucherKernel:',
+      event.args._approved
     );
-
-    tx = await this.erc1155erc721.setCashierAddress(this.cashier.address);
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log(
-      '$ ERC1155ERC721: ',
-      event.event,
-      'at:',
-      event.args._newCashier
-    );
-
-    tx = await this.voucherKernel.setBosonRouterAddress(this.br.address);
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log(
-      '\n$ VoucherKernel',
-      event.event,
-      'at:',
-      event.args._newBosonRouter
-    );
-
-    tx = await this.voucherKernel.setCashierAddress(this.cashier.address);
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log('$ VoucherKernel', event.event, 'at:', event.args._newCashier);
-
-    tx = await this.cashier.setBosonRouterAddress(this.br.address);
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log('\n$ Cashier', event.event, 'at:', event.args._newBosonRouter);
-
-    tx = await this.cashier.setTokenContractAddress(this.erc1155erc721.address);
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log('$ Cashier', event.event, 'at:', event.args._newTokenContract);
 
     tx = await this.tokenRegistry.setTokenWrapperAddress(
       this.dai_token,
@@ -151,19 +121,6 @@ class DeploymentExecutor {
       event.args._newWrapperAddress
     );
 
-    tx = await this.gate.setNonTransferableTokenContract(
-      this.erc1155NonTransferable.address
-    );
-
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log(
-      '$ Gate',
-      event.event,
-      'at:',
-      event.args._nonTransferableTokenContractAddress
-    );
-
     tx = await this.br.setGateApproval(this.gate.address, true);
 
     txReceipt = await tx.wait();
@@ -177,15 +134,6 @@ class DeploymentExecutor {
       event.args._approved
     );
 
-    await this.erc1155erc721._setMetadataBase(process.env.METADATA_BASE);
-    console.log('$ MetadataBase', 'set to :', process.env.METADATA_BASE);
-
-    await this.erc1155erc721._set1155Route(process.env.ERC1155_ROUTE);
-    console.log('$ ERC1155Route ', 'set to :', process.env.ERC1155_ROUTE);
-
-    await this.erc1155erc721._set721Route(process.env.ERC721_ROUTE);
-    console.log('$ ERC721Route ', 'set to :', process.env.ERC721_ROUTE);
-
     console.log(
       '$ ERC1155NonTransferable URI ',
       'set to :',
@@ -194,9 +142,30 @@ class DeploymentExecutor {
   }
 
   async deployContracts() {
-    const [, ccTokenDeployer] = await ethers.getSigners();
+    const [primaryDeployer, ccTokenDeployer] = await ethers.getSigners();
 
-    const ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
+    const contractList = [
+      'tokenRegistry',
+      'voucherSets',
+      'vouchers',
+      'voucherKernel',
+      'cashier',
+      'br',
+      'daiTokenWrapper',
+    ];
+
+    const contractAddresses = await calculateDeploymentAddresses(
+      primaryDeployer.address,
+      contractList
+    );
+
+    const ccContractAddresses = await calculateDeploymentAddresses(
+      ccTokenDeployer.address,
+      ['erc1155NonTransferable']
+    );
+
+    const VoucherSets = await ethers.getContractFactory('VoucherSets');
+    const Vouchers = await ethers.getContractFactory('Vouchers');
     const VoucherKernel = await ethers.getContractFactory('VoucherKernel');
     const Cashier = await ethers.getContractFactory('Cashier');
     const BosonRouter = await ethers.getContractFactory('BosonRouter');
@@ -212,26 +181,46 @@ class DeploymentExecutor {
       ERC1155NonTransferable.connect(ccTokenDeployer);
 
     this.tokenRegistry = await TokenRegistry.deploy(this.txOptions);
-    this.erc1155erc721 = await ERC1155ERC721.deploy(this.txOptions);
+    this.voucherSets = await VoucherSets.deploy(
+      process.env.VOUCHERSETS_METADATA_URI,
+      contractAddresses.cashier,
+      contractAddresses.voucherKernel,
+      this.txOptions
+    );
+    this.vouchers = await Vouchers.deploy(
+      process.env.VOUCHERS_METADATA_URI,
+      'Boson Smart Voucher',
+      'BSV',
+      contractAddresses.cashier,
+      contractAddresses.voucherKernel,
+      this.txOptions
+    );
     this.voucherKernel = await VoucherKernel.deploy(
-      this.erc1155erc721.address,
+      contractAddresses.br,
+      contractAddresses.cashier,
+      contractAddresses.voucherSets,
+      contractAddresses.vouchers,
       this.txOptions
     );
     this.cashier = await Cashier.deploy(
-      this.voucherKernel.address,
+      contractAddresses.br,
+      contractAddresses.voucherKernel,
+      contractAddresses.voucherSets,
+      contractAddresses.vouchers,
       this.txOptions
     );
     this.br = await BosonRouter.deploy(
-      this.voucherKernel.address,
-      this.tokenRegistry.address,
-      this.cashier.address,
+      contractAddresses.voucherKernel,
+      contractAddresses.tokenRegistry,
+      contractAddresses.cashier,
       this.txOptions
     );
-    this.daiTokenWrapper = await DAITokenWrapper.deploy(
-      this.dai_token,
+    this.daiTokenWrapper = await DAITokenWrapper.deploy(this.dai_token);
+    this.gate = await Gate.deploy(
+      contractAddresses.br,
+      ccContractAddresses.erc1155NonTransferable,
       this.txOptions
     );
-    this.gate = await Gate.deploy(this.br.address, this.txOptions);
 
     //ERC1155NonTransferrable is a Conditional Commit token and should be deployed from a separate address
     this.erc1155NonTransferable =
@@ -240,13 +229,35 @@ class DeploymentExecutor {
       );
 
     await this.tokenRegistry.deployed();
-    await this.erc1155erc721.deployed();
+    await this.voucherSets.deployed();
+    await this.vouchers.deployed();
     await this.voucherKernel.deployed();
     await this.cashier.deployed();
     await this.br.deployed();
     await this.daiTokenWrapper.deployed();
     await this.gate.deployed();
     await this.erc1155NonTransferable.deployed();
+
+    // check that expected and actual addresses match
+    for (const contract of contractList) {
+      if (
+        this[contract].address.toLowerCase() !==
+        contractAddresses[contract].toLowerCase()
+      ) {
+        console.log(
+          `${contract} address mismatch. Expected ${contractAddresses[contract]}, actual ${this[contract].address}`
+        );
+      }
+    }
+
+    if (
+      this.erc1155NonTransferable.address.toLowerCase() !==
+      ccContractAddresses.erc1155NonTransferable.toLowerCase()
+    ) {
+      console.log(
+        `erc1155NonTransferable address mismatch. Expected ${ccContractAddresses.erc1155NonTransferable}, actual ${this.erc1155NonTransferable.address}`
+      );
+    }
   }
 
   logContracts() {
@@ -256,9 +267,14 @@ class DeploymentExecutor {
       this.tokenRegistry.deployTransaction.from
     );
     console.log(
-      'ERC1155ERC721 Contract Address  %s from deployer address %s: ',
-      this.erc1155erc721.address,
-      this.erc1155erc721.deployTransaction.from
+      'VoucherSets Contract Address  %s from deployer address %s: ',
+      this.voucherSets.address,
+      this.voucherSets.deployTransaction.from
+    );
+    console.log(
+      'Vouchers Contract Address  %s from deployer address %s: ',
+      this.vouchers.address,
+      this.vouchers.deployTransaction.from
     );
     console.log(
       'VoucherKernel Contract Address  %s from deployer address %s: ',
@@ -303,7 +319,8 @@ class DeploymentExecutor {
         {
           network: hre.network.name,
           tokenRegistry: this.tokenRegistry.address,
-          erc1155erc721: this.erc1155erc721.address,
+          voucherSets: this.voucherSets.address,
+          vouchers: this.vouchers.address,
           voucherKernel: this.voucherKernel.address,
           cashier: this.cashier.address,
           br: this.br.address,

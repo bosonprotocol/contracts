@@ -142,6 +142,12 @@ interface IVoucherKernel {
     function setCancelFaultPeriod(uint256 _cancelFaultPeriod) external;
 
     /**
+     * @notice Set the address of the Boson Router contract
+     * @param _bosonRouterAddress   The address of the BR contract
+     */
+    function setBosonRouterAddress(address _bosonRouterAddress) external;
+
+    /**
      * @notice Set the address of the Cashier contract
      * @param _cashierAddress   The address of the Cashier contract
      */
@@ -373,8 +379,14 @@ interface IVoucherKernel {
         returns (bytes32);
 
     /**
-     * @notice Get the address of ERC1155ERC721 contract
-     * @return Address of ERC1155ERC721 contract
+     * @notice Get the address of the Vouchers token contract, an ERC721 contract
+     * @return Address of Vouchers contract
      */
-    function getTokensContractAddress() external view returns (address);
+    function getVoucherTokenAddress() external view returns (address);
+
+    /**
+     * @notice Get the address of the VoucherSets token contract, an ERC155 contract
+     * @return Address of VoucherSets contract
+     */
+    function getVoucherSetTokenAddress() external view returns (address);
 }

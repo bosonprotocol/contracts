@@ -2,6 +2,7 @@ import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract, BigNumber} from 'ethers';
 import {assert, expect} from 'chai';
 import {ecsign} from 'ethereumjs-util';
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
 import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
@@ -9,7 +10,8 @@ import UtilsBuilder from '../testHelpers/utilsBuilder';
 import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
 import {
   BosonRouter,
-  ERC1155ERC721,
+  VoucherSets,
+  Vouchers,
   VoucherKernel,
   Cashier,
   TokenRegistry,
@@ -28,7 +30,8 @@ let utils: Utils;
 
 const BN = ethers.BigNumber.from;
 
-let ERC1155ERC721_Factory: ContractFactory;
+let VoucherSets_Factory: ContractFactory;
+let Vouchers_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
@@ -50,7 +53,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
 
-    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherSets_Factory = await ethers.getContractFactory('VoucherSets');
+    Vouchers_Factory = await ethers.getContractFactory('Vouchers');
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
@@ -67,7 +71,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     );
   });
 
-  let contractERC1155ERC721: ERC1155ERC721,
+  let contractVoucherSets: VoucherSets,
+    contractVouchers: Vouchers,
     contractVoucherKernel: VoucherKernel,
     contractCashier: Cashier,
     contractBosonRouter: BosonRouter,
@@ -81,22 +86,51 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
   async function deployContracts() {
     const sixtySeconds = 60;
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+        'BSNTokenPrice',
+        'BSNTokenDeposit',
+        'ERC1155NonTransferable',
+      ]
+    );
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
-    contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
-      ERC1155ERC721;
+    contractVoucherSets = (await VoucherSets_Factory.deploy(
+      'https://token-cdn-domain/{id}.json',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
+    )) as Contract & VoucherSets;
+    contractVouchers = (await Vouchers_Factory.deploy(
+      'https://token-cdn-domain/orders/metadata/',
+      'Boson Smart Voucher',
+      'BSV',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
+    )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
-      contractERC1155ERC721.address
+      contractAddresses.BosonRouter,
+      contractAddresses.Cashier,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & VoucherKernel;
     contractCashier = (await Cashier_Factory.deploy(
-      contractVoucherKernel.address
+      contractAddresses.BosonRouter,
+      contractAddresses.VoucherKernel,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & Cashier;
-
     contractBosonRouter = (await BosonRouter_Factory.deploy(
-      contractVoucherKernel.address,
-      contractTokenRegistry.address,
-      contractCashier.address
+      contractAddresses.VoucherKernel,
+      contractAddresses.TokenRegistry,
+      contractAddresses.Cashier
     )) as Contract & BosonRouter;
 
     contractBSNTokenPrice = (await MockERC20Permit_Factory.deploy(
@@ -113,11 +147,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         'https://token-cdn-domain/{id}.json'
       )) as Contract & ERC1155NonTransferable;
     contractGate = (await Gate_Factory.deploy(
-      contractBosonRouter.address
+      contractAddresses.BosonRouter,
+      contractAddresses.ERC1155NonTransferable
     )) as Contract & Gate;
 
     await contractTokenRegistry.deployed();
-    await contractERC1155ERC721.deployed();
+    await contractVoucherSets.deployed();
+    await contractVouchers.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
     await contractBosonRouter.deployed();
@@ -126,26 +162,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     await contractERC1155NonTransferable.deployed();
     await contractGate.deployed();
 
-    await contractBosonRouter.setGateApproval(contractGate.address, true);
-
-    await contractERC1155ERC721.setApprovalForAll(
+    await contractVoucherSets.setApprovalForAll(
       contractVoucherKernel.address,
       true
     );
-    await contractERC1155ERC721.setVoucherKernelAddress(
-      contractVoucherKernel.address
-    );
 
-    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
-
-    await contractVoucherKernel.setBosonRouterAddress(
-      contractBosonRouter.address
-    );
-    await contractVoucherKernel.setCashierAddress(contractCashier.address);
-
-    await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-    await contractCashier.setTokenContractAddress(
-      contractERC1155ERC721.address
+    await contractVouchers.setApprovalForAll(
+      contractVoucherKernel.address,
+      true
     );
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
@@ -173,9 +197,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       contractBSNTokenDeposit.address
     );
 
-    await contractGate.setNonTransferableTokenContract(
-      contractERC1155NonTransferable.address
-    );
+    await contractBosonRouter.setGateApproval(contractGate.address, true);
   }
 
   let timestamp, tokenSupplyKey: BigNumber, promiseId: string;
@@ -282,7 +304,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             constants.PROMISE_VALID_TO,
             constants.ZERO
           )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
           .withArgs(
             contractVoucherKernel.address,
             constants.ZERO_ADDRESS,
@@ -369,17 +391,17 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           'PromisId mismatch'
         );
 
-        // Check ERC1155ERC721 state
-        const sellerERC1155ERC721Balance = (
-          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+        // Check VoucherSets state
+        const sellerVoucherSetsBalance = (
+          await contractVoucherSets.functions[fnSignatures.balanceOf1155](
             users.seller.address,
             tokenSupplyKey
           )
         )[0];
 
         assert.isTrue(
-          sellerERC1155ERC721Balance.eq(constants.QTY_10),
-          'ERC1155ERC721 seller balance mismatch'
+          sellerVoucherSetsBalance.eq(constants.QTY_10),
+          'VoucherSets seller balance mismatch'
         );
       });
 
@@ -522,7 +544,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           .ERC20withPermit()
           .TKNTKN()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter,
@@ -588,7 +611,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             constants.PROMISE_VALID_TO,
             constants.ZERO
           )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
           .withArgs(
             contractVoucherKernel.address,
             constants.ZERO_ADDRESS,
@@ -675,17 +698,17 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           'PromisId mismatch'
         );
 
-        // Check ERC1155ERC721 state
-        const sellerERC1155ERC721Balance = (
-          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+        // Check VoucherSets state
+        const sellerVoucherSetsBalance = (
+          await contractVoucherSets.functions[fnSignatures.balanceOf1155](
             users.seller.address,
             tokenSupplyKey
           )
         )[0];
 
         assert.isTrue(
-          sellerERC1155ERC721Balance.eq(constants.QTY_10),
-          'ERC1155ERC721 seller balance mismatch'
+          sellerVoucherSetsBalance.eq(constants.QTY_10),
+          'VoucherSets seller balance mismatch'
         );
       });
 
@@ -873,7 +896,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           .ERC20withPermit()
           .TKNTKN()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter,
@@ -938,7 +962,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             constants.PROMISE_VALID_TO,
             constants.ZERO
           )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
           .withArgs(
             contractVoucherKernel.address,
             constants.ZERO_ADDRESS,
@@ -1025,17 +1049,17 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           'PromisId mismatch'
         );
 
-        // Check ERC1155ERC721 state
-        const sellerERC1155ERC721Balance = (
-          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+        // Check VoucherSets state
+        const sellerVoucherSetsBalance = (
+          await contractVoucherSets.functions[fnSignatures.balanceOf1155](
             users.seller.address,
             tokenSupplyKey
           )
         )[0];
 
         assert.isTrue(
-          sellerERC1155ERC721Balance.eq(constants.QTY_10),
-          'ERC1155ERC721 seller balance mismatch'
+          sellerVoucherSetsBalance.eq(constants.QTY_10),
+          'VoucherSets seller balance mismatch'
         );
       });
 
@@ -1254,7 +1278,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             constants.PROMISE_VALID_TO,
             constants.ZERO
           )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
           .withArgs(
             contractVoucherKernel.address,
             constants.ZERO_ADDRESS,
@@ -1341,17 +1365,17 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           'PromisId mismatch'
         );
 
-        // Check ERC1155ERC721 state
-        const sellerERC1155ERC721Balance = (
-          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+        // Check VoucherSets state
+        const sellerVoucherSetsBalance = (
+          await contractVoucherSets.functions[fnSignatures.balanceOf1155](
             users.seller.address,
             tokenSupplyKey
           )
         )[0];
 
         assert.isTrue(
-          sellerERC1155ERC721Balance.eq(constants.QTY_10),
-          'ERC1155ERC721 seller balance mismatch'
+          sellerVoucherSetsBalance.eq(constants.QTY_10),
+          'VoucherSets seller balance mismatch'
         );
       });
 
@@ -1568,7 +1592,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             users.buyer.address,
             promiseId
           )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
           .withArgs(
             contractVoucherKernel.address,
             users.seller.address,
@@ -1576,7 +1600,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             tokenSupplyKey,
             constants.ONE
           )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER)
+          .to.emit(contractVouchers, eventNames.TRANSFER)
           .withArgs(constants.ZERO, users.buyer.address, voucherTokenId);
 
         const voucherStatus = await contractVoucherKernel.getVoucherStatus(
@@ -1784,7 +1808,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           .ERC20withPermit()
           .TKNTKN()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter,
@@ -1889,7 +1914,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             users.buyer.address,
             promiseId
           )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
           .withArgs(
             contractVoucherKernel.address,
             users.seller.address,
@@ -1897,7 +1922,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             tokenSupplyKey,
             constants.ONE
           )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER)
+          .to.emit(contractVouchers, eventNames.TRANSFER)
           .withArgs(constants.ZERO, users.buyer.address, voucherTokenId);
 
         const voucherStatus = await contractVoucherKernel.getVoucherStatus(
@@ -2097,7 +2122,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           .ERC20withPermit()
           .TKNTKN()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter,
@@ -2189,7 +2215,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             users.buyer.address,
             promiseId
           )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
           .withArgs(
             contractVoucherKernel.address,
             users.seller.address,
@@ -2197,7 +2223,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             tokenSupplyKey,
             constants.ONE
           )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER)
+          .to.emit(contractVouchers, eventNames.TRANSFER)
           .withArgs(constants.ZERO, users.buyer.address, voucherTokenId);
 
         const voucherStatus = await contractVoucherKernel.getVoucherStatus(
@@ -2375,7 +2401,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           .ERC20withPermit()
           .TKNTKN()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter,
@@ -2498,7 +2525,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             users.buyer.address,
             promiseId
           )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
           .withArgs(
             contractVoucherKernel.address,
             users.seller.address,
@@ -2506,7 +2533,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             tokenSupplyKey,
             constants.ONE
           )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER)
+          .to.emit(contractVouchers, eventNames.TRANSFER)
           .withArgs(constants.ZERO, users.buyer.address, voucherTokenId);
 
         const voucherStatus = await contractVoucherKernel.getVoucherStatus(
@@ -2757,7 +2784,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           .ERC20withPermit()
           .TKNTKN()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter,
@@ -2852,7 +2880,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             users.buyer.address,
             promiseId
           )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
           .withArgs(
             contractVoucherKernel.address,
             users.seller.address,
@@ -2860,7 +2888,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             tokenSupplyKey,
             constants.ONE
           )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER)
+          .to.emit(contractVouchers, eventNames.TRANSFER)
           .withArgs(constants.ZERO, users.buyer.address, voucherTokenId);
 
         const voucherStatus = await contractVoucherKernel.getVoucherStatus(

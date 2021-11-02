@@ -4,6 +4,7 @@ import {Signer, ContractFactory, Contract, ContractReceipt} from 'ethers';
 // later consider using
 // https://github.com/OpenZeppelin/openzeppelin-test-helpers
 
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
 import constants from '../testHelpers/constants';
 import {advanceTimeSeconds} from '../testHelpers/timemachine';
 import Users from '../testHelpers/users';
@@ -15,7 +16,6 @@ import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
 const eventNames = eventUtils.eventNames;
 const {keccak256, solidityPack} = ethers.utils;
-import fnSignatures from '../testHelpers/functionSignatures';
 
 import {waffle} from 'hardhat';
 const {deployMockContract} = waffle;
@@ -24,7 +24,8 @@ import IERC20Old from '../artifacts/contracts/mocks/IERC20old.sol/IERC20Old.json
 
 import {
   BosonRouter,
-  ERC1155ERC721,
+  VoucherSets,
+  Vouchers,
   VoucherKernel,
   Cashier,
   TokenRegistry,
@@ -32,7 +33,8 @@ import {
   MockERC20Permit,
 } from '../typechain';
 
-let ERC1155ERC721_Factory: ContractFactory;
+let VoucherSets_Factory: ContractFactory;
+let Vouchers_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
@@ -40,18 +42,13 @@ let TokenRegistry_Factory: ContractFactory;
 let MockBosonRouter_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
 
-let ERC1155ERC721_Factory2: ContractFactory;
-let VoucherKernel_Factory2: ContractFactory;
-let Cashier_Factory2: ContractFactory;
-let BosonRouter_Factory2: ContractFactory;
-let TokenRegistry_Factory2: ContractFactory;
-
 const BN = ethers.BigNumber.from;
 
 let users;
 
 describe('Voucher tests', () => {
-  let contractERC1155ERC721: ERC1155ERC721,
+  let contractVoucherSets: VoucherSets,
+    contractVouchers: Vouchers,
     contractVoucherKernel: VoucherKernel,
     contractCashier: Cashier,
     contractBosonRouter: BosonRouter,
@@ -59,7 +56,8 @@ describe('Voucher tests', () => {
     contractMockBosonRouter: MockBosonRouter,
     contractBSNTokenPrice: MockERC20Permit;
 
-  let contractERC1155ERC721_2: ERC1155ERC721,
+  let contractVoucherSets_2: VoucherSets,
+    contractVouchers_2: Vouchers,
     contractVoucherKernel_2: VoucherKernel,
     contractCashier_2: Cashier,
     contractBosonRouter_2: BosonRouter,
@@ -76,7 +74,8 @@ describe('Voucher tests', () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
 
-    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherSets_Factory = await ethers.getContractFactory('VoucherSets');
+    Vouchers_Factory = await ethers.getContractFactory('Vouchers');
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
@@ -91,21 +90,48 @@ describe('Voucher tests', () => {
 
   async function deployContracts() {
     const sixtySeconds = 60;
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+      ]
+    );
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
-    contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
-      ERC1155ERC721;
+    contractVoucherSets = (await VoucherSets_Factory.deploy(
+      'https://token-cdn-domain/{id}.json',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
+    )) as Contract & VoucherSets;
+    contractVouchers = (await Vouchers_Factory.deploy(
+      'https://token-cdn-domain/orders/metadata/',
+      'Boson Smart Voucher',
+      'BSV',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
+    )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
-      contractERC1155ERC721.address
+      contractAddresses.BosonRouter,
+      contractAddresses.Cashier,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & VoucherKernel;
     contractCashier = (await Cashier_Factory.deploy(
-      contractVoucherKernel.address
+      contractAddresses.BosonRouter,
+      contractAddresses.VoucherKernel,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & Cashier;
     contractBosonRouter = (await BosonRouter_Factory.deploy(
-      contractVoucherKernel.address,
-      contractTokenRegistry.address,
-      contractCashier.address
+      contractAddresses.VoucherKernel,
+      contractAddresses.TokenRegistry,
+      contractAddresses.Cashier
     )) as Contract & BosonRouter;
 
     contractBSNTokenPrice = (await MockERC20Permit_Factory.deploy(
@@ -114,30 +140,20 @@ describe('Voucher tests', () => {
     )) as Contract & MockERC20Permit;
 
     await contractTokenRegistry.deployed();
-    await contractERC1155ERC721.deployed();
+    await contractVoucherSets.deployed();
+    await contractVouchers.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
     await contractBosonRouter.deployed();
     await contractBSNTokenPrice.deployed();
 
-    await contractERC1155ERC721.setApprovalForAll(
+    await contractVoucherSets.setApprovalForAll(
       contractVoucherKernel.address,
       true
     );
-    await contractERC1155ERC721.setVoucherKernelAddress(
-      contractVoucherKernel.address
-    );
-
-    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
-
-    await contractVoucherKernel.setBosonRouterAddress(
-      contractBosonRouter.address
-    );
-    await contractVoucherKernel.setCashierAddress(contractCashier.address);
-
-    await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-    await contractCashier.setTokenContractAddress(
-      contractERC1155ERC721.address
+    await contractVouchers.setApprovalForAll(
+      contractVoucherKernel.address,
+      true
     );
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
@@ -145,56 +161,65 @@ describe('Voucher tests', () => {
   }
 
   async function deployContracts2() {
-    ERC1155ERC721_Factory2 = await ethers.getContractFactory('ERC1155ERC721');
-    VoucherKernel_Factory2 = await ethers.getContractFactory('VoucherKernel');
-    Cashier_Factory2 = await ethers.getContractFactory('Cashier');
-    BosonRouter_Factory2 = await ethers.getContractFactory('BosonRouter');
-    TokenRegistry_Factory2 = await ethers.getContractFactory('TokenRegistry');
-
     const sixtySeconds = 60;
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+      ]
+    );
 
     contractTokenRegistry_2 =
-      (await TokenRegistry_Factory2.deploy()) as Contract & TokenRegistry;
-    contractERC1155ERC721_2 =
-      (await ERC1155ERC721_Factory2.deploy()) as Contract & ERC1155ERC721;
-    contractVoucherKernel_2 = (await VoucherKernel_Factory2.deploy(
-      contractERC1155ERC721_2.address
+      (await TokenRegistry_Factory.deploy()) as Contract & TokenRegistry;
+    contractVoucherSets_2 = (await VoucherSets_Factory.deploy(
+      'https://token-cdn-domain/{id}.json',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
+    )) as Contract & VoucherSets;
+    contractVouchers_2 = (await Vouchers_Factory.deploy(
+      'https://token-cdn-domain/orders/metadata/',
+      'Boson Smart Voucher',
+      'BSV',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
+    )) as Contract & Vouchers;
+    contractVoucherKernel_2 = (await VoucherKernel_Factory.deploy(
+      contractAddresses.BosonRouter,
+      contractAddresses.Cashier,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & VoucherKernel;
-    contractCashier_2 = (await Cashier_Factory2.deploy(
-      contractVoucherKernel_2.address
+    contractCashier_2 = (await Cashier_Factory.deploy(
+      contractAddresses.BosonRouter,
+      contractAddresses.VoucherKernel,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & Cashier;
-    contractBosonRouter_2 = (await BosonRouter_Factory2.deploy(
-      contractVoucherKernel_2.address,
-      contractTokenRegistry_2.address,
-      contractCashier_2.address
+    contractBosonRouter_2 = (await BosonRouter_Factory.deploy(
+      contractAddresses.VoucherKernel,
+      contractAddresses.TokenRegistry,
+      contractAddresses.Cashier
     )) as Contract & BosonRouter;
 
     await contractTokenRegistry_2.deployed();
-    await contractERC1155ERC721_2.deployed();
+    await contractVoucherSets_2.deployed();
+    await contractVouchers_2.deployed();
     await contractVoucherKernel_2.deployed();
     await contractCashier_2.deployed();
     await contractBosonRouter_2.deployed();
 
-    await contractERC1155ERC721_2.setApprovalForAll(
+    await contractVoucherSets_2.setApprovalForAll(
       contractVoucherKernel_2.address,
       true
     );
-    await contractERC1155ERC721_2.setVoucherKernelAddress(
-      contractVoucherKernel_2.address
-    );
-
-    await contractERC1155ERC721_2.setCashierAddress(contractCashier_2.address);
-
-    await contractVoucherKernel_2.setBosonRouterAddress(
-      contractBosonRouter_2.address
-    );
-    await contractVoucherKernel_2.setCashierAddress(contractCashier_2.address);
-
-    await contractCashier_2.setBosonRouterAddress(
-      contractBosonRouter_2.address
-    );
-    await contractCashier_2.setTokenContractAddress(
-      contractERC1155ERC721_2.address
+    await contractVouchers_2.setApprovalForAll(
+      contractVoucherKernel_2.address,
+      true
     );
 
     await contractVoucherKernel_2.setComplainPeriod(sixtySeconds);
@@ -220,51 +245,57 @@ describe('Voucher tests', () => {
       assert.equal(voucherKernel, contractVoucherKernel.address);
     });
 
-    it('Should have set contract addresses properly for ERC1155ERC721', async () => {
-      const voucherKernel =
-        await contractERC1155ERC721.getVoucherKernelAddress();
-      const cashier = await contractERC1155ERC721.getCashierAddress();
+    it('Should have set contract addresses properly for VoucherSets', async () => {
+      const voucherKernel = await contractVoucherSets.getVoucherKernelAddress();
+      const cashier = await contractVoucherSets.getCashierAddress();
+
+      assert.equal(voucherKernel, contractVoucherKernel.address);
+      assert.equal(cashier, contractCashier.address);
+    });
+
+    it('Should have set contract addresses properly for Vouchers', async () => {
+      const voucherKernel = await contractVouchers.getVoucherKernelAddress();
+      const cashier = await contractVouchers.getCashierAddress();
 
       assert.equal(voucherKernel, contractVoucherKernel.address);
       assert.equal(cashier, contractCashier.address);
     });
 
     it('Should have set contract addresses properly for VoucherKernel', async () => {
-      const tokensContract =
-        await contractVoucherKernel.getTokensContractAddress();
+      const voucherSetTokenContract =
+        await contractVoucherKernel.getVoucherSetTokenAddress();
+      assert.equal(voucherSetTokenContract, contractVoucherSets.address);
 
-      assert.equal(tokensContract, contractERC1155ERC721.address);
+      const voucherTokenContract =
+        await contractVoucherKernel.getVoucherTokenAddress();
+      assert.equal(voucherTokenContract, contractVouchers.address);
     });
 
     it('Should have set contract addresses properly for Cashier', async () => {
       const voucherKernel = await contractCashier.getVoucherKernelAddress();
       const bosonRouter = await contractCashier.getBosonRouterAddress();
-      const tokensContract = await contractCashier.getTokensContractAddress();
+      const voucherSetTokenContract =
+        await contractCashier.getVoucherSetTokenAddress();
+      const voucherTokenContract =
+        await contractCashier.getVoucherTokenAddress();
 
       assert.equal(voucherKernel, contractVoucherKernel.address);
       assert.equal(bosonRouter, contractBosonRouter.address);
-      assert.equal(tokensContract, contractERC1155ERC721.address);
+      assert.equal(voucherSetTokenContract, contractVoucherSets.address);
+      assert.equal(voucherTokenContract, contractVouchers.address);
     });
   });
 
   describe('Direct minting', function () {
     it('must fail: unauthorized minting ERC-1155', async () => {
       await expect(
-        contractERC1155ERC721.functions[fnSignatures.mint1155](
-          users.attacker.address,
-          666,
-          1,
-          []
-        )
+        contractVoucherSets.mint(users.attacker.address, 666, 1, [])
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VK);
     });
 
     it('must fail: unauthorized minting ERC-721', async () => {
       await expect(
-        contractERC1155ERC721.functions[fnSignatures.mint721](
-          users.attacker.address,
-          666
-        )
+        contractVouchers.mint(users.attacker.address, 666)
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_VK);
     });
   });
@@ -324,14 +355,14 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        ERC1155ERC721_Factory,
+        VoucherSets_Factory,
         eventNames.TRANSFER_SINGLE,
         (ev) => {
-          assert.isTrue(ev._operator === contractVoucherKernel.address);
-          assert.isTrue(ev._from === constants.ZERO_ADDRESS);
-          assert.isTrue(ev._to === users.seller.address);
-          assert.isTrue(ev._id.eq(tokenSupplyKey1));
-          assert.isTrue(ev._value.eq(constants.ORDER_QUANTITY1));
+          assert.isTrue(ev.operator === contractVoucherKernel.address);
+          assert.isTrue(ev.from === constants.ZERO_ADDRESS);
+          assert.isTrue(ev.to === users.seller.address);
+          assert.isTrue(ev.id.eq(tokenSupplyKey1));
+          assert.isTrue(ev.value.eq(constants.ORDER_QUANTITY1));
         }
       );
 
@@ -403,15 +434,13 @@ describe('Voucher tests', () => {
         await contractVoucherKernel.getPromiseIdFromSupplyId(tokenSupplyKey1)
       );
 
-      //Check ERC1155ERC721 state
-      const sellerERC1155ERC721Balance = (
-        await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
-          users.seller.address,
-          tokenSupplyKey1
-        )
-      )[0];
+      //Check Voucher Sets token state
+      const sellerVoucherSetTokenBalance = await contractVoucherSets.balanceOf(
+        users.seller.address,
+        tokenSupplyKey1
+      );
 
-      assert.isTrue(sellerERC1155ERC721Balance.eq(constants.ONE));
+      assert.isTrue(sellerVoucherSetTokenBalance.eq(constants.ONE));
     });
 
     it('adding two new orders / promises', async () => {
@@ -496,14 +525,14 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt2,
-        ERC1155ERC721_Factory,
+        VoucherSets_Factory,
         eventNames.TRANSFER_SINGLE,
         (ev) => {
-          assert.isTrue(ev._operator === contractVoucherKernel.address);
-          assert.isTrue(ev._from === constants.ZERO_ADDRESS);
-          assert.isTrue(ev._to === users.seller.address);
-          assert.isTrue(ev._id.eq(tokenSupplyKey2));
-          assert.isTrue(ev._value.eq(constants.ORDER_QUANTITY2));
+          assert.isTrue(ev.operator === contractVoucherKernel.address);
+          assert.isTrue(ev.from === constants.ZERO_ADDRESS);
+          assert.isTrue(ev.to === users.seller.address);
+          assert.isTrue(ev.id.eq(tokenSupplyKey2));
+          assert.isTrue(ev.value.eq(constants.ORDER_QUANTITY2));
         }
       );
 
@@ -569,21 +598,21 @@ describe('Voucher tests', () => {
       );
       assert.isTrue(tokenNonce.eq(constants.TWO));
 
-      //Check ERC1155ERC721 state
-      const sellerERC1155ERC721BalanceVoucherSet1 = (
-        await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+      //Check Voucher Sets token state
+      const sellerERC1155ERC721BalanceVoucherSet1 =
+        await contractVoucherSets.balanceOf(
           users.seller.address,
           tokenSupplyKey1
-        )
-      )[0];
+        );
+
       assert.isTrue(sellerERC1155ERC721BalanceVoucherSet1.eq(constants.ONE));
 
-      const sellerERC1155ERC721BalanceVoucherSet2 = (
-        await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+      const sellerERC1155ERC721BalanceVoucherSet2 =
+        await contractVoucherSets.balanceOf(
           users.seller.address,
           tokenSupplyKey2
-        )
-      )[0];
+        );
+
       assert.isTrue(sellerERC1155ERC721BalanceVoucherSet2.eq(constants.TWO));
     });
 
@@ -736,25 +765,25 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        ERC1155ERC721_Factory,
+        VoucherSets_Factory,
         eventNames.TRANSFER_SINGLE,
         (ev) => {
-          assert.isTrue(ev._operator === contractVoucherKernel.address);
-          assert.isTrue(ev._from === users.seller.address);
-          assert.isTrue(ev._to === constants.ZERO_ADDRESS);
-          assert.isTrue(ev._id.eq(tokenSupplyKey1));
-          assert.isTrue(ev._value.eq(constants.ONE));
+          assert.isTrue(ev.operator === contractVoucherKernel.address);
+          assert.isTrue(ev.from === users.seller.address);
+          assert.isTrue(ev.to === constants.ZERO_ADDRESS);
+          assert.isTrue(ev.id.eq(tokenSupplyKey1));
+          assert.isTrue(ev.value.eq(constants.ONE));
         }
       );
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        ERC1155ERC721_Factory,
+        Vouchers_Factory,
         eventNames.TRANSFER,
         (ev) => {
-          assert.isTrue(ev._from === constants.ZERO_ADDRESS);
-          assert.isTrue(ev._to === users.buyer.address);
-          assert.isTrue(ev._tokenId.eq(tokenVoucherKey));
+          assert.isTrue(ev.from === constants.ZERO_ADDRESS);
+          assert.isTrue(ev.to === users.buyer.address);
+          assert.isTrue(ev.tokenId.eq(tokenVoucherKey));
         }
       );
 
@@ -776,24 +805,19 @@ describe('Voucher tests', () => {
         'Deposit released not false'
       );
 
-      //Check ERC1155ERC721 state
-      const sellerERC1155ERC721Balance = (
-        await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
-          users.seller.address,
-          tokenSupplyKey1
-        )
-      )[0];
-
-      assert.isTrue(sellerERC1155ERC721Balance.eq(constants.ZERO));
-
-      const buyerERC721Balance = (
-        await contractERC1155ERC721.functions[fnSignatures.balanceOf721](
-          users.buyer.address
-        )
-      )[0];
-      const erc721TokenOwner = await contractERC1155ERC721.ownerOf(
-        tokenVoucherKey
+      //Check Voucher Sets token state
+      const sellerVoucherSetTokenBalance = await contractVoucherSets.balanceOf(
+        users.seller.address,
+        tokenSupplyKey1
       );
+
+      assert.isTrue(sellerVoucherSetTokenBalance.eq(constants.ZERO));
+
+      const buyerERC721Balance = await contractVouchers.balanceOf(
+        users.buyer.address
+      );
+
+      const erc721TokenOwner = await contractVouchers.ownerOf(tokenVoucherKey);
       assert.isTrue(buyerERC721Balance.eq(constants.ONE));
       assert.strictEqual(users.buyer.address, erc721TokenOwner);
     });
@@ -827,25 +851,25 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        ERC1155ERC721_Factory,
+        VoucherSets_Factory,
         eventNames.TRANSFER_SINGLE,
         (ev) => {
-          assert.isTrue(ev._operator === contractVoucherKernel.address);
-          assert.isTrue(ev._from === users.seller.address);
-          assert.isTrue(ev._to === constants.ZERO_ADDRESS);
-          assert.isTrue(ev._id.eq(tokenSupplyKey2));
-          assert.isTrue(ev._value.eq(constants.ONE));
+          assert.isTrue(ev.operator === contractVoucherKernel.address);
+          assert.isTrue(ev.from === users.seller.address);
+          assert.isTrue(ev.to === constants.ZERO_ADDRESS);
+          assert.isTrue(ev.id.eq(tokenSupplyKey2));
+          assert.isTrue(ev.value.eq(constants.ONE));
         }
       );
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        ERC1155ERC721_Factory,
+        Vouchers_Factory,
         eventNames.TRANSFER,
         (ev) => {
-          assert.isTrue(ev._from === constants.ZERO_ADDRESS);
-          assert.isTrue(ev._to === users.buyer.address);
-          assert.isTrue(ev._tokenId.eq(tokenVoucherKey));
+          assert.isTrue(ev.from === constants.ZERO_ADDRESS);
+          assert.isTrue(ev.to === users.buyer.address);
+          assert.isTrue(ev.tokenId.eq(tokenVoucherKey));
         }
       );
 
@@ -866,24 +890,19 @@ describe('Voucher tests', () => {
         'Deposit released not false'
       );
 
-      //Check ERC1155ERC721 state
-      const sellerERC1155ERC721Balance = (
-        await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
-          users.seller.address,
-          tokenSupplyKey2
-        )
-      )[0];
-
-      assert.isTrue(sellerERC1155ERC721Balance.eq(constants.ONE));
-
-      const buyerERC721Balance = (
-        await contractERC1155ERC721.functions[fnSignatures.balanceOf721](
-          users.buyer.address
-        )
-      )[0];
-      const erc721TokenOwner = await contractERC1155ERC721.ownerOf(
-        tokenVoucherKey
+      //Check Voucher Sets token state
+      const sellerVoucherSetTokenBalance = await contractVoucherSets.balanceOf(
+        users.seller.address,
+        tokenSupplyKey2
       );
+
+      assert.isTrue(sellerVoucherSetTokenBalance.eq(constants.ONE));
+
+      const buyerERC721Balance = await contractVouchers.balanceOf(
+        users.buyer.address
+      );
+
+      const erc721TokenOwner = await contractVouchers.ownerOf(tokenVoucherKey);
 
       assert.isTrue(buyerERC721Balance.eq(constants.ONE));
       assert.strictEqual(users.buyer.address, erc721TokenOwner);
@@ -1471,7 +1490,7 @@ describe('Voucher tests', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt2,
-        VoucherKernel_Factory2,
+        VoucherKernel_Factory,
         eventNames.LOG_PROMISE_CREATED,
         (ev) => {
           assert.isTrue(ev._promiseId == promisekey2);
@@ -1493,7 +1512,8 @@ describe('Voucher tests', () => {
 }); //end of contract
 
 describe('Voucher tests - UNHAPPY PATH', () => {
-  let contractERC1155ERC721: ERC1155ERC721,
+  let contractVoucherSets: VoucherSets,
+    contractVouchers: Vouchers,
     contractVoucherKernel: VoucherKernel,
     contractCashier: Cashier,
     contractBosonRouter: BosonRouter,
@@ -1504,11 +1524,11 @@ describe('Voucher tests - UNHAPPY PATH', () => {
     const signers = await ethers.getSigners();
     users = new Users(signers);
 
-    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherSets_Factory = await ethers.getContractFactory('VoucherSets');
+    Vouchers_Factory = await ethers.getContractFactory('Vouchers');
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
-    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
     TokenRegistry_Factory = await ethers.getContractFactory('TokenRegistry');
     MockBosonRouter_Factory = await ethers.getContractFactory(
       'MockBosonRouter'
@@ -1516,46 +1536,64 @@ describe('Voucher tests - UNHAPPY PATH', () => {
   });
 
   async function deployContracts() {
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+      ]
+    );
+
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
-    contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
-      ERC1155ERC721;
+    contractVoucherSets = (await VoucherSets_Factory.deploy(
+      'https://token-cdn-domain/{id}.json',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
+    )) as Contract & VoucherSets;
+    contractVouchers = (await Vouchers_Factory.deploy(
+      'https://token-cdn-domain/orders/metadata/',
+      'Boson Smart Voucher',
+      'BSV',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
+    )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
-      contractERC1155ERC721.address
+      contractAddresses.BosonRouter,
+      contractAddresses.Cashier,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & VoucherKernel;
     contractCashier = (await Cashier_Factory.deploy(
-      contractVoucherKernel.address
+      contractAddresses.BosonRouter,
+      contractAddresses.VoucherKernel,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & Cashier;
     contractBosonRouter = (await BosonRouter_Factory.deploy(
-      contractVoucherKernel.address,
-      contractTokenRegistry.address,
-      contractCashier.address
+      contractAddresses.VoucherKernel,
+      contractAddresses.TokenRegistry,
+      contractAddresses.Cashier
     )) as Contract & BosonRouter;
 
     await contractTokenRegistry.deployed();
-    await contractERC1155ERC721.deployed();
+    await contractVoucherSets.deployed();
+    await contractVouchers.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
     await contractBosonRouter.deployed();
 
-    await contractERC1155ERC721.setApprovalForAll(
+    await contractVoucherSets.setApprovalForAll(
       contractVoucherKernel.address,
       true
     );
-    await contractERC1155ERC721.setVoucherKernelAddress(
-      contractVoucherKernel.address
-    );
-
-    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
-
-    await contractVoucherKernel.setBosonRouterAddress(
-      contractBosonRouter.address
-    );
-    await contractVoucherKernel.setCashierAddress(contractCashier.address);
-
-    await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-    await contractCashier.setTokenContractAddress(
-      contractERC1155ERC721.address
+    await contractVouchers.setApprovalForAll(
+      contractVoucherKernel.address,
+      true
     );
   }
 
