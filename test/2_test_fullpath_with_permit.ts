@@ -10,7 +10,8 @@ import UtilsBuilder from '../testHelpers/utilsBuilder';
 import {toWei, getApprovalDigest} from '../testHelpers/permitUtils';
 import {
   BosonRouter,
-  ERC1155ERC721,
+  VoucherSets,
+  Vouchers,
   VoucherKernel,
   Cashier,
   TokenRegistry,
@@ -20,7 +21,8 @@ import {
 } from '../typechain';
 const {keccak256, solidityPack} = ethers.utils;
 
-let ERC1155ERC721_Factory: ContractFactory;
+let VoucherSets_Factory: ContractFactory;
+let Vouchers_Factory: ContractFactory;
 let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let BosonRouter_Factory: ContractFactory;
@@ -46,7 +48,8 @@ describe('Cashier and VoucherKernel', () => {
     const signers: Signer[] = await ethers.getSigners();
     users = new Users(signers);
 
-    ERC1155ERC721_Factory = await ethers.getContractFactory('ERC1155ERC721');
+    VoucherSets_Factory = await ethers.getContractFactory('VoucherSets');
+    Vouchers_Factory = await ethers.getContractFactory('Vouchers');
     VoucherKernel_Factory = await ethers.getContractFactory('VoucherKernel');
     Cashier_Factory = await ethers.getContractFactory('Cashier');
     BosonRouter_Factory = await ethers.getContractFactory('BosonRouter');
@@ -64,7 +67,8 @@ describe('Cashier and VoucherKernel', () => {
     await setPeriods();
   });
 
-  let contractERC1155ERC721: ERC1155ERC721,
+  let contractVoucherSets: VoucherSets,
+    contractVouchers: Vouchers,
     contractVoucherKernel: VoucherKernel,
     contractCashier: Cashier,
     contractBosonRouter: BosonRouter,
@@ -96,15 +100,21 @@ describe('Cashier and VoucherKernel', () => {
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
-    contractERC1155ERC721 = (await ERC1155ERC721_Factory.deploy()) as Contract &
-      ERC1155ERC721;
+    contractVoucherSets = (await VoucherSets_Factory.deploy(
+      'https://token-cdn-domain/{id}.json'
+    )) as Contract & VoucherSets;
+    contractVouchers = (await Vouchers_Factory.deploy(
+      'https://token-cdn-domain/orders/metadata/',
+      'Boson Smart Voucher',
+      'BSV'
+    )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
-      contractERC1155ERC721.address
+      contractVoucherSets.address,
+      contractVouchers.address
     )) as Contract & VoucherKernel;
     contractCashier = (await Cashier_Factory.deploy(
       contractVoucherKernel.address
     )) as Contract & Cashier;
-
     contractBosonRouter = (await BosonRouter_Factory.deploy(
       contractVoucherKernel.address,
       contractTokenRegistry.address,
@@ -126,23 +136,31 @@ describe('Cashier and VoucherKernel', () => {
         MockERC721Receiver;
 
     await contractTokenRegistry.deployed();
-    await contractERC1155ERC721.deployed();
+    await contractVoucherSets.deployed();
+    await contractVouchers.deployed();
     await contractVoucherKernel.deployed();
     await contractCashier.deployed();
     await contractBosonRouter.deployed();
     await contractBSNTokenPrice.deployed();
     await contractBSNTokenDeposit.deployed();
     await contractMockERC721Receiver.deployed();
-
-    await contractERC1155ERC721.setApprovalForAll(
+    await contractVoucherSets.setApprovalForAll(
       contractVoucherKernel.address,
       true
     );
-    await contractERC1155ERC721.setVoucherKernelAddress(
+    await contractVouchers.setApprovalForAll(
+      contractVoucherKernel.address,
+      true
+    );
+    await contractVoucherSets.setVoucherKernelAddress(
+      contractVoucherKernel.address
+    );
+    await contractVouchers.setVoucherKernelAddress(
       contractVoucherKernel.address
     );
 
-    await contractERC1155ERC721.setCashierAddress(contractCashier.address);
+    await contractVoucherSets.setCashierAddress(contractCashier.address);
+    await contractVouchers.setCashierAddress(contractCashier.address);
 
     await contractVoucherKernel.setBosonRouterAddress(
       contractBosonRouter.address
@@ -150,10 +168,10 @@ describe('Cashier and VoucherKernel', () => {
     await contractVoucherKernel.setCashierAddress(contractCashier.address);
 
     await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-
-    await contractCashier.setTokenContractAddress(
-      contractERC1155ERC721.address
+    await contractCashier.setVoucherSetTokenAddress(
+      contractVoucherSets.address
     );
+    await contractCashier.setVoucherTokenAddress(contractVouchers.address);
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
@@ -216,7 +234,8 @@ describe('Cashier and VoucherKernel', () => {
         utils = await UtilsBuilder.create()
           .ETHETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
@@ -252,7 +271,7 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_VALID_TO,
             constants.ZERO
           )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
           .withArgs(
             contractVoucherKernel.address,
             constants.ZERO_ADDRESS,
@@ -386,17 +405,17 @@ describe('Cashier and VoucherKernel', () => {
           });
         });
 
-        it('ERC1155ERC721 state is correct', async () => {
-          const sellerERC1155ERC721Balance = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+        it('Voucher Sets token state is correct', async () => {
+          const sellerVoucherSetTokenBalance = (
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.seller.address,
               tokenSupplyKey
             )
           )[0];
 
           assert.isTrue(
-            sellerERC1155ERC721Balance.eq(constants.QTY_10),
-            'ERC1155ERC721 seller balance mismatch'
+            sellerVoucherSetTokenBalance.eq(constants.QTY_10),
+            'Voucher Set token seller balance mismatch'
           );
         });
 
@@ -561,7 +580,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .ETHTKN()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -614,7 +634,7 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_VALID_TO,
               constants.ZERO
             )
-            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+            .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
             .withArgs(
               contractVoucherKernel.address,
               constants.ZERO_ADDRESS,
@@ -749,17 +769,17 @@ describe('Cashier and VoucherKernel', () => {
             });
           });
 
-          it('ERC1155ERC721 state is correct', async () => {
-            const sellerERC1155ERC721Balance = (
-              await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          it('Voucher Sets token state is correct', async () => {
+            const sellerVoucherSetTokenBalance = (
+              await contractVoucherSets.functions[fnSignatures.balanceOf1155](
                 users.seller.address,
                 tokenSupplyKey
               )
             )[0];
 
             assert.isTrue(
-              sellerERC1155ERC721Balance.eq(constants.QTY_10),
-              'ERC1155ERC721 seller balance mismatch'
+              sellerVoucherSetTokenBalance.eq(constants.QTY_10),
+              'Voucher Set token seller balance mismatch'
             );
           });
 
@@ -1023,7 +1043,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .TKNETH()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -1070,7 +1091,7 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_VALID_TO,
               constants.ZERO
             )
-            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+            .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
             .withArgs(
               contractVoucherKernel.address,
               constants.ZERO_ADDRESS,
@@ -1205,17 +1226,17 @@ describe('Cashier and VoucherKernel', () => {
             });
           });
 
-          it('ERC1155ERC721 state is correct', async () => {
-            const sellerERC1155ERC721Balance = (
-              await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          it('Voucher Sets token state is correct', async () => {
+            const sellerVoucherSetTokenBalance = (
+              await contractVoucherSets.functions[fnSignatures.balanceOf1155](
                 users.seller.address,
                 tokenSupplyKey
               )
             )[0];
 
             assert.isTrue(
-              sellerERC1155ERC721Balance.eq(constants.QTY_10),
-              'ERC1155ERC721 seller balance mismatch'
+              sellerVoucherSetTokenBalance.eq(constants.QTY_10),
+              'Voucher Set token seller balance mismatch'
             );
           });
 
@@ -1382,7 +1403,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .TKNTKN()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -1440,7 +1462,7 @@ describe('Cashier and VoucherKernel', () => {
               constants.PROMISE_VALID_TO,
               constants.ZERO
             )
-            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+            .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
             .withArgs(
               contractVoucherKernel.address,
               constants.ZERO_ADDRESS,
@@ -1575,17 +1597,17 @@ describe('Cashier and VoucherKernel', () => {
             });
           });
 
-          it('ERC1155ERC721 state is correct', async () => {
-            const sellerERC1155ERC721Balance = (
-              await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          it('Voucher Sets token state is correct', async () => {
+            const sellerVoucherSetTokenBalance = (
+              await contractVoucherSets.functions[fnSignatures.balanceOf1155](
                 users.seller.address,
                 tokenSupplyKey
               )
             )[0];
 
             assert.isTrue(
-              sellerERC1155ERC721Balance.eq(constants.QTY_10),
-              'ERC1155ERC721 seller balance mismatch'
+              sellerVoucherSetTokenBalance.eq(constants.QTY_10),
+              'Voucher Set token seller balance mismatch'
             );
           });
 
@@ -1898,7 +1920,8 @@ describe('Cashier and VoucherKernel', () => {
       utils = await UtilsBuilder.create()
         .ETHETH()
         .buildAsync(
-          contractERC1155ERC721,
+          contractVoucherSets,
+          contractVouchers,
           contractVoucherKernel,
           contractCashier,
           contractBosonRouter
@@ -1937,14 +1960,14 @@ describe('Cashier and VoucherKernel', () => {
 
       eventUtils.assertEventEmitted(
         txReceipt,
-        ERC1155ERC721_Factory,
+        VoucherSets_Factory,
         eventNames.TRANSFER_SINGLE,
         (ev) => {
-          assert.isTrue(ev._operator == contractVoucherKernel.address);
-          assert.isTrue(ev._from === users.seller.address);
-          assert.isTrue(ev._to === constants.ZERO_ADDRESS);
-          assert.isTrue(ev._id == tokenSupplyKey);
-          assert.isTrue(ev._value == constants.QTY_10);
+          assert.isTrue(ev.operator == contractVoucherKernel.address);
+          assert.isTrue(ev.from === users.seller.address);
+          assert.isTrue(ev.to === constants.ZERO_ADDRESS);
+          assert.isTrue(ev.id == tokenSupplyKey);
+          assert.isTrue(ev.value == constants.QTY_10);
         }
       );
 
@@ -2002,7 +2025,8 @@ describe('Cashier and VoucherKernel', () => {
         utils = await UtilsBuilder.create()
           .ETHETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
@@ -2038,7 +2062,7 @@ describe('Cashier and VoucherKernel', () => {
             users.buyer.address,
             promiseId
           )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+          .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
           .withArgs(
             contractVoucherKernel.address,
             users.seller.address,
@@ -2046,7 +2070,7 @@ describe('Cashier and VoucherKernel', () => {
             tokenSupplyKey,
             constants.ONE
           )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER)
+          .to.emit(contractVouchers, eventNames.TRANSFER)
           .withArgs(constants.ZERO, users.buyer.address, voucherTokenId);
       });
 
@@ -2085,21 +2109,21 @@ describe('Cashier and VoucherKernel', () => {
           );
         });
 
-        it('ERC1155ERC721 state is correct', async () => {
-          const sellerERC1155ERC721Balance = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+        it('Voucher Sets and Vouchers token state is correct', async () => {
+          const sellerVoucherSetTokenBalance = (
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.seller.address,
               TOKEN_SUPPLY_ID
             )
           )[0];
 
           assert.isTrue(
-            sellerERC1155ERC721Balance.eq(constants.QTY_10 - 1),
-            'Seller 1155 balance mismatch'
+            sellerVoucherSetTokenBalance.eq(constants.QTY_10 - 1),
+            'Voucher Set token seller balance mismatch'
           );
 
           const buyerERC721Balance = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf721](
+            await contractVouchers.functions[fnSignatures.balanceOf721](
               users.buyer.address
             )
           )[0];
@@ -2109,7 +2133,7 @@ describe('Cashier and VoucherKernel', () => {
             'Buyer 721 balance mismatch'
           );
 
-          expect(await contractERC1155ERC721.ownerOf(voucherTokenId)).to.equal(
+          expect(await contractVouchers.ownerOf(voucherTokenId)).to.equal(
             users.buyer.address,
             'Owner address mismatch'
           );
@@ -2203,7 +2227,8 @@ describe('Cashier and VoucherKernel', () => {
           .ERC20withPermit()
           .TKNETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractMockBosonRouter,
@@ -2256,7 +2281,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .ETHTKN()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -2318,7 +2344,7 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer.address,
               promiseId
             )
-            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+            .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
             .withArgs(
               contractVoucherKernel.address,
               users.seller.address,
@@ -2326,7 +2352,7 @@ describe('Cashier and VoucherKernel', () => {
               tokenSupplyKey,
               constants.ONE
             )
-            .to.emit(contractERC1155ERC721, eventNames.TRANSFER)
+            .to.emit(contractVouchers, eventNames.TRANSFER)
             .withArgs(constants.ZERO, users.buyer.address, voucherTokenId)
             .to.emit(contractBSNTokenDeposit, eventNames.TRANSFER)
             .withArgs(
@@ -2371,21 +2397,21 @@ describe('Cashier and VoucherKernel', () => {
             );
           });
 
-          it('ERC1155ERC721 state is correct', async () => {
-            const sellerERC1155ERC721Balance = (
-              await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          it('Voucher Sets and Vouchers token state are correct', async () => {
+            const sellerVoucherSetTokenBalance = (
+              await contractVoucherSets.functions[fnSignatures.balanceOf1155](
                 users.seller.address,
                 TOKEN_SUPPLY_ID
               )
             )[0];
 
             assert.isTrue(
-              sellerERC1155ERC721Balance.eq(ORDER_QTY - 1),
-              'Seller 1155 balance mismatch'
+              sellerVoucherSetTokenBalance.eq(ORDER_QTY - 1),
+              'Voucher Set token seller balance mismatch'
             );
 
             const buyerERC721Balance = (
-              await contractERC1155ERC721.functions[fnSignatures.balanceOf721](
+              await contractVouchers.functions[fnSignatures.balanceOf721](
                 users.buyer.address
               )
             )[0];
@@ -2395,9 +2421,10 @@ describe('Cashier and VoucherKernel', () => {
               'Buyer 721 balance mismatch'
             );
 
-            expect(
-              await contractERC1155ERC721.ownerOf(voucherTokenId)
-            ).to.equal(users.buyer.address, 'Owner address mismatch');
+            expect(await contractVouchers.ownerOf(voucherTokenId)).to.equal(
+              users.buyer.address,
+              'Owner address mismatch'
+            );
           });
 
           it('Cashier Contract has correct amount of funds', async () => {
@@ -2492,7 +2519,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .ETHETH()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -2544,7 +2572,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .TKNTKN()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -2602,7 +2631,7 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer.address,
               promiseId
             )
-            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+            .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
             .withArgs(
               contractVoucherKernel.address,
               users.seller.address,
@@ -2610,7 +2639,7 @@ describe('Cashier and VoucherKernel', () => {
               tokenSupplyKey,
               constants.ONE
             )
-            .to.emit(contractERC1155ERC721, eventNames.TRANSFER)
+            .to.emit(contractVouchers, eventNames.TRANSFER)
             .withArgs(constants.ZERO, users.buyer.address, voucherTokenId)
             .to.emit(contractBSNTokenDeposit, eventNames.TRANSFER)
             .withArgs(
@@ -2661,21 +2690,21 @@ describe('Cashier and VoucherKernel', () => {
             );
           });
 
-          it('ERC1155ERC721 state is correct', async () => {
-            const sellerERC1155ERC721Balance = (
-              await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          it('Voucher Sets and Vouchers token state are correct', async () => {
+            const sellerVoucherSetTokenBalance = (
+              await contractVoucherSets.functions[fnSignatures.balanceOf1155](
                 users.seller.address,
                 TOKEN_SUPPLY_ID
               )
             )[0];
 
             assert.isTrue(
-              sellerERC1155ERC721Balance.eq(ORDER_QTY - 1),
-              'Seller 1155 balance mismatch'
+              sellerVoucherSetTokenBalance.eq(ORDER_QTY - 1),
+              'Voucher Set token seller balance mismatch'
             );
 
             const buyerERC721Balance = (
-              await contractERC1155ERC721.functions[fnSignatures.balanceOf721](
+              await contractVouchers.functions[fnSignatures.balanceOf721](
                 users.buyer.address
               )
             )[0];
@@ -2685,9 +2714,10 @@ describe('Cashier and VoucherKernel', () => {
               'Buyer 721 balance mismatch'
             );
 
-            expect(
-              await contractERC1155ERC721.ownerOf(voucherTokenId)
-            ).to.equal(users.buyer.address, 'Owner address mismatch');
+            expect(await contractVouchers.ownerOf(voucherTokenId)).to.equal(
+              users.buyer.address,
+              'Owner address mismatch'
+            );
           });
 
           it('Cashier Contract has correct amount of funds', async () => {
@@ -2779,7 +2809,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .ETHTKN()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -2838,7 +2869,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .TKNTKNSame()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -2885,7 +2917,7 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer.address,
               promiseId
             )
-            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+            .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
             .withArgs(
               contractVoucherKernel.address,
               users.seller.address,
@@ -2893,7 +2925,7 @@ describe('Cashier and VoucherKernel', () => {
               tokenSupplyKey,
               constants.ONE
             )
-            .to.emit(contractERC1155ERC721, eventNames.TRANSFER)
+            .to.emit(contractVouchers, eventNames.TRANSFER)
             .withArgs(constants.ZERO, users.buyer.address, voucherTokenId)
             .to.emit(contractBSNTokenPrice, eventNames.TRANSFER)
             .withArgs(
@@ -2938,21 +2970,21 @@ describe('Cashier and VoucherKernel', () => {
             );
           });
 
-          it('ERC1155ERC721 state is correct', async () => {
-            const sellerERC1155ERC721Balance = (
-              await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          it('Voucher Sets and Vouchers token state are correct', async () => {
+            const sellerVoucherSetTokenBalance = (
+              await contractVoucherSets.functions[fnSignatures.balanceOf1155](
                 users.seller.address,
                 TOKEN_SUPPLY_ID
               )
             )[0];
 
             assert.isTrue(
-              sellerERC1155ERC721Balance.eq(ORDER_QTY - 1),
-              'Seller 1155 balance mismatch'
+              sellerVoucherSetTokenBalance.eq(ORDER_QTY - 1),
+              'Voucher Set token seller balance mismatch'
             );
 
             const buyerERC721Balance = (
-              await contractERC1155ERC721.functions[fnSignatures.balanceOf721](
+              await contractVouchers.functions[fnSignatures.balanceOf721](
                 users.buyer.address
               )
             )[0];
@@ -2962,9 +2994,10 @@ describe('Cashier and VoucherKernel', () => {
               'Buyer 721 balance mismatch'
             );
 
-            expect(
-              await contractERC1155ERC721.ownerOf(voucherTokenId)
-            ).to.equal(users.buyer.address, 'Owner address mismatch');
+            expect(await contractVouchers.ownerOf(voucherTokenId)).to.equal(
+              users.buyer.address,
+              'Owner address mismatch'
+            );
           });
 
           it('Cashier Contract has correct amount of funds', async () => {
@@ -3046,7 +3079,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .ETHETH()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -3096,7 +3130,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .TKNTKN()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -3177,7 +3212,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .TKNETH()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -3224,7 +3260,7 @@ describe('Cashier and VoucherKernel', () => {
               users.buyer.address,
               promiseId
             )
-            .to.emit(contractERC1155ERC721, eventNames.TRANSFER_SINGLE)
+            .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
             .withArgs(
               contractVoucherKernel.address,
               users.seller.address,
@@ -3232,7 +3268,7 @@ describe('Cashier and VoucherKernel', () => {
               tokenSupplyKey,
               constants.ONE
             )
-            .to.emit(contractERC1155ERC721, eventNames.TRANSFER)
+            .to.emit(contractVouchers, eventNames.TRANSFER)
             .withArgs(constants.ZERO, users.buyer.address, voucherTokenId)
             .to.emit(contractBSNTokenPrice, eventNames.TRANSFER)
             .withArgs(
@@ -3277,21 +3313,21 @@ describe('Cashier and VoucherKernel', () => {
             );
           });
 
-          it('ERC1155ERC721 state is correct', async () => {
-            const sellerERC1155ERC721Balance = (
-              await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          it('Voucher Sets and Vouchers token state are correct', async () => {
+            const sellerVoucherSetTokenBalance = (
+              await contractVoucherSets.functions[fnSignatures.balanceOf1155](
                 users.seller.address,
                 TOKEN_SUPPLY_ID
               )
             )[0];
 
             assert.isTrue(
-              sellerERC1155ERC721Balance.eq(ORDER_QTY - 1),
-              'Seller 1155 balance mismatch'
+              sellerVoucherSetTokenBalance.eq(ORDER_QTY - 1),
+              'Voucher Set token seller balance mismatch'
             );
 
             const buyerERC721Balance = (
-              await contractERC1155ERC721.functions[fnSignatures.balanceOf721](
+              await contractVouchers.functions[fnSignatures.balanceOf721](
                 users.buyer.address
               )
             )[0];
@@ -3301,9 +3337,10 @@ describe('Cashier and VoucherKernel', () => {
               'Buyer 721 balance mismatch'
             );
 
-            expect(
-              await contractERC1155ERC721.ownerOf(voucherTokenId)
-            ).to.equal(users.buyer.address, 'Owner address mismatch');
+            expect(await contractVouchers.ownerOf(voucherTokenId)).to.equal(
+              users.buyer.address,
+              'Owner address mismatch'
+            );
           });
 
           it('Cashier Contract has correct amount of funds', async () => {
@@ -3380,7 +3417,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .ETHETH()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -3435,7 +3473,8 @@ describe('Cashier and VoucherKernel', () => {
         utils = await UtilsBuilder.create()
           .ETHETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
@@ -4020,7 +4059,8 @@ describe('Cashier and VoucherKernel', () => {
         utils = await UtilsBuilder.create()
           .ETHETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
@@ -4886,7 +4926,8 @@ describe('Cashier and VoucherKernel', () => {
           utils = await UtilsBuilder.create()
             .ETHETH()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter
@@ -4948,7 +4989,8 @@ describe('Cashier and VoucherKernel', () => {
         utils = await UtilsBuilder.create()
           .ETHETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
@@ -4991,14 +5033,14 @@ describe('Cashier and VoucherKernel', () => {
 
         // balances before
         const user1BalanceBeforeTransfer = (
-          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          await contractVoucherSets.functions[fnSignatures.balanceOf1155](
             users.other1.address,
             tokenSupplyKey
           )
         )[0];
 
         const user2BalanceBeforeTransfer = (
-          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          await contractVoucherSets.functions[fnSignatures.balanceOf1155](
             users.other2.address,
             tokenSupplyKey
           )
@@ -5027,27 +5069,27 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          ERC1155ERC721_Factory,
+          VoucherSets_Factory,
           eventNames.TRANSFER_SINGLE,
           (ev) => {
-            assert.isTrue(ev._operator === users.other1.address);
-            assert.isTrue(ev._from === users.other1.address);
-            assert.isTrue(ev._to === users.other2.address);
-            assert.isTrue(ev._id.eq(tokenSupplyKey));
-            assert.isTrue(ev._value.eq(constants.QTY_10));
+            assert.isTrue(ev.operator === users.other1.address);
+            assert.isTrue(ev.from === users.other1.address);
+            assert.isTrue(ev.to === users.other2.address);
+            assert.isTrue(ev.id.eq(tokenSupplyKey));
+            assert.isTrue(ev.value.eq(constants.QTY_10));
           }
         );
 
         // balances after
         const user1BalanceAfterTransfer = (
-          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          await contractVoucherSets.functions[fnSignatures.balanceOf1155](
             users.other1.address,
             tokenSupplyKey
           )
         )[0];
 
         const user2BalanceAfterTransfer = (
-          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          await contractVoucherSets.functions[fnSignatures.balanceOf1155](
             users.other2.address,
             tokenSupplyKey
           )
@@ -5105,7 +5147,7 @@ describe('Cashier and VoucherKernel', () => {
         );
 
         const balanceBeforeTransfer = (
-          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          await contractVoucherSets.functions[fnSignatures.balanceOf1155](
             users.other1.address,
             tokenSupplyKey
           )
@@ -5120,7 +5162,7 @@ describe('Cashier and VoucherKernel', () => {
         );
 
         const balanceAfterTransfer = (
-          await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+          await contractVoucherSets.functions[fnSignatures.balanceOf1155](
             users.other1.address,
             tokenSupplyKey
           )
@@ -5136,13 +5178,13 @@ describe('Cashier and VoucherKernel', () => {
 
         eventUtils.assertEventEmitted(
           txReceipt,
-          ERC1155ERC721_Factory,
+          VoucherSets_Factory,
           eventNames.TRANSFER_SINGLE,
           (ev) => {
-            assert.equal(ev._from, users.other1.address);
-            assert.equal(ev._to, users.other1.address);
-            assert.equal(ev._id.toString(), tokenSupplyKey);
-            assert.equal(ev._value.toString(), constants.QTY_10);
+            assert.equal(ev.from, users.other1.address);
+            assert.equal(ev.to, users.other1.address);
+            assert.equal(ev.id.toString(), tokenSupplyKey);
+            assert.equal(ev.value.toString(), constants.QTY_10);
           }
         );
 
@@ -5233,13 +5275,13 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           const user1BalanceBeforeTransfer =
-            await contractERC1155ERC721.balanceOfBatch(
+            await contractVoucherSets.balanceOfBatch(
               [users.other1.address, users.other1.address],
               tokenSupplyBatch
             );
 
           const user2BalanceBeforeTransfer =
-            await contractERC1155ERC721.balanceOfBatch(
+            await contractVoucherSets.balanceOfBatch(
               [users.other2.address, users.other2.address],
               tokenSupplyBatch
             );
@@ -5267,17 +5309,17 @@ describe('Cashier and VoucherKernel', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            ERC1155ERC721_Factory,
+            VoucherSets_Factory,
             eventNames.TRANSFER_BATCH,
             (ev) => {
-              assert.equal(ev._from, users.other1.address);
-              assert.equal(ev._to, users.other2.address);
+              assert.equal(ev.from, users.other1.address);
+              assert.equal(ev.to, users.other2.address);
               assert.equal(
-                JSON.stringify(ev._ids),
+                JSON.stringify(ev.ids),
                 JSON.stringify(tokenSupplyBatch)
               );
               assert.equal(
-                JSON.stringify(ev._values),
+                JSON.stringify(ev[ev.length - 1]), //for some reason, "values" is not available in the event objec by that name
                 JSON.stringify(batchQuantities)
               );
             }
@@ -5285,13 +5327,13 @@ describe('Cashier and VoucherKernel', () => {
 
           // balances after
           const user1BalanceAfterTransfer =
-            await contractERC1155ERC721.balanceOfBatch(
+            await contractVoucherSets.balanceOfBatch(
               [users.other1.address, users.other1.address],
               tokenSupplyBatch
             );
 
           const user2BalanceAfterTransfer =
-            await contractERC1155ERC721.balanceOfBatch(
+            await contractVoucherSets.balanceOfBatch(
               [users.other2.address, users.other2.address],
               tokenSupplyBatch
             );
@@ -5353,7 +5395,7 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           const balanceBeforeTransfer =
-            await contractERC1155ERC721.balanceOfBatch(
+            await contractVoucherSets.balanceOfBatch(
               [users.other1.address, users.other1.address],
               tokenSupplyBatch
             );
@@ -5366,11 +5408,10 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.signer
           );
 
-          const balanceAfterTransfer =
-            await contractERC1155ERC721.balanceOfBatch(
-              [users.other1.address, users.other1.address],
-              tokenSupplyBatch
-            );
+          const balanceAfterTransfer = await contractVoucherSets.balanceOfBatch(
+            [users.other1.address, users.other1.address],
+            tokenSupplyBatch
+          );
 
           assert.equal(
             JSON.stringify(balanceBeforeTransfer),
@@ -5382,17 +5423,17 @@ describe('Cashier and VoucherKernel', () => {
 
           eventUtils.assertEventEmitted(
             txReceipt,
-            ERC1155ERC721_Factory,
+            VoucherSets_Factory,
             eventNames.TRANSFER_BATCH,
             (ev) => {
-              assert.equal(ev._from, users.other1.address);
-              assert.equal(ev._to, users.other1.address);
+              assert.equal(ev.from, users.other1.address);
+              assert.equal(ev.to, users.other1.address);
               assert.equal(
-                JSON.stringify(ev._ids),
+                JSON.stringify(ev.ids),
                 JSON.stringify(tokenSupplyBatch)
               );
               assert.equal(
-                JSON.stringify(ev._values),
+                JSON.stringify(ev[ev.length - 1]), //for some reason, "values" is not available in the event objec by that name
                 JSON.stringify(batchQuantities)
               );
             }
@@ -5449,7 +5490,8 @@ describe('Cashier and VoucherKernel', () => {
         utils = await UtilsBuilder.create()
           .ETHETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
@@ -5742,7 +5784,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .ETHTKN()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -5808,14 +5851,14 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           const user1BalanceBeforeTransfer = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.other1.address,
               tokenSupplyKey
             )
           )[0];
 
           const user2BalanceBeforeTransfer = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.other2.address,
               tokenSupplyKey
             )
@@ -5853,14 +5896,14 @@ describe('Cashier and VoucherKernel', () => {
             );
 
           const user1BalanceAfterTransfer = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.other1.address,
               tokenSupplyKey
             )
           )[0];
 
           const user2BalanceAfterTransfer = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.other2.address,
               tokenSupplyKey
             )
@@ -6106,7 +6149,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .TKNTKN()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -6169,14 +6213,14 @@ describe('Cashier and VoucherKernel', () => {
             );
 
           const user1BalanceBeforeTransfer = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.other1.address,
               tokenSupplyKey
             )
           )[0];
 
           const user2BalanceBeforeTransfer = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.other2.address,
               tokenSupplyKey
             )
@@ -6232,14 +6276,14 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           const user1BalanceAfterTransfer = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.other1.address,
               tokenSupplyKey
             )
           )[0];
 
           const user2BalanceAfterTransfer = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.other2.address,
               tokenSupplyKey
             )
@@ -6486,7 +6530,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .TKNETH()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -6537,14 +6582,14 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           const user1BalanceBeforeTransfer = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.other1.address,
               tokenSupplyKey
             )
           )[0];
 
           const user2BalanceBeforeTransfer = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.other2.address,
               tokenSupplyKey
             )
@@ -6585,14 +6630,14 @@ describe('Cashier and VoucherKernel', () => {
           );
 
           const user1BalanceAfterTransfer = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.other1.address,
               tokenSupplyKey
             )
           )[0];
 
           const user2BalanceAfterTransfer = (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf1155](
+            await contractVoucherSets.functions[fnSignatures.balanceOf1155](
               users.other2.address,
               tokenSupplyKey
             )
@@ -6852,7 +6897,8 @@ describe('Cashier and VoucherKernel', () => {
         utils = await UtilsBuilder.create()
           .ETHETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
@@ -6899,7 +6945,7 @@ describe('Cashier and VoucherKernel', () => {
 
         expect(
           (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf721](
+            await contractVouchers.functions[fnSignatures.balanceOf721](
               users.other1.address
             )
           )[0]
@@ -6907,7 +6953,7 @@ describe('Cashier and VoucherKernel', () => {
 
         expect(
           (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf721](
+            await contractVouchers.functions[fnSignatures.balanceOf721](
               users.other2.address
             )
           )[0]
@@ -6921,7 +6967,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.signer
           )
         )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER)
+          .to.emit(contractVouchers, eventNames.TRANSFER)
           .withArgs(users.other1.address, users.other2.address, voucherID);
 
         // balances after
@@ -6941,21 +6987,15 @@ describe('Cashier and VoucherKernel', () => {
           'New owner balance from escrow does not match'
         );
 
-        expect(
-          (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf721](
-              users.other1.address
-            )
-          )[0]
-        ).to.equal(0, 'User1 after balance mismatch');
+        expect(await contractVouchers.balanceOf(users.other1.address)).to.equal(
+          0,
+          'User1 after balance mismatch'
+        );
 
-        expect(
-          (
-            await contractERC1155ERC721.functions[fnSignatures.balanceOf721](
-              users.other2.address
-            )
-          )[0]
-        ).to.equal(1, 'User2 after balance mismatch');
+        expect(await contractVouchers.balanceOf(users.other2.address)).to.equal(
+          1,
+          'User2 after balance mismatch'
+        );
       });
 
       it('Should transfer voucher to self and balance should be the same', async () => {
@@ -6972,8 +7012,7 @@ describe('Cashier and VoucherKernel', () => {
           'Old owner balance from escrow does not match'
         );
 
-        const balanceOf =
-          contractERC1155ERC721.functions[fnSignatures.balanceOf721];
+        const balanceOf = contractVouchers.functions[fnSignatures.balanceOf721];
 
         const balanceBeforeTransfer = (
           await balanceOf(users.other1.address)
@@ -6987,7 +7026,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other1.signer
           )
         )
-          .to.emit(contractERC1155ERC721, eventNames.TRANSFER)
+          .to.emit(contractVouchers, eventNames.TRANSFER)
           .withArgs(users.other1.address, users.other1.address, voucherID);
 
         // balances after
@@ -7017,7 +7056,8 @@ describe('Cashier and VoucherKernel', () => {
         utils = await UtilsBuilder.create()
           .ETHETH()
           .buildAsync(
-            contractERC1155ERC721,
+            contractVoucherSets,
+            contractVouchers,
             contractVoucherKernel,
             contractCashier,
             contractBosonRouter
@@ -7343,7 +7383,7 @@ describe('Cashier and VoucherKernel', () => {
             voucherID,
             users.attacker.signer
           )
-        ).to.be.revertedWith(revertReasons.NOT_OWNER_NOR_APPROVED);
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_721);
       });
     });
 
@@ -7357,7 +7397,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .ETHTKN()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -7791,7 +7832,7 @@ describe('Cashier and VoucherKernel', () => {
               voucherID,
               users.attacker.signer
             )
-          ).to.be.revertedWith(revertReasons.NOT_OWNER_NOR_APPROVED);
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_721);
         });
       });
 
@@ -7804,7 +7845,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .TKNTKN()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -8235,7 +8277,7 @@ describe('Cashier and VoucherKernel', () => {
               voucherID,
               users.attacker.signer
             )
-          ).to.be.revertedWith(revertReasons.NOT_OWNER_NOR_APPROVED);
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_721);
         });
       });
 
@@ -8248,7 +8290,8 @@ describe('Cashier and VoucherKernel', () => {
             .ERC20withPermit()
             .TKNETH()
             .buildAsync(
-              contractERC1155ERC721,
+              contractVoucherSets,
+              contractVouchers,
               contractVoucherKernel,
               contractCashier,
               contractBosonRouter,
@@ -8675,7 +8718,7 @@ describe('Cashier and VoucherKernel', () => {
               voucherID,
               users.attacker.signer
             )
-          ).to.be.revertedWith(revertReasons.NOT_OWNER_NOR_APPROVED);
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_721);
         });
       });
     });

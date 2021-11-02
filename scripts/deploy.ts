@@ -14,7 +14,8 @@ const ethers = hre.ethers;
 class DeploymentExecutor {
   env;
   tokenRegistry;
-  erc1155erc721;
+  voucherSets;
+  vouchers;
   voucherKernel;
   cashier;
   br;
@@ -33,7 +34,8 @@ class DeploymentExecutor {
     this.env;
 
     this.tokenRegistry;
-    this.erc1155erc721;
+    this.voucherSets;
+    this.vouchers;
     this.voucherKernel;
     this.cashier;
     this.br;
@@ -54,40 +56,65 @@ class DeploymentExecutor {
 
     console.log('$ Setting initial values ...');
 
-    tx = await this.erc1155erc721.setApprovalForAll(
+    tx = await this.voucherSets.setApprovalForAll(
       this.voucherKernel.address,
       'true'
     );
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
     console.log(
-      '\n$ ERC1155ERC721: ',
+      '\n$ VoucherSets: ',
       event.event,
       'approved VoucherKernel:',
       event.args._approved
     );
 
-    tx = await this.erc1155erc721.setVoucherKernelAddress(
+    tx = await this.voucherSets.setVoucherKernelAddress(
       this.voucherKernel.address
     );
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
     console.log(
-      '$ ERC1155ERC721: ',
+      '$ VoucherSets: ',
       event.event,
       'at:',
       event.args._newVoucherKernel
     );
 
-    tx = await this.erc1155erc721.setCashierAddress(this.cashier.address);
+    tx = await this.voucherSets.setCashierAddress(this.cashier.address);
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log('$ VoucherSets: ', event.event, 'at:', event.args._newCashier);
+
+    tx = await this.vouchers.setApprovalForAll(
+      this.voucherKernel.address,
+      'true'
+    );
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
     console.log(
-      '$ ERC1155ERC721: ',
+      '\n$ Vouchers: ',
+      event.event,
+      'approved VoucherKernel:',
+      event.args._approved
+    );
+
+    tx = await this.vouchers.setVoucherKernelAddress(
+      this.voucherKernel.address
+    );
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log(
+      '$ Vouchers: ',
       event.event,
       'at:',
-      event.args._newCashier
+      event.args._newVoucherKernel
     );
+
+    tx = await this.vouchers.setCashierAddress(this.cashier.address);
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log('$ Vouchers: ', event.event, 'at:', event.args._newCashier);
 
     tx = await this.voucherKernel.setBosonRouterAddress(this.br.address);
     txReceipt = await tx.wait();
@@ -109,7 +136,12 @@ class DeploymentExecutor {
     event = txReceipt.events[0];
     console.log('\n$ Cashier', event.event, 'at:', event.args._newBosonRouter);
 
-    tx = await this.cashier.setTokenContractAddress(this.erc1155erc721.address);
+    tx = await this.cashier.setVoucherSetTokenAddress(this.voucherSets.address);
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log('$ Cashier', event.event, 'at:', event.args._newTokenContract);
+
+    tx = await this.cashier.setVoucherTokenAddress(this.vouchers.address);
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
     console.log('$ Cashier', event.event, 'at:', event.args._newTokenContract);
@@ -168,15 +200,6 @@ class DeploymentExecutor {
       event.args._approved
     );
 
-    await this.erc1155erc721._setMetadataBase(process.env.METADATA_BASE);
-    console.log('$ MetadataBase', 'set to :', process.env.METADATA_BASE);
-
-    await this.erc1155erc721._set1155Route(process.env.ERC1155_ROUTE);
-    console.log('$ ERC1155Route ', 'set to :', process.env.ERC1155_ROUTE);
-
-    await this.erc1155erc721._set721Route(process.env.ERC721_ROUTE);
-    console.log('$ ERC721Route ', 'set to :', process.env.ERC721_ROUTE);
-
     console.log(
       '$ ERC1155NonTransferable URI ',
       'set to :',
@@ -187,7 +210,8 @@ class DeploymentExecutor {
   async deployContracts() {
     const [, ccTokenDeployer] = await ethers.getSigners();
 
-    const ERC1155ERC721 = await ethers.getContractFactory('ERC1155ERC721');
+    const VoucherSets = await ethers.getContractFactory('VoucherSets');
+    const Vouchers = await ethers.getContractFactory('Vouchers');
     const VoucherKernel = await ethers.getContractFactory('VoucherKernel');
     const Cashier = await ethers.getContractFactory('Cashier');
     const BosonRouter = await ethers.getContractFactory('BosonRouter');
@@ -203,8 +227,18 @@ class DeploymentExecutor {
       ERC1155NonTransferable.connect(ccTokenDeployer);
 
     this.tokenRegistry = await TokenRegistry.deploy();
-    this.erc1155erc721 = await ERC1155ERC721.deploy();
-    this.voucherKernel = await VoucherKernel.deploy(this.erc1155erc721.address);
+    this.voucherSets = await VoucherSets.deploy(
+      process.env.VOUCHERSETS_METADATA_URI
+    );
+    this.vouchers = await Vouchers.deploy(
+      process.env.VOUCHERS_METADATA_URI,
+      'Boson Smart Voucher',
+      'BSV'
+    );
+    this.voucherKernel = await VoucherKernel.deploy(
+      this.voucherSets.address,
+      this.vouchers.address
+    );
     this.cashier = await Cashier.deploy(this.voucherKernel.address);
     this.br = await BosonRouter.deploy(
       this.voucherKernel.address,
@@ -221,7 +255,8 @@ class DeploymentExecutor {
       );
 
     await this.tokenRegistry.deployed();
-    await this.erc1155erc721.deployed();
+    await this.voucherSets.deployed();
+    await this.vouchers.deployed();
     await this.voucherKernel.deployed();
     await this.cashier.deployed();
     await this.br.deployed();
@@ -237,9 +272,14 @@ class DeploymentExecutor {
       this.tokenRegistry.deployTransaction.from
     );
     console.log(
-      'ERC1155ERC721 Contract Address  %s from deployer address %s: ',
-      this.erc1155erc721.address,
-      this.erc1155erc721.deployTransaction.from
+      'VoucherSets Contract Address  %s from deployer address %s: ',
+      this.voucherSets.address,
+      this.voucherSets.deployTransaction.from
+    );
+    console.log(
+      'Vouchers Contract Address  %s from deployer address %s: ',
+      this.vouchers.address,
+      this.vouchers.deployTransaction.from
     );
     console.log(
       'VoucherKernel Contract Address  %s from deployer address %s: ',
@@ -284,7 +324,8 @@ class DeploymentExecutor {
         {
           network: hre.network.name,
           tokenRegistry: this.tokenRegistry.address,
-          erc1155erc721: this.erc1155erc721.address,
+          voucherSets: this.voucherSets.address,
+          vouchers: this.vouchers.address,
           voucherKernel: this.voucherKernel.address,
           cashier: this.cashier.address,
           br: this.br.address,
