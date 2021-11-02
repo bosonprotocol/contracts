@@ -4,8 +4,8 @@ const {keccak256, RLP} = ethers.utils;
 const BN = ethers.BigNumber.from;
 
 export async function calculateDeploymentAddresses(
-  deployer : string,
-  contractsToDeploy : string[]
+  deployer: string,
+  contractsToDeploy: string[]
 ): Promise<any> {
   const addresses = {};
   const startingNonce = await ethers.provider.getTransactionCount(deployer);
