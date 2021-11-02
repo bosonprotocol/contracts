@@ -138,6 +138,12 @@ interface ICashier {
     function setBosonRouterAddress(address _bosonRouterAddress) external;
 
     /**
+     * @notice Set the address of the VoucherKernel contract
+     * @param _voucherKernelAddress   The address of the VoucherKernel contract
+     */
+    function setVoucherKernelAddress(address _voucherKernelAddress) external;
+
+    /**
      * @notice Set the address of the Vouchers token contract, an ERC721 contract
      * @param _voucherTokenAddress   The address of the Vouchers token contract
      */

@@ -1136,6 +1136,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      */
     function setVoucherKernelAddress(address _voucherKernelAddress)
         external
+        override
         onlyOwner
         notZeroAddress(_voucherKernelAddress)
     {

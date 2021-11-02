@@ -834,6 +834,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
      */
     function setBosonRouterAddress(address _bosonRouterAddress)
         external
+        override
         onlyOwner
         notZeroAddress(_bosonRouterAddress)
     {
