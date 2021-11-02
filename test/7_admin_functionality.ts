@@ -2,8 +2,9 @@ import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
 
 import {assert, expect} from 'chai';
-import constants from '../testHelpers/constants';
 
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress'
+import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
 
@@ -61,27 +62,45 @@ describe('Admin functionality', async () => {
     constants.PROMISE_VALID_FROM = timestamp;
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
+    const contractAddresses = await calculateDeploymentAddresses(users.deployer.address, [
+      'TokenRegistry',
+      'VoucherSets',
+      'Vouchers',
+      'VoucherKernel',
+      'Cashier',
+      'BosonRouter'
+    ]);
+
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
     contractVoucherSets = (await VoucherSets_Factory.deploy(
-      'https://token-cdn-domain/{id}.json'
+      'https://token-cdn-domain/{id}.json',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
     )) as Contract & VoucherSets;
     contractVouchers = (await Vouchers_Factory.deploy(
       'https://token-cdn-domain/orders/metadata/',
       'Boson Smart Voucher',
-      'BSV'
+      'BSV',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
     )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
-      contractVoucherSets.address,
-      contractVouchers.address
+      contractAddresses.BosonRouter,
+      contractAddresses.Cashier,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & VoucherKernel;
     contractCashier = (await Cashier_Factory.deploy(
-      contractVoucherKernel.address
+      contractAddresses.BosonRouter,
+      contractAddresses.VoucherKernel,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & Cashier;
     contractBosonRouter = (await BosonRouter_Factory.deploy(
-      contractVoucherKernel.address,
-      contractTokenRegistry.address,
-      contractCashier.address
+      contractAddresses.VoucherKernel,
+      contractAddresses.TokenRegistry,
+      contractAddresses.Cashier
     )) as Contract & BosonRouter;
 
     await contractTokenRegistry.deployed();
@@ -93,23 +112,60 @@ describe('Admin functionality', async () => {
   }
 
   async function deployContracts2() {
-    contractTokenRegistry_2 =
-      (await TokenRegistry_Factory.deploy()) as Contract & TokenRegistry;
+    const contractAddresses = await calculateDeploymentAddresses(users.deployer.address, [
+      'TokenRegistry',
+      'VoucherSets',
+      'Vouchers',
+      'VoucherKernel',
+      'Cashier',
+      'BosonRouter'
+    ]);
+
+    contractTokenRegistry_2 = (await TokenRegistry_Factory.deploy()) as Contract &
+      TokenRegistry;
     contractVoucherSets_2 = (await VoucherSets_Factory.deploy(
-      'https://token-cdn-domain/{id}.json'
+      'https://token-cdn-domain/{id}.json',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
     )) as Contract & VoucherSets;
     contractVouchers_2 = (await Vouchers_Factory.deploy(
       'https://token-cdn-domain/orders/metadata/',
       'Boson Smart Voucher',
-      'BSV'
+      'BSV',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
     )) as Contract & Vouchers;
     contractVoucherKernel_2 = (await VoucherKernel_Factory.deploy(
-      contractVoucherSets_2.address,
-      contractVouchers_2.address
+      contractAddresses.BosonRouter,
+      contractAddresses.Cashier,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & VoucherKernel;
     contractCashier_2 = (await Cashier_Factory.deploy(
-      contractVoucherKernel_2.address
+      contractAddresses.BosonRouter,
+      contractAddresses.VoucherKernel,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & Cashier;
+
+
+    // contractTokenRegistry_2 =
+    //   (await TokenRegistry_Factory.deploy()) as Contract & TokenRegistry;
+    // contractVoucherSets_2 = (await VoucherSets_Factory.deploy(
+    //   'https://token-cdn-domain/{id}.json'
+    // )) as Contract & VoucherSets;
+    // contractVouchers_2 = (await Vouchers_Factory.deploy(
+    //   'https://token-cdn-domain/orders/metadata/',
+    //   'Boson Smart Voucher',
+    //   'BSV'
+    // )) as Contract & Vouchers;
+    // contractVoucherKernel_2 = (await VoucherKernel_Factory.deploy(
+    //   contractVoucherSets_2.address,
+    //   contractVouchers_2.address
+    // )) as Contract & VoucherKernel;
+    // contractCashier_2 = (await Cashier_Factory.deploy(
+    //   contractVoucherKernel_2.address
+    // )) as Contract & Cashier;
 
     await contractTokenRegistry_2.deployed();
     await contractVoucherSets_2.deployed();
@@ -247,9 +303,43 @@ describe('Admin functionality', async () => {
       ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
 
-    it('[NEGATIVE][setBosonRouterAddress] Should revert if ZERO address is provided at deployment', async () => {
+    it('[NEGATIVE][deploy Cashier] Should revert if ZERO address is provided at deployment for BosonRouter address', async () => {
       await expect(
-        Cashier_Factory.deploy(constants.ZERO_ADDRESS)
+        Cashier_Factory.deploy(
+          constants.ZERO_ADDRESS,
+          contractVoucherKernel.address,
+          contractVoucherSets.address,
+          contractVouchers.address)
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+    });
+
+    it('[NEGATIVE][deploy Cashier] Should revert if ZERO address is provided at deployment for VoucherKernel address', async () => {
+      await expect(
+        Cashier_Factory.deploy(
+          contractBosonRouter.address,
+          constants.ZERO_ADDRESS,
+          contractVoucherSets.address,
+          contractVouchers.address)
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+    });
+
+    it('[NEGATIVE][deploy Cashier] Should revert if ZERO address is provided at deployment for VoucherSets address', async () => {
+      await expect(
+        Cashier_Factory.deploy(
+          contractBosonRouter.address,
+          contractVoucherKernel.address,
+          constants.ZERO_ADDRESS,
+          contractVouchers.address)
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+    });
+
+    it('[NEGATIVE][deploy Cashier] Should revert if ZERO address is provided at deployment for Vouchers address', async () => {
+      await expect(
+        Cashier_Factory.deploy(
+          contractBosonRouter.address,
+          contractVoucherKernel.address,
+          contractVoucherSets.address,
+          constants.ZERO_ADDRESS)
       ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
 
@@ -581,18 +671,44 @@ describe('Admin functionality', async () => {
       ).to.be.revertedWith(revertReasons.UNSPECIFIED_ADDRESS);
     });
 
-    it('[NEGATIVE][setBosonRouterAddress] Should revert if ZERO address is provided at deployment for voucherSets', async () => {
+    it('[NEGATIVE][deploy VoucherKernel] Should revert if ZERO address is provided at deployment for BosonRouter', async () => {
       await expect(
         VoucherKernel_Factory.deploy(
+          constants.ZERO_ADDRESS,
+          contractCashier.address,
+          contractVoucherSets.address,
+          contractVouchers.address
+        )
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+    });
+
+    it('[NEGATIVE][deploy VoucherKernel] Should revert if ZERO address is provided at deployment for Cashier', async () => {
+      await expect(
+        VoucherKernel_Factory.deploy(
+          contractBosonRouter.address,
+          constants.ZERO_ADDRESS,
+          contractVoucherSets.address,
+          contractVouchers.address
+        )
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+    });
+
+    it('[NEGATIVE][deploy VoucherKernel] Should revert if ZERO address is provided at deployment for VoucherSets', async () => {
+      await expect(
+        VoucherKernel_Factory.deploy(
+          contractBosonRouter.address,
+          contractCashier.address,
           constants.ZERO_ADDRESS,
           contractVouchers.address
         )
       ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
 
-    it('[NEGATIVE][setBosonRouterAddress] Should revert if ZERO address is provided at deployment for vouchers', async () => {
+    it('[NEGATIVE][deploy VoucherKernel] Should revert if ZERO address is provided at deployment for Vouchers', async () => {
       await expect(
         VoucherKernel_Factory.deploy(
+          contractBosonRouter.address,
+          contractCashier.address,
           contractVoucherSets.address,
           constants.ZERO_ADDRESS
         )

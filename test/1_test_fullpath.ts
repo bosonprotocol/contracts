@@ -4,6 +4,7 @@ import {Signer, ContractFactory, Contract, ContractReceipt} from 'ethers';
 // later consider using
 // https://github.com/OpenZeppelin/openzeppelin-test-helpers
 
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress'
 import constants from '../testHelpers/constants';
 import {advanceTimeSeconds} from '../testHelpers/timemachine';
 import Users from '../testHelpers/users';
@@ -94,28 +95,45 @@ describe('Voucher tests', () => {
 
   async function deployContracts() {
     const sixtySeconds = 60;
+    const contractAddresses = await calculateDeploymentAddresses(users.deployer.address, [
+      'TokenRegistry',
+      'VoucherSets',
+      'Vouchers',
+      'VoucherKernel',
+      'Cashier',
+      'BosonRouter'
+    ]);
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
     contractVoucherSets = (await VoucherSets_Factory.deploy(
-      'https://token-cdn-domain/{id}.json'
+      'https://token-cdn-domain/{id}.json',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
     )) as Contract & VoucherSets;
     contractVouchers = (await Vouchers_Factory.deploy(
       'https://token-cdn-domain/orders/metadata/',
       'Boson Smart Voucher',
-      'BSV'
+      'BSV',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
     )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
-      contractVoucherSets.address,
-      contractVouchers.address
+      contractAddresses.BosonRouter,
+      contractAddresses.Cashier,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & VoucherKernel;
     contractCashier = (await Cashier_Factory.deploy(
-      contractVoucherKernel.address
+      contractAddresses.BosonRouter,
+      contractAddresses.VoucherKernel,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & Cashier;
     contractBosonRouter = (await BosonRouter_Factory.deploy(
-      contractVoucherKernel.address,
-      contractTokenRegistry.address,
-      contractCashier.address
+      contractAddresses.VoucherKernel,
+      contractAddresses.TokenRegistry,
+      contractAddresses.Cashier
     )) as Contract & BosonRouter;
 
     contractBSNTokenPrice = (await MockERC20Permit_Factory.deploy(
@@ -139,27 +157,7 @@ describe('Voucher tests', () => {
       contractVoucherKernel.address,
       true
     );
-    await contractVoucherSets.setVoucherKernelAddress(
-      contractVoucherKernel.address
-    );
-    await contractVouchers.setVoucherKernelAddress(
-      contractVoucherKernel.address
-    );
-
-    await contractVoucherSets.setCashierAddress(contractCashier.address);
-    await contractVouchers.setCashierAddress(contractCashier.address);
-
-    await contractVoucherKernel.setBosonRouterAddress(
-      contractBosonRouter.address
-    );
-    await contractVoucherKernel.setCashierAddress(contractCashier.address);
-
-    await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-    await contractCashier.setVoucherSetTokenAddress(
-      contractVoucherSets.address
-    );
-    await contractCashier.setVoucherTokenAddress(contractVouchers.address);
-
+    
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
   }
@@ -1549,28 +1547,47 @@ describe('Voucher tests - UNHAPPY PATH', () => {
   });
 
   async function deployContracts() {
+    const contractAddresses = await calculateDeploymentAddresses(users.deployer.address, [
+      'TokenRegistry',
+      'VoucherSets',
+      'Vouchers',
+      'VoucherKernel',
+      'Cashier',
+      'BosonRouter'
+    ]);
+
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
     contractVoucherSets = (await VoucherSets_Factory.deploy(
-      'https://token-cdn-domain/{id}.json'
+      'https://token-cdn-domain/{id}.json',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
     )) as Contract & VoucherSets;
     contractVouchers = (await Vouchers_Factory.deploy(
       'https://token-cdn-domain/orders/metadata/',
       'Boson Smart Voucher',
-      'BSV'
+      'BSV',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
     )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
-      contractVoucherSets.address,
-      contractVouchers.address
+      contractAddresses.BosonRouter,
+      contractAddresses.Cashier,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & VoucherKernel;
     contractCashier = (await Cashier_Factory.deploy(
-      contractVoucherKernel.address
+      contractAddresses.BosonRouter,
+      contractAddresses.VoucherKernel,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & Cashier;
     contractBosonRouter = (await BosonRouter_Factory.deploy(
-      contractVoucherKernel.address,
-      contractTokenRegistry.address,
-      contractCashier.address
+      contractAddresses.VoucherKernel,
+      contractAddresses.TokenRegistry,
+      contractAddresses.Cashier
     )) as Contract & BosonRouter;
+
 
     await contractTokenRegistry.deployed();
     await contractVoucherSets.deployed();
@@ -1587,26 +1604,6 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       contractVoucherKernel.address,
       true
     );
-    await contractVoucherSets.setVoucherKernelAddress(
-      contractVoucherKernel.address
-    );
-    await contractVouchers.setVoucherKernelAddress(
-      contractVoucherKernel.address
-    );
-
-    await contractVoucherSets.setCashierAddress(contractCashier.address);
-    await contractVouchers.setCashierAddress(contractCashier.address);
-
-    await contractVoucherKernel.setBosonRouterAddress(
-      contractBosonRouter.address
-    );
-    await contractVoucherKernel.setCashierAddress(contractCashier.address);
-
-    await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-    await contractCashier.setVoucherSetTokenAddress(
-      contractVoucherSets.address
-    );
-    await contractCashier.setVoucherTokenAddress(contractVouchers.address);
   }
 
   beforeEach('setup promise dates based on the block timestamp', async () => {

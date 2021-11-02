@@ -3,13 +3,13 @@ import {ethers} from 'hardhat';
 const {keccak256, RLP} = ethers.utils;
 const BN = ethers.BigNumber.from;
 
-export async function calculateDeploymentAddresses(deployer, n) {
-    let addresses = [];
+export async function calculateDeploymentAddresses(deployer, contractsToDeploy) : Promise<any> {
+    let addresses = {};
     let startingNonce = await ethers.provider.getTransactionCount(
         deployer
       );
 
-    for (let i = 0; i < n; i++) {
+    for (let i = 0; i < contractsToDeploy.length; i++) {
         const nonce = BN(startingNonce).add(i); 
         const nonceHex = nonce.eq(0) ? "0x" : nonce.toHexString()
 
@@ -20,7 +20,7 @@ export async function calculateDeploymentAddresses(deployer, n) {
 
         const contract_address = "0x" + contract_address_long.substring(26); //Trim the first 24 characters.
         
-        addresses.push(contract_address)
+        addresses[contractsToDeploy[i]]=contract_address;
         }
     return addresses;
   }
