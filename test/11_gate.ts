@@ -3,7 +3,7 @@ import {Signer, ContractFactory, Contract} from 'ethers';
 
 import {expect} from 'chai';
 
-import {calculateDeploymentAddresses} from '../testHelpers/contractAddress'
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
 import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
@@ -82,8 +82,10 @@ describe('Gate contract', async () => {
     const routerAddress =
       (contractBosonRouter && contractBosonRouter.address) ||
       users.other1.address; // if router is not initalized use mock address
-    contractGate = (await Gate_Factory.deploy(routerAddress, contractERC1155NonTransferable.address)) as Contract &
-      Gate;
+    contractGate = (await Gate_Factory.deploy(
+      routerAddress,
+      contractERC1155NonTransferable.address
+    )) as Contract & Gate;
 
     await contractERC1155NonTransferable.deployed();
     await contractGate.deployed();
@@ -92,14 +94,17 @@ describe('Gate contract', async () => {
   async function deployBosonRouterContracts() {
     const sixtySeconds = 60;
 
-    const contractAddresses = await calculateDeploymentAddresses(users.deployer.address, [
-      'TokenRegistry',
-      'VoucherSets',
-      'Vouchers',
-      'VoucherKernel',
-      'Cashier',
-      'BosonRouter'
-    ]);
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+      ]
+    );
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
@@ -156,7 +161,7 @@ describe('Gate contract', async () => {
       contractVoucherKernel.address,
       true
     );
-   
+
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
 
@@ -469,15 +474,17 @@ describe('Gate contract', async () => {
         await expect(
           Gate_Factory.deploy(
             constants.ZERO_ADDRESS,
-            contractERC1155NonTransferable.address)
+            contractERC1155NonTransferable.address
+          )
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
       });
-  
+
       it('[NEGATIVE][deploy Gate] Should revert if ZERO address is provided at deployment for ERC1155NonTransferable address', async () => {
         await expect(
           Gate_Factory.deploy(
             contractBosonRouter.address,
-            constants.ZERO_ADDRESS)
+            constants.ZERO_ADDRESS
+          )
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
       });
       it('[NEGATIVE][setBosonRouterAddress] Should revert if supplied wrong boson router address', async () => {

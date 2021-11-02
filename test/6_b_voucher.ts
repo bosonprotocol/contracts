@@ -1,7 +1,7 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
 import {assert, expect} from 'chai';
-import {calculateDeploymentAddresses} from '../testHelpers/contractAddress'
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
 import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
@@ -80,14 +80,17 @@ describe('Vouchers', () => {
   async function deployContracts() {
     const sixtySeconds = 60;
 
-    const contractAddresses = await calculateDeploymentAddresses(users.deployer.address, [
-      'TokenRegistry',
-      'VoucherSets',
-      'Vouchers',
-      'VoucherKernel',
-      'Cashier',
-      'BosonRouter'
-    ]);
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+      ]
+    );
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
@@ -249,7 +252,8 @@ describe('Vouchers', () => {
             'Boson Smart Voucher',
             'BSV',
             constants.ZERO_ADDRESS,
-            contractVoucherKernel.address)
+            contractVoucherKernel.address
+          )
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
       });
 
@@ -260,7 +264,8 @@ describe('Vouchers', () => {
             'Boson Smart Voucher',
             'BSV',
             contractCashier.address,
-            constants.ZERO_ADDRESS)
+            constants.ZERO_ADDRESS
+          )
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
       });
 

@@ -2,7 +2,7 @@ import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
 import {assert, expect} from 'chai';
 import {ecsign} from 'ethereumjs-util';
-import {calculateDeploymentAddresses} from '../testHelpers/contractAddress'
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
 import constants from '../testHelpers/constants';
 import {advanceTimeSeconds} from '../testHelpers/timemachine';
 import Users from '../testHelpers/users';
@@ -98,14 +98,17 @@ describe('Cashier and VoucherKernel', () => {
 
   async function deployContracts() {
     const sixtySeconds = 60;
-    const contractAddresses = await calculateDeploymentAddresses(users.deployer.address, [
-      'TokenRegistry',
-      'VoucherSets',
-      'Vouchers',
-      'VoucherKernel',
-      'Cashier',
-      'BosonRouter'
-    ]);
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+      ]
+    );
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
@@ -170,7 +173,7 @@ describe('Cashier and VoucherKernel', () => {
       contractVoucherKernel.address,
       true
     );
-    
+
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
 

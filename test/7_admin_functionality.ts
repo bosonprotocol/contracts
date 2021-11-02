@@ -3,7 +3,7 @@ import {Signer, ContractFactory, Contract} from 'ethers';
 
 import {assert, expect} from 'chai';
 
-import {calculateDeploymentAddresses} from '../testHelpers/contractAddress'
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
 import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
@@ -62,14 +62,17 @@ describe('Admin functionality', async () => {
     constants.PROMISE_VALID_FROM = timestamp;
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
-    const contractAddresses = await calculateDeploymentAddresses(users.deployer.address, [
-      'TokenRegistry',
-      'VoucherSets',
-      'Vouchers',
-      'VoucherKernel',
-      'Cashier',
-      'BosonRouter'
-    ]);
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+      ]
+    );
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
@@ -112,17 +115,20 @@ describe('Admin functionality', async () => {
   }
 
   async function deployContracts2() {
-    const contractAddresses = await calculateDeploymentAddresses(users.deployer.address, [
-      'TokenRegistry',
-      'VoucherSets',
-      'Vouchers',
-      'VoucherKernel',
-      'Cashier',
-      'BosonRouter'
-    ]);
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+      ]
+    );
 
-    contractTokenRegistry_2 = (await TokenRegistry_Factory.deploy()) as Contract &
-      TokenRegistry;
+    contractTokenRegistry_2 =
+      (await TokenRegistry_Factory.deploy()) as Contract & TokenRegistry;
     contractVoucherSets_2 = (await VoucherSets_Factory.deploy(
       'https://token-cdn-domain/{id}.json',
       contractAddresses.Cashier,
@@ -147,7 +153,6 @@ describe('Admin functionality', async () => {
       contractAddresses.VoucherSets,
       contractAddresses.Vouchers
     )) as Contract & Cashier;
-
 
     // contractTokenRegistry_2 =
     //   (await TokenRegistry_Factory.deploy()) as Contract & TokenRegistry;
@@ -309,7 +314,8 @@ describe('Admin functionality', async () => {
           constants.ZERO_ADDRESS,
           contractVoucherKernel.address,
           contractVoucherSets.address,
-          contractVouchers.address)
+          contractVouchers.address
+        )
       ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
 
@@ -319,7 +325,8 @@ describe('Admin functionality', async () => {
           contractBosonRouter.address,
           constants.ZERO_ADDRESS,
           contractVoucherSets.address,
-          contractVouchers.address)
+          contractVouchers.address
+        )
       ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
 
@@ -329,7 +336,8 @@ describe('Admin functionality', async () => {
           contractBosonRouter.address,
           contractVoucherKernel.address,
           constants.ZERO_ADDRESS,
-          contractVouchers.address)
+          contractVouchers.address
+        )
       ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
 
@@ -339,7 +347,8 @@ describe('Admin functionality', async () => {
           contractBosonRouter.address,
           contractVoucherKernel.address,
           contractVoucherSets.address,
-          constants.ZERO_ADDRESS)
+          constants.ZERO_ADDRESS
+        )
       ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
 

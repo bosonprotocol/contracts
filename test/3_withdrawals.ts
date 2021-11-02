@@ -6,7 +6,7 @@ import IVK from '../artifacts/contracts/interfaces/IVoucherKernel.sol/IVoucherKe
 
 import {assert, expect} from 'chai';
 
-import {calculateDeploymentAddresses} from '../testHelpers/contractAddress'
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
 import constants from '../testHelpers/constants';
 import {advanceTimeSeconds} from '../testHelpers/timemachine';
 import Users from '../testHelpers/users';
@@ -75,14 +75,17 @@ describe('Cashier withdrawals ', () => {
 
   async function deployContracts() {
     const sixtySeconds = 60;
-    const contractAddresses = await calculateDeploymentAddresses(users.deployer.address, [
-      'TokenRegistry',
-      'VoucherSets',
-      'Vouchers',
-      'VoucherKernel',
-      'Cashier',
-      'BosonRouter'
-    ]);
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+      ]
+    );
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
@@ -143,7 +146,7 @@ describe('Cashier withdrawals ', () => {
       contractVoucherKernel.address,
       true
     );
-    
+
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
 

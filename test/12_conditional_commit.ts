@@ -2,7 +2,7 @@ import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract, BigNumber} from 'ethers';
 import {assert, expect} from 'chai';
 import {ecsign} from 'ethereumjs-util';
-import {calculateDeploymentAddresses} from '../testHelpers/contractAddress'
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
 import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
@@ -86,17 +86,20 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
   async function deployContracts() {
     const sixtySeconds = 60;
-    const contractAddresses = await calculateDeploymentAddresses(users.deployer.address, [
-      'TokenRegistry',
-      'VoucherSets',
-      'Vouchers',
-      'VoucherKernel',
-      'Cashier',
-      'BosonRouter',
-      'contractBSNTokenPrice',
-      'contractBSNTokenDeposit',
-      'contractERC1155NonTransferable'
-    ]);
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+        'BSNTokenPrice',
+        'BSNTokenDeposit',
+        'ERC1155NonTransferable',
+      ]
+    );
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
@@ -145,7 +148,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       )) as Contract & ERC1155NonTransferable;
     contractGate = (await Gate_Factory.deploy(
       contractAddresses.BosonRouter,
-      contractAddresses.contractERC1155NonTransferable 
+      contractAddresses.ERC1155NonTransferable
     )) as Contract & Gate;
 
     await contractTokenRegistry.deployed();
@@ -168,7 +171,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       contractVoucherKernel.address,
       true
     );
-   
+
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
 

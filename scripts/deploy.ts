@@ -4,7 +4,7 @@
 import hre from 'hardhat';
 import fs from 'fs';
 import {isValidEnv} from './env-validator';
-import {calculateDeploymentAddresses} from '../testHelpers/contractAddress'
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
 
 const ethers = hre.ethers;
 
@@ -134,21 +134,26 @@ class DeploymentExecutor {
 
   async deployContracts() {
     const [primaryDeployer, ccTokenDeployer] = await ethers.getSigners();
-    
-    let contractList = ['tokenRegistry',
-    'voucherSets',
-    'vouchers',
-    'voucherKernel',
-    'cashier',
-    'br',
-    'daiTokenWrapper'
-    ]
 
-    const contractAddresses = await calculateDeploymentAddresses(primaryDeployer.address, contractList);
+    const contractList = [
+      'tokenRegistry',
+      'voucherSets',
+      'vouchers',
+      'voucherKernel',
+      'cashier',
+      'br',
+      'daiTokenWrapper',
+    ];
 
-    const ccContractAddresses = await calculateDeploymentAddresses(ccTokenDeployer.address, [
-      'erc1155NonTransferable'
-    ]);
+    const contractAddresses = await calculateDeploymentAddresses(
+      primaryDeployer.address,
+      contractList
+    );
+
+    const ccContractAddresses = await calculateDeploymentAddresses(
+      ccTokenDeployer.address,
+      ['erc1155NonTransferable']
+    );
 
     const VoucherSets = await ethers.getContractFactory('VoucherSets');
     const Vouchers = await ethers.getContractFactory('Vouchers');
@@ -199,7 +204,8 @@ class DeploymentExecutor {
     this.daiTokenWrapper = await DAITokenWrapper.deploy(this.dai_token);
     this.gate = await Gate.deploy(
       contractAddresses.br,
-      ccContractAddresses.erc1155NonTransferable );
+      ccContractAddresses.erc1155NonTransferable
+    );
 
     //ERC1155NonTransferrable is a Conditional Commit token and should be deployed from a separate address
     this.erc1155NonTransferable =
@@ -217,15 +223,25 @@ class DeploymentExecutor {
     await this.gate.deployed();
     await this.erc1155NonTransferable.deployed();
 
-    // check that expected and actual addresses match 
+    // check that expected and actual addresses match
     for (const contract of contractList) {
-      if (this[contract].address.toLowerCase() !== contractAddresses[contract].toLowerCase()) {
-        console.log(`${contract} address mismatch. Expected ${contractAddresses[contract]}, actual ${this[contract].address}`)
+      if (
+        this[contract].address.toLowerCase() !==
+        contractAddresses[contract].toLowerCase()
+      ) {
+        console.log(
+          `${contract} address mismatch. Expected ${contractAddresses[contract]}, actual ${this[contract].address}`
+        );
       }
     }
 
-    if (this.erc1155NonTransferable.address.toLowerCase() !== ccContractAddresses.erc1155NonTransferable.toLowerCase()) {
-      console.log(`erc1155NonTransferable address mismatch. Expected ${ccContractAddresses.erc1155NonTransferable}, actual ${this.erc1155NonTransferable.address}`)
+    if (
+      this.erc1155NonTransferable.address.toLowerCase() !==
+      ccContractAddresses.erc1155NonTransferable.toLowerCase()
+    ) {
+      console.log(
+        `erc1155NonTransferable address mismatch. Expected ${ccContractAddresses.erc1155NonTransferable}, actual ${this.erc1155NonTransferable.address}`
+      );
     }
   }
 

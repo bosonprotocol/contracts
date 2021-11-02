@@ -4,7 +4,7 @@ import {Signer, ContractFactory, Contract, ContractReceipt} from 'ethers';
 // later consider using
 // https://github.com/OpenZeppelin/openzeppelin-test-helpers
 
-import {calculateDeploymentAddresses} from '../testHelpers/contractAddress'
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
 import constants from '../testHelpers/constants';
 import {advanceTimeSeconds} from '../testHelpers/timemachine';
 import Users from '../testHelpers/users';
@@ -41,11 +41,6 @@ let BosonRouter_Factory: ContractFactory;
 let TokenRegistry_Factory: ContractFactory;
 let MockBosonRouter_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
-
-let VoucherKernel_Factory2: ContractFactory;
-let Cashier_Factory2: ContractFactory;
-let BosonRouter_Factory2: ContractFactory;
-let TokenRegistry_Factory2: ContractFactory;
 
 const BN = ethers.BigNumber.from;
 
@@ -95,14 +90,17 @@ describe('Voucher tests', () => {
 
   async function deployContracts() {
     const sixtySeconds = 60;
-    const contractAddresses = await calculateDeploymentAddresses(users.deployer.address, [
-      'TokenRegistry',
-      'VoucherSets',
-      'Vouchers',
-      'VoucherKernel',
-      'Cashier',
-      'BosonRouter'
-    ]);
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+      ]
+    );
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
@@ -157,24 +155,27 @@ describe('Voucher tests', () => {
       contractVoucherKernel.address,
       true
     );
-    
+
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
   }
 
   async function deployContracts2() {
     const sixtySeconds = 60;
-    const contractAddresses = await calculateDeploymentAddresses(users.deployer.address, [
-      'TokenRegistry',
-      'VoucherSets',
-      'Vouchers',
-      'VoucherKernel',
-      'Cashier',
-      'BosonRouter'
-    ]);
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+      ]
+    );
 
-    contractTokenRegistry_2 = (await TokenRegistry_Factory.deploy()) as Contract &
-      TokenRegistry;
+    contractTokenRegistry_2 =
+      (await TokenRegistry_Factory.deploy()) as Contract & TokenRegistry;
     contractVoucherSets_2 = (await VoucherSets_Factory.deploy(
       'https://token-cdn-domain/{id}.json',
       contractAddresses.Cashier,
@@ -220,7 +221,7 @@ describe('Voucher tests', () => {
       contractVoucherKernel_2.address,
       true
     );
-   
+
     await contractVoucherKernel_2.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel_2.setCancelFaultPeriod(sixtySeconds);
   }
@@ -1535,14 +1536,17 @@ describe('Voucher tests - UNHAPPY PATH', () => {
   });
 
   async function deployContracts() {
-    const contractAddresses = await calculateDeploymentAddresses(users.deployer.address, [
-      'TokenRegistry',
-      'VoucherSets',
-      'Vouchers',
-      'VoucherKernel',
-      'Cashier',
-      'BosonRouter'
-    ]);
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+      ]
+    );
 
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
@@ -1575,7 +1579,6 @@ describe('Voucher tests - UNHAPPY PATH', () => {
       contractAddresses.TokenRegistry,
       contractAddresses.Cashier
     )) as Contract & BosonRouter;
-
 
     await contractTokenRegistry.deployed();
     await contractVoucherSets.deployed();
