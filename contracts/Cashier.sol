@@ -834,9 +834,8 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         override
         onlyOwner
         whenPaused
+        notZeroAddress(_bosonRouterAddress)
     {
-        require(_bosonRouterAddress != address(0), "UNSPECIFIED_ADDRESS");
-
         bosonRouterAddress = _bosonRouterAddress;
 
         emit LogBosonRouterSet(_bosonRouterAddress, msg.sender);
@@ -1138,6 +1137,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      */
     function setVoucherKernelAddress(address _voucherKernelAddress)
         external
+        override
         onlyOwner
         notZeroAddress(_voucherKernelAddress)
         whenPaused
