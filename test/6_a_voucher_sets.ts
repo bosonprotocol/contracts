@@ -244,6 +244,24 @@ describe('Voucher Sets', () => {
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
       });
 
+      it('[NEGATIVE][deploy Voucher Sets] Should revert if ZERO address is provided at deployment for Cashier address', async () => {
+        await expect(
+          VoucherSets_Factory.deploy(
+            'https://token-cdn-domain/{id}.json',
+            constants.ZERO_ADDRESS,
+            contractVoucherKernel.address)
+        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
+      });
+
+      it('[NEGATIVE][deploy Voucher Sets] Should revert if ZERO address is provided at deployment for Voucher Kernel address', async () => {
+        await expect(
+          VoucherSets_Factory.deploy(
+            'https://token-cdn-domain/{id}.json',
+            contractCashier.address,
+            constants.ZERO_ADDRESS)
+        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS);
+      });
+
       describe('[supportsInterface]', () => {
         it('Should return True for supported _interfaceId', async () => {
           const supportedInterfaceIds = [

@@ -82,7 +82,7 @@ describe('Gate contract', async () => {
     const routerAddress =
       (contractBosonRouter && contractBosonRouter.address) ||
       users.other1.address; // if router is not initalized use mock address
-    contractGate = (await Gate_Factory.deploy(routerAddress)) as Contract &
+    contractGate = (await Gate_Factory.deploy(routerAddress, contractERC1155NonTransferable.address)) as Contract &
       Gate;
 
     await contractERC1155NonTransferable.deployed();
@@ -465,12 +465,21 @@ describe('Gate contract', async () => {
           .withArgs(contractBosonRouter.address, users.deployer.address);
       });
 
-      it('[NEGATIVE][constructor] Should revert if supplied wrong boson router address', async () => {
+      it('[NEGATIVE][deploy Gate] Should revert if ZERO address is provided at deployment for Boson Router address', async () => {
         await expect(
-          Gate_Factory.deploy(constants.ZERO_ADDRESS)
+          Gate_Factory.deploy(
+            constants.ZERO_ADDRESS,
+            contractERC1155NonTransferable.address)
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
       });
-
+  
+      it('[NEGATIVE][deploy Gate] Should revert if ZERO address is provided at deployment for ERC1155NonTransferable address', async () => {
+        await expect(
+          Gate_Factory.deploy(
+            contractBosonRouter.address,
+            constants.ZERO_ADDRESS)
+        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+      });
       it('[NEGATIVE][setBosonRouterAddress] Should revert if supplied wrong boson router address', async () => {
         await expect(
           contractGate.setBosonRouterAddress(constants.ZERO_ADDRESS)
