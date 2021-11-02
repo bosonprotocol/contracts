@@ -1111,15 +1111,13 @@ describe('Vouchers', () => {
       });
 
       it('[NEGATIVE][setContractUri] Should revert if contract URI is empty', async () => {
-        await expect(
-          contractVouchers.setContractUri('')
-        ).to.be.revertedWith(revertReasons.INVALID_VALUE);
+        await expect(contractVouchers.setContractUri('')).to.be.revertedWith(
+          revertReasons.INVALID_VALUE
+        );
       });
 
-      it('[setContractUri] should be able to set contract URI', async() => {
-        const tx = await contractVouchers.setContractUri(
-          newMetadataUri
-        );
+      it('[setContractUri] should be able to set contract URI', async () => {
+        const tx = await contractVouchers.setContractUri(newMetadataUri);
 
         const txReceipt = await tx.wait();
         eventUtils.assertEventEmitted(
@@ -1140,8 +1138,7 @@ describe('Vouchers', () => {
           }
         );
 
-        const contractURI =
-          await contractVouchers.contractURI();
+        const contractURI = await contractVouchers.contractURI();
         assert.equal(contractURI, newMetadataUri);
       });
     });
