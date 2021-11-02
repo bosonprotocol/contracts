@@ -21,12 +21,16 @@ class DeploymentExecutor {
   voucherKernel;
   cashier;
   br;
+  eth_limit;
   boson_token;
-  TOKEN_LIMIT;
+  boson_token_limit;
   daiTokenWrapper;
   dai_token;
+  dai_token_limit;
   gate;
   erc1155NonTransferable;
+  complainPeriod;
+  cancelFaultPeriod;
 
   constructor() {
     if (this.constructor == DeploymentExecutor) {
@@ -42,15 +46,17 @@ class DeploymentExecutor {
     this.cashier;
     this.br;
 
-    this.boson_token;
-    this.TOKEN_LIMIT;
-
+    this.eth_limit = process.env.ETH_LIMIT;
     this.boson_token = process.env.BOSON_TOKEN;
-    this.TOKEN_LIMIT = (1 * 10 ** 18).toString();
+    this.boson_token_limit = process.env.BOSON_TOKEN_LIMIT;
     this.daiTokenWrapper;
     this.dai_token = process.env.DAI_TOKEN;
+    this.dai_token_limit = process.env.DAI_TOKEN_LIMIT;
     this.gate;
     this.erc1155NonTransferable;
+
+    this.complainPeriod = process.env.COMPLAIN_PERIOD;
+    this.cancelFaultPeriod = process.env.CANCEL_FAULT_PERIOD;
   }
 
   async setDefaults() {
@@ -335,10 +341,20 @@ class ProdExecutor extends DeploymentExecutor {
 
   async setDefaults() {
     await super.setDefaults();
-    await this.tokenRegistry.setTokenLimit(this.boson_token, this.TOKEN_LIMIT);
-    console.log(`Set Boson token limit: ${this.TOKEN_LIMIT}`);
-    await this.tokenRegistry.setTokenLimit(this.dai_token, this.TOKEN_LIMIT);
-    console.log(`Set Dai token limit: ${this.TOKEN_LIMIT}`);
+    // this code does not seem to be executed. Keeping it in anyways, until it is clear
+    // The lines below are otherwise called also in another setDefaults
+    await this.tokenRegistry.setETHLimit(this.eth_limit);
+    console.log(`Set ETH limit: ${this.eth_limit}`);
+    await this.tokenRegistry.setTokenLimit(
+      this.boson_token,
+      this.boson_token_limit
+    );
+    console.log(`Set Boson token limit: ${this.boson_token_limit}`);
+    await this.tokenRegistry.setTokenLimit(
+      this.dai_token,
+      this.dai_token_limit
+    );
+    console.log(`Set Dai token limit: ${this.dai_token_limit}`);
   }
 }
 
@@ -357,10 +373,17 @@ class NonProdExecutor extends DeploymentExecutor {
 
   async setDefaults() {
     await super.setDefaults();
-    await this.voucherKernel.setComplainPeriod(2 * this.SIXTY_SECONDS);
-    await this.voucherKernel.setCancelFaultPeriod(2 * this.SIXTY_SECONDS);
-    await this.tokenRegistry.setTokenLimit(this.boson_token, this.TOKEN_LIMIT);
-    await this.tokenRegistry.setTokenLimit(this.dai_token, this.TOKEN_LIMIT);
+    await this.voucherKernel.setComplainPeriod(this.complainPeriod);
+    await this.voucherKernel.setCancelFaultPeriod(this.cancelFaultPeriod);
+    await this.tokenRegistry.setETHLimit(this.eth_limit);
+    await this.tokenRegistry.setTokenLimit(
+      this.boson_token,
+      this.boson_token_limit
+    );
+    await this.tokenRegistry.setTokenLimit(
+      this.dai_token,
+      this.dai_token_limit
+    );
   }
 }
 
