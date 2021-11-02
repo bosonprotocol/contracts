@@ -614,7 +614,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
                 revertReasonExpired
             );            
         } else if (
-            //if the opposite of what is the desired new state
+            //if the opposite of what is the desired new state. When doing COMPLAIN we need to check if already in COF (and vice versa), since the waiting periods are different.
+            // VoucherState.COMPLAIN has enum index value 2, while VoucherState.CANCEL_FAULT has enum index value 1. To check the opposite status we use transformation "% 2 + 1" which maps 2 to 1 and 1 to 2 
             isStatus(vouchersStatus[_tokenIdVoucher].status, VoucherState((uint8(_newStatus) % 2 + 1))) // making it VoucherState.COMPLAIN or VoucherState.CANCEL_FAULT (opposite to new status) 
         ) {
             uint256 waitPeriod = _newStatus == VoucherState.COMPLAIN ? vouchersStatus[_tokenIdVoucher].complainPeriodStart +
@@ -904,7 +905,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         returns (uint256)
     {
         uint256 tokenIdSupply = _tokenIdVoucher & MASK_TYPE;
-        require(tokenIdSupply !=0, "INEXISTING_SUPPLY");
+        require(tokenIdSupply !=0, "INEXISTENT_SUPPLY");
         return tokenIdSupply;
     }
 

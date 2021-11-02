@@ -4047,7 +4047,7 @@ describe('Cashier and VoucherKernel', () => {
             constants.ONE,
             constants.ZERO_ADDRESS
           )
-        ).to.be.revertedWith(revertReasons.INEXISTING_SUPPLY);
+        ).to.be.revertedWith(revertReasons.INEXISTENT_SUPPLY);
       });
 
       it('[!CANCEL] It should not be possible to cancel voucher that does not exist yet', async () => {

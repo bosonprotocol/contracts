@@ -8579,7 +8579,7 @@ describe('Cashier withdrawals ', () => {
 
     it('[NEGATIVE] should revert if voucherId does not map to any supply', async () => {
       await expect(contractCashier.withdraw(constants.ONE)).to.be.revertedWith(
-        revertReasons.INEXISTING_SUPPLY
+        revertReasons.INEXISTENT_SUPPLY
       );
     });
 
