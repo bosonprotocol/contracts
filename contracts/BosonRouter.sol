@@ -161,8 +161,10 @@ contract BosonRouter is
      */
     function pause() external override onlyRouterOwner() {
         _pause();
-        IVoucherKernel(voucherKernel).pause();
-        ICashier(cashierAddress).pause();
+        if (!Pausable(voucherKernel).paused()) { 
+            IVoucherKernel(voucherKernel).pause();
+            ICashier(cashierAddress).pause();
+        }
     }
 
     /**
@@ -174,8 +176,10 @@ contract BosonRouter is
         require(ICashier(cashierAddress).canUnpause(), "UF"); //unpaused forbidden
 
         _unpause();
-        IVoucherKernel(voucherKernel).unpause();
-        ICashier(cashierAddress).unpause();
+        if (Pausable(voucherKernel).paused()) { 
+            IVoucherKernel(voucherKernel).unpause();
+            ICashier(cashierAddress).unpause();
+        }        
     }
 
     /**

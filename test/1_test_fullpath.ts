@@ -626,13 +626,17 @@ describe('Voucher tests', () => {
       await contractMockBosonRouter.deployed();
 
       //Set mock so that passing wrong payment type from requestCreateOrderETHETH to createPaymentMethod can be tested
+      await contractBosonRouter.pause();
+
       await contractVoucherKernel.setBosonRouterAddress(
         contractMockBosonRouter.address
-      );
+      );      
 
       await contractCashier.setBosonRouterAddress(
         contractMockBosonRouter.address
       );
+      await contractMockBosonRouter.pause();
+      await contractMockBosonRouter.unpause();
 
       const sellerInstance = contractMockBosonRouter.connect(
         users.seller.signer
@@ -1333,16 +1337,24 @@ describe('Voucher tests', () => {
       await contractMockBosonRouter.deployed();
 
       //Set mock so that failed transferFrom of tokens with no return value can be tested in transferFromAndAddEscrow
+      await contractBosonRouter.pause();
+      
       await contractCashier.setBosonRouterAddress(
         contractMockBosonRouter.address
       );
+
+      await contractVoucherKernel.setBosonRouterAddress(
+        contractMockBosonRouter.address
+      );
+
+      await contractMockBosonRouter.pause();
+      await contractMockBosonRouter.unpause();      
 
       sellerInstance = contractMockBosonRouter.connect(users.seller.signer);
     });
 
     it('[Negative] safeTransferFrom will revert the transaction if it fails', async () => {
       await contractBSNTokenPrice.pause();
-
       await expect(
         sellerInstance.transferFromAndAddEscrowTest(
           contractBSNTokenPrice.address,

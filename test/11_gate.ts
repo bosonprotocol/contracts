@@ -198,10 +198,12 @@ describe('Gate contract', async () => {
       constants.ZERO_BYTES
     );
 
+    await gate.pause();
     await gate.setNonTransferableTokenContract(
       contractERC1155NonTransferable.address
     );
     await gate.setBosonRouterAddress(contractBosonRouter.address);
+    await gate.unpause();
 
     utils = await UtilsBuilder.create()
       .ERC20withPermit()
@@ -273,6 +275,7 @@ describe('Gate contract', async () => {
     });
 
     it('Owner should be able set ERC1155 contract address', async () => {
+      await contractGate.pause();
       expect(
         await contractGate.setNonTransferableTokenContract(
           contractERC1155NonTransferable.address
@@ -286,9 +289,10 @@ describe('Gate contract', async () => {
     });
 
     it('One should be able get ERC1155 contract address', async () => {
-      await contractGate.setNonTransferableTokenContract(
-        contractERC1155NonTransferable.address
-      );
+      // await contractGate.pause();
+      // await contractGate.setNonTransferableTokenContract(
+      //   contractERC1155NonTransferable.address
+      // );
 
       expect(await contractGate.getNonTransferableTokenContract()).to.equal(
         contractERC1155NonTransferable.address
@@ -322,9 +326,9 @@ describe('Gate contract', async () => {
         constants.NFT_TOKEN_ID
       );
 
-      await contractGate.setNonTransferableTokenContract(
-        contractERC1155NonTransferable.address
-      );
+      // await contractGate.setNonTransferableTokenContract(
+      //   contractERC1155NonTransferable.address
+      // );
 
       expect(
         await contractGate.check(users.other1.address, constants.VOUCHER_SET_ID)
@@ -380,6 +384,15 @@ describe('Gate contract', async () => {
       ).to.be.revertedWith(revertReasons.PAUSED);
     });
 
+    it('[NEGATIVE] ERC1155 cannot be set if gate contract is not paused', async () => {
+      await expect(
+         contractGate.setNonTransferableTokenContract(
+          contractERC1155NonTransferable.address
+        )
+      )
+        .to.be.revertedWith(revertReasons.NOT_PAUSED);
+    });
+
     it('[NEGATIVE][setNonTransferableTokenContract] Should revert if supplied wrong boson router address', async () => {
       await expect(
         contractGate.setNonTransferableTokenContract(constants.ZERO_ADDRESS)
@@ -423,9 +436,9 @@ describe('Gate contract', async () => {
     });
 
     it('[NEGATIVE][check] Should return false if constants.VOUCHER_SET_ID is not registered', async () => {
-      await contractGate.setNonTransferableTokenContract(
-        contractERC1155NonTransferable.address
-      );
+      // await contractGate.setNonTransferableTokenContract(
+      //   contractERC1155NonTransferable.address
+      // );
 
       await contractERC1155NonTransferable.mint(
         users.other1.address,
@@ -463,11 +476,19 @@ describe('Gate contract', async () => {
 
     describe('Setting a boson router address', () => {
       it('Owner should be able set boson router address', async () => {
+        await contractGate.pause();
         expect(
           await contractGate.setBosonRouterAddress(contractBosonRouter.address)
         )
           .to.emit(contractGate, eventNames.LOG_BOSON_ROUTER_SET)
           .withArgs(contractBosonRouter.address, users.deployer.address);
+      });
+
+      it('[NEGATIVE] Boson router address cannot be set when not paused', async () => {
+        await expect(
+           contractGate.setBosonRouterAddress(contractBosonRouter.address)
+        )
+          .to.be.revertedWith(revertReasons.NOT_PAUSED);
       });
 
       it('[NEGATIVE][deploy Gate] Should revert if ZERO address is provided at deployment for Boson Router address', async () => {

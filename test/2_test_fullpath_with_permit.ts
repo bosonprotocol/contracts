@@ -2216,6 +2216,7 @@ describe('Cashier and VoucherKernel', () => {
         await contractMockBosonRouter.deployed();
 
         //Set mock so that passing wrong payment type from requestCreateOrderETHETH to createPaymentMethod can be tested
+        await contractBosonRouter.pause();
         await contractVoucherKernel.setBosonRouterAddress(
           contractMockBosonRouter.address
         );
@@ -2223,6 +2224,8 @@ describe('Cashier and VoucherKernel', () => {
         await contractCashier.setBosonRouterAddress(
           contractMockBosonRouter.address
         );
+        await contractMockBosonRouter.pause();
+        await contractMockBosonRouter.unpause();
 
         const utilsTknEth = await UtilsBuilder.create()
           .ERC20withPermit()
@@ -4039,9 +4042,11 @@ describe('Cashier and VoucherKernel', () => {
 
       it('[!CANCEL] It should not be possible to cancel voucher that does not exist yet', async () => {
         // spoof boson router address.
+        await contractBosonRouter.pause();
         await contractVoucherKernel.setBosonRouterAddress(
           users.deployer.address
         );
+        await contractVoucherKernel.unpause();
 
         await expect(
           contractVoucherKernel.cancelOrFault(
