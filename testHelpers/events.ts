@@ -47,6 +47,7 @@ export const eventNames = {
   LOG_TOKEN_REGISTRY_SET: 'LogTokenRegistrySet',
   LOG_VOUCHER_SET_TOKEN_SET: 'LogVoucherSetTokenContractSet',
   LOG_VOUCHER_TOKEN_SET: 'LogVoucherTokenContractSet',
+  LOG_CONTRACT_URI_SET: 'LogContractUriSet',
 };
 
 import {ContractFactory, ContractReceipt} from 'ethers';
