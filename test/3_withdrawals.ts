@@ -8589,7 +8589,10 @@ describe('Cashier withdrawals ', () => {
       ); //deploys mock
 
       contractCashier = (await Cashier_Factory.deploy(
-        mockVoucherKernel.address
+        contractBosonRouter.address,
+        mockVoucherKernel.address,
+        contractVoucherSets.address,
+        contractVouchers.address
       )) as Contract & Cashier;
 
       await contractCashier.deployed();

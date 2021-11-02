@@ -160,15 +160,7 @@ describe('Voucher Sets', () => {
       contractVoucherKernel.address,
       true
     );
-
-    // TODO
-    if (setVoucherKernelAddress) {
-      await contractVoucherSets.setVoucherKernelAddress(
-        contractVoucherKernel.address
-      );
-    }
-
-  
+ 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
 

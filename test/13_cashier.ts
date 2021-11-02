@@ -25,9 +25,12 @@ describe('CASHIER', () => {
 
   let contractCashier: Cashier, contractBSNTokenDeposit: MockERC20Permit;
 
-  async function deployContracts(setBosonRouterAddress = true) {
+  async function deployContracts() {
     contractCashier = (await Cashier_Factory.deploy(
-      users.other2.address // just setting some address, we don't need voucherKernel functionalites
+      users.other2.address, // just setting some address, we don't need actual functionalities functionalites
+      users.other2.address, // just setting some address, we don't need actual functionalities functionalites
+      users.other2.address, // just setting some address, we don't need actual functionalities functionalites
+      users.other2.address // just setting some address, we don't need actual functionalities functionalites
     )) as Contract & Cashier;
 
     contractBSNTokenDeposit = (await MockERC20Permit_Factory.deploy(
@@ -36,41 +39,9 @@ describe('CASHIER', () => {
     )) as Contract & MockERC20Permit;
 
     await contractCashier.deployed();
-
-    if (setBosonRouterAddress) {
-      await contractCashier.setBosonRouterAddress(users.other1.address); // just setting some address, we don't need router functionalites
-    }
   }
 
-  it('[NEGATIVE] Should revert if boson router is not set', async () => {
-    await deployContracts(false);
 
-    await expect(contractCashier.pause()).to.be.revertedWith(
-      revertReasons.UNSET_ROUTER
-    );
-    await expect(contractCashier.unpause()).to.be.revertedWith(
-      revertReasons.UNSET_ROUTER
-    );
-    await expect(
-      contractCashier.withdrawDepositsSe(
-        constants.ONE,
-        constants.ONE,
-        users.other1.address
-      )
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-    await expect(
-      contractCashier.addEscrowAmount(users.other1.address)
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-    await expect(
-      contractCashier.addEscrowTokensAmount(
-        contractBSNTokenDeposit.address,
-        users.other1.address,
-        constants.buyer_deposit
-      )
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
-  });
-
-  describe('With normal deployment', () => {
     beforeEach(async () => {
       await deployContracts();
     });
@@ -127,5 +98,5 @@ describe('CASHIER', () => {
         )
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TOKEN_CONTRACT);
     });
-  });
+
 });
