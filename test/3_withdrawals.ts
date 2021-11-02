@@ -7035,7 +7035,7 @@ describe('Cashier withdrawals ', () => {
 
       it('[NEGATIVE] should revert if router supplies burn quantity as zero', async () => {
         // spoof boson router
-                await contractBosonRouter.pause();
+        await contractBosonRouter.pause();
         await contractCashier.setBosonRouterAddress(users.deployer.address);
         await contractCashier.unpause();
 
@@ -7252,9 +7252,9 @@ describe('Cashier withdrawals ', () => {
 
         it('[NEGATIVE] should revert if router supplies wrong _messageSender', async () => {
           // spoof boson router
-                  await contractBosonRouter.pause();
-        await contractCashier.setBosonRouterAddress(users.deployer.address);
-        await contractCashier.unpause();
+          await contractBosonRouter.pause();
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+          await contractCashier.unpause();
 
           await expect(
             contractCashier.withdrawDepositsSe(
@@ -7267,9 +7267,9 @@ describe('Cashier withdrawals ', () => {
 
         it('[NEGATIVE] should revert if router supplies burn quantity as zero', async () => {
           // spoof boson router
-                  await contractBosonRouter.pause();
-        await contractCashier.setBosonRouterAddress(users.deployer.address);
-        await contractCashier.unpause();
+          await contractBosonRouter.pause();
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+          await contractCashier.unpause();
 
           await expect(
             contractCashier.withdrawDepositsSe(
@@ -7477,9 +7477,9 @@ describe('Cashier withdrawals ', () => {
 
         it('[NEGATIVE] should revert if router supplies wrong _messageSender', async () => {
           // spoof boson router
-                  await contractBosonRouter.pause();
-        await contractCashier.setBosonRouterAddress(users.deployer.address);
-        await contractCashier.unpause();
+          await contractBosonRouter.pause();
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+          await contractCashier.unpause();
 
           await expect(
             contractCashier.withdrawDepositsSe(
@@ -7492,9 +7492,9 @@ describe('Cashier withdrawals ', () => {
 
         it('[NEGATIVE] should revert if router supplies burn quantity as zero', async () => {
           // spoof boson router
-                  await contractBosonRouter.pause();
-        await contractCashier.setBosonRouterAddress(users.deployer.address);
-        await contractCashier.unpause();
+          await contractBosonRouter.pause();
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+          await contractCashier.unpause();
 
           await expect(
             contractCashier.withdrawDepositsSe(
@@ -7704,9 +7704,9 @@ describe('Cashier withdrawals ', () => {
 
         it('[NEGATIVE] should revert if router supplies wrong _messageSender', async () => {
           // spoof boson router
-                  await contractBosonRouter.pause();
-        await contractCashier.setBosonRouterAddress(users.deployer.address);
-        await contractCashier.unpause();
+          await contractBosonRouter.pause();
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+          await contractCashier.unpause();
 
           await expect(
             contractCashier.withdrawDepositsSe(
@@ -7719,9 +7719,9 @@ describe('Cashier withdrawals ', () => {
 
         it('[NEGATIVE] should revert if router supplies burn quantity as zero', async () => {
           // spoof boson router
-                  await contractBosonRouter.pause();
-        await contractCashier.setBosonRouterAddress(users.deployer.address);
-        await contractCashier.unpause();
+          await contractBosonRouter.pause();
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+          await contractCashier.unpause();
 
           await expect(
             contractCashier.withdrawDepositsSe(
@@ -7908,9 +7908,9 @@ describe('Cashier withdrawals ', () => {
 
         it('[NEGATIVE] should revert if router supplies wrong _messageSender', async () => {
           // spoof boson router
-                  await contractBosonRouter.pause();
-        await contractCashier.setBosonRouterAddress(users.deployer.address);
-        await contractCashier.unpause();
+          await contractBosonRouter.pause();
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+          await contractCashier.unpause();
 
           await expect(
             contractCashier.withdrawDepositsSe(
@@ -7923,9 +7923,9 @@ describe('Cashier withdrawals ', () => {
 
         it('[NEGATIVE] should revert if router supplies burn quantity as zero', async () => {
           // spoof boson router
-                  await contractBosonRouter.pause();
-        await contractCashier.setBosonRouterAddress(users.deployer.address);
-        await contractCashier.unpause();
+          await contractBosonRouter.pause();
+          await contractCashier.setBosonRouterAddress(users.deployer.address);
+          await contractCashier.unpause();
 
           await expect(
             contractCashier.withdrawDepositsSe(
@@ -8589,9 +8589,9 @@ describe('Cashier withdrawals ', () => {
       );
 
       // spoof boson router address
-              await contractBosonRouter.pause();
-        await contractCashier.setBosonRouterAddress(users.deployer.address);
-        await contractCashier.unpause();
+      await contractBosonRouter.pause();
+      await contractCashier.setBosonRouterAddress(users.deployer.address);
+      await contractCashier.unpause();
 
       await expect(
         contractCashier.withdrawDepositsSe(

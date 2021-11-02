@@ -195,7 +195,7 @@ describe('Admin functionality', async () => {
       await contractBosonRouter.pause();
       const tx = await contractCashier.setBosonRouterAddress(
         contractBosonRouter.address
-      );      
+      );
 
       const txReceipt = await tx.wait();
 
@@ -219,9 +219,9 @@ describe('Admin functionality', async () => {
     });
 
     it('[NEGATIVE] BR address cannot be set if not paused', async () => {
-      await expect(contractCashier.setBosonRouterAddress(
-        contractBosonRouter.address
-      )).to.be.revertedWith(revertReasons.NOT_PAUSED);
+      await expect(
+        contractCashier.setBosonRouterAddress(contractBosonRouter.address)
+      ).to.be.revertedWith(revertReasons.NOT_PAUSED);
     });
 
     it('[NEGATIVE][setBosonRouterAddress] Should revert if executed by attacker', async () => {
@@ -305,9 +305,9 @@ describe('Admin functionality', async () => {
     });
 
     it('[NEGATIVE] voucher token contract address cannot be set if not paused', async () => {
-      await expect(contractCashier.setVoucherTokenAddress(
-        contractVouchers.address
-      )).to.be.revertedWith(revertReasons.NOT_PAUSED);
+      await expect(
+        contractCashier.setVoucherTokenAddress(contractVouchers.address)
+      ).to.be.revertedWith(revertReasons.NOT_PAUSED);
     });
 
     it('[NEGATIVE][setVoucherTokenAddress] Should revert if executed by attacker', async () => {
@@ -400,9 +400,11 @@ describe('Admin functionality', async () => {
       });
 
       it('[NEGATIVE] Voucher Kernel address cannot be se if not paused', async () => {
-        await expect(contractCashier.setVoucherKernelAddress(
-          contractVoucherKernel_2.address
-        )).to.be.revertedWith(revertReasons.NOT_PAUSED);
+        await expect(
+          contractCashier.setVoucherKernelAddress(
+            contractVoucherKernel_2.address
+          )
+        ).to.be.revertedWith(revertReasons.NOT_PAUSED);
       });
 
       it('[NEGATIVE][setVoucherKernelAddress] should revert when address is a zero address', async () => {
@@ -649,9 +651,9 @@ describe('Admin functionality', async () => {
     });
 
     it('[NEGATIVE] Cashier address cannot be set when not paused', async () => {
-      await expect(contractVoucherKernel.setCashierAddress(
-        contractCashier.address
-      )).to.be.revertedWith(revertReasons.NOT_PAUSED);
+      await expect(
+        contractVoucherKernel.setCashierAddress(contractCashier.address)
+      ).to.be.revertedWith(revertReasons.NOT_PAUSED);
     });
 
     it('[NEGATIVE][setCashierAddress] Attacker should not be able to set Cashier address', async () => {
@@ -698,9 +700,9 @@ describe('Admin functionality', async () => {
     });
 
     it('[NEGATIVE] BR address cannot be set if not paused', async () => {
-      await expect(contractVoucherKernel.setBosonRouterAddress(
-        contractBosonRouter.address
-      )).to.be.revertedWith(revertReasons.NOT_PAUSED);
+      await expect(
+        contractVoucherKernel.setBosonRouterAddress(contractBosonRouter.address)
+      ).to.be.revertedWith(revertReasons.NOT_PAUSED);
     });
 
     it('[NEGATIVE][setBosonRouterAddress] Should revert if executed by attacker', async () => {
@@ -771,7 +773,7 @@ describe('Admin functionality', async () => {
     });
 
     it('[setVoucherKernelAddress] Should be able to set a new Voucher Kernel address', async () => {
-      await contractBosonRouter.pause()
+      await contractBosonRouter.pause();
       const expectedNewVoucherKernelAddress = contractVoucherKernel_2.address;
       const tx = await contractBosonRouter.setVoucherKernelAddress(
         expectedNewVoucherKernelAddress
@@ -795,9 +797,11 @@ describe('Admin functionality', async () => {
     });
 
     it('[NEGATIVE] Voucher Kernel address cannot be set if not paused', async () => {
-      await expect(contractBosonRouter.setVoucherKernelAddress(
-        contractVoucherKernel_2.address
-      )).to.be.revertedWith(revertReasons.NOT_PAUSED);
+      await expect(
+        contractBosonRouter.setVoucherKernelAddress(
+          contractVoucherKernel_2.address
+        )
+      ).to.be.revertedWith(revertReasons.NOT_PAUSED);
     });
 
     it('[NEGATIVE][setVoucherKernelAddress] should revert if called by an attacker', async () => {
@@ -842,9 +846,11 @@ describe('Admin functionality', async () => {
     });
 
     it('[NEGATIVE] Token Registry address cannot be set when not paused', async () => {
-      await expect(contractBosonRouter.setTokenRegistryAddress(
-        contractTokenRegistry_2.address
-      )).to.be.revertedWith(revertReasons.NOT_PAUSED);
+      await expect(
+        contractBosonRouter.setTokenRegistryAddress(
+          contractTokenRegistry_2.address
+        )
+      ).to.be.revertedWith(revertReasons.NOT_PAUSED);
     });
 
     it('[NEGATIVE][setTokenRegistryAddress] should revert if called by an attacker', async () => {
@@ -889,9 +895,9 @@ describe('Admin functionality', async () => {
     });
 
     it('[NEGATIVE] Cashier address cannot set if not paused', async () => {
-      await expect(contractBosonRouter.setCashierAddress(
-        contractCashier_2.address
-      )).to.be.revertedWith(revertReasons.NOT_PAUSED);
+      await expect(
+        contractBosonRouter.setCashierAddress(contractCashier_2.address)
+      ).to.be.revertedWith(revertReasons.NOT_PAUSED);
     });
 
     it('[NEGATIVE][setCashierAddress] should revert if called by an attacker', async () => {

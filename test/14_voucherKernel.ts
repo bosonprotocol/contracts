@@ -414,9 +414,9 @@ describe('VOUCHER KERNEL', () => {
 
     it('[NEGATIVE] Should revert if fillOrder is called with wrong token Id Supply', async () => {
       // spoof boson router address
-      await contractBosonRouter.pause()
+      await contractBosonRouter.pause();
       await contractVoucherKernel.setBosonRouterAddress(users.deployer.address);
-      await contractVoucherKernel.unpause()
+      await contractVoucherKernel.unpause();
 
       await expect(
         contractVoucherKernel.fillOrder(
@@ -465,11 +465,11 @@ describe('VOUCHER KERNEL', () => {
         );
 
         // spoof boson router address
-        await contractBosonRouter.pause()
+        await contractBosonRouter.pause();
         await contractVoucherKernel.setBosonRouterAddress(
           users.deployer.address
         );
-        await contractVoucherKernel.unpause()
+        await contractVoucherKernel.unpause();
       });
 
       it('[NEGATIVE] Should revert if fillOrder is called with wrong holder', async () => {

@@ -630,7 +630,7 @@ describe('Voucher tests', () => {
 
       await contractVoucherKernel.setBosonRouterAddress(
         contractMockBosonRouter.address
-      );      
+      );
 
       await contractCashier.setBosonRouterAddress(
         contractMockBosonRouter.address
@@ -1338,7 +1338,7 @@ describe('Voucher tests', () => {
 
       //Set mock so that failed transferFrom of tokens with no return value can be tested in transferFromAndAddEscrow
       await contractBosonRouter.pause();
-      
+
       await contractCashier.setBosonRouterAddress(
         contractMockBosonRouter.address
       );
@@ -1348,7 +1348,7 @@ describe('Voucher tests', () => {
       );
 
       await contractMockBosonRouter.pause();
-      await contractMockBosonRouter.unpause();      
+      await contractMockBosonRouter.unpause();
 
       sellerInstance = contractMockBosonRouter.connect(users.seller.signer);
     });

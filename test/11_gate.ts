@@ -386,11 +386,10 @@ describe('Gate contract', async () => {
 
     it('[NEGATIVE] ERC1155 cannot be set if gate contract is not paused', async () => {
       await expect(
-         contractGate.setNonTransferableTokenContract(
+        contractGate.setNonTransferableTokenContract(
           contractERC1155NonTransferable.address
         )
-      )
-        .to.be.revertedWith(revertReasons.NOT_PAUSED);
+      ).to.be.revertedWith(revertReasons.NOT_PAUSED);
     });
 
     it('[NEGATIVE][setNonTransferableTokenContract] Should revert if supplied wrong boson router address', async () => {
@@ -486,9 +485,8 @@ describe('Gate contract', async () => {
 
       it('[NEGATIVE] Boson router address cannot be set when not paused', async () => {
         await expect(
-           contractGate.setBosonRouterAddress(contractBosonRouter.address)
-        )
-          .to.be.revertedWith(revertReasons.NOT_PAUSED);
+          contractGate.setBosonRouterAddress(contractBosonRouter.address)
+        ).to.be.revertedWith(revertReasons.NOT_PAUSED);
       });
 
       it('[NEGATIVE][deploy Gate] Should revert if ZERO address is provided at deployment for Boson Router address', async () => {
