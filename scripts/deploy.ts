@@ -90,6 +90,18 @@ class DeploymentExecutor {
       event.args._approved
     );
 
+    tx = await this.vouchers.setContractUri(
+      process.env.VOUCHERS_CONTRACT_URI
+    );
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log(
+      '\n$ Vouchers: ',
+      event.event,
+      'has set a ContractUri:',
+      event.args._contractUri
+    );
+
     tx = await this.tokenRegistry.setTokenWrapperAddress(
       this.dai_token,
       this.daiTokenWrapper.address
