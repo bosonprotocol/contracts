@@ -635,6 +635,8 @@ describe('Voucher tests', () => {
       await contractCashier.setBosonRouterAddress(
         contractMockBosonRouter.address
       );
+      // To unpause Cashier and VoucherKernel unpause must be called on the new router
+      // To call unpause, router must be in paused state, so pause should be called first
       await contractMockBosonRouter.pause();
       await contractMockBosonRouter.unpause();
 
@@ -1347,6 +1349,8 @@ describe('Voucher tests', () => {
         contractMockBosonRouter.address
       );
 
+      // To unpause Cashier and VoucherKernel unpause must be called on the new router
+      // To call unpause, router must be in paused state, so pause should be called first
       await contractMockBosonRouter.pause();
       await contractMockBosonRouter.unpause();
 
