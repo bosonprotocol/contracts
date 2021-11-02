@@ -2,8 +2,9 @@ import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
 
 import {expect} from 'chai';
-import constants from '../testHelpers/constants';
 
+import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
+import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import Utils from '../testHelpers/utils';
 import UtilsBuilder from '../testHelpers/utilsBuilder';
@@ -81,8 +82,10 @@ describe('Gate contract', async () => {
     const routerAddress =
       (contractBosonRouter && contractBosonRouter.address) ||
       users.other1.address; // if router is not initalized use mock address
-    contractGate = (await Gate_Factory.deploy(routerAddress)) as Contract &
-      Gate;
+    contractGate = (await Gate_Factory.deploy(
+      routerAddress,
+      contractERC1155NonTransferable.address
+    )) as Contract & Gate;
 
     await contractERC1155NonTransferable.deployed();
     await contractGate.deployed();
@@ -91,28 +94,50 @@ describe('Gate contract', async () => {
   async function deployBosonRouterContracts() {
     const sixtySeconds = 60;
 
+    const contractAddresses = await calculateDeploymentAddresses(
+      users.deployer.address,
+      [
+        'TokenRegistry',
+        'VoucherSets',
+        'Vouchers',
+        'VoucherKernel',
+        'Cashier',
+        'BosonRouter',
+      ]
+    );
+
     contractTokenRegistry = (await TokenRegistry_Factory.deploy()) as Contract &
       TokenRegistry;
     contractVoucherSets = (await VoucherSets_Factory.deploy(
-      'https://token-cdn-domain/{id}.json'
+      'https://token-cdn-domain/{id}.json',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
     )) as Contract & VoucherSets;
     contractVouchers = (await Vouchers_Factory.deploy(
       'https://token-cdn-domain/orders/metadata/',
       'Boson Smart Voucher',
-      'BSV'
+      'BSV',
+      contractAddresses.Cashier,
+      contractAddresses.VoucherKernel
     )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
-      contractVoucherSets.address,
-      contractVouchers.address
+      contractAddresses.BosonRouter,
+      contractAddresses.Cashier,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & VoucherKernel;
     contractCashier = (await Cashier_Factory.deploy(
-      contractVoucherKernel.address
+      contractAddresses.BosonRouter,
+      contractAddresses.VoucherKernel,
+      contractAddresses.VoucherSets,
+      contractAddresses.Vouchers
     )) as Contract & Cashier;
     contractBosonRouter = (await BosonRouter_Factory.deploy(
-      contractVoucherKernel.address,
-      contractTokenRegistry.address,
-      contractCashier.address
+      contractAddresses.VoucherKernel,
+      contractAddresses.TokenRegistry,
+      contractAddresses.Cashier
     )) as Contract & BosonRouter;
+
     contractBSNTokenPrice = (await MockERC20Permit_Factory.deploy(
       'BosonTokenPrice',
       'BPRC'
@@ -136,26 +161,6 @@ describe('Gate contract', async () => {
       contractVoucherKernel.address,
       true
     );
-    await contractVoucherSets.setVoucherKernelAddress(
-      contractVoucherKernel.address
-    );
-    await contractVouchers.setVoucherKernelAddress(
-      contractVoucherKernel.address
-    );
-
-    await contractVoucherSets.setCashierAddress(contractCashier.address);
-    await contractVouchers.setCashierAddress(contractCashier.address);
-
-    await contractVoucherKernel.setBosonRouterAddress(
-      contractBosonRouter.address
-    );
-    await contractVoucherKernel.setCashierAddress(contractCashier.address);
-
-    await contractCashier.setBosonRouterAddress(contractBosonRouter.address);
-    await contractCashier.setVoucherSetTokenAddress(
-      contractVoucherSets.address
-    );
-    await contractCashier.setVoucherTokenAddress(contractVouchers.address);
 
     await contractVoucherKernel.setComplainPeriod(sixtySeconds);
     await contractVoucherKernel.setCancelFaultPeriod(sixtySeconds);
@@ -465,12 +470,23 @@ describe('Gate contract', async () => {
           .withArgs(contractBosonRouter.address, users.deployer.address);
       });
 
-      it('[NEGATIVE][constructor] Should revert if supplied wrong boson router address', async () => {
+      it('[NEGATIVE][deploy Gate] Should revert if ZERO address is provided at deployment for Boson Router address', async () => {
         await expect(
-          Gate_Factory.deploy(constants.ZERO_ADDRESS)
+          Gate_Factory.deploy(
+            constants.ZERO_ADDRESS,
+            contractERC1155NonTransferable.address
+          )
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
       });
 
+      it('[NEGATIVE][deploy Gate] Should revert if ZERO address is provided at deployment for ERC1155NonTransferable address', async () => {
+        await expect(
+          Gate_Factory.deploy(
+            contractBosonRouter.address,
+            constants.ZERO_ADDRESS
+          )
+        ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+      });
       it('[NEGATIVE][setBosonRouterAddress] Should revert if supplied wrong boson router address', async () => {
         await expect(
           contractGate.setBosonRouterAddress(constants.ZERO_ADDRESS)

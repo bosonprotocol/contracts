@@ -142,6 +142,12 @@ interface IVoucherKernel {
     function setCancelFaultPeriod(uint256 _cancelFaultPeriod) external;
 
     /**
+     * @notice Set the address of the Boson Router contract
+     * @param _bosonRouterAddress   The address of the BR contract
+     */
+    function setBosonRouterAddress(address _bosonRouterAddress) external;
+
+    /**
      * @notice Set the address of the Cashier contract
      * @param _cashierAddress   The address of the Cashier contract
      */

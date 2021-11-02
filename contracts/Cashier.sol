@@ -24,7 +24,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     address private voucherKernel;
     address private bosonRouterAddress;
     address private voucherSetTokenAddress;   //ERC1155 contract representing voucher sets    
-    address private voucherTokenAddress; //ERC721 contract representing vouchers;
+    address private voucherTokenAddress;     //ERC721 contract representing vouchers;
     bool private disasterState;
 
     enum PaymentType {PAYMENT, DEPOSIT_SELLER, DEPOSIT_BUYER}
@@ -62,7 +62,6 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
     );
 
     modifier onlyFromRouter() {
-        require(bosonRouterAddress != address(0), "UNSPECIFIED_BR");
         require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR");
         _;
     }
@@ -90,12 +89,22 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
 
     /**
      * @notice Construct and initialze the contract. Iniialises associated contract addresses. Iniialises disaster state to false.    
+     * @param _bosonRouterAddress address of the associated BosonRouter contract
      * @param _voucherKernel address of the associated VocherKernal contract instance
+     * @param _voucherSetTokenAddress address of the associated ERC1155 contract instance
+     * @param _voucherTokenAddress address of the associated ERC721 contract instance
+
      */
-    constructor(address _voucherKernel) 
-     notZeroAddress(_voucherKernel)
+    constructor(address _bosonRouterAddress, address _voucherKernel, address _voucherSetTokenAddress, address _voucherTokenAddress) 
+        notZeroAddress(_bosonRouterAddress)
+        notZeroAddress(_voucherKernel)
+        notZeroAddress(_voucherSetTokenAddress)
+        notZeroAddress(_voucherTokenAddress)
     {
+        bosonRouterAddress = _bosonRouterAddress;
         voucherKernel = _voucherKernel;
+        voucherSetTokenAddress = _voucherSetTokenAddress;
+        voucherTokenAddress = _voucherTokenAddress;
         disasterState = false;
     }
 
@@ -1127,6 +1136,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
      */
     function setVoucherKernelAddress(address _voucherKernelAddress)
         external
+        override
         onlyOwner
         notZeroAddress(_voucherKernelAddress)
     {

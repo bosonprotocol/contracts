@@ -25,9 +25,12 @@ describe('CASHIER', () => {
 
   let contractCashier: Cashier, contractBSNTokenDeposit: MockERC20Permit;
 
-  async function deployContracts(setBosonRouterAddress = true) {
+  async function deployContracts() {
     contractCashier = (await Cashier_Factory.deploy(
-      users.other2.address // just setting some address, we don't need voucherKernel functionalites
+      users.other2.address, // just setting some address, we don't need actual functionalities functionalites
+      users.other2.address, // just setting some address, we don't need actual functionalities functionalites
+      users.other2.address, // just setting some address, we don't need actual functionalities functionalites
+      users.other2.address // just setting some address, we don't need actual functionalities functionalites
     )) as Contract & Cashier;
 
     contractBSNTokenDeposit = (await MockERC20Permit_Factory.deploy(
@@ -36,96 +39,62 @@ describe('CASHIER', () => {
     )) as Contract & MockERC20Permit;
 
     await contractCashier.deployed();
-
-    if (setBosonRouterAddress) {
-      await contractCashier.setBosonRouterAddress(users.other1.address); // just setting some address, we don't need router functionalites
-    }
   }
 
-  it('[NEGATIVE] Should revert if boson router is not set', async () => {
-    await deployContracts(false);
+  beforeEach(async () => {
+    await deployContracts();
+  });
 
-    await expect(contractCashier.pause()).to.be.revertedWith(
-      revertReasons.UNSET_ROUTER
+  it('[NEGATIVE] Should revert if attacker tries to call method that should be called only from bosonRouter', async () => {
+    const attackerInstance = contractCashier.connect(users.attacker.signer);
+
+    await expect(attackerInstance.pause()).to.be.revertedWith(
+      revertReasons.ONLY_FROM_ROUTER
     );
-    await expect(contractCashier.unpause()).to.be.revertedWith(
-      revertReasons.UNSET_ROUTER
+    await expect(attackerInstance.unpause()).to.be.revertedWith(
+      revertReasons.ONLY_FROM_ROUTER
     );
     await expect(
-      contractCashier.withdrawDepositsSe(
+      attackerInstance.withdrawDepositsSe(
         constants.ONE,
         constants.ONE,
         users.other1.address
       )
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
     await expect(
-      contractCashier.addEscrowAmount(users.other1.address)
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+      attackerInstance.addEscrowAmount(users.other1.address)
+    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
     await expect(
-      contractCashier.addEscrowTokensAmount(
+      attackerInstance.addEscrowTokensAmount(
         contractBSNTokenDeposit.address,
         users.other1.address,
         constants.buyer_deposit
       )
-    ).to.be.revertedWith(revertReasons.UNSET_ROUTER);
+    ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
   });
 
-  describe('With normal deployment', () => {
-    beforeEach(async () => {
-      await deployContracts();
-    });
+  it('[NEGATIVE] Should revert if onVoucherTransfer is called by the attacker', async () => {
+    const attackerInstance = contractCashier.connect(users.attacker.signer);
 
-    it('[NEGATIVE] Should revert if attacker tries to call method that should be called only from bosonRouter', async () => {
-      const attackerInstance = contractCashier.connect(users.attacker.signer);
+    await expect(
+      attackerInstance.onVoucherTransfer(
+        users.other1.address,
+        users.attacker.address,
+        constants.ONE
+      )
+    ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TOKEN_CONTRACT);
+  });
 
-      await expect(attackerInstance.pause()).to.be.revertedWith(
-        revertReasons.ONLY_FROM_ROUTER
-      );
-      await expect(attackerInstance.unpause()).to.be.revertedWith(
-        revertReasons.ONLY_FROM_ROUTER
-      );
-      await expect(
-        attackerInstance.withdrawDepositsSe(
-          constants.ONE,
-          constants.ONE,
-          users.other1.address
-        )
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-      await expect(
-        attackerInstance.addEscrowAmount(users.other1.address)
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-      await expect(
-        attackerInstance.addEscrowTokensAmount(
-          contractBSNTokenDeposit.address,
-          users.other1.address,
-          constants.buyer_deposit
-        )
-      ).to.be.revertedWith(revertReasons.ONLY_FROM_ROUTER);
-    });
+  it('[NEGATIVE] Should revert if onVoucherSetTransfer is called by the attacker', async () => {
+    const attackerInstance = contractCashier.connect(users.attacker.signer);
 
-    it('[NEGATIVE] Should revert if onVoucherTransfer is called by the attacker', async () => {
-      const attackerInstance = contractCashier.connect(users.attacker.signer);
-
-      await expect(
-        attackerInstance.onVoucherTransfer(
-          users.other1.address,
-          users.attacker.address,
-          constants.ONE
-        )
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TOKEN_CONTRACT);
-    });
-
-    it('[NEGATIVE] Should revert if onVoucherSetTransfer is called by the attacker', async () => {
-      const attackerInstance = contractCashier.connect(users.attacker.signer);
-
-      await expect(
-        attackerInstance.onVoucherSetTransfer(
-          users.other1.address,
-          users.attacker.address,
-          constants.ONE,
-          constants.ONE
-        )
-      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TOKEN_CONTRACT);
-    });
+    await expect(
+      attackerInstance.onVoucherSetTransfer(
+        users.other1.address,
+        users.attacker.address,
+        constants.ONE,
+        constants.ONE
+      )
+    ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TOKEN_CONTRACT);
   });
 });

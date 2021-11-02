@@ -24,10 +24,6 @@ contract VoucherSets is IVoucherSets, ERC1155, Ownable {
     event LogCashierSet(address _newCashier, address _triggeredBy);
 
     modifier onlyFromVoucherKernel() {
-        require(
-            voucherKernelAddress != address(0),
-            "UNSPECIFIED_VOUCHERKERNEL"
-        );
         require(msg.sender == voucherKernelAddress, "UNAUTHORIZED_VK");
         _;
     }
@@ -40,8 +36,13 @@ contract VoucherSets is IVoucherSets, ERC1155, Ownable {
     /**
      * @notice Construct and initialze the contract. 
      * @param _uri metadata uri
+     * @param _cashierAddress address of the associated Cashier contract
+     * @param _voucherKernelAddress address of the associated Voucher Kernel contract
      */
-    constructor(string memory _uri) ERC1155(_uri) {}
+    constructor(string memory _uri, address _cashierAddress, address _voucherKernelAddress) ERC1155(_uri) notZeroAddress(_cashierAddress) notZeroAddress(_voucherKernelAddress)  {
+        cashierAddress = _cashierAddress;
+        voucherKernelAddress = _voucherKernelAddress;
+    }
 
     /**
      * @notice Transfers amount of _tokenId from-to addresses with safety call.

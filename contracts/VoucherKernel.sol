@@ -151,7 +151,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
      * @notice Checks that only the BosonRouter contract can call a function
     */
     modifier onlyFromRouter() {
-        require(bosonRouterAddress != address(0), "UNSPECIFIED_BR");
         require(msg.sender == bosonRouterAddress, "UNAUTHORIZED_BR");
         _;
     }
@@ -160,7 +159,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
      * @notice Checks that only the Cashier contract can call a function
     */
     modifier onlyFromCashier() {
-        require(cashierAddress != address(0), "UNSPECIFIED_BR");
         require(msg.sender == cashierAddress, "UNAUTHORIZED_C");
         _;
     }
@@ -184,13 +182,19 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
 
     /**
      * @notice Construct and initialze the contract. Iniialises associated contract addresses, the complain period, and the cancel or fault period
+     * @param _bosonRouterAddress address of the associated BosonRouter contract
+     * @param _cashierAddress address of the associated Cashier contract
      * @param _voucherSetsTokenAddress address of the associated ERC1155 contract instance
      * @param _vouchersTokenAddress address of the associated ERC721 contract instance
-     */
-    constructor(address _voucherSetsTokenAddress, address _vouchersTokenAddress)
+      */
+    constructor(address _bosonRouterAddress, address _cashierAddress, address _voucherSetsTokenAddress, address _vouchersTokenAddress)
+    notZeroAddress(_bosonRouterAddress)
+    notZeroAddress(_cashierAddress)
     notZeroAddress(_voucherSetsTokenAddress)
     notZeroAddress(_vouchersTokenAddress)
     {
+        bosonRouterAddress = _bosonRouterAddress;
+        cashierAddress = _cashierAddress;
         voucherSetsTokenAddress = _voucherSetsTokenAddress;
         vouchersTokenAddress = _vouchersTokenAddress;
 
@@ -830,6 +834,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
      */
     function setBosonRouterAddress(address _bosonRouterAddress)
         external
+        override
         onlyOwner
         notZeroAddress(_bosonRouterAddress)
     {
@@ -840,7 +845,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
 
     /**
      * @notice Set the address of the Cashier contract
-     * @param _cashierAddress   The address of the BR contract
+     * @param _cashierAddress   The address of the Cashier contract
      */
     function setCashierAddress(address _cashierAddress)
         external
