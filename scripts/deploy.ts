@@ -29,6 +29,8 @@ class DeploymentExecutor {
   dai_token_limit;
   gate;
   erc1155NonTransferable;
+  complainPeriod;
+  cancelFaultPeriod;
 
   constructor() {
     if (this.constructor == DeploymentExecutor) {
@@ -52,6 +54,9 @@ class DeploymentExecutor {
     this.dai_token_limit = process.env.DAI_TOKEN_LIMIT;
     this.gate;
     this.erc1155NonTransferable;
+
+    this.complainPeriod = process.env.COMPLAIN_PERIOD;
+    this.cancelFaultPeriod = process.env.CANCEL_FAULT_PERIOD;
   }
 
   async setDefaults() {
@@ -362,8 +367,8 @@ class NonProdExecutor extends DeploymentExecutor {
 
   async setDefaults() {
     await super.setDefaults();
-    await this.voucherKernel.setComplainPeriod(2 * this.SIXTY_SECONDS);
-    await this.voucherKernel.setCancelFaultPeriod(2 * this.SIXTY_SECONDS);
+    await this.voucherKernel.setComplainPeriod(this.complainPeriod);
+    await this.voucherKernel.setCancelFaultPeriod(this.cancelFaultPeriod);
     await this.tokenRegistry.setETHLimit(this.eth_limit);
     await this.tokenRegistry.setTokenLimit(this.boson_token, this.boson_token_limit);
     await this.tokenRegistry.setTokenLimit(this.dai_token, this.dai_token_limit);
