@@ -154,6 +154,19 @@ interface IVoucherKernel {
     function setCashierAddress(address _cashierAddress) external;
 
     /**
+     * @notice Set the address of the Vouchers token contract, an ERC721 contract
+     * @param _voucherTokenAddress   The address of the Vouchers token contract
+     */
+    function setVoucherTokenAddress(address _voucherTokenAddress) external;
+
+    /**
+     * @notice Set the address of the Voucher Sets token contract, an ERC1155 contract
+     * @param _voucherSetTokenAddress   The address of the Voucher Sets token contract
+     */
+    function setVoucherSetTokenAddress(address _voucherSetTokenAddress)
+        external;
+
+    /**
      * @notice Set the general complain period, should be used sparingly as it has significant consequences. Here done simply for demo purposes.
      * @param _complainPeriod   the new value for complain period (in number of seconds)
      */

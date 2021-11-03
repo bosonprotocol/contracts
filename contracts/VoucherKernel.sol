@@ -27,10 +27,10 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
     using SafeMath for uint256;
 
     //ERC1155 contract representing voucher sets
-    address private voucherSetsTokenAddress;
+    address private voucherSetTokenAddress;
 
     //ERC721 contract representing vouchers;
-    address private vouchersTokenAddress;
+    address private voucherTokenAddress;
 
     //promise for an asset could be reusable, but simplified here for brevity
     struct Promise {
@@ -130,6 +130,10 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
 
     event LogCashierSet(address _newCashier, address _triggeredBy);
 
+    event LogVoucherTokenContractSet(address _newTokenContract, address _triggeredBy);
+
+    event LogVoucherSetTokenContractSet(address _newTokenContract, address _triggeredBy);
+
     event LogComplainPeriodChanged(
         uint256 _newComplainPeriod,
         address _triggeredBy
@@ -169,7 +173,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
     modifier onlyVoucherOwner(uint256 _tokenIdVoucher, address _sender) {
         //check authorization
         require(
-            IVouchers(vouchersTokenAddress).ownerOf(_tokenIdVoucher) == _sender,
+            IVouchers(voucherTokenAddress).ownerOf(_tokenIdVoucher) == _sender,
             "UNAUTHORIZED_V"
         );
         _;
@@ -184,19 +188,19 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
      * @notice Construct and initialze the contract. Iniialises associated contract addresses, the complain period, and the cancel or fault period
      * @param _bosonRouterAddress address of the associated BosonRouter contract
      * @param _cashierAddress address of the associated Cashier contract
-     * @param _voucherSetsTokenAddress address of the associated ERC1155 contract instance
-     * @param _vouchersTokenAddress address of the associated ERC721 contract instance
+     * @param _voucherSetTokenAddress address of the associated ERC1155 contract instance
+     * @param _voucherTokenAddress address of the associated ERC721 contract instance
       */
-    constructor(address _bosonRouterAddress, address _cashierAddress, address _voucherSetsTokenAddress, address _vouchersTokenAddress)
+    constructor(address _bosonRouterAddress, address _cashierAddress, address _voucherSetTokenAddress, address _voucherTokenAddress)
     notZeroAddress(_bosonRouterAddress)
     notZeroAddress(_cashierAddress)
-    notZeroAddress(_voucherSetsTokenAddress)
-    notZeroAddress(_vouchersTokenAddress)
+    notZeroAddress(_voucherSetTokenAddress)
+    notZeroAddress(_voucherTokenAddress)
     {
         bosonRouterAddress = _bosonRouterAddress;
         cashierAddress = _cashierAddress;
-        voucherSetsTokenAddress = _voucherSetsTokenAddress;
-        vouchersTokenAddress = _vouchersTokenAddress;
+        voucherSetTokenAddress = _voucherSetTokenAddress;
+        voucherTokenAddress = _voucherTokenAddress;
 
         complainPeriod = 7 * 1 days;
         cancelFaultPeriod = 7 * 1 days;
@@ -329,7 +333,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
 
         ordersPromise[tokenIdSupply] = _promiseId;
 
-        IVoucherSets(voucherSetsTokenAddress).mint(
+        IVoucherSets(voucherSetTokenAddress).mint(
             _seller,
             tokenIdSupply,
             _quantity,
@@ -421,7 +425,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         require(_tokenIdSupply != 0, "UNSPECIFIED_ID");
 
         require(
-            IVoucherSets(voucherSetsTokenAddress).balanceOf(_issuer, _tokenIdSupply) > 0,
+            IVoucherSets(voucherSetTokenAddress).balanceOf(_issuer, _tokenIdSupply) > 0,
             "OFFER_EMPTY"
         );
 
@@ -446,7 +450,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         address _to,
         uint256 _tokenIdSupply
     ) internal returns (uint256) {
-        IVoucherSets(voucherSetsTokenAddress).burn(_issuer, _tokenIdSupply, 1); // This is hardcoded as 1 on purpose
+        IVoucherSets(voucherSetTokenAddress).burn(_issuer, _tokenIdSupply, 1); // This is hardcoded as 1 on purpose
 
         //calculate tokenId
         uint256 voucherTokenId =
@@ -461,7 +465,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         vouchersStatus[voucherTokenId].isDepositsReleased = false;
 
         //mint voucher NFT as ERC-721
-        IVouchers(vouchersTokenAddress).mint(_to, voucherTokenId);
+        IVouchers(voucherTokenAddress).mint(_to, voucherTokenId);
 
         return voucherTokenId;
     }
@@ -687,7 +691,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
 
         require(remQty > 0, "OFFER_EMPTY");
 
-        IVoucherSets(voucherSetsTokenAddress).burn(_issuer, _tokenIdSupply, remQty);
+        IVoucherSets(voucherSetTokenAddress).burn(_issuer, _tokenIdSupply, remQty);
 
         emit LogVoucherSetFaultCancel(_tokenIdSupply, _issuer);
 
@@ -861,6 +865,36 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
     }
 
     /**
+     * @notice Set the address of the Vouchers token contract, an ERC721 contract
+     * @param _voucherTokenAddress   The address of the Vouchers token contract
+     */
+    function setVoucherTokenAddress(address _voucherTokenAddress)
+        external
+        override
+        onlyOwner
+        notZeroAddress(_voucherTokenAddress)
+        whenPaused
+    {
+        voucherTokenAddress = _voucherTokenAddress;
+        emit LogVoucherTokenContractSet(_voucherTokenAddress, msg.sender);
+    }
+
+   /**
+     * @notice Set the address of the Voucher Sets token contract, an ERC1155 contract
+     * @param _voucherSetTokenAddress   The address of the Vouchers token contract
+     */
+    function setVoucherSetTokenAddress(address _voucherSetTokenAddress)
+        external
+        override
+        onlyOwner
+        notZeroAddress(_voucherSetTokenAddress)
+        whenPaused
+    {
+        voucherSetTokenAddress = _voucherSetTokenAddress;
+        emit LogVoucherSetTokenContractSet(_voucherSetTokenAddress, msg.sender);
+    }
+
+    /**
      * @notice Set the general complain period, should be used sparingly as it has significant consequences. Here done simply for demo purposes.
      * @param _complainPeriod   the new value for complain period (in number of seconds)
      */
@@ -949,7 +983,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         override
         returns (uint256)
     {
-        return IVoucherSets(voucherSetsTokenAddress).balanceOf(_tokenSupplyOwner, _tokenSupplyId);
+        return IVoucherSets(voucherSetTokenAddress).balanceOf(_tokenSupplyOwner, _tokenSupplyId);
     }
 
     /**
@@ -1072,7 +1106,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         override
         returns (address)
     {
-        return IVouchers(vouchersTokenAddress).ownerOf(_tokenIdVoucher);
+        return IVouchers(voucherTokenAddress).ownerOf(_tokenIdVoucher);
     }
 
     /**
@@ -1254,7 +1288,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         override
         returns (address)
     {
-        return vouchersTokenAddress;
+        return voucherTokenAddress;
     }
 
     /**
@@ -1267,6 +1301,6 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard, Us
         override
         returns (address)
     {
-        return voucherSetsTokenAddress;
+        return voucherSetTokenAddress;
     }
 }

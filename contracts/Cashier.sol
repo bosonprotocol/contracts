@@ -865,6 +865,7 @@ contract Cashier is ICashier, UsingHelpers, ReentrancyGuard, Ownable, Pausable {
         override
         onlyOwner
         notZeroAddress(_voucherSetTokenAddress)
+        whenPaused
     {
         voucherSetTokenAddress = _voucherSetTokenAddress;
         emit LogVoucherSetTokenContractSet(_voucherSetTokenAddress, msg.sender);
