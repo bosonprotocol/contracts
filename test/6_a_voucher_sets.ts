@@ -1300,5 +1300,55 @@ describe('Voucher Sets', () => {
         );
       });
     });
+
+    describe('Contract Metadata', () => {
+      const newMetadataUri = 'https://metadata-url.com/vouchersets/contract.json';
+
+      beforeEach(async () => {
+        await deployContracts();
+      });
+
+      it('[NEGATIVE][setContractUri] Should revert if attacker tries to set contract URI', async () => {
+        const attackerInstance = contractVoucherSets.connect(
+          users.attacker.signer
+        );
+
+        await expect(
+          attackerInstance.setContractUri(newMetadataUri)
+        ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+      });
+
+      it('[NEGATIVE][setContractUri] Should revert if contract URI is empty', async () => {
+        await expect(contractVoucherSets.setContractUri('')).to.be.revertedWith(
+          revertReasons.INVALID_VALUE
+        );
+      });
+
+      it('[setContractUri] should be able to set contract URI', async () => {
+        const tx = await contractVoucherSets.setContractUri(newMetadataUri);
+
+        const txReceipt = await tx.wait();
+        eventUtils.assertEventEmitted(
+          txReceipt,
+          Vouchers_Factory,
+          eventNames.LOG_CONTRACT_URI_SET,
+          (ev) => {
+            assert.equal(
+              ev._contractUri,
+              newMetadataUri,
+              'ev._contractUri not as expected!'
+            );
+            assert.equal(
+              ev._triggeredBy,
+              users.deployer.address,
+              'ev._triggeredBy not as expected!'
+            );
+          }
+        );
+
+        const contractURI = await contractVoucherSets.contractURI();
+        assert.equal(contractURI, newMetadataUri);
+      });
+    });
   });
 });
