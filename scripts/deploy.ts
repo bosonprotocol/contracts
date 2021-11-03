@@ -462,8 +462,9 @@ export async function deploy(_env: string): Promise<void> {
     env == 'prod' ? new ProdExecutor() : new NonProdExecutor(env);
 
   await executor.deployContracts();
-  await executor.setDefaults();
-
+  
   executor.logContracts();
   executor.writeContracts();
+
+  await executor.setDefaults();
 }
