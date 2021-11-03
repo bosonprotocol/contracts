@@ -23,7 +23,7 @@ Main contracts:
 * `DAITokenWrapper`: Provides a uniform interface for calling the `permit `function on the DAI token
 * `ERC1155NonTransferable`: Non-transferrable token, the possession of which allows a buyer to commit to an item following a special quest or campaign.
 * `Gate`: Allows users of the protocol to gate access to a given VoucherSet by requiring that any address attempting to commit to an item in the given VoucherSet have a given ERC1155 before they access.
-* `MetaTransactionReceiver`: Base contract that allows the ERC1155NonTransferable contract to receive and proces meta transactions
+* `MetaTransactionReceiver`: Base contract that allows the ERC1155NonTransferable contract to receive and process meta transactions
 
 ![Boson Protocol inheritance tree](../assets/bosonprotocol-inheritance.png)  
 A control graph of the contracts is 
@@ -209,7 +209,7 @@ periods being triggered.
 ### Services in the background
   
 There are a few functions that can be called by an application built on Boson Protocol to mark vouchers as 
-expired or finalized or to wtidhraw funds. These functions can be called on a scheduled basis or as 
+expired or finalized or to withdraw funds. These functions can be called on a scheduled basis or as 
 individual calls: `VoucherKernel.triggerExpiration()`, 
 `VoucherKernel.triggerFinalizeVoucher()`, `Cashier.withdraw()`.  
 
