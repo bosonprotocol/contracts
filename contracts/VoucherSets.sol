@@ -18,10 +18,11 @@ contract VoucherSets is IVoucherSets, ERC1155, Ownable {
  
     address private voucherKernelAddress; //address of the VoucherKernel contract
     address private cashierAddress; //address of the Cashier contract
-    
+    string private contractUri;
 
     event LogVoucherKernelSet(address _newVoucherKernel, address _triggeredBy);
     event LogCashierSet(address _newCashier, address _triggeredBy);
+    event LogContractUriSet(string _contractUri, address _triggeredBy);
 
     modifier onlyFromVoucherKernel() {
         require(msg.sender == voucherKernelAddress, "UNAUTHORIZED_VK");
@@ -229,6 +230,16 @@ contract VoucherSets is IVoucherSets, ERC1155, Ownable {
         _setURI(_newUri);
     }
 
+    /**
+     * @notice Setting a contractURI for OpenSea collections integration.
+     * @param _contractUri   The contract URI to be used
+     */
+    function setContractUri(string memory _contractUri) external onlyOwner {
+        require(bytes(_contractUri).length != 0, "INVALID_VALUE");
+        contractUri = _contractUri;
+        emit LogContractUriSet(_contractUri, msg.sender);
+    }
+
     // // // // // // // //
     // UTILS
     // // // // // // // //
@@ -287,5 +298,12 @@ contract VoucherSets is IVoucherSets, ERC1155, Ownable {
     {
         return cashierAddress;
     }
-    
+
+    /**
+     * @notice Get the contractURI for Opensea collections integration
+     * @return Contract URI
+     */
+    function contractURI() public view returns (string memory) {
+        return contractUri;
+    }
 }
