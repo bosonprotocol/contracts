@@ -1302,7 +1302,8 @@ describe('Voucher Sets', () => {
     });
 
     describe('Contract Metadata', () => {
-      const newMetadataUri = 'https://metadata-url.com/vouchersets/contract.json';
+      const newMetadataUri =
+        'https://metadata-url.com/vouchersets/contract.json';
 
       beforeEach(async () => {
         await deployContracts();
