@@ -4060,10 +4060,12 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('[!CANCEL] It should not be possible to cancel voucher that does not exist yet', async () => {
-        // spoof boson router address.
+        // spoof boson router address
+        await contractBosonRouter.pause();
         await contractVoucherKernel.setBosonRouterAddress(
           users.deployer.address
         );
+        await contractVoucherKernel.unpause();
 
         await expect(
           contractVoucherKernel.cancelOrFault(
