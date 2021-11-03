@@ -77,6 +77,18 @@ class DeploymentExecutor {
       event.args._approved
     );
 
+    tx = await this.voucherSets.setContractUri(
+      process.env.VOUCHERSETS_CONTRACT_URI
+    );
+    txReceipt = await tx.wait();
+    event = txReceipt.events[0];
+    console.log(
+      '\n$ VoucherSets: ',
+      event.event,
+      'has set a ContractUri:',
+      event.args._contractUri
+    );
+
     tx = await this.vouchers.setApprovalForAll(
       this.voucherKernel.address,
       'true'
