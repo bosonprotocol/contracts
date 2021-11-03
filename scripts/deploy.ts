@@ -61,10 +61,9 @@ class DeploymentExecutor {
     this.cancelFaultPeriod = process.env.CANCEL_FAULT_PERIOD;
 
     this.maxTip = ethers.utils.parseUnits(
-      process.env.MAX_TIP
-        ? String(process.env.MAX_TIP)
-        : "1"
-      ,"gwei");
+      process.env.MAX_TIP ? String(process.env.MAX_TIP) : '1',
+      'gwei'
+    );
 
     this.txOptions = {maxPriorityFeePerGas: this.maxTip};
   }
@@ -115,7 +114,10 @@ class DeploymentExecutor {
       event.args._approved
     );
 
-    tx = await this.vouchers.setContractUri(process.env.VOUCHERS_CONTRACT_URI, this.txOptions);
+    tx = await this.vouchers.setContractUri(
+      process.env.VOUCHERS_CONTRACT_URI,
+      this.txOptions
+    );
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
     console.log(
@@ -249,7 +251,10 @@ class DeploymentExecutor {
       contractAddresses.cashier,
       this.txOptions
     );
-    this.daiTokenWrapper = await DAITokenWrapper.deploy(this.dai_token, this.txOptions);
+    this.daiTokenWrapper = await DAITokenWrapper.deploy(
+      this.dai_token,
+      this.txOptions
+    );
     this.gate = await Gate.deploy(
       contractAddresses.br,
       ccContractAddresses.erc1155NonTransferable,
@@ -419,8 +424,14 @@ class NonProdExecutor extends DeploymentExecutor {
 
   async setDefaults() {
     await super.setDefaults();
-    await this.voucherKernel.setComplainPeriod(this.complainPeriod, this.txOptions);
-    await this.voucherKernel.setCancelFaultPeriod(this.cancelFaultPeriod, this.txOptions);
+    await this.voucherKernel.setComplainPeriod(
+      this.complainPeriod,
+      this.txOptions
+    );
+    await this.voucherKernel.setCancelFaultPeriod(
+      this.cancelFaultPeriod,
+      this.txOptions
+    );
     await this.tokenRegistry.setETHLimit(this.eth_limit, this.txOptions);
     await this.tokenRegistry.setTokenLimit(
       this.boson_token,
