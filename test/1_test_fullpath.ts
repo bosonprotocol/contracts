@@ -626,6 +626,8 @@ describe('Voucher tests', () => {
       await contractMockBosonRouter.deployed();
 
       //Set mock so that passing wrong payment type from requestCreateOrderETHETH to createPaymentMethod can be tested
+      await contractBosonRouter.pause();
+
       await contractVoucherKernel.setBosonRouterAddress(
         contractMockBosonRouter.address
       );
@@ -633,6 +635,10 @@ describe('Voucher tests', () => {
       await contractCashier.setBosonRouterAddress(
         contractMockBosonRouter.address
       );
+      // To unpause Cashier and VoucherKernel unpause must be called on the new router
+      // To call unpause, router must be in paused state, so pause should be called first
+      await contractMockBosonRouter.pause();
+      await contractMockBosonRouter.unpause();
 
       const sellerInstance = contractMockBosonRouter.connect(
         users.seller.signer
@@ -1333,16 +1339,26 @@ describe('Voucher tests', () => {
       await contractMockBosonRouter.deployed();
 
       //Set mock so that failed transferFrom of tokens with no return value can be tested in transferFromAndAddEscrow
+      await contractBosonRouter.pause();
+
       await contractCashier.setBosonRouterAddress(
         contractMockBosonRouter.address
       );
+
+      await contractVoucherKernel.setBosonRouterAddress(
+        contractMockBosonRouter.address
+      );
+
+      // To unpause Cashier and VoucherKernel unpause must be called on the new router
+      // To call unpause, router must be in paused state, so pause should be called first
+      await contractMockBosonRouter.pause();
+      await contractMockBosonRouter.unpause();
 
       sellerInstance = contractMockBosonRouter.connect(users.seller.signer);
     });
 
     it('[Negative] safeTransferFrom will revert the transaction if it fails', async () => {
       await contractBSNTokenPrice.pause();
-
       await expect(
         sellerInstance.transferFromAndAddEscrowTest(
           contractBSNTokenPrice.address,

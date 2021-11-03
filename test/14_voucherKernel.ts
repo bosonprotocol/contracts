@@ -414,7 +414,9 @@ describe('VOUCHER KERNEL', () => {
 
     it('[NEGATIVE] Should revert if fillOrder is called with wrong token Id Supply', async () => {
       // spoof boson router address
+      await contractBosonRouter.pause();
       await contractVoucherKernel.setBosonRouterAddress(users.deployer.address);
+      await contractVoucherKernel.unpause();
 
       await expect(
         contractVoucherKernel.fillOrder(
@@ -463,9 +465,11 @@ describe('VOUCHER KERNEL', () => {
         );
 
         // spoof boson router address
+        await contractBosonRouter.pause();
         await contractVoucherKernel.setBosonRouterAddress(
           users.deployer.address
         );
+        await contractVoucherKernel.unpause();
       });
 
       it('[NEGATIVE] Should revert if fillOrder is called with wrong holder', async () => {
@@ -567,7 +571,9 @@ describe('VOUCHER KERNEL', () => {
         );
 
         // spoof boson router address
+        await contractBosonRouter.pause();
         await contractVoucherKernel.setCashierAddress(users.deployer.address);
+        await contractBosonRouter.unpause();
       });
 
       it('[NEGATIVE] Should revert if setPaymentReleased voucher id is zero', async () => {
@@ -587,7 +593,9 @@ describe('VOUCHER KERNEL', () => {
       await deployContracts();
 
       // spoof boson router address
+      await contractBosonRouter.pause();
       await contractVoucherKernel.setBosonRouterAddress(users.deployer.address);
+      await contractVoucherKernel.unpause();
 
       await expect(
         contractVoucherKernel.createTokenSupplyId(
@@ -607,9 +615,11 @@ describe('VOUCHER KERNEL', () => {
         await deployContracts();
 
         // spoof boson router address
+        await contractBosonRouter.pause();
         await contractVoucherKernel.setBosonRouterAddress(
           users.deployer.address
         );
+        await contractVoucherKernel.unpause();
       });
 
       it('[createTokenSupplyId] Should not revert if validFrom is 5 minutes or more than ValidTo', async () => {

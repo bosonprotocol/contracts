@@ -213,6 +213,7 @@ describe('Voucher Sets', () => {
 
       it('[setVoucherKernelAddress] Should set setVoucherKernelAddress to valid address', async () => {
         const expectedVoucherKernelAddress = users.other1.address;
+        await contractVoucherSets.pause();
         const tx = await contractVoucherSets.setVoucherKernelAddress(
           expectedVoucherKernelAddress
         );
@@ -364,9 +365,11 @@ describe('Voucher Sets', () => {
         const expectedCount = constants.QTY_10;
 
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        contractVoucherSets.pause();
         await contractVoucherSets.setVoucherKernelAddress(
           users.deployer.address
         );
+        contractVoucherSets.unpause();
 
         await contractVoucherSets.functions[fnSignatures.mint1155](
           users.deployer.address,
@@ -537,9 +540,11 @@ describe('Voucher Sets', () => {
         ];
 
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVoucherSets.pause();
         await contractVoucherSets.setVoucherKernelAddress(
           users.deployer.address
         );
+        await contractVoucherSets.unpause();
 
         await contractVoucherSets.mintBatch(
           users.deployer.address,
@@ -614,9 +619,11 @@ describe('Voucher Sets', () => {
         ];
 
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVoucherSets.pause();
         await contractVoucherSets.setVoucherKernelAddress(
           users.deployer.address
         );
+        await contractVoucherSets.unpause();
 
         await contractVoucherSets.mintBatch(
           users.deployer.address,
@@ -799,9 +806,11 @@ describe('Voucher Sets', () => {
 
       it('[mint] Should mint a desired token', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVoucherSets.pause();
         await contractVoucherSets.setVoucherKernelAddress(
           users.deployer.address
         );
+        await contractVoucherSets.unpause();
 
         const tokenIdForMint = 123;
         const tx = await contractVoucherSets.functions[fnSignatures.mint1155](
@@ -850,9 +859,11 @@ describe('Voucher Sets', () => {
         const erc1155supportingContract = contractMockERC1155Receiver;
 
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVoucherSets.pause();
         await contractVoucherSets.setVoucherKernelAddress(
           users.deployer.address
         );
+        await contractVoucherSets.unpause();
 
         const tokenIdForMint = 123;
         const tx = await contractVoucherSets.functions[fnSignatures.mint1155](
@@ -903,9 +914,11 @@ describe('Voucher Sets', () => {
 
       it('[NEGATIVE][mint] Should revert when to is a contract that cannot receive it', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVoucherSets.pause();
         await contractVoucherSets.setVoucherKernelAddress(
           users.deployer.address
         );
+        await contractVoucherSets.unpause();
 
         await expect(
           contractVoucherSets.functions[fnSignatures.mint1155](
@@ -930,9 +943,11 @@ describe('Voucher Sets', () => {
 
       it('[NEGATIVE][mint] Should revert when to is a zero address', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVoucherSets.pause();
         await contractVoucherSets.setVoucherKernelAddress(
           users.deployer.address
         );
+        await contractVoucherSets.unpause();
 
         await expect(
           contractVoucherSets.functions[fnSignatures.mint1155](
@@ -946,9 +961,11 @@ describe('Voucher Sets', () => {
 
       it('[burn] Should burn an amount of tokens with the given ID', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVoucherSets.pause();
         await contractVoucherSets.setVoucherKernelAddress(
           users.deployer.address
         );
+        await contractVoucherSets.unpause();
 
         const tokenIdToBurn = TOKEN_SUPPLY_ID;
         const tx = await contractVoucherSets.functions[fnSignatures.burn1155](
@@ -998,9 +1015,11 @@ describe('Voucher Sets', () => {
 
       it('[NEGATIVE][burn] Should revert when _account is a zero address', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVoucherSets.pause();
         await contractVoucherSets.setVoucherKernelAddress(
           users.deployer.address
         );
+        await contractVoucherSets.unpause();
 
         await expect(
           contractVoucherSets.functions[fnSignatures.burn1155](
@@ -1013,9 +1032,11 @@ describe('Voucher Sets', () => {
 
       it('[mintBatch] Should do batch minting of tokens', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVoucherSets.pause();
         await contractVoucherSets.setVoucherKernelAddress(
           users.deployer.address
         );
+        await contractVoucherSets.unpause();
 
         const tokenIds = [BN(123), BN(456), BN(789)];
         const quantities = [
@@ -1082,9 +1103,11 @@ describe('Voucher Sets', () => {
         const erc1155supportingContract = contractMockERC1155Receiver;
 
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVoucherSets.pause();
         await contractVoucherSets.setVoucherKernelAddress(
           users.deployer.address
         );
+        await contractVoucherSets.unpause();
 
         const tokenIds = [BN(123)];
         const quantities = [BN(constants.QTY_10)];
@@ -1139,9 +1162,11 @@ describe('Voucher Sets', () => {
 
       it('[NEGATIVE][mintBatch] Should revert when to is a contract that cannot receive it', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVoucherSets.pause();
         await contractVoucherSets.setVoucherKernelAddress(
           users.deployer.address
         );
+        await contractVoucherSets.unpause();
 
         await expect(
           contractVoucherSets.mintBatch(
@@ -1155,9 +1180,11 @@ describe('Voucher Sets', () => {
 
       it('[NEGATIVE][mintBatch] Should revert when _account is a zero address', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVoucherSets.pause();
         await contractVoucherSets.setVoucherKernelAddress(
           users.deployer.address
         );
+        await contractVoucherSets.unpause();
 
         await expect(
           contractVoucherSets.mintBatch(
@@ -1171,9 +1198,11 @@ describe('Voucher Sets', () => {
 
       it('[NEGATIVE][mintBatch] Should revert if array lengths mismatch', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVoucherSets.pause();
         await contractVoucherSets.setVoucherKernelAddress(
           users.deployer.address
         );
+        await contractVoucherSets.unpause();
 
         await expect(
           contractVoucherSets.mintBatch(
@@ -1187,9 +1216,11 @@ describe('Voucher Sets', () => {
 
       it('[burnBatch] Should do batch minting of tokens', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVoucherSets.pause();
         await contractVoucherSets.setVoucherKernelAddress(
           users.deployer.address
         );
+        await contractVoucherSets.unpause();
 
         const tokenIds = TOKEN_SUPPLY_ID;
         const tx = await contractVoucherSets.burnBatch(
@@ -1236,9 +1267,11 @@ describe('Voucher Sets', () => {
 
       it('[NEGATIVE][burnBatch] Should revert when _account is a zero address', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVoucherSets.pause();
         await contractVoucherSets.setVoucherKernelAddress(
           users.deployer.address
         );
+        await contractVoucherSets.unpause();
 
         await expect(
           contractVoucherSets.burnBatch(
@@ -1251,9 +1284,11 @@ describe('Voucher Sets', () => {
 
       it('[NEGATIVE][burnBatch] Should revert if array lengths mismatch', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVoucherSets.pause();
         await contractVoucherSets.setVoucherKernelAddress(
           users.deployer.address
         );
+        await contractVoucherSets.unpause();
 
         await expect(
           contractVoucherSets.burnBatch(

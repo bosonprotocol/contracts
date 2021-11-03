@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./interfaces/IVoucherKernel.sol";
 import "./interfaces/ICashier.sol";
@@ -16,7 +17,7 @@ import "./interfaces/IVouchers.sol";
 /**
  * @title Vouchers implemented as ERC-721
  */
-contract Vouchers is IVouchers, ERC721, Ownable {
+contract Vouchers is IVouchers, ERC721, Ownable, Pausable {
     using Address for address;
     using Strings for uint256;
 
@@ -55,6 +56,22 @@ contract Vouchers is IVouchers, ERC721, Ownable {
 
         cashierAddress = _cashierAddress;
         voucherKernelAddress = _voucherKernelAddress;
+    }
+
+    /**
+     * @notice Pause the process of interaction with voucherID's (ERC-721), in case of emergency.
+     * Only BR contract is in control of this function.
+     */
+    function pause() external override onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @notice Unpause the process of interaction with voucherID's (ERC-721).
+     * Only BR contract is in control of this function.
+     */
+    function unpause() external override onlyOwner {
+        _unpause();
     }
 
     /**
@@ -172,6 +189,7 @@ contract Vouchers is IVouchers, ERC721, Ownable {
         override
         onlyOwner
         notZeroAddress(_voucherKernelAddress)
+        whenPaused
     {
         voucherKernelAddress = _voucherKernelAddress;
 
@@ -187,6 +205,7 @@ contract Vouchers is IVouchers, ERC721, Ownable {
         override
         onlyOwner
         notZeroAddress(_cashierAddress)
+        whenPaused
     {
         cashierAddress = _cashierAddress;
         emit LogCashierSet(_cashierAddress, msg.sender);

@@ -2216,6 +2216,7 @@ describe('Cashier and VoucherKernel', () => {
         await contractMockBosonRouter.deployed();
 
         //Set mock so that passing wrong payment type from requestCreateOrderETHETH to createPaymentMethod can be tested
+        await contractBosonRouter.pause();
         await contractVoucherKernel.setBosonRouterAddress(
           contractMockBosonRouter.address
         );
@@ -2223,6 +2224,11 @@ describe('Cashier and VoucherKernel', () => {
         await contractCashier.setBosonRouterAddress(
           contractMockBosonRouter.address
         );
+
+        // To unpause Cashier and VoucherKernel unpause must be called on the new router
+        // To call unpause, router must be in paused state, so pause should be called first
+        await contractMockBosonRouter.pause();
+        await contractMockBosonRouter.unpause();
 
         const utilsTknEth = await UtilsBuilder.create()
           .ERC20withPermit()
@@ -4039,9 +4045,11 @@ describe('Cashier and VoucherKernel', () => {
 
       it('[!CANCEL] It should not be possible to cancel voucher that is not mapped to any supply', async () => {
         // spoof boson router address.
+        await contractBosonRouter.pause();
         await contractVoucherKernel.setBosonRouterAddress(
           users.deployer.address
         );
+        await contractVoucherKernel.unpause();
 
         await expect(
           contractVoucherKernel.cancelOrFault(
@@ -4052,10 +4060,12 @@ describe('Cashier and VoucherKernel', () => {
       });
 
       it('[!CANCEL] It should not be possible to cancel voucher that does not exist yet', async () => {
-        // spoof boson router address.
+        // spoof boson router address
+        await contractBosonRouter.pause();
         await contractVoucherKernel.setBosonRouterAddress(
           users.deployer.address
         );
+        await contractVoucherKernel.unpause();
 
         await expect(
           contractVoucherKernel.cancelOrFault(

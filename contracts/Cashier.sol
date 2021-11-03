@@ -823,6 +823,7 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
         external
         override
         onlyOwner
+        whenPaused
         notZeroAddress(_bosonRouterAddress)
     {
         bosonRouterAddress = _bosonRouterAddress;
@@ -839,6 +840,7 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
         override
         onlyOwner
         notZeroAddress(_voucherTokenAddress)
+        whenPaused
     {
         voucherTokenAddress = _voucherTokenAddress;
         emit LogVoucherTokenContractSet(_voucherTokenAddress, msg.sender);
@@ -853,11 +855,11 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
         override
         onlyOwner
         notZeroAddress(_voucherSetTokenAddress)
+        whenPaused
     {
         voucherSetTokenAddress = _voucherSetTokenAddress;
         emit LogVoucherSetTokenContractSet(_voucherSetTokenAddress, msg.sender);
     }
-
 
     /**
      * @notice Update the amount in escrow of an address with the new value, based on VoucherSet/Voucher interaction
@@ -1129,6 +1131,7 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
         override
         onlyOwner
         notZeroAddress(_voucherKernelAddress)
+        whenPaused
     {
         voucherKernel = _voucherKernelAddress;
 

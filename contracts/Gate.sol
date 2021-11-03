@@ -66,7 +66,7 @@ contract Gate is IGate, Ownable, Pausable {
      */
     function setNonTransferableTokenContract(
         address _nonTransferableTokenContractAddress
-    ) external override onlyOwner notZeroAddress(_nonTransferableTokenContractAddress) {
+    ) external override onlyOwner notZeroAddress(_nonTransferableTokenContractAddress) whenPaused {
         nonTransferableTokenContract = IERC1155(
             _nonTransferableTokenContractAddress
         );
@@ -92,6 +92,7 @@ contract Gate is IGate, Ownable, Pausable {
         override
         onlyOwner
         notZeroAddress(_bosonRouterAddress)
+        whenPaused
     {
         bosonRouterAddress = _bosonRouterAddress;
 

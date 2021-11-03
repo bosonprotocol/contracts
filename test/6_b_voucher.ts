@@ -211,6 +211,7 @@ describe('Vouchers', () => {
 
       it('[setVoucherKernelAddress] Should set setVoucherKernelAddress to valid address', async () => {
         const expectedVoucherKernelAddress = users.other1.address;
+        await contractVouchers.pause();
         const tx = await contractVouchers.setVoucherKernelAddress(
           expectedVoucherKernelAddress
         );
@@ -442,7 +443,9 @@ describe('Vouchers', () => {
         const tokenIdsForMint = 123;
 
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVouchers.pause();
         await contractVouchers.setVoucherKernelAddress(users.deployer.address);
+        await contractVouchers.unpause();
 
         await contractVouchers.functions[fnSignatures.mint721](
           expectedOwner,
@@ -464,9 +467,11 @@ describe('Vouchers', () => {
       describe('[balanceOf] should count all NFTs assigned to an owner', async () => {
         it('[balanceOf] returns 4 when 4 NFTs are assigned to owner', async () => {
           // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+          await contractVouchers.pause();
           await contractVouchers.setVoucherKernelAddress(
             users.deployer.address
           );
+          await contractVouchers.unpause();
 
           const tokenIdsForMint = [10, 20, 30, 40];
 
@@ -829,7 +834,9 @@ describe('Vouchers', () => {
 
       it('[getApproved] Should return zero address if no address set', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVouchers.pause();
         await contractVouchers.setVoucherKernelAddress(users.deployer.address);
+        await contractVouchers.unpause();
 
         const tokenIdForMint = 123;
         await contractVouchers.functions[fnSignatures.mint721](
@@ -847,7 +854,9 @@ describe('Vouchers', () => {
         const expectedApprovedAddress = users.other1.address;
 
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVouchers.pause();
         await contractVouchers.setVoucherKernelAddress(users.deployer.address);
+        await contractVouchers.unpause();
 
         const tokenIdForMint = 123;
         await contractVouchers.functions[fnSignatures.mint721](
@@ -870,7 +879,9 @@ describe('Vouchers', () => {
 
       it('[mint] Should mint a token', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVouchers.pause();
         await contractVouchers.setVoucherKernelAddress(users.deployer.address);
+        await contractVouchers.unpause();
 
         const tokenIdForMint = 123;
         const tx = await contractVouchers.functions[fnSignatures.mint721](
@@ -911,7 +922,9 @@ describe('Vouchers', () => {
         const supportingContractAddress = contractMockERC721Receiver.address;
 
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVouchers.pause();
         await contractVouchers.setVoucherKernelAddress(users.deployer.address);
+        await contractVouchers.unpause();
 
         const tokenIdForMint = 123;
         const tx = await contractVouchers.functions[fnSignatures.mint721](
@@ -954,7 +967,9 @@ describe('Vouchers', () => {
 
       it('[NEGATIVE][mint] it should not be able to mint a token to a receiver whose onERC721Received function eturns the wrong value', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVouchers.pause();
         await contractVouchers.setVoucherKernelAddress(users.deployer.address);
+        await contractVouchers.unpause();
 
         const tokenIdForMint = 123;
 
@@ -975,7 +990,9 @@ describe('Vouchers', () => {
 
       it('[NEGATIVE][mint] it should not be able to mint a token to a receiver that cannot receive it because it does not have onERC721Received function', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVouchers.pause();
         await contractVouchers.setVoucherKernelAddress(users.deployer.address);
+        await contractVouchers.unpause();
 
         const tokenIdForMint = 123;
         await expect(
@@ -997,7 +1014,9 @@ describe('Vouchers', () => {
 
       it('[NEGATIVE][mint] Should revert when to is a zero address', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVouchers.pause();
         await contractVouchers.setVoucherKernelAddress(users.deployer.address);
+        await contractVouchers.unpause();
 
         await expect(
           contractVouchers.functions[fnSignatures.mint721](
@@ -1009,7 +1028,9 @@ describe('Vouchers', () => {
 
       it('[NEGATIVE][mint] Should not be able to mint same token twice', async () => {
         // spoofing the VoucherKernel address here because the function is being called directly instead of via the VoucherKernel contract
+        await contractVouchers.pause();
         await contractVouchers.setVoucherKernelAddress(users.deployer.address);
+        await contractVouchers.unpause();
 
         const tokenIdForMint = 123;
         await contractVouchers.functions[fnSignatures.mint721](

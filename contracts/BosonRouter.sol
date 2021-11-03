@@ -160,8 +160,10 @@ contract BosonRouter is
      */
     function pause() external override onlyRouterOwner() {
         _pause();
-        IVoucherKernel(voucherKernel).pause();
-        ICashier(cashierAddress).pause();
+        if (!Pausable(voucherKernel).paused()) { 
+            IVoucherKernel(voucherKernel).pause();
+            ICashier(cashierAddress).pause();
+        }
     }
 
     /**
@@ -173,8 +175,10 @@ contract BosonRouter is
         require(ICashier(cashierAddress).canUnpause(), "UF"); //unpaused forbidden
 
         _unpause();
-        IVoucherKernel(voucherKernel).unpause();
-        ICashier(cashierAddress).unpause();
+        if (Pausable(voucherKernel).paused()) { 
+            IVoucherKernel(voucherKernel).unpause();
+            ICashier(cashierAddress).unpause();
+        }        
     }
 
     /**
@@ -1227,6 +1231,7 @@ contract BosonRouter is
         external
         onlyOwner
         notZeroAddress(_voucherKernelAddress)
+        whenPaused
     {
         voucherKernel = _voucherKernelAddress;
 
@@ -1241,6 +1246,7 @@ contract BosonRouter is
         external
         onlyOwner
         notZeroAddress(_tokenRegistryAddress)
+        whenPaused
     {
         tokenRegistry = _tokenRegistryAddress;
 
@@ -1255,6 +1261,7 @@ contract BosonRouter is
         external
         onlyOwner
         notZeroAddress(_cashierAddress)
+        whenPaused
     {
         cashierAddress = _cashierAddress;
 
