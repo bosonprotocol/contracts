@@ -444,6 +444,7 @@ describe('Admin functionality', async () => {
     });
 
     it('Owner should be able to set VK address', async () => {
+      await contractVoucherSets.pause();
       const tx = await contractVoucherSets.setVoucherKernelAddress(
         contractVoucherKernel.address
       );
@@ -469,6 +470,14 @@ describe('Admin functionality', async () => {
       );
     });
 
+    it('[NEGATIVE] VK address cannot be set if not paused', async () => {
+      await expect(
+        contractVoucherSets.setVoucherKernelAddress(
+          contractVoucherKernel.address
+        )
+      ).to.be.revertedWith(revertReasons.NOT_PAUSED);
+    });
+
     it('[NEGATIVE][setVoucherKernelAddress] Should revert if executed by attacker', async () => {
       const attackerInstance = contractVoucherSets.connect(
         users.attacker.signer
@@ -485,6 +494,7 @@ describe('Admin functionality', async () => {
     });
 
     it('Owner should be able to set Cashier address', async () => {
+      await contractVoucherSets.pause();
       const tx = await contractVoucherSets.setCashierAddress(
         contractCashier.address
       );
@@ -507,6 +517,12 @@ describe('Admin functionality', async () => {
           );
         }
       );
+    });
+
+    it('[NEGATIVE] Cashier address cannot be set if not paused', async () => {
+      await expect(
+        contractVoucherSets.setCashierAddress(contractCashier.address)
+      ).to.be.revertedWith(revertReasons.NOT_PAUSED);
     });
 
     it('[NEGATIVE][setCashierAddress] Attacker should not be able to set Cashier address', async () => {
@@ -540,6 +556,7 @@ describe('Admin functionality', async () => {
     });
 
     it('Owner should be able to set VK address', async () => {
+      await contractVouchers.pause();
       const tx = await contractVouchers.setVoucherKernelAddress(
         contractVoucherKernel.address
       );
@@ -565,6 +582,12 @@ describe('Admin functionality', async () => {
       );
     });
 
+    it('[NEGATIVE] VK address cannot be set if not paused', async () => {
+      await expect(
+        contractVouchers.setVoucherKernelAddress(contractVoucherKernel.address)
+      ).to.be.revertedWith(revertReasons.NOT_PAUSED);
+    });
+
     it('[NEGATIVE][setVoucherKernelAddress] Should revert if executed by attacker', async () => {
       const attackerInstance = contractVouchers.connect(users.attacker.signer);
       await expect(
@@ -579,6 +602,7 @@ describe('Admin functionality', async () => {
     });
 
     it('Owner should be able to set Cashier address', async () => {
+      await contractVouchers.pause();
       const tx = await contractVouchers.setCashierAddress(
         contractCashier.address
       );
@@ -601,6 +625,12 @@ describe('Admin functionality', async () => {
           );
         }
       );
+    });
+
+    it('[NEGATIVE] Cashier address cannot be set when not paused', async () => {
+      await expect(
+        contractVouchers.setCashierAddress(contractCashier.address)
+      ).to.be.revertedWith(revertReasons.NOT_PAUSED);
     });
 
     it('[NEGATIVE][setCashierAddress] Attacker should not be able to set Cashier address', async () => {

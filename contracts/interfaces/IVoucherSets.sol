@@ -6,6 +6,19 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155MetadataURI.sol";
 
 interface IVoucherSets is IERC1155, IERC1155MetadataURI {
     /**
+     * @notice Pause the Cashier && the Voucher Kernel contracts in case of emergency.
+     * All functions related to creating new batch, requestVoucher or withdraw will be paused, hence cannot be executed.
+     * There is special function for withdrawing funds if contract is paused.
+     */
+    function pause() external;
+
+    /**
+     * @notice Unpause the Cashier && the Voucher Kernel contracts.
+     * All functions related to creating new batch, requestVoucher or withdraw will be unpaused.
+     */
+    function unpause() external;
+
+    /**
      * @notice Mint an amount of a desired token
      * Currently no restrictions as to who is allowed to mint - so, it is external.
      * @dev ERC-1155

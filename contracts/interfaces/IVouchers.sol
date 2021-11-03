@@ -6,6 +6,19 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Metadata.sol";
 
 interface IVouchers is IERC721, IERC721Metadata {
     /**
+     * @notice Pause the Cashier && the Voucher Kernel contracts in case of emergency.
+     * All functions related to creating new batch, requestVoucher or withdraw will be paused, hence cannot be executed.
+     * There is special function for withdrawing funds if contract is paused.
+     */
+    function pause() external;
+
+    /**
+     * @notice Unpause the Cashier && the Voucher Kernel contracts.
+     * All functions related to creating new batch, requestVoucher or withdraw will be unpaused.
+     */
+    function unpause() external;
+
+    /**
      * @notice Function to mint tokens.
      * @dev ERC-721
      * @param _to The address that will receive the minted tokens.

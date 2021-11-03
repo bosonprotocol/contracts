@@ -1463,6 +1463,104 @@ describe('Cashier && VK', () => {
       });
     });
 
+    describe('VOUCHERSETS', () => {
+      describe('COMMON PAUSING', () => {
+        beforeEach(async () => {
+          await deployContracts();
+        });
+
+        it('Should not be paused on deployment', async () => {
+          const isPaused = await contractVoucherSets.paused();
+          assert.isFalse(isPaused);
+        });
+
+        it('Owner should pause the contract', async () => {
+          await contractVoucherSets.pause();
+
+          const isPaused = await contractVoucherSets.paused();
+          assert.isTrue(isPaused);
+        });
+
+        it('Owner should unpause the contract', async () => {
+          await contractVoucherSets.pause();
+          await contractVoucherSets.unpause();
+
+          const isPaused = await contractVoucherSets.paused();
+          assert.isFalse(isPaused);
+        });
+
+        it('[NEGATIVE] Attacker should not be able to pause the contract', async () => {
+          const attackerInstance = contractVoucherSets.connect(
+            users.attacker.signer
+          );
+          await expect(attackerInstance.pause()).to.be.revertedWith(
+            revertReasons.UNAUTHORIZED_OWNER
+          );
+        });
+
+        it('[NEGATIVE] Attacker should not be able to unpause the contract', async () => {
+          await contractVoucherSets.pause();
+
+          const attackerInstance = contractVoucherSets.connect(
+            users.attacker.signer
+          );
+
+          await expect(attackerInstance.unpause()).to.be.revertedWith(
+            revertReasons.UNAUTHORIZED_OWNER
+          );
+        });
+      });
+    });
+
+    describe('VOUCHERS', () => {
+      describe('COMMON PAUSING', () => {
+        beforeEach(async () => {
+          await deployContracts();
+        });
+
+        it('Should not be paused on deployment', async () => {
+          const isPaused = await contractVouchers.paused();
+          assert.isFalse(isPaused);
+        });
+
+        it('Owner should pause the contract', async () => {
+          await contractVouchers.pause();
+
+          const isPaused = await contractVouchers.paused();
+          assert.isTrue(isPaused);
+        });
+
+        it('Owner should unpause the contract', async () => {
+          await contractVouchers.pause();
+          await contractVouchers.unpause();
+
+          const isPaused = await contractVouchers.paused();
+          assert.isFalse(isPaused);
+        });
+
+        it('[NEGATIVE] Attacker should not be able to pause the contract', async () => {
+          const attackerInstance = contractVouchers.connect(
+            users.attacker.signer
+          );
+          await expect(attackerInstance.pause()).to.be.revertedWith(
+            revertReasons.UNAUTHORIZED_OWNER
+          );
+        });
+
+        it('[NEGATIVE] Attacker should not be able to unpause the contract', async () => {
+          await contractVouchers.pause();
+
+          const attackerInstance = contractVoucherSets.connect(
+            users.attacker.signer
+          );
+
+          await expect(attackerInstance.unpause()).to.be.revertedWith(
+            revertReasons.UNAUTHORIZED_OWNER
+          );
+        });
+      });
+    });
+
     afterEach(async () => {
       const isPaused = await contractBosonRouter.paused();
       const isUnpauseable = await contractCashier.canUnpause();

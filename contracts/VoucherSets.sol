@@ -5,6 +5,7 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "./interfaces/IVoucherKernel.sol";
 import "./interfaces/IVoucherSets.sol";
 import "./interfaces/ICashier.sol";
@@ -14,7 +15,7 @@ import "./interfaces/ICashier.sol";
 /**
  * @title Voucher sets implemented as ERC-1155
  */
-contract VoucherSets is IVoucherSets, ERC1155, Ownable {
+contract VoucherSets is IVoucherSets, ERC1155, Ownable, Pausable {
  
     address private voucherKernelAddress; //address of the VoucherKernel contract
     address private cashierAddress; //address of the Cashier contract
@@ -42,6 +43,22 @@ contract VoucherSets is IVoucherSets, ERC1155, Ownable {
     constructor(string memory _uri, address _cashierAddress, address _voucherKernelAddress) ERC1155(_uri) notZeroAddress(_cashierAddress) notZeroAddress(_voucherKernelAddress)  {
         cashierAddress = _cashierAddress;
         voucherKernelAddress = _voucherKernelAddress;
+    }
+
+    /**
+     * @notice Pause the process of interaction with voucherID's (ERC-721), in case of emergency.
+     * Only BR contract is in control of this function.
+     */
+    function pause() external override onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @notice Unpause the process of interaction with voucherID's (ERC-721).
+     * Only BR contract is in control of this function.
+     */
+    function unpause() external override onlyOwner {
+        _unpause();
     }
 
     /**
@@ -242,6 +259,7 @@ contract VoucherSets is IVoucherSets, ERC1155, Ownable {
         override
         onlyOwner
         notZeroAddress(_voucherKernelAddress)
+        whenPaused
     {
         voucherKernelAddress = _voucherKernelAddress;
 
@@ -257,6 +275,7 @@ contract VoucherSets is IVoucherSets, ERC1155, Ownable {
         override
         onlyOwner
         notZeroAddress(_cashierAddress)
+        whenPaused
     {
         cashierAddress = _cashierAddress;
         emit LogCashierSet(_cashierAddress, msg.sender);
