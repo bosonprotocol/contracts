@@ -15,7 +15,7 @@ const testMnemonic = 'inhale wood champion certain immense wash pepper enact enr
 const INFURA_KEY = process.env.INFURA_API_KEY;
 const PROTOCOL_DEPLOYER_PRIVATE_KEY = process.env.PROTOCOL_DEPLOYER_PRIVATE_KEY;
 const CC_TOKEN_DEPLOYER_PRIVATE_KEY = process.env.CC_TOKEN_DEPLOYER_PRIVATE_KEY;
-const CMC_API_KEY = process.env.CMS_API_KEY;
+const CMC_API_KEY = process.env.CMC_API_KEY;
 const ACCOUNTS =
   PROTOCOL_DEPLOYER_PRIVATE_KEY && CC_TOKEN_DEPLOYER_PRIVATE_KEY
     ? [PROTOCOL_DEPLOYER_PRIVATE_KEY, CC_TOKEN_DEPLOYER_PRIVATE_KEY]
