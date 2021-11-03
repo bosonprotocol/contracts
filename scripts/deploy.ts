@@ -31,6 +31,8 @@ class DeploymentExecutor {
   erc1155NonTransferable;
   complainPeriod;
   cancelFaultPeriod;
+  maxTip;
+  txOptions;
 
   constructor() {
     if (this.constructor == DeploymentExecutor) {
@@ -57,6 +59,14 @@ class DeploymentExecutor {
 
     this.complainPeriod = process.env.COMPLAIN_PERIOD;
     this.cancelFaultPeriod = process.env.CANCEL_FAULT_PERIOD;
+
+    this.maxTip = ethers.utils.parseUnits(
+      process.env.MAX_TIP
+        ? String(process.env.MAX_TIP)
+        : "1"
+      ,"gwei");
+
+    this.txOptions = {maxPriorityFeePerGas: this.maxTip};
   }
 
   async setDefaults() {
@@ -66,7 +76,8 @@ class DeploymentExecutor {
 
     tx = await this.voucherSets.setApprovalForAll(
       this.voucherKernel.address,
-      'true'
+      'true',
+      this.txOptions
     );
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
@@ -78,7 +89,8 @@ class DeploymentExecutor {
     );
 
     tx = await this.voucherSets.setContractUri(
-      process.env.VOUCHERSETS_CONTRACT_URI
+      process.env.VOUCHERSETS_CONTRACT_URI,
+      this.txOptions
     );
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
@@ -91,7 +103,8 @@ class DeploymentExecutor {
 
     tx = await this.vouchers.setApprovalForAll(
       this.voucherKernel.address,
-      'true'
+      'true',
+      this.txOptions
     );
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
@@ -102,7 +115,7 @@ class DeploymentExecutor {
       event.args._approved
     );
 
-    tx = await this.vouchers.setContractUri(process.env.VOUCHERS_CONTRACT_URI);
+    tx = await this.vouchers.setContractUri(process.env.VOUCHERS_CONTRACT_URI, this.txOptions);
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
     console.log(
@@ -114,7 +127,8 @@ class DeploymentExecutor {
 
     tx = await this.tokenRegistry.setTokenWrapperAddress(
       this.dai_token,
-      this.daiTokenWrapper.address
+      this.daiTokenWrapper.address,
+      this.txOptions
     );
 
     txReceipt = await tx.wait();
@@ -128,7 +142,8 @@ class DeploymentExecutor {
 
     tx = await this.tokenRegistry.setTokenWrapperAddress(
       this.boson_token,
-      this.boson_token
+      this.boson_token,
+      this.txOptions
     );
 
     txReceipt = await tx.wait();
@@ -140,7 +155,7 @@ class DeploymentExecutor {
       event.args._newWrapperAddress
     );
 
-    tx = await this.br.setGateApproval(this.gate.address, true);
+    tx = await this.br.setGateApproval(this.gate.address, true, this.txOptions);
 
     txReceipt = await tx.wait();
     event = txReceipt.events[0];
@@ -199,46 +214,53 @@ class DeploymentExecutor {
     const ERC1155NonTransferableAsOtherSigner =
       ERC1155NonTransferable.connect(ccTokenDeployer);
 
-    this.tokenRegistry = await TokenRegistry.deploy();
+    this.tokenRegistry = await TokenRegistry.deploy(this.txOptions);
     this.voucherSets = await VoucherSets.deploy(
       process.env.VOUCHERSETS_METADATA_URI,
       contractAddresses.cashier,
-      contractAddresses.voucherKernel
+      contractAddresses.voucherKernel,
+      this.txOptions
     );
     this.vouchers = await Vouchers.deploy(
       process.env.VOUCHERS_METADATA_URI,
       'Boson Smart Voucher',
       'BSV',
       contractAddresses.cashier,
-      contractAddresses.voucherKernel
+      contractAddresses.voucherKernel,
+      this.txOptions
     );
     this.voucherKernel = await VoucherKernel.deploy(
       contractAddresses.br,
       contractAddresses.cashier,
       contractAddresses.voucherSets,
-      contractAddresses.vouchers
+      contractAddresses.vouchers,
+      this.txOptions
     );
     this.cashier = await Cashier.deploy(
       contractAddresses.br,
       contractAddresses.voucherKernel,
       contractAddresses.voucherSets,
-      contractAddresses.vouchers
+      contractAddresses.vouchers,
+      this.txOptions
     );
     this.br = await BosonRouter.deploy(
       contractAddresses.voucherKernel,
       contractAddresses.tokenRegistry,
-      contractAddresses.cashier
+      contractAddresses.cashier,
+      this.txOptions
     );
-    this.daiTokenWrapper = await DAITokenWrapper.deploy(this.dai_token);
+    this.daiTokenWrapper = await DAITokenWrapper.deploy(this.dai_token, this.txOptions);
     this.gate = await Gate.deploy(
       contractAddresses.br,
-      ccContractAddresses.erc1155NonTransferable
+      ccContractAddresses.erc1155NonTransferable,
+      this.txOptions
     );
 
     //ERC1155NonTransferrable is a Conditional Commit token and should be deployed from a separate address
     this.erc1155NonTransferable =
       await ERC1155NonTransferableAsOtherSigner.deploy(
-        process.env.CONDITIONAL_COMMIT_TOKEN_METADATA_URI
+        process.env.CONDITIONAL_COMMIT_TOKEN_METADATA_URI,
+        this.txOptions
       );
 
     await this.tokenRegistry.deployed();
@@ -365,16 +387,18 @@ class ProdExecutor extends DeploymentExecutor {
     await super.setDefaults();
     // this code does not seem to be executed. Keeping it in anyways, until it is clear
     // The lines below are otherwise called also in another setDefaults
-    await this.tokenRegistry.setETHLimit(this.eth_limit);
+    await this.tokenRegistry.setETHLimit(this.eth_limit, this.txOptions);
     console.log(`Set ETH limit: ${this.eth_limit}`);
     await this.tokenRegistry.setTokenLimit(
       this.boson_token,
-      this.boson_token_limit
+      this.boson_token_limit,
+      this.txOptions
     );
     console.log(`Set Boson token limit: ${this.boson_token_limit}`);
     await this.tokenRegistry.setTokenLimit(
       this.dai_token,
-      this.dai_token_limit
+      this.dai_token_limit,
+      this.txOptions
     );
     console.log(`Set Dai token limit: ${this.dai_token_limit}`);
   }
@@ -395,16 +419,18 @@ class NonProdExecutor extends DeploymentExecutor {
 
   async setDefaults() {
     await super.setDefaults();
-    await this.voucherKernel.setComplainPeriod(this.complainPeriod);
-    await this.voucherKernel.setCancelFaultPeriod(this.cancelFaultPeriod);
-    await this.tokenRegistry.setETHLimit(this.eth_limit);
+    await this.voucherKernel.setComplainPeriod(this.complainPeriod, this.txOptions);
+    await this.voucherKernel.setCancelFaultPeriod(this.cancelFaultPeriod, this.txOptions);
+    await this.tokenRegistry.setETHLimit(this.eth_limit, this.txOptions);
     await this.tokenRegistry.setTokenLimit(
       this.boson_token,
-      this.boson_token_limit
+      this.boson_token_limit,
+      this.txOptions
     );
     await this.tokenRegistry.setTokenLimit(
       this.dai_token,
-      this.dai_token_limit
+      this.dai_token_limit,
+      this.txOptions
     );
   }
 }
