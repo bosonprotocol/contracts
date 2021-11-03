@@ -65,7 +65,10 @@ class DeploymentExecutor {
       'gwei'
     );
 
-    this.txOptions = {maxPriorityFeePerGas: this.maxTip};
+    this.txOptions = {
+      maxPriorityFeePerGas: this.maxTip,
+      maxFeePerGas: this.maxTip,
+    };
   }
 
   async setDefaults() {
@@ -84,7 +87,7 @@ class DeploymentExecutor {
       '\n$ VoucherSets: ',
       event.event,
       'approved VoucherKernel:',
-      event.args._approved
+      event.args.approved
     );
 
     tx = await this.voucherSets.setContractUri(
@@ -111,7 +114,7 @@ class DeploymentExecutor {
       '\n$ Vouchers: ',
       event.event,
       'approved VoucherKernel:',
-      event.args._approved
+      event.args.approved
     );
 
     tx = await this.vouchers.setContractUri(
@@ -178,7 +181,14 @@ class DeploymentExecutor {
   }
 
   async deployContracts() {
-    const [primaryDeployer, ccTokenDeployer] = await ethers.getSigners();
+    let [primaryDeployer, ccTokenDeployer] = await ethers.getSigners();
+
+    if (
+      process.env.PROTOCOL_DEPLOYER_PRIVATE_KEY ==
+      process.env.CC_TOKEN_DEPLOYER_PRIVATE_KEY
+    ) {
+      ccTokenDeployer = primaryDeployer;
+    }
 
     const contractList = [
       'tokenRegistry',
@@ -189,11 +199,6 @@ class DeploymentExecutor {
       'br',
       'daiTokenWrapper',
     ];
-
-    const contractAddresses = await calculateDeploymentAddresses(
-      primaryDeployer.address,
-      contractList
-    );
 
     const ccContractAddresses = await calculateDeploymentAddresses(
       ccTokenDeployer.address,
@@ -215,6 +220,20 @@ class DeploymentExecutor {
     //ERC1155NonTransferrable is a Conditional Commit token and should be deployed from a separate address
     const ERC1155NonTransferableAsOtherSigner =
       ERC1155NonTransferable.connect(ccTokenDeployer);
+
+    //ERC1155NonTransferrable is a Conditional Commit token and should be deployed from a separate address
+    this.erc1155NonTransferable =
+      await ERC1155NonTransferableAsOtherSigner.deploy(
+        process.env.CONDITIONAL_COMMIT_TOKEN_METADATA_URI,
+        this.txOptions
+      );
+
+    await this.erc1155NonTransferable.deployed();
+
+    const contractAddresses = await calculateDeploymentAddresses(
+      primaryDeployer.address,
+      contractList
+    );
 
     this.tokenRegistry = await TokenRegistry.deploy(this.txOptions);
     this.voucherSets = await VoucherSets.deploy(
@@ -261,13 +280,6 @@ class DeploymentExecutor {
       this.txOptions
     );
 
-    //ERC1155NonTransferrable is a Conditional Commit token and should be deployed from a separate address
-    this.erc1155NonTransferable =
-      await ERC1155NonTransferableAsOtherSigner.deploy(
-        process.env.CONDITIONAL_COMMIT_TOKEN_METADATA_URI,
-        this.txOptions
-      );
-
     await this.tokenRegistry.deployed();
     await this.voucherSets.deployed();
     await this.vouchers.deployed();
@@ -276,7 +288,6 @@ class DeploymentExecutor {
     await this.br.deployed();
     await this.daiTokenWrapper.deployed();
     await this.gate.deployed();
-    await this.erc1155NonTransferable.deployed();
 
     // check that expected and actual addresses match
     for (const contract of contractList) {
@@ -456,8 +467,9 @@ export async function deploy(_env: string): Promise<void> {
     env == 'prod' ? new ProdExecutor() : new NonProdExecutor(env);
 
   await executor.deployContracts();
-  await executor.setDefaults();
 
   executor.logContracts();
   executor.writeContracts();
+
+  await executor.setDefaults();
 }
