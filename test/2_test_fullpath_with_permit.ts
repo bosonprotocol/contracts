@@ -222,10 +222,10 @@ describe('Cashier and VoucherKernel', () => {
     const vouchersToBuy = 5;
 
     const paymentMethods = {
-      ETHETH: 1,
-      ETHTKN: 2,
-      TKNETH: 3,
-      TKNTKN: 4,
+      ETHETH: 0,
+      ETHTKN: 1,
+      TKNETH: 2,
+      TKNTKN: 3,
     };
 
     describe('ETHETH', () => {
@@ -2091,7 +2091,7 @@ describe('Cashier and VoucherKernel', () => {
             voucherTokenId
           );
 
-          const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
           assert.equal(
             voucherStatus[0],
@@ -2197,7 +2197,7 @@ describe('Cashier and VoucherKernel', () => {
           voucherTokenId
         );
 
-        const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+        const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
         assert.equal(
           voucherStatus[0],
@@ -2251,7 +2251,7 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_PRICE1,
             constants.PROMISE_DEPOSITBU1
           )
-        ).to.be.revertedWith(revertReasons.INCORRECT_PAYMENT_METHOD);
+        ).to.be.revertedWith(revertReasons.RUNTIME_ERROR_INVALID_OPCODE);
       });
 
       it('[NEGATIVE] Should not create order with incorrect price', async () => {
@@ -2385,7 +2385,7 @@ describe('Cashier and VoucherKernel', () => {
               voucherTokenId
             );
 
-            const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+            const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
             assert.equal(
               voucherStatus[0],
@@ -2512,7 +2512,7 @@ describe('Cashier and VoucherKernel', () => {
             voucherTokenId
           );
 
-          const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
           assert.equal(
             voucherStatus[0],
@@ -2678,7 +2678,7 @@ describe('Cashier and VoucherKernel', () => {
               voucherTokenId
             );
 
-            const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+            const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
             assert.equal(
               voucherStatus[0],
@@ -2802,7 +2802,7 @@ describe('Cashier and VoucherKernel', () => {
             voucherTokenId
           );
 
-          const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
           assert.equal(
             voucherStatus[0],
@@ -2958,7 +2958,7 @@ describe('Cashier and VoucherKernel', () => {
               voucherTokenId
             );
 
-            const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+            const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
             assert.equal(
               voucherStatus[0],
@@ -3072,7 +3072,7 @@ describe('Cashier and VoucherKernel', () => {
             voucherTokenId
           );
 
-          const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
           assert.equal(
             voucherStatus[0],
@@ -3301,7 +3301,7 @@ describe('Cashier and VoucherKernel', () => {
               voucherTokenId
             );
 
-            const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+            const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
             assert.equal(
               voucherStatus[0],
@@ -3410,7 +3410,7 @@ describe('Cashier and VoucherKernel', () => {
             voucherTokenId
           );
 
-          const expectedStatus = constants.ZERO.or(constants.ONE.shl(7)); // as per contract implementations
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
 
           assert.equal(
             voucherStatus[0],
@@ -4043,7 +4043,7 @@ describe('Cashier and VoucherKernel', () => {
         ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
       });
 
-      it('[!CANCEL] It should not be possible to cancel voucher that does not exist yet', async () => {
+      it('[!CANCEL] It should not be possible to cancel voucher that is not mapped to any supply', async () => {
         // spoof boson router address.
         await contractBosonRouter.pause();
         await contractVoucherKernel.setBosonRouterAddress(
@@ -4055,6 +4055,20 @@ describe('Cashier and VoucherKernel', () => {
           contractVoucherKernel.cancelOrFault(
             constants.ONE,
             constants.ZERO_ADDRESS
+          )
+        ).to.be.revertedWith(revertReasons.INEXISTENT_SUPPLY);
+      });
+
+      it('[!CANCEL] It should not be possible to cancel voucher that does not exist yet', async () => {
+        // spoof boson router address.
+        await contractVoucherKernel.setBosonRouterAddress(
+          users.deployer.address
+        );
+
+        await expect(
+          contractVoucherKernel.cancelOrFault(
+            BN(TOKEN_SUPPLY_ID).or(1),
+            users.seller.address
           )
         ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
       });

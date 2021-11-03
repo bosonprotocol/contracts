@@ -50,7 +50,13 @@ contract MockBosonRouter is BosonRouter {
         whenNotPaused
     {
         checkLimits(_metadata, address(0), address(0), 0);
-        requestCreateOrder(_metadata, 5, address(0), address(0), 0);
+        requestCreateOrder(
+            _metadata,
+            PaymentMethod(5),
+            address(0),
+            address(0),
+            0
+        );
     }
 
     // only for test
@@ -79,6 +85,6 @@ contract MockBosonRouter is BosonRouter {
         bytes32,
         bytes32
     ) external payable override nonReentrant whenNotPaused {
-        addEscrowAmountAndFillOrder(_tokenIdSupply, _issuer, 5);
+        addEscrowAmountAndFillOrder(_tokenIdSupply, _issuer, PaymentMethod(5));
     }
 }

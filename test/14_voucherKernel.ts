@@ -478,7 +478,7 @@ describe('VOUCHER KERNEL', () => {
             tokenSupplyId,
             users.seller.address,
             constants.ZERO_ADDRESS,
-            1
+            constants.ZERO
           )
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
       });
@@ -541,7 +541,7 @@ describe('VOUCHER KERNEL', () => {
             tokenSupplyId,
             users.seller.address,
             contractMockERC721Receiver.address,
-            1
+            constants.ZERO
           )
         ).to.not.be.reverted;
       });

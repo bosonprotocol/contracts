@@ -1,6 +1,6 @@
 {
     "name": "@bosonprotocol/core",
-    "version": "0.0.0",
+    "version": "v1.0.0-rc.2",
     "description": "Repo for Boson Protocol prototype of the core exchange mechanism",
     "types": "typechain/index.ts",
     "directories": {
@@ -50,13 +50,13 @@
         "contracts:migrate:dev:ropsten": "npm run contracts:clean && npm run contracts:compile && hardhat deploy --network ropsten --env dev",
         "contracts:migrate:demo": "npm run contracts:clean && npm run contracts:compile && hardhat deploy --network rinkeby --env demo",
         "contracts:migrate:demo:ropsten": "npm run contracts:clean && npm run contracts:compile && hardhat deploy --network ropsten --env demo",
-        "contracts:migrate:prod": "npm run contracts:clean && npm run contracts:compile && hardhat deploy --network rinkeby --env prod",
+        "contracts:migrate:prod": "npm run contracts:clean && npm run contracts:compile && hardhat deploy --network mainnet --env prod",
         "contracts:size": "hardhat size-contracts",
         "contracts:verify:dev": "hardhat contracts-verify --network rinkeby --env dev",
         "contracts:verify:dev:ropsten": "hardhat contracts-verify --network ropsten --env dev",
         "contracts:verify:demo": "hardhat contracts-verify --network rinkeby --env demo",
         "contracts:verify:demo:ropsten": "hardhat contracts-verify --network ropsten --env demo",
-        "contracts:verify:prod": "hardhat contracts-verify --network rinkeby --env prod",
+        "contracts:verify:prod": "hardhat contracts-verify --network mainnet --env prod",
         "tests:lint": "eslint test/**/*.ts testHelpers/**/*.ts",
         "tests:lint-fix": "eslint --fix test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
         "tests:format": "prettier --list-different test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",

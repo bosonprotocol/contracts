@@ -8583,11 +8583,7 @@ describe('Cashier withdrawals ', () => {
       );
     });
 
-    it('[NEGATIVE] should revert if voucher kernel returns payment method 0', async () => {
-      await expect(contractCashier.withdraw(constants.ONE)).to.be.revertedWith(
-        revertReasons.INVALID_PAYMENT_METHOD
-      );
-
+    it('[NEGATIVE] should revert if withdrawDepositsSe is called with zero address message sender', async () => {
       // spoof boson router address
       await contractBosonRouter.pause();
       await contractCashier.setBosonRouterAddress(users.deployer.address);
@@ -8599,7 +8595,13 @@ describe('Cashier withdrawals ', () => {
           1,
           constants.ZERO_ADDRESS
         )
-      ).to.be.revertedWith(revertReasons.INVALID_PAYMENT_METHOD);
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+    });
+
+    it('[NEGATIVE] should revert if voucherId does not map to any supply', async () => {
+      await expect(contractCashier.withdraw(constants.ONE)).to.be.revertedWith(
+        revertReasons.INEXISTENT_SUPPLY
+      );
     });
 
     it('[NEGATIVE] should revert if voucher kernel returns payment method greater than 5', async () => {
@@ -8630,7 +8632,7 @@ describe('Cashier withdrawals ', () => {
         .returns('5');
 
       await expect(contractCashier.withdraw(tokenVoucherId)).to.be.revertedWith(
-        revertReasons.INVALID_PAYMENT_METHOD
+        revertReasons.RUNTIME_ERROR_INVALID_OPCODE
       );
 
       await mockVoucherKernel.mock.getSupplyHolder
@@ -8646,7 +8648,7 @@ describe('Cashier withdrawals ', () => {
           1,
           users.seller.address
         )
-      ).to.be.revertedWith(revertReasons.INVALID_PAYMENT_METHOD);
+      ).to.be.revertedWith(revertReasons.RUNTIME_ERROR_INVALID_OPCODE);
     });
   });
 });

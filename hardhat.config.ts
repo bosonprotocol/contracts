@@ -45,7 +45,7 @@ const config: HardhatUserConfig = {
 		settings: {
 			optimizer: {
 				enabled: true,
-				runs: 10
+				runs: 200
 			}
 		}
 	},
@@ -61,6 +61,10 @@ const config: HardhatUserConfig = {
 		},
 		ropsten: {
 			url: `https://ropsten.infura.io/v3/${INFURA_KEY}`,
+			accounts: ACCOUNTS
+		},
+		mainnet: {
+			url: `https://mainnet.infura.io/v3/${INFURA_KEY}`,
 			accounts: ACCOUNTS
 		},
 	},

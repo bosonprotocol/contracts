@@ -2,6 +2,8 @@
 
 pragma solidity 0.7.6;
 
+import "./../UsingHelpers.sol";
+
 interface ICashier {
     /**
      * @notice Pause the Cashier && the Voucher Kernel contracts in case of emergency.
