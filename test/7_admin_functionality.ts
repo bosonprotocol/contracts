@@ -239,6 +239,7 @@ describe('Admin functionality', async () => {
     });
 
     it('Owner should be able to set voucherSet token contract address', async () => {
+      await contractBosonRouter.pause();
       const tx = await contractCashier.setVoucherSetTokenAddress(
         contractVoucherSets.address
       );
@@ -262,6 +263,12 @@ describe('Admin functionality', async () => {
           );
         }
       );
+    });
+
+    it('[NEGATIVE] voucherSet token contract address cannot be set when not paused', async () => {
+      await expect(
+        contractCashier.setVoucherSetTokenAddress(contractVoucherSets.address)
+      ).to.be.revertedWith(revertReasons.NOT_PAUSED);
     });
 
     it('[NEGATIVE][setVoucherSetTokenAddress] Should revert if executed by attacker', async () => {
@@ -718,6 +725,104 @@ describe('Admin functionality', async () => {
       await contractBosonRouter.pause();
       await expect(
         contractVoucherKernel.setBosonRouterAddress(constants.ZERO_ADDRESS)
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+    });
+
+    it('Owner should be able to set voucherSet token contract address', async () => {
+      await contractBosonRouter.pause();
+      const tx = await contractVoucherKernel.setVoucherSetTokenAddress(
+        contractVoucherSets.address
+      );
+
+      const txReceipt = await tx.wait();
+
+      eventUtils.assertEventEmitted(
+        txReceipt,
+        VoucherKernel_Factory,
+        eventNames.LOG_VOUCHER_SET_TOKEN_SET,
+        (ev) => {
+          assert.equal(
+            ev._newTokenContract,
+            contractVoucherSets.address,
+            'Token contract not as expected!'
+          );
+          assert.equal(
+            ev._triggeredBy,
+            users.deployer.address,
+            'LogTokenContractSet not triggered by owner!'
+          );
+        }
+      );
+    });
+
+    it('[NEGATIVE] voucherSet token contract address cannot be set when not paused', async () => {
+      await expect(
+        contractVoucherKernel.setVoucherSetTokenAddress(
+          contractVoucherSets.address
+        )
+      ).to.be.revertedWith(revertReasons.NOT_PAUSED);
+    });
+
+    it('[NEGATIVE][setVoucherSetTokenAddress] Should revert if executed by attacker', async () => {
+      const attackerInstance = contractVoucherKernel.connect(
+        users.attacker.signer
+      );
+      await expect(
+        attackerInstance.setVoucherSetTokenAddress(contractVoucherSets.address)
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+
+    it('[NEGATIVE][setVoucherSetTokenAddress] Should revert if ZERO address is provided', async () => {
+      await expect(
+        contractVoucherKernel.setVoucherSetTokenAddress(constants.ZERO_ADDRESS)
+      ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
+    });
+
+    it('Owner should be able to set voucher token contract address', async () => {
+      await contractBosonRouter.pause();
+      const tx = await contractVoucherKernel.setVoucherTokenAddress(
+        contractVouchers.address
+      );
+
+      const txReceipt = await tx.wait();
+
+      eventUtils.assertEventEmitted(
+        txReceipt,
+        VoucherKernel_Factory,
+        eventNames.LOG_VOUCHER_TOKEN_SET,
+        (ev) => {
+          assert.equal(
+            ev._newTokenContract,
+            contractVouchers.address,
+            'Token contract not as expected!'
+          );
+          assert.equal(
+            ev._triggeredBy,
+            users.deployer.address,
+            'LogTokenContractSet not triggered by owner!'
+          );
+        }
+      );
+    });
+
+    it('[NEGATIVE] voucher token contract address cannot be set if not paused', async () => {
+      await expect(
+        contractVoucherKernel.setVoucherTokenAddress(contractVouchers.address)
+      ).to.be.revertedWith(revertReasons.NOT_PAUSED);
+    });
+
+    it('[NEGATIVE][setVoucherTokenAddress] Should revert if executed by attacker', async () => {
+      const attackerInstance = contractVoucherKernel.connect(
+        users.attacker.signer
+      );
+      await expect(
+        attackerInstance.setVoucherTokenAddress(contractVouchers.address)
+      ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
+    });
+
+    it('[NEGATIVE][setVoucherTokenAddress] Should revert if ZERO address is provided', async () => {
+      await expect(
+        contractVoucherKernel.setVoucherTokenAddress(constants.ZERO_ADDRESS)
       ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
 
