@@ -15,13 +15,15 @@ are based on two NFT standards,
 Main contracts:  
 * `BosonRouter`: User interface of Boson Protocol  
 * `Cashier`: Escrow and funds management  
-* `ERC1155ERC721`: Token factory  
+* `VoucherSets`: VoucherSets token contract. Conforms to the ERC1155 standard.
+* `Vouchers`: Vouchers token contract. Conforms to the ERC721 standard
 * `TokenRegistry`: Restrictions on the allowed escrowed amounts and registry of token wrappers
 * `VoucherKernel`: Main business logic  
 * `UsingHelpers`: Common utilities
 * `DAITokenWrapper`: Provides a uniform interface for calling the `permit `function on the DAI token
 * `ERC1155NonTransferable`: Non-transferrable token, the possession of which allows a buyer to commit to an item following a special quest or campaign.
 * `Gate`: Allows users of the protocol to gate access to a given VoucherSet by requiring that any address attempting to commit to an item in the given VoucherSet have a given ERC1155 before they access.
+* `MetaTransactionReceiver`: Base contract that allows the ERC1155NonTransferable contract to receive and proces meta transactions
 
 ![Boson Protocol inheritance tree](../assets/bosonprotocol-inheritance.png)  
 A control graph of the contracts is 
@@ -76,6 +78,8 @@ transaction independently of any Buyer action.
    the quantity of available things that all bear similar properties, we say 
    such an offer is a Voucher Set.  
 
+   Example:
+
 ```solidity
 BosonRouter.requestCreateOrderETHETH()  
 ```
@@ -86,10 +90,12 @@ BosonRouter.requestCreateOrderETHETH()
    the commit is possession of a non-transferrable NFT with the given Id. A Buyer
    can obtain the NFT by, for instance, completing a quest. The Seller might make items
    obtained via conditional commit available for a discount as a reward to Buyers for
-   completing the quest. This option is only available with the TKNTKN payment type.
+   completing the quest.
+
+   Example:
 
 ```solidity
-BosonRouter.requestCreateOrderTKNTKNWithPermitConditional(()  
+BosonRouter.requestCreateOrderETHETHConditional(()  
 ```
 
 > Note: the contracts currently refer to this Voucher Set using a few different
@@ -106,6 +112,8 @@ BosonRouter.requestCreateOrderTKNTKNWithPermitConditional(()
 > Note: committing to buy a voucher is equivalent to creating a Voucher from a 
 > Voucher Set which is equivalent to minting an ERC-721 NFT out of the parent 
 > ERC-1155.
+
+   Example:
   
 ```solidity
 BosonRouter.requestVoucherETHETH()  
@@ -116,15 +124,13 @@ BosonRouter.requestVoucherETHETH()
    price or other offer when she commits to redeem the voucher. The Buyer could obtain
    the NFT by, for instance, completing a quest. The protocol checks to see if the user
    owns the NFT (and is therefore eligible for the special offer) at commitment time.
-   This option is ony available with the TKNTKN payment type.
+
+   Example:
 
 ```solidity
-BosonRouter.requestVoucherTKNTKNWithPermit()  
+BosonRouter.requestVoucherETHETH()  
 ```
 
-```solidity
-BosonRouter.requestVoucherTKNTKNSameWithPermit()  
-```
 
 3. The Buyer can then choose to `redeem` the voucher and exchange the payment 
    amount for the item received, or can choose to `refund` the voucher, thus 
@@ -187,25 +193,24 @@ its lifecycle (defined in
 [UsingHelpers.sol](https://github.com/bosonprotocol/bsn-core-prototype/blob/master/contracts/UsingHelpers.sol#L47)):  
 
 ```
-7:COMMITTED  
-6:REDEEMED  
-5:REFUNDED   
-4:EXPIRED  
-3:COMPLAINED  
-2:CANCELORFAULT  
-1:FINAL  
+6:COMMITTED  
+5:REDEEMED  
+4:REFUNDED   
+3:EXPIRED  
+2:COMPLAINED  
+1:CANCELORFAULT  
+0:FINAL  
 ```
 
 There are also a few additional, more technical flags that record the status of 
-the funds of a particular vouchers and that also record the timestamps of wait 
-periods triggering.  
+the funds of a particular voucher and that also record the timestamps of wait 
+periods being triggered.  
 
 ### Services in the background
   
-A scheduled process is running in the backend that flags the vouchers when 
-redemption was made and when wait periods expire. Anybody could be executing 
-these functions, marked as external, the backend is currently running them for 
-convenience: `VoucherKernel.triggerExpiration()`, 
+There are a few functions that can be called by an application built on Boson Protocol to mark vouchers as 
+expired or finalized or to wtidhraw funds. These functions can be called on a scheduled basis or as 
+individual calls: `VoucherKernel.triggerExpiration()`, 
 `VoucherKernel.triggerFinalizeVoucher()`, `Cashier.withdraw()`.  
 
 ### Happy path
