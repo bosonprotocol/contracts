@@ -65,7 +65,10 @@ class DeploymentExecutor {
       'gwei'
     );
 
-    this.txOptions = {maxPriorityFeePerGas: this.maxTip, maxFeePerGas: this.maxTip};
+    this.txOptions = {
+      maxPriorityFeePerGas: this.maxTip,
+      maxFeePerGas: this.maxTip,
+    };
   }
 
   async setDefaults() {
@@ -180,7 +183,10 @@ class DeploymentExecutor {
   async deployContracts() {
     let [primaryDeployer, ccTokenDeployer] = await ethers.getSigners();
 
-    if (process.env.PROTOCOL_DEPLOYER_PRIVATE_KEY == process.env.CC_TOKEN_DEPLOYER_PRIVATE_KEY) {
+    if (
+      process.env.PROTOCOL_DEPLOYER_PRIVATE_KEY ==
+      process.env.CC_TOKEN_DEPLOYER_PRIVATE_KEY
+    ) {
       ccTokenDeployer = primaryDeployer;
     }
 
@@ -282,7 +288,6 @@ class DeploymentExecutor {
     await this.br.deployed();
     await this.daiTokenWrapper.deployed();
     await this.gate.deployed();
-
 
     // check that expected and actual addresses match
     for (const contract of contractList) {
@@ -462,7 +467,7 @@ export async function deploy(_env: string): Promise<void> {
     env == 'prod' ? new ProdExecutor() : new NonProdExecutor(env);
 
   await executor.deployContracts();
-  
+
   executor.logContracts();
   executor.writeContracts();
 
