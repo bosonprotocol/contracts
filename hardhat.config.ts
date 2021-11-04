@@ -62,7 +62,8 @@ const config: HardhatUserConfig = {
 		},
 		mainnet: {
 			url: `https://mainnet.infura.io/v3/${INFURA_KEY}`,
-			accounts: ACCOUNTS
+			accounts: ACCOUNTS,
+			initialBaseFeePerGas: 0
 		},
 	},
 	etherscan: {

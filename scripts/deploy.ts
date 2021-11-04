@@ -67,7 +67,7 @@ class DeploymentExecutor {
 
     this.txOptions = {
       maxPriorityFeePerGas: this.maxTip,
-      maxFeePerGas: this.maxTip,
+      gasLimit: 4500000, // our current max contract is around 4.2m gas
     };
   }
 
