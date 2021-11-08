@@ -2,9 +2,7 @@ name: Scheduled Code Coverage Check
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [ run-code-coverage-periodically-in-GHA ]
   schedule:
     - cron: '*/25 * * * *'
 jobs:
@@ -30,7 +28,7 @@ jobs:
       - name: Check Code Coverage
         shell: bash
         run: |
-          MIN_COVERAGE=99.59
+          MIN_COVERAGE=199.59
           COVERAGE=`grep -a -m 1 -h -r '<span class="strong">' coverage/index.html | head -1 | sed 's/^[^>]*>//' | sed 's/%.*$//'`
           echo "solidity code coverage is '$COVERAGE'"
           if (( $(echo "$COVERAGE < $MIN_COVERAGE" | bc -l) )); then echo "Fail: code coverage '$COVERAGE' is lower than configured '$MIN_COVERAGE'" >&2; exit 1; fi
