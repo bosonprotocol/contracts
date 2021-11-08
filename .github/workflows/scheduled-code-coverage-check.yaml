@@ -4,7 +4,7 @@ on:
   push:
     branches: [ run-code-coverage-periodically-in-GHA ]
   schedule:
-    - cron: '*/25 * * * *'
+    - cron: '0 * * * *'
 jobs:
   test:
     runs-on: ubuntu-latest
