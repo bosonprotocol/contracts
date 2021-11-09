@@ -1,8 +1,8 @@
-name: Scheduled Code Coverage Check
+name: Code Coverage Check
 
 on:
-  schedule:
-    - cron: '*/5 * * * *'
+  push:
+    branches: [ main ]
 jobs:
   test:
     runs-on: ubuntu-latest
