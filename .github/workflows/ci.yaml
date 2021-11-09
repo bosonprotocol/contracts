@@ -57,7 +57,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: gas-reporter-report
-          path: gasReporter/report.txt
+          path: GasReport.txt
 
   snyk:
     runs-on: ubuntu-latest
