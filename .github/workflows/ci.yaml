@@ -2,7 +2,7 @@ name: Contracts CI
 
 on:
   push:
-    branches: [ upload-code-coverage-and-gas-report ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
