@@ -53,6 +53,11 @@ jobs:
         run: npm run contracts:size
       - name: Unit tests + Gas Reporter
         run: npm run tests:unit
+      - name: Upload Gas reporter output
+        uses: actions/upload-artifact@v2
+        with:
+          name: gas-reporter-report
+          path: gasReporter/report.txt
 
   snyk:
     runs-on: ubuntu-latest
