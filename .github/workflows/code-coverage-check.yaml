@@ -2,7 +2,7 @@ name: Code Coverage Check
 
 on:
   push:
-    branches: [ main ]
+    branches: [ upload-code-coverage-and-gas-report ]
 jobs:
   test:
     runs-on: ubuntu-latest
