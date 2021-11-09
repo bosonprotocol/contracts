@@ -1,10 +1,8 @@
 name: Scheduled Code Coverage Check
 
 on:
-  push:
-    branches: [ run-code-coverage-periodically-in-GHA ]
   schedule:
-    - cron: '0 * * * *'
+    - cron: '*/5 * * * *'
 jobs:
   test:
     runs-on: ubuntu-latest
