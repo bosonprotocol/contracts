@@ -36,6 +36,7 @@ jobs:
     env:
       PROTOCOL_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
       CC_TOKEN_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
+      CMC_API_KEY: ${{ secrets.CMC_API_KEY }}
     name: test
     steps:
       - name: Checkout repository
