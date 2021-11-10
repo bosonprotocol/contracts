@@ -53,6 +53,8 @@ jobs:
       - name: Contract Sizing
         run: npm run contracts:size
       - name: Unit tests + Gas Reporter
+        env:
+          CMC_API_KEY: ${{ secrets.CMC_API_KEY }}
         run: npm run tests:unit
       - name: Upload Gas reporter output
         uses: actions/upload-artifact@v2
