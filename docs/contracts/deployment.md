@@ -19,7 +19,7 @@ This page lists the most recent versions of the Boson Protocol contracts on the 
 
 ## [v1.0.0-rc.3](https://github.com/bosonprotocol/contracts/releases/tag/v1.0.0-rc.3) Contracts are deployed to Ropsten testnet
 
-| Contract Name | Address
+| Contract Name | Address |
 | ----------- | ----------- |
 | $BOSON Token Contract Address | [`0xf47E4fd9d2eBd6182F597eE12E487CcA37FC524c`](https://ropsten.etherscan.io/address/0xf47E4fd9d2eBd6182F597eE12E487CcA37FC524c#code) |
 | TokenRegistry | [`0x3652b1b62648060C80F1bf7aC017b91AB1986E0d`](https://ropsten.etherscan.io/address/0x3652b1b62648060C80F1bf7aC017b91AB1986E0d#code) | 
