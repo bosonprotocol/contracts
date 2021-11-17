@@ -4,9 +4,11 @@
 
 [![Gitter chat](https://badges.gitter.im/bosonprotocol.png)](https://gitter.im/bosonprotocol/community)
 
-Welcome to the Boson Protocol. Please find a set of Solidity smart contracts that implement the Boson Protocol. You are invited to learn more about the project through its code and perhaps test locally how you might use it within your own project. When you are ready to integrate with Boson Protocol on a live network, you will soon be able to find the latest deployment details here, as well.
+Welcome to Boson Protocol. Please find a set of Solidity smart contracts that implement Boson Protocol. You are invited to learn more about the project through its code and perhaps test locally how you might use it within your own project. 
 
-> Note: the contracts are not yet deployed on Ethereum mainnet.
+This is version 1 of the Protocol. You will find the addresses of the deployed contracts on Ethereum's main net and Ropsten test net [here](https://github.com/bosonprotocol/contracts/blob/main/docs/contracts/deployment.md).
+
+This version of Boson Protocol is a stepping stone on the way to the release of version 2 of the Protocol next year, which will be accompanied with SDKs and plug-ins to make it easy to integrate. While you may prefer to wait until the new features that will be released in version 2 before building dApps using the Protocol, we encourage you to use the contracts locally and to participate in our [bug bounty](https://github.com/bosonprotocol/community/blob/main/BugBountyProgram.md). 
 
 For more details about how Boson Protocol works and how you might make use of
 it, please see the [documentation site](https://docs.bosonprotocol.io/).  
