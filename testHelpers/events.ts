@@ -33,7 +33,7 @@ export const eventNames = {
   LOG_CANCEL_VOUCHER_SET: 'LogVoucherSetFaultCancel',
   PAUSED: 'Paused',
   UNPAUSED: 'Unpaused',
-  LOG_NON_TRANSFERABLE_CONTRACT: 'LogNonTransferableContractSet',
+  LOG_NON_TRANSFERABLE_CONTRACT: 'LogConditionalContractSet',
   LOG_BOSON_ROUTER_SET: 'LogBosonRouterSet',
   LOG_GATE_APPROVAL_CHANGED: 'LogGateApprovalChanged',
   LOG_VOUCHER_SET_REGISTERED: 'LogVoucherSetRegistered',

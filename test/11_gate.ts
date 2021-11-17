@@ -199,7 +199,7 @@ describe('Gate contract', async () => {
     );
 
     await gate.pause();
-    await gate.setNonTransferableTokenContract(
+    await gate.setConditionalTokenAddress(
       contractERC1155NonTransferable.address
     );
     await gate.setBosonRouterAddress(contractBosonRouter.address);
@@ -277,7 +277,7 @@ describe('Gate contract', async () => {
     it('Owner should be able set ERC1155 contract address', async () => {
       await contractGate.pause();
       expect(
-        await contractGate.setNonTransferableTokenContract(
+        await contractGate.setConditionalTokenAddress(
           contractERC1155NonTransferable.address
         )
       )
@@ -289,7 +289,7 @@ describe('Gate contract', async () => {
     });
 
     it('One should be able get ERC1155 contract address', async () => {
-      expect(await contractGate.getNonTransferableTokenContract()).to.equal(
+      expect(await contractGate.getConditionalTokenContract()).to.equal(
         contractERC1155NonTransferable.address
       );
     });
@@ -311,7 +311,7 @@ describe('Gate contract', async () => {
         constants.NFT_TOKEN_ID
       );
       expect(
-        await contractGate.getNftTokenId(constants.VOUCHER_SET_ID)
+        await contractGate.getConditionalTokenId(constants.VOUCHER_SET_ID)
       ).to.equal(constants.NFT_TOKEN_ID);
     });
 
@@ -377,23 +377,23 @@ describe('Gate contract', async () => {
 
     it('[NEGATIVE] ERC1155 cannot be set if gate contract is not paused', async () => {
       await expect(
-        contractGate.setNonTransferableTokenContract(
+        contractGate.setConditionalTokenAddress(
           contractERC1155NonTransferable.address
         )
       ).to.be.revertedWith(revertReasons.NOT_PAUSED);
     });
 
-    it('[NEGATIVE][setNonTransferableTokenContract] Should revert if supplied wrong boson router address', async () => {
+    it('[NEGATIVE][setConditionalTokenAddress] Should revert if supplied wrong boson router address', async () => {
       await expect(
-        contractGate.setNonTransferableTokenContract(constants.ZERO_ADDRESS)
+        contractGate.setConditionalTokenAddress(constants.ZERO_ADDRESS)
       ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
 
-    it('[NEGATIVE][setNonTransferableTokenContract] Should revert if executed by attacker', async () => {
+    it('[NEGATIVE][setConditionalTokenAddress] Should revert if executed by attacker', async () => {
       await expect(
         contractGate
           .connect(users.attacker.signer)
-          .setNonTransferableTokenContract(
+          .setConditionalTokenAddress(
             contractERC1155NonTransferable.address
           )
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);

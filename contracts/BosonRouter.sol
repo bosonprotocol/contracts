@@ -227,11 +227,11 @@ contract BosonRouter is
      *
      * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
-     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher
+     * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
      */
     function requestCreateOrderETHETHConditional(uint256[] calldata _metadata, address _gateAddress,
-        uint256 _nftTokenId)
+        uint256 _conditionalTokenId)
         external
         payable
         override
@@ -241,7 +241,7 @@ contract BosonRouter is
     {
         checkLimits(_metadata, address(0), address(0), 0);
         uint256 _tokenIdSupply = requestCreateOrder(_metadata, PaymentMethod.ETHETH, address(0), address(0), 0);
-        finalizeConditionalOrder(_tokenIdSupply, _gateAddress, _nftTokenId);
+        finalizeConditionalOrder(_tokenIdSupply, _gateAddress, _conditionalTokenId);
     }
 
 
@@ -319,7 +319,7 @@ contract BosonRouter is
      *
      * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
-     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher
+     * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
      */
     function requestCreateOrderTKNTKNWithPermitConditional(
@@ -332,7 +332,7 @@ contract BosonRouter is
         bytes32 _s,
         uint256[] calldata _metadata,
         address _gateAddress,
-        uint256 _nftTokenId
+        uint256 _conditionalTokenId
     )
     external
     override
@@ -350,7 +350,7 @@ contract BosonRouter is
             _metadata
         );
 
-        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _nftTokenId);
+        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _conditionalTokenId);
     }
 
     /**
@@ -422,7 +422,7 @@ contract BosonRouter is
      *
      * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
-     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher
+     * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
      */
     function requestCreateOrderETHTKNWithPermitConditional(
@@ -434,7 +434,7 @@ contract BosonRouter is
         bytes32 _s,
         uint256[] calldata _metadata,
         address _gateAddress,
-        uint256 _nftTokenId
+        uint256 _conditionalTokenId
     )
     external
     override
@@ -449,7 +449,7 @@ contract BosonRouter is
          _s,
         _metadata);
 
-        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _nftTokenId);
+        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _conditionalTokenId);
     }
 
     /**
@@ -504,14 +504,14 @@ contract BosonRouter is
      *
      * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferable NFT,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
-     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher
+     * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
      */
     function requestCreateOrderTKNETHConditional(
         address _tokenPriceAddress,
         uint256[] calldata _metadata,
         address _gateAddress,
-        uint256 _nftTokenId
+        uint256 _conditionalTokenId
     )
     external
     payable
@@ -520,7 +520,7 @@ contract BosonRouter is
     onlyApprovedGate(_gateAddress)
     {
         uint256 tokenIdSupply = requestCreateOrderTKNETHInternal(_tokenPriceAddress, _metadata);
-        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _nftTokenId);
+        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _conditionalTokenId);
     }
 
     /**
@@ -1192,18 +1192,18 @@ contract BosonRouter is
      * @param _tokenIdSupply    ID of the supply token
      * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
-     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher
+     * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
      */
-    function finalizeConditionalOrder(uint256 _tokenIdSupply, address _gateAddress, uint256 _nftTokenId) internal {
+    function finalizeConditionalOrder(uint256 _tokenIdSupply, address _gateAddress, uint256 _conditionalTokenId) internal {
         voucherSetToGateContract[_tokenIdSupply] = _gateAddress;
 
         emit LogConditionalOrderCreated(_tokenIdSupply, _gateAddress);
 
-        if (_nftTokenId > 0) {
+        if (_conditionalTokenId > 0) {
             IGate(_gateAddress).registerVoucherSetId(
                 _tokenIdSupply,
-                _nftTokenId
+                _conditionalTokenId
             );
         }
     }

@@ -3,8 +3,8 @@
 pragma solidity 0.7.6;
 
 interface IGate {
-    event LogNonTransferableContractSet(
-        address indexed _nonTransferableTokenContractAddress,
+    event LogConditionalContractSet(
+        address indexed _conditionalToken,
         address indexed _triggeredBy
     );
     event LogBosonRouterSet(
@@ -13,7 +13,7 @@ interface IGate {
     );
     event LogVoucherSetRegistered(
         uint256 indexed _tokenIdSupply,
-        uint256 indexed _nftTokenId
+        uint256 indexed _conditionalTokenId
     );
     event LogUserVoucherDeactivated(
         address indexed _user,
@@ -23,19 +23,19 @@ interface IGate {
     /**
      * @notice For a given _tokenIdSupply, it tells on which NFT it depends
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
-     * @return quest NFT token ID
+     * @return conditional token ID
      */
-    function getNftTokenId(uint256 _tokenIdSupply)
+    function getConditionalTokenId(uint256 _tokenIdSupply)
         external
         view
         returns (uint256);
 
     /**
-     * @notice Sets the contract, where gate contract checks if quest NFT token exists
-     * @param _nonTransferableTokenContractAddress address of a non-transferable token contract
+     * @notice Sets the contract, where gate contract checks if user holds conditional token
+     * @param _conditionalToken address of a non-transferable token contract
      */
-    function setNonTransferableTokenContract(
-        address _nonTransferableTokenContractAddress
+    function setConditionalTokenAddress(
+        address _conditionalToken
     ) external;
 
     /**
@@ -47,22 +47,22 @@ interface IGate {
     /**
      * @notice Registers connection between setID and tokenID
      * @param _tokenIdSupply an ID of a supply token (ERC-1155)
-     * @param _nftTokenId an ID of a quest token
+     * @param _conditionalTokenId an ID of a conditional token
      */
-    function registerVoucherSetId(uint256 _tokenIdSupply, uint256 _nftTokenId)
+    function registerVoucherSetId(uint256 _tokenIdSupply, uint256 _conditionalTokenId)
         external;
 
     /**
-     * @notice Gets the contract address, where gate contract checks if quest NFT token exists
-     * @return Address of contract that hold non transferable NFTs (quest NFTs)
+     * @notice Gets the contract address, where gate contract checks if user holds conditional token
+     * @return Address of conditional token contract
      */
-    function getNonTransferableTokenContract() external view returns (address);
+    function getConditionalTokenContract() external view returns (address);
 
     /**
-     * @notice Checks if user possesses the required quest NFT token for given voucher set
+     * @notice Checks if user possesses the required conditional token for given voucher set
      * @param _user user address
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
-     * @return true if user possesses quest NFT token, and the token is not deactivated
+     * @return true if user possesses conditional token, and the token is not deactivated
      */
     function check(address _user, uint256 _tokenIdSupply)
         external
