@@ -312,9 +312,9 @@ class DeploymentExecutor {
   }
 
   async deployMockToken() {
-    //only deploy the mock for local environment
+    //only deploy the mock for local environment using default deployer address
     if(this.env == 'hardhat') {
-      console.log("Deploying mock Boson Token");
+      console.log("$ Deploying mock Boson Token");
 
       const MockBosonToken = await ethers.getContractFactory('MockERC20Permit');
       const mockBosonToken = await MockBosonToken.deploy(
@@ -419,8 +419,7 @@ class ProdExecutor extends DeploymentExecutor {
 
   async setDefaults() {
     await super.setDefaults();
-    // this code does not seem to be executed. Keeping it in anyways, until it is clear
-    // The lines below are otherwise called also in another setDefaults
+   
     await this.tokenRegistry.setETHLimit(this.eth_limit, this.txOptions);
     console.log(`Set ETH limit: ${this.eth_limit}`);
     await this.tokenRegistry.setTokenLimit(
@@ -443,14 +442,11 @@ class ProdExecutor extends DeploymentExecutor {
  * @extends {DeploymentExecutor}
  */
 class NonProdExecutor extends DeploymentExecutor {
-  SIXTY_SECONDS: number;
 
   constructor(env) {
     super();
     this.env = env;
-    this.SIXTY_SECONDS = 60;
   }
-
 
   async setDefaults() {
     await super.setDefaults();
