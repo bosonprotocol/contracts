@@ -73,7 +73,7 @@ npm run contracts:compile
 npm run contracts:run
 ```
 
-*Note that*: This command starts up built-in Hardhat Network and migrates all contracts to the Hardhat Network instance. The `.env` file has a hard-coded value for the `BOSON_TOKEN` address, which points to account #9 of the local hardhat network. This isn't an actual BOSON token address but just a valid address that will allow the deployment scripts to work. It's not necessary to deploy a BOSON token to run the unit tests locally (see Unit Tests section), as the unit tests deploy their own contract instances.
+*Note that*: This command starts up built-in Hardhat Network and migrates all contracts to the Hardhat Network instance. The `.env` file has a hard-coded value for the `BOSON_TOKEN` address, which points to account #9 of the local hardhat network. This isn't an actual BOSON token address but just a valid address that will allow the deployment scripts to work. When deploying locally (env == hardhat), a mock Boson Token will be deployed. The unit tests deploy their own contracts and do not rely on the deploy.ts script.
 
 If preferred by those who are familiar with Hardhat, the standard Hardhat commands can be used.
 
