@@ -311,6 +311,24 @@ class DeploymentExecutor {
     }
   }
 
+  async deployMockToken() {
+    //only deploy the mock for local environment
+    if(this.env == 'hardhat') {
+      console.log("Deploying mock Boson Token");
+
+      const MockBosonToken = await ethers.getContractFactory('MockERC20Permit');
+      const mockBosonToken = await MockBosonToken.deploy(
+        "Mock Boson Token",
+        "BOSON"
+      );
+
+      await mockBosonToken.deployed();
+      this.boson_token = mockBosonToken.address;
+    } else {
+      console.log("Not local env. NOT deploying mock Boson Token");
+    }
+  }
+
   logContracts() {
     console.log(
       '\nToken Registry Contract Address  %s from deployer address %s: ',
@@ -433,6 +451,7 @@ class NonProdExecutor extends DeploymentExecutor {
     this.SIXTY_SECONDS = 60;
   }
 
+
   async setDefaults() {
     await super.setDefaults();
     await this.voucherKernel.setComplainPeriod(
@@ -459,6 +478,7 @@ class NonProdExecutor extends DeploymentExecutor {
 
 export async function deploy(_env: string): Promise<void> {
   const env = _env.toLowerCase();
+
   if (!isValidEnv(env)) {
     throw new Error(`Env: ${env} is not recognized!`);
   }
@@ -467,6 +487,11 @@ export async function deploy(_env: string): Promise<void> {
     env == 'prod' ? new ProdExecutor() : new NonProdExecutor(env);
 
   await executor.deployContracts();
+
+
+  if(env == 'hardhat') {
+    await executor.deployMockToken();
+  }
 
   executor.logContracts();
   executor.writeContracts();
