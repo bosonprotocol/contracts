@@ -311,6 +311,24 @@ class DeploymentExecutor {
     }
   }
 
+  async deployMockToken() {
+    //only deploy the mock for local environment using default deployer address
+    if (hre.network.name == 'hardhat' || hre.network.name == 'localhost') {
+      console.log('$ Deploying mock Boson Token');
+
+      const MockBosonToken = await ethers.getContractFactory('MockERC20Permit');
+      const mockBosonToken = await MockBosonToken.deploy(
+        'Mock Boson Token',
+        'BOSON'
+      );
+
+      await mockBosonToken.deployed();
+      this.boson_token = mockBosonToken.address;
+    } else {
+      console.log('$ Not local deployment. NOT deploying mock Boson Token');
+    }
+  }
+
   logContracts() {
     console.log(
       '\nToken Registry Contract Address  %s from deployer address %s: ',
@@ -401,8 +419,7 @@ class ProdExecutor extends DeploymentExecutor {
 
   async setDefaults() {
     await super.setDefaults();
-    // this code does not seem to be executed. Keeping it in anyways, until it is clear
-    // The lines below are otherwise called also in another setDefaults
+
     await this.tokenRegistry.setETHLimit(this.eth_limit, this.txOptions);
     console.log(`Set ETH limit: ${this.eth_limit}`);
     await this.tokenRegistry.setTokenLimit(
@@ -425,12 +442,9 @@ class ProdExecutor extends DeploymentExecutor {
  * @extends {DeploymentExecutor}
  */
 class NonProdExecutor extends DeploymentExecutor {
-  SIXTY_SECONDS: number;
-
   constructor(env) {
     super();
     this.env = env;
-    this.SIXTY_SECONDS = 60;
   }
 
   async setDefaults() {
@@ -459,6 +473,7 @@ class NonProdExecutor extends DeploymentExecutor {
 
 export async function deploy(_env: string): Promise<void> {
   const env = _env.toLowerCase();
+
   if (!isValidEnv(env)) {
     throw new Error(`Env: ${env} is not recognized!`);
   }
@@ -467,6 +482,7 @@ export async function deploy(_env: string): Promise<void> {
     env == 'prod' ? new ProdExecutor() : new NonProdExecutor(env);
 
   await executor.deployContracts();
+  await executor.deployMockToken(); //only deploys mock locally
 
   executor.logContracts();
   executor.writeContracts();
