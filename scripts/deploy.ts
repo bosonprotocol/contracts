@@ -313,19 +313,19 @@ class DeploymentExecutor {
 
   async deployMockToken() {
     //only deploy the mock for local environment using default deployer address
-    if(this.env == 'hardhat') {
-      console.log("$ Deploying mock Boson Token");
+    if (this.env == 'hardhat') {
+      console.log('$ Deploying mock Boson Token');
 
       const MockBosonToken = await ethers.getContractFactory('MockERC20Permit');
       const mockBosonToken = await MockBosonToken.deploy(
-        "Mock Boson Token",
-        "BOSON"
+        'Mock Boson Token',
+        'BOSON'
       );
 
       await mockBosonToken.deployed();
       this.boson_token = mockBosonToken.address;
     } else {
-      console.log("Not local env. NOT deploying mock Boson Token");
+      console.log('Not local env. NOT deploying mock Boson Token');
     }
   }
 
@@ -419,7 +419,7 @@ class ProdExecutor extends DeploymentExecutor {
 
   async setDefaults() {
     await super.setDefaults();
-   
+
     await this.tokenRegistry.setETHLimit(this.eth_limit, this.txOptions);
     console.log(`Set ETH limit: ${this.eth_limit}`);
     await this.tokenRegistry.setTokenLimit(
@@ -442,7 +442,6 @@ class ProdExecutor extends DeploymentExecutor {
  * @extends {DeploymentExecutor}
  */
 class NonProdExecutor extends DeploymentExecutor {
-
   constructor(env) {
     super();
     this.env = env;
@@ -484,8 +483,7 @@ export async function deploy(_env: string): Promise<void> {
 
   await executor.deployContracts();
 
-
-  if(env == 'hardhat') {
+  if (env == 'hardhat') {
     await executor.deployMockToken();
   }
 
