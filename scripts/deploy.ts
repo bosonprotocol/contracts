@@ -313,7 +313,7 @@ class DeploymentExecutor {
 
   async deployMockToken() {
     //only deploy the mock for local environment using default deployer address
-    if (this.env == 'hardhat') {
+    if (hre.network.name == 'hardhat' || hre.network.name == 'localhost') {
       console.log('$ Deploying mock Boson Token');
 
       const MockBosonToken = await ethers.getContractFactory('MockERC20Permit');
@@ -325,7 +325,7 @@ class DeploymentExecutor {
       await mockBosonToken.deployed();
       this.boson_token = mockBosonToken.address;
     } else {
-      console.log('Not local env. NOT deploying mock Boson Token');
+      console.log('$ Not local deployment. NOT deploying mock Boson Token');
     }
   }
 
@@ -482,10 +482,7 @@ export async function deploy(_env: string): Promise<void> {
     env == 'prod' ? new ProdExecutor() : new NonProdExecutor(env);
 
   await executor.deployContracts();
-
-  if (env == 'hardhat') {
-    await executor.deployMockToken();
-  }
+  await executor.deployMockToken(); //only deploys mock locally
 
   executor.logContracts();
   executor.writeContracts();
