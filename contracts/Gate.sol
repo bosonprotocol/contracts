@@ -27,6 +27,26 @@ interface MultiToken {
 
 contract Gate is IGate, Ownable, Pausable {
 
+    event LogConditionalContractSet(
+        address indexed _conditionalToken,
+        address indexed _triggeredBy
+    );
+
+    event LogBosonRouterSet(
+        address indexed _bosonRouter,
+        address indexed _triggeredBy
+    );
+
+    event LogVoucherSetRegistered(
+        uint256 indexed _tokenIdSupply,
+        uint256 indexed _conditionalTokenId
+    );
+
+    event LogUserVoucherDeactivated(
+        address indexed _user,
+        uint256 indexed _tokenIdSupply
+    );
+
     enum TokenType {TOKEN, MULTI_TOKEN} // ERC20 & ERC721 = TOKEN, ERC1155 = MULTI_TOKEN
 
     mapping(uint256 => uint256) private voucherToToken;
@@ -81,7 +101,7 @@ contract Gate is IGate, Ownable, Pausable {
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
      * @return conditional token ID or zero if conditional token is not MultiToken
      */
-    function getConditionalTokenId(uint256 _tokenIdSupply) external view override returns (uint256) {
+    function getConditionalTokenId(uint256 _tokenIdSupply) external view returns (uint256) {
         return voucherToToken[_tokenIdSupply];
     }
 
@@ -91,7 +111,7 @@ contract Gate is IGate, Ownable, Pausable {
      */
     function setConditionalTokenAddress(
         address _conditionalToken
-    ) external override onlyOwner notZeroAddress(_conditionalToken) whenPaused {
+    ) external onlyOwner notZeroAddress(_conditionalToken) whenPaused {
         conditionalTokenContract = _conditionalToken;
 
         emit LogConditionalContractSet(_conditionalToken, owner());
@@ -101,7 +121,7 @@ contract Gate is IGate, Ownable, Pausable {
      * @notice Gets the contract address, where gate contract checks if user holds conditional token
      * @return Address of conditional token contract
      */
-    function getConditionalTokenContract() external view override returns (address) {
+    function getConditionalTokenContract() external view returns (address) {
         return conditionalTokenContract;
     }
 
@@ -111,7 +131,6 @@ contract Gate is IGate, Ownable, Pausable {
      */
     function setBosonRouterAddress(address _bosonRouterAddress)
         external
-        override
         onlyOwner
         notZeroAddress(_bosonRouterAddress)
         whenPaused
@@ -182,14 +201,14 @@ contract Gate is IGate, Ownable, Pausable {
     /**
      * @notice Pause register and deactivate
      */
-    function pause() external override onlyOwner {
+    function pause() external onlyOwner {
         _pause();
     }
 
     /**
      * @notice Unpause the contract and allows register and deactivate
      */
-    function unpause() external override onlyOwner {
+    function unpause() external onlyOwner {
         _unpause();
     }
 

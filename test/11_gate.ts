@@ -84,7 +84,8 @@ describe('Gate contract', async () => {
       users.other1.address; // if router is not initalized use mock address
     contractGate = (await Gate_Factory.deploy(
       routerAddress,
-      contractERC1155NonTransferable.address
+      contractERC1155NonTransferable.address,
+      constants.TOKEN_TYPE.MULTI_TOKEN
     )) as Contract & Gate;
 
     await contractERC1155NonTransferable.deployed();
@@ -393,9 +394,7 @@ describe('Gate contract', async () => {
       await expect(
         contractGate
           .connect(users.attacker.signer)
-          .setConditionalTokenAddress(
-            contractERC1155NonTransferable.address
-          )
+          .setConditionalTokenAddress(contractERC1155NonTransferable.address)
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
     });
 
@@ -480,7 +479,8 @@ describe('Gate contract', async () => {
         await expect(
           Gate_Factory.deploy(
             constants.ZERO_ADDRESS,
-            contractERC1155NonTransferable.address
+            contractERC1155NonTransferable.address,
+            constants.TOKEN_TYPE.MULTI_TOKEN
           )
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
       });
@@ -489,7 +489,8 @@ describe('Gate contract', async () => {
         await expect(
           Gate_Factory.deploy(
             contractBosonRouter.address,
-            constants.ZERO_ADDRESS
+            constants.ZERO_ADDRESS,
+            constants.TOKEN_TYPE.MULTI_TOKEN
           )
         ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
       });

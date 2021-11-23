@@ -148,7 +148,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       )) as Contract & ERC1155NonTransferable;
     contractGate = (await Gate_Factory.deploy(
       contractAddresses.BosonRouter,
-      contractAddresses.ERC1155NonTransferable
+      contractAddresses.ERC1155NonTransferable,
+      constants.TOKEN_TYPE.MULTI_TOKEN
     )) as Contract & Gate;
 
     await contractTokenRegistry.deployed();
