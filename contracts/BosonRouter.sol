@@ -210,7 +210,7 @@ contract BosonRouter is
 
     /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is also known as a voucher set.
-     * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token.
+     * The supply token/voucher set created should only be available to buyers who own a specific token of type ERC721, ERC1155, or ERC20.
      * This is the "condition" under which a buyer may commit to redeem a voucher that is part of the voucher set created by this function.
      * Payment and deposits are specified in ETH.
      * @param _metadata metadata which is required for creation of a voucher set
@@ -295,7 +295,7 @@ contract BosonRouter is
 
     /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is also known as a voucher set.
-     * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token.
+     * The supply token/voucher set created should only be available to buyers who own a specific token of type ERC721, ERC1155, or ERC20.
      * This is the "condition" under which a buyer may commit to redeem a voucher that is part of the voucher set created by this function.
      * Price and deposits are specified in tokens.
      * @param _tokenPriceAddress address of the token to be used for the price
@@ -399,7 +399,7 @@ contract BosonRouter is
 
     /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is also known as a voucher set.
-     * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token.
+     * The supply token/voucher set created should only be available to buyers who own a specific token of type ERC721, ERC1155, or ERC20.
      * This is the "condition" under which a buyer may commit to redeem a voucher that is part of the voucher set created by this function.
      * Price is specified in ETH and deposits are specified in tokens.
      * @param _tokenDepositAddress address of the token to be used for the deposits
@@ -484,7 +484,7 @@ contract BosonRouter is
 
     /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is also known as a voucher set.
-     * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token.
+     * The supply token/voucher set created should only be available to buyers who own a specific specific token of type ERC721, ERC1155, or ERC20.
      * This is the "condition" under which a buyer may commit to redeem a voucher that is part of the voucher set created by this function.
      * Price is specified in tokens and the deposits are specified in ETH.
      * Since the price, which is specified in tokens, is not collected when a voucher set is created, there is no need to call
