@@ -17,8 +17,11 @@ import {
   TokenRegistry,
   MockERC20Permit,
   ERC1155NonTransferable,
-  Gate, SampleERC20, SampleERC721, SampleERC1155
-} from "../typechain";
+  Gate,
+  SampleERC20,
+  SampleERC721,
+  SampleERC1155,
+} from '../typechain';
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
 import {Account} from '../testHelpers/types';
@@ -110,7 +113,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         'ERC1155NonTransferable',
         'SampleERC20',
         'SampleERC721',
-        'SampleERC1155'
+        'SampleERC1155',
       ]
     );
 
@@ -165,17 +168,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       constants.TOKEN_TYPE.MULTI_TOKEN
     )) as Contract & Gate;
 
-    contractSampleERC20 = (
-      await SampleERC20_Factory.deploy()
-    ) as Contract & SampleERC20;
+    contractSampleERC20 = (await SampleERC20_Factory.deploy()) as Contract &
+      SampleERC20;
 
-    contractSampleERC721 = (
-      await SampleERC721_Factory.deploy()
-    ) as Contract & SampleERC721;
+    contractSampleERC721 = (await SampleERC721_Factory.deploy()) as Contract &
+      SampleERC721;
 
-    contractSampleERC1155 = (
-      await SampleERC1155_Factory.deploy()
-    ) as Contract & SampleERC1155;
+    contractSampleERC1155 = (await SampleERC1155_Factory.deploy()) as Contract &
+      SampleERC1155;
 
     await contractTokenRegistry.deployed();
     await contractVoucherSets.deployed();
