@@ -23,7 +23,10 @@ import {
   Cashier,
   TokenRegistry,
   MockERC20Permit,
-} from '../typechain';
+  SampleERC20,
+  SampleERC721,
+  SampleERC1155
+} from "../typechain";
 
 let ERC1155NonTransferable_Factory: ContractFactory;
 let Gate_Factory: ContractFactory;
@@ -34,6 +37,9 @@ let VoucherKernel_Factory: ContractFactory;
 let Cashier_Factory: ContractFactory;
 let TokenRegistry_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
+let SampleERC20_Factory: ContractFactory;
+let SampleERC721_Factory: ContractFactory;
+let SampleERC1155_Factory: ContractFactory;
 
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
@@ -61,6 +67,10 @@ describe('Gate contract', async () => {
     MockERC20Permit_Factory = await ethers.getContractFactory(
       'MockERC20Permit'
     );
+
+    SampleERC20_Factory = await ethers.getContractFactory('SampleERC20');
+    SampleERC721_Factory = await ethers.getContractFactory('SampleERC721');
+    SampleERC1155_Factory = await ethers.getContractFactory('SampleERC1155');
   });
 
   let contractERC1155NonTransferable: ERC1155NonTransferable,
@@ -72,24 +82,48 @@ describe('Gate contract', async () => {
     contractBosonRouter: BosonRouter,
     contractTokenRegistry: TokenRegistry,
     contractBSNTokenPrice: MockERC20Permit,
-    contractBSNTokenDeposit: MockERC20Permit;
+    contractBSNTokenDeposit: MockERC20Permit,
+    contractSampleERC20: SampleERC20,
+    contractSampleERC721: SampleERC721,
+    contractSampleERC1155: SampleERC1155;
 
   async function deployContracts() {
     contractERC1155NonTransferable =
       (await ERC1155NonTransferable_Factory.deploy(
         'https://token-cdn-domain/{id}.json'
       )) as Contract & ERC1155NonTransferable;
+    await contractERC1155NonTransferable.deployed();
+
     const routerAddress =
       (contractBosonRouter && contractBosonRouter.address) ||
       users.other1.address; // if router is not initalized use mock address
+
     contractGate = (await Gate_Factory.deploy(
       routerAddress,
       contractERC1155NonTransferable.address,
       constants.TOKEN_TYPE.MULTI_TOKEN
     )) as Contract & Gate;
 
-    await contractERC1155NonTransferable.deployed();
     await contractGate.deployed();
+
+    contractSampleERC20 = (
+      await SampleERC20_Factory.deploy()
+    ) as Contract & SampleERC20;
+
+    await contractSampleERC20.deployed();
+
+    contractSampleERC721 = (
+      await SampleERC721_Factory.deploy()
+    ) as Contract & SampleERC721;
+
+    await contractSampleERC721.deployed();
+
+    contractSampleERC1155 = (
+      await SampleERC1155_Factory.deploy()
+    ) as Contract & SampleERC1155;
+
+    await contractSampleERC1155.deployed();
+
   }
 
   async function deployBosonRouterContracts() {
@@ -200,8 +234,9 @@ describe('Gate contract', async () => {
     );
 
     await gate.pause();
-    await gate.setConditionalTokenAddress(
-      contractERC1155NonTransferable.address
+    await gate.setConditionalTokenContract(
+      contractERC1155NonTransferable.address,
+      constants.TOKEN_TYPE.MULTI_TOKEN
     );
     await gate.setBosonRouterAddress(contractBosonRouter.address);
     await gate.unpause();
@@ -275,23 +310,29 @@ describe('Gate contract', async () => {
       await deployContracts();
     });
 
-    it('Owner should be able set ERC1155 contract address', async () => {
+    it('Owner should be able set conditional token contract address and type', async () => {
       await contractGate.pause();
       expect(
-        await contractGate.setConditionalTokenAddress(
-          contractERC1155NonTransferable.address
+        await contractGate.setConditionalTokenContract(
+          contractERC1155NonTransferable.address,
+          constants.TOKEN_TYPE.MULTI_TOKEN
         )
       )
         .to.emit(contractGate, eventNames.LOG_NON_TRANSFERABLE_CONTRACT)
         .withArgs(
           contractERC1155NonTransferable.address,
+          constants.TOKEN_TYPE.MULTI_TOKEN,
           users.deployer.address
         );
     });
 
-    it('One should be able get ERC1155 contract address', async () => {
-      expect(await contractGate.getConditionalTokenContract()).to.equal(
+    it('Anyone should be able get conditional token contract address and type', async () => {
+      const response = await contractGate.getConditionalTokenContract();
+      expect(response[0]).to.equal(
         contractERC1155NonTransferable.address
+      );
+      expect(response[1]).to.equal(
+        constants.TOKEN_TYPE.MULTI_TOKEN
       );
     });
 
@@ -376,25 +417,41 @@ describe('Gate contract', async () => {
       ).to.be.revertedWith(revertReasons.PAUSED);
     });
 
-    it('[NEGATIVE] ERC1155 cannot be set if gate contract is not paused', async () => {
+    it('[NEGATIVE] Conditional token cannot be set if gate contract is not paused', async () => {
       await expect(
-        contractGate.setConditionalTokenAddress(
-          contractERC1155NonTransferable.address
+        contractGate.setConditionalTokenContract(
+          contractERC1155NonTransferable.address,
+          constants.TOKEN_TYPE.MULTI_TOKEN
         )
       ).to.be.revertedWith(revertReasons.NOT_PAUSED);
     });
 
-    it('[NEGATIVE][setConditionalTokenAddress] Should revert if supplied wrong boson router address', async () => {
+    it('[NEGATIVE][setConditionalTokenContract] Should revert if supplied zero address', async () => {
       await expect(
-        contractGate.setConditionalTokenAddress(constants.ZERO_ADDRESS)
+        contractGate.setConditionalTokenContract(
+          constants.ZERO_ADDRESS,
+          constants.TOKEN_TYPE.MULTI_TOKEN
+        )
       ).to.be.revertedWith(revertReasons.ZERO_ADDRESS_NOT_ALLOWED);
     });
 
-    it('[NEGATIVE][setConditionalTokenAddress] Should revert if executed by attacker', async () => {
+    it.only('[NEGATIVE][setConditionalTokenContract] Should revert if supplied invalid token type', async () => {
+      await expect(
+        contractGate.setConditionalTokenContract(
+          constants.ZERO_ADDRESS,
+          2
+        )
+      ).to.be.revertedWith(""); // No revert reason, if argument is not in valid range for enum, solidity reverts
+    });
+
+    it('[NEGATIVE][setConditionalTokenContract] Should revert if executed by attacker', async () => {
       await expect(
         contractGate
           .connect(users.attacker.signer)
-          .setConditionalTokenAddress(contractERC1155NonTransferable.address)
+          .setConditionalTokenContract(
+            contractERC1155NonTransferable.address,
+            constants.TOKEN_TYPE.MULTI_TOKEN
+            )
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER);
     });
 

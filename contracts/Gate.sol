@@ -27,8 +27,11 @@ interface MultiToken {
 
 contract Gate is IGate, Ownable, Pausable {
 
+    enum TokenType {TOKEN, MULTI_TOKEN} // ERC20 & ERC721 = TOKEN, ERC1155 = MULTI_TOKEN
+
     event LogConditionalContractSet(
         address indexed _conditionalToken,
+        TokenType indexed _conditionalTokenType,
         address indexed _triggeredBy
     );
 
@@ -46,8 +49,6 @@ contract Gate is IGate, Ownable, Pausable {
         address indexed _user,
         uint256 indexed _tokenIdSupply
     );
-
-    enum TokenType {TOKEN, MULTI_TOKEN} // ERC20 & ERC721 = TOKEN, ERC1155 = MULTI_TOKEN
 
     mapping(uint256 => uint256) private voucherToToken;
     mapping(address => mapping(uint256 => bool)) private isDeactivated; // user => voucherSet => bool
@@ -75,7 +76,7 @@ contract Gate is IGate, Ownable, Pausable {
         conditionalTokenType = _conditionalTokenType;
 
         emit LogBosonRouterSet(_bosonRouterAddress, owner());
-        emit LogConditionalContractSet(_conditionalToken, owner());
+        emit LogConditionalContractSet(_conditionalToken, _conditionalTokenType, owner());
     }
 
     modifier onlyFromRouter() {
@@ -108,21 +109,27 @@ contract Gate is IGate, Ownable, Pausable {
     /**
      * @notice Sets the contract, where gate contract checks if user holds conditional token
      * @param _conditionalToken address of a non-transferable token contract
+     * @param _conditionalTokenType type of token
      */
-    function setConditionalTokenAddress(
-        address _conditionalToken
+    function setConditionalTokenContract(
+        address _conditionalToken,
+        TokenType _conditionalTokenType
     ) external onlyOwner notZeroAddress(_conditionalToken) whenPaused {
         conditionalTokenContract = _conditionalToken;
-
-        emit LogConditionalContractSet(_conditionalToken, owner());
+        conditionalTokenType = _conditionalTokenType;
+        emit LogConditionalContractSet(_conditionalToken, _conditionalTokenType, owner());
     }
 
-      /**
+    /**
      * @notice Gets the contract address, where gate contract checks if user holds conditional token
-     * @return Address of conditional token contract
+     * @return address of conditional token contract
+     * @return type of conditional token contract
      */
-    function getConditionalTokenContract() external view returns (address) {
-        return conditionalTokenContract;
+    function getConditionalTokenContract() external view returns (address, TokenType) {
+        return (
+            conditionalTokenContract,
+            conditionalTokenType
+        );
     }
 
     /**

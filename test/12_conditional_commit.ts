@@ -17,8 +17,8 @@ import {
   TokenRegistry,
   MockERC20Permit,
   ERC1155NonTransferable,
-  Gate,
-} from '../typechain';
+  Gate, SampleERC20, SampleERC721, SampleERC1155
+} from "../typechain";
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
 import {Account} from '../testHelpers/types';
@@ -39,6 +39,9 @@ let TokenRegistry_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
 let ERC1155NonTransferable_Factory: ContractFactory;
 let Gate_Factory: ContractFactory;
+let SampleERC20_Factory: ContractFactory;
+let SampleERC721_Factory: ContractFactory;
+let SampleERC1155_Factory: ContractFactory;
 
 const eventNames = eventUtils.eventNames;
 let users;
@@ -69,6 +72,10 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     MockERC20Permit_Factory = await ethers.getContractFactory(
       'MockERC20Permit'
     );
+
+    SampleERC20_Factory = await ethers.getContractFactory('SampleERC20');
+    SampleERC721_Factory = await ethers.getContractFactory('SampleERC721');
+    SampleERC1155_Factory = await ethers.getContractFactory('SampleERC1155');
   });
 
   let contractVoucherSets: VoucherSets,
@@ -80,7 +87,10 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     contractBSNTokenDeposit: MockERC20Permit,
     contractTokenRegistry: TokenRegistry,
     contractERC1155NonTransferable: ERC1155NonTransferable,
-    contractGate: Gate;
+    contractGate: Gate,
+    contractSampleERC20: SampleERC20,
+    contractSampleERC721: SampleERC721,
+    contractSampleERC1155: SampleERC1155;
 
   const deadline = toWei(1);
 
@@ -98,6 +108,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         'BSNTokenPrice',
         'BSNTokenDeposit',
         'ERC1155NonTransferable',
+        'SampleERC20',
+        'SampleERC721',
+        'SampleERC1155'
       ]
     );
 
@@ -152,6 +165,18 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
       constants.TOKEN_TYPE.MULTI_TOKEN
     )) as Contract & Gate;
 
+    contractSampleERC20 = (
+      await SampleERC20_Factory.deploy()
+    ) as Contract & SampleERC20;
+
+    contractSampleERC721 = (
+      await SampleERC721_Factory.deploy()
+    ) as Contract & SampleERC721;
+
+    contractSampleERC1155 = (
+      await SampleERC1155_Factory.deploy()
+    ) as Contract & SampleERC1155;
+
     await contractTokenRegistry.deployed();
     await contractVoucherSets.deployed();
     await contractVouchers.deployed();
@@ -162,6 +187,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
     await contractBSNTokenDeposit.deployed();
     await contractERC1155NonTransferable.deployed();
     await contractGate.deployed();
+    await contractSampleERC20.deployed();
+    await contractSampleERC721.deployed();
+    await contractSampleERC1155.deployed();
 
     await contractVoucherSets.setApprovalForAll(
       contractVoucherKernel.address,
