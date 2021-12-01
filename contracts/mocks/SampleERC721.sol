@@ -19,10 +19,10 @@ contract SampleERC721 is ERC721 {
     string public constant TOKEN_SYMBOL = "SE721";
 
     /**
-     * Mint a Sample NFT
+     * Mint a sample token
      * @param _owner the address that will own the token
      */
-    function mintSample(address _owner) public returns (uint256 tokenId) {
+    function mint(address _owner) public returns (uint256 tokenId) {
         tokenId = totalSupply();
         _mint(_owner, tokenId);
     }

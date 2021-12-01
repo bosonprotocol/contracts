@@ -19,10 +19,10 @@ contract SampleERC20 is ERC20 {
     string public constant TOKEN_SYMBOL = "SE20";
 
     /**
-     * Mint a Sample NFT
+     * Mint a sample token
      * @param _owner the address that will own the token
      */
-    function mintSample(address _owner, uint256 _amount) public {
+    function mint(address _owner, uint256 _amount) public {
         _mint(_owner, _amount);
     }
 }

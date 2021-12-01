@@ -13,12 +13,12 @@ contract SampleERC1155 is ERC1155 {
     {}
 
     /**
-     * Mint a Sample NFT
+     * Mint a sample token
      * @param _owner the address that will own the token
      * @param _tokenId the token ID to mint an amount of
      * @param _amount the amount of tokens to mint
      */
-    function mintSample(
+    function mint(
         address _owner,
         uint256 _tokenId,
         uint256 _amount
