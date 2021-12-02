@@ -60,7 +60,7 @@ describe('Token Wrappers', () => {
 
     it('Should emit LogTokenAddressChanged event when deployed', async () => {
       const signers: Signer[] = await ethers.getSigners();
-      let users = new Users(signers);
+      const users = new Users(signers);
 
       expect(contractDAITokenWrapper.deployTransaction)
         .to.emit(contractDAITokenWrapper, eventNames.LOG_TOKEN_ADDRESS_CHANGED)
