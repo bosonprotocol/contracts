@@ -135,6 +135,16 @@ describe('TokenRegistry', () => {
       await deployContracts();
     });
 
+    describe('TokenRegistry deploy', () => {
+      it('should emit LogETHLimitChanged event when deployed', async () => {
+        const expectedInitialEthLimit = ethers.utils.parseEther('1').toString();
+
+        expect(contractTokenRegistry.deployTransaction)
+          .to.emit(contractTokenRegistry, eventNames.LOG_ETH_LIMIT_CHANGED)
+          .withArgs(expectedInitialEthLimit, users.deployer.address);
+      });
+    });
+
     describe('ETH', () => {
       it('Should have set ETH Limit initially to 1 ETH', async () => {
         const ONE_ETH = (10 ** 18).toString();
