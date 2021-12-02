@@ -1,5 +1,5 @@
 import {ethers} from 'hardhat';
-import {ContractFactory, Contract, Wallet, BigNumber} from 'ethers';
+import {ContractFactory, Contract, Wallet, BigNumber, Signer} from 'ethers';
 import {waffle} from 'hardhat';
 import {expect} from 'chai';
 import {ecsign} from 'ethereumjs-util';
@@ -9,6 +9,7 @@ import Utils from '../testHelpers/utils';
 import {toWei, getApprovalDigestDAI} from '../testHelpers/permitUtilsDAI';
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
+import Users from '../testHelpers/users';
 import IDAI from '../artifacts/contracts/interfaces/IDAI.sol/IDAI.json';
 import DATTokenWrapper from '../artifacts/contracts/DAITokenWrapper.sol/DAITokenWrapper.json'; //only used by deployContract
 import {DAITokenWrapper} from '../typechain';
@@ -55,6 +56,15 @@ describe('Token Wrappers', () => {
       await deployContracts();
 
       await mockDAI.mock.name.returns('MockDAI');
+    });
+
+    it('Should emit LogTokenAddressChanged event when deployed', async () => {
+      const signers: Signer[] = await ethers.getSigners();
+      let users = new Users(signers);
+
+      expect(contractDAITokenWrapper.deployTransaction)
+        .to.emit(contractDAITokenWrapper, eventNames.LOG_TOKEN_ADDRESS_CHANGED)
+        .withArgs(mockDAI.address, users.deployer.address);
     });
 
     it('Should allow owner to set the token address', async () => {
