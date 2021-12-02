@@ -4,10 +4,10 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /**
- * @title Sample ERC20 NFT for Unit Testing
+ * @title Mock ERC20 NFT for Unit Testing
  * @author Cliff Hall
  */
-contract SampleERC20 is ERC20 {
+contract MockERC20 is ERC20 {
     constructor()
         ERC20(TOKEN_NAME, TOKEN_SYMBOL)
     // solhint-disable-next-line no-empty-blocks
@@ -15,7 +15,7 @@ contract SampleERC20 is ERC20 {
 
     }
 
-    string public constant TOKEN_NAME = "SampleERC20";
+    string public constant TOKEN_NAME = "MockERC20";
     string public constant TOKEN_SYMBOL = "SE20";
 
     /**

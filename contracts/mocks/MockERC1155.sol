@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
  * @title Sample ERC1155 NFT for Unit Testing
  * @author Cliff Hall
  */
-contract SampleERC1155 is ERC1155 {
+contract MockERC1155 is ERC1155 {
     constructor()
         ERC1155("") // solhint-disable-next-line no-empty-blocks
     {}

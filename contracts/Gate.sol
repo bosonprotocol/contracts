@@ -2,10 +2,8 @@
 
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/introspection/IERC165.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "./interfaces/IGate.sol";
 
 /**
@@ -50,7 +48,7 @@ contract Gate is IGate, Ownable, Pausable {
         uint256 indexed _tokenIdSupply
     );
 
-    mapping(uint256 => uint256) private voucherToToken;
+    mapping(uint256 => uint256) private voucherSetToToken;
     mapping(address => mapping(uint256 => bool)) private isDeactivated; // user => voucherSet => bool
 
     TokenType private conditionalTokenType;
@@ -103,12 +101,12 @@ contract Gate is IGate, Ownable, Pausable {
      * @return conditional token ID or zero if conditional token is not MultiToken
      */
     function getConditionalTokenId(uint256 _tokenIdSupply) external view returns (uint256) {
-        return voucherToToken[_tokenIdSupply];
+        return voucherSetToToken[_tokenIdSupply];
     }
 
     /**
      * @notice Sets the contract, where gate contract checks if user holds conditional token
-     * @param _conditionalToken address of a non-transferable token contract
+     * @param _conditionalToken address of a conditional token contract
      * @param _conditionalTokenType type of token
      */
     function setConditionalTokenContract(
@@ -163,7 +161,7 @@ contract Gate is IGate, Ownable, Pausable {
         require(_conditionalTokenId != 0, "TOKEN_ID_0_NOT_ALLOWED");
         require(_tokenIdSupply != 0, "INVALID_TOKEN_SUPPLY");
 
-        voucherToToken[_tokenIdSupply] = _conditionalTokenId;
+        voucherSetToToken[_tokenIdSupply] = _conditionalTokenId;
 
         emit LogVoucherSetRegistered(_tokenIdSupply, _conditionalTokenId);
     }
@@ -180,7 +178,7 @@ contract Gate is IGate, Ownable, Pausable {
         override
         returns (bool)
     {
-        uint256 conditionalTokenId = voucherToToken[_tokenIdSupply];
+        uint256 conditionalTokenId = voucherSetToToken[_tokenIdSupply];
         return
             !isDeactivated[_user][_tokenIdSupply] &&
             ((conditionalTokenType == TokenType.TOKEN)

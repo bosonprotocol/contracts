@@ -46,11 +46,11 @@ describe('ERC1155 non transferable functionality', async () => {
     });
 
     it('Owner should be able to mint', async () => {
-      const nftTokenID = BN('2');
+      const conditionalTokenId = BN('2');
       expect(
         await contractERC1155NonTransferable.mint(
           users.other1.address,
-          nftTokenID,
+          conditionalTokenId,
           constants.ONE,
           constants.ZERO_BYTES
         )
@@ -60,20 +60,20 @@ describe('ERC1155 non transferable functionality', async () => {
           users.deployer.address,
           constants.ZERO_ADDRESS,
           users.other1.address,
-          nftTokenID,
+          conditionalTokenId,
           constants.ONE
         );
 
       expect(
         await contractERC1155NonTransferable.balanceOf(
           users.other1.address,
-          nftTokenID
+          conditionalTokenId
         )
       ).to.equal(constants.ONE);
     });
 
     it('Owner should be able to mint batch', async () => {
-      const nftTokenIDs = [BN('2'), BN('5'), BN('7'), BN('9')];
+      const conditionalTokenIds = [BN('2'), BN('5'), BN('7'), BN('9')];
       const balances = [
         constants.ONE,
         constants.ONE,
@@ -84,7 +84,7 @@ describe('ERC1155 non transferable functionality', async () => {
       expect(
         await contractERC1155NonTransferable.mintBatch(
           users.other1.address,
-          nftTokenIDs,
+          conditionalTokenIds,
           balances,
           constants.ZERO_BYTES
         )
@@ -94,7 +94,7 @@ describe('ERC1155 non transferable functionality', async () => {
           users.deployer.address,
           constants.ZERO_ADDRESS,
           users.other1.address,
-          nftTokenIDs,
+          conditionalTokenIds,
           balances
         );
 
@@ -107,17 +107,17 @@ describe('ERC1155 non transferable functionality', async () => {
               users.other1.address,
               users.other1.address,
             ],
-            nftTokenIDs
+            conditionalTokenIds
           )
         ).map((balance) => balance.toString())
       ).to.include.members(balances.map((balance) => balance.toString()));
     });
 
     it('Owner should be able to burn', async () => {
-      const nftTokenID = BN('2');
+      const conditionalTokenId = BN('2');
       await contractERC1155NonTransferable.mint(
         users.other1.address,
-        nftTokenID,
+        conditionalTokenId,
         constants.ONE,
         constants.ZERO_BYTES
       );
@@ -125,7 +125,7 @@ describe('ERC1155 non transferable functionality', async () => {
       expect(
         await contractERC1155NonTransferable.burn(
           users.other1.address,
-          nftTokenID,
+          conditionalTokenId,
           constants.ONE
         )
       )
@@ -134,20 +134,20 @@ describe('ERC1155 non transferable functionality', async () => {
           users.deployer.address,
           users.other1.address,
           constants.ZERO_ADDRESS,
-          nftTokenID,
+          conditionalTokenId,
           constants.ONE
         );
 
       expect(
         await contractERC1155NonTransferable.balanceOf(
           users.other1.address,
-          nftTokenID
+          conditionalTokenId
         )
       ).to.equal(constants.ZERO);
     });
 
     it('Owner should be able to burn batch', async () => {
-      const nftTokenIDs = [BN('2'), BN('5'), BN('7'), BN('9')];
+      const conditionalTokenIds = [BN('2'), BN('5'), BN('7'), BN('9')];
       const balances = [
         constants.ONE,
         constants.ONE,
@@ -163,7 +163,7 @@ describe('ERC1155 non transferable functionality', async () => {
 
       await contractERC1155NonTransferable.mintBatch(
         users.other1.address,
-        nftTokenIDs,
+        conditionalTokenIds,
         balances,
         constants.ZERO_BYTES
       );
@@ -171,7 +171,7 @@ describe('ERC1155 non transferable functionality', async () => {
       expect(
         await contractERC1155NonTransferable.burnBatch(
           users.other1.address,
-          nftTokenIDs,
+          conditionalTokenIds,
           balances
         )
       )
@@ -180,7 +180,7 @@ describe('ERC1155 non transferable functionality', async () => {
           users.deployer.address,
           users.other1.address,
           constants.ZERO_ADDRESS,
-          nftTokenIDs,
+          conditionalTokenIds,
           balances
         );
 
@@ -193,7 +193,7 @@ describe('ERC1155 non transferable functionality', async () => {
               users.other1.address,
               users.other1.address,
             ],
-            nftTokenIDs
+            conditionalTokenIds
           )
         ).map((balance) => balance.toString())
       ).to.include.members(zeroBalances.map((balance) => balance.toString()));
@@ -206,16 +206,16 @@ describe('ERC1155 non transferable functionality', async () => {
         .withArgs(newUri, users.deployer.address);
 
       expect(
-        await contractERC1155NonTransferable.uri(constants.NFT_TOKEN_ID)
+        await contractERC1155NonTransferable.uri(constants.CONDITIONAL_TOKEN_ID)
       ).to.equal(newUri);
     });
 
     it('[NEGATIVE] Regular users cannot execute transfer', async () => {
-      const nftTokenID = BN('2');
+      const conditionalTokenId = BN('2');
 
       await contractERC1155NonTransferable.mint(
         users.other1.address,
-        nftTokenID,
+        conditionalTokenId,
         constants.ONE,
         constants.ZERO_BYTES
       );
@@ -228,7 +228,7 @@ describe('ERC1155 non transferable functionality', async () => {
         tokenOwnerInstance.safeTransferFrom(
           users.other1.address,
           users.other2.address,
-          nftTokenID,
+          conditionalTokenId,
           constants.ONE,
           constants.ZERO_BYTES
         )
@@ -236,10 +236,10 @@ describe('ERC1155 non transferable functionality', async () => {
     });
 
     it('[NEGATIVE] Tokens are non-transferable', async () => {
-      const nftTokenID = BN('2');
+      const conditionalTokenId = BN('2');
       await contractERC1155NonTransferable.mint(
         users.deployer.address,
-        nftTokenID,
+        conditionalTokenId,
         constants.ONE,
         constants.ZERO_BYTES
       );
@@ -248,7 +248,7 @@ describe('ERC1155 non transferable functionality', async () => {
         contractERC1155NonTransferable.safeTransferFrom(
           users.deployer.address,
           users.other2.address,
-          nftTokenID,
+          conditionalTokenId,
           constants.ONE,
           constants.ZERO_BYTES
         )
@@ -257,14 +257,14 @@ describe('ERC1155 non transferable functionality', async () => {
       expect(
         await contractERC1155NonTransferable.balanceOf(
           users.deployer.address,
-          nftTokenID
+          conditionalTokenId
         )
       ).to.equal(constants.ONE);
 
       expect(
         await contractERC1155NonTransferable.balanceOf(
           users.other2.address,
-          nftTokenID
+          conditionalTokenId
         )
       ).to.equal(constants.ZERO);
     });
@@ -302,16 +302,20 @@ describe('ERC1155 non transferable functionality', async () => {
         users.attacker.signer
       );
 
-      const nftTokenID = BN('2');
+      const conditionalTokenId = BN('2');
       await contractERC1155NonTransferable.mint(
         users.other1.address,
-        nftTokenID,
+        conditionalTokenId,
         constants.ONE,
         constants.ZERO_BYTES
       );
 
       await expect(
-        attackerInstance.burn(users.other1.address, nftTokenID, constants.ONE)
+        attackerInstance.burn(
+          users.other1.address,
+          conditionalTokenId,
+          constants.ONE
+        )
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER_OR_SELF);
     });
 
@@ -320,7 +324,7 @@ describe('ERC1155 non transferable functionality', async () => {
         users.attacker.signer
       );
 
-      const nftTokenIDs = [BN('2'), BN('5'), BN('7'), BN('9')];
+      const conditionalTokenIds = [BN('2'), BN('5'), BN('7'), BN('9')];
       const balances = [
         constants.ONE,
         constants.ONE,
@@ -329,13 +333,17 @@ describe('ERC1155 non transferable functionality', async () => {
       ];
       await contractERC1155NonTransferable.mintBatch(
         users.other1.address,
-        nftTokenIDs,
+        conditionalTokenIds,
         balances,
         constants.ZERO_BYTES
       );
 
       await expect(
-        attackerInstance.burnBatch(users.other1.address, nftTokenIDs, balances)
+        attackerInstance.burnBatch(
+          users.other1.address,
+          conditionalTokenIds,
+          balances
+        )
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER_OR_SELF);
     });
 
@@ -380,9 +388,9 @@ describe('ERC1155 non transferable functionality', async () => {
     it('[NEGATIVE] During the pause mint and burn does not work', async () => {
       await contractERC1155NonTransferable.pause();
 
-      const nftTokenID = BN('2');
+      const conditionalTokenId = BN('2');
 
-      const nftTokenIDs = [BN('2'), BN('5'), BN('7'), BN('9')];
+      const conditionalTokenIds = [BN('2'), BN('5'), BN('7'), BN('9')];
       const balances = [
         constants.ONE,
         constants.ONE,
@@ -393,7 +401,7 @@ describe('ERC1155 non transferable functionality', async () => {
       await expect(
         contractERC1155NonTransferable.mint(
           users.other1.address,
-          nftTokenID,
+          conditionalTokenId,
           constants.ONE,
           constants.ZERO_BYTES
         )
@@ -402,7 +410,7 @@ describe('ERC1155 non transferable functionality', async () => {
       await expect(
         contractERC1155NonTransferable.burn(
           users.other1.address,
-          nftTokenID,
+          conditionalTokenId,
           constants.ONE
         )
       ).to.be.revertedWith(revertReasons.PAUSED_ERC1155);
@@ -410,7 +418,7 @@ describe('ERC1155 non transferable functionality', async () => {
       await expect(
         contractERC1155NonTransferable.mintBatch(
           users.other1.address,
-          nftTokenIDs,
+          conditionalTokenIds,
           balances,
           constants.ZERO_BYTES
         )
@@ -419,7 +427,7 @@ describe('ERC1155 non transferable functionality', async () => {
       await expect(
         contractERC1155NonTransferable.burnBatch(
           users.other1.address,
-          nftTokenIDs,
+          conditionalTokenIds,
           balances
         )
       ).to.be.revertedWith(revertReasons.PAUSED_ERC1155);
@@ -477,13 +485,13 @@ describe('ERC1155 non transferable functionality', async () => {
       });
 
       it('Self should be able to mint', async () => {
-        const nftTokenID = BN('2');
+        const conditionalTokenId = BN('2');
         const nonce = getRandomNonce();
 
         const mintData =
           contractERC1155NonTransferable.interface.encodeFunctionData('mint', [
             users.other1.address,
-            nftTokenID,
+            conditionalTokenId,
             constants.ONE,
             constants.ZERO_BYTES,
           ]);
@@ -502,7 +510,7 @@ describe('ERC1155 non transferable functionality', async () => {
             users.deployer.address,
             constants.ZERO_ADDRESS,
             users.other1.address,
-            nftTokenID,
+            conditionalTokenId,
             constants.ONE
           )
           .to.emit(contractERC1155NonTransferable, eventNames.USED_NONCE)
@@ -513,7 +521,7 @@ describe('ERC1155 non transferable functionality', async () => {
         expect(
           await contractERC1155NonTransferable.balanceOf(
             users.other1.address,
-            nftTokenID
+            conditionalTokenId
           )
         ).to.equal(constants.ONE);
 
@@ -523,7 +531,7 @@ describe('ERC1155 non transferable functionality', async () => {
 
       it('Self should be able to mint batch', async () => {
         const nonce = getRandomNonce();
-        const nftTokenIDs = [BN('2'), BN('5'), BN('7'), BN('9')];
+        const conditionalTokenIds = [BN('2'), BN('5'), BN('7'), BN('9')];
         const balances = [
           constants.ONE,
           constants.ONE,
@@ -534,7 +542,12 @@ describe('ERC1155 non transferable functionality', async () => {
         const mintBatchData =
           contractERC1155NonTransferable.interface.encodeFunctionData(
             'mintBatch',
-            [users.other1.address, nftTokenIDs, balances, constants.ZERO_BYTES]
+            [
+              users.other1.address,
+              conditionalTokenIds,
+              balances,
+              constants.ZERO_BYTES,
+            ]
           );
 
         const sig = signData(users.deployer.signer, mintBatchData, nonce);
@@ -551,7 +564,7 @@ describe('ERC1155 non transferable functionality', async () => {
             users.deployer.address,
             constants.ZERO_ADDRESS,
             users.other1.address,
-            nftTokenIDs,
+            conditionalTokenIds,
             balances
           )
           .to.emit(contractERC1155NonTransferable, eventNames.USED_NONCE)
@@ -568,7 +581,7 @@ describe('ERC1155 non transferable functionality', async () => {
                 users.other1.address,
                 users.other1.address,
               ],
-              nftTokenIDs
+              conditionalTokenIds
             )
           ).map((balance) => balance.toString())
         ).to.include.members(balances.map((balance) => balance.toString()));
@@ -579,12 +592,12 @@ describe('ERC1155 non transferable functionality', async () => {
 
       it('Self should be able to burn', async () => {
         const nonce = getRandomNonce();
-        const nftTokenID = BN('2');
+        const conditionalTokenId = BN('2');
 
         const burnData =
           contractERC1155NonTransferable.interface.encodeFunctionData('burn', [
             users.other1.address,
-            nftTokenID,
+            conditionalTokenId,
             constants.ONE,
           ]);
 
@@ -592,7 +605,7 @@ describe('ERC1155 non transferable functionality', async () => {
 
         await contractERC1155NonTransferable.mint(
           users.other1.address,
-          nftTokenID,
+          conditionalTokenId,
           constants.ONE,
           constants.ZERO_BYTES
         );
@@ -609,7 +622,7 @@ describe('ERC1155 non transferable functionality', async () => {
             users.deployer.address,
             users.other1.address,
             constants.ZERO_ADDRESS,
-            nftTokenID,
+            conditionalTokenId,
             constants.ONE
           )
           .to.emit(contractERC1155NonTransferable, eventNames.USED_NONCE)
@@ -620,7 +633,7 @@ describe('ERC1155 non transferable functionality', async () => {
         expect(
           await contractERC1155NonTransferable.balanceOf(
             users.other1.address,
-            nftTokenID
+            conditionalTokenId
           )
         ).to.equal(constants.ZERO);
 
@@ -630,7 +643,7 @@ describe('ERC1155 non transferable functionality', async () => {
 
       it('Self should be able to burn batch', async () => {
         const nonce = getRandomNonce();
-        const nftTokenIDs = [BN('2'), BN('5'), BN('7'), BN('9')];
+        const conditionalTokenIds = [BN('2'), BN('5'), BN('7'), BN('9')];
         const balances = [
           constants.ONE,
           constants.ONE,
@@ -647,14 +660,14 @@ describe('ERC1155 non transferable functionality', async () => {
         const burnBatchData =
           contractERC1155NonTransferable.interface.encodeFunctionData(
             'burnBatch',
-            [users.other1.address, nftTokenIDs, balances]
+            [users.other1.address, conditionalTokenIds, balances]
           );
 
         const sig = signData(users.deployer.signer, burnBatchData, nonce);
 
         await contractERC1155NonTransferable.mintBatch(
           users.other1.address,
-          nftTokenIDs,
+          conditionalTokenIds,
           balances,
           constants.ZERO_BYTES
         );
@@ -671,7 +684,7 @@ describe('ERC1155 non transferable functionality', async () => {
             users.deployer.address,
             users.other1.address,
             constants.ZERO_ADDRESS,
-            nftTokenIDs,
+            conditionalTokenIds,
             balances
           )
           .to.emit(contractERC1155NonTransferable, eventNames.USED_NONCE)
@@ -688,7 +701,7 @@ describe('ERC1155 non transferable functionality', async () => {
                 users.other1.address,
                 users.other1.address,
               ],
-              nftTokenIDs
+              conditionalTokenIds
             )
           ).map((balance) => balance.toString())
         ).to.include.members(zeroBalances.map((balance) => balance.toString()));
@@ -724,7 +737,9 @@ describe('ERC1155 non transferable functionality', async () => {
           .withArgs(setUriData, '0x');
 
         expect(
-          await contractERC1155NonTransferable.uri(constants.NFT_TOKEN_ID)
+          await contractERC1155NonTransferable.uri(
+            constants.CONDITIONAL_TOKEN_ID
+          )
         ).to.equal(newUri);
 
         expect(await contractERC1155NonTransferable.isUsedNonce(nonce)).to.be
@@ -790,12 +805,12 @@ describe('ERC1155 non transferable functionality', async () => {
       });
 
       it('[Negative][mint] Attacker should not be able to mint', async () => {
-        const nftTokenID = BN('2');
+        const conditionalTokenId = BN('2');
 
         const mintData =
           contractERC1155NonTransferable.interface.encodeFunctionData('mint', [
             users.other1.address,
-            nftTokenID,
+            conditionalTokenId,
             constants.ONE,
             constants.ZERO_BYTES,
           ]);
@@ -812,12 +827,12 @@ describe('ERC1155 non transferable functionality', async () => {
       });
 
       it('[Negative][mint] Owner should not be able to replay', async () => {
-        const nftTokenID = BN('2');
+        const conditionalTokenId = BN('2');
 
         const mintData =
           contractERC1155NonTransferable.interface.encodeFunctionData('mint', [
             users.other1.address,
-            nftTokenID,
+            conditionalTokenId,
             constants.ONE,
             constants.ZERO_BYTES,
           ]);
@@ -840,14 +855,14 @@ describe('ERC1155 non transferable functionality', async () => {
       });
 
       it('[Negative][XXXX] Owner should fail to call a non-existant method', async () => {
-        const nftTokenID = BN('2');
+        const conditionalTokenId = BN('2');
 
         const mintiface = new ethers.utils.Interface([
           'function XXXX(address _to, uint256 _tokenId, uint256 _value, bytes memory _data)',
         ]);
         const xxxxData = mintiface.encodeFunctionData('XXXX', [
           users.other1.address,
-          nftTokenID,
+          conditionalTokenId,
           constants.ONE,
           constants.ZERO_BYTES,
         ]);

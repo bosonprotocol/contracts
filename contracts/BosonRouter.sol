@@ -55,7 +55,8 @@ contract BosonRouter is
 
     event LogConditionalOrderCreated(
         uint256 indexed _tokenIdSupply,
-        address indexed _gateAddress
+        address indexed _gateAddress,
+        uint256 indexed _conditionalTokenId
     );
 
     event LogVoucherKernelSet(address _newVoucherKernel, address _triggeredBy);
@@ -1198,7 +1199,7 @@ contract BosonRouter is
     function finalizeConditionalOrder(uint256 _tokenIdSupply, address _gateAddress, uint256 _conditionalTokenId) internal {
         voucherSetToGateContract[_tokenIdSupply] = _gateAddress;
 
-        emit LogConditionalOrderCreated(_tokenIdSupply, _gateAddress);
+        emit LogConditionalOrderCreated(_tokenIdSupply, _gateAddress, _conditionalTokenId);
 
         if (_conditionalTokenId > 0) {
             IGate(_gateAddress).registerVoucherSetId(

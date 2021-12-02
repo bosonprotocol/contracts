@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
  * @title Sample ERC721 NFT for Unit Testing
  * @author Cliff Hall
  */
-contract SampleERC721 is ERC721 {
+contract MockERC721 is ERC721 {
     constructor()
         ERC721(TOKEN_NAME, TOKEN_SYMBOL)
     // solhint-disable-next-line no-empty-blocks
@@ -15,7 +15,7 @@ contract SampleERC721 is ERC721 {
 
     }
 
-    string public constant TOKEN_NAME = "SampleERC721";
+    string public constant TOKEN_NAME = "MockERC721";
     string public constant TOKEN_SYMBOL = "SE721";
 
     /**
