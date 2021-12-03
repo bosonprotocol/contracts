@@ -332,7 +332,9 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
               assert.isTrue(ev._tokenAddress === mockDAI.address);
               assert.isTrue(ev._owner === users.seller.address);
               assert.isTrue(ev._spender === contractBosonRouter.address);
-              assert.isTrue(ev._value == 0);
+              assert.isTrue(
+                ev._value.toString() == ethers.constants.MaxUint256.toString()
+              );
             }
           );
 
@@ -802,7 +804,9 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
               assert.isTrue(ev._tokenAddress === mockDAI.address);
               assert.isTrue(ev._owner === users.seller.address);
               assert.isTrue(ev._spender === contractBosonRouter.address);
-              assert.isTrue(ev._value == 0);
+              assert.isTrue(
+                ev._value.toString() == ethers.constants.MaxUint256.toString()
+              );
             }
           );
 
@@ -1118,7 +1122,9 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
               assert.isTrue(ev._tokenAddress === mockDAI.address);
               assert.isTrue(ev._owner === users.buyer.address);
               assert.isTrue(ev._spender === contractBosonRouter.address);
-              assert.isTrue(ev._value == 0);
+              assert.isTrue(
+                ev._value.toString() == ethers.constants.MaxUint256.toString()
+              );
             }
           );
 
@@ -1407,7 +1413,9 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
               assert.isTrue(ev._tokenAddress === mockDAI.address);
               assert.isTrue(ev._owner === users.buyer.address);
               assert.isTrue(ev._spender === contractBosonRouter.address);
-              assert.isTrue(ev._value == 0);
+              assert.isTrue(
+                ev._value.toString() == ethers.constants.MaxUint256.toString()
+              );
             }
           );
 
@@ -1687,7 +1695,9 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
               assert.isTrue(ev._tokenAddress === mockDAI.address);
               assert.isTrue(ev._owner === users.buyer.address);
               assert.isTrue(ev._spender === contractBosonRouter.address);
-              assert.isTrue(ev._value == 0);
+              assert.isTrue(
+                ev._value.toString() == ethers.constants.MaxUint256.toString()
+              );
             }
           );
 
@@ -2052,7 +2062,9 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
               assert.isTrue(ev._tokenAddress === mockDAI.address);
               assert.isTrue(ev._owner === users.buyer.address);
               assert.isTrue(ev._spender === contractBosonRouter.address);
-              assert.isTrue(ev._value == 0);
+              assert.isTrue(
+                ev._value.toString() == ethers.constants.MaxUint256.toString()
+              );
             }
           );
 
