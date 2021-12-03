@@ -62,7 +62,7 @@ contract DAITokenWrapper is ITokenWrapper, Ownable, ReentrancyGuard {
         require(_v == 27 || _v == 28, "INVALID_SIG_V");
         uint nonce =  IDAI(daiTokenAddress).nonces(_tokenOwner);
         IDAI(daiTokenAddress).permit(_tokenOwner, _spender, nonce, _deadline, true, _v, _r, _s);
-        emit LogPermitCalledOnToken(daiTokenAddress, _tokenOwner, _spender, 0);
+        emit LogPermitCalledOnToken(daiTokenAddress, _tokenOwner, _spender, type(uint256).max);
     }
 
     /**
