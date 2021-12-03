@@ -21,8 +21,8 @@ Main contracts:
 * `VoucherKernel`: Main business logic  
 * `UsingHelpers`: Common utilities
 * `DAITokenWrapper`: Provides a uniform interface for calling the `permit `function on the DAI token
-* `ERC1155NonTransferable`: Non-transferrable token, the possession of which allows a buyer to commit to an item following a special quest or campaign.
-* `Gate`: Allows users of the protocol to gate access to a given VoucherSet by requiring that any address attempting to commit to an item in the given VoucherSet have a given ERC1155 before they access.
+* `ERC1155NonTransferable`: Non-transferable token, the possession of which allows a buyer to commit to an item following a special quest or campaign.
+* `Gate`: Allows users of the protocol to gate access to a given VoucherSet by requiring that any address attempting to commit to an item in the given VoucherSet have a given conditional token (ERC721, ERC20 or ERC1155) before they access.
 * `MetaTransactionReceiver`: Base contract that allows the ERC1155NonTransferable contract to receive and process meta transactions
 
 ![Boson Protocol inheritance tree](../assets/bosonprotocol-inheritance.png)  
@@ -85,9 +85,9 @@ BosonRouter.requestCreateOrderETHETH()
 ```
    
    Alternatively, the Seller can make an offer with an associated gate contract and
-   non-transferrable NFT Id. In this case, the Seller is making the item(s) on offer
+   conditional token (ERC721, ERC20 or ERC1155). In this case, the Seller is making the item(s) on offer
    only available to Buyers who execute a conditional commit. The "condition" of
-   the commit is possession of a non-transferrable NFT with the given Id. A Buyer
+   the commit is possession of a conditional token (ERC721, ERC20 or ERC1155). A Buyer
    can obtain the NFT by, for instance, completing a quest. The Seller might make items
    obtained via conditional commit available for a discount as a reward to Buyers for
    completing the quest.
@@ -119,7 +119,7 @@ BosonRouter.requestCreateOrderETHETHConditional(()
 BosonRouter.requestVoucherETHETH()  
 ```
 
-   Alternatively, if the Buyer is in possession of a specific non-transferrable NFT
+   Alternatively, if the Buyer is in possession of a specific conditional token
    (specified by Seller when offer is made), she would be eligible for a special 
    price or other offer when she commits to redeem the voucher. The Buyer could obtain
    the NFT by, for instance, completing a quest. The protocol checks to see if the user
@@ -132,7 +132,7 @@ BosonRouter.requestVoucherETHETH()
 ```
 
 
-3. The Buyer can then choose to `redeem` the voucher and exchange the payment 
+1. The Buyer can then choose to `redeem` the voucher and exchange the payment 
    amount for the item received, or can choose to `refund` the voucher, thus 
    getting the payment back, but also potentially losing the deposit, or can 
    choose not to do anything (she can just forget about it), in which case the 
