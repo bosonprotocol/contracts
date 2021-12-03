@@ -226,7 +226,7 @@ contract BosonRouter is
      * uint256 _depositBu = _metadata[4];
      * uint256 _quantity = _metadata[5];
      *
-     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the conditional token,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
      * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
@@ -318,7 +318,7 @@ contract BosonRouter is
      * uint256 _depositBu = _metadata[4];
      * uint256 _quantity = _metadata[5];
      *
-     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the conditional token,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
      * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
@@ -421,7 +421,7 @@ contract BosonRouter is
      * uint256 _depositBu = _metadata[4];
      * uint256 _quantity = _metadata[5];
      *
-     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the conditional token,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
      * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
@@ -503,7 +503,7 @@ contract BosonRouter is
      * uint256 _depositBu = _metadata[4];
      * uint256 _quantity = _metadata[5];
      *
-     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferable NFT,
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the conditional token,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
      * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
@@ -1191,7 +1191,7 @@ contract BosonRouter is
     /**
      * @notice finalizes creating of conditional order
      * @param _tokenIdSupply    ID of the supply token
-     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the conditional token,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
      * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
