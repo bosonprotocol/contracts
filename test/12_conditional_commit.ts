@@ -382,7 +382,11 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             contractBosonRouter,
             eventNames.LOG_CONDITIONAL_ORDER_CREATED
           )
-          .withArgs(tokenSupplyKey, contractGate.address)
+          .withArgs(
+            tokenSupplyKey,
+            contractGate.address,
+            constants.EMPTY_CONDITIONAL_TOKEN_ID
+          )
           .to.emit(contractBosonRouter, eventNames.LOG_ORDER_CREATED)
           .withArgs(
             tokenSupplyKey,
@@ -522,6 +526,15 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 {value: txValue}
               )
           )
+            .to.emit(
+              contractBosonRouter,
+              eventNames.LOG_CONDITIONAL_ORDER_CREATED
+            )
+            .withArgs(
+              tokenSupplyKey,
+              contractGate.address,
+              constants.CONDITIONAL_TOKEN_ID
+            )
             .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
             .withArgs(tokenSupplyKey, constants.CONDITIONAL_TOKEN_ID);
         });
@@ -686,7 +699,11 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             contractBosonRouter,
             eventNames.LOG_CONDITIONAL_ORDER_CREATED
           )
-          .withArgs(tokenSupplyKey, contractGate.address)
+          .withArgs(
+            tokenSupplyKey,
+            contractGate.address,
+            constants.EMPTY_CONDITIONAL_TOKEN_ID
+          )
           .to.emit(contractBosonRouter, eventNames.LOG_ORDER_CREATED)
           .withArgs(
             tokenSupplyKey,
@@ -835,6 +852,15 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.CONDITIONAL_TOKEN_ID
               )
           )
+            .to.emit(
+              contractBosonRouter,
+              eventNames.LOG_CONDITIONAL_ORDER_CREATED
+            )
+            .withArgs(
+              tokenSupplyKey,
+              contractGate.address,
+              constants.CONDITIONAL_TOKEN_ID
+            )
             .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
             .withArgs(tokenSupplyKey, constants.CONDITIONAL_TOKEN_ID);
         });
@@ -1034,7 +1060,11 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             contractBosonRouter,
             eventNames.LOG_CONDITIONAL_ORDER_CREATED
           )
-          .withArgs(tokenSupplyKey, contractGate.address)
+          .withArgs(
+            tokenSupplyKey,
+            contractGate.address,
+            constants.EMPTY_CONDITIONAL_TOKEN_ID
+          )
           .to.emit(contractBosonRouter, eventNames.LOG_ORDER_CREATED)
           .withArgs(
             tokenSupplyKey,
@@ -1182,6 +1212,15 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.CONDITIONAL_TOKEN_ID
               )
           )
+            .to.emit(
+              contractBosonRouter,
+              eventNames.LOG_CONDITIONAL_ORDER_CREATED
+            )
+            .withArgs(
+              tokenSupplyKey,
+              contractGate.address,
+              constants.CONDITIONAL_TOKEN_ID
+            )
             .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
             .withArgs(tokenSupplyKey, constants.CONDITIONAL_TOKEN_ID);
         });
@@ -1345,7 +1384,11 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             contractBosonRouter,
             eventNames.LOG_CONDITIONAL_ORDER_CREATED
           )
-          .withArgs(tokenSupplyKey, contractGate.address)
+          .withArgs(
+            tokenSupplyKey,
+            contractGate.address,
+            constants.EMPTY_CONDITIONAL_TOKEN_ID
+          )
           .to.emit(contractBosonRouter, eventNames.LOG_ORDER_CREATED)
           .withArgs(
             tokenSupplyKey,
@@ -1486,6 +1529,15 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 {value: txValue}
               )
           )
+            .to.emit(
+              contractBosonRouter,
+              eventNames.LOG_CONDITIONAL_ORDER_CREATED
+            )
+            .withArgs(
+              tokenSupplyKey,
+              contractGate.address,
+              constants.CONDITIONAL_TOKEN_ID
+            )
             .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
             .withArgs(tokenSupplyKey, constants.CONDITIONAL_TOKEN_ID);
         });
