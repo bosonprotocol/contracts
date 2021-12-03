@@ -21,7 +21,7 @@ contract DAITokenWrapper is ITokenWrapper, Ownable, ReentrancyGuard {
     notZeroAddress(_daiTokenAddress)
     {
         daiTokenAddress = _daiTokenAddress;
-        emit LogTokenAddressChanged(daiTokenAddress, owner());
+        emit LogTokenAddressChanged(_daiTokenAddress, owner());
     }
 
     /**
