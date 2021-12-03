@@ -112,7 +112,7 @@ describe('Token Wrappers', () => {
           mockDAI.address,
           user1.address,
           contractBosonRouter.address,
-          ethers.constants.Zero
+          ethers.constants.MaxUint256.toString()
         );
     });
 
@@ -151,7 +151,7 @@ describe('Token Wrappers', () => {
           mockDAI.address,
           user1.address,
           contractBosonRouter.address,
-          ethers.constants.Zero
+          ethers.constants.MaxUint256.toString()
         );
     });
 
