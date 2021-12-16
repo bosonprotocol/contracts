@@ -22,6 +22,8 @@ jobs:
         with:
           node-version: '12.20.x'
           cache: 'npm'
+      - run: |
+          echo CMC_API_KEY =${{ secrets.CMC_API_KEY }} >> .env
       - run: npm install
       - run: npm run contracts:compile
       - run: npm run contracts:lint
@@ -45,6 +47,9 @@ jobs:
         with:
           node-version: '12.20.x'
           cache: 'npm'
+      - name: Add CMC API key to environment
+        run: |
+          echo CMC_API_KEY =${{ secrets.CMC_API_KEY }} >> .env
       - name: Install Dependencies
         run: npm install
       - name: Compile Contracts
@@ -52,8 +57,6 @@ jobs:
       - name: Contract Sizing
         run: npm run contracts:size
       - name: Unit tests + Gas Reporter
-        env:
-          CMC_API_KEY: ${{ secrets.CMC_API_KEY }} #set at org level
         run: npm run tests:unit
       - name: Upload Gas reporter output
         uses: actions/upload-artifact@v2
