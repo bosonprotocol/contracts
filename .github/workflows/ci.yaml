@@ -2,7 +2,7 @@ name: Contracts CI
 
 on:
   push:
-    branches: [ upload-code-coverage-and-gas-report ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -47,9 +47,6 @@ jobs:
         with:
           node-version: '12.20.x'
           cache: 'npm'
-      - name: Write to secret file to upload
-        run: |
-          echo CMC_API_KEY =${{ secrets.CMC_API_KEY }} >> secret.txt
       - name: Install Dependencies
         run: npm install
       - name: Compile Contracts
@@ -58,11 +55,6 @@ jobs:
         run: npm run contracts:size
       - name: Unit tests + Gas Reporter
         run: npm run tests:unit
-      - name: Show me the Secret
-        uses: actions/upload-artifact@v2
-        with:
-          name: Secret
-          path: secret.txt
       - name: Upload Gas reporter output
         uses: actions/upload-artifact@v2
         with:
