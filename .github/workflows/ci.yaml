@@ -22,8 +22,6 @@ jobs:
         with:
           node-version: '12.20.x'
           cache: 'npm'
-      - run: |
-          echo CMC_API_KEY =${{ secrets.CMC_API_KEY }} >> .env
       - run: npm install
       - run: npm run contracts:compile
       - run: npm run contracts:lint

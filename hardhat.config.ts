@@ -85,7 +85,5 @@ const config: HardhatUserConfig = {
 		outputFile: 'GasReport.txt'
 	}
 };
-console.log(`process.env.CMC_API_KEY length is ${process.env.CMC_API_KEY.length}`);
-console.log(`coinmarketcap key length is ${config.gasReporter.coinmarketcap.length}`);
 
 export default config;
