@@ -23,8 +23,6 @@ jobs:
         with:
           node-version: '12.20.x'
           cache: 'npm'
-      - run: |
-        echo CMC_API_KEY =$CMC_API_KEY >> .env
       - run: npm install
       - run: npm run contracts:compile
       - run: npm run contracts:lint
@@ -49,9 +47,6 @@ jobs:
         with:
           node-version: '12.20.x'
           cache: 'npm'
-      - name: Add CMC API key to environment
-        run: |
-          echo CMC_API_KEY =$CMC_API_KEY >> .env
       - name: Install Dependencies
         run: npm install
       - name: Compile Contracts
