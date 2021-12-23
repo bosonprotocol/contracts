@@ -15,6 +15,8 @@ import "./interfaces/IGate.sol";
 import "./interfaces/ITokenWrapper.sol";
 import {PaymentMethod} from "./UsingHelpers.sol";
 import "./libs/SafeERC20WithPermit.sol";
+import "./MetaTransactionEIP712Receiver.sol";
+
 
 /**
  * @title Contract for interacting with Boson Protocol from the user's perspective.
@@ -34,7 +36,8 @@ contract BosonRouter is
     IBosonRouter,
     Pausable,
     ReentrancyGuard,
-    Ownable
+    Ownable,
+    MetaTransactionEIP712Receiver
 {
     using Address for address payable;
     using SafeMath for uint256;
@@ -130,7 +133,7 @@ contract BosonRouter is
         address _cashierAddress
     )   notZeroAddress(_voucherKernel)
         notZeroAddress(_tokenRegistry)
-        notZeroAddress(_cashierAddress)
+        notZeroAddress(_cashierAddress) MetaTransactionEIP712Receiver("Boson Protocol")
     {
         voucherKernel = _voucherKernel;
         tokenRegistry = _tokenRegistry;
@@ -610,7 +613,7 @@ contract BosonRouter is
         IVoucherKernel(voucherKernel).fillOrder(
             _tokenIdSupply,
             _issuer,
-            msg.sender,
+            _msgSender(),
             PaymentMethod.TKNTKN
         );
     }
@@ -664,7 +667,7 @@ contract BosonRouter is
         IVoucherKernel(voucherKernel).fillOrder(
             _tokenIdSupply,
             _issuer,
-            msg.sender,
+            _msgSender(),
             PaymentMethod.TKNTKN
         );
     }
@@ -769,11 +772,11 @@ contract BosonRouter is
         whenNotPaused
     {
         uint256 _burnedSupplyQty = IVoucherKernel(voucherKernel)
-            .cancelOrFaultVoucherSet(_tokenIdSupply, msg.sender);
+            .cancelOrFaultVoucherSet(_tokenIdSupply, _msgSender());
         ICashier(cashierAddress).withdrawDepositsSe(
             _tokenIdSupply,
             _burnedSupplyQty,
-            msg.sender
+            _msgSender()
         );
     }
 
@@ -782,7 +785,7 @@ contract BosonRouter is
      * @param _tokenIdVoucher   ID of the voucher
      */
     function redeem(uint256 _tokenIdVoucher) external override {
-        IVoucherKernel(voucherKernel).redeem(_tokenIdVoucher, msg.sender);
+        IVoucherKernel(voucherKernel).redeem(_tokenIdVoucher, _msgSender());
     }
 
     /**
@@ -790,7 +793,7 @@ contract BosonRouter is
      * @param _tokenIdVoucher   ID of the voucher
      */
     function refund(uint256 _tokenIdVoucher) external override {
-        IVoucherKernel(voucherKernel).refund(_tokenIdVoucher, msg.sender);
+        IVoucherKernel(voucherKernel).refund(_tokenIdVoucher, _msgSender());
     }
 
     /**
@@ -798,7 +801,7 @@ contract BosonRouter is
      * @param _tokenIdVoucher   ID of the voucher
      */
     function complain(uint256 _tokenIdVoucher) external override {
-        IVoucherKernel(voucherKernel).complain(_tokenIdVoucher, msg.sender);
+        IVoucherKernel(voucherKernel).complain(_tokenIdVoucher, _msgSender());
     }
 
     /**
@@ -808,7 +811,7 @@ contract BosonRouter is
     function cancelOrFault(uint256 _tokenIdVoucher) external override {
         IVoucherKernel(voucherKernel).cancelOrFault(
             _tokenIdVoucher,
-            msg.sender
+            _msgSender()
         );
     }
 
@@ -906,13 +909,13 @@ contract BosonRouter is
      */    
     function addEscrowAmountAndFillOrder(uint256 _tokenIdSupply, address _issuer, PaymentMethod _paymentMethod) internal {
         //record funds in escrow ...
-        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(msg.sender);
+        ICashier(cashierAddress).addEscrowAmount{value: msg.value}(_msgSender());
 
         // fill order
         IVoucherKernel(voucherKernel).fillOrder(
             _tokenIdSupply,
             _issuer,
-            msg.sender,
+            _msgSender(),
             _paymentMethod
         );        
     }
@@ -927,14 +930,14 @@ contract BosonRouter is
     {
         SafeERC20WithPermit.safeTransferFrom(
             IERC20WithPermit(_tokenAddress),
-            msg.sender,
+            _msgSender(),
             address(cashierAddress),
             _amount
         );
 
         ICashier(cashierAddress).addEscrowTokensAmount(
             _tokenAddress,
-            msg.sender,
+            _msgSender(),
             _amount
         );
     }
@@ -958,7 +961,7 @@ contract BosonRouter is
     ) internal {
         _permit(
             _tokenAddress,
-            msg.sender,
+            _msgSender(),
             address(this),
             _amount,
             _deadline,
@@ -1062,7 +1065,7 @@ contract BosonRouter is
 
         _permit(
             _tokenDepositAddress,
-            msg.sender,
+            _msgSender(),
             address(this),
             _tokensSent,
             _deadline,
@@ -1094,7 +1097,7 @@ contract BosonRouter is
 
         _permit(
             _tokenDepositAddress,
-            msg.sender,
+            _msgSender(),
             address(this),
             _tokensSent,
             _deadline,
@@ -1153,7 +1156,7 @@ contract BosonRouter is
         //record funds in escrow ...
         if (_tokenDepositAddress == address(0)) {
             ICashier(cashierAddress).addEscrowAmount{value: msg.value}(
-                msg.sender
+                _msgSender()
             );
         } else {
             transferFromAndAddEscrow(_tokenDepositAddress, _tokensSent);
@@ -1161,7 +1164,7 @@ contract BosonRouter is
         
         uint256 tokenIdSupply = IVoucherKernel(voucherKernel)
             .createTokenSupplyId(
-                msg.sender,
+                _msgSender(),
                 _metadata[0],
                 _metadata[1],
                 _metadata[2],
@@ -1179,7 +1182,7 @@ contract BosonRouter is
 
         emit LogOrderCreated(
             tokenIdSupply,
-            msg.sender,
+            _msgSender(),
             _metadata[5],
             _paymentMethod
         );
@@ -1218,8 +1221,8 @@ contract BosonRouter is
             IGate gateContract = IGate(
                 voucherSetToGateContract[_tokenIdSupply]
             );
-            require(gateContract.check(msg.sender, _tokenIdSupply),"NE"); // not eligible
-            gateContract.deactivate(msg.sender, _tokenIdSupply);
+            require(gateContract.check(_msgSender(), _tokenIdSupply),"NE"); // not eligible
+            gateContract.deactivate(_msgSender(), _tokenIdSupply);
         }
     }
 
@@ -1235,7 +1238,7 @@ contract BosonRouter is
     {
         voucherKernel = _voucherKernelAddress;
 
-        emit LogVoucherKernelSet(_voucherKernelAddress, msg.sender);
+        emit LogVoucherKernelSet(_voucherKernelAddress, _msgSender());
     }
 
     /**
@@ -1250,7 +1253,7 @@ contract BosonRouter is
     {
         tokenRegistry = _tokenRegistryAddress;
 
-        emit LogTokenRegistrySet(_tokenRegistryAddress, msg.sender);
+        emit LogTokenRegistrySet(_tokenRegistryAddress, _msgSender());
     }
 
     /**
@@ -1265,6 +1268,11 @@ contract BosonRouter is
     {
         cashierAddress = _cashierAddress;
 
-        emit LogCashierSet(_cashierAddress, msg.sender);
+        emit LogCashierSet(_cashierAddress, _msgSender());
     }
+
+    function _msgSender() internal view virtual override(Context, MetaTransactionEIP712Receiver) returns (address payable) {
+        return MetaTransactionEIP712Receiver._msgSender();
+    }
+
 }

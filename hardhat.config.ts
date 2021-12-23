@@ -48,9 +48,14 @@ const config: HardhatUserConfig = {
 	},
 	defaultNetwork: "hardhat",
 	networks: {
+		localhost: {
+      url: 'http://localhost:8545',
+      accounts: {mnemonic: testMnemonic, count: 10},
+      chainId: 31337,
+    },
 		hardhat: {
 			accounts: {mnemonic: testMnemonic, count: 10},
-			chainId: 1
+			chainId: 31337
 		},
 		rinkeby: {
 			url: `https://rinkeby.infura.io/v3/${INFURA_KEY}`,
@@ -65,6 +70,12 @@ const config: HardhatUserConfig = {
 			accounts: ACCOUNTS,
 			initialBaseFeePerGas: 0
 		},
+    mumbai: {
+      url: `https://rpc-mumbai.maticvigil.com/v1/${INFURA_KEY}`,
+      chainId: 80001,
+			accounts: ACCOUNTS,
+      gasPrice: 8000000000, // default is 'auto' which breaks chains without the london hardfork
+    },
 	},
 	etherscan: {
 		apiKey: process.env.ETHERSCAN_API_KEY
