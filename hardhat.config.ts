@@ -81,7 +81,8 @@ const config: HardhatUserConfig = {
 	gasReporter: {
 		currency: 'USD',
 		coinmarketcap: CMC_API_KEY,
-		excludeContracts: ['mocks/']
+		excludeContracts: ['mocks/'],
+		outputFile: 'GasReport.txt'
 	}
 };
 

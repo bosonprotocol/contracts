@@ -13,6 +13,7 @@ jobs:
     env:
       PROTOCOL_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
       CC_TOKEN_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
+      CMC_API_KEY: ${{ secrets.COINMARKETCAP_API_KEY }}
     name: build
     steps:
       - name: Checkout repository
@@ -36,6 +37,7 @@ jobs:
     env:
       PROTOCOL_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
       CC_TOKEN_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
+      CMC_API_KEY: ${{ secrets.COINMARKETCAP_API_KEY }}
     name: test
     steps:
       - name: Checkout repository
@@ -53,6 +55,11 @@ jobs:
         run: npm run contracts:size
       - name: Unit tests + Gas Reporter
         run: npm run tests:unit
+      - name: Upload Gas reporter output
+        uses: actions/upload-artifact@v2
+        with:
+          name: gas-reporter-report
+          path: GasReport.txt
 
   snyk:
     runs-on: ubuntu-latest
