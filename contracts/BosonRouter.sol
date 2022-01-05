@@ -297,6 +297,46 @@ contract BosonRouter is
     }
 
     /**
+     * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is
+     * also known as a voucher set. Price and deposits are specified in tokens.
+     * @param _tokenPriceAddress address of the token to be used for the price
+     * @param _tokenDepositAddress address of the token to be used for the deposits
+     * @param _tokensSent total number of tokens sent. Must be equal to seller deposit * quantity
+     * @param _metadata metadata which is required for creation of a voucher set
+     * Metadata array is used for consistency across the permutations of similar functions.
+     * Some functions require other parameters, and the number of parameters causes stack too deep error.
+     * The use of the matadata array mitigates the stack too deep error.
+     *
+     * uint256 _validFrom = _metadata[0];
+     * uint256 _validTo = _metadata[1];
+     * uint256 _price = _metadata[2];
+     * uint256 _depositSe = _metadata[3];
+     * uint256 _depositBu = _metadata[4];
+     * uint256 _quantity = _metadata[5];
+     */
+    function requestCreateOrderTKNTKNNoPermit(
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256[] calldata _metadata
+    )
+    external
+    override
+    nonReentrant
+    {
+        requestCreateOrderTKNTKNWithPermitInternal(
+            _tokenPriceAddress,
+            _tokenDepositAddress,
+            _tokensSent,
+            uint256(0),
+            uint8(0),
+            bytes32(0),
+            bytes32(0),
+            _metadata
+        );
+    }
+
+    /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is also known as a voucher set.
      * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token.
      * This is the "condition" under which a buyer may commit to redeem a voucher that is part of the voucher set created by this function.
@@ -350,6 +390,58 @@ contract BosonRouter is
             _v,
             _r,
             _s,
+            _metadata
+        );
+
+        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _nftTokenId);
+    }
+
+    /**
+     * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is also known as a voucher set.
+     * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token.
+     * This is the "condition" under which a buyer may commit to redeem a voucher that is part of the voucher set created by this function.
+     * Price and deposits are specified in tokens.
+     * @param _tokenPriceAddress address of the token to be used for the price
+     * @param _tokenDepositAddress address of the token to be used for the deposits
+     * @param _tokensSent total number of tokens sent. Must be equal to seller deposit * quantity
+     * @param _metadata metadata which is required for creation of a voucher set
+     * Metadata array is used for consistency across the permutations of similar functions.
+     * Some functions require other parameters, and the number of parameters causes stack too deep error.
+     * The use of the matadata array mitigates the stack too deep error.
+     *
+     * uint256 _validFrom = _metadata[0];
+     * uint256 _validTo = _metadata[1];
+     * uint256 _price = _metadata[2];
+     * uint256 _depositSe = _metadata[3];
+     * uint256 _depositBu = _metadata[4];
+     * uint256 _quantity = _metadata[5];
+     *
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
+     * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
+     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher
+     * in the voucher set created by this function.
+     */
+    function requestCreateOrderTKNTKNNoPermitConditional(
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256[] calldata _metadata,
+        address _gateAddress,
+        uint256 _nftTokenId
+    )
+    external
+    override
+    nonReentrant
+    onlyApprovedGate(_gateAddress)
+    {
+        uint256 tokenIdSupply = requestCreateOrderTKNTKNWithPermitInternal(
+            _tokenPriceAddress,
+            _tokenDepositAddress,
+            _tokensSent,
+            uint256(0),
+            uint8(0),
+            bytes32(0),
+            bytes32(0),
             _metadata
         );
 
@@ -662,6 +754,52 @@ contract BosonRouter is
             _v,
             _r,
             _s
+        );
+
+        IVoucherKernel(voucherKernel).fillOrder(
+            _tokenIdSupply,
+            _issuer,
+            _msgSender(),
+            PaymentMethod.TKNTKN
+        );
+    }
+
+/**
+     * @notice Buyer requests/commits to redeem a voucher and receives Voucher Token in return.
+     * Price and deposit is specified in tokens. The same token is used for both the price and deposit.
+     * @param _tokenIdSupply ID of the supply token
+     * @param _issuer address of the issuer of the supply token
+     * @param _tokensSent total number of tokens sent. Must be equal to buyer deposit plus price
+     */
+    function requestVoucherTKNTKNNoPermit(
+        uint256 _tokenIdSupply,
+        address _issuer,
+        uint256 _tokensSent
+    ) external override nonReentrant whenNotPaused {
+        // check if _tokenIdSupply mapped to gate contract
+        // if yes, deactivate (user,_tokenIdSupply) to prevent double spending
+        deactivateConditionalCommit(_tokenIdSupply);
+
+        (uint256 price, uint256 depositBu) = IVoucherKernel(voucherKernel)
+            .getBuyerOrderCosts(_tokenIdSupply);
+        require(_tokensSent.sub(depositBu) == price, "IF"); //invalid funds
+
+        address tokenPriceAddress = IVoucherKernel(voucherKernel)
+            .getVoucherPriceToken(_tokenIdSupply);
+        address tokenDepositAddress = IVoucherKernel(voucherKernel)
+            .getVoucherDepositToken(_tokenIdSupply);
+
+        require(tokenPriceAddress == tokenDepositAddress, "TOKENS_ARE_NOT_THE_SAME"); //invalid caller
+
+        // If tokenPriceAddress && tokenPriceAddress are the same
+        // practically it's not of importance to each we are sending the funds
+        permitTransferFromAndAddEscrow(
+            tokenPriceAddress,
+            _tokensSent,
+            uint256(0),
+            uint8(0),
+            bytes32(0),
+            bytes32(0)
         );
 
         IVoucherKernel(voucherKernel).fillOrder(

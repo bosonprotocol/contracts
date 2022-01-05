@@ -44,6 +44,13 @@ interface IBosonRouter {
         uint256[] calldata _metadata
     ) external;
 
+    function requestCreateOrderTKNTKNNoPermit(
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
+        uint256[] calldata _metadata
+    ) external;
+
     function requestCreateOrderTKNTKNWithPermitConditional(
         address _tokenPriceAddress,
         address _tokenDepositAddress,
@@ -52,6 +59,15 @@ interface IBosonRouter {
         uint8 _v,
         bytes32 _r,
         bytes32 _s,
+        uint256[] calldata _metadata,
+        address _gateAddress,
+        uint256 _nftTokenId
+    ) external;
+
+    function requestCreateOrderTKNTKNNoPermitConditional(
+        address _tokenPriceAddress,
+        address _tokenDepositAddress,
+        uint256 _tokensSent,
         uint256[] calldata _metadata,
         address _gateAddress,
         uint256 _nftTokenId
@@ -121,6 +137,12 @@ interface IBosonRouter {
         uint8 _v,
         bytes32 _r,
         bytes32 _s
+    ) external;
+
+    function requestVoucherTKNTKNNoPermit(
+        uint256 _tokenIdSupply,
+        address _issuer,
+        uint256 _tokensSent
     ) external;
 
     function requestVoucherETHTKNWithPermit(
