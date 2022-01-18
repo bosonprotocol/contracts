@@ -187,17 +187,6 @@ describe('Cashier and VoucherKernel', () => {
     );
     await contractTokenRegistry.setETHLimit(constants.ETHER_LIMIT);
 
-    //Set Boson Token as it's own wrapper so that the same interface can be called in the code
-    await contractTokenRegistry.setTokenWrapperAddress(
-      contractBSNTokenPrice.address,
-      contractBSNTokenPrice.address
-    );
-
-    await contractTokenRegistry.setTokenWrapperAddress(
-      contractBSNTokenDeposit.address,
-      contractBSNTokenDeposit.address
-    );
-
     // calculate expected tokenSupplyID for first voucher
     promiseId = keccak256(
       solidityPack(

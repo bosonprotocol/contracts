@@ -1,4 +1,4 @@
-import {ethers} from 'hardhat';
+import {ethers, network} from 'hardhat';
 import {Signer, ContractFactory, Contract, Wallet} from 'ethers';
 import {waffle} from 'hardhat';
 import {assert, expect} from 'chai';
@@ -19,9 +19,9 @@ import {
   TokenRegistry,
   MockERC20Permit,
   DAITokenWrapper,
+  MockDai,
 } from '../typechain';
 import IDAI from '../artifacts/contracts/interfaces/IDAI.sol/IDAI.json';
-import IERC20WithPermit from '../artifacts/contracts/interfaces/IERC20WithPermit.sol/IERC20WithPermit.json';
 import revertReasons from '../testHelpers/revertReasons';
 import * as eventUtils from '../testHelpers/events';
 import fnSignatures from '../testHelpers/functionSignatures';
@@ -38,12 +38,13 @@ let BosonRouter_Factory: ContractFactory;
 let TokenRegistry_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
 let DAITokenWrapper_Factory: ContractFactory;
+let MockDAI_Factory: ContractFactory;
 
 const eventNames = eventUtils.eventNames;
 let users;
 let mockDAI: Contract;
-let mockUnsupportedToken: Contract;
-let daiOwner, unsupportedTokenOwner: Wallet;
+let daiOwner: Wallet;
+const chainId = network.config.chainId;
 
 describe('Create Voucher sets and commit to vouchers with token wrapper', () => {
   before(async () => {
@@ -62,6 +63,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
     DAITokenWrapper_Factory = await ethers.getContractFactory(
       'DAITokenWrapper'
     );
+    MockDAI_Factory = await ethers.getContractFactory('MockDai');
   });
 
   let contractVoucherSets: VoucherSets,
@@ -72,7 +74,8 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
     contractBSNTokenPrice: MockERC20Permit,
     contractBSNTokenDeposit: MockERC20Permit,
     contractTokenRegistry: TokenRegistry,
-    contractDAITokenWrapper: DAITokenWrapper;
+    contractDAITokenWrapper: DAITokenWrapper,
+    contractMockDAI: MockDai;
 
   let tokenSupplyKey, tokenVoucherKey;
 
@@ -137,16 +140,19 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
       'BDEP'
     )) as Contract & MockERC20Permit;
 
-    [daiOwner, unsupportedTokenOwner] = provider.getWallets();
+    [daiOwner] = provider.getWallets();
     mockDAI = await deployMockContract(daiOwner, IDAI.abi); //deploys mock
-    mockUnsupportedToken = await deployMockContract(
-      unsupportedTokenOwner,
-      IERC20WithPermit.abi
-    ); //deploys mock unsupported token.
 
+    /* Have to do deploy an actual mock contract for one of the test cases because the Waffle mock (mockDAI) will revert with a waffle-specific
+     * 'Mock on the method is not initialized' error instead of reverting the way the EVM would revert if a non-existent function is called.
+     * This is a shortcoming of Waffle mocks - fallback function (or lack thereof) can't be tested
+     */
     contractDAITokenWrapper = (await DAITokenWrapper_Factory.deploy(
       mockDAI.address
     )) as Contract & DAITokenWrapper;
+
+    contractMockDAI = (await MockDAI_Factory.deploy(chainId)) as Contract &
+      MockDai;
 
     await contractTokenRegistry.deployed();
     await contractVoucherSets.deployed();
@@ -156,6 +162,7 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
     await contractBosonRouter.deployed();
     await contractBSNTokenPrice.deployed();
     await contractBSNTokenDeposit.deployed();
+    await contractMockDAI.deployed();
 
     await contractVoucherSets.setApprovalForAll(
       contractVoucherKernel.address,
@@ -182,21 +189,17 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
       constants.TOKEN_LIMIT
     );
     await contractTokenRegistry.setTokenLimit(
-      mockUnsupportedToken.address,
+      contractMockDAI.address,
       constants.TOKEN_LIMIT
     );
+
     await contractTokenRegistry.setETHLimit(constants.ETHER_LIMIT);
     await contractTokenRegistry.setTokenWrapperAddress(
       mockDAI.address,
       contractDAITokenWrapper.address
     );
 
-    //Map $BOSON token to itself so that the token address can be called by casting to the wrapper interface in the Boson Router
-    await contractTokenRegistry.setTokenWrapperAddress(
-      contractBSNTokenPrice.address,
-      contractBSNTokenPrice.address
-    );
-
+    //Note: Not registereing a wrapper for contractMockDAI because we have a test case to test situation where we forget to register a wrapper for DAI
     await contractDAITokenWrapper.setTokenAddress(mockDAI.address);
   }
 
@@ -460,60 +463,6 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
           );
         });
 
-        it('[NEGATIVE] Should revert if token doesn not have a registered token wrapper', async () => {
-          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
-            BN(constants.QTY_10)
-          );
-
-          await mockUnsupportedToken.mock.nonces
-            .withArgs(users.seller.address)
-            .returns(0);
-          await mockUnsupportedToken.mock.permit.returns();
-          await mockUnsupportedToken.mock.name.returns(
-            'Mock Unsupported Token'
-          );
-
-          const digest = await getApprovalDigest(
-            mockUnsupportedToken,
-            users.seller.address,
-            contractBosonRouter.address,
-            txValue,
-            0,
-            deadline
-          );
-
-          const {v, r, s} = ecsign(
-            Buffer.from(digest.slice(2), 'hex'),
-            Buffer.from(users.seller.privateKey.slice(2), 'hex')
-          );
-
-          const sellerInstance = contractBosonRouter.connect(
-            users.seller.signer
-          ) as BosonRouter;
-
-          await expect(
-            sellerInstance.requestCreateOrderETHTKNWithPermit(
-              mockUnsupportedToken.address,
-              txValue,
-              deadline,
-              v,
-              r,
-              s,
-              [
-                constants.PROMISE_VALID_FROM,
-                constants.PROMISE_VALID_TO,
-                constants.PROMISE_PRICE1,
-                constants.PROMISE_DEPOSITSE1,
-                constants.PROMISE_DEPOSITBU1,
-                constants.QTY_10,
-              ],
-              {
-                from: users.seller.address,
-              }
-            )
-          ).to.be.revertedWith(revertReasons.UNSUPPORTED_TOKEN);
-        });
-
         it('[NEGATIVE] Should revert if token wrapper reverts because of invalid deadline', async () => {
           const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
             BN(constants.QTY_10)
@@ -677,6 +626,62 @@ describe('Create Voucher sets and commit to vouchers with token wrapper', () => 
               }
             )
           ).to.be.revertedWith(revertReasons.INVALID_SIG_V);
+        });
+
+        it('[NEGATIVE] Should revert if DAI token wrapper is not registered', async () => {
+          /* Have to do this test with an actual contract because the Waffle mock (mockDAI) will revert with a waffle-specific 'Mock on the method is not initialized' error
+           * instead of reverting the way the EVM would revert if a non-existent function is called.
+           * This is a shortcoming of Waffle mocks - fallback function (or lack thereof) can't be tested
+           */
+
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(constants.QTY_10)
+          );
+
+          //Make sure seller has enough tokens to execute transaction. We don't want it to fail for this reason
+          await contractMockDAI.mint(users.buyer.address, txValue);
+
+          const digest = await getApprovalDigestDAI(
+            contractMockDAI,
+            users.seller.address,
+            contractBosonRouter.address,
+            txValue,
+            0,
+            deadline
+          );
+
+          const {v, r, s} = ecsign(
+            Buffer.from(digest.slice(2), 'hex'),
+            Buffer.from(users.seller.privateKey.slice(2), 'hex')
+          );
+
+          const sellerInstance = contractBosonRouter.connect(
+            users.seller.signer
+          ) as BosonRouter;
+
+          await expect(
+            sellerInstance.requestCreateOrderETHTKNWithPermit(
+              contractMockDAI.address,
+              txValue,
+              deadline,
+              v,
+              r,
+              s,
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              {
+                from: users.seller.address,
+              }
+            )
+          ).to.be.revertedWith(
+            revertReasons.FUNCTION_NOT_RECOGNIZED_NO_FALLBACK
+          );
         });
       });
 

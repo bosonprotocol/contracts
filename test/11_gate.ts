@@ -174,17 +174,6 @@ describe('Gate contract', async () => {
       constants.TOKEN_LIMIT
     );
     await contractTokenRegistry.setETHLimit(constants.ETHER_LIMIT);
-
-    //Map $BOSON token to itself so that the token address can be called by casting to the wrapper interface in the Boson Router
-    await contractTokenRegistry.setTokenWrapperAddress(
-      contractBSNTokenPrice.address,
-      contractBSNTokenPrice.address
-    );
-
-    await contractTokenRegistry.setTokenWrapperAddress(
-      contractBSNTokenDeposit.address,
-      contractBSNTokenDeposit.address
-    );
   }
 
   async function registerVoucherSetIdFromBosonProtocol(

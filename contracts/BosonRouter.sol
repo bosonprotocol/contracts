@@ -883,19 +883,29 @@ contract BosonRouter is
     ) internal {
         address tokenWrapper = ITokenRegistry(tokenRegistry)
             .getTokenWrapperAddress(_token);
-        require(tokenWrapper != address(0), "UNSUPPORTED_TOKEN");
-
-        //The BosonToken contract conforms to this spec, so it will be callable this way
-        //if it's address is mapped to itself in the TokenRegistry
-        ITokenWrapper(tokenWrapper).permit(
-            _tokenOwner,
-            _spender,
-            _value,
-            _deadline,
-            _v,
-            _r,
-            _s
-        );
+      
+        if(tokenWrapper != address(0)) { //tokens like DAI don't conform to EIP-2612, so a token wrapper is needed
+            ITokenWrapper(tokenWrapper).permit(
+                _tokenOwner,
+                _spender,
+                _value,
+                _deadline,
+                _v,
+                _r,
+                _s
+            );
+        } else { //we assume the token has a permit function that conforms to EIP-2612, but it may not.
+            IERC20WithPermit(_token).permit(
+                _tokenOwner,
+                _spender,
+                _value,
+                _deadline,
+                _v,
+                _r,
+                _s
+            );
+        }
+      
     }
 
     /**

@@ -186,17 +186,6 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
     await contractTokenRegistry.setETHLimit(constants.ETHER_LIMIT);
 
-    //Map $BOSON token to itself so that the token address can be called by casting to the wrapper interface in the Boson Router
-    await contractTokenRegistry.setTokenWrapperAddress(
-      contractBSNTokenPrice.address,
-      contractBSNTokenPrice.address
-    );
-
-    await contractTokenRegistry.setTokenWrapperAddress(
-      contractBSNTokenDeposit.address,
-      contractBSNTokenDeposit.address
-    );
-
     await contractBosonRouter.setGateApproval(contractGate.address, true);
   }
 

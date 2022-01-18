@@ -38,13 +38,26 @@ task("contracts-verify", "Verify already deployed contracts. Bear in mind that a
 
 const config: HardhatUserConfig = {
 	solidity: {
-		version: "0.7.6",
-		settings: {
-			optimizer: {
-				enabled: true,
-				runs: 200
-			}
-		}
+		compilers: [
+			{
+			  version: "0.5.12",
+			  settings: {
+					optimizer: {
+						enabled: true,
+						runs: 200
+					}
+				}
+			},
+			{
+			  version: "0.7.6",
+			  settings: {
+					optimizer: {
+						enabled: true,
+						runs: 200
+					}
+				}
+			},
+		  ],
 	},
 	defaultNetwork: "hardhat",
 	networks: {

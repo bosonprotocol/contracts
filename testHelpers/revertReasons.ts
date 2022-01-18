@@ -100,4 +100,6 @@ export default {
   NOTHING_TO_WITHDRAW: 'NOTHING_TO_WITHDRAW',
   VALID_FROM_MUST_BE_AT_LEAST_5_MINUTES_LESS_THAN_VALID_TO:
     'VALID_FROM_MUST_BE_AT_LEAST_5_MINUTES_LESS_THAN_VALID_TO',
+  FUNCTION_NOT_RECOGNIZED_NO_FALLBACK:
+    "function selector was not recognized and there's no fallback function",
 };
