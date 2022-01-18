@@ -145,21 +145,6 @@ class DeploymentExecutor {
       event.args._newWrapperAddress
     );
 
-    tx = await this.tokenRegistry.setTokenWrapperAddress(
-      this.boson_token,
-      this.boson_token,
-      this.txOptions
-    );
-
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log(
-      '$ TokenRegistry',
-      event.event,
-      'at:',
-      event.args._newWrapperAddress
-    );
-
     tx = await this.br.setGateApproval(this.gate.address, true, this.txOptions);
 
     txReceipt = await tx.wait();
