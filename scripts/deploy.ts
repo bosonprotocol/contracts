@@ -5,6 +5,7 @@ import hre from 'hardhat';
 import fs from 'fs';
 import {isValidEnv} from './env-validator';
 import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
+import {TOKEN_TYPE} from '../testHelpers/constants';
 
 const ethers = hre.ethers;
 
@@ -277,6 +278,7 @@ class DeploymentExecutor {
     this.gate = await Gate.deploy(
       contractAddresses.br,
       ccContractAddresses.erc1155NonTransferable,
+      TOKEN_TYPE.MULTI_TOKEN,
       this.txOptions
     );
 

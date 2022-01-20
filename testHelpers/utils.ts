@@ -48,7 +48,7 @@ class Utils {
     buyerDeposit,
     qty,
     gateContract,
-    nftTokenID,
+    conditionalTokenId,
     returnTx?
   ) => any;
   commitToBuy: (

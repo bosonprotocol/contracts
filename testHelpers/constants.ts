@@ -93,9 +93,15 @@ const PROMISE_ORDER_FIELDS = {} as any;
   }
 }
 
-const NFT_TOKEN_ID = BN('12345');
-const EMPTY_NFT_TOKEN_ID = BN('0');
+const CONDITIONAL_TOKEN_ID = BN('12345');
+const EMPTY_CONDITIONAL_TOKEN_ID = BN('0');
 const VOUCHER_SET_ID = BN('54321');
+
+// Token type for Gate's conditional token
+const TOKEN_TYPE = {
+  TOKEN: 0,
+  MULTI_TOKEN: 1,
+};
 
 export default {
   ASSET_VERSION,
@@ -146,7 +152,8 @@ export default {
   PROMISE_DATA_FIELDS,
   VOUCHER_STATUS_FIELDS,
   PROMISE_ORDER_FIELDS,
-  NFT_TOKEN_ID,
-  EMPTY_NFT_TOKEN_ID,
+  CONDITIONAL_TOKEN_ID,
+  EMPTY_CONDITIONAL_TOKEN_ID,
   VOUCHER_SET_ID,
+  TOKEN_TYPE,
 };

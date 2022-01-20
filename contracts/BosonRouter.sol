@@ -55,7 +55,8 @@ contract BosonRouter is
 
     event LogConditionalOrderCreated(
         uint256 indexed _tokenIdSupply,
-        address indexed _gateAddress
+        address indexed _gateAddress,
+        uint256 indexed _conditionalTokenId
     );
 
     event LogVoucherKernelSet(address _newVoucherKernel, address _triggeredBy);
@@ -210,7 +211,7 @@ contract BosonRouter is
 
     /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is also known as a voucher set.
-     * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token.
+     * The supply token/voucher set created should only be available to buyers who own a specific token of type ERC721, ERC1155, or ERC20.
      * This is the "condition" under which a buyer may commit to redeem a voucher that is part of the voucher set created by this function.
      * Payment and deposits are specified in ETH.
      * @param _metadata metadata which is required for creation of a voucher set
@@ -225,13 +226,13 @@ contract BosonRouter is
      * uint256 _depositBu = _metadata[4];
      * uint256 _quantity = _metadata[5];
      *
-     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the conditional token,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
-     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher
+     * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
      */
     function requestCreateOrderETHETHConditional(uint256[] calldata _metadata, address _gateAddress,
-        uint256 _nftTokenId)
+        uint256 _conditionalTokenId)
         external
         payable
         override
@@ -241,7 +242,7 @@ contract BosonRouter is
     {
         checkLimits(_metadata, address(0), address(0), 0);
         uint256 _tokenIdSupply = requestCreateOrder(_metadata, PaymentMethod.ETHETH, address(0), address(0), 0);
-        finalizeConditionalOrder(_tokenIdSupply, _gateAddress, _nftTokenId);
+        finalizeConditionalOrder(_tokenIdSupply, _gateAddress, _conditionalTokenId);
     }
 
 
@@ -295,7 +296,7 @@ contract BosonRouter is
 
     /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is also known as a voucher set.
-     * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token.
+     * The supply token/voucher set created should only be available to buyers who own a specific token of type ERC721, ERC1155, or ERC20.
      * This is the "condition" under which a buyer may commit to redeem a voucher that is part of the voucher set created by this function.
      * Price and deposits are specified in tokens.
      * @param _tokenPriceAddress address of the token to be used for the price
@@ -317,9 +318,9 @@ contract BosonRouter is
      * uint256 _depositBu = _metadata[4];
      * uint256 _quantity = _metadata[5];
      *
-     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the conditional token,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
-     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher
+     * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
      */
     function requestCreateOrderTKNTKNWithPermitConditional(
@@ -332,7 +333,7 @@ contract BosonRouter is
         bytes32 _s,
         uint256[] calldata _metadata,
         address _gateAddress,
-        uint256 _nftTokenId
+        uint256 _conditionalTokenId
     )
     external
     override
@@ -350,7 +351,7 @@ contract BosonRouter is
             _metadata
         );
 
-        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _nftTokenId);
+        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _conditionalTokenId);
     }
 
     /**
@@ -399,7 +400,7 @@ contract BosonRouter is
 
     /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is also known as a voucher set.
-     * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token.
+     * The supply token/voucher set created should only be available to buyers who own a specific token of type ERC721, ERC1155, or ERC20.
      * This is the "condition" under which a buyer may commit to redeem a voucher that is part of the voucher set created by this function.
      * Price is specified in ETH and deposits are specified in tokens.
      * @param _tokenDepositAddress address of the token to be used for the deposits
@@ -420,9 +421,9 @@ contract BosonRouter is
      * uint256 _depositBu = _metadata[4];
      * uint256 _quantity = _metadata[5];
      *
-     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the conditional token,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
-     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher
+     * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
      */
     function requestCreateOrderETHTKNWithPermitConditional(
@@ -434,7 +435,7 @@ contract BosonRouter is
         bytes32 _s,
         uint256[] calldata _metadata,
         address _gateAddress,
-        uint256 _nftTokenId
+        uint256 _conditionalTokenId
     )
     external
     override
@@ -449,7 +450,7 @@ contract BosonRouter is
          _s,
         _metadata);
 
-        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _nftTokenId);
+        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _conditionalTokenId);
     }
 
     /**
@@ -484,7 +485,7 @@ contract BosonRouter is
 
     /**
      * @notice Issuer/Seller offers promise as supply token and needs to escrow the deposit. A supply token is also known as a voucher set.
-     * The supply token/voucher set created should only be available to buyers who own a specific NFT (ERC115NonTransferrable) token.
+     * The supply token/voucher set created should only be available to buyers who own a specific specific token of type ERC721, ERC1155, or ERC20.
      * This is the "condition" under which a buyer may commit to redeem a voucher that is part of the voucher set created by this function.
      * Price is specified in tokens and the deposits are specified in ETH.
      * Since the price, which is specified in tokens, is not collected when a voucher set is created, there is no need to call
@@ -502,16 +503,16 @@ contract BosonRouter is
      * uint256 _depositBu = _metadata[4];
      * uint256 _quantity = _metadata[5];
      *
-     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferable NFT,
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the conditional token,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
-     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher
+     * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
      */
     function requestCreateOrderTKNETHConditional(
         address _tokenPriceAddress,
         uint256[] calldata _metadata,
         address _gateAddress,
-        uint256 _nftTokenId
+        uint256 _conditionalTokenId
     )
     external
     payable
@@ -520,7 +521,7 @@ contract BosonRouter is
     onlyApprovedGate(_gateAddress)
     {
         uint256 tokenIdSupply = requestCreateOrderTKNETHInternal(_tokenPriceAddress, _metadata);
-        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _nftTokenId);
+        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _conditionalTokenId);
     }
 
     /**
@@ -1190,20 +1191,20 @@ contract BosonRouter is
     /**
      * @notice finalizes creating of conditional order
      * @param _tokenIdSupply    ID of the supply token
-     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the non-transferrable NFT,
+     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the conditional token,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
-     * @param _nftTokenId Id of the NFT (ERC115NonTransferrable) token, ownership of which is a condition for committing to redeem a voucher
+     * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
      */
-    function finalizeConditionalOrder(uint256 _tokenIdSupply, address _gateAddress, uint256 _nftTokenId) internal {
+    function finalizeConditionalOrder(uint256 _tokenIdSupply, address _gateAddress, uint256 _conditionalTokenId) internal {
         voucherSetToGateContract[_tokenIdSupply] = _gateAddress;
 
-        emit LogConditionalOrderCreated(_tokenIdSupply, _gateAddress);
+        emit LogConditionalOrderCreated(_tokenIdSupply, _gateAddress, _conditionalTokenId);
 
-        if (_nftTokenId > 0) {
+        if (_conditionalTokenId > 0) {
             IGate(_gateAddress).registerVoucherSetId(
                 _tokenIdSupply,
-                _nftTokenId
+                _conditionalTokenId
             );
         }
     }
