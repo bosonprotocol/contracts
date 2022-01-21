@@ -883,9 +883,12 @@ contract BosonRouter is
     ) internal {
         address tokenWrapper = ITokenRegistry(tokenRegistry)
             .getTokenWrapperAddress(_token);
-      
-        if(tokenWrapper != address(0)) { //tokens like DAI don't conform to EIP-2612, so a token wrapper is needed
-            ITokenWrapper(tokenWrapper).permit(
+
+        bool isWrapped = ( tokenWrapper != address(0) );
+
+        //The IERC20WithPermit and ITokenWrapper permit functions have the same signature, so we can cast either
+        //the retrieved tokenWrapper address or the passed in _token address to make the call
+        IERC20WithPermit(isWrapped ? tokenWrapper : _token ).permit(
                 _tokenOwner,
                 _spender,
                 _value,
@@ -894,17 +897,6 @@ contract BosonRouter is
                 _r,
                 _s
             );
-        } else { //we assume the token has a permit function that conforms to EIP-2612, but it may not.
-            IERC20WithPermit(_token).permit(
-                _tokenOwner,
-                _spender,
-                _value,
-                _deadline,
-                _v,
-                _r,
-                _s
-            );
-        }
       
     }
 
