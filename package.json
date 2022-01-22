@@ -103,7 +103,7 @@
         "hardhat-contract-sizer": "^2.1.1",
         "hardhat-gas-reporter": "^1.0.4",
         "mocha": "^8.2.1",
-        "node-fetch": "^2.6.1",
+        "node-fetch": "^3.1.1",
         "prettier": "^2.2.1",
         "prettier-plugin-solidity": "^1.0.0-beta.3",
         "solhint": "^3.3.2",
