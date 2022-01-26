@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/cryptography/ECDSA.sol";
 import "./EIP712Base.sol";
 
+import "hardhat/console.sol";
+
 /*
  * This contract accepts metatransactions signed by the Owner.
  * The signature of the Owner is verfied on chain and as a result 
@@ -18,12 +20,15 @@ contract MetaTransactionEIP712Receiver is Ownable, EIP712Base {
     struct MetaTransaction {
       uint256 nonce;
       address from;
+      address contractAddress;
+      string functionName;
+      uint256 tokenIdSupply;
       bytes functionSignature;
     }
 
     bytes32 private constant META_TRANSACTION_TYPEHASH = keccak256(
       bytes(
-          "MetaTransaction(uint256 nonce,address from,bytes functionSignature)"
+          "MetaTransaction(uint256 nonce,address from,address contractAddress,string functionName,uint256 tokenIdSupply,bytes functionSignature)"
       )
     );
 
@@ -51,6 +56,20 @@ contract MetaTransactionEIP712Receiver is Ownable, EIP712Base {
         // ...and an Ethereum Signed Message to protect user from signing an actual Tx
         require(!usedNonce[_nonce], "METATX_NONCE");
 
+        bytes4 functionPrefix;
+        uint256 tokenIdSupply;
+        bytes memory data = _data;
+        assembly {
+          // 0x20 needs to be added to the bytes array because the first slot contains the array length
+          functionPrefix := and(mload(add(data, 0x20)), 0xffffffff00000000000000000000000000000000000000000000000000000000)
+          // Add again 4 bytes to get the tokenIdSupply
+          tokenIdSupply := mload(add(data, 0x24))
+        }
+        console.log("executeMetaTransaction() --> functionPrefix");
+        console.logBytes4(functionPrefix);
+        console.log("executeMetaTransaction() --> tokenIdSupply");
+        console.log(tokenIdSupply);
+
         uint256 id;
         assembly {
             id := chainid() //1 for Ethereum mainnet, > 1 for public testnets.
@@ -58,6 +77,9 @@ contract MetaTransactionEIP712Receiver is Ownable, EIP712Base {
         MetaTransaction memory metaTx = MetaTransaction({
             nonce: _nonce,
             from: _signer,
+            contractAddress: address(this),
+            functionName: "requestVoucher",
+            tokenIdSupply: tokenIdSupply,
             functionSignature: _data
         });
         require(
@@ -99,6 +121,9 @@ contract MetaTransactionEIP712Receiver is Ownable, EIP712Base {
                     META_TRANSACTION_TYPEHASH,
                     metaTx.nonce,
                     metaTx.from,
+                    metaTx.contractAddress,
+                    keccak256(bytes(metaTx.functionName)),
+                    metaTx.tokenIdSupply,
                     keccak256(metaTx.functionSignature)
                 )
             );
