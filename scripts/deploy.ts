@@ -3,10 +3,12 @@
 
 import hre from 'hardhat';
 import fs from 'fs';
-import {isValidEnv} from './env-validator';
+import {isValidEnv, addressesDirPath, getAddressesFilePath} from './utils';
 import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
-import {TOKEN_TYPE} from '../testHelpers/constants';
+import constants from '../testHelpers/constants';
+import packageFile from '../package.json';
 
+const {TOKEN_TYPE} = constants;
 const ethers = hre.ethers;
 
 /**
@@ -182,7 +184,9 @@ class DeploymentExecutor {
   }
 
   async deployContracts() {
-    let [primaryDeployer, ccTokenDeployer] = await ethers.getSigners();
+    const signers = await ethers.getSigners();
+    let [, ccTokenDeployer] = signers;
+    const [primaryDeployer] = signers;
 
     if (
       process.env.PROTOCOL_DEPLOYER_PRIVATE_KEY ==
@@ -384,21 +388,28 @@ class DeploymentExecutor {
   }
 
   writeContracts() {
+    if (!fs.existsSync(addressesDirPath)) {
+      fs.mkdirSync(addressesDirPath);
+    }
+
     fs.writeFileSync(
-      `scripts/contracts-${this.env.toLowerCase()}.json`,
+      getAddressesFilePath(hre.network.config.chainId, this.env),
       JSON.stringify(
         {
-          network: hre.network.name,
+          chainId: hre.network.config.chainId,
+          env: this.env || '',
+          protocolVersion: packageFile.version,
           tokenRegistry: this.tokenRegistry.address,
           voucherSets: this.voucherSets.address,
           vouchers: this.vouchers.address,
           voucherKernel: this.voucherKernel.address,
           cashier: this.cashier.address,
-          br: this.br.address,
+          bosonRouter: this.br.address,
           daiTokenWrapper: this.daiTokenWrapper.address,
           gate: this.gate.address,
           erc1155NonTransferable: this.erc1155NonTransferable.address,
-          daiTokenUsed: this.dai_token,
+          daiToken: this.dai_token,
+          bosonToken: this.boson_token,
         },
         null,
         2
