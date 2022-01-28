@@ -36,10 +36,7 @@
         "artifacts/contracts/VoucherKernel.sol/VoucherKernel.json",
         "abi/contracts/VoucherKernel.sol/VoucherKernel.json",
         "artifacts/contracts/interfaces/**/*.json",
-        "!artifacts/contracts/interfaces/**/*.dbg.json",
-        "scripts/contracts-demo.json",
-        "scripts/contracts-dev.json",
-        "scripts/contracts-prod.json"
+        "!artifacts/contracts/interfaces/**/*.dbg.json"
     ],
     "scripts": {
         "contracts:run": "npm run contracts:clean && npm run contracts:compile && hardhat deploy",
