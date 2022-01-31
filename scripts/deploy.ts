@@ -426,7 +426,6 @@ class DeploymentExecutor {
 class ProdExecutor extends DeploymentExecutor {
   constructor() {
     super();
-    this.env = 'prod';
     this.boson_token = process.env.BOSON_TOKEN;
   }
 
@@ -492,7 +491,7 @@ export async function deploy(_env: string): Promise<void> {
   }
 
   const executor =
-    env == 'prod' ? new ProdExecutor() : new NonProdExecutor(env);
+    env == 'production' ? new ProdExecutor() : new NonProdExecutor(env);
 
   await executor.deployContracts();
   await executor.deployMockToken(); //only deploys mock locally

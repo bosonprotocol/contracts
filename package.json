@@ -50,7 +50,7 @@
         "contracts:migrate:testing": "npm run contracts:clean && npm run contracts:compile && hardhat deploy --network ropsten --env testing",
         "contracts:migrate:staging:rinkeby": "npm run contracts:clean && npm run contracts:compile && hardhat deploy --network rinkeby --env staging",
         "contracts:migrate:staging": "npm run contracts:clean && npm run contracts:compile && hardhat deploy --network ropsten --env staging",
-        "contracts:migrate:production": "npm run contracts:clean && npm run contracts:compile && hardhat deploy --network mainnet",
+        "contracts:migrate:production": "npm run contracts:clean && npm run contracts:compile && hardhat deploy --network mainnet --env production",
         "contracts:size": "hardhat size-contracts",
         "contracts:verify:testing:rinkeby": "hardhat contracts-verify --network rinkeby --env testing",
         "contracts:verify:testing": "hardhat contracts-verify --network ropsten --env testing",
