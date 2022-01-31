@@ -56,7 +56,7 @@
         "contracts:verify:testing": "hardhat contracts-verify --network ropsten --env testing",
         "contracts:verify:staging:rinkeby": "hardhat contracts-verify --network rinkeby --env staging",
         "contracts:verify:staging": "hardhat contracts-verify --network ropsten --env staging",
-        "contracts:verify:production": "hardhat contracts-verify --network mainnet",
+        "contracts:verify:production": "hardhat contracts-verify --network mainnet --env production",
         "tests:lint": "eslint test/**/*.ts testHelpers/**/*.ts",
         "tests:lint-fix": "eslint --fix test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
         "tests:format": "prettier --list-different test/**/*.ts testHelpers/**/*.ts scripts/**/*.ts",
