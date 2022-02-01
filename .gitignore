@@ -26,3 +26,4 @@ node_modules
 # Test Coverage
 coverage*
 
+/addresses
