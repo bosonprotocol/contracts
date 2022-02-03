@@ -12,7 +12,7 @@ import "./interfaces/IVoucherKernel.sol";
 import "./interfaces/ICashier.sol";
 import "./interfaces/IVouchers.sol";
 
-//preparing for ERC-1066, ERC-1444, EIP-838
+//preparing for ERC-1066, ERC-1444
 
 /**
  * @title Vouchers implemented as ERC-721
@@ -56,6 +56,8 @@ contract Vouchers is IVouchers, ERC721, Ownable, Pausable {
 
         cashierAddress = _cashierAddress;
         voucherKernelAddress = _voucherKernelAddress;
+        emit LogCashierSet(_cashierAddress, msg.sender);
+        emit LogVoucherKernelSet(_voucherKernelAddress, msg.sender);
     }
 
     /**
@@ -255,7 +257,7 @@ contract Vouchers is IVouchers, ERC721, Ownable, Pausable {
         if (_to.isContract()) {
             try IERC721Receiver(_to).onERC721Received(_msgSender(), _from, _tokenId, _data) returns (bytes4 response) {
                 if (response != IERC721Receiver.onERC721Received.selector) {
-                    revert("ERC721: transfer to non ERC721Receiver implementer");
+                    revert("ERC721: transfer to a bad receiver implementation");
                 }
             } catch Error(string memory reason) {
                 revert(reason);
