@@ -12,8 +12,6 @@ import "./interfaces/IVoucherKernel.sol";
 import "./interfaces/ICashier.sol";
 import "./interfaces/IVouchers.sol";
 
-//preparing for ERC-1066, ERC-1444
-
 /**
  * @title Vouchers implemented as ERC-721
  */

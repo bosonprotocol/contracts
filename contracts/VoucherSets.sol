@@ -10,8 +10,6 @@ import "./interfaces/IVoucherKernel.sol";
 import "./interfaces/IVoucherSets.sol";
 import "./interfaces/ICashier.sol";
 
-//preparing for ERC-1066, ERC-1444
-
 /**
  * @title Voucher sets implemented as ERC-1155
  */

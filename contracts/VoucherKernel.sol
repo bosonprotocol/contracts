@@ -13,8 +13,6 @@ import "./interfaces/IVouchers.sol";
 import "./interfaces/IVoucherKernel.sol";
 import {PaymentMethod, VoucherState, VoucherStatus, isStateCommitted, isStateRedemptionSigned, isStateRefunded, isStateExpired, isStatus, determineStatus} from "./UsingHelpers.sol";
 
-//preparing for ERC-1066, ERC-1444
-
 /**
  * @title VoucherKernel contract controls the core business logic
  * @dev Notes:
