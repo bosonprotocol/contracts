@@ -12,6 +12,8 @@ import "./interfaces/IVoucherKernel.sol";
 import "./interfaces/ICashier.sol";
 import {PaymentMethod, VoucherState, VoucherDetails, isStatus, determineStatus} from "./UsingHelpers.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @title Contract for managing funds
  * Roughly following OpenZeppelin's Escrow at https://github.com/OpenZeppelin/openzeppelin-solidity/contracts/payment/
@@ -183,7 +185,7 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
         whenNotPaused
         returns (bool)
     {
-  VoucherDetails memory voucherDetails;
+        VoucherDetails memory voucherDetails;
 
         require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");
 
@@ -236,20 +238,27 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
         }
 
         //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status
+        // console.log("Is deposit released", IVoucherKernel(voucherKernel).isDepositReleased(_tokenIdVoucher, _to));
+        // console.log("Voucher status", isStatus(voucherDetails.currStatus.status, VoucherState.FINAL));
+
         if (
             !IVoucherKernel(voucherKernel).isDepositReleased(_tokenIdVoucher, _to) &&
             isStatus(voucherDetails.currStatus.status, VoucherState.FINAL)
         ) {
             (bool _released, uint256 _amount) = releaseDeposits(voucherDetails, _to);
-            if (released) {
+            // console.log("released", _released);
+            // console.log("amount", _amount);
+            
+            if (_released) {
                 _withdrawDeposits(
-                    voucherDetails.holder,
+                    _to == Entity.ISSUER ? voucherDetails.issuer : _to == Entity.HOLDER ? voucherDetails.holder : owner(),
                     _amount,
                     voucherDetails.paymentMethod,
                     voucherDetails.tokenIdSupply
                 );
             }
-            released == _released || released;
+            released = _released || released;
+            // console.log("total released", released);
         }
 
         // require (released, "NOTHING_TO_WITHDRAW");
@@ -266,11 +275,10 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
 function withdraw(uint256 _tokenIdVoucher)
         external
         override
-   {
-            require (distributeAndWithdraw(_tokenIdVoucher, Entity.ISSUER) ||
-            distributeAndWithdraw(_tokenIdVoucher, Entity.HOLDER) ||
-            distributeAndWithdraw(_tokenIdVoucher, Entity.POOL), 
-            "NOTHING_TO_WITHDRAW");
+   {        bool released = distributeAndWithdraw(_tokenIdVoucher, Entity.ISSUER);
+            released = distributeAndWithdraw(_tokenIdVoucher, Entity.HOLDER) || released;
+            released = distributeAndWithdraw(_tokenIdVoucher, Entity.POOL) || released;
+            require (released, "NOTHING_TO_WITHDRAW");
 
         }
 
@@ -405,10 +413,10 @@ function withdraw(uint256 _tokenIdVoucher)
         
         if (
             _to == Entity.HOLDER &&
-            isStatus(_voucherDetails.currStatus.status, VoucherState.REFUND) ||
+            (isStatus(_voucherDetails.currStatus.status, VoucherState.REFUND) ||
             isStatus(_voucherDetails.currStatus.status, VoucherState.EXPIRE) ||
             (isStatus(_voucherDetails.currStatus.status, VoucherState.CANCEL_FAULT) &&
-                !isStatus(_voucherDetails.currStatus.status, VoucherState.REDEEM))
+                !isStatus(_voucherDetails.currStatus.status, VoucherState.REDEEM)))
         ) { 
             releasePayment(_voucherDetails, Role.HOLDER);
             return true;
@@ -479,29 +487,31 @@ function withdraw(uint256 _tokenIdVoucher)
         if (isStatus(_voucherDetails.currStatus.status, VoucherState.COMPLAIN)) {
             //slash depositSe
             _amount = _amount.add(distributeIssuerDepositOnHolderComplain(_voucherDetails, _to));
-            _released = true;
-        } else if(_to == Entity.ISSUER) {
-            if (
-                _to == Entity.HOLDER &&
+            _released = _amount > 0;
+        } else if(_to != Entity.POOL) {
+            if (                
                 isStatus(_voucherDetails.currStatus.status, VoucherState.CANCEL_FAULT)) {
                 //slash depositSe
                 _amount = _amount.add(distributeIssuerDepositOnIssuerCancel(_voucherDetails, _to));
-            } else {
+                _released = true;
+            } else if (_to == Entity.ISSUER) {
                 //release depositSe
                 _amount = _amount.add(distributeFullIssuerDeposit(_voucherDetails));
+                _released = true;
             }
-            _released = true;
+            
         }
 
         //second, depositBu
-        if (
-            _to == Entity.HOLDER &&
+        if (            
             isStatus(_voucherDetails.currStatus.status, VoucherState.REDEEM) ||
             isStatus(_voucherDetails.currStatus.status, VoucherState.CANCEL_FAULT)
         ) {
             //release depositBu
+            if (_to == Entity.HOLDER) {
             _amount = _amount.add(distributeFullHolderDeposit(_voucherDetails));
             _released = true;
+            }
         } else if (_to == Entity.POOL){
             //slash depositBu
             _amount = _amount.add(distributeHolderDepositOnNotRedeemedNotCancelled(_voucherDetails));
@@ -515,6 +525,9 @@ function withdraw(uint256 _tokenIdVoucher)
     }
 
     function reduceEscrowAmountDeposits(PaymentMethod _paymentMethod, address _entity, uint256 _amount, uint256 _tokenIdSupply) internal {
+            // console.log("amount in escrow", escrow[_entity]);
+            // console.log("amount to subtract", _amount);
+
             if (
                 _paymentMethod == PaymentMethod.ETHETH ||
                 _paymentMethod == PaymentMethod.TKNETH
@@ -550,7 +563,7 @@ function withdraw(uint256 _tokenIdVoucher)
     ) internal 
         returns (uint256){
         uint256 toDistribute;
-        address recepient;
+        address recipient;
         if (isStatus(_voucherDetails.currStatus.status, VoucherState.CANCEL_FAULT)) {
             //appease the conflict three-ways
             uint256 tFraction = _voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
@@ -558,15 +571,15 @@ function withdraw(uint256 _tokenIdVoucher)
 
             if (_to == Entity.HOLDER) { //Bu gets, say, a half                
                 toDistribute = tFraction;
-                recepient = _voucherDetails.holder;
+                recipient = _voucherDetails.holder;
             } else if (_to == Entity.ISSUER) {  //Se gets, say, a quarter
                 toDistribute = tFraction.div(CANCELFAULT_SPLIT);
-                recepient = _voucherDetails.issuer;
+                recipient = _voucherDetails.issuer;
             } else { //slashing the rest
                 toDistribute = (_voucherDetails.depositSe.sub(tFraction)).sub(
                     tFraction.div(CANCELFAULT_SPLIT)
                 );
-                recepient = owner();
+                recipient = owner();
             }
 
             // _voucherDetails.deposit2holder = _voucherDetails.deposit2holder.add(
@@ -602,7 +615,7 @@ function withdraw(uint256 _tokenIdVoucher)
             //     PaymentType.DEPOSIT_SELLER
             // );
 
-        } else {
+        } else if (_to == Entity.POOL){
             //slash depositSe
             // reduceEscrowAmountDeposits(_voucherDetails.paymentMethod, _voucherDetails.issuer, _voucherDetails.depositSe, _voucherDetails.tokenIdSupply);
             // if (
@@ -635,14 +648,16 @@ function withdraw(uint256 _tokenIdVoucher)
             //     PaymentType.DEPOSIT_SELLER
             // );
             toDistribute = _voucherDetails.depositSe;
-            recepient = owner();
+            recipient = owner();
+        } else {
+            return 0;
         }
 
         reduceEscrowAmountDeposits(_voucherDetails.paymentMethod, _voucherDetails.issuer, toDistribute, _voucherDetails.tokenIdSupply);
 
         emit LogAmountDistribution(
             _voucherDetails.tokenIdVoucher,
-            recepient,
+            recipient,
             toDistribute,
             PaymentType.DEPOSIT_SELLER
         );
@@ -662,22 +677,22 @@ function withdraw(uint256 _tokenIdVoucher)
         returns (uint256)
     {
         uint256 toDistribute;
-        address recepient;
+        address recipient;
         if (_to == Entity.HOLDER) { //Bu gets, say, a half                
         toDistribute = _voucherDetails.depositSe.sub(
                 _voucherDetails.depositSe.div(CANCELFAULT_SPLIT)
             );
-            recepient = _voucherDetails.holder;
+            recipient = _voucherDetails.holder;
         } else if (_to == Entity.ISSUER) {  //Se gets, say, a quarter
             toDistribute = _voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
-            recepient = _voucherDetails.issuer;
+            recipient = _voucherDetails.issuer;
         } 
 
         reduceEscrowAmountDeposits(_voucherDetails.paymentMethod, _voucherDetails.issuer, toDistribute, _voucherDetails.tokenIdSupply);
 
         emit LogAmountDistribution(
             _voucherDetails.tokenIdVoucher,
-            recepient,
+            recipient,
             toDistribute,
             PaymentType.DEPOSIT_SELLER
         );

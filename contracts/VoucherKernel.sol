@@ -732,8 +732,9 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
 
         if (vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount == getTotalDeposits(_tokenIdVoucher)) {
             vouchersStatus[_tokenIdVoucher].isDepositsReleased = true;
+            emit LogFundsReleased(_tokenIdVoucher, 1); 
         }
-        emit LogFundsReleased(_tokenIdVoucher, 1); 
+        
     }
 
     function isDepositReleased(uint256 _tokenIdVoucher, Entity _to) external view override returns (bool){
