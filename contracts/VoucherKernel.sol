@@ -198,8 +198,18 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         voucherSetTokenAddress = _voucherSetTokenAddress;
         voucherTokenAddress = _voucherTokenAddress;
 
-        complainPeriod = 7 * 1 days;
-        cancelFaultPeriod = 7 * 1 days;
+        emit LogBosonRouterSet(_bosonRouterAddress, msg.sender);
+        emit LogCashierSet(_cashierAddress, msg.sender);
+        emit LogVoucherSetTokenContractSet(_voucherSetTokenAddress, msg.sender);
+        emit LogVoucherTokenContractSet(_voucherTokenAddress, msg.sender);
+
+        uint256 _complainPeriod = 7 * 1 days;
+        uint256 _cancelFaultPeriod = 7 * 1 days;
+        complainPeriod = _complainPeriod;
+        cancelFaultPeriod = _cancelFaultPeriod;
+
+        emit LogComplainPeriodChanged(_complainPeriod, msg.sender);
+        emit LogCancelFaultPeriodChanged(_cancelFaultPeriod, msg.sender);
     }
 
     /**

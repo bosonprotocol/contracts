@@ -136,6 +136,9 @@ contract BosonRouter is
         voucherKernel = _voucherKernel;
         tokenRegistry = _tokenRegistry;
         cashierAddress = _cashierAddress;
+        emit LogVoucherKernelSet(_voucherKernel, msg.sender);
+        emit LogTokenRegistrySet(_tokenRegistry, msg.sender);
+        emit LogCashierSet(_cashierAddress, msg.sender);
     }
 
     /**

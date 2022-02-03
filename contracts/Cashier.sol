@@ -105,6 +105,10 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
         voucherKernel = _voucherKernel;
         voucherSetTokenAddress = _voucherSetTokenAddress;
         voucherTokenAddress = _voucherTokenAddress;
+        emit LogBosonRouterSet(_bosonRouterAddress, msg.sender);
+        emit LogVoucherKernelSet(_voucherKernel, msg.sender);
+        emit LogVoucherSetTokenContractSet(_voucherSetTokenAddress, msg.sender);
+        emit LogVoucherTokenContractSet(_voucherTokenAddress, msg.sender);
     }
 
     /**
