@@ -331,8 +331,9 @@ describe('Cashier withdrawals ', () => {
       let snapshot = await ethers.provider.send('evm_snapshot', []);
 
       // withdraw before first action should revert
-      await expect(utils.withdraw(voucherID, users.deployer.signer))
-        .to.be.revertedWith(revertReasons.NOTHING_TO_WITHDRAW);
+      await expect(
+        utils.withdraw(voucherID, users.deployer.signer)
+      ).to.be.revertedWith(revertReasons.NOTHING_TO_WITHDRAW);
 
       await checkEscrowAmounts('beforePaymentRelease');
       if (checkTokenBalances)

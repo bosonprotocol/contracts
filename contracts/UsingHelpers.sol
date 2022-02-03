@@ -28,12 +28,6 @@ struct VoucherDetails {
     uint256 price;
     uint256 depositSe;
     uint256 depositBu;
-    uint256 price2pool;
-    uint256 deposit2pool;
-    uint256 price2issuer;
-    uint256 deposit2issuer;
-    uint256 price2holder;
-    uint256 deposit2holder;
     PaymentMethod paymentMethod;
     VoucherStatus currStatus;
 }
@@ -50,7 +44,7 @@ struct VoucherStatus {
 struct DepositsReleased {
     bool issuer;
     bool holder;
-    bool pool; // this three will be changed to uint representing all of them
+    bool pool;
     uint256 releasedAmount;
 }
 

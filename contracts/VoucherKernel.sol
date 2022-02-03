@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./interfaces/IVoucherSets.sol";
 import "./interfaces/IVouchers.sol";
 import "./interfaces/IVoucherKernel.sol";
-import {PaymentMethod, VoucherState, VoucherStatus, isStateCommitted, isStateRedemptionSigned, isStateRefunded, isStateExpired, isStatus, determineStatus} from "./UsingHelpers.sol";
+import {Entity, PaymentMethod, VoucherState, VoucherStatus, isStateCommitted, isStateRedemptionSigned, isStateRefunded, isStateExpired, isStatus, determineStatus} from "./UsingHelpers.sol";
 
 //preparing for ERC-1066, ERC-1444, EIP-838
 
@@ -712,6 +712,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
     /**
      * @notice Mark voucher token that the deposits were released
      * @param _tokenIdVoucher   ID of the voucher token
+     * @param _to               recipient, one of {ISSUER, HOLDER, POOL}
+     * @param _amount           amount that was released in the transaction
      */
     function setDepositsReleased(uint256 _tokenIdVoucher, Entity _to, uint256 _amount)
         external
@@ -737,6 +739,11 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         
     }
 
+    /**
+     * @notice Tells if part of the deposit, belonging to entity, was released already
+     * @param _tokenIdVoucher   ID of the voucher token
+     * @param _to               recipient, one of {ISSUER, HOLDER, POOL}
+     */
     function isDepositReleased(uint256 _tokenIdVoucher, Entity _to) external view override returns (bool){
         if (_to == Entity.ISSUER) {
             return vouchersStatus[_tokenIdVoucher].depositReleased.issuer;
