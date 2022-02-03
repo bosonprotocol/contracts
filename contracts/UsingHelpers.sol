@@ -11,6 +11,8 @@ enum PaymentMethod {
     TKNTKN
 }
 
+enum Entity {ISSUER, HOLDER, POOL}
+
 enum VoucherState {FINAL, CANCEL_FAULT, COMPLAIN, EXPIRE, REFUND, REDEEM, COMMIT}
 /*  Status of the voucher in 8 bits:
     [6:COMMITTED] [5:REDEEMED] [4:REFUNDED] [3:EXPIRED] [2:COMPLAINED] [1:CANCELORFAULT] [0:FINAL]
@@ -40,8 +42,16 @@ struct VoucherStatus {
     uint8 status;
     bool isPaymentReleased;
     bool isDepositsReleased;
+    DepositsReleased depositReleased;
     uint256 complainPeriodStart;
     uint256 cancelFaultPeriodStart;
+}
+
+struct DepositsReleased {
+    bool issuer;
+    bool holder;
+    bool pool; // this three will be changed to uint representing all of them
+    uint256 releasedAmount;
 }
 
 /**

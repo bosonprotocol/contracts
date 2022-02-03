@@ -176,19 +176,14 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
         emit LogWithdrawTokensOnDisaster(amount, _token, msg.sender);
     }
 
-    /**
-     * @notice Trigger withdrawals of what funds are releasable
-     * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
-     * @dev This function would be optimized a lot, here verbose for readability.
-     * @param _tokenIdVoucher  ID of a voucher token (ERC-721) to try withdraw funds from
-     */
-    function withdraw(uint256 _tokenIdVoucher)
-        external
-        override
+  
+    function distributeAndWithdraw(uint256 _tokenIdVoucher, Entity _to)
+        internal
         nonReentrant
         whenNotPaused
+        returns (bool)
     {
-        VoucherDetails memory voucherDetails;
+  VoucherDetails memory voucherDetails;
 
         require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");
 
@@ -229,83 +224,196 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
         bool released;
         //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
         if (!voucherDetails.currStatus.isPaymentReleased) {
-            releasePayments(voucherDetails);
-            released = true;
+            released = releasePayments(voucherDetails, _to);
+            if (released) {
+                _withdrawPayments(
+                    _to == Entity.ISSUER ? voucherDetails.issuer : voucherDetails.holder,
+                    voucherDetails.price,
+                    voucherDetails.paymentMethod,
+                    voucherDetails.tokenIdSupply
+                );
+            }
         }
 
         //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status
         if (
-            !voucherDetails.currStatus.isDepositsReleased &&
+            !IVoucherKernel(voucherKernel).isDepositReleased(_tokenIdVoucher, _to) &&
             isStatus(voucherDetails.currStatus.status, VoucherState.FINAL)
         ) {
-            releaseDeposits(voucherDetails);
-            released = true;
+            (bool _released, uint256 _amount) = releaseDeposits(voucherDetails, _to);
+            if (released) {
+                _withdrawDeposits(
+                    voucherDetails.holder,
+                    _amount,
+                    voucherDetails.paymentMethod,
+                    voucherDetails.tokenIdSupply
+                );
+            }
+            released == _released || released;
         }
 
-        require (released, "NOTHING_TO_WITHDRAW");
+        // require (released, "NOTHING_TO_WITHDRAW");
+        return released;
 
-        if (voucherDetails.deposit2pool > 0) {
-            _withdrawDeposits(
-                owner(),
-                voucherDetails.deposit2pool,
-                voucherDetails.paymentMethod,
-                voucherDetails.tokenIdSupply
-            );
-        }
-
-        if (voucherDetails.price2issuer > 0) {
-            _withdrawPayments(
-                voucherDetails.issuer,
-                voucherDetails.price2issuer,
-                voucherDetails.paymentMethod,
-                voucherDetails.tokenIdSupply
-            );
-        }
-
-        if (voucherDetails.deposit2issuer > 0) {
-            _withdrawDeposits(
-                voucherDetails.issuer,
-                voucherDetails.deposit2issuer,
-                voucherDetails.paymentMethod,
-                voucherDetails.tokenIdSupply
-            );
-        }
-
-        if (voucherDetails.price2holder > 0) {
-            _withdrawPayments(
-                voucherDetails.holder,
-                voucherDetails.price2holder,
-                voucherDetails.paymentMethod,
-                voucherDetails.tokenIdSupply
-            );
-        }
-
-        if (voucherDetails.deposit2holder > 0) {
-            _withdrawDeposits(
-                voucherDetails.holder,
-                voucherDetails.deposit2holder,
-                voucherDetails.paymentMethod,
-                voucherDetails.tokenIdSupply
-            );
-        }        
     }
+
+    /**
+     * @notice Trigger withdrawals of what funds are releasable
+     * The caller of this function triggers transfers to all involved entities (pool, issuer, token holder), also paying for gas.
+     * @dev This function would be optimized a lot, here verbose for readability.
+     * @param _tokenIdVoucher  ID of a voucher token (ERC-721) to try withdraw funds from
+     */
+function withdraw(uint256 _tokenIdVoucher)
+        external
+        override
+   {
+            require (distributeAndWithdraw(_tokenIdVoucher, Entity.ISSUER) ||
+            distributeAndWithdraw(_tokenIdVoucher, Entity.HOLDER) ||
+            distributeAndWithdraw(_tokenIdVoucher, Entity.POOL), 
+            "NOTHING_TO_WITHDRAW");
+
+        }
+
+  function withdrawSingle(uint256 _tokenIdVoucher, Entity _to)
+        external
+        override
+     {
+        require (distributeAndWithdraw(_tokenIdVoucher, _to),
+            "NOTHING_TO_WITHDRAW");
+
+ }
+
+    // function withdraw(uint256 _tokenIdVoucher)
+    //     external
+    //     override
+    //     nonReentrant
+    //     whenNotPaused
+    // {
+    //     VoucherDetails memory voucherDetails;
+
+    //     require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");
+
+    //     voucherDetails.tokenIdVoucher = _tokenIdVoucher;
+    //     voucherDetails.tokenIdSupply = IVoucherKernel(voucherKernel)
+    //         .getIdSupplyFromVoucher(voucherDetails.tokenIdVoucher);
+    //     voucherDetails.paymentMethod = IVoucherKernel(voucherKernel)
+    //         .getVoucherPaymentMethod(voucherDetails.tokenIdSupply);
+
+    //     (
+    //         voucherDetails.currStatus.status,
+    //         voucherDetails.currStatus.isPaymentReleased,
+    //         voucherDetails.currStatus.isDepositsReleased,
+    //         ,
+    //     ) = IVoucherKernel(voucherKernel).getVoucherStatus(
+    //         voucherDetails.tokenIdVoucher
+    //     );
+
+    //     (
+    //         voucherDetails.price,
+    //         voucherDetails.depositSe,
+    //         voucherDetails.depositBu
+    //     ) = IVoucherKernel(voucherKernel).getOrderCosts(
+    //         voucherDetails.tokenIdSupply
+    //     );
+
+    //     voucherDetails.issuer = payable(
+    //         IVoucherKernel(voucherKernel).getSupplyHolder(
+    //             voucherDetails.tokenIdSupply
+    //         )
+    //     );
+    //     voucherDetails.holder = payable(
+    //         IVoucherKernel(voucherKernel).getVoucherHolder(
+    //             voucherDetails.tokenIdVoucher
+    //         )
+    //     );
+
+    //     bool released;
+    //     //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
+    //     if (!voucherDetails.currStatus.isPaymentReleased) {
+    //         releasePayments(voucherDetails);
+    //         released = true;
+    //     }
+
+    //     //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status
+    //     if (
+    //         !voucherDetails.currStatus.isDepositsReleased &&
+    //         isStatus(voucherDetails.currStatus.status, VoucherState.FINAL)
+    //     ) {
+    //         releaseDeposits(voucherDetails);
+    //         released = true;
+    //     }
+
+    //     require (released, "NOTHING_TO_WITHDRAW");
+
+    //     if (voucherDetails.deposit2pool > 0) {
+    //         _withdrawDeposits(
+    //             owner(),
+    //             voucherDetails.deposit2pool,
+    //             voucherDetails.paymentMethod,
+    //             voucherDetails.tokenIdSupply
+    //         );
+    //     }
+
+    //     if (voucherDetails.price2issuer > 0) {
+    //         _withdrawPayments(
+    //             voucherDetails.issuer,
+    //             voucherDetails.price2issuer,
+    //             voucherDetails.paymentMethod,
+    //             voucherDetails.tokenIdSupply
+    //         );
+    //     }
+
+    //     if (voucherDetails.deposit2issuer > 0) {
+    //         _withdrawDeposits(
+    //             voucherDetails.issuer,
+    //             voucherDetails.deposit2issuer,
+    //             voucherDetails.paymentMethod,
+    //             voucherDetails.tokenIdSupply
+    //         );
+    //     }
+
+    //     if (voucherDetails.price2holder > 0) {
+    //         _withdrawPayments(
+    //             voucherDetails.holder,
+    //             voucherDetails.price2holder,
+    //             voucherDetails.paymentMethod,
+    //             voucherDetails.tokenIdSupply
+    //         );
+    //     }
+
+    //     if (voucherDetails.deposit2holder > 0) {
+    //         _withdrawDeposits(
+    //             voucherDetails.holder,
+    //             voucherDetails.deposit2holder,
+    //             voucherDetails.paymentMethod,
+    //             voucherDetails.tokenIdSupply
+    //         );
+    //     }        
+    // }
 
     /**
      * @notice Release of payments, for a voucher which payments had not been released already.
      * Based on the voucher status(e.g. redeemed, refunded, etc), the voucher price will be sent to either buyer or seller.
      * @param _voucherDetails keeps all required information of the voucher which the payment should be released for.
      */
-    function releasePayments(VoucherDetails memory _voucherDetails) internal {
-        if (isStatus(_voucherDetails.currStatus.status, VoucherState.REDEEM)) {
+    function releasePayments(VoucherDetails memory _voucherDetails, Entity _to) internal returns (bool){
+        if (_to == Entity.ISSUER &&
+            isStatus(_voucherDetails.currStatus.status, VoucherState.REDEEM)) {
             releasePayment(_voucherDetails, Role.ISSUER);
-        } else if (
+            return true;
+        } 
+        
+        if (
+            _to == Entity.HOLDER &&
             isStatus(_voucherDetails.currStatus.status, VoucherState.REFUND) ||
             isStatus(_voucherDetails.currStatus.status, VoucherState.EXPIRE) ||
             (isStatus(_voucherDetails.currStatus.status, VoucherState.CANCEL_FAULT) &&
                 !isStatus(_voucherDetails.currStatus.status, VoucherState.REDEEM))
         ) { 
             releasePayment(_voucherDetails, Role.HOLDER);
+            return true;
         }
+        return false;
     }
 
     /**
@@ -338,15 +446,15 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
             );
         }
 
-        if (_role == Role.ISSUER) {
-            _voucherDetails.price2issuer = _voucherDetails.price2issuer.add(
-            _voucherDetails.price
-        );
-        } else {
-            _voucherDetails.price2holder = _voucherDetails.price2holder.add(
-            _voucherDetails.price
-        ); 
-        }
+        // if (_role == Role.ISSUER) {
+        //     _voucherDetails.price2issuer = _voucherDetails.price2issuer.add(
+        //     _voucherDetails.price
+        // );
+        // } else {
+        //     _voucherDetails.price2holder = _voucherDetails.price2holder.add(
+        //     _voucherDetails.price
+        // ); 
+        // }
 
         IVoucherKernel(voucherKernel).setPaymentReleased(
             _voucherDetails.tokenIdVoucher
@@ -366,36 +474,69 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
      * Depending on the payment type (e.g ETH, or Token) escrow funds will be held in the `escrow` || escrowTokens mappings
      * @param _voucherDetails keeps all required information of the voucher which the deposits should be released for.
      */
-    function releaseDeposits(VoucherDetails memory _voucherDetails) internal {
+    function releaseDeposits(VoucherDetails memory _voucherDetails, Entity _to) internal returns (bool _released, uint256 _amount){
         //first, depositSe
         if (isStatus(_voucherDetails.currStatus.status, VoucherState.COMPLAIN)) {
             //slash depositSe
-            distributeIssuerDepositOnHolderComplain(_voucherDetails);
-        } else {
-            if (isStatus(_voucherDetails.currStatus.status, VoucherState.CANCEL_FAULT)) {
+            _amount = _amount.add(distributeIssuerDepositOnHolderComplain(_voucherDetails, _to));
+            _released = true;
+        } else if(_to == Entity.ISSUER) {
+            if (
+                _to == Entity.HOLDER &&
+                isStatus(_voucherDetails.currStatus.status, VoucherState.CANCEL_FAULT)) {
                 //slash depositSe
-                distributeIssuerDepositOnIssuerCancel(_voucherDetails);
+                _amount = _amount.add(distributeIssuerDepositOnIssuerCancel(_voucherDetails, _to));
             } else {
                 //release depositSe
-                distributeFullIssuerDeposit(_voucherDetails);
+                _amount = _amount.add(distributeFullIssuerDeposit(_voucherDetails));
             }
+            _released = true;
         }
 
         //second, depositBu
         if (
+            _to == Entity.HOLDER &&
             isStatus(_voucherDetails.currStatus.status, VoucherState.REDEEM) ||
             isStatus(_voucherDetails.currStatus.status, VoucherState.CANCEL_FAULT)
         ) {
             //release depositBu
-            distributeFullHolderDeposit(_voucherDetails);
-        } else {
+            _amount = _amount.add(distributeFullHolderDeposit(_voucherDetails));
+            _released = true;
+        } else if (_to == Entity.POOL){
             //slash depositBu
-            distributeHolderDepositOnNotRedeemedNotCancelled(_voucherDetails);
+            _amount = _amount.add(distributeHolderDepositOnNotRedeemedNotCancelled(_voucherDetails));
+            _released = true;
         }
 
         IVoucherKernel(voucherKernel).setDepositsReleased(
-            _voucherDetails.tokenIdVoucher
+            _voucherDetails.tokenIdVoucher, _to, _amount
         );
+
+    }
+
+    function reduceEscrowAmountDeposits(PaymentMethod _paymentMethod, address _entity, uint256 _amount, uint256 _tokenIdSupply) internal {
+            if (
+                _paymentMethod == PaymentMethod.ETHETH ||
+                _paymentMethod == PaymentMethod.TKNETH
+            ) {
+                escrow[_entity] = escrow[_entity]
+                    .sub(_amount);
+            }
+
+            if (
+                _paymentMethod == PaymentMethod.ETHTKN ||
+                _paymentMethod == PaymentMethod.TKNTKN
+            ) {
+                address addressTokenDeposits =
+                    IVoucherKernel(voucherKernel).getVoucherDepositToken(
+                        _tokenIdSupply
+                    );
+
+                escrowTokens[addressTokenDeposits][
+                    _entity
+                ] = escrowTokens[addressTokenDeposits][_entity]
+                    .sub(_amount);
+            }
     }
 
     /**
@@ -404,98 +545,109 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
      * @param _voucherDetails keeps all required information of the voucher which the payment should be released for.
      */
     function distributeIssuerDepositOnHolderComplain(
-        VoucherDetails memory _voucherDetails
-    ) internal {
+        VoucherDetails memory _voucherDetails,
+        Entity _to
+    ) internal 
+        returns (uint256){
+        uint256 toDistribute;
+        address recepient;
         if (isStatus(_voucherDetails.currStatus.status, VoucherState.CANCEL_FAULT)) {
             //appease the conflict three-ways
-            if (
-                _voucherDetails.paymentMethod == PaymentMethod.ETHETH ||
-                _voucherDetails.paymentMethod == PaymentMethod.TKNETH
-            ) {
-                escrow[_voucherDetails.issuer] = escrow[_voucherDetails.issuer]
-                    .sub(_voucherDetails.depositSe);
-            }
-
-            if (
-                _voucherDetails.paymentMethod == PaymentMethod.ETHTKN ||
-                _voucherDetails.paymentMethod == PaymentMethod.TKNTKN
-            ) {
-                address addressTokenDeposits =
-                    IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                        _voucherDetails.tokenIdSupply
-                    );
-
-                escrowTokens[addressTokenDeposits][
-                    _voucherDetails.issuer
-                ] = escrowTokens[addressTokenDeposits][_voucherDetails.issuer]
-                    .sub(_voucherDetails.depositSe);
-            }
-
             uint256 tFraction = _voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
-            _voucherDetails.deposit2holder = _voucherDetails.deposit2holder.add(
-                tFraction
-            ); //Bu gets, say, a half
-            _voucherDetails.deposit2issuer = _voucherDetails.deposit2issuer.add(
-                tFraction.div(CANCELFAULT_SPLIT)
-            ); //Se gets, say, a quarter
-            _voucherDetails.deposit2pool = _voucherDetails.deposit2pool.add(
-                (_voucherDetails.depositSe.sub(tFraction)).sub(
-                    tFraction.div(CANCELFAULT_SPLIT)
-                )
-            ); //slashing the rest
 
-            emit LogAmountDistribution(
-                _voucherDetails.tokenIdVoucher,
-                _voucherDetails.holder,
-                tFraction,
-                PaymentType.DEPOSIT_SELLER
-            );
-            emit LogAmountDistribution(
-                _voucherDetails.tokenIdVoucher,
-                _voucherDetails.issuer,
-                tFraction.div(CANCELFAULT_SPLIT),
-                PaymentType.DEPOSIT_SELLER
-            );
-            emit LogAmountDistribution(
-                _voucherDetails.tokenIdVoucher,
-                owner(),
-                (_voucherDetails.depositSe.sub(tFraction)).sub(
+
+            if (_to == Entity.HOLDER) { //Bu gets, say, a half                
+                toDistribute = tFraction;
+                recepient = _voucherDetails.holder;
+            } else if (_to == Entity.ISSUER) {  //Se gets, say, a quarter
+                toDistribute = tFraction.div(CANCELFAULT_SPLIT);
+                recepient = _voucherDetails.issuer;
+            } else { //slashing the rest
+                toDistribute = (_voucherDetails.depositSe.sub(tFraction)).sub(
                     tFraction.div(CANCELFAULT_SPLIT)
-                ),
-                PaymentType.DEPOSIT_SELLER
-            );
+                );
+                recepient = owner();
+            }
+
+            // _voucherDetails.deposit2holder = _voucherDetails.deposit2holder.add(
+            //     tFraction
+            // ); //Bu gets, say, a half
+            // _voucherDetails.deposit2issuer = _voucherDetails.deposit2issuer.add(
+            //     tFraction.div(CANCELFAULT_SPLIT)
+            // ); //Se gets, say, a quarter
+            // _voucherDetails.deposit2pool = _voucherDetails.deposit2pool.add(
+            //     (_voucherDetails.depositSe.sub(tFraction)).sub(
+            //         tFraction.div(CANCELFAULT_SPLIT)
+            //     )
+            // ); //slashing the rest
+
+            // emit LogAmountDistribution(
+            //     _voucherDetails.tokenIdVoucher,
+            //     _voucherDetails.holder,
+            //     tFraction,
+            //     PaymentType.DEPOSIT_SELLER
+            // );
+            // emit LogAmountDistribution(
+            //     _voucherDetails.tokenIdVoucher,
+            //     _voucherDetails.issuer,
+            //     tFraction.div(CANCELFAULT_SPLIT),
+            //     PaymentType.DEPOSIT_SELLER
+            // );
+            // emit LogAmountDistribution(
+            //     _voucherDetails.tokenIdVoucher,
+            //     owner(),
+            //     (_voucherDetails.depositSe.sub(tFraction)).sub(
+            //         tFraction.div(CANCELFAULT_SPLIT)
+            //     ),
+            //     PaymentType.DEPOSIT_SELLER
+            // );
 
         } else {
             //slash depositSe
-            if (
-                _voucherDetails.paymentMethod == PaymentMethod.ETHETH ||
-                _voucherDetails.paymentMethod == PaymentMethod.TKNETH
-            ) {
-                escrow[_voucherDetails.issuer] = escrow[_voucherDetails.issuer]
-                    .sub(_voucherDetails.depositSe);
-            } else {
-                address addressTokenDeposits =
-                    IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                        _voucherDetails.tokenIdSupply
-                    );
+            // reduceEscrowAmountDeposits(_voucherDetails.paymentMethod, _voucherDetails.issuer, _voucherDetails.depositSe, _voucherDetails.tokenIdSupply);
+            // if (
+            //     _voucherDetails.paymentMethod == PaymentMethod.ETHETH ||
+            //     _voucherDetails.paymentMethod == PaymentMethod.TKNETH
+            // ) {
+            //     escrow[_voucherDetails.issuer] = escrow[_voucherDetails.issuer]
+            //         .sub(_voucherDetails.depositSe);
+            // } else {
+            //     address addressTokenDeposits =
+            //         IVoucherKernel(voucherKernel).getVoucherDepositToken(
+            //             _voucherDetails.tokenIdSupply
+            //         );
 
-                escrowTokens[addressTokenDeposits][
-                    _voucherDetails.issuer
-                ] = escrowTokens[addressTokenDeposits][_voucherDetails.issuer]
-                    .sub(_voucherDetails.depositSe);
-            }
+            //     escrowTokens[addressTokenDeposits][
+            //         _voucherDetails.issuer
+            //     ] = escrowTokens[addressTokenDeposits][_voucherDetails.issuer]
+            //         .sub(_voucherDetails.depositSe);
+            // }
 
-            _voucherDetails.deposit2pool = _voucherDetails.deposit2pool.add(
-                _voucherDetails.depositSe
-            );
 
-            emit LogAmountDistribution(
-                _voucherDetails.tokenIdVoucher,
-                owner(),
-                _voucherDetails.depositSe,
-                PaymentType.DEPOSIT_SELLER
-            );
+            // _voucherDetails.deposit2pool = _voucherDetails.deposit2pool.add(
+            //     _voucherDetails.depositSe
+            // );
+
+            // emit LogAmountDistribution(
+            //     _voucherDetails.tokenIdVoucher,
+            //     owner(),
+            //     _voucherDetails.depositSe,
+            //     PaymentType.DEPOSIT_SELLER
+            // );
+            toDistribute = _voucherDetails.depositSe;
+            recepient = owner();
         }
+
+        reduceEscrowAmountDeposits(_voucherDetails.paymentMethod, _voucherDetails.issuer, toDistribute, _voucherDetails.tokenIdSupply);
+
+        emit LogAmountDistribution(
+            _voucherDetails.tokenIdVoucher,
+            recepient,
+            toDistribute,
+            PaymentType.DEPOSIT_SELLER
+        );
+
+        return toDistribute;
     }
 
     /**
@@ -504,58 +656,85 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
      * @param _voucherDetails keeps all required information of the voucher which the deposits should be released for.
      */
     function distributeIssuerDepositOnIssuerCancel(
-        VoucherDetails memory _voucherDetails
-    ) internal {
-        if (
-            _voucherDetails.paymentMethod == PaymentMethod.ETHETH ||
-            _voucherDetails.paymentMethod == PaymentMethod.TKNETH
-        ) {
-            escrow[_voucherDetails.issuer] = escrow[_voucherDetails.issuer].sub(
-                _voucherDetails.depositSe
-            );
-        }
-
-        if (
-            _voucherDetails.paymentMethod == PaymentMethod.ETHTKN ||
-            _voucherDetails.paymentMethod == PaymentMethod.TKNTKN
-        ) {
-            address addressTokenDeposits =
-                IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                    _voucherDetails.tokenIdSupply
-                );
-
-            escrowTokens[addressTokenDeposits][
-                _voucherDetails.issuer
-            ] = escrowTokens[addressTokenDeposits][_voucherDetails.issuer].sub(
-                _voucherDetails.depositSe
-            );
-        }
-
-        _voucherDetails.deposit2issuer = _voucherDetails.deposit2issuer.add(
-            _voucherDetails.depositSe.div(CANCELFAULT_SPLIT)
-        );
-
-        _voucherDetails.deposit2holder = _voucherDetails.deposit2holder.add(
-            _voucherDetails.depositSe.sub(
+        VoucherDetails memory _voucherDetails,
+        Entity _to
+    ) internal 
+        returns (uint256)
+    {
+        uint256 toDistribute;
+        address recepient;
+        if (_to == Entity.HOLDER) { //Bu gets, say, a half                
+        toDistribute = _voucherDetails.depositSe.sub(
                 _voucherDetails.depositSe.div(CANCELFAULT_SPLIT)
-            )
-        );
+            );
+            recepient = _voucherDetails.holder;
+        } else if (_to == Entity.ISSUER) {  //Se gets, say, a quarter
+            toDistribute = _voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
+            recepient = _voucherDetails.issuer;
+        } 
+
+        reduceEscrowAmountDeposits(_voucherDetails.paymentMethod, _voucherDetails.issuer, toDistribute, _voucherDetails.tokenIdSupply);
 
         emit LogAmountDistribution(
             _voucherDetails.tokenIdVoucher,
-            _voucherDetails.issuer,
-            _voucherDetails.depositSe.div(CANCELFAULT_SPLIT),
+            recepient,
+            toDistribute,
             PaymentType.DEPOSIT_SELLER
         );
 
-        emit LogAmountDistribution(
-            _voucherDetails.tokenIdVoucher,
-            _voucherDetails.holder,
-            _voucherDetails.depositSe.sub(
-                _voucherDetails.depositSe.div(CANCELFAULT_SPLIT)
-            ),
-            PaymentType.DEPOSIT_SELLER
-        );
+        return toDistribute;
+
+        // reduceEscrowAmountDeposits(_voucherDetails.paymentMethod, _voucherDetails.issuer, _voucherDetails.depositSe, _voucherDetails.tokenIdSupply);
+        // if (
+        //     _voucherDetails.paymentMethod == PaymentMethod.ETHETH ||
+        //     _voucherDetails.paymentMethod == PaymentMethod.TKNETH
+        // ) {
+        //     escrow[_voucherDetails.issuer] = escrow[_voucherDetails.issuer].sub(
+        //         _voucherDetails.depositSe
+        //     );
+        // }
+
+        // if (
+        //     _voucherDetails.paymentMethod == PaymentMethod.ETHTKN ||
+        //     _voucherDetails.paymentMethod == PaymentMethod.TKNTKN
+        // ) {
+        //     address addressTokenDeposits =
+        //         IVoucherKernel(voucherKernel).getVoucherDepositToken(
+        //             _voucherDetails.tokenIdSupply
+        //         );
+
+        //     escrowTokens[addressTokenDeposits][
+        //         _voucherDetails.issuer
+        //     ] = escrowTokens[addressTokenDeposits][_voucherDetails.issuer].sub(
+        //         _voucherDetails.depositSe
+        //     );
+        // }
+
+        // _voucherDetails.deposit2issuer = _voucherDetails.deposit2issuer.add(
+        //     _voucherDetails.depositSe.div(CANCELFAULT_SPLIT)
+        // );
+
+        // _voucherDetails.deposit2holder = _voucherDetails.deposit2holder.add(
+        //     _voucherDetails.depositSe.sub(
+        //         _voucherDetails.depositSe.div(CANCELFAULT_SPLIT)
+        //     )
+        // );
+
+        // emit LogAmountDistribution(
+        //     _voucherDetails.tokenIdVoucher,
+        //     _voucherDetails.issuer,
+        //     _voucherDetails.depositSe.div(CANCELFAULT_SPLIT),
+        //     PaymentType.DEPOSIT_SELLER
+        // );
+
+        // emit LogAmountDistribution(
+        //     _voucherDetails.tokenIdVoucher,
+        //     _voucherDetails.holder,
+        //     _voucherDetails.depositSe.sub(
+        //         _voucherDetails.depositSe.div(CANCELFAULT_SPLIT)
+        //     ),
+        //     PaymentType.DEPOSIT_SELLER
+        // );
     }
 
     /**
@@ -564,36 +743,37 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
      * @param _voucherDetails keeps all required information of the voucher which the deposits should be released for.
      */
     function distributeFullIssuerDeposit(VoucherDetails memory _voucherDetails)
-        internal
+        internal returns (uint256)
     {
-        if (
-            _voucherDetails.paymentMethod == PaymentMethod.ETHETH ||
-            _voucherDetails.paymentMethod == PaymentMethod.TKNETH
-        ) {
-            escrow[_voucherDetails.issuer] = escrow[_voucherDetails.issuer].sub(
-                _voucherDetails.depositSe
-            );
-        }
+        reduceEscrowAmountDeposits(_voucherDetails.paymentMethod, _voucherDetails.issuer, _voucherDetails.depositSe, _voucherDetails.tokenIdSupply);
+        // if (
+        //     _voucherDetails.paymentMethod == PaymentMethod.ETHETH ||
+        //     _voucherDetails.paymentMethod == PaymentMethod.TKNETH
+        // ) {
+        //     escrow[_voucherDetails.issuer] = escrow[_voucherDetails.issuer].sub(
+        //         _voucherDetails.depositSe
+        //     );
+        // }
 
-        if (
-            _voucherDetails.paymentMethod == PaymentMethod.ETHTKN ||
-            _voucherDetails.paymentMethod == PaymentMethod.TKNTKN
-        ) {
-            address addressTokenDeposits =
-                IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                    _voucherDetails.tokenIdSupply
-                );
+        // if (
+        //     _voucherDetails.paymentMethod == PaymentMethod.ETHTKN ||
+        //     _voucherDetails.paymentMethod == PaymentMethod.TKNTKN
+        // ) {
+        //     address addressTokenDeposits =
+        //         IVoucherKernel(voucherKernel).getVoucherDepositToken(
+        //             _voucherDetails.tokenIdSupply
+        //         );
 
-            escrowTokens[addressTokenDeposits][
-                _voucherDetails.issuer
-            ] = escrowTokens[addressTokenDeposits][_voucherDetails.issuer].sub(
-                _voucherDetails.depositSe
-            );
-        }
+        //     escrowTokens[addressTokenDeposits][
+        //         _voucherDetails.issuer
+        //     ] = escrowTokens[addressTokenDeposits][_voucherDetails.issuer].sub(
+        //         _voucherDetails.depositSe
+        //     );
+        // }
 
-        _voucherDetails.deposit2issuer = _voucherDetails.deposit2issuer.add(
-            _voucherDetails.depositSe
-        );
+        // _voucherDetails.deposit2issuer = _voucherDetails.deposit2issuer.add(
+        //     _voucherDetails.depositSe
+        // );
 
         emit LogAmountDistribution(
             _voucherDetails.tokenIdVoucher,
@@ -601,6 +781,8 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
             _voucherDetails.depositSe,
             PaymentType.DEPOSIT_SELLER
         );
+
+        return _voucherDetails.depositSe;
     }
 
     /**
@@ -610,35 +792,37 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
      */
     function distributeFullHolderDeposit(VoucherDetails memory _voucherDetails)
         internal
+        returns (uint256)
     {
-        if (
-            _voucherDetails.paymentMethod == PaymentMethod.ETHETH ||
-            _voucherDetails.paymentMethod == PaymentMethod.TKNETH
-        ) {
-            escrow[_voucherDetails.holder] = escrow[_voucherDetails.holder].sub(
-                _voucherDetails.depositBu
-            );
-        }
+        reduceEscrowAmountDeposits(_voucherDetails.paymentMethod, _voucherDetails.holder, _voucherDetails.depositBu, _voucherDetails.tokenIdSupply);
+        // if (
+        //     _voucherDetails.paymentMethod == PaymentMethod.ETHETH ||
+        //     _voucherDetails.paymentMethod == PaymentMethod.TKNETH
+        // ) {
+        //     escrow[_voucherDetails.holder] = escrow[_voucherDetails.holder].sub(
+        //         _voucherDetails.depositBu
+        //     );
+        // }
 
-        if (
-            _voucherDetails.paymentMethod == PaymentMethod.ETHTKN ||
-            _voucherDetails.paymentMethod == PaymentMethod.TKNTKN
-        ) {
-            address addressTokenDeposits =
-                IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                    _voucherDetails.tokenIdSupply
-                );
+        // if (
+        //     _voucherDetails.paymentMethod == PaymentMethod.ETHTKN ||
+        //     _voucherDetails.paymentMethod == PaymentMethod.TKNTKN
+        // ) {
+        //     address addressTokenDeposits =
+        //         IVoucherKernel(voucherKernel).getVoucherDepositToken(
+        //             _voucherDetails.tokenIdSupply
+        //         );
 
-            escrowTokens[addressTokenDeposits][
-                _voucherDetails.holder
-            ] = escrowTokens[addressTokenDeposits][_voucherDetails.holder].sub(
-                _voucherDetails.depositBu
-            );
-        }
+        //     escrowTokens[addressTokenDeposits][
+        //         _voucherDetails.holder
+        //     ] = escrowTokens[addressTokenDeposits][_voucherDetails.holder].sub(
+        //         _voucherDetails.depositBu
+        //     );
+        // }
 
-        _voucherDetails.deposit2holder = _voucherDetails.deposit2holder.add(
-            _voucherDetails.depositBu
-        );
+        // _voucherDetails.deposit2holder = _voucherDetails.deposit2holder.add(
+        //     _voucherDetails.depositBu
+        // );
 
         emit LogAmountDistribution(
             _voucherDetails.tokenIdVoucher,
@@ -646,6 +830,8 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
             _voucherDetails.depositBu,
             PaymentType.DEPOSIT_BUYER
         );
+
+        return _voucherDetails.depositBu;
     }
 
     /**
@@ -654,36 +840,38 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
      * All buyer deposit goes to Boson.
      */
     function distributeHolderDepositOnNotRedeemedNotCancelled(
-        VoucherDetails memory _voucherDetails
-    ) internal {
-        if (
-            _voucherDetails.paymentMethod == PaymentMethod.ETHETH ||
-            _voucherDetails.paymentMethod == PaymentMethod.TKNETH
-        ) {
-            escrow[_voucherDetails.holder] = escrow[_voucherDetails.holder].sub(
-                _voucherDetails.depositBu
-            );
-        }
+        VoucherDetails memory _voucherDetails        
+    ) internal returns (uint256){
+        reduceEscrowAmountDeposits(_voucherDetails.paymentMethod, _voucherDetails.holder, _voucherDetails.depositBu, _voucherDetails.tokenIdSupply);
+        // if (
+        //     _voucherDetails.paymentMethod == PaymentMethod.ETHETH ||
+        //     _voucherDetails.paymentMethod == PaymentMethod.TKNETH
+        // ) {
+        //     escrow[_voucherDetails.holder] = escrow[_voucherDetails.holder].sub(
+        //         _voucherDetails.depositBu
+        //     );
+        // }
 
-        if (
-            _voucherDetails.paymentMethod == PaymentMethod.ETHTKN ||
-            _voucherDetails.paymentMethod == PaymentMethod.TKNTKN
-        ) {
-            address addressTokenDeposits =
-                IVoucherKernel(voucherKernel).getVoucherDepositToken(
-                    _voucherDetails.tokenIdSupply
-                );
+        // if (
+        //     _voucherDetails.paymentMethod == PaymentMethod.ETHTKN ||
+        //     _voucherDetails.paymentMethod == PaymentMethod.TKNTKN
+        // ) {
+        //     address addressTokenDeposits =
+        //         IVoucherKernel(voucherKernel).getVoucherDepositToken(
+        //             _voucherDetails.tokenIdSupply
+        //         );
 
-            escrowTokens[addressTokenDeposits][
-                _voucherDetails.holder
-            ] = escrowTokens[addressTokenDeposits][_voucherDetails.holder].sub(
-                _voucherDetails.depositBu
-            );
-        }
+        //     escrowTokens[addressTokenDeposits][
+        //         _voucherDetails.holder
+        //     ] = escrowTokens[addressTokenDeposits][_voucherDetails.holder].sub(
+        //         _voucherDetails.depositBu
+        //     );
+        // }
 
-        _voucherDetails.deposit2pool = _voucherDetails.deposit2pool.add(
-            _voucherDetails.depositBu
-        );
+        // _voucherDetails.deposit2pool = _voucherDetails.deposit2pool.add(
+        //     _voucherDetails.depositBu
+        // );
+        
 
         emit LogAmountDistribution(
             _voucherDetails.tokenIdVoucher,
@@ -691,6 +879,8 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
             _voucherDetails.depositBu,
             PaymentType.DEPOSIT_BUYER
         );
+
+        return _voucherDetails.depositBu;
     }
 
     /**

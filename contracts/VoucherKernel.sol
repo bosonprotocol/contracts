@@ -713,15 +713,37 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
      * @notice Mark voucher token that the deposits were released
      * @param _tokenIdVoucher   ID of the voucher token
      */
-    function setDepositsReleased(uint256 _tokenIdVoucher)
+    function setDepositsReleased(uint256 _tokenIdVoucher, Entity _to, uint256 _amount)
         external
         override
         onlyFromCashier
     {
         require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");
-        vouchersStatus[_tokenIdVoucher].isDepositsReleased = true;
 
-        emit LogFundsReleased(_tokenIdVoucher, 1);
+        if (_to == Entity.ISSUER) {
+            vouchersStatus[_tokenIdVoucher].depositReleased.issuer = true;
+        } else if (_to == Entity.HOLDER) {
+            vouchersStatus[_tokenIdVoucher].depositReleased.holder = true;
+        } else {
+            vouchersStatus[_tokenIdVoucher].depositReleased.pool = true;
+        }
+
+        vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount = vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount.add(_amount);
+
+        if (vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount == getTotalDeposits(_tokenIdVoucher)) {
+            vouchersStatus[_tokenIdVoucher].isDepositsReleased = true;
+        }
+        emit LogFundsReleased(_tokenIdVoucher, 1); 
+    }
+
+    function isDepositReleased(uint256 _tokenIdVoucher, Entity _to) external view override returns (bool){
+        if (_to == Entity.ISSUER) {
+            return vouchersStatus[_tokenIdVoucher].depositReleased.issuer;
+        } else if (_to == Entity.HOLDER) {
+            return vouchersStatus[_tokenIdVoucher].depositReleased.holder;
+        } else {
+            return vouchersStatus[_tokenIdVoucher].depositReleased.pool;
+        }
     }
 
     /**
@@ -1001,6 +1023,17 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
             promises[promiseKey].depositSe,
             promises[promiseKey].depositBu
         );
+    }
+
+    function getTotalDeposits(uint256 _tokenIdSupply)
+        internal
+        view
+        returns (
+            uint256
+        )
+    {
+        bytes32 promiseKey = ordersPromise[_tokenIdSupply];
+        return promises[promiseKey].depositSe +  promises[promiseKey].depositBu;
     }
 
     /**
