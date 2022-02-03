@@ -105,7 +105,6 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
         voucherKernel = _voucherKernel;
         voucherSetTokenAddress = _voucherSetTokenAddress;
         voucherTokenAddress = _voucherTokenAddress;
-        disasterState = false;
     }
 
     /**
