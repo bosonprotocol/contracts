@@ -10,7 +10,7 @@ import "./interfaces/IVoucherKernel.sol";
 import "./interfaces/IVoucherSets.sol";
 import "./interfaces/ICashier.sol";
 
-//preparing for ERC-1066, ERC-1444, EIP-838
+//preparing for ERC-1066, ERC-1444
 
 /**
  * @title Voucher sets implemented as ERC-1155
@@ -44,6 +44,8 @@ contract VoucherSets is IVoucherSets, ERC1155, Ownable, Pausable {
     constructor(string memory _uri, address _cashierAddress, address _voucherKernelAddress) ERC1155(_uri) notZeroAddress(_cashierAddress) notZeroAddress(_voucherKernelAddress)  {
         cashierAddress = _cashierAddress;
         voucherKernelAddress = _voucherKernelAddress;
+        emit LogCashierSet(_cashierAddress, msg.sender);
+        emit LogVoucherKernelSet(_voucherKernelAddress, msg.sender);
     }
 
     /**
@@ -179,9 +181,9 @@ contract VoucherSets is IVoucherSets, ERC1155, Ownable, Pausable {
      */
     function mintBatch(
         address _to,
-        uint256[] memory _tokenIds,
-        uint256[] memory _values,
-        bytes memory _data
+        uint256[] calldata _tokenIds,
+        uint256[] calldata _values,
+        bytes calldata _data
     ) external onlyFromVoucherKernel {
         //require approved minter
 
@@ -213,8 +215,8 @@ contract VoucherSets is IVoucherSets, ERC1155, Ownable, Pausable {
      */
     function burnBatch(
         address _account,
-        uint256[] memory _tokenIds,
-        uint256[] memory _values
+        uint256[] calldata _tokenIds,
+        uint256[] calldata _values
     ) external onlyFromVoucherKernel {
         _burnBatch(_account, _tokenIds, _values);
     }
