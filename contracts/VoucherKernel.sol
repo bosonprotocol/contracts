@@ -13,7 +13,7 @@ import "./interfaces/IVouchers.sol";
 import "./interfaces/IVoucherKernel.sol";
 import {PaymentMethod, VoucherState, VoucherStatus, isStateCommitted, isStateRedemptionSigned, isStateRefunded, isStateExpired, isStatus, determineStatus} from "./UsingHelpers.sol";
 
-//preparing for ERC-1066, ERC-1444, EIP-838
+//preparing for ERC-1066, ERC-1444
 
 /**
  * @title VoucherKernel contract controls the core business logic
@@ -67,10 +67,10 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
 
     //ID reqs
     mapping(uint256 => uint256) private typeCounters; //counter for ID of a particular type of NFT
-    uint256 private constant MASK_TYPE = uint256(uint128(~0)) << 128; //the type mask in the upper 128 bits
+    uint256 private constant MASK_TYPE = uint256(type(uint128).max) << 128; //the type mask in the upper 128 bits
     //1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 
-    uint256 private constant MASK_NF_INDEX = uint128(~0); //the non-fungible index mask in the lower 128
+    uint256 private constant MASK_NF_INDEX = type(uint128).max; //the non-fungible index mask in the lower 128
     //0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
 
     uint256 private constant TYPE_NF_BIT = 1 << 255; //the first bit represents an NFT type
