@@ -13,8 +13,6 @@ import "./interfaces/IVouchers.sol";
 import "./interfaces/IVoucherKernel.sol";
 import {Entity, PaymentMethod, VoucherState, VoucherStatus, isStateCommitted, isStateRedemptionSigned, isStateRefunded, isStateExpired, isStatus, determineStatus} from "./UsingHelpers.sol";
 
-//preparing for ERC-1066, ERC-1444, EIP-838
-
 /**
  * @title VoucherKernel contract controls the core business logic
  * @dev Notes:
@@ -67,10 +65,10 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
 
     //ID reqs
     mapping(uint256 => uint256) private typeCounters; //counter for ID of a particular type of NFT
-    uint256 private constant MASK_TYPE = uint256(uint128(~0)) << 128; //the type mask in the upper 128 bits
+    uint256 private constant MASK_TYPE = uint256(type(uint128).max) << 128; //the type mask in the upper 128 bits
     //1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 
-    uint256 private constant MASK_NF_INDEX = uint128(~0); //the non-fungible index mask in the lower 128
+    uint256 private constant MASK_NF_INDEX = type(uint128).max; //the non-fungible index mask in the lower 128
     //0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
 
     uint256 private constant TYPE_NF_BIT = 1 << 255; //the first bit represents an NFT type
@@ -200,8 +198,18 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         voucherSetTokenAddress = _voucherSetTokenAddress;
         voucherTokenAddress = _voucherTokenAddress;
 
-        complainPeriod = 7 * 1 days;
-        cancelFaultPeriod = 7 * 1 days;
+        emit LogBosonRouterSet(_bosonRouterAddress, msg.sender);
+        emit LogCashierSet(_cashierAddress, msg.sender);
+        emit LogVoucherSetTokenContractSet(_voucherSetTokenAddress, msg.sender);
+        emit LogVoucherTokenContractSet(_voucherTokenAddress, msg.sender);
+
+        uint256 _complainPeriod = 7 * 1 days;
+        uint256 _cancelFaultPeriod = 7 * 1 days;
+        complainPeriod = _complainPeriod;
+        cancelFaultPeriod = _cancelFaultPeriod;
+
+        emit LogComplainPeriodChanged(_complainPeriod, msg.sender);
+        emit LogCancelFaultPeriodChanged(_cancelFaultPeriod, msg.sender);
     }
 
     /**

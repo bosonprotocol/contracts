@@ -4,6 +4,7 @@ import {expect} from 'chai';
 import constants from '../testHelpers/constants';
 import Users from '../testHelpers/users';
 import {Cashier, MockERC20Permit} from '../typechain';
+import {eventNames} from '../testHelpers/events';
 
 let Cashier_Factory: ContractFactory;
 let MockERC20Permit_Factory: ContractFactory;
@@ -43,6 +44,27 @@ describe('CASHIER', () => {
 
   beforeEach(async () => {
     await deployContracts();
+  });
+
+  it('Should emit events when deployed', async () => {
+    const signers: Signer[] = await ethers.getSigners();
+    const users = new Users(signers);
+
+    expect(contractCashier.deployTransaction)
+      .to.emit(contractCashier, eventNames.LOG_BOSON_ROUTER_SET)
+      .withArgs(users.other2.address, users.deployer.address);
+
+    expect(contractCashier.deployTransaction)
+      .to.emit(contractCashier, eventNames.LOG_VK_SET)
+      .withArgs(users.other2.address, users.deployer.address);
+
+    expect(contractCashier.deployTransaction)
+      .to.emit(contractCashier, eventNames.LOG_VOUCHER_SET_TOKEN_SET)
+      .withArgs(users.other2.address, users.deployer.address);
+
+    expect(contractCashier.deployTransaction)
+      .to.emit(contractCashier, eventNames.LOG_VOUCHER_TOKEN_SET)
+      .withArgs(users.other2.address, users.deployer.address);
   });
 
   it('[NEGATIVE] Should revert if attacker tries to call method that should be called only from bosonRouter', async () => {

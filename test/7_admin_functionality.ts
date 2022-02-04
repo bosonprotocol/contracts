@@ -29,6 +29,7 @@ import * as eventUtils from '../testHelpers/events';
 import {eventNames} from '../testHelpers/events';
 
 let users;
+let contractAddresses_1;
 
 describe('Admin functionality', async () => {
   before(async () => {
@@ -62,7 +63,7 @@ describe('Admin functionality', async () => {
     constants.PROMISE_VALID_FROM = timestamp;
     constants.PROMISE_VALID_TO = timestamp + 2 * constants.SECONDS_IN_DAY;
 
-    const contractAddresses = await calculateDeploymentAddresses(
+    contractAddresses_1 = await calculateDeploymentAddresses(
       users.deployer.address,
       [
         'TokenRegistry',
@@ -78,32 +79,32 @@ describe('Admin functionality', async () => {
       TokenRegistry;
     contractVoucherSets = (await VoucherSets_Factory.deploy(
       'https://token-cdn-domain/{id}.json',
-      contractAddresses.Cashier,
-      contractAddresses.VoucherKernel
+      contractAddresses_1.Cashier,
+      contractAddresses_1.VoucherKernel
     )) as Contract & VoucherSets;
     contractVouchers = (await Vouchers_Factory.deploy(
       'https://token-cdn-domain/orders/metadata/',
       'Boson Smart Voucher',
       'BSV',
-      contractAddresses.Cashier,
-      contractAddresses.VoucherKernel
+      contractAddresses_1.Cashier,
+      contractAddresses_1.VoucherKernel
     )) as Contract & Vouchers;
     contractVoucherKernel = (await VoucherKernel_Factory.deploy(
-      contractAddresses.BosonRouter,
-      contractAddresses.Cashier,
-      contractAddresses.VoucherSets,
-      contractAddresses.Vouchers
+      contractAddresses_1.BosonRouter,
+      contractAddresses_1.Cashier,
+      contractAddresses_1.VoucherSets,
+      contractAddresses_1.Vouchers
     )) as Contract & VoucherKernel;
     contractCashier = (await Cashier_Factory.deploy(
-      contractAddresses.BosonRouter,
-      contractAddresses.VoucherKernel,
-      contractAddresses.VoucherSets,
-      contractAddresses.Vouchers
+      contractAddresses_1.BosonRouter,
+      contractAddresses_1.VoucherKernel,
+      contractAddresses_1.VoucherSets,
+      contractAddresses_1.Vouchers
     )) as Contract & Cashier;
     contractBosonRouter = (await BosonRouter_Factory.deploy(
-      contractAddresses.VoucherKernel,
-      contractAddresses.TokenRegistry,
-      contractAddresses.Cashier
+      contractAddresses_1.VoucherKernel,
+      contractAddresses_1.TokenRegistry,
+      contractAddresses_1.Cashier
     )) as Contract & BosonRouter;
 
     await contractTokenRegistry.deployed();
@@ -115,7 +116,7 @@ describe('Admin functionality', async () => {
   }
 
   async function deployContracts2() {
-    const contractAddresses = await calculateDeploymentAddresses(
+    const contractAddresses_2 = await calculateDeploymentAddresses(
       users.deployer.address,
       [
         'TokenRegistry',
@@ -131,27 +132,27 @@ describe('Admin functionality', async () => {
       (await TokenRegistry_Factory.deploy()) as Contract & TokenRegistry;
     contractVoucherSets_2 = (await VoucherSets_Factory.deploy(
       'https://token-cdn-domain/{id}.json',
-      contractAddresses.Cashier,
-      contractAddresses.VoucherKernel
+      contractAddresses_2.Cashier,
+      contractAddresses_2.VoucherKernel
     )) as Contract & VoucherSets;
     contractVouchers_2 = (await Vouchers_Factory.deploy(
       'https://token-cdn-domain/orders/metadata/',
       'Boson Smart Voucher',
       'BSV',
-      contractAddresses.Cashier,
-      contractAddresses.VoucherKernel
+      contractAddresses_2.Cashier,
+      contractAddresses_2.VoucherKernel
     )) as Contract & Vouchers;
     contractVoucherKernel_2 = (await VoucherKernel_Factory.deploy(
-      contractAddresses.BosonRouter,
-      contractAddresses.Cashier,
-      contractAddresses.VoucherSets,
-      contractAddresses.Vouchers
+      contractAddresses_2.BosonRouter,
+      contractAddresses_2.Cashier,
+      contractAddresses_2.VoucherSets,
+      contractAddresses_2.Vouchers
     )) as Contract & VoucherKernel;
     contractCashier_2 = (await Cashier_Factory.deploy(
-      contractAddresses.BosonRouter,
-      contractAddresses.VoucherKernel,
-      contractAddresses.VoucherSets,
-      contractAddresses.Vouchers
+      contractAddresses_2.BosonRouter,
+      contractAddresses_2.VoucherKernel,
+      contractAddresses_2.VoucherSets,
+      contractAddresses_2.Vouchers
     )) as Contract & Cashier;
 
     // contractTokenRegistry_2 =
@@ -905,6 +906,32 @@ describe('Admin functionality', async () => {
     beforeEach('Deploy and create instancess of the contracts', async () => {
       await deployContracts();
       await deployContracts2();
+    });
+
+    it('Should emit events when deployed', async () => {
+      const signers: Signer[] = await ethers.getSigners();
+      const users = new Users(signers);
+
+      expect(contractBosonRouter.deployTransaction)
+        .to.emit(contractBosonRouter, eventNames.LOG_VK_SET)
+        .withArgs(
+          ethers.utils.getAddress(contractAddresses_1.VoucherKernel),
+          users.deployer.address
+        );
+
+      expect(contractBosonRouter.deployTransaction)
+        .to.emit(contractBosonRouter, eventNames.LOG_TOKEN_REGISTRY_SET)
+        .withArgs(
+          ethers.utils.getAddress(contractAddresses_1.TokenRegistry),
+          users.deployer.address
+        );
+
+      expect(contractBosonRouter.deployTransaction)
+        .to.emit(contractBosonRouter, eventNames.LOG_CASHIER_SET)
+        .withArgs(
+          ethers.utils.getAddress(contractAddresses_1.Cashier),
+          users.deployer.address
+        );
     });
 
     it('[setVoucherKernelAddress] Should be able to set a new Voucher Kernel address', async () => {

@@ -32,9 +32,11 @@ import revertReasons from '../testHelpers/revertReasons';
 import {waffle} from 'hardhat';
 import ERC721receiver from '../artifacts/contracts/mocks/MockERC721Receiver.sol/MockERC721Receiver.json';
 const {deployMockContract} = waffle;
+import {eventNames} from '../testHelpers/events';
 
 let utils: Utils;
 let users;
+let contractAddresses;
 
 describe('VOUCHER KERNEL', () => {
   before(async () => {
@@ -76,7 +78,7 @@ describe('VOUCHER KERNEL', () => {
 
   async function deployContracts() {
     const sixtySeconds = 60;
-    const contractAddresses = await calculateDeploymentAddresses(
+    contractAddresses = await calculateDeploymentAddresses(
       users.deployer.address,
       [
         'TokenRegistry',
@@ -196,6 +198,50 @@ describe('VOUCHER KERNEL', () => {
 
     beforeEach(async () => {
       await deployContracts();
+    });
+
+    it('Should emit events when deployed', async () => {
+      const signers: Signer[] = await ethers.getSigners();
+      const users = new Users(signers);
+
+      expect(contractVoucherKernel.deployTransaction)
+        .to.emit(contractVoucherKernel, eventNames.LOG_BOSON_ROUTER_SET)
+        .withArgs(
+          ethers.utils.getAddress(contractAddresses.BosonRouter),
+          users.deployer.address
+        );
+
+      expect(contractVoucherKernel.deployTransaction)
+        .to.emit(contractVoucherKernel, eventNames.LOG_CASHIER_SET)
+        .withArgs(
+          ethers.utils.getAddress(contractAddresses.Cashier),
+          users.deployer.address
+        );
+
+      expect(contractVoucherKernel.deployTransaction)
+        .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_SET_TOKEN_SET)
+        .withArgs(
+          ethers.utils.getAddress(contractAddresses.VoucherSets),
+          users.deployer.address
+        );
+
+      expect(contractVoucherKernel.deployTransaction)
+        .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_TOKEN_SET)
+        .withArgs(
+          ethers.utils.getAddress(contractAddresses.Vouchers),
+          users.deployer.address
+        );
+
+      expect(contractVoucherKernel.deployTransaction)
+        .to.emit(contractVoucherKernel, eventNames.LOG_COMPLAIN_PERIOD_CHANGED)
+        .withArgs(7 * constants.SECONDS_IN_DAY, users.deployer.address);
+
+      expect(contractVoucherKernel.deployTransaction)
+        .to.emit(
+          contractVoucherKernel,
+          eventNames.LOG_CANCEL_FAULT_PERIOD_CHANGED
+        )
+        .withArgs(7 * constants.SECONDS_IN_DAY, users.deployer.address);
     });
 
     it('[NEGATIVE] Should revert if attacker tries to call method that should be called only from bosonRouter', async () => {

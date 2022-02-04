@@ -23,14 +23,14 @@ const lazyImport = async (module) => {
 }
 
 task("deploy", "Deploy contracts on a provided network")
-	.addOptionalParam("env", "Which environment is going to be used for contract deployment. Choose between prod, demo, dev or empty for local deployment", "hardhat")
+	.addOptionalParam("env", "(Optional) Provide additional context on which environment the contracts are deployed to: production, staging or testing", "")
 	.setAction( async ({env}) => {
 		const { deploy } = await lazyImport('./scripts/deploy')
 		await deploy(env);
 	})
 
 task("contracts-verify", "Verify already deployed contracts. Bear in mind that at least couple of blocks should be mined before execution!")
-	.addOptionalParam("env", "Which environment is going to be used for contract deployment. Choose between prod, demo & dev", "dev")
+	.addOptionalParam("env", "(Optional) Provide additional context on which environment the contracts are deployed to: production, staging or testing", "")
 	.setAction(async ({env}) => {
 		const { verifyContracts } = await lazyImport('./scripts/verify')
 		await verifyContracts(env);
@@ -54,16 +54,19 @@ const config: HardhatUserConfig = {
 		},
 		rinkeby: {
 			url: `https://rinkeby.infura.io/v3/${INFURA_KEY}`,
-			accounts: ACCOUNTS
+			accounts: ACCOUNTS,
+			chainId: 4
 		},
 		ropsten: {
 			url: `https://ropsten.infura.io/v3/${INFURA_KEY}`,
-			accounts: ACCOUNTS
+			accounts: ACCOUNTS,
+			chainId: 3
 		},
 		mainnet: {
 			url: `https://mainnet.infura.io/v3/${INFURA_KEY}`,
 			accounts: ACCOUNTS,
-			initialBaseFeePerGas: 0
+			initialBaseFeePerGas: 0,
+			chainId: 1
 		},
 	},
 	etherscan: {

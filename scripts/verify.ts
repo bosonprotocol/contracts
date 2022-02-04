@@ -1,13 +1,16 @@
-import {isValidEnv} from './env-validator';
-import hre from 'hardhat';
+import {isValidEnv, getAddressesFilePath} from './utils';
 import fs from 'fs';
+import hre from 'hardhat';
 
 export async function verifyContracts(env: string): Promise<void> {
   const contracts = JSON.parse(
-    fs.readFileSync(`./scripts/contracts-${env}.json`, 'utf-8')
+    fs.readFileSync(
+      getAddressesFilePath(hre.network.config.chainId, env),
+      'utf-8'
+    )
   );
 
-  if (contracts.network != hre.network.name) {
+  if (contracts.chainId != hre.network.config.chainId) {
     throw new Error(
       'Contracts are not deployed on the same network, that you are trying to verify!'
     );
@@ -89,7 +92,7 @@ export async function verifyContracts(env: string): Promise<void> {
   //verify BosonRouter
   try {
     await hre.run('verify:verify', {
-      address: contracts.br,
+      address: contracts.bosonRouter,
       constructorArguments: [
         contracts.voucherKernel,
         contracts.tokenRegistry,
