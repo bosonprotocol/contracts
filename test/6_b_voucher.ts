@@ -678,7 +678,7 @@ describe('Vouchers', () => {
             erc721,
             users.buyer.signer
           )
-        ).to.be.revertedWith(revertReasons.NON_ERC721RECEIVER);
+        ).to.be.revertedWith(revertReasons.BAD_RECEIVER_IMPLEMENTATION);
       });
 
       it('[NEGATIVE][safeTransfer721] it should revert if sent to contract that reverts with arbitrary revert reason', async () => {
@@ -985,7 +985,7 @@ describe('Vouchers', () => {
             mockERC721Receiver.address,
             tokenIdForMint
           )
-        ).to.be.revertedWith(revertReasons.NON_ERC721RECEIVER);
+        ).to.be.revertedWith(revertReasons.BAD_RECEIVER_IMPLEMENTATION);
       });
 
       it('[NEGATIVE][mint] it should not be able to mint a token to a receiver that cannot receive it because it does not have onERC721Received function', async () => {
