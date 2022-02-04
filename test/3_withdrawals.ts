@@ -197,7 +197,7 @@ describe('Cashier withdrawals ', () => {
           );
           assert.equal(
             ev._to,
-            expected.payment.receiver.address,
+            expected.payment.recipient.address,
             'Wrong payment recipient'
           );
           assert.equal(
@@ -208,12 +208,12 @@ describe('Cashier withdrawals ', () => {
           break;
         case paymentType.DEPOSIT_SELLER:
           expect(ev._to).to.be.oneOf(
-            expected.sellerDeposit.receivers.map((user) => user.address),
+            expected.sellerDeposit.recipients.map((user) => user.address),
             'Unexpected recipient'
           );
 
           switch (ev._to) {
-            case expected.sellerDeposit.receivers[0].address:
+            case expected.sellerDeposit.recipients[0].address:
               assert.equal(
                 ev._tokenIdVoucher.toString(),
                 expected.voucherID.toString(),
@@ -225,7 +225,7 @@ describe('Cashier withdrawals ', () => {
                 'Wrong seller deposit amount'
               );
               break;
-            case expected.sellerDeposit.receivers[1].address:
+            case expected.sellerDeposit.recipients[1].address:
               assert.equal(
                 ev._tokenIdVoucher.toString(),
                 expected.voucherID.toString(),
@@ -237,7 +237,7 @@ describe('Cashier withdrawals ', () => {
                 'Wrong seller deposit amount'
               );
               break;
-            case expected.sellerDeposit.receivers[2].address:
+            case expected.sellerDeposit.recipients[2].address:
               assert.equal(
                 ev._tokenIdVoucher.toString(),
                 expected.voucherID.toString(),
@@ -259,7 +259,7 @@ describe('Cashier withdrawals ', () => {
           );
           assert.equal(
             ev._to,
-            expected.buyerDeposit.receiver.address,
+            expected.buyerDeposit.recipient.address,
             'Wrong buyer deposit recipient'
           );
           assert.equal(
@@ -610,14 +610,14 @@ describe('Cashier withdrawals ', () => {
         // expected content of LOG_AMOUNT_DISTRIBUTION
         const paymentAmountDistribution = {
           payment: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.product_price,
           },
         };
 
         const depositAmountDistribution = {
           sellerDeposit: {
-            receivers: [users.buyer, users.seller, users.deployer],
+            recipients: [users.buyer, users.seller, users.deployer],
             amounts: [
               BN(constants.seller_deposit).div(2),
               expectedSellerAmount,
@@ -625,7 +625,7 @@ describe('Cashier withdrawals ', () => {
             ],
           },
           buyerDeposit: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.buyer_deposit,
           },
         };
@@ -669,21 +669,21 @@ describe('Cashier withdrawals ', () => {
         // expected content of LOG_AMOUNT_DISTRIBUTION
         const paymentAmountDistribution = {
           payment: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.product_price,
           },
         };
 
         const depositAmountDistribution = {
           sellerDeposit: {
-            receivers: [users.seller, users.buyer],
+            recipients: [users.seller, users.buyer],
             amounts: [
               expectedSellerAmount,
               BN(constants.seller_deposit).div(BN(2)),
             ],
           },
           buyerDeposit: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.buyer_deposit,
           },
         };
@@ -724,18 +724,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller],
+              recipients: [users.seller],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -773,18 +773,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.deployer],
+              recipients: [users.deployer],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -826,14 +826,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 BN(constants.seller_deposit).div(BN(4)),
@@ -841,7 +841,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -888,14 +888,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 BN(constants.seller_deposit).div(BN(4)),
@@ -903,7 +903,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -950,21 +950,21 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller, users.buyer],
+              recipients: [users.seller, users.buyer],
               amounts: [
                 BN(constants.seller_deposit).div(BN(2)),
                 BN(constants.seller_deposit).div(BN(2)),
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -1007,18 +1007,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller],
+              recipients: [users.seller],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -1055,18 +1055,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.deployer],
+              recipients: [users.deployer],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -1106,14 +1106,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerAmount,
@@ -1121,7 +1121,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -1166,14 +1166,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerAmount,
@@ -1181,7 +1181,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -1226,21 +1226,21 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller, users.buyer],
+              recipients: [users.seller, users.buyer],
               amounts: [
                 expectedSellerAmount,
                 BN(constants.seller_deposit).div(2),
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -1287,18 +1287,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller],
+              recipients: [users.seller],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -1335,18 +1335,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.deployer],
+              recipients: [users.deployer],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -1386,14 +1386,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerAmount,
@@ -1401,7 +1401,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -1446,14 +1446,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerAmount,
@@ -1461,7 +1461,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -1506,21 +1506,21 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller, users.buyer],
+              recipients: [users.seller, users.buyer],
               amounts: [
                 expectedSellerAmount,
                 BN(constants.seller_deposit).div(2),
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -1842,14 +1842,14 @@ describe('Cashier withdrawals ', () => {
         // expected content of LOG_AMOUNT_DISTRIBUTION
         const paymentAmountDistribution = {
           payment: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.product_price,
           },
         };
 
         const depositAmountDistribution = {
           sellerDeposit: {
-            receivers: [users.buyer, users.seller, users.deployer],
+            recipients: [users.buyer, users.seller, users.deployer],
             amounts: [
               BN(constants.seller_deposit).div(2),
               expectedSellerDeposit,
@@ -1857,7 +1857,7 @@ describe('Cashier withdrawals ', () => {
             ],
           },
           buyerDeposit: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.buyer_deposit,
           },
         };
@@ -1901,21 +1901,21 @@ describe('Cashier withdrawals ', () => {
         // expected content of LOG_AMOUNT_DISTRIBUTION
         const paymentAmountDistribution = {
           payment: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.product_price,
           },
         };
 
         const depositAmountDistribution = {
           sellerDeposit: {
-            receivers: [users.seller, users.buyer],
+            recipients: [users.seller, users.buyer],
             amounts: [
               expectedSellerDeposit,
               BN(constants.seller_deposit).div(BN(2)),
             ],
           },
           buyerDeposit: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.buyer_deposit,
           },
         };
@@ -1964,18 +1964,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller],
+              recipients: [users.seller],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -2028,18 +2028,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.deployer],
+              recipients: [users.deployer],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -2090,14 +2090,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 BN(constants.seller_deposit).div(BN(4)),
@@ -2105,7 +2105,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -2152,14 +2152,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 BN(constants.seller_deposit).div(BN(4)),
@@ -2167,7 +2167,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -2221,21 +2221,21 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller, users.buyer],
+              recipients: [users.seller, users.buyer],
               amounts: [
                 BN(constants.seller_deposit).div(BN(2)),
                 BN(constants.seller_deposit).div(BN(2)),
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -2284,18 +2284,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller],
+              recipients: [users.seller],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -2336,18 +2336,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.deployer],
+              recipients: [users.deployer],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -2393,14 +2393,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -2408,7 +2408,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -2455,14 +2455,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -2470,7 +2470,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -2515,14 +2515,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -2530,7 +2530,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -2587,18 +2587,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller],
+              recipients: [users.seller],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -2653,18 +2653,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.deployer],
+              recipients: [users.deployer],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -2724,14 +2724,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -2739,7 +2739,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -2800,14 +2800,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -2815,7 +2815,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -2874,14 +2874,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -2889,7 +2889,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -3152,14 +3152,14 @@ describe('Cashier withdrawals ', () => {
         // expected content of LOG_AMOUNT_DISTRIBUTION
         const paymentAmountDistribution = {
           payment: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.product_price,
           },
         };
 
         const depositAmountDistribution = {
           sellerDeposit: {
-            receivers: [users.buyer, users.seller, users.deployer],
+            recipients: [users.buyer, users.seller, users.deployer],
             amounts: [
               BN(constants.seller_deposit).div(2),
               expectedSellerDeposit,
@@ -3167,7 +3167,7 @@ describe('Cashier withdrawals ', () => {
             ],
           },
           buyerDeposit: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.buyer_deposit,
           },
         };
@@ -3211,21 +3211,21 @@ describe('Cashier withdrawals ', () => {
         // expected content of LOG_AMOUNT_DISTRIBUTION
         const paymentAmountDistribution = {
           payment: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.product_price,
           },
         };
 
         const depositAmountDistribution = {
           sellerDeposit: {
-            receivers: [users.seller, users.buyer],
+            recipients: [users.seller, users.buyer],
             amounts: [
               expectedSellerDeposit,
               BN(constants.seller_deposit).div(BN(2)),
             ],
           },
           buyerDeposit: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.buyer_deposit,
           },
         };
@@ -3274,18 +3274,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller],
+              recipients: [users.seller],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -3338,18 +3338,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.deployer],
+              recipients: [users.deployer],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -3400,14 +3400,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 BN(constants.seller_deposit).div(BN(4)),
@@ -3415,7 +3415,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -3462,14 +3462,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 BN(constants.seller_deposit).div(BN(4)),
@@ -3477,7 +3477,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -3531,21 +3531,21 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller, users.buyer],
+              recipients: [users.seller, users.buyer],
               amounts: [
                 BN(constants.seller_deposit).div(BN(2)),
                 BN(constants.seller_deposit).div(BN(2)),
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -3594,18 +3594,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller],
+              recipients: [users.seller],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -3646,18 +3646,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.deployer],
+              recipients: [users.deployer],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -3703,14 +3703,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -3718,7 +3718,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -3765,14 +3765,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -3780,7 +3780,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -3825,14 +3825,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -3840,7 +3840,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -3897,18 +3897,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller],
+              recipients: [users.seller],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -3963,18 +3963,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.deployer],
+              recipients: [users.deployer],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -4034,14 +4034,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -4049,7 +4049,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -4110,14 +4110,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -4125,7 +4125,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -4184,14 +4184,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -4199,7 +4199,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -4467,14 +4467,14 @@ describe('Cashier withdrawals ', () => {
         // expected content of LOG_AMOUNT_DISTRIBUTION
         const paymentAmountDistribution = {
           payment: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.product_price,
           },
         };
 
         const depositAmountDistribution = {
           sellerDeposit: {
-            receivers: [users.buyer, users.seller, users.deployer],
+            recipients: [users.buyer, users.seller, users.deployer],
             amounts: [
               BN(constants.seller_deposit).div(2),
               expectedSellerDeposit,
@@ -4482,7 +4482,7 @@ describe('Cashier withdrawals ', () => {
             ],
           },
           buyerDeposit: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.buyer_deposit,
           },
         };
@@ -4531,21 +4531,21 @@ describe('Cashier withdrawals ', () => {
         // expected content of LOG_AMOUNT_DISTRIBUTION
         const paymentAmountDistribution = {
           payment: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.product_price,
           },
         };
 
         const depositAmountDistribution = {
           sellerDeposit: {
-            receivers: [users.seller, users.buyer],
+            recipients: [users.seller, users.buyer],
             amounts: [
               expectedSellerDeposit,
               BN(constants.seller_deposit).div(BN(2)),
             ],
           },
           buyerDeposit: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.buyer_deposit,
           },
         };
@@ -4590,18 +4590,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller],
+              recipients: [users.seller],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -4645,18 +4645,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.deployer],
+              recipients: [users.deployer],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -4707,14 +4707,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 BN(constants.seller_deposit).div(BN(4)),
@@ -4722,7 +4722,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -4774,14 +4774,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 BN(constants.seller_deposit).div(BN(4)),
@@ -4789,7 +4789,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -4839,21 +4839,21 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller, users.buyer],
+              recipients: [users.seller, users.buyer],
               amounts: [
                 BN(constants.seller_deposit).div(BN(2)),
                 BN(constants.seller_deposit).div(BN(2)),
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -4902,18 +4902,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller],
+              recipients: [users.seller],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -4959,18 +4959,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.deployer],
+              recipients: [users.deployer],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -5021,14 +5021,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -5036,7 +5036,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -5088,14 +5088,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -5103,7 +5103,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -5153,21 +5153,21 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller, users.buyer],
+              recipients: [users.seller, users.buyer],
               amounts: [
                 expectedSellerDeposit,
                 BN(constants.seller_deposit).div(2),
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -5220,18 +5220,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller],
+              recipients: [users.seller],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -5277,18 +5277,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.deployer],
+              recipients: [users.deployer],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -5339,14 +5339,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -5354,7 +5354,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -5406,14 +5406,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -5421,7 +5421,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -5471,21 +5471,21 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller, users.buyer],
+              recipients: [users.seller, users.buyer],
               amounts: [
                 expectedSellerDeposit,
                 BN(constants.seller_deposit).div(2),
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -5749,14 +5749,14 @@ describe('Cashier withdrawals ', () => {
         // expected content of LOG_AMOUNT_DISTRIBUTION
         const paymentAmountDistribution = {
           payment: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.product_price,
           },
         };
 
         const depositAmountDistribution = {
           sellerDeposit: {
-            receivers: [users.buyer, users.seller, users.deployer],
+            recipients: [users.buyer, users.seller, users.deployer],
             amounts: [
               BN(constants.seller_deposit).div(2),
               expectedSellerDeposit,
@@ -5764,7 +5764,7 @@ describe('Cashier withdrawals ', () => {
             ],
           },
           buyerDeposit: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.buyer_deposit,
           },
         };
@@ -5819,21 +5819,21 @@ describe('Cashier withdrawals ', () => {
         // expected content of LOG_AMOUNT_DISTRIBUTION
         const paymentAmountDistribution = {
           payment: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.product_price,
           },
         };
 
         const depositAmountDistribution = {
           sellerDeposit: {
-            receivers: [users.seller, users.buyer],
+            recipients: [users.seller, users.buyer],
             amounts: [
               expectedSellerDeposit,
               BN(constants.seller_deposit).div(BN(2)),
             ],
           },
           buyerDeposit: {
-            receiver: users.buyer,
+            recipient: users.buyer,
             amount: constants.buyer_deposit,
           },
         };
@@ -5880,18 +5880,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller],
+              recipients: [users.seller],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -5937,18 +5937,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.deployer],
+              recipients: [users.deployer],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -6001,14 +6001,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 BN(constants.seller_deposit).div(BN(4)),
@@ -6016,7 +6016,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -6074,14 +6074,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 BN(constants.seller_deposit).div(BN(4)),
@@ -6089,7 +6089,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -6145,21 +6145,21 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.seller,
+              recipient: users.seller,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller, users.buyer],
+              recipients: [users.seller, users.buyer],
               amounts: [
                 BN(constants.seller_deposit).div(BN(2)),
                 BN(constants.seller_deposit).div(BN(2)),
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -6210,18 +6210,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller],
+              recipients: [users.seller],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -6269,18 +6269,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.deployer],
+              recipients: [users.deployer],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -6333,14 +6333,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -6348,7 +6348,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -6406,14 +6406,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -6421,7 +6421,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -6477,21 +6477,21 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller, users.buyer],
+              recipients: [users.seller, users.buyer],
               amounts: [
                 expectedSellerDeposit,
                 BN(constants.seller_deposit).div(2),
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -6545,18 +6545,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller],
+              recipients: [users.seller],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -6604,18 +6604,18 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.deployer],
+              recipients: [users.deployer],
               amounts: [constants.seller_deposit],
             },
             buyerDeposit: {
-              receiver: users.deployer,
+              recipient: users.deployer,
               amount: constants.buyer_deposit,
             },
           };
@@ -6668,14 +6668,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -6683,7 +6683,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -6741,14 +6741,14 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.buyer, users.seller, users.deployer],
+              recipients: [users.buyer, users.seller, users.deployer],
               amounts: [
                 BN(constants.seller_deposit).div(2),
                 expectedSellerDeposit,
@@ -6756,7 +6756,7 @@ describe('Cashier withdrawals ', () => {
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
@@ -6812,21 +6812,21 @@ describe('Cashier withdrawals ', () => {
           // expected content of LOG_AMOUNT_DISTRIBUTION
           const paymentAmountDistribution = {
             payment: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.product_price,
             },
           };
 
           const depositAmountDistribution = {
             sellerDeposit: {
-              receivers: [users.seller, users.buyer],
+              recipients: [users.seller, users.buyer],
               amounts: [
                 expectedSellerDeposit,
                 BN(constants.seller_deposit).div(2),
               ],
             },
             buyerDeposit: {
-              receiver: users.buyer,
+              recipient: users.buyer,
               amount: constants.buyer_deposit,
             },
           };
