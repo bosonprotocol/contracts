@@ -722,13 +722,15 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
     {
         require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");
 
-        if (_to == Entity.ISSUER) {
-            vouchersStatus[_tokenIdVoucher].depositReleased.issuer = true;
-        } else if (_to == Entity.HOLDER) {
-            vouchersStatus[_tokenIdVoucher].depositReleased.holder = true;
-        } else {
-            vouchersStatus[_tokenIdVoucher].depositReleased.pool = true;
-        }
+        // if (_to == Entity.ISSUER) {
+        //     vouchersStatus[_tokenIdVoucher].depositReleased.issuer = true;
+        // } else if (_to == Entity.HOLDER) {
+        //     vouchersStatus[_tokenIdVoucher].depositReleased.holder = true;
+        // } else {
+        //     vouchersStatus[_tokenIdVoucher].depositReleased.pool = true;
+        // }
+
+        vouchersStatus[_tokenIdVoucher].depositReleased.status |= (ONE << uint8(_to));
 
         vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount = vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount.add(_amount);
 
@@ -745,13 +747,14 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
      * @param _to               recipient, one of {ISSUER, HOLDER, POOL}
      */
     function isDepositReleased(uint256 _tokenIdVoucher, Entity _to) external view override returns (bool){
-        if (_to == Entity.ISSUER) {
-            return vouchersStatus[_tokenIdVoucher].depositReleased.issuer;
-        } else if (_to == Entity.HOLDER) {
-            return vouchersStatus[_tokenIdVoucher].depositReleased.holder;
-        } else {
-            return vouchersStatus[_tokenIdVoucher].depositReleased.pool;
-        }
+        // if (_to == Entity.ISSUER) {
+        //     return vouchersStatus[_tokenIdVoucher].depositReleased.issuer;
+        // } else if (_to == Entity.HOLDER) {
+        //     return vouchersStatus[_tokenIdVoucher].depositReleased.holder;
+        // } else {
+        //     return vouchersStatus[_tokenIdVoucher].depositReleased.pool;
+        // }
+        return (vouchersStatus[_tokenIdVoucher].depositReleased.status >> uint8(_to)) & ONE == 1;
     }
 
     /**
