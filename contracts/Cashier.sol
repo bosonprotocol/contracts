@@ -372,17 +372,17 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
         //first, depositSe
         if (isStatus(_voucherDetails.currStatus.status, VoucherState.COMPLAIN)) {
             //slash depositSe
-            _amount = _amount.add(distributeIssuerDepositOnHolderComplain(_voucherDetails, _to));
+            _amount = distributeIssuerDepositOnHolderComplain(_voucherDetails, _to);
             _released = _amount > 0;
         } else if(_to != Entity.POOL) {
             if (                
                 isStatus(_voucherDetails.currStatus.status, VoucherState.CANCEL_FAULT)) {
                 //slash depositSe
-                _amount = _amount.add(distributeIssuerDepositOnIssuerCancel(_voucherDetails, _to));
+                _amount = distributeIssuerDepositOnIssuerCancel(_voucherDetails, _to);
                 _released = true;
             } else if (_to == Entity.ISSUER) {
                 //release depositSe
-                _amount = _amount.add(distributeFullIssuerDeposit(_voucherDetails));
+                _amount = distributeFullIssuerDeposit(_voucherDetails);
                 _released = true;
             }
             
