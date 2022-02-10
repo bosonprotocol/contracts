@@ -311,7 +311,11 @@ describe('VOUCHER KERNEL', () => {
         attackerInstance.setPaymentReleased(constants.ONE)
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
       await expect(
-        attackerInstance.setDepositsReleased(constants.ONE)
+        attackerInstance.setDepositsReleased(
+          constants.ONE,
+          constants.ONE,
+          constants.ONE
+        )
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_CASHIER);
       await expect(
         attackerInstance.setSupplyHolderOnTransfer(
@@ -630,7 +634,11 @@ describe('VOUCHER KERNEL', () => {
 
       it('[NEGATIVE] Should revert if setDepositReleased voucher id is zero', async () => {
         await expect(
-          contractVoucherKernel.setDepositsReleased(constants.ZERO)
+          contractVoucherKernel.setDepositsReleased(
+            constants.ZERO,
+            constants.ONE,
+            constants.ONE
+          )
         ).to.be.revertedWith(revertReasons.UNSPECIFIED_ID);
       });
     });

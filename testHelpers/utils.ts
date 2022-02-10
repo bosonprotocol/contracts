@@ -1,6 +1,12 @@
 import {ethers} from 'hardhat';
 import {ecsign} from 'ethereumjs-util';
-import {BigNumber, Contract, ContractTransaction, Signer} from 'ethers';
+import {
+  BigNumber,
+  BigNumberish,
+  Contract,
+  ContractTransaction,
+  Signer,
+} from 'ethers';
 import {Account, DistributionAmounts, DistributionEvent} from './types';
 
 import * as events from './events';
@@ -764,6 +770,17 @@ class Utils {
   ): Promise<ContractTransaction> {
     const deployerInstance = this.contractCashier.connect(deployer) as Cashier;
     const tx = await deployerInstance.withdraw(voucherID);
+
+    return tx;
+  }
+
+  async withdrawSingle(
+    voucherID: string,
+    entity: BigNumberish,
+    deployer: Signer
+  ): Promise<ContractTransaction> {
+    const deployerInstance = this.contractCashier.connect(deployer) as Cashier;
+    const tx = await deployerInstance.withdrawSingle(voucherID, entity);
 
     return tx;
   }
