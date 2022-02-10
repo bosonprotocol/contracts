@@ -407,7 +407,11 @@ describe('Cashier withdrawals ', () => {
               // after withdraw is called, all withdrawSingle should revert
               for (const entityIndex in Object.values(Entity)) {
                 await expect(
-                  utils.withdrawSingle(voucherID, entityIndex, users.deployer.signer)
+                  utils.withdrawSingle(
+                    voucherID,
+                    entityIndex,
+                    users.deployer.signer
+                  )
                 ).to.be.revertedWith(revertReasons.NOTHING_TO_WITHDRAW);
               }
             } else {
