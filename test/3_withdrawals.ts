@@ -42,6 +42,12 @@ let TOKEN_SUPPLY_ID;
 
 let users;
 
+const Entity = {
+  ISSUER: 0,
+  HOLDER: 1,
+  POOL: 2,
+};
+
 describe('Cashier withdrawals ', () => {
   before(async () => {
     const signers: Signer[] = await ethers.getSigners();
@@ -397,6 +403,13 @@ describe('Cashier withdrawals ', () => {
                 );
               }
               paymentWithdrawn = true;
+
+              // after withdraw is called, all withdrawSingle should revert
+              for (const entityIndex in Object.values(Entity)) {
+                await expect(
+                  utils.withdrawSingle(voucherID, entityIndex, users.deployer.signer)
+                ).to.be.revertedWith(revertReasons.NOTHING_TO_WITHDRAW);
+              }
             } else {
               await expect(
                 utils.withdraw(voucherID, users.deployer.signer)
@@ -507,6 +520,13 @@ describe('Cashier withdrawals ', () => {
             ),
             `Escrow Amount is not as expected. Withdraws after "${withdrawsAfter}"`
           );
+        }
+
+        // after withdraw is called, all withdrawSingle should revert
+        for (const entityIndex in Object.values(Entity)) {
+          await expect(
+            utils.withdrawSingle(voucherID, entityIndex, users.deployer.signer)
+          ).to.be.revertedWith(revertReasons.NOTHING_TO_WITHDRAW);
         }
 
         // revert to state before path was executed

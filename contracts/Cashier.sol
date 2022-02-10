@@ -379,7 +379,7 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
                 isStatus(_voucherDetails.currStatus.status, VoucherState.CANCEL_FAULT)) {
                 //slash depositSe
                 _amount = distributeIssuerDepositOnIssuerCancel(_voucherDetails, _to);
-            } else if (_to == Entity.ISSUER) {
+            } else if (_to == Entity.ISSUER) { // happy path, seller gets the whole seller deposit
                 //release depositSe
                 _amount = distributeFullIssuerDeposit(_voucherDetails);
             }
@@ -417,7 +417,7 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
      * @param _amount        amount to be released from escrow
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
      */
-    function reduceEscrowAmountDeposits(PaymentMethod _paymentMethod, address _entity, uint256 _amount, uint256 _tokenIdSupply) internal {
+    function reduceEscrowAmount(PaymentMethod _paymentMethod, PaymentType _paymentType, address _entity, uint256 _amount, uint256 _tokenIdSupply) internal {
             if (
                 _paymentMethod == PaymentMethod.ETHETH ||
                 _paymentMethod == PaymentMethod.TKNETH
@@ -430,14 +430,18 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
                 _paymentMethod == PaymentMethod.ETHTKN ||
                 _paymentMethod == PaymentMethod.TKNTKN
             ) {
-                address addressTokenDeposits =
+
+                address tokenAddress = _paymentType == PaymentType.PAYMENT ?
+                                    IVoucherKernel(voucherKernel).getVoucherPriceToken(
+                        _tokenIdSupply
+                    ) :
                     IVoucherKernel(voucherKernel).getVoucherDepositToken(
                         _tokenIdSupply
                     );
 
-                escrowTokens[addressTokenDeposits][
+                escrowTokens[tokenAddress][
                     _entity
-                ] = escrowTokens[addressTokenDeposits][_entity]
+                ] = escrowTokens[tokenAddress][_entity]
                     .sub(_amount);
             }
     }

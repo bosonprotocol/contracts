@@ -423,7 +423,7 @@ describe('Cashier withdrawals ', () => {
                 }
                 paymentWithdrawn = true;
 
-                // trying to withdraw agains should revert
+                // trying to withdraw again should revert
                 await expect(
                   utils.withdrawSingle(
                     voucherID,
@@ -550,6 +550,15 @@ describe('Cashier withdrawals ', () => {
                 }
               );
             }
+
+            // trying to withdraw again should revert
+            await expect(
+              utils.withdrawSingle(
+                voucherID,
+                entityIndex,
+                users.deployer.signer
+              )
+            ).to.be.revertedWith(revertReasons.NOTHING_TO_WITHDRAW);
           } else {
             await expect(
               utils.withdrawSingle(
