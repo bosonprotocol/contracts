@@ -417,7 +417,7 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
      * @param _amount        amount to be released from escrow
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
      */
-    function reduceEscrowAmount(PaymentMethod _paymentMethod, PaymentType _paymentType, address _entity, uint256 _amount, uint256 _tokenIdSupply) internal {
+    function reduceEscrowAmountDeposits(PaymentMethod _paymentMethod, PaymentType _paymentType, address _entity, uint256 _amount, uint256 _tokenIdSupply) internal {
             if (
                 _paymentMethod == PaymentMethod.ETHETH ||
                 _paymentMethod == PaymentMethod.TKNETH
