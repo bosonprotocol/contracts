@@ -1,9 +1,6 @@
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract} from 'ethers';
 
-import {waffle} from 'hardhat';
-import IVK from '../artifacts/contracts/interfaces/IVoucherKernel.sol/IVoucherKernel.json';
-
 import {assert, expect} from 'chai';
 
 import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
@@ -382,8 +379,9 @@ describe('Cashier withdrawals ', () => {
               ) {
                 // if withdraw is called first time in the subscernario, it should emit event, and change state
                 // withdraw should release payments
-                const withdrawTx = await utils.withdraw(
+                const withdrawTx = await utils.withdrawSingle(
                   voucherID,
+                  entityIndex,
                   users.deployer.signer
                 );
 
@@ -424,6 +422,15 @@ describe('Cashier withdrawals ', () => {
                   );
                 }
                 paymentWithdrawn = true;
+
+                // trying to withdraw agains should revert
+                await expect(
+                  utils.withdrawSingle(
+                    voucherID,
+                    entityIndex,
+                    users.deployer.signer
+                  )
+                ).to.be.revertedWith(revertReasons.NOTHING_TO_WITHDRAW);
               } else {
                 await expect(
                   utils.withdrawSingle(
@@ -461,7 +468,10 @@ describe('Cashier withdrawals ', () => {
 
         for (const [entity, entityIndex] of Object.entries(Entity)) {
           if (
-            isEntityRecipient([...depositRecipients, ...paymentRecipients], entity)
+            isEntityRecipient(
+              [...depositRecipients, ...paymentRecipients],
+              entity
+            )
           ) {
             const withdrawTx = await utils.withdrawSingle(
               voucherID,

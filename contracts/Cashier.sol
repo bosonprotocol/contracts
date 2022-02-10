@@ -373,17 +373,15 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
         if (isStatus(_voucherDetails.currStatus.status, VoucherState.COMPLAIN)) {
             //slash depositSe
             _amount = distributeIssuerDepositOnHolderComplain(_voucherDetails, _to);
-            _released = _amount > 0;
+            
         } else if(_to != Entity.POOL) {
             if (                
                 isStatus(_voucherDetails.currStatus.status, VoucherState.CANCEL_FAULT)) {
                 //slash depositSe
                 _amount = distributeIssuerDepositOnIssuerCancel(_voucherDetails, _to);
-                _released = true;
             } else if (_to == Entity.ISSUER) {
                 //release depositSe
                 _amount = distributeFullIssuerDeposit(_voucherDetails);
-                _released = true;
             }
             
         }
@@ -396,13 +394,13 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
             //release depositBu
             if (_to == Entity.HOLDER) {
             _amount = _amount.add(distributeFullHolderDeposit(_voucherDetails));
-            _released = true;
             }
         } else if (_to == Entity.POOL){
             //slash depositBu
             _amount = _amount.add(distributeHolderDepositOnNotRedeemedNotCancelled(_voucherDetails));
-            _released = true;
         }
+
+        _released = _amount > 0;
 
         IVoucherKernel(voucherKernel).setDepositsReleased(
             _voucherDetails.tokenIdVoucher, _to, _amount
@@ -410,6 +408,15 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
 
     }
 
+    /**
+     * @notice Release of deposits, for a voucher which deposits had not been released already, and had been marked as `finalized`
+     * Based on the voucher status(e.g. complained, redeemed, refunded, etc), the voucher deposits will be sent to either buyer, seller, or pool owner.
+     * Depending on the payment type (e.g ETH, or Token) escrow funds will be held in the `escrow` || escrowTokens mappings
+     * @param _paymentMethod payment method that should be used to determine, how to do the payouts
+     * @param _entity        address which ecrows is reduced
+     * @param _amount        amount to be released from escrow
+     * @param _tokenIdSupply an ID of a supply token (ERC-1155) which will be burned and deposits will be returned for
+     */
     function reduceEscrowAmountDeposits(PaymentMethod _paymentMethod, address _entity, uint256 _amount, uint256 _tokenIdSupply) internal {
             if (
                 _paymentMethod == PaymentMethod.ETHETH ||
@@ -505,7 +512,7 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
                 _voucherDetails.depositSe.div(CANCELFAULT_SPLIT)
             );
             recipient = _voucherDetails.holder;
-        } else if (_to == Entity.ISSUER) {  //Se gets, say, a quarter
+        } else if (_to == Entity.ISSUER) {  //Se gets, say, a half
             toDistribute = _voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
             recipient = _voucherDetails.issuer;
         } 
