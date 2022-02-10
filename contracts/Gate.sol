@@ -5,6 +5,7 @@ pragma solidity 0.7.6;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "./interfaces/IGate.sol";
+import ".//UsingHelpers.sol";
 
 /**
  * @notice Gate contract between Boson router for conditional commits
@@ -16,7 +17,8 @@ import "./interfaces/IGate.sol";
 
 
 interface Token {
-    function balanceOf(address account) external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256); //ERC-721 and ERC-20
+    function ownerOf(uint256 _tokenId) external view returns (address); //ERC-721
 }
 
 interface MultiToken {
@@ -25,7 +27,12 @@ interface MultiToken {
 
 contract Gate is IGate, Ownable, Pausable {
 
-    enum TokenType {TOKEN, MULTI_TOKEN} // ERC20 & ERC721 = TOKEN, ERC1155 = MULTI_TOKEN
+    enum TokenType {FUNGIBLE_TOKEN, NONFUNGIBLE_TOKEN, MULTI_TOKEN} // ERC20, ERC721, ERC1155
+
+    struct ConditionalCommitInfo {
+        uint256 conditionalTokenId;
+        Condition condition;
+    }
 
     event LogConditionalContractSet(
         address indexed _conditionalToken,
@@ -40,7 +47,8 @@ contract Gate is IGate, Ownable, Pausable {
 
     event LogVoucherSetRegistered(
         uint256 indexed _tokenIdSupply,
-        uint256 indexed _conditionalTokenId
+        uint256 indexed _conditionalTokenId,
+        Condition _condition
     );
 
     event LogUserVoucherDeactivated(
@@ -48,7 +56,7 @@ contract Gate is IGate, Ownable, Pausable {
         uint256 indexed _tokenIdSupply
     );
 
-    mapping(uint256 => uint256) private voucherSetToToken;
+    mapping(uint256 => ConditionalCommitInfo) private voucherSetToConditionalCommit;
     mapping(address => mapping(uint256 => bool)) private isDeactivated; // user => voucherSet => bool
 
     TokenType private conditionalTokenType;
@@ -96,12 +104,17 @@ contract Gate is IGate, Ownable, Pausable {
     }
 
     /**
-     * @notice If conditional token is MultiToken type, which token is associated with a give voucherset
+     * @notice Get the token ID and Condition associated with the supply token ID (voucherSetID)
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
-     * @return conditional token ID or zero if conditional token is not MultiToken
+     * @return conditional token ID if one is associated with a voucher set. Zero could be a valid token ID
+     * @return condition that will be checked when a user commits using a conditional token
      */
-    function getConditionalTokenId(uint256 _tokenIdSupply) external view returns (uint256) {
-        return voucherSetToToken[_tokenIdSupply];
+    function getConditionalCommitInfo(uint256 _tokenIdSupply) external view returns (uint256, Condition) {
+        ConditionalCommitInfo memory conditionalCommitInfo = voucherSetToConditionalCommit[_tokenIdSupply];
+        return (
+            conditionalCommitInfo.conditionalTokenId,
+            conditionalCommitInfo.condition
+        );
     }
 
     /**
@@ -151,8 +164,9 @@ contract Gate is IGate, Ownable, Pausable {
      *
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
      * @param _conditionalTokenId an ID of a conditional token
+     * @param _condition condition that will be checked when a user commits using a conditional token
      */
-    function registerVoucherSetId(uint256 _tokenIdSupply, uint256 _conditionalTokenId)
+    function registerVoucherSetId(uint256 _tokenIdSupply, uint256 _conditionalTokenId, Condition _condition)
         external
         override
         whenNotPaused
@@ -160,10 +174,14 @@ contract Gate is IGate, Ownable, Pausable {
     {
         require(_conditionalTokenId != 0, "TOKEN_ID_0_NOT_ALLOWED");
         require(_tokenIdSupply != 0, "INVALID_TOKEN_SUPPLY");
+        
+        if(_condition == Condition.OWNERSHIP) {
+            require(conditionalTokenType == TokenType.NONFUNGIBLE_TOKEN, "CONDITION_NOT_AVAILABLE_FOR_TOKEN_TYPE");
+        }
 
-        voucherSetToToken[_tokenIdSupply] = _conditionalTokenId;
+        voucherSetToConditionalCommit[_tokenIdSupply] = ConditionalCommitInfo(_conditionalTokenId, _condition);
 
-        emit LogVoucherSetRegistered(_tokenIdSupply, _conditionalTokenId);
+        emit LogVoucherSetRegistered(_tokenIdSupply, _conditionalTokenId, _condition);
     }
 
     /**
@@ -178,13 +196,11 @@ contract Gate is IGate, Ownable, Pausable {
         override
         returns (bool)
     {
-        uint256 conditionalTokenId = voucherSetToToken[_tokenIdSupply];
-        return
-            !isDeactivated[_user][_tokenIdSupply] &&
-            ((conditionalTokenType == TokenType.TOKEN)
-                ? Token(conditionalTokenContract).balanceOf(_user)
-                : MultiToken(conditionalTokenContract).balanceOf(_user, conditionalTokenId)
-            ) > 0;
+       ConditionalCommitInfo memory conditionalCommitInfo = voucherSetToConditionalCommit[_tokenIdSupply];
+    
+        return conditionalCommitInfo.condition == Condition.OWNERSHIP
+                ? checkOwnership(_user, conditionalCommitInfo.conditionalTokenId)
+                : checkBalance(_user, conditionalCommitInfo.conditionalTokenId);
     }
 
     /**
@@ -216,5 +232,44 @@ contract Gate is IGate, Ownable, Pausable {
     function unpause() external onlyOwner {
         _unpause();
     }
+
+    /**
+     * @notice Checks if user possesses the required balance of the conditional token for given voucher set
+     * @param _user user address
+     * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
+     * @return true if user possesses conditional token, and the token is not deactivated
+     */
+    function checkBalance(address _user, uint256 _tokenIdSupply)
+        internal
+        view
+        returns (bool)
+    {
+        ConditionalCommitInfo memory conditionalCommitInfo = voucherSetToConditionalCommit[_tokenIdSupply];
+        return
+            !isDeactivated[_user][_tokenIdSupply] &&
+            ((conditionalTokenType == TokenType.NONFUNGIBLE_TOKEN || conditionalTokenType == TokenType.FUNGIBLE_TOKEN)
+                ? Token(conditionalTokenContract).balanceOf(_user)
+                : MultiToken(conditionalTokenContract).balanceOf(_user, conditionalCommitInfo.conditionalTokenId)
+            ) > 0;
+    }
+
+     /**
+     * @notice Checks if user owns a specific token Id. Only for ERC-721 tokens
+     * @param _user user address
+     * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
+     * @return true if user possesses conditional token, and the token is not deactivated
+     */
+    function checkOwnership(address _user, uint256 _tokenIdSupply)
+        internal
+        view
+        returns (bool)
+    {
+        ConditionalCommitInfo memory conditionalCommitInfo = voucherSetToConditionalCommit[_tokenIdSupply];
+        return
+            !isDeactivated[_user][_tokenIdSupply] &&
+            (Token(conditionalTokenContract).ownerOf(conditionalCommitInfo.conditionalTokenId) == _user);
+         
+    }
+        
 
 }
