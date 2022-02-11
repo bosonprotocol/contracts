@@ -21,6 +21,8 @@ jobs:
         run: npm install
       - name: Compile Contracts
         run: npm run contracts:compile
+      - name: Set NODE_OPTIONS
+        run: export NODE_OPTIONS=--max_old_space_size=4096
       - name: Code Coverage
         run: npm run tests:coverage
       - name: Check Code Coverage
