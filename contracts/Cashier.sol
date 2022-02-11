@@ -512,7 +512,7 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
                 _voucherDetails.depositSe.div(CANCELFAULT_SPLIT)
             );
             recipient = _voucherDetails.holder;
-        } else if (_to == Entity.ISSUER) {  //Se gets, say, a half
+        } else {  //Se gets, say, a half
             toDistribute = _voucherDetails.depositSe.div(CANCELFAULT_SPLIT);
             recipient = _voucherDetails.issuer;
         } 
