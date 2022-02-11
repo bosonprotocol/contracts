@@ -2,7 +2,7 @@ name: Code Coverage Check
 
 on:
   push:
-    branches: [ refactor-withdraw_code_coverage_check ]
+    branches: [ main ]
 jobs:
   test:
     runs-on: ubuntu-latest
