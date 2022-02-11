@@ -22,7 +22,9 @@ jobs:
       - name: Compile Contracts
         run: npm run contracts:compile
       - name: Set NODE_OPTIONS
-        run: export NODE_OPTIONS=--max_old_space_size=4096
+        run: export NODE_OPTIONS=--max_old_space_size=8192
+      - name: Get NODE_OPTIONS
+        run: echo $NODE_OPTIONS
       - name: Code Coverage
         run: npm run tests:coverage
       - name: Check Code Coverage
