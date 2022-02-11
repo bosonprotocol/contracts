@@ -9,6 +9,7 @@ jobs:
     env:
       PROTOCOL_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
       CC_TOKEN_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
+      NODE_OPTIONS: --max_old_space_size=8192
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -21,8 +22,6 @@ jobs:
         run: npm install
       - name: Compile Contracts
         run: npm run contracts:compile
-      - name: Set NODE_OPTIONS
-        run: export NODE_OPTIONS=--max_old_space_size=8192
       - name: Get NODE_OPTIONS
         run: echo $NODE_OPTIONS
       - name: Code Coverage
