@@ -28,6 +28,8 @@ interface ICashier {
      */
     function withdraw(uint256 _tokenIdVoucher) external;
 
+    function withdrawSingle(uint256 _tokenIdVoucher, Entity _to) external;
+
     /**
      * @notice External function for withdrawing deposits. Caller must be the seller of the goods, otherwise reverts.
      * @notice Seller triggers withdrawals of remaining deposits for a given supply, in case the voucher set is no longer in exchange.

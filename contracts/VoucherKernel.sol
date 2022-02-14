@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./interfaces/IVoucherSets.sol";
 import "./interfaces/IVouchers.sol";
 import "./interfaces/IVoucherKernel.sol";
-import {PaymentMethod, VoucherState, VoucherStatus, isStateCommitted, isStateRedemptionSigned, isStateRefunded, isStateExpired, isStatus, determineStatus} from "./UsingHelpers.sol";
+import {Entity, PaymentMethod, VoucherState, VoucherStatus, isStateCommitted, isStateRedemptionSigned, isStateRefunded, isStateExpired, isStatus, determineStatus} from "./UsingHelpers.sol";
 
 /**
  * @title VoucherKernel contract controls the core business logic
@@ -720,16 +720,33 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
     /**
      * @notice Mark voucher token that the deposits were released
      * @param _tokenIdVoucher   ID of the voucher token
+     * @param _to               recipient, one of {ISSUER, HOLDER, POOL}
+     * @param _amount           amount that was released in the transaction
      */
-    function setDepositsReleased(uint256 _tokenIdVoucher)
+    function setDepositsReleased(uint256 _tokenIdVoucher, Entity _to, uint256 _amount)
         external
         override
         onlyFromCashier
     {
         require(_tokenIdVoucher != 0, "UNSPECIFIED_ID");
-        vouchersStatus[_tokenIdVoucher].isDepositsReleased = true;
 
-        emit LogFundsReleased(_tokenIdVoucher, 1);
+        vouchersStatus[_tokenIdVoucher].depositReleased.status |= (ONE << uint8(_to));
+
+        vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount = vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount.add(_amount);
+
+        if (vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount == getTotalDeposits(_tokenIdVoucher)) {
+            vouchersStatus[_tokenIdVoucher].isDepositsReleased = true;
+            emit LogFundsReleased(_tokenIdVoucher, 1); 
+        }        
+    }
+
+    /**
+     * @notice Tells if part of the deposit, belonging to entity, was released already
+     * @param _tokenIdVoucher   ID of the voucher token
+     * @param _to               recipient, one of {ISSUER, HOLDER, POOL}
+     */
+    function isDepositReleased(uint256 _tokenIdVoucher, Entity _to) external view override returns (bool){
+        return (vouchersStatus[_tokenIdVoucher].depositReleased.status >> uint8(_to)) & ONE == 1;
     }
 
     /**
@@ -1009,6 +1026,17 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
             promises[promiseKey].depositSe,
             promises[promiseKey].depositBu
         );
+    }
+
+    function getTotalDeposits(uint256 _tokenIdSupply)
+        internal
+        view
+        returns (
+            uint256
+        )
+    {
+        bytes32 promiseKey = ordersPromise[_tokenIdSupply];
+        return promises[promiseKey].depositSe.add(promises[promiseKey].depositBu);
     }
 
     /**

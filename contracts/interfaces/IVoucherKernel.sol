@@ -59,8 +59,23 @@ interface IVoucherKernel {
     /**
      * @notice Mark voucher token that the deposits were released
      * @param _tokenIdVoucher   ID of the voucher token
+     * @param _to               recipient, one of {ISSUER, HOLDER, POOL}
+     * @param _amount           amount that was released in the transaction
      */
-    function setDepositsReleased(uint256 _tokenIdVoucher) external;
+    function setDepositsReleased(
+        uint256 _tokenIdVoucher,
+        Entity _to,
+        uint256 _amount
+    ) external;
+
+    /**
+     * @notice Tells if part of the deposit, belonging to entity, was released already
+     * @param _tokenIdVoucher   ID of the voucher token
+     * @param _to               recipient, one of {ISSUER, HOLDER, POOL}
+     */
+    function isDepositReleased(uint256 _tokenIdVoucher, Entity _to)
+        external
+        returns (bool);
 
     /**
      * @notice Redemption of the vouchers promise
