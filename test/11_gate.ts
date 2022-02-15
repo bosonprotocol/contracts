@@ -48,12 +48,12 @@ const runs = [
   {
     name: 'ERC20 Standard Fungible Token',
     token: conditionalTokens.ERC20,
-    type: constants.TOKEN_TYPE.TOKEN,
+    type: constants.TOKEN_TYPE.FUNGIBLE_TOKEN,
   },
   {
     name: 'ERC721 Standard Non-fungible Token',
     token: conditionalTokens.ERC721,
-    type: constants.TOKEN_TYPE.TOKEN,
+    type: constants.TOKEN_TYPE.FUNGIBLE_TOKEN,
   },
   {
     name: 'ERC1155 Standard MultiToken',
@@ -269,7 +269,7 @@ describe('Gate contract', async () => {
         await contractGate.pause();
         await contractGate.setConditionalTokenContract(
           contractMockERC20.address,
-          constants.TOKEN_TYPE.TOKEN
+          constants.TOKEN_TYPE.FUNGIBLE_TOKEN
         );
         await contractGate.unpause();
 
@@ -282,7 +282,7 @@ describe('Gate contract', async () => {
         await contractGate.pause();
         await contractGate.setConditionalTokenContract(
           contractMockERC721.address,
-          constants.TOKEN_TYPE.TOKEN
+          constants.TOKEN_TYPE.NONFUNGIBLE_TOKEN
         );
         await contractGate.unpause();
 
@@ -315,7 +315,9 @@ describe('Gate contract', async () => {
 
   async function registerVoucherSetIdFromBosonProtocol(
     gate,
-    conditionalOrderNftTokenID
+    conditionalOrderConditionalTokenID,
+    conditionalOrderCondition,
+    registerConditionalCommit
   ) {
     await contractERC1155NonTransferable.mint(
       users.buyer.address,
@@ -377,7 +379,9 @@ describe('Gate contract', async () => {
       constants.buyer_deposit,
       constants.QTY_10,
       gate,
-      conditionalOrderNftTokenID,
+      conditionalOrderConditionalTokenID,
+      conditionalOrderCondition,
+      registerConditionalCommit,
       true
     );
 
@@ -423,25 +427,59 @@ describe('Gate contract', async () => {
       expect(response[1]).to.equal(constants.TOKEN_TYPE.MULTI_TOKEN);
     });
 
-    it('Owner should be able to register voucher set id', async () => {
+    it('Owner should be able to register voucher set id with conditional token Id > 0', async () => {
       expect(
         await contractGate.registerVoucherSetId(
           constants.VOUCHER_SET_ID,
-          constants.CONDITIONAL_TOKEN_ID
+          constants.CONDITIONAL_TOKEN_ID,
+          constants.CONDITION.BALANCE
         )
       )
         .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
-        .withArgs(constants.VOUCHER_SET_ID, constants.CONDITIONAL_TOKEN_ID);
+        .withArgs(constants.VOUCHER_SET_ID, constants.CONDITIONAL_TOKEN_ID, constants.CONDITION.BALANCE);
     });
 
-    it('One should be able to get conditional token id associated with voucher set', async () => {
+    it('Owner should be able to register voucher set id with conditional token Id = 0', async () => {
+      expect(
+        await contractGate.registerVoucherSetId(
+          constants.VOUCHER_SET_ID,
+          constants.EMPTY_CONDITIONAL_TOKEN_ID,
+          constants.CONDITION.BALANCE
+        )
+      )
+        .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
+        .withArgs(constants.VOUCHER_SET_ID, constants.EMPTY_CONDITIONAL_TOKEN_ID, constants.CONDITION.BALANCE);
+    });
+
+    it('Owner should be able to register voucher set id with condition OWNERSHIP if token is ERC721', async () => {
+      await contractGate.pause();
+      await contractGate.setConditionalTokenContract(
+        contractMockERC721.address,
+        constants.TOKEN_TYPE.NONFUNGIBLE_TOKEN
+      );
+      await contractGate.unpause();
+
+      expect(
+        await contractGate.registerVoucherSetId(
+          constants.VOUCHER_SET_ID,
+          constants.CONDITIONAL_TOKEN_ID,
+          constants.CONDITION.OWNERSHIP
+        )
+      )
+        .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
+        .withArgs(constants.VOUCHER_SET_ID, constants.CONDITIONAL_TOKEN_ID, constants.CONDITION.OWNERSHIP);
+    });
+
+    it('One should be able to get conditional commit info associated with voucher set', async () => {
       await contractGate.registerVoucherSetId(
         constants.VOUCHER_SET_ID,
-        constants.CONDITIONAL_TOKEN_ID
+        constants.CONDITIONAL_TOKEN_ID,
+        constants.CONDITION.BALANCE
       );
-      expect(
-        await contractGate.getConditionalTokenId(constants.VOUCHER_SET_ID)
-      ).to.equal(constants.CONDITIONAL_TOKEN_ID);
+
+      const response = await contractGate.getConditionalCommitInfo(constants.VOUCHER_SET_ID);
+      expect(response[0]).to.equal(constants.CONDITIONAL_TOKEN_ID);
+      expect(response[1]).to.equal(constants.CONDITION.BALANCE);
     });
 
     it('Owner should be able to pause', async () => {
@@ -470,7 +508,8 @@ describe('Gate contract', async () => {
           .connect(users.attacker.signer)
           .registerVoucherSetId(
             constants.VOUCHER_SET_ID,
-            constants.CONDITIONAL_TOKEN_ID
+            constants.CONDITIONAL_TOKEN_ID,
+            constants.CONDITION.BALANCE
           )
       ).to.be.revertedWith(revertReasons.PAUSED);
 
@@ -503,6 +542,8 @@ describe('Gate contract', async () => {
       ).to.be.revertedWith(''); // No revert reason, if argument is not in valid range for enum, solidity reverts
     });
 
+  
+
     it('[NEGATIVE][setConditionalTokenContract] Should revert if executed by attacker', async () => {
       await expect(
         contractGate
@@ -520,33 +561,60 @@ describe('Gate contract', async () => {
           .connect(users.attacker.signer)
           .registerVoucherSetId(
             constants.VOUCHER_SET_ID,
-            constants.CONDITIONAL_TOKEN_ID
+            constants.CONDITIONAL_TOKEN_ID,
+            constants.CONDITION.BALANCE
           )
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER_OR_ROUTER);
     });
 
-    it('[NEGATIVE][registerVoucherSetId] Should revert if conditionalTokenId id is zero', async () => {
-      const conditionalTokenId = 0;
-      await expect(
-        contractGate.registerVoucherSetId(
-          constants.VOUCHER_SET_ID,
-          conditionalTokenId
-        )
-      ).to.be.revertedWith(revertReasons.TOKEN_ID_0_NOT_ALLOWED);
-    });
 
-    it('[NEGATIVE][registerVoucherSetId] Should revert if constants.VOUCHER_SET_ID id is zero', async () => {
+    it('[NEGATIVE][registerVoucherSetId] Should revert if voucher set id is zero', async () => {
       const voucherSetId = 0;
 
       await expect(
         contractGate.registerVoucherSetId(
           voucherSetId,
-          constants.CONDITIONAL_TOKEN_ID
+          constants.CONDITIONAL_TOKEN_ID,
+          constants.CONDITION.BALANCE
         )
       ).to.be.revertedWith(revertReasons.INVALID_TOKEN_SUPPLY);
     });
 
-    it('[NEGATIVE][check] Should return false if constants.VOUCHER_SET_ID is not registered', async () => {
+    it('[NEGATIVE][registerVoucherSetId] Should revert if supplied invalid condition type', async () => {
+      await expect(
+        contractGate.registerVoucherSetId(
+          constants.VOUCHER_SET_ID,
+          constants.CONDITIONAL_TOKEN_ID,
+          constants.CONDITION.INVALID
+        )
+      ).to.be.revertedWith(''); // No revert reason, if argument is not in valid range for enum, solidity reverts
+    });
+
+    it('[NEGATIVE][registerVoucherSetId] Should revert if OWNERSHIP is specified with conditional token type other than ERC721', async () => {
+      //ERC1155
+      await expect(
+        contractGate.registerVoucherSetId(
+          constants.VOUCHER_SET_ID,
+          constants.CONDITIONAL_TOKEN_ID,
+          constants.CONDITION.OWNERSHIP
+        )
+      ).to.be.revertedWith(revertReasons.CONDITION_NOT_AVAILABLE_FOR_TOKEN_TYPE);
+
+      await contractGate.pause();
+      await contractGate.setConditionalTokenContract(contractMockERC20.address, constants.TOKEN_TYPE.FUNGIBLE_TOKEN);
+      await contractGate.unpause();
+
+      //ERC20
+      await expect(
+        contractGate.registerVoucherSetId(
+          constants.VOUCHER_SET_ID,
+          constants.CONDITIONAL_TOKEN_ID,
+          constants.CONDITION.OWNERSHIP
+        )
+      ).to.be.revertedWith(revertReasons.CONDITION_NOT_AVAILABLE_FOR_TOKEN_TYPE);
+    });
+
+    it('[NEGATIVE][check] Should return false if voucher set id is not registered', async () => {
       await contractERC1155NonTransferable.mint(
         users.other1.address,
         constants.CONDITIONAL_TOKEN_ID,
@@ -586,7 +654,8 @@ describe('Gate contract', async () => {
           if (run.type === constants.TOKEN_TYPE.MULTI_TOKEN) {
             await contractGate.registerVoucherSetId(
               constants.VOUCHER_SET_ID,
-              constants.CONDITIONAL_TOKEN_ID
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
             );
           }
 
@@ -612,6 +681,7 @@ describe('Gate contract', async () => {
               constants.VOUCHER_SET_ID
             )
           ).to.be.false;
+
         });
       });
     });
@@ -720,30 +790,30 @@ describe('Gate contract', async () => {
     describe('Voucher set registered by Boson protocol', () => {
       it('Boson router should be able to deactivate voucher set id', async () => {
         const {tokenId, conditionalTokenId} =
-          await registerVoucherSetIdFromBosonProtocol(contractGate, 0);
+          await registerVoucherSetIdFromBosonProtocol(contractGate, 0, constants.CONDITION.BALANCE, false);
 
-        await contractGate.registerVoucherSetId(tokenId, conditionalTokenId);
+          await contractGate.registerVoucherSetId(tokenId, conditionalTokenId, constants.CONDITION.BALANCE);
 
-        expect(await contractGate.check(users.buyer.address, tokenId)).to.be
-          .true;
+          expect(await contractGate.check(users.buyer.address, tokenId)).to.be
+            .true;
 
-        await utils.commitToBuy(
-          users.buyer,
-          users.seller,
-          tokenId,
-          constants.product_price,
-          constants.buyer_deposit
-        );
+          await utils.commitToBuy(
+            users.buyer,
+            users.seller,
+            tokenId,
+            constants.product_price,
+            constants.buyer_deposit
+          );
 
-        expect(await contractGate.check(users.buyer.address, tokenId)).to.be
-          .false;
+          expect(await contractGate.check(users.buyer.address, tokenId)).to.be
+            .false;
       });
 
       it('[NEGATIVE] Should revert if attacker tries to deactivate voucher set id', async () => {
         const {tokenId, conditionalTokenId} =
-          await registerVoucherSetIdFromBosonProtocol(contractGate, 0);
+          await registerVoucherSetIdFromBosonProtocol(contractGate, 0, constants.CONDITION.BALANCE, false);
 
-        await contractGate.registerVoucherSetId(tokenId, conditionalTokenId);
+        await contractGate.registerVoucherSetId(tokenId, conditionalTokenId, constants.CONDITION.BALANCE);
 
         await expect(
           contractGate.deactivate(users.buyer.address, tokenId)

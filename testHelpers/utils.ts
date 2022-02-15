@@ -49,6 +49,8 @@ class Utils {
     qty,
     gateContract,
     conditionalTokenId,
+    condition,
+    registerConditionalCommit,
     returnTx?
   ) => any;
   commitToBuy: (
@@ -272,7 +274,9 @@ class Utils {
     buyerDeposit: number | string,
     qty: number | string,
     gateContract: Account,
-    nftTokenId: number | string | null,
+    conditionalTokenId: number | string | null,
+    condition: number | string, 
+    registerConditionalCommit: boolean,
     returnTx = false
   ): Promise<ContractTransaction | string> {
     const txValue = BN(sellerDeposit).mul(BN(qty));
@@ -307,7 +311,9 @@ class Utils {
         s,
         [from, to, promisePrice, sellerDeposit, buyerDeposit, qty],
         gateContract.address,
-        nftTokenId || '0',
+        conditionalTokenId || '0',
+        condition,
+        registerConditionalCommit,
         {
           from: seller.address,
         }
