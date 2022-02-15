@@ -275,7 +275,7 @@ class Utils {
     qty: number | string,
     gateContract: Account,
     conditionalTokenId: number | string | null,
-    condition: number | string, 
+    condition: number | string,
     registerConditionalCommit: boolean,
     returnTx = false
   ): Promise<ContractTransaction | string> {

@@ -101,14 +101,14 @@ const VOUCHER_SET_ID = BN('54321');
 const TOKEN_TYPE = {
   FUNGIBLE_TOKEN: 0,
   NONFUNGIBLE_TOKEN: 1,
-  MULTI_TOKEN: 2
+  MULTI_TOKEN: 2,
 };
 
 // Condition for Gate's conditional token
 const CONDITION = {
   BALANCE: 0,
   OWNERSHIP: 1,
-  INVALID: 2
+  INVALID: 2,
 };
 
 export default {
@@ -164,5 +164,5 @@ export default {
   EMPTY_CONDITIONAL_TOKEN_ID,
   VOUCHER_SET_ID,
   TOKEN_TYPE,
-  CONDITION
+  CONDITION,
 };
