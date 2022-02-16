@@ -29,12 +29,6 @@ contract Gate is IGate, Ownable, Pausable {
 
     enum TokenType {FUNGIBLE_TOKEN, NONFUNGIBLE_TOKEN, MULTI_TOKEN} // ERC20, ERC721, ERC1155
 
-    struct ConditionalCommitInfo {
-        uint256 conditionalTokenId;
-        uint256 threshold;
-        Condition condition;
-    }
-
     event LogConditionalContractSet(
         address indexed _conditionalToken,
         TokenType indexed _conditionalTokenType,
@@ -182,7 +176,7 @@ contract Gate is IGate, Ownable, Pausable {
             require(conditionalTokenType == TokenType.NONFUNGIBLE_TOKEN, "CONDITION_NOT_AVAILABLE_FOR_TOKEN_TYPE");
         }
 
-        voucherSetToConditionalCommit[_tokenIdSupply] = ConditionalCommitInfo(_conditionalTokenId, _threshold, _condition);//last two not used by Gate, just setting defaults
+        voucherSetToConditionalCommit[_tokenIdSupply] = ConditionalCommitInfo(_conditionalTokenId, _threshold, _condition, address(0), false);//last two not used by Gate, just setting defaults
 
         emit LogVoucherSetRegistered(_tokenIdSupply, _conditionalTokenId, _condition, _threshold);
     }

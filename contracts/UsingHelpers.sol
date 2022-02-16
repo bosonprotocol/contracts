@@ -20,6 +20,14 @@ enum VoucherState {FINAL, CANCEL_FAULT, COMPLAIN, EXPIRE, REFUND, REDEEM, COMMIT
 
 enum Condition {BALANCE, OWNERSHIP} //Describes what kind of condition must be met for a conditional commit
 
+struct ConditionalCommitInfo {
+    uint256 conditionalTokenId;
+    uint256 threshold;
+    Condition condition;
+    address gateAddress;
+    bool registerConditionalCommit;
+}
+
 uint8 constant ONE = 1;
 
 struct VoucherDetails {
