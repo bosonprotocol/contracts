@@ -31,6 +31,7 @@ contract Gate is IGate, Ownable, Pausable {
 
     struct ConditionalCommitInfo {
         uint256 conditionalTokenId;
+        uint256 threshold;
         Condition condition;
     }
 
@@ -48,7 +49,8 @@ contract Gate is IGate, Ownable, Pausable {
     event LogVoucherSetRegistered(
         uint256 indexed _tokenIdSupply,
         uint256 indexed _conditionalTokenId,
-        Condition _condition
+        Condition _condition,
+        uint256 threshold
     );
 
     event LogUserVoucherDeactivated(
@@ -109,11 +111,12 @@ contract Gate is IGate, Ownable, Pausable {
      * @return conditional token ID if one is associated with a voucher set. Zero could be a valid token ID
      * @return condition that will be checked when a user commits using a conditional token
      */
-    function getConditionalCommitInfo(uint256 _tokenIdSupply) external view returns (uint256, Condition) {
+    function getConditionalCommitInfo(uint256 _tokenIdSupply) external view returns (uint256, Condition, uint256) {
         ConditionalCommitInfo memory conditionalCommitInfo = voucherSetToConditionalCommit[_tokenIdSupply];
         return (
             conditionalCommitInfo.conditionalTokenId,
-            conditionalCommitInfo.condition
+            conditionalCommitInfo.condition,
+            conditionalCommitInfo.threshold
         );
     }
 
@@ -165,8 +168,9 @@ contract Gate is IGate, Ownable, Pausable {
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
      * @param _conditionalTokenId an ID of a conditional token
      * @param _condition condition that will be checked when a user commits using a conditional token
+     * @param _threshold the number that the balance of a tokenId must be greater than or equal to. Not used for OWNERSHIP condition.
      */
-    function registerVoucherSetId(uint256 _tokenIdSupply, uint256 _conditionalTokenId, Condition _condition)
+    function registerVoucherSetId(uint256 _tokenIdSupply, uint256 _conditionalTokenId, Condition _condition, uint256 _threshold)
         external
         override
         whenNotPaused
@@ -178,9 +182,9 @@ contract Gate is IGate, Ownable, Pausable {
             require(conditionalTokenType == TokenType.NONFUNGIBLE_TOKEN, "CONDITION_NOT_AVAILABLE_FOR_TOKEN_TYPE");
         }
 
-        voucherSetToConditionalCommit[_tokenIdSupply] = ConditionalCommitInfo(_conditionalTokenId, _condition);
+        voucherSetToConditionalCommit[_tokenIdSupply] = ConditionalCommitInfo(_conditionalTokenId, _threshold, _condition);//last two not used by Gate, just setting defaults
 
-        emit LogVoucherSetRegistered(_tokenIdSupply, _conditionalTokenId, _condition);
+        emit LogVoucherSetRegistered(_tokenIdSupply, _conditionalTokenId, _condition, _threshold);
     }
 
     /**
@@ -199,7 +203,7 @@ contract Gate is IGate, Ownable, Pausable {
 
         return conditionalCommitInfo.condition == Condition.OWNERSHIP
                 ? checkOwnership(_user, _tokenIdSupply, conditionalCommitInfo.conditionalTokenId)
-                : checkBalance(_user, _tokenIdSupply, conditionalCommitInfo.conditionalTokenId);
+                : checkBalance(_user, _tokenIdSupply, conditionalCommitInfo.conditionalTokenId, conditionalCommitInfo.threshold);
     }
 
     /**
@@ -237,9 +241,10 @@ contract Gate is IGate, Ownable, Pausable {
      * @param _user user address
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
      * @param _conditionalTokenId an ID of a conditional token
+     * @param _threshold the number that the balance must be greater than or equal to
      * @return true if user possesses conditional token, and the token is not deactivated
      */
-    function checkBalance(address _user, uint256 _tokenIdSupply, uint256 _conditionalTokenId)
+    function checkBalance(address _user, uint256 _tokenIdSupply, uint256 _conditionalTokenId, uint256 _threshold)
         internal
         view
         returns (bool)
@@ -249,7 +254,7 @@ contract Gate is IGate, Ownable, Pausable {
             ((conditionalTokenType == TokenType.MULTI_TOKEN)
                 ? MultiToken(conditionalTokenContract).balanceOf(_user, _conditionalTokenId)
                 : Token(conditionalTokenContract).balanceOf(_user)
-            ) > 0;
+            ) >= _threshold;
     }
 
      /**

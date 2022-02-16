@@ -14,7 +14,8 @@ interface IGate {
     function registerVoucherSetId(
         uint256 _tokenIdSupply,
         uint256 _conditionalTokenId,
-        Condition _condition
+        Condition _condition,
+        uint256 _threshold
     ) external;
 
     /**
