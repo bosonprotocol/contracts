@@ -18,6 +18,8 @@ enum VoucherState {FINAL, CANCEL_FAULT, COMPLAIN, EXPIRE, REFUND, REDEEM, COMMIT
     [6:COMMITTED] [5:REDEEMED] [4:REFUNDED] [3:EXPIRED] [2:COMPLAINED] [1:CANCELORFAULT] [0:FINAL]
 */
 
+enum Condition {BALANCE, OWNERSHIP} //Describes what kind of condition must be met for a conditional commit
+
 uint8 constant ONE = 1;
 
 struct VoucherDetails {

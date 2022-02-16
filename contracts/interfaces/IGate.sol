@@ -2,15 +2,19 @@
 
 pragma solidity 0.7.6;
 
+import "./../UsingHelpers.sol";
+
 interface IGate {
     /**
      * @notice Registers connection between setID and tokenID
      * @param _tokenIdSupply an ID of a supply token (ERC-1155)
      * @param _conditionalTokenId an ID of a conditional token
+     * @param _condition condition that will be checked when a user commits using a conditional token
      */
     function registerVoucherSetId(
         uint256 _tokenIdSupply,
-        uint256 _conditionalTokenId
+        uint256 _conditionalTokenId,
+        Condition _condition
     ) external;
 
     /**

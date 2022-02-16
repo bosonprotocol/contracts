@@ -1,3 +1,4 @@
+/* eslint-disable no-case-declarations */
 import {ethers} from 'hardhat';
 import {Signer, ContractFactory, Contract, BigNumber} from 'ethers';
 import {assert, expect} from 'chai';
@@ -54,6 +55,7 @@ const runs = [
 let users;
 let utils: Utils;
 let timestamp, tokenSupplyKey: BigNumber, promiseId: string;
+let erc721TokenId: BigNumber;
 
 let VoucherSets_Factory: ContractFactory;
 let Vouchers_Factory: ContractFactory;
@@ -257,7 +259,7 @@ async function setupConditionalToken(token: number) {
       await contractGate.pause();
       await contractGate.setConditionalTokenContract(
         contractMockERC20.address,
-        constants.TOKEN_TYPE.TOKEN
+        constants.TOKEN_TYPE.FUNGIBLE_TOKEN
       );
       await contractGate.unpause();
 
@@ -266,16 +268,24 @@ async function setupConditionalToken(token: number) {
       break;
 
     case conditionalTokens.ERC721:
-      // Setup ERC721 as conditional token
+      // Setup ERC721 as conditional token;
       await contractGate.pause();
       await contractGate.setConditionalTokenContract(
         contractMockERC721.address,
-        constants.TOKEN_TYPE.TOKEN
+        constants.TOKEN_TYPE.NONFUNGIBLE_TOKEN
       );
       await contractGate.unpause();
 
       // Mint an ERC721 token for buyer
-      await contractMockERC721.mint(users.buyer.address);
+      expect(await contractMockERC721.mint(users.buyer.address))
+        .to.emit(contractMockERC721, eventNames.TRANSFER)
+        .withArgs(
+          ethers.constants.AddressZero,
+          users.buyer.address,
+          constants.ZERO
+        );
+
+      erc721TokenId = constants.ZERO;
       break;
 
     case conditionalTokens.ERC1155:
@@ -375,6 +385,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               ],
               contractGate.address,
               constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              false,
               {value: txValue}
             )
         )
@@ -385,7 +397,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           .withArgs(
             tokenSupplyKey,
             contractGate.address,
-            constants.EMPTY_CONDITIONAL_TOKEN_ID
+            constants.EMPTY_CONDITIONAL_TOKEN_ID,
+            constants.CONDITION.BALANCE
           )
           .to.emit(contractBosonRouter, eventNames.LOG_ORDER_CREATED)
           .withArgs(
@@ -523,6 +536,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 ],
                 contractGate.address,
                 constants.CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                true,
                 {value: txValue}
               )
           )
@@ -533,10 +548,56 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             .withArgs(
               tokenSupplyKey,
               contractGate.address,
-              constants.CONDITIONAL_TOKEN_ID
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
             )
             .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
-            .withArgs(tokenSupplyKey, constants.CONDITIONAL_TOKEN_ID);
+            .withArgs(
+              tokenSupplyKey,
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
+            );
+        });
+
+        it('Should be able to create Voucher with gate address and empty conditional token id', async () => {
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(constants.QTY_10)
+          );
+          expect(
+            await contractBosonRouter
+              .connect(users.seller.signer)
+              .requestCreateOrderETHETHConditional(
+                [
+                  constants.PROMISE_VALID_FROM,
+                  constants.PROMISE_VALID_TO,
+                  constants.PROMISE_PRICE1,
+                  constants.PROMISE_DEPOSITSE1,
+                  constants.PROMISE_DEPOSITBU1,
+                  constants.QTY_10,
+                ],
+                contractGate.address,
+                constants.EMPTY_CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                true,
+                {value: txValue}
+              )
+          )
+            .to.emit(
+              contractBosonRouter,
+              eventNames.LOG_CONDITIONAL_ORDER_CREATED
+            )
+            .withArgs(
+              tokenSupplyKey,
+              contractGate.address,
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
+            )
+            .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
+            .withArgs(
+              tokenSupplyKey,
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
+            );
         });
 
         it('[NEGATIVE] Should revert if non empty conditional token id and wrong gate address', async () => {
@@ -557,6 +618,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 ],
                 users.other1.address, /// gate address that maps to EOA
                 constants.CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                true,
                 {value: txValue}
               )
           ).to.be.revertedWith(revertReasons.INVALID_GATE);
@@ -580,6 +643,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             ],
             contractGate.address,
             constants.EMPTY_CONDITIONAL_TOKEN_ID,
+            constants.CONDITION.BALANCE,
+            true,
             {value: txValue}
           );
 
@@ -615,6 +680,58 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         ).to.equal(constants.ZERO_ADDRESS);
       });
 
+      it('One should not automatically call gate.registerVoucherSetId if conditional token Id is empty and _registerConditionalCommit is false', async () => {
+        const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+          BN(constants.QTY_10)
+        );
+
+        expect(
+          await contractBosonRouter
+            .connect(users.seller.signer)
+            .requestCreateOrderETHETHConditional(
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              contractGate.address,
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              false,
+              {value: txValue}
+            )
+        ).to.not.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED);
+      });
+
+      it('One should not automatically call gate.registerVoucherSetId if conditional token Id is not empty and _registerConditionalCommit is false', async () => {
+        const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+          BN(constants.QTY_10)
+        );
+
+        expect(
+          await contractBosonRouter
+            .connect(users.seller.signer)
+            .requestCreateOrderETHETHConditional(
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              contractGate.address,
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              false,
+              {value: txValue}
+            )
+        ).to.not.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED);
+      });
+
       it('[NEGATIVE] Supplying invalid gate address should revert', async () => {
         const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
           BN(constants.QTY_10)
@@ -633,6 +750,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               ],
               constants.ZERO_ADDRESS,
               constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              true,
               {value: txValue}
             )
         ).to.be.revertedWith(revertReasons.INVALID_GATE);
@@ -692,7 +811,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.QTY_10,
               ],
               contractGate.address,
-              constants.EMPTY_CONDITIONAL_TOKEN_ID
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              false
             )
         )
           .to.emit(
@@ -702,7 +823,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           .withArgs(
             tokenSupplyKey,
             contractGate.address,
-            constants.EMPTY_CONDITIONAL_TOKEN_ID
+            constants.EMPTY_CONDITIONAL_TOKEN_ID,
+            constants.CONDITION.BALANCE
           )
           .to.emit(contractBosonRouter, eventNames.LOG_ORDER_CREATED)
           .withArgs(
@@ -849,7 +971,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.QTY_10,
                 ],
                 contractGate.address,
-                constants.CONDITIONAL_TOKEN_ID
+                constants.CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                true
               )
           )
             .to.emit(
@@ -859,10 +983,56 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             .withArgs(
               tokenSupplyKey,
               contractGate.address,
-              constants.CONDITIONAL_TOKEN_ID
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
             )
             .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
-            .withArgs(tokenSupplyKey, constants.CONDITIONAL_TOKEN_ID);
+            .withArgs(
+              tokenSupplyKey,
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
+            );
+        });
+
+        it('Should be able to create Voucher with gate address and empty conditional token id', async () => {
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(constants.QTY_10)
+          );
+          expect(
+            await contractBosonRouter
+              .connect(users.seller.signer)
+              .requestCreateOrderETHETHConditional(
+                [
+                  constants.PROMISE_VALID_FROM,
+                  constants.PROMISE_VALID_TO,
+                  constants.PROMISE_PRICE1,
+                  constants.PROMISE_DEPOSITSE1,
+                  constants.PROMISE_DEPOSITBU1,
+                  constants.QTY_10,
+                ],
+                contractGate.address,
+                constants.EMPTY_CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                true,
+                {value: txValue}
+              )
+          )
+            .to.emit(
+              contractBosonRouter,
+              eventNames.LOG_CONDITIONAL_ORDER_CREATED
+            )
+            .withArgs(
+              tokenSupplyKey,
+              contractGate.address,
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
+            )
+            .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
+            .withArgs(
+              tokenSupplyKey,
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
+            );
         });
 
         it('[NEGATIVE] Should revert if non empty conditional token id and wrong gate address', async () => {
@@ -892,7 +1062,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.QTY_10,
                 ],
                 users.other1.address, /// gate address that maps to EOA
-                constants.CONDITIONAL_TOKEN_ID
+                constants.CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                true
               )
           ).to.be.revertedWith(revertReasons.INVALID_GATE);
         });
@@ -924,7 +1096,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.QTY_10,
             ],
             contractGate.address,
-            constants.EMPTY_CONDITIONAL_TOKEN_ID
+            constants.EMPTY_CONDITIONAL_TOKEN_ID,
+            constants.CONDITION.BALANCE,
+            false
           );
 
         expect(
@@ -968,6 +1142,58 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         ).to.equal(constants.ZERO_ADDRESS);
       });
 
+      it('One should not automatically call gate.registerVoucherSetId if conditional token Id is empty and _registerConditionalCommit is false', async () => {
+        const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+          BN(constants.QTY_10)
+        );
+
+        expect(
+          await contractBosonRouter
+            .connect(users.seller.signer)
+            .requestCreateOrderETHETHConditional(
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              contractGate.address,
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              false,
+              {value: txValue}
+            )
+        ).to.not.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED);
+      });
+
+      it('One should not automatically call gate.registerVoucherSetId if conditional token Id is not empty and _registerConditionalCommit is false', async () => {
+        const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+          BN(constants.QTY_10)
+        );
+
+        expect(
+          await contractBosonRouter
+            .connect(users.seller.signer)
+            .requestCreateOrderETHETHConditional(
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              contractGate.address,
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              false,
+              {value: txValue}
+            )
+        ).to.not.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED);
+      });
+
       it('[NEGATIVE] Supplying invalid gate address should revert', async () => {
         const {txValue, v, r, s} = await generateInputs(
           users.seller,
@@ -995,7 +1221,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.QTY_10,
               ],
               constants.ZERO_ADDRESS,
-              constants.EMPTY_CONDITIONAL_TOKEN_ID
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              false
             )
         ).to.be.revertedWith(revertReasons.INVALID_GATE);
       });
@@ -1053,7 +1281,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.QTY_10,
               ],
               contractGate.address,
-              constants.EMPTY_CONDITIONAL_TOKEN_ID
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              false
             )
         )
           .to.emit(
@@ -1063,7 +1293,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           .withArgs(
             tokenSupplyKey,
             contractGate.address,
-            constants.EMPTY_CONDITIONAL_TOKEN_ID
+            constants.EMPTY_CONDITIONAL_TOKEN_ID,
+            constants.CONDITION.BALANCE
           )
           .to.emit(contractBosonRouter, eventNames.LOG_ORDER_CREATED)
           .withArgs(
@@ -1209,7 +1440,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.QTY_10,
                 ],
                 contractGate.address,
-                constants.CONDITIONAL_TOKEN_ID
+                constants.CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                true
               )
           )
             .to.emit(
@@ -1219,10 +1452,56 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             .withArgs(
               tokenSupplyKey,
               contractGate.address,
-              constants.CONDITIONAL_TOKEN_ID
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
             )
             .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
-            .withArgs(tokenSupplyKey, constants.CONDITIONAL_TOKEN_ID);
+            .withArgs(
+              tokenSupplyKey,
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
+            );
+        });
+
+        it('Should be able to create Voucher with gate address and empty conditional token id', async () => {
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(constants.QTY_10)
+          );
+          expect(
+            await contractBosonRouter
+              .connect(users.seller.signer)
+              .requestCreateOrderETHETHConditional(
+                [
+                  constants.PROMISE_VALID_FROM,
+                  constants.PROMISE_VALID_TO,
+                  constants.PROMISE_PRICE1,
+                  constants.PROMISE_DEPOSITSE1,
+                  constants.PROMISE_DEPOSITBU1,
+                  constants.QTY_10,
+                ],
+                contractGate.address,
+                constants.EMPTY_CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                true,
+                {value: txValue}
+              )
+          )
+            .to.emit(
+              contractBosonRouter,
+              eventNames.LOG_CONDITIONAL_ORDER_CREATED
+            )
+            .withArgs(
+              tokenSupplyKey,
+              contractGate.address,
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
+            )
+            .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
+            .withArgs(
+              tokenSupplyKey,
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
+            );
         });
 
         it('[NEGATIVE] Should revert if non empty conditional token id and wrong gate address', async () => {
@@ -1251,7 +1530,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.QTY_10,
                 ],
                 users.other1.address, /// gate address that maps to EOA
-                constants.CONDITIONAL_TOKEN_ID
+                constants.CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                true
               )
           ).to.be.revertedWith(revertReasons.INVALID_GATE);
         });
@@ -1282,7 +1563,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.QTY_10,
             ],
             contractGate.address,
-            constants.EMPTY_CONDITIONAL_TOKEN_ID
+            constants.EMPTY_CONDITIONAL_TOKEN_ID,
+            constants.CONDITION.BALANCE,
+            false
           );
 
         expect(
@@ -1325,6 +1608,58 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         ).to.equal(constants.ZERO_ADDRESS);
       });
 
+      it('One should not automatically call gate.registerVoucherSetId if conditional token Id is empty and _registerConditionalCommit is false', async () => {
+        const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+          BN(constants.QTY_10)
+        );
+
+        expect(
+          await contractBosonRouter
+            .connect(users.seller.signer)
+            .requestCreateOrderETHETHConditional(
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              contractGate.address,
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              false,
+              {value: txValue}
+            )
+        ).to.not.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED);
+      });
+
+      it('One should not automatically call gate.registerVoucherSetId if conditional token Id is not empty and _registerConditionalCommit is false', async () => {
+        const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+          BN(constants.QTY_10)
+        );
+
+        expect(
+          await contractBosonRouter
+            .connect(users.seller.signer)
+            .requestCreateOrderETHETHConditional(
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              contractGate.address,
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              false,
+              {value: txValue}
+            )
+        ).to.not.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED);
+      });
+
       it('[NEGATIVE] Supplying invalid gate address should revert', async () => {
         const {txValue, v, r, s} = await generateInputs(
           users.seller,
@@ -1351,7 +1686,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.QTY_10,
               ],
               constants.ZERO_ADDRESS,
-              constants.EMPTY_CONDITIONAL_TOKEN_ID
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              false
             )
         ).to.be.revertedWith(revertReasons.INVALID_GATE);
       });
@@ -1377,6 +1714,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               ],
               contractGate.address,
               constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              false,
               {value: txValue}
             )
         )
@@ -1387,7 +1726,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           .withArgs(
             tokenSupplyKey,
             contractGate.address,
-            constants.EMPTY_CONDITIONAL_TOKEN_ID
+            constants.EMPTY_CONDITIONAL_TOKEN_ID,
+            constants.CONDITION.BALANCE
           )
           .to.emit(contractBosonRouter, eventNames.LOG_ORDER_CREATED)
           .withArgs(
@@ -1526,6 +1866,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 ],
                 contractGate.address,
                 constants.CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                true,
                 {value: txValue}
               )
           )
@@ -1536,10 +1878,56 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             .withArgs(
               tokenSupplyKey,
               contractGate.address,
-              constants.CONDITIONAL_TOKEN_ID
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
             )
             .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
-            .withArgs(tokenSupplyKey, constants.CONDITIONAL_TOKEN_ID);
+            .withArgs(
+              tokenSupplyKey,
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
+            );
+        });
+
+        it('Should be able to create Voucher with gate address and empty conditional token id', async () => {
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(constants.QTY_10)
+          );
+          expect(
+            await contractBosonRouter
+              .connect(users.seller.signer)
+              .requestCreateOrderETHETHConditional(
+                [
+                  constants.PROMISE_VALID_FROM,
+                  constants.PROMISE_VALID_TO,
+                  constants.PROMISE_PRICE1,
+                  constants.PROMISE_DEPOSITSE1,
+                  constants.PROMISE_DEPOSITBU1,
+                  constants.QTY_10,
+                ],
+                contractGate.address,
+                constants.EMPTY_CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                true,
+                {value: txValue}
+              )
+          )
+            .to.emit(
+              contractBosonRouter,
+              eventNames.LOG_CONDITIONAL_ORDER_CREATED
+            )
+            .withArgs(
+              tokenSupplyKey,
+              contractGate.address,
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
+            )
+            .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
+            .withArgs(
+              tokenSupplyKey,
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
+            );
         });
 
         it('[NEGATIVE] Should revert if non empty conditional token id and wrong gate address', async () => {
@@ -1561,6 +1949,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 ],
                 users.other1.address, /// gate address that maps to EOA
                 constants.CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                true,
                 {value: txValue}
               )
           ).to.be.revertedWith(revertReasons.INVALID_GATE);
@@ -1585,6 +1975,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             ],
             contractGate.address,
             constants.EMPTY_CONDITIONAL_TOKEN_ID,
+            constants.CONDITION.BALANCE,
+            false,
             {value: txValue}
           );
 
@@ -1621,6 +2013,58 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         ).to.equal(constants.ZERO_ADDRESS);
       });
 
+      it('One should not automatically call gate.registerVoucherSetId if conditional token Id is empty and _registerConditionalCommit is false', async () => {
+        const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+          BN(constants.QTY_10)
+        );
+
+        expect(
+          await contractBosonRouter
+            .connect(users.seller.signer)
+            .requestCreateOrderETHETHConditional(
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              contractGate.address,
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              false,
+              {value: txValue}
+            )
+        ).to.not.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED);
+      });
+
+      it('One should not automatically call gate.registerVoucherSetId if conditional token Id is not empty and _registerConditionalCommit is false', async () => {
+        const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+          BN(constants.QTY_10)
+        );
+
+        expect(
+          await contractBosonRouter
+            .connect(users.seller.signer)
+            .requestCreateOrderETHETHConditional(
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              contractGate.address,
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              false,
+              {value: txValue}
+            )
+        ).to.not.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED);
+      });
+
       it('[NEGATIVE] Supplying invalid gate address should revert', async () => {
         const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
           BN(constants.QTY_10)
@@ -1640,6 +2084,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               ],
               constants.ZERO_ADDRESS,
               constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              false,
               {value: txValue}
             )
         ).to.be.revertedWith(revertReasons.INVALID_GATE);
@@ -1676,6 +2122,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 ],
                 contractGate.address,
                 constants.EMPTY_CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                false,
                 {value: txValue}
               );
 
@@ -1694,7 +2142,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
             await contractGate.registerVoucherSetId(
               tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
             );
           });
 
@@ -1833,6 +2282,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   ],
                   contractGate.address,
                   constants.EMPTY_CONDITIONAL_TOKEN_ID,
+                  constants.CONDITION.BALANCE,
+                  false,
                   {value: txValue}
                 )
             ).to.be.revertedWith(revertReasons.INVALID_GATE);
@@ -1856,6 +2307,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 ],
                 contractGate.address,
                 constants.EMPTY_CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                false,
                 {value: txValue}
               );
 
@@ -1978,6 +2431,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.QTY_10,
               contractGate,
               0,
+              constants.CONDITION.BALANCE,
+              false,
               true
             );
 
@@ -1996,7 +2451,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
             await contractGate.registerVoucherSetId(
               tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
             );
           });
 
@@ -2160,7 +2616,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.buyer_deposit,
                 constants.QTY_10,
                 users.other1, /// gate address that maps to EOA
-                0
+                0,
+                constants.CONDITION.BALANCE,
+                false
               )
             ).to.be.revertedWith(revertReasons.INVALID_GATE);
           });
@@ -2175,7 +2633,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.buyer_deposit,
               constants.QTY_10,
               contractGate,
-              0
+              0,
+              constants.CONDITION.BALANCE,
+              false
             );
 
             const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);
@@ -2278,6 +2738,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.QTY_10,
               contractGate,
               0,
+              constants.CONDITION.BALANCE,
+              true,
               true
             );
 
@@ -2296,7 +2758,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
             await contractGate.registerVoucherSetId(
               tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
             );
           });
 
@@ -2441,7 +2904,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.buyer_deposit,
                 constants.QTY_10,
                 users.other1, /// gate address that maps to EOA
-                0
+                0,
+                constants.CONDITION.BALANCE,
+                false
               )
             ).to.be.revertedWith(revertReasons.INVALID_GATE);
           });
@@ -2456,7 +2921,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.buyer_deposit,
               constants.QTY_10,
               contractGate,
-              0
+              0,
+              constants.CONDITION.BALANCE,
+              false
             );
 
             const tokenSupplyKey = calculateTokenSupplyKey(constants.TWO);
@@ -2577,7 +3044,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.QTY_10,
                 ],
                 contractGate.address,
-                constants.EMPTY_CONDITIONAL_TOKEN_ID
+                constants.EMPTY_CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                false
               );
 
             const txReceipt = await txOrder.wait();
@@ -2595,7 +3064,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
             await contractGate.registerVoucherSetId(
               tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
             );
           });
 
@@ -2772,7 +3242,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                     constants.QTY_10,
                   ],
                   users.other1.address, /// gate address that maps to EOA
-                  constants.EMPTY_CONDITIONAL_TOKEN_ID
+                  constants.EMPTY_CONDITIONAL_TOKEN_ID,
+                  constants.CONDITION.BALANCE,
+                  false
                 )
             ).to.be.revertedWith(revertReasons.INVALID_GATE);
           });
@@ -2818,7 +3290,9 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.QTY_10,
                 ],
                 contractGate.address,
-                constants.EMPTY_CONDITIONAL_TOKEN_ID
+                constants.EMPTY_CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                false
               );
 
             const txReceipt = await txOrder.wait();
@@ -2922,6 +3396,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 ],
                 contractGate.address,
                 constants.EMPTY_CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                false,
                 {value: txValue}
               );
 
@@ -2940,7 +3416,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
             await contractGate.registerVoucherSetId(
               tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE
             );
           });
 
@@ -3094,6 +3571,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   ],
                   users.other1.address, /// gate address that maps to EOA
                   constants.EMPTY_CONDITIONAL_TOKEN_ID,
+                  constants.CONDITION.BALANCE,
+                  false,
                   {value: txValue}
                 )
             ).to.be.revertedWith(revertReasons.INVALID_GATE);
@@ -3118,6 +3597,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 ],
                 contractGate.address,
                 constants.EMPTY_CONDITIONAL_TOKEN_ID,
+                constants.CONDITION.BALANCE,
+                false,
                 {value: txValue}
               );
 
@@ -3147,5 +3628,673 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
         }); // end TKNETH
       });
     });
+  });
+
+  describe(`VOUCHER CREATION (Commit to buy when condition is OWNERSHIP)`, () => {
+    describe(`Conditional Token on Gate: ${runs[2].name}`, () => {
+      beforeEach(async () => {
+        await deployContracts();
+        await preparePromiseKey();
+        await setupConditionalToken(runs[2].token);
+      });
+
+      describe(`ETHETH`, () => {
+        beforeEach(async () => {
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(constants.QTY_10)
+          );
+
+          const txOrder = await contractBosonRouter
+            .connect(users.seller.signer)
+            .requestCreateOrderETHETHConditional(
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              contractGate.address,
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.OWNERSHIP,
+              false,
+              {value: txValue}
+            );
+
+          const txReceipt = await txOrder.wait();
+
+          let eventArgs;
+
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            BosonRouter_Factory,
+            eventNames.LOG_ORDER_CREATED,
+            (e) => (eventArgs = e)
+          );
+
+          tokenSupplyKey = eventArgs._tokenIdSupply;
+
+          await contractGate.registerVoucherSetId(
+            tokenSupplyKey,
+            erc721TokenId,
+            constants.CONDITION.OWNERSHIP
+          );
+        });
+
+        it('Should be able to request voucher with OWNERSHIP condition', async () => {
+          const voucherTokenId = tokenSupplyKey.or(constants.ONE);
+
+          const txValue = BN(constants.PROMISE_DEPOSITBU1).add(
+            BN(constants.PROMISE_PRICE1)
+          );
+          const buyerInstance = contractBosonRouter.connect(
+            users.buyer.signer
+          ) as BosonRouter;
+
+          expect(
+            await buyerInstance.requestVoucherETHETH(
+              tokenSupplyKey,
+              users.seller.address,
+              {
+                value: txValue,
+              }
+            )
+          )
+            .to.emit(contractGate, eventNames.LOG_USER_VOUCHER_DEACTIVATED)
+            .withArgs(users.buyer.address, tokenSupplyKey)
+            .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
+            .withArgs(
+              tokenSupplyKey,
+              voucherTokenId,
+              users.seller.address,
+              users.buyer.address,
+              promiseId
+            )
+            .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
+            .withArgs(
+              contractVoucherKernel.address,
+              users.seller.address,
+              constants.ZERO,
+              tokenSupplyKey,
+              constants.ONE
+            )
+            .to.emit(contractVouchers, eventNames.TRANSFER)
+            .withArgs(constants.ZERO, users.buyer.address, voucherTokenId);
+
+          const voucherStatus = await contractVoucherKernel.getVoucherStatus(
+            voucherTokenId
+          );
+
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
+
+          assert.equal(
+            voucherStatus[0],
+            expectedStatus.toNumber(),
+            'Wrong status'
+          );
+          assert.isFalse(voucherStatus[1], 'Payment should not be released');
+          assert.isFalse(voucherStatus[2], 'Deposit should not be released');
+          assert.isTrue(
+            voucherStatus[3].eq(constants.ZERO),
+            'Complaint period should not started yet'
+          );
+          assert.isTrue(
+            voucherStatus[4].eq(constants.ZERO),
+            'COF period should not started yet'
+          );
+        });
+      }); // end ETHTH
+
+      describe(`TKNTKN`, () => {
+        async function generateInputs(
+          account: Account,
+          deposit: number | string,
+          product_price: number | string
+        ) {
+          const txValue = BN(deposit).add(BN(product_price));
+          const DEPOSIT = await generateDepositInputs(account, deposit);
+          const PRICE = await generatePriceInputs(account, product_price);
+          return {txValue, DEPOSIT, PRICE};
+        }
+
+        async function generateDepositInputs(
+          account: Account,
+          deposit: number | string
+        ) {
+          const nonce = await contractBSNTokenDeposit.nonces(account.address);
+
+          const digest = await getApprovalDigest(
+            contractBSNTokenDeposit,
+            account.address,
+            contractBosonRouter.address,
+            deposit,
+            nonce,
+            deadline
+          );
+
+          const {v, r, s} = ecsign(
+            Buffer.from(digest.slice(2), 'hex'),
+            Buffer.from(account.privateKey.slice(2), 'hex')
+          );
+
+          return {v, r, s};
+        }
+
+        async function generatePriceInputs(
+          account: Account,
+          product_price: number | string
+        ) {
+          const nonce = await contractBSNTokenDeposit.nonces(account.address);
+
+          const digest = await getApprovalDigest(
+            contractBSNTokenPrice,
+            account.address,
+            contractBosonRouter.address,
+            product_price,
+            nonce,
+            deadline
+          );
+
+          const {v, r, s} = ecsign(
+            Buffer.from(digest.slice(2), 'hex'),
+            Buffer.from(account.privateKey.slice(2), 'hex')
+          );
+
+          return {v, r, s};
+        }
+
+        beforeEach(async () => {
+          const tokensToMint = BN(constants.product_price).mul(
+            BN(constants.QTY_20)
+          );
+
+          utils = await UtilsBuilder.create()
+            .ERC20withPermit()
+            .TKNTKN()
+            .buildAsync(
+              contractVoucherSets,
+              contractVouchers,
+              contractVoucherKernel,
+              contractCashier,
+              contractBosonRouter,
+              contractBSNTokenPrice,
+              contractBSNTokenDeposit
+            );
+
+          await utils.mintTokens(
+            'contractBSNTokenDeposit',
+            users.seller.address,
+            tokensToMint
+          );
+          await utils.mintTokens(
+            'contractBSNTokenPrice',
+            users.buyer.address,
+            tokensToMint
+          );
+          await utils.mintTokens(
+            'contractBSNTokenDeposit',
+            users.buyer.address,
+            tokensToMint
+          );
+
+          const txOrder = await utils.createOrderConditional(
+            users.seller,
+            constants.PROMISE_VALID_FROM,
+            constants.PROMISE_VALID_TO,
+            constants.product_price,
+            constants.PROMISE_DEPOSITSE1,
+            constants.buyer_deposit,
+            constants.QTY_10,
+            contractGate,
+            0,
+            constants.CONDITION.OWNERSHIP,
+            false,
+            true
+          );
+
+          const txReceipt = await txOrder.wait();
+
+          let eventArgs;
+
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            BosonRouter_Factory,
+            eventNames.LOG_ORDER_CREATED,
+            (e) => (eventArgs = e)
+          );
+
+          tokenSupplyKey = eventArgs._tokenIdSupply;
+
+          await contractGate.registerVoucherSetId(
+            tokenSupplyKey,
+            erc721TokenId,
+            constants.CONDITION.OWNERSHIP
+          );
+        }); //end beforeEach
+
+        it('Should be able to request voucher with OWNERSHIP condition', async () => {
+          const voucherTokenId = tokenSupplyKey.or(constants.ONE);
+
+          const {txValue, DEPOSIT, PRICE} = await generateInputs(
+            users.buyer,
+            constants.buyer_deposit,
+            constants.product_price
+          );
+          const vDeposit = DEPOSIT.v;
+          const rDeposit = DEPOSIT.r;
+          const sDeposit = DEPOSIT.s;
+          const vPrice = PRICE.v;
+          const rPrice = PRICE.r;
+          const sPrice = PRICE.s;
+
+          const buyerInstance = contractBosonRouter.connect(
+            users.buyer.signer
+          ) as BosonRouter;
+          expect(
+            await buyerInstance.requestVoucherTKNTKNWithPermit(
+              tokenSupplyKey,
+              users.seller.address,
+              txValue,
+              deadline,
+              vPrice,
+              rPrice,
+              sPrice,
+              vDeposit,
+              rDeposit,
+              sDeposit
+            )
+          )
+            .to.emit(contractGate, eventNames.LOG_USER_VOUCHER_DEACTIVATED)
+            .withArgs(users.buyer.address, tokenSupplyKey)
+            .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
+            .withArgs(
+              tokenSupplyKey,
+              voucherTokenId,
+              users.seller.address,
+              users.buyer.address,
+              promiseId
+            )
+            .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
+            .withArgs(
+              contractVoucherKernel.address,
+              users.seller.address,
+              constants.ZERO,
+              tokenSupplyKey,
+              constants.ONE
+            )
+            .to.emit(contractVouchers, eventNames.TRANSFER)
+            .withArgs(constants.ZERO, users.buyer.address, voucherTokenId);
+
+          const voucherStatus = await contractVoucherKernel.getVoucherStatus(
+            voucherTokenId
+          );
+
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
+
+          assert.equal(
+            voucherStatus[0],
+            expectedStatus.toNumber(),
+            'Wrong status'
+          );
+          assert.isFalse(voucherStatus[1], 'Payment should not be released');
+          assert.isFalse(voucherStatus[2], 'Deposit should not be released');
+          assert.isTrue(
+            voucherStatus[3].eq(constants.ZERO),
+            'Complaint period should not started yet'
+          );
+          assert.isTrue(
+            voucherStatus[4].eq(constants.ZERO),
+            'COF period should not started yet'
+          );
+        });
+      }); //end TKNTKN
+
+      describe(`ETHTKN`, () => {
+        async function generateInputs(
+          account: Account,
+          deposit: number | string
+        ) {
+          const nonce = await contractBSNTokenDeposit.nonces(account.address);
+
+          const digest = await getApprovalDigest(
+            contractBSNTokenDeposit,
+            account.address,
+            contractBosonRouter.address,
+            deposit,
+            nonce,
+            deadline
+          );
+
+          const {v, r, s} = ecsign(
+            Buffer.from(digest.slice(2), 'hex'),
+            Buffer.from(account.privateKey.slice(2), 'hex')
+          );
+          return {v, r, s};
+        }
+
+        beforeEach(async () => {
+          const tokensToMint = BN(constants.product_price).mul(
+            BN(constants.QTY_20)
+          );
+
+          utils = await UtilsBuilder.create()
+            .ERC20withPermit()
+            .TKNTKN()
+            .buildAsync(
+              contractVoucherSets,
+              contractVouchers,
+              contractVoucherKernel,
+              contractCashier,
+              contractBosonRouter,
+              contractBSNTokenDeposit,
+              contractBSNTokenDeposit
+            );
+
+          await utils.mintTokens(
+            'contractBSNTokenDeposit',
+            users.seller.address,
+            tokensToMint
+          );
+
+          await utils.mintTokens(
+            'contractBSNTokenDeposit',
+            users.buyer.address,
+            tokensToMint
+          );
+
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(constants.QTY_10)
+          );
+
+          const nonce = await contractBSNTokenDeposit.nonces(
+            users.seller.address
+          );
+
+          const digest = await getApprovalDigest(
+            contractBSNTokenDeposit,
+            users.seller.address,
+            contractBosonRouter.address,
+            txValue,
+            nonce,
+            deadline
+          );
+
+          const {v, r, s} = ecsign(
+            Buffer.from(digest.slice(2), 'hex'),
+            Buffer.from(users.seller.privateKey.slice(2), 'hex')
+          );
+
+          const txOrder = await contractBosonRouter
+            .connect(users.seller.signer)
+            .requestCreateOrderETHTKNWithPermitConditional(
+              contractBSNTokenDeposit.address,
+              txValue,
+              deadline,
+              v,
+              r,
+              s,
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              contractGate.address,
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.OWNERSHIP,
+              false
+            );
+
+          const txReceipt = await txOrder.wait();
+
+          let eventArgs;
+
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            BosonRouter_Factory,
+            eventNames.LOG_ORDER_CREATED,
+            (e) => (eventArgs = e)
+          );
+
+          tokenSupplyKey = eventArgs._tokenIdSupply;
+
+          await contractGate.registerVoucherSetId(
+            tokenSupplyKey,
+            erc721TokenId,
+            constants.CONDITION.OWNERSHIP
+          );
+        });
+
+        it('Should be able to request voucher with OWNERSHIP condition', async () => {
+          const voucherTokenId = tokenSupplyKey.or(constants.ONE);
+
+          const {v, r, s} = await generateInputs(
+            users.buyer,
+            constants.PROMISE_DEPOSITBU1
+          );
+
+          const buyerInstance = contractBosonRouter.connect(
+            users.buyer.signer
+          ) as BosonRouter;
+
+          expect(
+            await buyerInstance.requestVoucherETHTKNWithPermit(
+              tokenSupplyKey,
+              users.seller.address,
+              constants.PROMISE_DEPOSITBU1,
+              deadline,
+              v,
+              r,
+              s,
+              {value: constants.PROMISE_PRICE1}
+            )
+          )
+            .to.emit(contractGate, eventNames.LOG_USER_VOUCHER_DEACTIVATED)
+            .withArgs(users.buyer.address, tokenSupplyKey)
+            .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
+            .withArgs(
+              tokenSupplyKey,
+              voucherTokenId,
+              users.seller.address,
+              users.buyer.address,
+              promiseId
+            )
+            .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
+            .withArgs(
+              contractVoucherKernel.address,
+              users.seller.address,
+              constants.ZERO,
+              tokenSupplyKey,
+              constants.ONE
+            )
+            .to.emit(contractVouchers, eventNames.TRANSFER)
+            .withArgs(constants.ZERO, users.buyer.address, voucherTokenId);
+
+          const voucherStatus = await contractVoucherKernel.getVoucherStatus(
+            voucherTokenId
+          );
+
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
+
+          assert.equal(
+            voucherStatus[0],
+            expectedStatus.toNumber(),
+            'Wrong status'
+          );
+          assert.isFalse(voucherStatus[1], 'Payment should not be released');
+          assert.isFalse(voucherStatus[2], 'Deposit should not be released');
+          assert.isTrue(
+            voucherStatus[3].eq(constants.ZERO),
+            'Complaint period should not started yet'
+          );
+          assert.isTrue(
+            voucherStatus[4].eq(constants.ZERO),
+            'COF period should not started yet'
+          );
+        });
+      }); // end ETHTKN
+
+      describe(`TKNETH`, () => {
+        async function generateInputs(
+          account: Account,
+          product_price: number | string
+        ) {
+          const nonce = await contractBSNTokenDeposit.nonces(account.address);
+
+          const digest = await getApprovalDigest(
+            contractBSNTokenDeposit,
+            account.address,
+            contractBosonRouter.address,
+            product_price,
+            nonce,
+            deadline
+          );
+
+          const {v, r, s} = ecsign(
+            Buffer.from(digest.slice(2), 'hex'),
+            Buffer.from(account.privateKey.slice(2), 'hex')
+          );
+          return {v, r, s};
+        }
+
+        beforeEach(async () => {
+          const tokensToMint = BN(constants.product_price).mul(
+            BN(constants.QTY_20)
+          );
+
+          utils = await UtilsBuilder.create()
+            .ERC20withPermit()
+            .TKNTKN()
+            .buildAsync(
+              contractVoucherSets,
+              contractVouchers,
+              contractVoucherKernel,
+              contractCashier,
+              contractBosonRouter,
+              contractBSNTokenDeposit,
+              contractBSNTokenDeposit
+            );
+
+          await utils.mintTokens(
+            'contractBSNTokenDeposit',
+            users.buyer.address,
+            tokensToMint
+          );
+
+          const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
+            BN(constants.QTY_10)
+          );
+
+          const txOrder = await contractBosonRouter
+            .connect(users.seller.signer)
+            .requestCreateOrderTKNETHConditional(
+              contractBSNTokenDeposit.address,
+              [
+                constants.PROMISE_VALID_FROM,
+                constants.PROMISE_VALID_TO,
+                constants.PROMISE_PRICE1,
+                constants.PROMISE_DEPOSITSE1,
+                constants.PROMISE_DEPOSITBU1,
+                constants.QTY_10,
+              ],
+              contractGate.address,
+              constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.OWNERSHIP,
+              false,
+              {value: txValue}
+            );
+
+          const txReceipt = await txOrder.wait();
+
+          let eventArgs;
+
+          eventUtils.assertEventEmitted(
+            txReceipt,
+            BosonRouter_Factory,
+            eventNames.LOG_ORDER_CREATED,
+            (e) => (eventArgs = e)
+          );
+
+          tokenSupplyKey = eventArgs._tokenIdSupply;
+
+          await contractGate.registerVoucherSetId(
+            tokenSupplyKey,
+            erc721TokenId,
+            constants.CONDITION.OWNERSHIP
+          );
+        });
+
+        it('Should be able to request voucher with OWNERSHIP condition', async () => {
+          const voucherTokenId = tokenSupplyKey.or(constants.ONE);
+
+          const {v, r, s} = await generateInputs(
+            users.buyer,
+            constants.PROMISE_PRICE1
+          );
+
+          const buyerInstance = contractBosonRouter.connect(
+            users.buyer.signer
+          ) as BosonRouter;
+
+          expect(
+            await buyerInstance.requestVoucherTKNETHWithPermit(
+              tokenSupplyKey,
+              users.seller.address,
+              constants.PROMISE_PRICE1,
+              deadline,
+              v,
+              r,
+              s,
+              {value: constants.PROMISE_DEPOSITBU1}
+            )
+          )
+            .to.emit(contractGate, eventNames.LOG_USER_VOUCHER_DEACTIVATED)
+            .withArgs(users.buyer.address, tokenSupplyKey)
+            .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
+            .withArgs(
+              tokenSupplyKey,
+              voucherTokenId,
+              users.seller.address,
+              users.buyer.address,
+              promiseId
+            )
+            .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
+            .withArgs(
+              contractVoucherKernel.address,
+              users.seller.address,
+              constants.ZERO,
+              tokenSupplyKey,
+              constants.ONE
+            )
+            .to.emit(contractVouchers, eventNames.TRANSFER)
+            .withArgs(constants.ZERO, users.buyer.address, voucherTokenId);
+
+          const voucherStatus = await contractVoucherKernel.getVoucherStatus(
+            voucherTokenId
+          );
+
+          const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
+
+          assert.equal(
+            voucherStatus[0],
+            expectedStatus.toNumber(),
+            'Wrong status'
+          );
+          assert.isFalse(voucherStatus[1], 'Payment should not be released');
+          assert.isFalse(voucherStatus[2], 'Deposit should not be released');
+          assert.isTrue(
+            voucherStatus[3].eq(constants.ZERO),
+            'Complaint period should not started yet'
+          );
+          assert.isTrue(
+            voucherStatus[4].eq(constants.ZERO),
+            'COF period should not started yet'
+          );
+        });
+      }); //end TKNETH
+    }); //end Conditional Token on Gate
   });
 });

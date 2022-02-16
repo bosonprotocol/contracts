@@ -56,7 +56,8 @@ contract BosonRouter is
     event LogConditionalOrderCreated(
         uint256 indexed _tokenIdSupply,
         address indexed _gateAddress,
-        uint256 indexed _conditionalTokenId
+        uint256 indexed _conditionalTokenId,
+        Condition _condition
     );
 
     event LogVoucherKernelSet(address _newVoucherKernel, address _triggeredBy);
@@ -233,9 +234,13 @@ contract BosonRouter is
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
      * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
+     * @param _condition condition that will be checked when a user commits using a conditional token    
+     * @param _registerConditionalCommit indicates whether Gate.registerVoucherSetId should be called. Gate.registerVoucherSetId can also be called separately
      */
     function requestCreateOrderETHETHConditional(uint256[] calldata _metadata, address _gateAddress,
-        uint256 _conditionalTokenId)
+        uint256 _conditionalTokenId, 
+        Condition _condition,
+        bool _registerConditionalCommit)
         external
         payable
         override
@@ -245,7 +250,7 @@ contract BosonRouter is
     {
         checkLimits(_metadata, address(0), address(0), 0);
         uint256 _tokenIdSupply = requestCreateOrder(_metadata, PaymentMethod.ETHETH, address(0), address(0), 0);
-        finalizeConditionalOrder(_tokenIdSupply, _gateAddress, _conditionalTokenId);
+        finalizeConditionalOrder(_tokenIdSupply, _gateAddress, _conditionalTokenId, _condition, _registerConditionalCommit);
     }
 
 
@@ -325,6 +330,8 @@ contract BosonRouter is
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
      * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
+     * @param _condition condition that will be checked when a user commits using a conditional token        
+     * @param _registerConditionalCommit indicates whether Gate.registerVoucherSetId should be called. Gate.registerVoucherSetId can also be called separately
      */
     function requestCreateOrderTKNTKNWithPermitConditional(
         address _tokenPriceAddress,
@@ -336,7 +343,9 @@ contract BosonRouter is
         bytes32 _s,
         uint256[] calldata _metadata,
         address _gateAddress,
-        uint256 _conditionalTokenId
+        uint256 _conditionalTokenId,
+        Condition _condition,
+        bool _registerConditionalCommit
     )
     external
     override
@@ -354,7 +363,7 @@ contract BosonRouter is
             _metadata
         );
 
-        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _conditionalTokenId);
+        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _conditionalTokenId, _condition, _registerConditionalCommit);
     }
 
     /**
@@ -428,6 +437,8 @@ contract BosonRouter is
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
      * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
+     * @param _condition condition that will be checked when a user commits using a conditional token
+     * @param _registerConditionalCommit indicates whether Gate.registerVoucherSetId should be called. Gate.registerVoucherSetId can also be called separately
      */
     function requestCreateOrderETHTKNWithPermitConditional(
         address _tokenDepositAddress,
@@ -438,7 +449,9 @@ contract BosonRouter is
         bytes32 _s,
         uint256[] calldata _metadata,
         address _gateAddress,
-        uint256 _conditionalTokenId
+        uint256 _conditionalTokenId,
+        Condition _condition,
+        bool _registerConditionalCommit
     )
     external
     override
@@ -453,7 +466,7 @@ contract BosonRouter is
          _s,
         _metadata);
 
-        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _conditionalTokenId);
+        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _conditionalTokenId, _condition, _registerConditionalCommit);
     }
 
     /**
@@ -510,12 +523,16 @@ contract BosonRouter is
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
      * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
+     * @param _condition condition that will be checked when a user commits using a conditional token
+     * @param _registerConditionalCommit indicates whether Gate.registerVoucherSetId should be called. Gate.registerVoucherSetId can also be called separately
      */
     function requestCreateOrderTKNETHConditional(
         address _tokenPriceAddress,
         uint256[] calldata _metadata,
         address _gateAddress,
-        uint256 _conditionalTokenId
+        uint256 _conditionalTokenId,
+        Condition _condition,
+        bool _registerConditionalCommit
     )
     external
     payable
@@ -524,7 +541,7 @@ contract BosonRouter is
     onlyApprovedGate(_gateAddress)
     {
         uint256 tokenIdSupply = requestCreateOrderTKNETHInternal(_tokenPriceAddress, _metadata);
-        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _conditionalTokenId);
+        finalizeConditionalOrder(tokenIdSupply, _gateAddress, _conditionalTokenId, _condition, _registerConditionalCommit);
     }
 
     /**
@@ -1197,17 +1214,19 @@ contract BosonRouter is
      * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the conditional token,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
      * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
-     * in the voucher set created by this function.
+     * @param _condition condition that will be checked when a user commits using a conditional token
+     * @param _registerConditionalCommit indicates whether Gate.registerVoucherSetId should be called. Gate.registerVoucherSetId can also be called separately
      */
-    function finalizeConditionalOrder(uint256 _tokenIdSupply, address _gateAddress, uint256 _conditionalTokenId) internal {
+    function finalizeConditionalOrder(uint256 _tokenIdSupply, address _gateAddress, uint256 _conditionalTokenId, Condition _condition, bool _registerConditionalCommit) internal {
         voucherSetToGateContract[_tokenIdSupply] = _gateAddress;
 
-        emit LogConditionalOrderCreated(_tokenIdSupply, _gateAddress, _conditionalTokenId);
+        emit LogConditionalOrderCreated(_tokenIdSupply, _gateAddress, _conditionalTokenId, _condition);
 
-        if (_conditionalTokenId > 0) {
+        if (_registerConditionalCommit) {
             IGate(_gateAddress).registerVoucherSetId(
                 _tokenIdSupply,
-                _conditionalTokenId
+                _conditionalTokenId,
+                _condition
             );
         }
     }
