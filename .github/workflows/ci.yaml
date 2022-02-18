@@ -2,9 +2,9 @@ name: Contracts CI
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [ dependabot-prs-should-check-deploy-script ]
+  # pull_request:
+  #   branches: [ main ]
 
 jobs:
   build:
@@ -77,3 +77,24 @@ jobs:
         uses: github/codeql-action/upload-sarif@v1
         with:
           sarif_file: snyk.sarif
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    # if: ${{ github.actor == 'dependabot[bot]' }}
+    env:
+      PROTOCOL_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
+      CC_TOKEN_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
+    name: deploy
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '12.20.x'
+          cache: 'npm'
+      - name: Install Dependencies
+        run: npm install
+      - name: Deploy contracts locally
+        run: npm run contracts:run
