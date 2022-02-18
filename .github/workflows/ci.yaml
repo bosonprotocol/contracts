@@ -2,9 +2,9 @@ name: Contracts CI
 
 on:
   push:
-    branches: [ dependabot-prs-should-check-deploy-script ]
-  # pull_request:
-  #   branches: [ main ]
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
@@ -81,7 +81,7 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    # if: ${{ github.actor == 'dependabot[bot]' }}
+    if: ${{ github.actor == 'dependabot[bot]' }}
     env:
       PROTOCOL_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
       CC_TOKEN_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
