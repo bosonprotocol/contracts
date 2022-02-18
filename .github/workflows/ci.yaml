@@ -96,5 +96,9 @@ jobs:
           cache: 'npm'
       - name: Install Dependencies
         run: npm install
+      - name: Prepare Environment Variables
+        shell: bash
+        run: |
+          cp .env.example .env
       - name: Deploy contracts locally
         run: npm run contracts:run
