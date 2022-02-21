@@ -463,6 +463,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         );
         vouchersStatus[voucherTokenId].isPaymentReleased = false;
         vouchersStatus[voucherTokenId].isDepositsReleased = false;
+        vouchersStatus[voucherTokenId].seller = getSupplyHolder(_tokenIdSupply);
 
         //mint voucher NFT as ERC-721
         IVouchers(voucherTokenAddress).mint(_to, voucherTokenId);
@@ -1082,6 +1083,16 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
     {
         bytes32 promiseKey = ordersPromise[_tokenIdSupply];
         return promises[promiseKey].seller;
+    }
+
+
+    /**
+     * @notice Get the issuer of a voucher
+     * @param _voucherTokenId ID of the voucher token
+     * @return                Address of the seller, when voucher was created
+     */
+    function getVoucherSeller(uint256 _voucherTokenId) external view override returns (address) {
+        return vouchersStatus[_voucherTokenId].seller;
     }
 
     /**

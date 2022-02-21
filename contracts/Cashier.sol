@@ -248,8 +248,8 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
         );
 
         voucherDetails.issuer = payable(
-            IVoucherKernel(voucherKernel).getSupplyHolder(
-                voucherDetails.tokenIdSupply
+            IVoucherKernel(voucherKernel).getVoucherSeller(
+                _tokenIdVoucher
             )
         );
         voucherDetails.holder = payable(
