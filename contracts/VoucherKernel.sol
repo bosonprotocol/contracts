@@ -568,9 +568,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         onlyFromRouter
         whenNotPaused
     {
-        uint256 tokenIdSupply = getIdSupplyFromVoucher(_tokenIdVoucher);
         require(
-            getSupplyHolder(tokenIdSupply) == _messageSender,
+            vouchersStatus[_tokenIdVoucher].seller ==_messageSender,
             "UNAUTHORIZED_COF"
         );
 

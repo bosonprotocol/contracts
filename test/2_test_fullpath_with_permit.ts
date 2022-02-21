@@ -5252,6 +5252,180 @@ describe('Cashier and VoucherKernel', () => {
         ).to.be.revertedWith(revertReasons.UNAUTHORIZED_TRANSFER_1155);
       });
 
+      describe('Transfers when some voucher already commited', () => {
+        let tokenVoucherIdCommited,
+          tokenVoucherIdRedeemed,
+          tokenVoucherIdRefunded;
+        beforeEach(async () => {
+          tokenVoucherIdCommited = await utils.commitToBuy(
+            users.buyer,
+            users.other1,
+            tokenSupplyKey,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
+          );
+
+          tokenVoucherIdRedeemed = await utils.commitToBuy(
+            users.buyer,
+            users.other1,
+            tokenSupplyKey,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
+          );
+
+          tokenVoucherIdRefunded = await utils.commitToBuy(
+            users.buyer,
+            users.other1,
+            tokenSupplyKey,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
+          );
+
+          await utils.redeem(tokenVoucherIdRedeemed, users.buyer.signer);
+          await utils.refund(tokenVoucherIdRefunded, users.buyer.signer);
+
+          const transferTx = await utils.safeTransfer1155(
+            users.other1.address,
+            users.other2.address,
+            tokenSupplyKey,
+            constants.QTY_10 - 3,
+            users.other1.signer
+          );
+        });
+
+        it('After transfer, old seller remains seller of existing vouchers', async () => {
+          expect(
+            await contractVoucherKernel.getVoucherSeller(tokenVoucherIdCommited)
+          ).to.equal(users.other1.address, 'Committed voucher seller mismatch');
+          expect(
+            await contractVoucherKernel.getVoucherSeller(tokenVoucherIdRedeemed)
+          ).to.equal(users.other1.address, 'Committed voucher seller mismatch');
+          expect(
+            await contractVoucherKernel.getVoucherSeller(tokenVoucherIdRefunded)
+          ).to.equal(users.other1.address, 'Committed voucher seller mismatch');
+        });
+
+        it('After transfer, old seller manage already commited vouchers', async () => {
+          const bosonRouterOldSeller = contractBosonRouter.connect(
+            users.other1.signer
+          );
+          const bosonRouterNewSeller = contractBosonRouter.connect(
+            users.other2.signer
+          );
+
+          await expect(
+            bosonRouterNewSeller.cancelOrFault(tokenVoucherIdCommited)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
+          await expect(
+            bosonRouterNewSeller.cancelOrFault(tokenVoucherIdRedeemed)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
+          await expect(
+            bosonRouterNewSeller.cancelOrFault(tokenVoucherIdRefunded)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
+
+          expect(
+            await bosonRouterOldSeller.cancelOrFault(tokenVoucherIdCommited)
+          )
+            .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_FAULT_CANCEL)
+            .withArgs(tokenVoucherIdCommited);
+          expect(
+            await bosonRouterOldSeller.cancelOrFault(tokenVoucherIdRedeemed)
+          )
+            .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_FAULT_CANCEL)
+            .withArgs(tokenVoucherIdRedeemed);
+          expect(
+            await bosonRouterOldSeller.cancelOrFault(tokenVoucherIdRefunded)
+          )
+            .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_FAULT_CANCEL)
+            .withArgs(tokenVoucherIdRefunded);
+        });
+
+        it('After transfer, old owner gets correct amounts when voucher finalised', async () => {
+          await advanceTimeSeconds(2 * constants.SECONDS_IN_DAY);
+          await utils.expire(tokenVoucherIdCommited, users.deployer.signer);
+          await advanceTimeSeconds(60);
+          await utils.finalize(tokenVoucherIdCommited, users.deployer.signer);
+          await utils.finalize(tokenVoucherIdRedeemed, users.deployer.signer);
+          await utils.finalize(tokenVoucherIdRefunded, users.deployer.signer);
+
+          const oldOwnerFromEscrow = await contractCashier.getEscrowAmount(
+            users.other1.address
+          );
+
+          const oldOwnerBalance = await ethers.provider.getBalance(
+            users.other1.address
+          );
+
+          await utils.withdraw(tokenVoucherIdCommited, users.deployer.signer);
+          let expectedBalance = oldOwnerBalance.add(
+            constants.PROMISE_DEPOSITSE1
+          );
+          expect(
+            await contractCashier.getEscrowAmount(users.other1.address)
+          ).to.equal(
+            oldOwnerFromEscrow.sub(constants.PROMISE_DEPOSITSE1),
+            'Wrong escrow amount after expiry'
+          );
+          expect(
+            await ethers.provider.getBalance(users.other1.address)
+          ).to.equal(expectedBalance, 'Wrong withdrawn amount after expiry');
+
+          await utils.withdraw(tokenVoucherIdRedeemed, users.deployer.signer);
+          expectedBalance = expectedBalance.add(
+            constants.PROMISE_DEPOSITSE1 + constants.PROMISE_PRICE1
+          );
+          expect(
+            await contractCashier.getEscrowAmount(users.other1.address)
+          ).to.equal(
+            oldOwnerFromEscrow.sub(2 * constants.PROMISE_DEPOSITSE1),
+            'Wrong escrow amount after redeem'
+          );
+          expect(
+            await ethers.provider.getBalance(users.other1.address)
+          ).to.equal(expectedBalance, 'Wrong withdrawn amount after redeem');
+
+          await utils.withdraw(tokenVoucherIdRefunded, users.deployer.signer);
+          expectedBalance = expectedBalance.add(constants.PROMISE_DEPOSITSE1);
+          expect(
+            await contractCashier.getEscrowAmount(users.other1.address)
+          ).to.equal(
+            oldOwnerFromEscrow.sub(3 * constants.PROMISE_DEPOSITSE1),
+            'Wrong escrow amount after refund'
+          );
+          expect(
+            await ethers.provider.getBalance(users.other1.address)
+          ).to.equal(expectedBalance, 'Wrong withdrawn amount after refund');
+        });
+
+        it('After transfer, old seller cannot manage new vouchers anymore', async () => {
+          const bosonRouterOldSeller = contractBosonRouter.connect(
+            users.other1.signer
+          );
+          const bosonRouterNewSeller = contractBosonRouter.connect(
+            users.other2.signer
+          );
+
+          const tokenVoucherIdNew = await utils.commitToBuy(
+            users.buyer,
+            users.other2,
+            tokenSupplyKey,
+            constants.PROMISE_PRICE1,
+            constants.PROMISE_DEPOSITBU1
+          );
+
+          await expect(
+            bosonRouterOldSeller.cancelOrFault(tokenVoucherIdNew)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
+          await expect(
+            bosonRouterOldSeller.requestCancelOrFaultVoucherSet(tokenSupplyKey)
+          ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
+
+          expect(await bosonRouterNewSeller.cancelOrFault(tokenVoucherIdNew))
+            .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_FAULT_CANCEL)
+            .withArgs(tokenVoucherIdNew);
+        });
+      });
+
       describe('Batch transfers', () => {
         let tokenSupplyKey2;
         let tokenSupplyBatch;
