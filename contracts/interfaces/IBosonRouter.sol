@@ -29,7 +29,7 @@ interface IBosonRouter {
         payable;
 
     function requestCreateOrderETHETHConditional(
-        uint256[] calldata _metadata, 
+        uint256[] calldata _metadata,
         ConditionalCommitInfo calldata _conditionalCommitInfo
     ) external payable;
 

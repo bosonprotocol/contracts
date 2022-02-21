@@ -320,7 +320,8 @@ class Utils {
         r,
         s,
         [from, to, promisePrice, sellerDeposit, buyerDeposit, qty],
-        {//represents ConditionalCommitInfo struct
+        {
+          //represents ConditionalCommitInfo struct
           conditionalTokenId,
           threshold,
           condition,

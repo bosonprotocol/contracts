@@ -253,15 +253,11 @@ async function mintTokens(token: number, amount: number) {
 
     case conditionalTokens.ERC721:
       // Mint an ERC721 token for buyer
-      for(let i = 0; i < amount; i++) {
-        const  tokenId = await contractMockERC721.totalSupply();
+      for (let i = 0; i < amount; i++) {
+        const tokenId = await contractMockERC721.totalSupply();
         expect(await contractMockERC721.mint(users.buyer.address))
           .to.emit(contractMockERC721, eventNames.TRANSFER)
-          .withArgs(
-            ethers.constants.AddressZero,
-            users.buyer.address,
-            tokenId
-          );
+          .withArgs(ethers.constants.AddressZero, users.buyer.address, tokenId);
       }
       break;
 
@@ -429,13 +425,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
+              {
+                //represents ConditionalCommitInfo struct
                 conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                 threshold: constants.ONE,
                 condition: constants.CONDITION.BALANCE,
                 gateAddress: contractGate.address,
-                registerConditionalCommit: false
-              }, 
+                registerConditionalCommit: false,
+              },
               {value: txValue}
             )
         )
@@ -584,12 +581,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -630,12 +628,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -676,12 +675,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.TWO,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -725,12 +725,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.ZERO,
                   condition: constants.CONDITION.OWNERSHIP,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -771,18 +772,19 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.ZERO,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
           ).to.be.revertedWith(revertReasons.INVALID_THRESHOLD);
         });
-    
+
         it('[NEGATIVE] Should revert if non empty conditional token id and wrong gate address', async () => {
           const txValue = BN(constants.PROMISE_DEPOSITSE1).mul(
             BN(constants.QTY_10)
@@ -799,12 +801,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: users.other1.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -827,12 +830,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.PROMISE_DEPOSITBU1,
               constants.QTY_10,
             ],
-            {//represents ConditionalCommitInfo struct
-                conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
-                threshold: constants.ONE,
-                condition: constants.CONDITION.BALANCE,
-                gateAddress: contractGate.address,
-                registerConditionalCommit: true
+            {
+              //represents ConditionalCommitInfo struct
+              conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
+              threshold: constants.ONE,
+              condition: constants.CONDITION.BALANCE,
+              gateAddress: contractGate.address,
+              registerConditionalCommit: true,
             },
             {value: txValue}
           );
@@ -886,12 +890,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
-                  conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
-                  threshold: constants.ONE,
-                  condition: constants.CONDITION.BALANCE,
-                  gateAddress: contractGate.address,
-                  registerConditionalCommit: false
+              {
+                //represents ConditionalCommitInfo struct
+                conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
+                threshold: constants.ONE,
+                condition: constants.CONDITION.BALANCE,
+                gateAddress: contractGate.address,
+                registerConditionalCommit: false,
               },
               {value: txValue}
             )
@@ -915,12 +920,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
-                  conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
-                  threshold: constants.ONE,
-                  condition: constants.CONDITION.BALANCE,
-                  gateAddress: contractGate.address,
-                  registerConditionalCommit: false
+              {
+                //represents ConditionalCommitInfo struct
+                conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+                threshold: constants.ONE,
+                condition: constants.CONDITION.BALANCE,
+                gateAddress: contractGate.address,
+                registerConditionalCommit: false,
               },
               {value: txValue}
             )
@@ -943,12 +949,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
-                  conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
-                  threshold: constants.ONE,
-                  condition: constants.CONDITION.BALANCE,
-                  gateAddress: constants.ZERO_ADDRESS,
-                  registerConditionalCommit: true
+              {
+                //represents ConditionalCommitInfo struct
+                conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
+                threshold: constants.ONE,
+                condition: constants.CONDITION.BALANCE,
+                gateAddress: constants.ZERO_ADDRESS,
+                registerConditionalCommit: true,
               },
               {value: txValue}
             )
@@ -1008,12 +1015,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
+              {
+                //represents ConditionalCommitInfo struct
                 conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                 threshold: constants.ONE,
                 condition: constants.CONDITION.BALANCE,
                 gateAddress: contractGate.address,
-                registerConditionalCommit: false
+                registerConditionalCommit: false,
               }
             )
         )
@@ -1172,13 +1180,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
-                },
+                  registerConditionalCommit: true,
+                }
               )
           )
             .to.emit(
@@ -1217,12 +1226,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -1263,12 +1273,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.TWO,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -1312,12 +1323,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.ZERO,
                   condition: constants.CONDITION.OWNERSHIP,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -1358,12 +1370,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.ZERO,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -1396,12 +1409,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: users.other1.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 }
               )
           ).to.be.revertedWith(revertReasons.INVALID_GATE);
@@ -1433,12 +1447,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.PROMISE_DEPOSITBU1,
               constants.QTY_10,
             ],
-            {//represents ConditionalCommitInfo struct
+            {
+              //represents ConditionalCommitInfo struct
               conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
               threshold: constants.ONE,
               condition: constants.CONDITION.BALANCE,
               gateAddress: contractGate.address,
-              registerConditionalCommit: false
+              registerConditionalCommit: false,
             }
           );
 
@@ -1500,12 +1515,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
+              {
+                //represents ConditionalCommitInfo struct
                 conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                 threshold: constants.ONE,
                 condition: constants.CONDITION.BALANCE,
                 gateAddress: contractGate.address,
-                registerConditionalCommit: false
+                registerConditionalCommit: false,
               },
               {value: txValue}
             )
@@ -1529,12 +1545,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
+              {
+                //represents ConditionalCommitInfo struct
                 conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                 threshold: constants.ONE,
                 condition: constants.CONDITION.BALANCE,
                 gateAddress: contractGate.address,
-                registerConditionalCommit: false
+                registerConditionalCommit: false,
               },
               {value: txValue}
             )
@@ -1567,12 +1584,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
+              {
+                //represents ConditionalCommitInfo struct
                 conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                 threshold: constants.ONE,
                 condition: constants.CONDITION.BALANCE,
                 gateAddress: constants.ZERO_ADDRESS,
-                registerConditionalCommit: false
+                registerConditionalCommit: false,
               }
             )
         ).to.be.revertedWith(revertReasons.INVALID_GATE);
@@ -1630,12 +1648,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
+              {
+                //represents ConditionalCommitInfo struct
                 conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                 threshold: constants.ONE,
                 condition: constants.CONDITION.BALANCE,
                 gateAddress: contractGate.address,
-                registerConditionalCommit: false
+                registerConditionalCommit: false,
               }
             )
         )
@@ -1793,12 +1812,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 }
               )
           )
@@ -1838,12 +1858,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -1884,12 +1905,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.TWO,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -1933,12 +1955,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.ZERO,
                   condition: constants.CONDITION.OWNERSHIP,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -1979,12 +2002,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.ZERO,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -2016,12 +2040,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
-                  gateAddress:  users.other1.address, /// gate address that maps to EOA
-                  registerConditionalCommit: true
+                  gateAddress: users.other1.address, /// gate address that maps to EOA
+                  registerConditionalCommit: true,
                 }
               )
           ).to.be.revertedWith(revertReasons.INVALID_GATE);
@@ -2052,12 +2077,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.PROMISE_DEPOSITBU1,
               constants.QTY_10,
             ],
-            {//represents ConditionalCommitInfo struct
+            {
+              //represents ConditionalCommitInfo struct
               conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
               threshold: constants.ONE,
               condition: constants.CONDITION.BALANCE,
-              gateAddress:  contractGate.address,
-              registerConditionalCommit: false
+              gateAddress: contractGate.address,
+              registerConditionalCommit: false,
             }
           );
 
@@ -2118,12 +2144,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
+              {
+                //represents ConditionalCommitInfo struct
                 conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                 threshold: constants.ONE,
                 condition: constants.CONDITION.BALANCE,
-                gateAddress:  contractGate.address,
-                registerConditionalCommit: false
+                gateAddress: contractGate.address,
+                registerConditionalCommit: false,
               },
               {value: txValue}
             )
@@ -2147,12 +2174,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-               {//represents ConditionalCommitInfo struct
+              {
+                //represents ConditionalCommitInfo struct
                 conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                 threshold: constants.ONE,
                 condition: constants.CONDITION.BALANCE,
-                gateAddress:  contractGate.address,
-                registerConditionalCommit: false
+                gateAddress: contractGate.address,
+                registerConditionalCommit: false,
               },
               {value: txValue}
             )
@@ -2184,12 +2212,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
+              {
+                //represents ConditionalCommitInfo struct
                 conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                 threshold: constants.ONE,
                 condition: constants.CONDITION.BALANCE,
-                gateAddress:  constants.ZERO_ADDRESS,
-                registerConditionalCommit: false
+                gateAddress: constants.ZERO_ADDRESS,
+                registerConditionalCommit: false,
               }
             )
         ).to.be.revertedWith(revertReasons.INVALID_GATE);
@@ -2214,12 +2243,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
+              {
+                //represents ConditionalCommitInfo struct
                 conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                 threshold: constants.ONE,
                 condition: constants.CONDITION.BALANCE,
                 gateAddress: contractGate.address,
-                registerConditionalCommit: false
+                registerConditionalCommit: false,
               },
               {value: txValue}
             )
@@ -2370,12 +2400,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -2416,12 +2447,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -2462,12 +2494,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.TWO,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -2511,12 +2544,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.ZERO,
                   condition: constants.CONDITION.OWNERSHIP,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -2557,12 +2591,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.ZERO,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -2586,12 +2621,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: users.other1.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               )
@@ -2615,12 +2651,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.PROMISE_DEPOSITBU1,
               constants.QTY_10,
             ],
-            {//represents ConditionalCommitInfo struct
+            {
+              //represents ConditionalCommitInfo struct
               conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
               threshold: constants.ONE,
               condition: constants.CONDITION.BALANCE,
               gateAddress: contractGate.address,
-              registerConditionalCommit: false
+              registerConditionalCommit: false,
             },
             {value: txValue}
           );
@@ -2675,12 +2712,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
+              {
+                //represents ConditionalCommitInfo struct
                 conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                 threshold: constants.ONE,
                 condition: constants.CONDITION.BALANCE,
                 gateAddress: contractGate.address,
-                registerConditionalCommit: false
+                registerConditionalCommit: false,
               },
               {value: txValue}
             )
@@ -2704,12 +2742,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
+              {
+                //represents ConditionalCommitInfo struct
                 conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                 threshold: constants.ONE,
                 condition: constants.CONDITION.BALANCE,
                 gateAddress: contractGate.address,
-                registerConditionalCommit: false
+                registerConditionalCommit: false,
               },
               {value: txValue}
             )
@@ -2733,12 +2772,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
+              {
+                //represents ConditionalCommitInfo struct
                 conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                 threshold: constants.ONE,
                 condition: constants.CONDITION.BALANCE,
                 gateAddress: constants.ZERO_ADDRESS,
-                registerConditionalCommit: false
+                registerConditionalCommit: false,
               },
               {value: txValue}
             )
@@ -2774,12 +2814,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: false
+                  registerConditionalCommit: false,
                 },
                 {value: txValue}
               );
@@ -3085,12 +3126,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                     constants.PROMISE_DEPOSITBU1,
                     constants.QTY_10,
                   ],
-                  {//represents ConditionalCommitInfo struct
+                  {
+                    //represents ConditionalCommitInfo struct
                     conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                     threshold: constants.ONE,
                     condition: constants.CONDITION.BALANCE,
                     gateAddress: contractGate.address,
-                    registerConditionalCommit: false
+                    registerConditionalCommit: false,
                   },
                   {value: txValue}
                 )
@@ -3113,12 +3155,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: false
+                  registerConditionalCommit: false,
                 },
                 {value: txValue}
               );
@@ -3155,12 +3198,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.FOUR,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               );
@@ -3181,7 +3225,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   value: txValue,
                 }
               )
-            ).to.be.revertedWith(revertReasons.NOT_ELIGIBLE);           
+            ).to.be.revertedWith(revertReasons.NOT_ELIGIBLE);
           });
         }); // end ETHETH
 
@@ -3724,12 +3768,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.FOUR,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               );
@@ -3750,7 +3795,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   value: txValue,
                 }
               )
-            ).to.be.revertedWith(revertReasons.NOT_ELIGIBLE);           
+            ).to.be.revertedWith(revertReasons.NOT_ELIGIBLE);
           });
         }); // end TKNTKN
 
@@ -4286,12 +4331,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: false
+                  registerConditionalCommit: false,
                 }
               );
 
@@ -4385,16 +4431,16 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           });
 
           it('Should be able to request voucher when threshold is > 1 and balance is same', async () => {
-             //1 of each type has already been minted in the beforeEach call to setupConditionalToken(). Minting more here
-             await mintTokens(run.token, 1);
+            //1 of each type has already been minted in the beforeEach call to setupConditionalToken(). Minting more here
+            await mintTokens(run.token, 1);
 
-             //increase threshold for htis voucher set Id
-             await contractGate.registerVoucherSetId(
-               tokenSupplyKey,
-               constants.CONDITIONAL_TOKEN_ID,
-               constants.CONDITION.BALANCE,
-               constants.TWO
-             );
+            //increase threshold for htis voucher set Id
+            await contractGate.registerVoucherSetId(
+              tokenSupplyKey,
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              constants.TWO
+            );
 
             const voucherTokenId = tokenSupplyKey.or(constants.ONE);
 
@@ -4474,73 +4520,73 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.CONDITION.BALANCE,
               constants.TWO
             );
-            
-           const voucherTokenId = tokenSupplyKey.or(constants.ONE);
 
-           const {v, r, s} = await generateInputs(
-             users.buyer,
-             constants.PROMISE_DEPOSITBU1
-           );
+            const voucherTokenId = tokenSupplyKey.or(constants.ONE);
 
-           const buyerInstance = contractBosonRouter.connect(
-             users.buyer.signer
-           ) as BosonRouter;
+            const {v, r, s} = await generateInputs(
+              users.buyer,
+              constants.PROMISE_DEPOSITBU1
+            );
 
-           expect(
-             await buyerInstance.requestVoucherETHTKNWithPermit(
-               tokenSupplyKey,
-               users.seller.address,
-               constants.PROMISE_DEPOSITBU1,
-               deadline,
-               v,
-               r,
-               s,
-               {value: constants.PROMISE_PRICE1}
-             )
-           )
-             .to.emit(contractGate, eventNames.LOG_USER_VOUCHER_DEACTIVATED)
-             .withArgs(users.buyer.address, tokenSupplyKey)
-             .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
-             .withArgs(
-               tokenSupplyKey,
-               voucherTokenId,
-               users.seller.address,
-               users.buyer.address,
-               promiseId
-             )
-             .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
-             .withArgs(
-               contractVoucherKernel.address,
-               users.seller.address,
-               constants.ZERO,
-               tokenSupplyKey,
-               constants.ONE
-             )
-             .to.emit(contractVouchers, eventNames.TRANSFER)
-             .withArgs(constants.ZERO, users.buyer.address, voucherTokenId);
+            const buyerInstance = contractBosonRouter.connect(
+              users.buyer.signer
+            ) as BosonRouter;
 
-           const voucherStatus = await contractVoucherKernel.getVoucherStatus(
-             voucherTokenId
-           );
+            expect(
+              await buyerInstance.requestVoucherETHTKNWithPermit(
+                tokenSupplyKey,
+                users.seller.address,
+                constants.PROMISE_DEPOSITBU1,
+                deadline,
+                v,
+                r,
+                s,
+                {value: constants.PROMISE_PRICE1}
+              )
+            )
+              .to.emit(contractGate, eventNames.LOG_USER_VOUCHER_DEACTIVATED)
+              .withArgs(users.buyer.address, tokenSupplyKey)
+              .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
+              .withArgs(
+                tokenSupplyKey,
+                voucherTokenId,
+                users.seller.address,
+                users.buyer.address,
+                promiseId
+              )
+              .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
+              .withArgs(
+                contractVoucherKernel.address,
+                users.seller.address,
+                constants.ZERO,
+                tokenSupplyKey,
+                constants.ONE
+              )
+              .to.emit(contractVouchers, eventNames.TRANSFER)
+              .withArgs(constants.ZERO, users.buyer.address, voucherTokenId);
 
-           const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
+            const voucherStatus = await contractVoucherKernel.getVoucherStatus(
+              voucherTokenId
+            );
 
-           assert.equal(
-             voucherStatus[0],
-             expectedStatus.toNumber(),
-             'Wrong status'
-           );
-           assert.isFalse(voucherStatus[1], 'Payment should not be released');
-           assert.isFalse(voucherStatus[2], 'Deposit should not be released');
-           assert.isTrue(
-             voucherStatus[3].eq(constants.ZERO),
-             'Complaint period should not started yet'
-           );
-           assert.isTrue(
-             voucherStatus[4].eq(constants.ZERO),
-             'COF period should not started yet'
-           );
-         });
+            const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
+
+            assert.equal(
+              voucherStatus[0],
+              expectedStatus.toNumber(),
+              'Wrong status'
+            );
+            assert.isFalse(voucherStatus[1], 'Payment should not be released');
+            assert.isFalse(voucherStatus[2], 'Deposit should not be released');
+            assert.isTrue(
+              voucherStatus[3].eq(constants.ZERO),
+              'Complaint period should not started yet'
+            );
+            assert.isTrue(
+              voucherStatus[4].eq(constants.ZERO),
+              'COF period should not started yet'
+            );
+          });
 
           it('[NEGATIVE] Should not be able to request voucher twice', async () => {
             let {v, r, s} = await generateInputs(
@@ -4646,12 +4692,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                     constants.PROMISE_DEPOSITBU1,
                     constants.QTY_10,
                   ],
-                  {//represents ConditionalCommitInfo struct
+                  {
+                    //represents ConditionalCommitInfo struct
                     conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                     threshold: constants.ONE,
                     condition: constants.CONDITION.BALANCE,
                     gateAddress: users.other1.address,
-                    registerConditionalCommit: false
+                    registerConditionalCommit: false,
                   }
                 )
             ).to.be.revertedWith(revertReasons.INVALID_GATE);
@@ -4697,12 +4744,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: false
+                  registerConditionalCommit: false,
                 }
               );
 
@@ -4757,12 +4805,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.FOUR,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               );
@@ -4783,7 +4832,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   value: txValue,
                 }
               )
-            ).to.be.revertedWith(revertReasons.NOT_ELIGIBLE);           
+            ).to.be.revertedWith(revertReasons.NOT_ELIGIBLE);
           });
         }); // end ETHTKN
 
@@ -4850,12 +4899,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                 {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: false
+                  registerConditionalCommit: false,
                 },
                 {value: txValue}
               );
@@ -4950,16 +5000,16 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
           });
 
           it('Should be able to request voucher when threshold is > 1 and balance is same', async () => {
-             //1 of each type has already been minted in the beforeEach call to setupConditionalToken(). Minting more here
-             await mintTokens(run.token, 1);
+            //1 of each type has already been minted in the beforeEach call to setupConditionalToken(). Minting more here
+            await mintTokens(run.token, 1);
 
-             //increase threshold for htis voucher set Id
-             await contractGate.registerVoucherSetId(
-               tokenSupplyKey,
-               constants.CONDITIONAL_TOKEN_ID,
-               constants.CONDITION.BALANCE,
-               constants.TWO
-             );
+            //increase threshold for htis voucher set Id
+            await contractGate.registerVoucherSetId(
+              tokenSupplyKey,
+              constants.CONDITIONAL_TOKEN_ID,
+              constants.CONDITION.BALANCE,
+              constants.TWO
+            );
 
             const voucherTokenId = tokenSupplyKey.or(constants.ONE);
 
@@ -5028,7 +5078,6 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             );
           });
 
-
           it('Should be able to request voucher when threshold is > 1 and balance is greater', async () => {
             //1 of each type has already been minted in the beforeEach call to setupConditionalToken(). Minting more here
             await mintTokens(run.token, 2);
@@ -5040,73 +5089,73 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
               constants.CONDITION.BALANCE,
               constants.TWO
             );
-            
-           const voucherTokenId = tokenSupplyKey.or(constants.ONE);
 
-           const {v, r, s} = await generateInputs(
-             users.buyer,
-             constants.PROMISE_PRICE1
-           );
+            const voucherTokenId = tokenSupplyKey.or(constants.ONE);
 
-           const buyerInstance = contractBosonRouter.connect(
-             users.buyer.signer
-           ) as BosonRouter;
+            const {v, r, s} = await generateInputs(
+              users.buyer,
+              constants.PROMISE_PRICE1
+            );
 
-           expect(
-             await buyerInstance.requestVoucherTKNETHWithPermit(
-               tokenSupplyKey,
-               users.seller.address,
-               constants.PROMISE_PRICE1,
-               deadline,
-               v,
-               r,
-               s,
-               {value: constants.PROMISE_DEPOSITBU1}
-             )
-           )
-             .to.emit(contractGate, eventNames.LOG_USER_VOUCHER_DEACTIVATED)
-             .withArgs(users.buyer.address, tokenSupplyKey)
-             .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
-             .withArgs(
-               tokenSupplyKey,
-               voucherTokenId,
-               users.seller.address,
-               users.buyer.address,
-               promiseId
-             )
-             .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
-             .withArgs(
-               contractVoucherKernel.address,
-               users.seller.address,
-               constants.ZERO,
-               tokenSupplyKey,
-               constants.ONE
-             )
-             .to.emit(contractVouchers, eventNames.TRANSFER)
-             .withArgs(constants.ZERO, users.buyer.address, voucherTokenId);
+            const buyerInstance = contractBosonRouter.connect(
+              users.buyer.signer
+            ) as BosonRouter;
 
-           const voucherStatus = await contractVoucherKernel.getVoucherStatus(
-             voucherTokenId
-           );
+            expect(
+              await buyerInstance.requestVoucherTKNETHWithPermit(
+                tokenSupplyKey,
+                users.seller.address,
+                constants.PROMISE_PRICE1,
+                deadline,
+                v,
+                r,
+                s,
+                {value: constants.PROMISE_DEPOSITBU1}
+              )
+            )
+              .to.emit(contractGate, eventNames.LOG_USER_VOUCHER_DEACTIVATED)
+              .withArgs(users.buyer.address, tokenSupplyKey)
+              .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_DELIVERED)
+              .withArgs(
+                tokenSupplyKey,
+                voucherTokenId,
+                users.seller.address,
+                users.buyer.address,
+                promiseId
+              )
+              .to.emit(contractVoucherSets, eventNames.TRANSFER_SINGLE)
+              .withArgs(
+                contractVoucherKernel.address,
+                users.seller.address,
+                constants.ZERO,
+                tokenSupplyKey,
+                constants.ONE
+              )
+              .to.emit(contractVouchers, eventNames.TRANSFER)
+              .withArgs(constants.ZERO, users.buyer.address, voucherTokenId);
 
-           const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
+            const voucherStatus = await contractVoucherKernel.getVoucherStatus(
+              voucherTokenId
+            );
 
-           assert.equal(
-             voucherStatus[0],
-             expectedStatus.toNumber(),
-             'Wrong status'
-           );
-           assert.isFalse(voucherStatus[1], 'Payment should not be released');
-           assert.isFalse(voucherStatus[2], 'Deposit should not be released');
-           assert.isTrue(
-             voucherStatus[3].eq(constants.ZERO),
-             'Complaint period should not started yet'
-           );
-           assert.isTrue(
-             voucherStatus[4].eq(constants.ZERO),
-             'COF period should not started yet'
-           );
-         });
+            const expectedStatus = constants.ZERO.or(constants.ONE.shl(6)); // as per contract implementations
+
+            assert.equal(
+              voucherStatus[0],
+              expectedStatus.toNumber(),
+              'Wrong status'
+            );
+            assert.isFalse(voucherStatus[1], 'Payment should not be released');
+            assert.isFalse(voucherStatus[2], 'Deposit should not be released');
+            assert.isTrue(
+              voucherStatus[3].eq(constants.ZERO),
+              'Complaint period should not started yet'
+            );
+            assert.isTrue(
+              voucherStatus[4].eq(constants.ZERO),
+              'COF period should not started yet'
+            );
+          });
 
           it('[NEGATIVE] Should not be able to request voucher twice', async () => {
             let {v, r, s} = await generateInputs(
@@ -5188,12 +5237,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                     constants.PROMISE_DEPOSITBU1,
                     constants.QTY_10,
                   ],
-                  {//represents ConditionalCommitInfo struct
+                  {
+                    //represents ConditionalCommitInfo struct
                     conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                     threshold: constants.ONE,
                     condition: constants.CONDITION.BALANCE,
                     gateAddress: users.other1.address,
-                    registerConditionalCommit: false
+                    registerConditionalCommit: false,
                   },
                   {value: txValue}
                 )
@@ -5217,12 +5267,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                   threshold: constants.ONE,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: false
+                  registerConditionalCommit: false,
                 },
                 {value: txValue}
               );
@@ -5267,12 +5318,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   constants.PROMISE_DEPOSITBU1,
                   constants.QTY_10,
                 ],
-                {//represents ConditionalCommitInfo struct
+                {
+                  //represents ConditionalCommitInfo struct
                   conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
                   threshold: constants.FOUR,
                   condition: constants.CONDITION.BALANCE,
                   gateAddress: contractGate.address,
-                  registerConditionalCommit: true
+                  registerConditionalCommit: true,
                 },
                 {value: txValue}
               );
@@ -5293,7 +5345,7 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                   value: txValue,
                 }
               )
-            ).to.be.revertedWith(revertReasons.NOT_ELIGIBLE);           
+            ).to.be.revertedWith(revertReasons.NOT_ELIGIBLE);
           });
         }); // end TKNETH
       });
@@ -5301,7 +5353,8 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
   });
 
   describe(`VOUCHER CREATION (Commit to buy when condition is OWNERSHIP)`, () => {
-    describe(`Conditional Token on Gate: ${runs[2].name}`, () => {//only for ERC721
+    describe(`Conditional Token on Gate: ${runs[2].name}`, () => {
+      //only for ERC721
       beforeEach(async () => {
         await deployContracts();
         await preparePromiseKey();
@@ -5325,12 +5378,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
+              {
+                //represents ConditionalCommitInfo struct
                 conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                 threshold: constants.ZERO,
                 condition: constants.CONDITION.OWNERSHIP,
                 gateAddress: contractGate.address,
-                registerConditionalCommit: false
+                registerConditionalCommit: false,
               },
               {value: txValue}
             );
@@ -5718,12 +5772,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
+              {
+                //represents ConditionalCommitInfo struct
                 conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                 threshold: constants.ZERO,
                 condition: constants.CONDITION.OWNERSHIP,
                 gateAddress: contractGate.address,
-                registerConditionalCommit: false
+                registerConditionalCommit: false,
               }
             );
 
@@ -5880,12 +5935,13 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
                 constants.PROMISE_DEPOSITBU1,
                 constants.QTY_10,
               ],
-              {//represents ConditionalCommitInfo struct
+              {
+                //represents ConditionalCommitInfo struct
                 conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
                 threshold: constants.ZERO,
                 condition: constants.CONDITION.OWNERSHIP,
                 gateAddress: contractGate.address,
-                registerConditionalCommit: false
+                registerConditionalCommit: false,
               },
               {value: txValue}
             );

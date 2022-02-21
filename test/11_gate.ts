@@ -287,9 +287,8 @@ describe('Gate contract', async () => {
         await contractGate.unpause();
 
         // Mint an ERC721 token for buyer
-        for(let i = 0; i < tokensToMint.toNumber(); i++) {
+        for (let i = 0; i < tokensToMint.toNumber(); i++) {
           await contractMockERC721.mint(users.other1.address);
-          
         }
         break;
 
@@ -517,21 +516,21 @@ describe('Gate contract', async () => {
           constants.ONE
         );
 
-        expect(
-          await contractGate.registerVoucherSetId(
-            constants.VOUCHER_SET_ID,
-            constants.CONDITIONAL_TOKEN_ID,
-            constants.CONDITION.BALANCE,
-            constants.TWO
-          )
+      expect(
+        await contractGate.registerVoucherSetId(
+          constants.VOUCHER_SET_ID,
+          constants.CONDITIONAL_TOKEN_ID,
+          constants.CONDITION.BALANCE,
+          constants.TWO
         )
-          .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
-          .withArgs(
-            constants.VOUCHER_SET_ID,
-            constants.CONDITIONAL_TOKEN_ID,
-            constants.CONDITION.BALANCE,
-            constants.TWO
-          );
+      )
+        .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
+        .withArgs(
+          constants.VOUCHER_SET_ID,
+          constants.CONDITIONAL_TOKEN_ID,
+          constants.CONDITION.BALANCE,
+          constants.TWO
+        );
     });
 
     it('One should be able to get conditional commit info associated with voucher set', async () => {
@@ -748,14 +747,13 @@ describe('Gate contract', async () => {
               constants.VOUCHER_SET_ID
             )
           ).to.be.false;
-          
+
           await contractGate.registerVoucherSetId(
             constants.VOUCHER_SET_ID,
             constants.CONDITIONAL_TOKEN_ID,
             constants.CONDITION.BALANCE,
             constants.ONE
           );
-          
 
           expect(
             await contractGate.check(
@@ -781,7 +779,7 @@ describe('Gate contract', async () => {
               constants.VOUCHER_SET_ID
             )
           ).to.be.false;
-          
+
           await contractGate.registerVoucherSetId(
             constants.VOUCHER_SET_ID,
             constants.CONDITIONAL_TOKEN_ID,
