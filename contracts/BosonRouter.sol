@@ -232,7 +232,7 @@ contract BosonRouter is
      * uint256 _depositBu = _metadata[4];
      * uint256 _quantity = _metadata[5];
      *
-    * @param _conditionalCommitInfo struct that contains data pertaining to conditional commit:
+     * @param _conditionalCommitInfo struct that contains data pertaining to conditional commit:
      *
      * uint256 conditionalTokenId - Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
      * in the voucher set created by this function.
@@ -258,12 +258,7 @@ contract BosonRouter is
     {
         checkLimits(_metadata, address(0), address(0), 0);
         uint256 tokenIdSupply = requestCreateOrder(_metadata, PaymentMethod.ETHETH, address(0), address(0), 0);
-        finalizeConditionalOrder(tokenIdSupply,
-         _conditionalCommitInfo.gateAddress, 
-         _conditionalCommitInfo.conditionalTokenId,
-         _conditionalCommitInfo.condition, 
-         _conditionalCommitInfo.threshold, 
-         _conditionalCommitInfo.registerConditionalCommit);
+        finalizeConditionalOrder(tokenIdSupply, _conditionalCommitInfo);
     }
 
 
@@ -380,7 +375,7 @@ contract BosonRouter is
             _metadata
         );
 
-        finalizeConditionalOrder(tokenIdSupply, _conditionalCommitInfo.gateAddress, _conditionalCommitInfo.conditionalTokenId, _conditionalCommitInfo.condition, _conditionalCommitInfo.threshold,  _conditionalCommitInfo.registerConditionalCommit);
+        finalizeConditionalOrder(tokenIdSupply, _conditionalCommitInfo);
     
     }
 
@@ -488,12 +483,7 @@ contract BosonRouter is
          _s,
         _metadata);
 
-        finalizeConditionalOrder(tokenIdSupply,
-         _conditionalCommitInfo.gateAddress, 
-         _conditionalCommitInfo.conditionalTokenId,
-         _conditionalCommitInfo.condition, 
-         _conditionalCommitInfo.threshold, 
-         _conditionalCommitInfo.registerConditionalCommit);
+       finalizeConditionalOrder(tokenIdSupply, _conditionalCommitInfo);
     }
 
     /**
@@ -572,12 +562,7 @@ contract BosonRouter is
     onlyApprovedGate(_conditionalCommitInfo.gateAddress)
     {
         uint256 tokenIdSupply = requestCreateOrderTKNETHInternal(_tokenPriceAddress, _metadata);
-        finalizeConditionalOrder(tokenIdSupply,
-         _conditionalCommitInfo.gateAddress, 
-         _conditionalCommitInfo.conditionalTokenId,
-         _conditionalCommitInfo.condition, 
-         _conditionalCommitInfo.threshold, 
-         _conditionalCommitInfo.registerConditionalCommit);
+        finalizeConditionalOrder(tokenIdSupply, _conditionalCommitInfo);
     }
 
     /**
@@ -1247,23 +1232,31 @@ contract BosonRouter is
     /**
      * @notice finalizes creating of conditional order
      * @param _tokenIdSupply    ID of the supply token
-     * @param _gateAddress address of a gate contract that will handle the interaction between the BosonRouter contract and the conditional token,
+     * @param _conditionalCommitInfo struct that contains data pertaining to conditional commit:
+     *
+     * uint256 conditionalTokenId - Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
+     * in the voucher set created by this function.
+     *
+     * uint256 threshold - the number that the balance of a tokenId must be greater than or equal to. Not used for OWNERSHIP condition
+     *
+     * Condition condition - condition that will be checked when a user commits using a conditional token
+     *
+     * address gateAddress - address of a gate contract that will handle the interaction between the BosonRouter contract and the conditional token,
      * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
-     * @param _conditionalTokenId Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
-     * @param _condition condition that will be checked when a user commits using a conditional token
-     * @param _registerConditionalCommit indicates whether Gate.registerVoucherSetId should be called. Gate.registerVoucherSetId can also be called separately
+     *
+     * bool registerConditionalCommit - indicates whether Gate.registerVoucherSetId should be called. Gate.registerVoucherSetId can also be called separately
      */
-    function finalizeConditionalOrder(uint256 _tokenIdSupply, address _gateAddress, uint256 _conditionalTokenId, Condition _condition, uint256 _threshold, bool _registerConditionalCommit) internal {
-        voucherSetToGateContract[_tokenIdSupply] = _gateAddress;
+    function finalizeConditionalOrder(uint256 _tokenIdSupply, ConditionalCommitInfo calldata _conditionalCommitInfo) internal {
+        voucherSetToGateContract[_tokenIdSupply] = _conditionalCommitInfo.gateAddress;
 
-        emit LogConditionalOrderCreated(_tokenIdSupply, _gateAddress, _conditionalTokenId, _condition, _threshold);
+        emit LogConditionalOrderCreated(_tokenIdSupply, _conditionalCommitInfo.gateAddress, _conditionalCommitInfo.conditionalTokenId, _conditionalCommitInfo.condition, _conditionalCommitInfo.threshold);
 
-        if (_registerConditionalCommit) {
-            IGate(_gateAddress).registerVoucherSetId(
+        if (_conditionalCommitInfo.registerConditionalCommit) {
+            IGate(_conditionalCommitInfo.gateAddress).registerVoucherSetId(
                 _tokenIdSupply,
-                _conditionalTokenId,
-                _condition,
-                _threshold
+                _conditionalCommitInfo.conditionalTokenId,
+                _conditionalCommitInfo.condition,
+                _conditionalCommitInfo.threshold
             );
         }
     }

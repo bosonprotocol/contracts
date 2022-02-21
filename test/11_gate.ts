@@ -1,5 +1,5 @@
 import {ethers} from 'hardhat';
-import {Signer, ContractFactory, Contract} from 'ethers';
+import {Signer, ContractFactory, Contract, BigNumber} from 'ethers';
 
 import {expect} from 'chai';
 
@@ -244,7 +244,7 @@ describe('Gate contract', async () => {
     );
   }
 
-  async function setupConditionalToken(token: number) {
+  async function setupConditionalToken(token: number, tokensToMint: BigNumber) {
     switch (token) {
       case conditionalTokens.QUEST:
         // Setup ERC1155NonTransferable as conditional token
@@ -259,7 +259,7 @@ describe('Gate contract', async () => {
         await contractERC1155NonTransferable.mint(
           users.other1.address,
           constants.CONDITIONAL_TOKEN_ID,
-          constants.ONE,
+          tokensToMint,
           constants.ZERO_BYTES
         );
         break;
@@ -274,7 +274,7 @@ describe('Gate contract', async () => {
         await contractGate.unpause();
 
         // Mint an ERC20 token for buyer
-        await contractMockERC20.mint(users.other1.address, constants.ONE);
+        await contractMockERC20.mint(users.other1.address, tokensToMint);
         break;
 
       case conditionalTokens.ERC721:
@@ -287,7 +287,10 @@ describe('Gate contract', async () => {
         await contractGate.unpause();
 
         // Mint an ERC721 token for buyer
-        await contractMockERC721.mint(users.other1.address);
+        for(let i = 0; i < tokensToMint.toNumber(); i++) {
+          await contractMockERC721.mint(users.other1.address);
+          
+        }
         break;
 
       case conditionalTokens.ERC1155:
@@ -303,7 +306,7 @@ describe('Gate contract', async () => {
         await contractMockERC1155.mint(
           users.other1.address,
           constants.CONDITIONAL_TOKEN_ID,
-          constants.ONE
+          tokensToMint
         );
         break;
 
@@ -317,6 +320,7 @@ describe('Gate contract', async () => {
     gate,
     conditionalOrderConditionalTokenID,
     conditionalOrderCondition,
+    threshold,
     registerConditionalCommit
   ) {
     await contractERC1155NonTransferable.mint(
@@ -381,6 +385,7 @@ describe('Gate contract', async () => {
       gate,
       conditionalOrderConditionalTokenID,
       conditionalOrderCondition,
+      threshold,
       registerConditionalCommit,
       true
     );
@@ -432,14 +437,16 @@ describe('Gate contract', async () => {
         await contractGate.registerVoucherSetId(
           constants.VOUCHER_SET_ID,
           constants.CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.BALANCE
+          constants.CONDITION.BALANCE,
+          constants.ONE
         )
       )
         .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
         .withArgs(
           constants.VOUCHER_SET_ID,
           constants.CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.BALANCE
+          constants.CONDITION.BALANCE,
+          constants.ONE
         );
     });
 
@@ -448,14 +455,16 @@ describe('Gate contract', async () => {
         await contractGate.registerVoucherSetId(
           constants.VOUCHER_SET_ID,
           constants.EMPTY_CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.BALANCE
+          constants.CONDITION.BALANCE,
+          constants.ONE
         )
       )
         .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
         .withArgs(
           constants.VOUCHER_SET_ID,
           constants.EMPTY_CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.BALANCE
+          constants.CONDITION.BALANCE,
+          constants.ONE
         );
     });
 
@@ -471,22 +480,66 @@ describe('Gate contract', async () => {
         await contractGate.registerVoucherSetId(
           constants.VOUCHER_SET_ID,
           constants.CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.OWNERSHIP
+          constants.CONDITION.OWNERSHIP,
+          constants.ZERO
         )
       )
         .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
         .withArgs(
           constants.VOUCHER_SET_ID,
           constants.CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.OWNERSHIP
+          constants.CONDITION.OWNERSHIP,
+          constants.ZERO
         );
+    });
+
+    it('Owner should be able to change threshold for a voucher set Id', async () => {
+      await contractGate.pause();
+      await contractGate.setConditionalTokenContract(
+        contractMockERC721.address,
+        constants.TOKEN_TYPE.NONFUNGIBLE_TOKEN
+      );
+      await contractGate.unpause();
+
+      expect(
+        await contractGate.registerVoucherSetId(
+          constants.VOUCHER_SET_ID,
+          constants.CONDITIONAL_TOKEN_ID,
+          constants.CONDITION.BALANCE,
+          constants.ONE
+        )
+      )
+        .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
+        .withArgs(
+          constants.VOUCHER_SET_ID,
+          constants.CONDITIONAL_TOKEN_ID,
+          constants.CONDITION.BALANCE,
+          constants.ONE
+        );
+
+        expect(
+          await contractGate.registerVoucherSetId(
+            constants.VOUCHER_SET_ID,
+            constants.CONDITIONAL_TOKEN_ID,
+            constants.CONDITION.BALANCE,
+            constants.TWO
+          )
+        )
+          .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
+          .withArgs(
+            constants.VOUCHER_SET_ID,
+            constants.CONDITIONAL_TOKEN_ID,
+            constants.CONDITION.BALANCE,
+            constants.TWO
+          );
     });
 
     it('One should be able to get conditional commit info associated with voucher set', async () => {
       await contractGate.registerVoucherSetId(
         constants.VOUCHER_SET_ID,
         constants.CONDITIONAL_TOKEN_ID,
-        constants.CONDITION.BALANCE
+        constants.CONDITION.BALANCE,
+        constants.ONE
       );
 
       const response = await contractGate.getConditionalCommitInfo(
@@ -494,6 +547,7 @@ describe('Gate contract', async () => {
       );
       expect(response[0]).to.equal(constants.CONDITIONAL_TOKEN_ID);
       expect(response[1]).to.equal(constants.CONDITION.BALANCE);
+      expect(response[2]).to.equal(constants.ONE);
     });
 
     it('Owner should be able to pause', async () => {
@@ -523,7 +577,8 @@ describe('Gate contract', async () => {
           .registerVoucherSetId(
             constants.VOUCHER_SET_ID,
             constants.CONDITIONAL_TOKEN_ID,
-            constants.CONDITION.BALANCE
+            constants.CONDITION.BALANCE,
+            constants.ONE
           )
       ).to.be.revertedWith(revertReasons.PAUSED);
 
@@ -574,7 +629,8 @@ describe('Gate contract', async () => {
           .registerVoucherSetId(
             constants.VOUCHER_SET_ID,
             constants.CONDITIONAL_TOKEN_ID,
-            constants.CONDITION.BALANCE
+            constants.CONDITION.BALANCE,
+            constants.ONE
           )
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER_OR_ROUTER);
     });
@@ -586,9 +642,21 @@ describe('Gate contract', async () => {
         contractGate.registerVoucherSetId(
           voucherSetId,
           constants.CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.BALANCE
+          constants.CONDITION.BALANCE,
+          constants.ONE
         )
       ).to.be.revertedWith(revertReasons.INVALID_TOKEN_SUPPLY);
+    });
+
+    it('[NEGATIVE][registerVoucherSetId] Should revert if threshold is zero with condition BALANCE', async () => {
+      await expect(
+        contractGate.registerVoucherSetId(
+          constants.VOUCHER_SET_ID,
+          constants.CONDITIONAL_TOKEN_ID,
+          constants.CONDITION.BALANCE,
+          constants.ZERO
+        )
+      ).to.be.revertedWith(revertReasons.INVALID_THRESHOLD);
     });
 
     it('[NEGATIVE][registerVoucherSetId] Should revert if supplied invalid condition type', async () => {
@@ -596,7 +664,8 @@ describe('Gate contract', async () => {
         contractGate.registerVoucherSetId(
           constants.VOUCHER_SET_ID,
           constants.CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.INVALID
+          constants.CONDITION.INVALID,
+          constants.ONE
         )
       ).to.be.revertedWith(''); // No revert reason, if argument is not in valid range for enum, solidity reverts
     });
@@ -607,7 +676,8 @@ describe('Gate contract', async () => {
         contractGate.registerVoucherSetId(
           constants.VOUCHER_SET_ID,
           constants.CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.OWNERSHIP
+          constants.CONDITION.OWNERSHIP,
+          constants.ONE
         )
       ).to.be.revertedWith(
         revertReasons.CONDITION_NOT_AVAILABLE_FOR_TOKEN_TYPE
@@ -625,7 +695,8 @@ describe('Gate contract', async () => {
         contractGate.registerVoucherSetId(
           constants.VOUCHER_SET_ID,
           constants.CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.OWNERSHIP
+          constants.CONDITION.OWNERSHIP,
+          constants.ZERO
         )
       ).to.be.revertedWith(
         revertReasons.CONDITION_NOT_AVAILABLE_FOR_TOKEN_TYPE
@@ -668,14 +739,8 @@ describe('Gate contract', async () => {
           await deployContracts();
         });
 
-        it('check function works correctly', async () => {
-          if (run.type === constants.TOKEN_TYPE.MULTI_TOKEN) {
-            await contractGate.registerVoucherSetId(
-              constants.VOUCHER_SET_ID,
-              constants.CONDITIONAL_TOKEN_ID,
-              constants.CONDITION.BALANCE
-            );
-          }
+        it('check function works correctly for balance with threshold  = 1', async () => {
+          await setupConditionalToken(run.token, constants.ONE);
 
           expect(
             await contractGate.check(
@@ -683,8 +748,46 @@ describe('Gate contract', async () => {
               constants.VOUCHER_SET_ID
             )
           ).to.be.false;
+          
+          await contractGate.registerVoucherSetId(
+            constants.VOUCHER_SET_ID,
+            constants.CONDITIONAL_TOKEN_ID,
+            constants.CONDITION.BALANCE,
+            constants.ONE
+          );
+          
 
-          await setupConditionalToken(run.token);
+          expect(
+            await contractGate.check(
+              users.other1.address,
+              constants.VOUCHER_SET_ID
+            )
+          ).to.be.true;
+
+          expect(
+            await contractGate.check(
+              users.other2.address,
+              constants.VOUCHER_SET_ID
+            )
+          ).to.be.false;
+        });
+
+        it('check function works correctly for balance with threshold > 1', async () => {
+          await setupConditionalToken(run.token, constants.TWO);
+
+          expect(
+            await contractGate.check(
+              users.other1.address,
+              constants.VOUCHER_SET_ID
+            )
+          ).to.be.false;
+          
+          await contractGate.registerVoucherSetId(
+            constants.VOUCHER_SET_ID,
+            constants.CONDITIONAL_TOKEN_ID,
+            constants.CONDITION.BALANCE,
+            constants.TWO
+          );
 
           expect(
             await contractGate.check(
@@ -811,13 +914,15 @@ describe('Gate contract', async () => {
             contractGate,
             0,
             constants.CONDITION.BALANCE,
+            constants.ONE,
             false
           );
 
         await contractGate.registerVoucherSetId(
           tokenId,
           conditionalTokenId,
-          constants.CONDITION.BALANCE
+          constants.CONDITION.BALANCE,
+          constants.ONE
         );
 
         expect(await contractGate.check(users.buyer.address, tokenId)).to.be
@@ -841,13 +946,15 @@ describe('Gate contract', async () => {
             contractGate,
             0,
             constants.CONDITION.BALANCE,
+            constants.ONE,
             false
           );
 
         await contractGate.registerVoucherSetId(
           tokenId,
           conditionalTokenId,
-          constants.CONDITION.BALANCE
+          constants.CONDITION.BALANCE,
+          constants.ONE
         );
 
         await expect(

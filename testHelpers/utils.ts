@@ -56,6 +56,7 @@ class Utils {
     gateContract,
     conditionalTokenId,
     condition,
+    threshold,
     registerConditionalCommit,
     returnTx?
   ) => any;
@@ -282,6 +283,7 @@ class Utils {
     gateContract: Account,
     conditionalTokenId: number | string | null,
     condition: number | string,
+    threshold: number | string,
     registerConditionalCommit: boolean,
     returnTx = false
   ): Promise<ContractTransaction | string> {
@@ -303,6 +305,8 @@ class Utils {
       Buffer.from(seller.privateKey.slice(2), 'hex')
     );
 
+    const gateAddress = gateContract.address;
+
     const sellerInstance = this.contractBSNRouter.connect(
       seller.signer
     ) as BosonRouter;
@@ -316,10 +320,13 @@ class Utils {
         r,
         s,
         [from, to, promisePrice, sellerDeposit, buyerDeposit, qty],
-        gateContract.address,
-        conditionalTokenId || '0',
-        condition,
-        registerConditionalCommit,
+        {//represents ConditionalCommitInfo struct
+          conditionalTokenId,
+          threshold,
+          condition,
+          gateAddress,
+          registerConditionalCommit,
+        },
         {
           from: seller.address,
         }

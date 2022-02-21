@@ -104,6 +104,7 @@ contract Gate is IGate, Ownable, Pausable {
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
      * @return conditional token ID if one is associated with a voucher set. Zero could be a valid token ID
      * @return condition that will be checked when a user commits using a conditional token
+     * @return threshold that may be checked when a user commits using a conditional token
      */
     function getConditionalCommitInfo(uint256 _tokenIdSupply) external view returns (uint256, Condition, uint256) {
         ConditionalCommitInfo memory conditionalCommitInfo = voucherSetToConditionalCommit[_tokenIdSupply];
@@ -172,8 +173,11 @@ contract Gate is IGate, Ownable, Pausable {
     {
         require(_tokenIdSupply != 0, "INVALID_TOKEN_SUPPLY");
         
+        
         if(_condition == Condition.OWNERSHIP) {
             require(conditionalTokenType == TokenType.NONFUNGIBLE_TOKEN, "CONDITION_NOT_AVAILABLE_FOR_TOKEN_TYPE");
+        } else {
+            require(_threshold != 0, "INVALID_THRESHOLD");
         }
 
         voucherSetToConditionalCommit[_tokenIdSupply] = ConditionalCommitInfo(_conditionalTokenId, _threshold, _condition, address(0), false);//last two not used by Gate, just setting defaults
@@ -193,11 +197,17 @@ contract Gate is IGate, Ownable, Pausable {
         override
         returns (bool)
     {
-        ConditionalCommitInfo memory conditionalCommitInfo = voucherSetToConditionalCommit[_tokenIdSupply];
+       ConditionalCommitInfo memory conditionalCommitInfo = voucherSetToConditionalCommit[_tokenIdSupply];
+
+        if(conditionalCommitInfo.condition == Condition.NOT_SET) {
+            return false;
+        }
 
         return conditionalCommitInfo.condition == Condition.OWNERSHIP
                 ? checkOwnership(_user, _tokenIdSupply, conditionalCommitInfo.conditionalTokenId)
                 : checkBalance(_user, _tokenIdSupply, conditionalCommitInfo.conditionalTokenId, conditionalCommitInfo.threshold);
+
+
     }
 
     /**
