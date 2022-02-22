@@ -2838,12 +2838,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
             tokenSupplyKey = eventArgs._tokenIdSupply;
 
-            await contractGate.registerVoucherSetId(
-              tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID,
-              constants.CONDITION.BALANCE,
-              constants.ONE
-            );
+            await contractGate.registerVoucherSetId(tokenSupplyKey, {
+              //represents ConditionalCommitInfo struct
+              conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+              threshold: constants.ONE,
+              condition: constants.CONDITION.BALANCE,
+              gateAddress: constants.ZERO_ADDRESS, //default value
+              registerConditionalCommit: false, //default value
+            });
           });
 
           it('Should be able to request voucher when threshold is 1 and balance is same', async () => {
@@ -2914,12 +2916,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             await mintTokens(run.token, 1);
 
             //increase threshold for htis voucher set Id
-            await contractGate.registerVoucherSetId(
-              tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID,
-              constants.CONDITION.BALANCE,
-              constants.TWO
-            );
+            await contractGate.registerVoucherSetId(tokenSupplyKey, {
+              //represents ConditionalCommitInfo struct
+              conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+              threshold: constants.TWO,
+              condition: constants.CONDITION.BALANCE,
+              gateAddress: constants.ZERO_ADDRESS, //default value
+              registerConditionalCommit: false, //default value
+            });
             const voucherTokenId = tokenSupplyKey.or(constants.ONE);
 
             const txValue = BN(constants.PROMISE_DEPOSITBU1).add(
@@ -2987,12 +2991,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             await mintTokens(run.token, 2);
 
             //increase threshold for htis voucher set Id
-            await contractGate.registerVoucherSetId(
-              tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID,
-              constants.CONDITION.BALANCE,
-              constants.TWO
-            );
+            await contractGate.registerVoucherSetId(tokenSupplyKey, {
+              //represents ConditionalCommitInfo struct
+              conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+              threshold: constants.TWO,
+              condition: constants.CONDITION.BALANCE,
+              gateAddress: constants.ZERO_ADDRESS, //default value
+              registerConditionalCommit: false, //default value
+            });
 
             const voucherTokenId = tokenSupplyKey.or(constants.ONE);
 
@@ -3350,12 +3356,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
             tokenSupplyKey = eventArgs._tokenIdSupply;
 
-            await contractGate.registerVoucherSetId(
-              tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID,
-              constants.CONDITION.BALANCE,
-              constants.ONE
-            );
+            await contractGate.registerVoucherSetId(tokenSupplyKey, {
+              //represents ConditionalCommitInfo struct
+              conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+              threshold: constants.ONE,
+              condition: constants.CONDITION.BALANCE,
+              gateAddress: constants.ZERO_ADDRESS, //default value
+              registerConditionalCommit: false, //default value
+            });
           });
 
           it('Should be able to request voucher when threshold is 1 and balance is same', async () => {
@@ -3439,12 +3447,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             await mintTokens(run.token, 1);
 
             //increase threshold for htis voucher set Id
-            await contractGate.registerVoucherSetId(
-              tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID,
-              constants.CONDITION.BALANCE,
-              constants.TWO
-            );
+            await contractGate.registerVoucherSetId(tokenSupplyKey, {
+              //represents ConditionalCommitInfo struct
+              conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+              threshold: constants.TWO,
+              condition: constants.CONDITION.BALANCE,
+              gateAddress: constants.ZERO_ADDRESS, //default value
+              registerConditionalCommit: false, //default value
+            });
 
             const voucherTokenId = tokenSupplyKey.or(constants.ONE);
 
@@ -3526,12 +3536,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             await mintTokens(run.token, 2);
 
             //increase threshold for htis voucher set Id
-            await contractGate.registerVoucherSetId(
-              tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID,
-              constants.CONDITION.BALANCE,
-              constants.TWO
-            );
+            await contractGate.registerVoucherSetId(tokenSupplyKey, {
+              //represents ConditionalCommitInfo struct
+              conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+              threshold: constants.TWO,
+              condition: constants.CONDITION.BALANCE,
+              gateAddress: constants.ZERO_ADDRESS, //default value
+              registerConditionalCommit: false, //default value
+            });
 
             const voucherTokenId = tokenSupplyKey.or(constants.ONE);
 
@@ -3883,12 +3895,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
             tokenSupplyKey = eventArgs._tokenIdSupply;
 
-            await contractGate.registerVoucherSetId(
-              tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID,
-              constants.CONDITION.BALANCE,
-              constants.ONE
-            );
+            await contractGate.registerVoucherSetId(tokenSupplyKey, {
+              //represents ConditionalCommitInfo struct
+              conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+              threshold: constants.ONE,
+              condition: constants.CONDITION.BALANCE,
+              gateAddress: constants.ZERO_ADDRESS, //default value
+              registerConditionalCommit: false, //default value
+            });
           });
 
           it('Should be able to request voucher when threshold is 1 and balance is same', async () => {
@@ -3963,12 +3977,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             await mintTokens(run.token, 1);
 
             //increase threshold for htis voucher set Id
-            await contractGate.registerVoucherSetId(
-              tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID,
-              constants.CONDITION.BALANCE,
-              constants.TWO
-            );
+            await contractGate.registerVoucherSetId(tokenSupplyKey, {
+              //represents ConditionalCommitInfo struct
+              conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+              threshold: constants.TWO,
+              condition: constants.CONDITION.BALANCE,
+              gateAddress: constants.ZERO_ADDRESS, //default value
+              registerConditionalCommit: false, //default value
+            });
 
             const voucherTokenId = tokenSupplyKey.or(constants.ONE);
 
@@ -4041,12 +4057,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             await mintTokens(run.token, 2);
 
             //increase threshold for htis voucher set Id
-            await contractGate.registerVoucherSetId(
-              tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID,
-              constants.CONDITION.BALANCE,
-              constants.TWO
-            );
+            await contractGate.registerVoucherSetId(tokenSupplyKey, {
+              //represents ConditionalCommitInfo struct
+              conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+              threshold: constants.TWO,
+              condition: constants.CONDITION.BALANCE,
+              gateAddress: constants.ZERO_ADDRESS, //default value
+              registerConditionalCommit: false, //default value
+            });
 
             const voucherTokenId = tokenSupplyKey.or(constants.ONE);
 
@@ -4354,12 +4372,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
             tokenSupplyKey = eventArgs._tokenIdSupply;
 
-            await contractGate.registerVoucherSetId(
-              tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID,
-              constants.CONDITION.BALANCE,
-              constants.ONE
-            );
+            await contractGate.registerVoucherSetId(tokenSupplyKey, {
+              //represents ConditionalCommitInfo struct
+              conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+              threshold: constants.ONE,
+              condition: constants.CONDITION.BALANCE,
+              gateAddress: constants.ZERO_ADDRESS, //default value
+              registerConditionalCommit: false, //default value
+            });
           });
 
           it('Should be able to request voucher when threshold is 1 and balance is same', async () => {
@@ -4435,12 +4455,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             await mintTokens(run.token, 1);
 
             //increase threshold for htis voucher set Id
-            await contractGate.registerVoucherSetId(
-              tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID,
-              constants.CONDITION.BALANCE,
-              constants.TWO
-            );
+            await contractGate.registerVoucherSetId(tokenSupplyKey, {
+              //represents ConditionalCommitInfo struct
+              conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+              threshold: constants.TWO,
+              condition: constants.CONDITION.BALANCE,
+              gateAddress: constants.ZERO_ADDRESS, //default value
+              registerConditionalCommit: false, //default value
+            });
 
             const voucherTokenId = tokenSupplyKey.or(constants.ONE);
 
@@ -4514,12 +4536,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             await mintTokens(run.token, 2);
 
             //increase threshold for htis voucher set Id
-            await contractGate.registerVoucherSetId(
-              tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID,
-              constants.CONDITION.BALANCE,
-              constants.TWO
-            );
+            await contractGate.registerVoucherSetId(tokenSupplyKey, {
+              //represents ConditionalCommitInfo struct
+              conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+              threshold: constants.TWO,
+              condition: constants.CONDITION.BALANCE,
+              gateAddress: constants.ZERO_ADDRESS, //default value
+              registerConditionalCommit: false, //default value
+            });
 
             const voucherTokenId = tokenSupplyKey.or(constants.ONE);
 
@@ -4923,12 +4947,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
             tokenSupplyKey = eventArgs._tokenIdSupply;
 
-            await contractGate.registerVoucherSetId(
-              tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID,
-              constants.CONDITION.BALANCE,
-              constants.ONE
-            );
+            await contractGate.registerVoucherSetId(tokenSupplyKey, {
+              //represents ConditionalCommitInfo struct
+              conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+              threshold: constants.ONE,
+              condition: constants.CONDITION.BALANCE,
+              gateAddress: constants.ZERO_ADDRESS, //default value
+              registerConditionalCommit: false, //default value
+            });
           });
 
           it('Should be able to request voucher when threshold is 1 and balance is same', async () => {
@@ -5004,12 +5030,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             await mintTokens(run.token, 1);
 
             //increase threshold for htis voucher set Id
-            await contractGate.registerVoucherSetId(
-              tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID,
-              constants.CONDITION.BALANCE,
-              constants.TWO
-            );
+            await contractGate.registerVoucherSetId(tokenSupplyKey, {
+              //represents ConditionalCommitInfo struct
+              conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+              threshold: constants.TWO,
+              condition: constants.CONDITION.BALANCE,
+              gateAddress: constants.ZERO_ADDRESS, //default value
+              registerConditionalCommit: false, //default value
+            });
 
             const voucherTokenId = tokenSupplyKey.or(constants.ONE);
 
@@ -5083,12 +5111,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
             await mintTokens(run.token, 2);
 
             //increase threshold for htis voucher set Id
-            await contractGate.registerVoucherSetId(
-              tokenSupplyKey,
-              constants.CONDITIONAL_TOKEN_ID,
-              constants.CONDITION.BALANCE,
-              constants.TWO
-            );
+            await contractGate.registerVoucherSetId(tokenSupplyKey, {
+              //represents ConditionalCommitInfo struct
+              conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+              threshold: constants.TWO,
+              condition: constants.CONDITION.BALANCE,
+              gateAddress: constants.ZERO_ADDRESS, //default value
+              registerConditionalCommit: false, //default value
+            });
 
             const voucherTokenId = tokenSupplyKey.or(constants.ONE);
 
@@ -5402,12 +5432,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
           tokenSupplyKey = eventArgs._tokenIdSupply;
 
-          await contractGate.registerVoucherSetId(
-            tokenSupplyKey,
-            erc721TokenId,
-            constants.CONDITION.OWNERSHIP,
-            constants.ZERO
-          );
+          await contractGate.registerVoucherSetId(tokenSupplyKey, {
+            //represents ConditionalCommitInfo struct
+            conditionalTokenId: erc721TokenId,
+            threshold: constants.ZERO,
+            condition: constants.CONDITION.OWNERSHIP,
+            gateAddress: constants.ZERO_ADDRESS, //default value
+            registerConditionalCommit: false, //default value
+          });
         });
 
         it('Should be able to request voucher with OWNERSHIP condition', async () => {
@@ -5595,12 +5627,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
           tokenSupplyKey = eventArgs._tokenIdSupply;
 
-          await contractGate.registerVoucherSetId(
-            tokenSupplyKey,
-            erc721TokenId,
-            constants.CONDITION.OWNERSHIP,
-            constants.ZERO
-          );
+          await contractGate.registerVoucherSetId(tokenSupplyKey, {
+            //represents ConditionalCommitInfo struct
+            conditionalTokenId: erc721TokenId,
+            threshold: constants.ZERO,
+            condition: constants.CONDITION.OWNERSHIP,
+            gateAddress: constants.ZERO_ADDRESS, //default value
+            registerConditionalCommit: false, //default value
+          });
         }); //end beforeEach
 
         it('Should be able to request voucher with OWNERSHIP condition', async () => {
@@ -5795,12 +5829,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
           tokenSupplyKey = eventArgs._tokenIdSupply;
 
-          await contractGate.registerVoucherSetId(
-            tokenSupplyKey,
-            erc721TokenId,
-            constants.CONDITION.OWNERSHIP,
-            constants.ZERO
-          );
+          await contractGate.registerVoucherSetId(tokenSupplyKey, {
+            //represents ConditionalCommitInfo struct
+            conditionalTokenId: erc721TokenId,
+            threshold: constants.ZERO,
+            condition: constants.CONDITION.OWNERSHIP,
+            gateAddress: constants.ZERO_ADDRESS, //default value
+            registerConditionalCommit: false, //default value
+          });
         });
 
         it('Should be able to request voucher with OWNERSHIP condition', async () => {
@@ -5959,12 +5995,14 @@ describe('Create Voucher sets and commit to vouchers with token conditional comm
 
           tokenSupplyKey = eventArgs._tokenIdSupply;
 
-          await contractGate.registerVoucherSetId(
-            tokenSupplyKey,
-            erc721TokenId,
-            constants.CONDITION.OWNERSHIP,
-            constants.ZERO
-          );
+          await contractGate.registerVoucherSetId(tokenSupplyKey, {
+            //represents ConditionalCommitInfo struct
+            conditionalTokenId: erc721TokenId,
+            threshold: constants.ZERO,
+            condition: constants.CONDITION.OWNERSHIP,
+            gateAddress: constants.ZERO_ADDRESS, //default value
+            registerConditionalCommit: false, //default value
+          });
         });
 
         it('Should be able to request voucher with OWNERSHIP condition', async () => {

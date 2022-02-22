@@ -433,12 +433,14 @@ describe('Gate contract', async () => {
 
     it('Owner should be able to register voucher set id with conditional token Id > 0', async () => {
       expect(
-        await contractGate.registerVoucherSetId(
-          constants.VOUCHER_SET_ID,
-          constants.CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.BALANCE,
-          constants.ONE
-        )
+        await contractGate.registerVoucherSetId(constants.VOUCHER_SET_ID, {
+          //represents ConditionalCommitInfo struct
+          conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+          threshold: constants.ONE,
+          condition: constants.CONDITION.BALANCE,
+          gateAddress: constants.ZERO_ADDRESS, //default value
+          registerConditionalCommit: false, //default value
+        })
       )
         .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
         .withArgs(
@@ -451,12 +453,14 @@ describe('Gate contract', async () => {
 
     it('Owner should be able to register voucher set id with conditional token Id = 0', async () => {
       expect(
-        await contractGate.registerVoucherSetId(
-          constants.VOUCHER_SET_ID,
-          constants.EMPTY_CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.BALANCE,
-          constants.ONE
-        )
+        await contractGate.registerVoucherSetId(constants.VOUCHER_SET_ID, {
+          //represents ConditionalCommitInfo struct
+          conditionalTokenId: constants.EMPTY_CONDITIONAL_TOKEN_ID,
+          threshold: constants.ONE,
+          condition: constants.CONDITION.BALANCE,
+          gateAddress: constants.ZERO_ADDRESS, //default value
+          registerConditionalCommit: false, //default value
+        })
       )
         .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
         .withArgs(
@@ -476,12 +480,14 @@ describe('Gate contract', async () => {
       await contractGate.unpause();
 
       expect(
-        await contractGate.registerVoucherSetId(
-          constants.VOUCHER_SET_ID,
-          constants.CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.OWNERSHIP,
-          constants.ZERO
-        )
+        await contractGate.registerVoucherSetId(constants.VOUCHER_SET_ID, {
+          //represents ConditionalCommitInfo struct
+          conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+          threshold: constants.ZERO,
+          condition: constants.CONDITION.OWNERSHIP,
+          gateAddress: constants.ZERO_ADDRESS, //default value
+          registerConditionalCommit: false, //default value
+        })
       )
         .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
         .withArgs(
@@ -501,12 +507,14 @@ describe('Gate contract', async () => {
       await contractGate.unpause();
 
       expect(
-        await contractGate.registerVoucherSetId(
-          constants.VOUCHER_SET_ID,
-          constants.CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.BALANCE,
-          constants.ONE
-        )
+        await contractGate.registerVoucherSetId(constants.VOUCHER_SET_ID, {
+          //represents ConditionalCommitInfo struct
+          conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+          threshold: constants.ONE,
+          condition: constants.CONDITION.BALANCE,
+          gateAddress: constants.ZERO_ADDRESS, //default value
+          registerConditionalCommit: false, //default value
+        })
       )
         .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
         .withArgs(
@@ -517,12 +525,14 @@ describe('Gate contract', async () => {
         );
 
       expect(
-        await contractGate.registerVoucherSetId(
-          constants.VOUCHER_SET_ID,
-          constants.CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.BALANCE,
-          constants.TWO
-        )
+        await contractGate.registerVoucherSetId(constants.VOUCHER_SET_ID, {
+          //represents ConditionalCommitInfo struct
+          conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+          threshold: constants.TWO,
+          condition: constants.CONDITION.BALANCE,
+          gateAddress: constants.ZERO_ADDRESS, //default value
+          registerConditionalCommit: false, //default value
+        })
       )
         .to.emit(contractGate, eventNames.LOG_VOUCHER_SET_REGISTERED)
         .withArgs(
@@ -534,12 +544,14 @@ describe('Gate contract', async () => {
     });
 
     it('One should be able to get conditional commit info associated with voucher set', async () => {
-      await contractGate.registerVoucherSetId(
-        constants.VOUCHER_SET_ID,
-        constants.CONDITIONAL_TOKEN_ID,
-        constants.CONDITION.BALANCE,
-        constants.ONE
-      );
+      await contractGate.registerVoucherSetId(constants.VOUCHER_SET_ID, {
+        //represents ConditionalCommitInfo struct
+        conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+        threshold: constants.ONE,
+        condition: constants.CONDITION.BALANCE,
+        gateAddress: constants.ZERO_ADDRESS, //default value
+        registerConditionalCommit: false, //default value
+      });
 
       const response = await contractGate.getConditionalCommitInfo(
         constants.VOUCHER_SET_ID
@@ -573,12 +585,14 @@ describe('Gate contract', async () => {
       await expect(
         contractGate
           .connect(users.attacker.signer)
-          .registerVoucherSetId(
-            constants.VOUCHER_SET_ID,
-            constants.CONDITIONAL_TOKEN_ID,
-            constants.CONDITION.BALANCE,
-            constants.ONE
-          )
+          .registerVoucherSetId(constants.VOUCHER_SET_ID, {
+            //represents ConditionalCommitInfo struct
+            conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+            threshold: constants.ONE,
+            condition: constants.CONDITION.BALANCE,
+            gateAddress: constants.ZERO_ADDRESS, //default value
+            registerConditionalCommit: false, //default value
+          })
       ).to.be.revertedWith(revertReasons.PAUSED);
 
       await expect(
@@ -625,12 +639,14 @@ describe('Gate contract', async () => {
       await expect(
         contractGate
           .connect(users.attacker.signer)
-          .registerVoucherSetId(
-            constants.VOUCHER_SET_ID,
-            constants.CONDITIONAL_TOKEN_ID,
-            constants.CONDITION.BALANCE,
-            constants.ONE
-          )
+          .registerVoucherSetId(constants.VOUCHER_SET_ID, {
+            //represents ConditionalCommitInfo struct
+            conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+            threshold: constants.ONE,
+            condition: constants.CONDITION.BALANCE,
+            gateAddress: constants.ZERO_ADDRESS, //default value
+            registerConditionalCommit: false, //default value
+          })
       ).to.be.revertedWith(revertReasons.UNAUTHORIZED_OWNER_OR_ROUTER);
     });
 
@@ -638,46 +654,54 @@ describe('Gate contract', async () => {
       const voucherSetId = 0;
 
       await expect(
-        contractGate.registerVoucherSetId(
-          voucherSetId,
-          constants.CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.BALANCE,
-          constants.ONE
-        )
+        contractGate.registerVoucherSetId(voucherSetId, {
+          //represents ConditionalCommitInfo struct
+          conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+          threshold: constants.ONE,
+          condition: constants.CONDITION.BALANCE,
+          gateAddress: constants.ZERO_ADDRESS, //default value
+          registerConditionalCommit: false, //default value
+        })
       ).to.be.revertedWith(revertReasons.INVALID_TOKEN_SUPPLY);
     });
 
     it('[NEGATIVE][registerVoucherSetId] Should revert if threshold is zero with condition BALANCE', async () => {
       await expect(
-        contractGate.registerVoucherSetId(
-          constants.VOUCHER_SET_ID,
-          constants.CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.BALANCE,
-          constants.ZERO
-        )
+        contractGate.registerVoucherSetId(constants.VOUCHER_SET_ID, {
+          //represents ConditionalCommitInfo struct
+          conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+          threshold: constants.ZERO,
+          condition: constants.CONDITION.BALANCE,
+          gateAddress: constants.ZERO_ADDRESS, //default value
+          registerConditionalCommit: false, //default value
+        })
       ).to.be.revertedWith(revertReasons.INVALID_THRESHOLD);
     });
 
     it('[NEGATIVE][registerVoucherSetId] Should revert if supplied invalid condition type', async () => {
       await expect(
-        contractGate.registerVoucherSetId(
-          constants.VOUCHER_SET_ID,
-          constants.CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.INVALID,
-          constants.ONE
-        )
+        contractGate.registerVoucherSetId(constants.VOUCHER_SET_ID, {
+          //represents ConditionalCommitInfo struct
+          conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+          threshold: constants.ONE,
+          condition: constants.CONDITION.INVALID,
+          gateAddress: constants.ZERO_ADDRESS, //default value
+          registerConditionalCommit: false, //default value
+        })
       ).to.be.revertedWith(''); // No revert reason, if argument is not in valid range for enum, solidity reverts
     });
 
     it('[NEGATIVE][registerVoucherSetId] Should revert if OWNERSHIP is specified with conditional token type other than ERC721', async () => {
       //ERC1155
       await expect(
-        contractGate.registerVoucherSetId(
-          constants.VOUCHER_SET_ID,
-          constants.CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.OWNERSHIP,
-          constants.ONE
-        )
+        contractGate.registerVoucherSetId(constants.VOUCHER_SET_ID, {
+          //represents ConditionalCommitInfo struct
+          conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+          threshold: constants.ONE,
+          condition: constants.CONDITION.OWNERSHIP,
+          gateAddress: constants.ZERO_ADDRESS, //default value
+          registerConditionalCommit: false, //default value
+        })
       ).to.be.revertedWith(
         revertReasons.CONDITION_NOT_AVAILABLE_FOR_TOKEN_TYPE
       );
@@ -691,12 +715,14 @@ describe('Gate contract', async () => {
 
       //ERC20
       await expect(
-        contractGate.registerVoucherSetId(
-          constants.VOUCHER_SET_ID,
-          constants.CONDITIONAL_TOKEN_ID,
-          constants.CONDITION.OWNERSHIP,
-          constants.ZERO
-        )
+        contractGate.registerVoucherSetId(constants.VOUCHER_SET_ID, {
+          //represents ConditionalCommitInfo struct
+          conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+          threshold: constants.ZERO,
+          condition: constants.CONDITION.OWNERSHIP,
+          gateAddress: constants.ZERO_ADDRESS, //default value
+          registerConditionalCommit: false, //default value
+        })
       ).to.be.revertedWith(
         revertReasons.CONDITION_NOT_AVAILABLE_FOR_TOKEN_TYPE
       );
@@ -748,12 +774,14 @@ describe('Gate contract', async () => {
             )
           ).to.be.false;
 
-          await contractGate.registerVoucherSetId(
-            constants.VOUCHER_SET_ID,
-            constants.CONDITIONAL_TOKEN_ID,
-            constants.CONDITION.BALANCE,
-            constants.ONE
-          );
+          await contractGate.registerVoucherSetId(constants.VOUCHER_SET_ID, {
+            //represents ConditionalCommitInfo struct
+            conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+            threshold: constants.ONE,
+            condition: constants.CONDITION.BALANCE,
+            gateAddress: constants.ZERO_ADDRESS, //default value
+            registerConditionalCommit: false, //default value
+          });
 
           expect(
             await contractGate.check(
@@ -780,12 +808,14 @@ describe('Gate contract', async () => {
             )
           ).to.be.false;
 
-          await contractGate.registerVoucherSetId(
-            constants.VOUCHER_SET_ID,
-            constants.CONDITIONAL_TOKEN_ID,
-            constants.CONDITION.BALANCE,
-            constants.TWO
-          );
+          await contractGate.registerVoucherSetId(constants.VOUCHER_SET_ID, {
+            //represents ConditionalCommitInfo struct
+            conditionalTokenId: constants.CONDITIONAL_TOKEN_ID,
+            threshold: constants.TWO,
+            condition: constants.CONDITION.BALANCE,
+            gateAddress: constants.ZERO_ADDRESS, //default value
+            registerConditionalCommit: false, //default value
+          });
 
           expect(
             await contractGate.check(
@@ -916,12 +946,14 @@ describe('Gate contract', async () => {
             false
           );
 
-        await contractGate.registerVoucherSetId(
-          tokenId,
-          conditionalTokenId,
-          constants.CONDITION.BALANCE,
-          constants.ONE
-        );
+        await contractGate.registerVoucherSetId(tokenId, {
+          //represents ConditionalCommitInfo struct
+          conditionalTokenId: conditionalTokenId,
+          threshold: constants.ONE,
+          condition: constants.CONDITION.BALANCE,
+          gateAddress: constants.ZERO_ADDRESS, //default value
+          registerConditionalCommit: false, //default value
+        });
 
         expect(await contractGate.check(users.buyer.address, tokenId)).to.be
           .true;
@@ -948,12 +980,14 @@ describe('Gate contract', async () => {
             false
           );
 
-        await contractGate.registerVoucherSetId(
-          tokenId,
-          conditionalTokenId,
-          constants.CONDITION.BALANCE,
-          constants.ONE
-        );
+        await contractGate.registerVoucherSetId(tokenId, {
+          //represents ConditionalCommitInfo struct
+          conditionalTokenId: conditionalTokenId,
+          threshold: constants.ONE,
+          condition: constants.CONDITION.BALANCE,
+          gateAddress: constants.ZERO_ADDRESS, //default value
+          registerConditionalCommit: false, //default value
+        });
 
         await expect(
           contractGate.deactivate(users.buyer.address, tokenId)

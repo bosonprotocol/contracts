@@ -1254,9 +1254,7 @@ contract BosonRouter is
         if (_conditionalCommitInfo.registerConditionalCommit) {
             IGate(_conditionalCommitInfo.gateAddress).registerVoucherSetId(
                 _tokenIdSupply,
-                _conditionalCommitInfo.conditionalTokenId,
-                _conditionalCommitInfo.condition,
-                _conditionalCommitInfo.threshold
+                _conditionalCommitInfo
             );
         }
     }
