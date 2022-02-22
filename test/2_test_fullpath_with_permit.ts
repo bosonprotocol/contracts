@@ -5412,7 +5412,7 @@ describe('Cashier and VoucherKernel', () => {
           ).to.equal('0');
         });
 
-        it.only('After transfer, old seller cannot manage new vouchers anymore', async () => {
+        it('After transfer, old seller cannot manage new vouchers anymore', async () => {
           const bosonRouterOldSeller = contractBosonRouter.connect(
             users.other1.signer
           );
