@@ -4059,7 +4059,7 @@ describe('Cashier and VoucherKernel', () => {
         ).to.be.revertedWith(revertReasons.INEXISTENT_SUPPLY);
       });
 
-      it('[!CANCEL] It should not be possible to cancel voucher that does not exist yet', async () => {
+      it.only('[!CANCEL] It should not be possible to cancel voucher that does not exist yet', async () => {
         // spoof boson router address
         await contractBosonRouter.pause();
         await contractVoucherKernel.setBosonRouterAddress(
@@ -4070,7 +4070,7 @@ describe('Cashier and VoucherKernel', () => {
         await expect(
           contractVoucherKernel.cancelOrFault(
             BN(TOKEN_SUPPLY_ID).or(1),
-            users.seller.address
+            constants.ZERO_ADDRESS
           )
         ).to.be.revertedWith(revertReasons.INAPPLICABLE_STATUS);
       });
