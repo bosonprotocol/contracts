@@ -5284,7 +5284,7 @@ describe('Cashier and VoucherKernel', () => {
           await utils.redeem(tokenVoucherIdRedeemed, users.buyer.signer);
           await utils.refund(tokenVoucherIdRefunded, users.buyer.signer);
 
-          const transferTx = await utils.safeTransfer1155(
+          await utils.safeTransfer1155(
             users.other1.address,
             users.other2.address,
             tokenSupplyKey,
@@ -5313,6 +5313,7 @@ describe('Cashier and VoucherKernel', () => {
             users.other2.signer
           );
 
+          // new seller should fail
           await expect(
             bosonRouterNewSeller.cancelOrFault(tokenVoucherIdCommited)
           ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
@@ -5323,6 +5324,7 @@ describe('Cashier and VoucherKernel', () => {
             bosonRouterNewSeller.cancelOrFault(tokenVoucherIdRefunded)
           ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
 
+          // old seller should work
           expect(
             await bosonRouterOldSeller.cancelOrFault(tokenVoucherIdCommited)
           )
@@ -5395,9 +5397,22 @@ describe('Cashier and VoucherKernel', () => {
           expect(
             await ethers.provider.getBalance(users.other1.address)
           ).to.equal(expectedBalance, 'Wrong withdrawn amount after refund');
+
+          // cancel or fault of remaining voucherset
+          expect(
+            await contractBosonRouter
+              .connect(users.other2.signer)
+              .requestCancelOrFaultVoucherSet(tokenSupplyKey)
+          )
+            .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
+            .withArgs(tokenSupplyKey, users.other2.address);
+
+          expect(
+            await contractCashier.getEscrowAmount(users.other2.address)
+          ).to.equal('0');
         });
 
-        it('After transfer, old seller cannot manage new vouchers anymore', async () => {
+        it.only('After transfer, old seller cannot manage new vouchers anymore', async () => {
           const bosonRouterOldSeller = contractBosonRouter.connect(
             users.other1.signer
           );
@@ -5413,6 +5428,7 @@ describe('Cashier and VoucherKernel', () => {
             constants.PROMISE_DEPOSITBU1
           );
 
+          // old seller should fail
           await expect(
             bosonRouterOldSeller.cancelOrFault(tokenVoucherIdNew)
           ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
@@ -5420,9 +5436,18 @@ describe('Cashier and VoucherKernel', () => {
             bosonRouterOldSeller.requestCancelOrFaultVoucherSet(tokenSupplyKey)
           ).to.be.revertedWith(revertReasons.UNAUTHORIZED_COF);
 
+          // new seller should work
           expect(await bosonRouterNewSeller.cancelOrFault(tokenVoucherIdNew))
             .to.emit(contractVoucherKernel, eventNames.LOG_VOUCHER_FAULT_CANCEL)
             .withArgs(tokenVoucherIdNew);
+
+          expect(
+            await bosonRouterNewSeller.requestCancelOrFaultVoucherSet(
+              tokenSupplyKey
+            )
+          )
+            .to.emit(contractVoucherKernel, eventNames.LOG_CANCEL_VOUCHER_SET)
+            .withArgs(tokenSupplyKey, users.other2.address);
         });
       });
 
