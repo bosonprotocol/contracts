@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 pragma solidity 0.7.6;
+pragma abicoder v2;
 
 import "./../UsingHelpers.sol";
 
@@ -29,10 +30,7 @@ interface IBosonRouter {
 
     function requestCreateOrderETHETHConditional(
         uint256[] calldata _metadata,
-        address _gateAddress,
-        uint256 _conditionalTokenId,
-        Condition _condition,
-        bool _registerConditionalCommit
+        ConditionalCommitInfo calldata _conditionalCommitInfo
     ) external payable;
 
     function requestCreateOrderTKNTKNWithPermit(
@@ -55,10 +53,7 @@ interface IBosonRouter {
         bytes32 _r,
         bytes32 _s,
         uint256[] calldata _metadata,
-        address _gateAddress,
-        uint256 _conditionalTokenId,
-        Condition _condition,
-        bool _registerConditionalCommit
+        ConditionalCommitInfo calldata _conditionalCommitInfo
     ) external;
 
     function requestCreateOrderETHTKNWithPermit(
@@ -79,10 +74,7 @@ interface IBosonRouter {
         bytes32 _r,
         bytes32 _s,
         uint256[] calldata _metadata,
-        address _gateAddress,
-        uint256 _conditionalTokenId,
-        Condition _condition,
-        bool _registerConditionalCommit
+        ConditionalCommitInfo calldata _conditionalCommitInfo
     ) external;
 
     function requestCreateOrderTKNETH(
@@ -93,10 +85,7 @@ interface IBosonRouter {
     function requestCreateOrderTKNETHConditional(
         address _tokenPriceAddress,
         uint256[] calldata _metadata,
-        address _gateAddress,
-        uint256 _conditionalTokenId,
-        Condition _condition,
-        bool _registerConditionalCommit
+        ConditionalCommitInfo calldata _conditionalCommitInfo
     ) external payable;
 
     /**

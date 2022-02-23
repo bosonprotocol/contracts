@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 pragma solidity 0.7.6;
+pragma abicoder v2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
@@ -29,11 +30,6 @@ contract Gate is IGate, Ownable, Pausable {
 
     enum TokenType {FUNGIBLE_TOKEN, NONFUNGIBLE_TOKEN, MULTI_TOKEN} // ERC20, ERC721, ERC1155
 
-    struct ConditionalCommitInfo {
-        uint256 conditionalTokenId;
-        Condition condition;
-    }
-
     event LogConditionalContractSet(
         address indexed _conditionalToken,
         TokenType indexed _conditionalTokenType,
@@ -48,7 +44,8 @@ contract Gate is IGate, Ownable, Pausable {
     event LogVoucherSetRegistered(
         uint256 indexed _tokenIdSupply,
         uint256 indexed _conditionalTokenId,
-        Condition _condition
+        Condition _condition,
+        uint256 threshold
     );
 
     event LogUserVoucherDeactivated(
@@ -108,12 +105,14 @@ contract Gate is IGate, Ownable, Pausable {
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
      * @return conditional token ID if one is associated with a voucher set. Zero could be a valid token ID
      * @return condition that will be checked when a user commits using a conditional token
+     * @return threshold that may be checked when a user commits using a conditional token
      */
-    function getConditionalCommitInfo(uint256 _tokenIdSupply) external view returns (uint256, Condition) {
+    function getConditionalCommitInfo(uint256 _tokenIdSupply) external view returns (uint256, Condition, uint256) {
         ConditionalCommitInfo memory conditionalCommitInfo = voucherSetToConditionalCommit[_tokenIdSupply];
         return (
             conditionalCommitInfo.conditionalTokenId,
-            conditionalCommitInfo.condition
+            conditionalCommitInfo.condition,
+            conditionalCommitInfo.threshold
         );
     }
 
@@ -163,10 +162,21 @@ contract Gate is IGate, Ownable, Pausable {
      * Not necessary if the conditional token is not MultiToken (i.e, ERC1155)
      *
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
-     * @param _conditionalTokenId an ID of a conditional token
-     * @param _condition condition that will be checked when a user commits using a conditional token
+     * @param _conditionalCommitInfo struct that contains data pertaining to conditional commit:
+     *
+     * uint256 conditionalTokenId - Id of the conditional token, ownership of which is a condition for committing to redeem a voucher
+     * in the voucher set created by this function.
+     *
+     * uint256 threshold - the number that the balance of a tokenId must be greater than or equal to. Not used for OWNERSHIP condition
+     *
+     * Condition condition - condition that will be checked when a user commits using a conditional token
+     *
+     * address gateAddress - address of a gate contract that will handle the interaction between the BosonRouter contract and the conditional token,
+     * ownership of which is a condition for committing to redeem a voucher in the voucher set created by this function.
+     *
+     * bool registerConditionalCommit - indicates whether Gate.registerVoucherSetId should be called. Gate.registerVoucherSetId can also be called separately
      */
-    function registerVoucherSetId(uint256 _tokenIdSupply, uint256 _conditionalTokenId, Condition _condition)
+    function registerVoucherSetId(uint256 _tokenIdSupply, ConditionalCommitInfo calldata _conditionalCommitInfo)
         external
         override
         whenNotPaused
@@ -174,13 +184,16 @@ contract Gate is IGate, Ownable, Pausable {
     {
         require(_tokenIdSupply != 0, "INVALID_TOKEN_SUPPLY");
         
-        if(_condition == Condition.OWNERSHIP) {
+        
+        if(_conditionalCommitInfo.condition == Condition.OWNERSHIP) {
             require(conditionalTokenType == TokenType.NONFUNGIBLE_TOKEN, "CONDITION_NOT_AVAILABLE_FOR_TOKEN_TYPE");
+        } else {
+            require(_conditionalCommitInfo.threshold != 0, "INVALID_THRESHOLD");
         }
 
-        voucherSetToConditionalCommit[_tokenIdSupply] = ConditionalCommitInfo(_conditionalTokenId, _condition);
+        voucherSetToConditionalCommit[_tokenIdSupply] = _conditionalCommitInfo;
 
-        emit LogVoucherSetRegistered(_tokenIdSupply, _conditionalTokenId, _condition);
+        emit LogVoucherSetRegistered(_tokenIdSupply, _conditionalCommitInfo.conditionalTokenId, _conditionalCommitInfo.condition, _conditionalCommitInfo.threshold);
     }
 
     /**
@@ -195,11 +208,17 @@ contract Gate is IGate, Ownable, Pausable {
         override
         returns (bool)
     {
-        ConditionalCommitInfo memory conditionalCommitInfo = voucherSetToConditionalCommit[_tokenIdSupply];
+       ConditionalCommitInfo memory conditionalCommitInfo = voucherSetToConditionalCommit[_tokenIdSupply];
+
+        if(conditionalCommitInfo.condition == Condition.NOT_SET) {
+            return false;
+        }
 
         return conditionalCommitInfo.condition == Condition.OWNERSHIP
                 ? checkOwnership(_user, _tokenIdSupply, conditionalCommitInfo.conditionalTokenId)
-                : checkBalance(_user, _tokenIdSupply, conditionalCommitInfo.conditionalTokenId);
+                : checkBalance(_user, _tokenIdSupply, conditionalCommitInfo.conditionalTokenId, conditionalCommitInfo.threshold);
+
+
     }
 
     /**
@@ -237,9 +256,10 @@ contract Gate is IGate, Ownable, Pausable {
      * @param _user user address
      * @param _tokenIdSupply an ID of a supply token (ERC-1155) [voucherSetID]
      * @param _conditionalTokenId an ID of a conditional token
+     * @param _threshold the number that the balance must be greater than or equal to
      * @return true if user possesses conditional token, and the token is not deactivated
      */
-    function checkBalance(address _user, uint256 _tokenIdSupply, uint256 _conditionalTokenId)
+    function checkBalance(address _user, uint256 _tokenIdSupply, uint256 _conditionalTokenId, uint256 _threshold)
         internal
         view
         returns (bool)
@@ -249,7 +269,7 @@ contract Gate is IGate, Ownable, Pausable {
             ((conditionalTokenType == TokenType.MULTI_TOKEN)
                 ? MultiToken(conditionalTokenContract).balanceOf(_user, _conditionalTokenId)
                 : Token(conditionalTokenContract).balanceOf(_user)
-            ) > 0;
+            ) >= _threshold;
     }
 
      /**

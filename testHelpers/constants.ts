@@ -106,9 +106,10 @@ const TOKEN_TYPE = {
 
 // Condition for Gate's conditional token
 const CONDITION = {
-  BALANCE: 0,
-  OWNERSHIP: 1,
-  INVALID: 2,
+  NOT_SET: 0,
+  BALANCE: 1,
+  OWNERSHIP: 2,
+  INVALID: 3,
 };
 
 export default {
