@@ -317,6 +317,16 @@ interface IVoucherKernel {
         returns (address);
 
     /**
+     * @notice Get the issuer of a voucher
+     * @param _voucherTokenId ID of the voucher token
+     * @return                Address of the seller, when voucher was created
+     */
+    function getVoucherSeller(uint256 _voucherTokenId)
+        external
+        view
+        returns (address);
+
+    /**
      * @notice Get the holder of a voucher
      * @param _tokenIdVoucher   ID of the voucher token
      * @return                  Address of the holder

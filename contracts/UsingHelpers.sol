@@ -43,6 +43,7 @@ struct VoucherDetails {
 }
 
 struct VoucherStatus {
+    address seller;
     uint8 status;
     bool isPaymentReleased;
     bool isDepositsReleased;

@@ -29,6 +29,14 @@ task("deploy", "Deploy contracts on a provided network")
 		await deploy(env);
 	})
 
+task("deploy-mocks", "Deploy mock conditional token contracts (ERC20, ERC721, ERC1155) on a provided network")
+	.addOptionalParam("env", "(Optional) Provide additional context on which environment the contracts are deployed to: production, staging or testing", "")
+	.setAction( async ({env}) => {
+		const { deploy } = await lazyImport('./scripts/deploy-mocks')
+		await deploy(env);
+	})
+
+
 task("contracts-verify", "Verify already deployed contracts. Bear in mind that at least couple of blocks should be mined before execution!")
 	.addOptionalParam("env", "(Optional) Provide additional context on which environment the contracts are deployed to: production, staging or testing", "")
 	.setAction(async ({env}) => {
