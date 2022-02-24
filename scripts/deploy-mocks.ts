@@ -110,9 +110,7 @@ export async function deploy(_env: string): Promise<void> {
                     process.exit()
                 case "y":
                     // just proceed
-                    const executor = new DeploymentExecutor();
-                    await executor.deployMockTokens(); 
-                    executor.writeContracts();
+                    await deployMocks();
                     break;
                 default:
                     console.log('Invalid response');
@@ -120,6 +118,14 @@ export async function deploy(_env: string): Promise<void> {
             }
         }
        await prompt();
+    } else {
+        await deployMocks();
+    }
+
+    async function deployMocks() {
+        const executor = new DeploymentExecutor();
+        await executor.deployMockTokens(); 
+        executor.writeContracts();
     }
 }
 
