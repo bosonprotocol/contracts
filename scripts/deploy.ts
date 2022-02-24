@@ -263,7 +263,7 @@ class DeploymentExecutor {
       this.dai_token,
       this.txOptions
     );
-   
+
     await this.tokenRegistry.deployed();
     await this.voucherSets.deployed();
     await this.vouchers.deployed();

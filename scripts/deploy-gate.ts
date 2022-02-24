@@ -42,15 +42,16 @@ class DeploymentExecutor {
       maxPriorityFeePerGas: this.maxTip,
       gasLimit: 4500000, // our current max contract is around 4.2m gas
     };
-
-   
   }
 
   async setDefaults() {
-   
-     console.log('$ Setting Gate approval on Boson Router ...');
+    console.log('$ Setting Gate approval on Boson Router ...');
 
-    const tx = await this.br.setGateApproval(this.gate.address, true, this.txOptions);
+    const tx = await this.br.setGateApproval(
+      this.gate.address,
+      true,
+      this.txOptions
+    );
 
     const txReceipt = await tx.wait();
     const event = txReceipt.events[0];
@@ -63,17 +64,16 @@ class DeploymentExecutor {
       ' = ',
       event.args._approved
     );
-
   }
 
   async deployContracts() {
     const signers = await ethers.getSigners();
 
-    console.log("$ Setting Boson Router address");
+    console.log('$ Setting Boson Router address');
     const BosonRouter = await ethers.getContractFactory('BosonRouter');
     this.br = BosonRouter.attach(process.env.BOSON_ROUTER_ADDRESS);
 
-    console.log("$ Gate being deployed by account  ", signers[0].address);
+    console.log('$ Gate being deployed by account  ', signers[0].address);
     const Gate = await ethers.getContractFactory('Gate');
 
     this.gate = await Gate.deploy(
@@ -81,10 +81,9 @@ class DeploymentExecutor {
       this.conditionalToken,
       this.conditionalTokenType,
       this.txOptions
-    ); 
+    );
   }
 
-  
   async logContracts() {
     console.log(
       'Gate Contract Address %s from deployer address %s: ',
@@ -92,9 +91,18 @@ class DeploymentExecutor {
       this.gate.deployTransaction.from
     );
 
-    console.log('Boson Router Address Used: ',  process.env.BOSON_ROUTER_ADDRESS);
-    console.log('Conditional Token Address Used: ',  process.env.CONDITIONAL_TOKEN_ADDRESS);
-    console.log('Conditional Token Type Used: ',  process.env.CONDITIONAL_TOKEN_TYPE);
+    console.log(
+      'Boson Router Address Used: ',
+      process.env.BOSON_ROUTER_ADDRESS
+    );
+    console.log(
+      'Conditional Token Address Used: ',
+      process.env.CONDITIONAL_TOKEN_ADDRESS
+    );
+    console.log(
+      'Conditional Token Type Used: ',
+      process.env.CONDITIONAL_TOKEN_TYPE
+    );
   }
 
   writeContracts() {
@@ -109,7 +117,7 @@ class DeploymentExecutor {
           chainId: hre.network.config.chainId,
           env: this.env || '',
           protocolVersion: packageFile.version,
-          gate: this.gate.address
+          gate: this.gate.address,
         },
         null,
         2
@@ -117,7 +125,7 @@ class DeploymentExecutor {
       'utf-8'
     );
   }
-}//End DeploymentExecutor
+} //End DeploymentExecutor
 
 /**
  * @class ProdExecutor
@@ -130,8 +138,7 @@ class ProdExecutor extends DeploymentExecutor {
 
   async setDefaults() {
     await super.setDefaults();
-   
- }
+  }
 }
 
 /**
