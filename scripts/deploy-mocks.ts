@@ -69,8 +69,9 @@ class DeploymentExecutor {
             fs.mkdirSync(addressesDirPath);
         }
 
+        const filePath = getAddressesFilePath(hre.network.config.chainId, this.env, "mocks");
         fs.writeFileSync(
-            getAddressesFilePath(hre.network.config.chainId, this.env, "mocks"),
+            filePath,
             JSON.stringify(
                 {
                     chainId: hre.network.config.chainId,
@@ -85,6 +86,7 @@ class DeploymentExecutor {
             ),
             'utf-8'
         );
+        console.log(`Contract addresses written to ${filePath}`)
     }
 
 }
