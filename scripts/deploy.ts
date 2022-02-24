@@ -30,7 +30,6 @@ class DeploymentExecutor {
   daiTokenWrapper;
   dai_token;
   dai_token_limit;
-  gate;
   erc1155NonTransferable;
   complainPeriod;
   cancelFaultPeriod;
@@ -57,7 +56,6 @@ class DeploymentExecutor {
     this.daiTokenWrapper;
     this.dai_token = process.env.DAI_TOKEN;
     this.dai_token_limit = process.env.DAI_TOKEN_LIMIT;
-    this.gate;
     this.erc1155NonTransferable;
 
     this.complainPeriod = process.env.COMPLAIN_PERIOD;
@@ -163,19 +161,6 @@ class DeploymentExecutor {
       event.args._newWrapperAddress
     );
 
-    tx = await this.br.setGateApproval(this.gate.address, true, this.txOptions);
-
-    txReceipt = await tx.wait();
-    event = txReceipt.events[0];
-    console.log(
-      '$ BosonRouter',
-      event.event,
-      'at:',
-      event.args._gateAddress,
-      ' = ',
-      event.args._approved
-    );
-
     console.log(
       '$ ERC1155NonTransferable URI ',
       'set to :',
@@ -217,7 +202,6 @@ class DeploymentExecutor {
     const BosonRouter = await ethers.getContractFactory('BosonRouter');
     const TokenRegistry = await ethers.getContractFactory('TokenRegistry');
     const DAITokenWrapper = await ethers.getContractFactory('DAITokenWrapper');
-    const Gate = await ethers.getContractFactory('Gate');
     const ERC1155NonTransferable = await ethers.getContractFactory(
       'ERC1155NonTransferable'
     );
@@ -279,12 +263,6 @@ class DeploymentExecutor {
       this.dai_token,
       this.txOptions
     );
-    this.gate = await Gate.deploy(
-      contractAddresses.br,
-      ccContractAddresses.erc1155NonTransferable,
-      TOKEN_TYPE.MULTI_TOKEN,
-      this.txOptions
-    );
 
     await this.tokenRegistry.deployed();
     await this.voucherSets.deployed();
@@ -293,7 +271,6 @@ class DeploymentExecutor {
     await this.cashier.deployed();
     await this.br.deployed();
     await this.daiTokenWrapper.deployed();
-    await this.gate.deployed();
 
     // check that expected and actual addresses match
     for (const contract of contractList) {
@@ -373,11 +350,6 @@ class DeploymentExecutor {
     );
 
     console.log(
-      'Gate Contract Address %s from deployer address %s: ',
-      this.gate.address,
-      this.gate.deployTransaction.from
-    );
-    console.log(
       'ERC1155NonTransferable Contract Address: %s from deployer address %s',
       this.erc1155NonTransferable.address,
       this.erc1155NonTransferable.deployTransaction.from
@@ -406,7 +378,6 @@ class DeploymentExecutor {
           cashier: this.cashier.address,
           bosonRouter: this.br.address,
           daiTokenWrapper: this.daiTokenWrapper.address,
-          gate: this.gate.address,
           erc1155NonTransferable: this.erc1155NonTransferable.address,
           daiToken: this.dai_token,
           bosonToken: this.boson_token,

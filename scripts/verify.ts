@@ -103,16 +103,6 @@ export async function verifyContracts(env: string): Promise<void> {
     logError('BosonRouter', error.message);
   }
 
-  //verify Gate
-  try {
-    await hre.run('verify:verify', {
-      address: contracts.gate,
-      constructorArguments: [contracts.br, contracts.erc1155NonTransferable],
-    });
-  } catch (error) {
-    logError('Gate', error.message);
-  }
-
   //verify ERC1155NonTransferable
   try {
     await hre.run('verify:verify', {
