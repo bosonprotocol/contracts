@@ -36,6 +36,13 @@ task("contracts-verify", "Verify already deployed contracts. Bear in mind that a
 		await verifyContracts(env);
 	})
 
+task("deploy-gate", "Deploy and verify the Gate contract on a provided network")
+.addOptionalParam("env", "(Optional) Provide additional context on which environment the contracts are deployed to: production, staging or testing", "")
+.setAction( async ({env}) => {
+		const { deploy } = await lazyImport('./scripts/deploy-gate')
+		await deploy(env);
+	})
+
 const config: HardhatUserConfig = {
 	solidity: {
 		version: "0.7.6",
