@@ -108,5 +108,8 @@
         "ts-node": "^10.0.0",
         "typechain": "^5.0.0",
         "typescript": "^4.3.2"
+    },
+    "dependencies": {
+        "prompts": "^2.4.2"
     }
 }

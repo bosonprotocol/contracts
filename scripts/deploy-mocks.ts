@@ -1,11 +1,8 @@
 import hre from 'hardhat';
 import fs from 'fs';
 import { isValidEnv, addressesDirPath, getAddressesFilePath } from './utils';
-import { calculateDeploymentAddresses } from '../testHelpers/contractAddress';
-import constants from '../testHelpers/constants';
-import packageFile from '../package.json';
+const prompts = require('prompts');
 
-const { TOKEN_TYPE } = constants;
 const ethers = hre.ethers;
 
 class DeploymentExecutor {
@@ -91,23 +88,39 @@ class DeploymentExecutor {
 
 }
 
-
 export async function deploy(_env: string): Promise<void> {
-  const env = _env.toLowerCase();
+    const env = _env.toLowerCase();
 
-  if (!isValidEnv(env)) {
-    throw new Error(`Env: ${env} is not recognized!`);
-  }
+    if (!isValidEnv(env)) {
+        throw new Error(`Env: ${env} is not recognized!`);
+    }
 
-  const executor = new DeploymentExecutor();
+    if (hre.network.name == 'mainnet') {
+        console.log('You are trying to deploy mock contracts to mainnet');
+        let prompt = async () => {
+            const response = await prompts({
+                type: 'text',
+                name: 'reposnse',
+                message: 'Proceed? [y/n]'
+            });
 
-//   await executor.deployContracts();
-  await executor.deployMockTokens(); 
-
-//   executor.logContracts();
-  executor.writeContracts();
-
-//   await executor.setDefaults();
+            switch (response.reposnse.toLowerCase()) {
+                case "n":
+                    console.log('Aborting')
+                    process.exit()
+                case "y":
+                    // just proceed
+                    const executor = new DeploymentExecutor();
+                    await executor.deployMockTokens(); 
+                    executor.writeContracts();
+                    break;
+                default:
+                    console.log('Invalid response');
+                    await prompt();
+            }
+        }
+       await prompt();
+    }
 }
 
 
