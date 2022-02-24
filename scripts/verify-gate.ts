@@ -19,13 +19,17 @@ export async function verifyContracts(env: string): Promise<void> {
   if (!isValidEnv(env.toLowerCase())) {
     throw new Error(`Env: ${env} is not recognized!`);
   }
-  
+
   //verify Gate
   try {
-  await hre.run('verify:verify', {
-    address: contracts.gate,
-    constructorArguments: [process.env.BOSON_ROUTER_ADDRESS, process.env.CONDITIONAL_TOKEN_ADDRESS, process.env.CONDITIONAL_TOKEN_TYPE],
-  });
+    await hre.run('verify:verify', {
+      address: contracts.gate,
+      constructorArguments: [
+        process.env.BOSON_ROUTER_ADDRESS,
+        process.env.CONDITIONAL_TOKEN_ADDRESS,
+        process.env.CONDITIONAL_TOKEN_TYPE,
+      ],
+    });
   } catch (error) {
     logError('Gate', error.message);
   }
