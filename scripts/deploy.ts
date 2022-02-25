@@ -5,10 +5,8 @@ import hre from 'hardhat';
 import fs from 'fs';
 import {isValidEnv, addressesDirPath, getAddressesFilePath} from './utils';
 import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
-import constants from '../testHelpers/constants';
 import packageFile from '../package.json';
 
-const {TOKEN_TYPE} = constants;
 const ethers = hre.ethers;
 
 /**

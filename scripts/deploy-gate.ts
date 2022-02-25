@@ -5,7 +5,6 @@ import hre from 'hardhat';
 import fs from 'fs';
 import {isValidEnv, addressesDirPath, getAddressesFilePath} from './utils';
 import packageFile from '../package.json';
-import env from 'hardhat';
 
 const ethers = hre.ethers;
 

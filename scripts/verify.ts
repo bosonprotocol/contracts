@@ -64,7 +64,7 @@ export async function verifyContracts(env: string): Promise<void> {
     await hre.run('verify:verify', {
       address: contracts.voucherKernel,
       constructorArguments: [
-        contracts.br,
+        contracts.bosonRouter,
         contracts.cashier,
         contracts.voucherSets,
         contracts.vouchers,
@@ -79,7 +79,7 @@ export async function verifyContracts(env: string): Promise<void> {
     await hre.run('verify:verify', {
       address: contracts.cashier,
       constructorArguments: [
-        contracts.br,
+        contracts.bosonRouter,
         contracts.voucherKernel,
         contracts.voucherSets,
         contracts.vouchers,
@@ -117,7 +117,7 @@ export async function verifyContracts(env: string): Promise<void> {
   try {
     await hre.run('verify:verify', {
       address: contracts.daiTokenWrapper,
-      constructorArguments: [contracts.daiTokenUsed],
+      constructorArguments: [contracts.daiToken],
     });
   } catch (error) {
     logError('DAITokenWrapper', error.message);
