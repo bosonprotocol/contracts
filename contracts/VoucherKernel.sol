@@ -719,6 +719,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
 
     /**
      * @notice Mark voucher token that the deposits were released
+     * @dev    Currently Cashier makes a check that _amount > 0. If onlyFromCashier is ever removed, this function should check that _amount > 0
      * @param _tokenIdVoucher   ID of the voucher token
      * @param _to               recipient, one of {ISSUER, HOLDER, POOL}
      * @param _amount           amount that was released in the transaction
