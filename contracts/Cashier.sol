@@ -258,39 +258,42 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
             )
         );
 
-        bool released;
+        bool paymentReleased;
         //process the RELEASE OF PAYMENTS - only depends on the redeemed/not-redeemed, a voucher need not be in the final status
         if (!voucherDetails.currStatus.isPaymentReleased) {
-            released = releasePayments(voucherDetails, _to);
-            if (released) {
-                _withdrawPayments(
-                    _to == Entity.ISSUER ? voucherDetails.issuer : voucherDetails.holder,
-                    voucherDetails.price,
-                    voucherDetails.paymentMethod,
-                    voucherDetails.tokenIdSupply
-                );
-            }
+            paymentReleased = releasePayments(voucherDetails, _to);
         }
 
         //process the RELEASE OF DEPOSITS - only when vouchers are in the FINAL status
+        bool depositReleased;
+        uint256 releasedAmount;
         if (
             !IVoucherKernel(voucherKernel).isDepositReleased(_tokenIdVoucher, _to) &&
             isStatus(voucherDetails.currStatus.status, VoucherState.FINAL)
         ) {
-            (bool _released, uint256 _amount) = releaseDeposits(voucherDetails, _to);
-            
-            if (_released) {
-                _withdrawDeposits(
-                    _to == Entity.ISSUER ? voucherDetails.issuer : _to == Entity.HOLDER ? voucherDetails.holder : owner(),
-                    _amount,
-                    voucherDetails.paymentMethod,
-                    voucherDetails.tokenIdSupply
-                );
-            }
-            released = _released || released;
+            (depositReleased, releasedAmount) = releaseDeposits(voucherDetails, _to);
         }
 
-        return released;
+        // WITHDRAW
+        if (paymentReleased) {
+            _withdrawPayments(
+                _to == Entity.ISSUER ? voucherDetails.issuer : voucherDetails.holder,
+                voucherDetails.price,
+                voucherDetails.paymentMethod,
+                voucherDetails.tokenIdSupply
+            );
+        }
+                    
+        if (depositReleased) {
+            _withdrawDeposits(
+                _to == Entity.ISSUER ? voucherDetails.issuer : _to == Entity.HOLDER ? voucherDetails.holder : owner(),
+                releasedAmount,
+                voucherDetails.paymentMethod,
+                voucherDetails.tokenIdSupply
+            );
+        }
+
+        return paymentReleased || depositReleased;
     }
 
     /**
