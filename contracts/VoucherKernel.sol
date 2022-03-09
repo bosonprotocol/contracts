@@ -733,7 +733,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
 
         vouchersStatus[_tokenIdVoucher].depositReleased.status |= (ONE << uint8(_to));
 
-        vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount = vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount.add(_amount);
+        vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount = uint248(uint256(vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount).add(_amount));
 
         if (vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount == getTotalDeposits(_tokenIdVoucher)) {
             vouchersStatus[_tokenIdVoucher].isDepositsReleased = true;

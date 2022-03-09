@@ -53,11 +53,8 @@ struct VoucherStatus {
 }
 
 struct DepositsReleased {
-    // bool issuer;
-    // bool holder;
-    // bool pool;
     uint8 status;
-    uint256 releasedAmount;
+    uint248 releasedAmount;
 }
 
 /**
