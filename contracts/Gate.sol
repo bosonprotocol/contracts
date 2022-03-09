@@ -127,7 +127,7 @@ contract Gate is IGate, Ownable, Pausable {
     ) external onlyOwner notZeroAddress(_conditionalToken) whenPaused {
         conditionalTokenContract = _conditionalToken;
         conditionalTokenType = _conditionalTokenType;
-        emit LogConditionalContractSet(_conditionalToken, _conditionalTokenType, owner());
+        emit LogConditionalContractSet(_conditionalToken, _conditionalTokenType, msg.sender);
     }
 
     /**
@@ -153,7 +153,7 @@ contract Gate is IGate, Ownable, Pausable {
         whenPaused
     {
         bosonRouterAddress = _bosonRouterAddress;
-        emit LogBosonRouterSet(_bosonRouterAddress, owner());
+        emit LogBosonRouterSet(_bosonRouterAddress, msg.sender);
     }
 
     /**

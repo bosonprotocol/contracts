@@ -34,7 +34,7 @@ contract TokenRegistry is Ownable, ITokenRegistry {
      */
     function setETHLimit(uint256 _newLimit) external override onlyOwner {
         ethLimit = _newLimit;
-        emit LogETHLimitChanged(_newLimit, owner());
+        emit LogETHLimitChanged(_newLimit, msg.sender);
     }
 
     /**
@@ -49,7 +49,7 @@ contract TokenRegistry is Ownable, ITokenRegistry {
         notZeroAddress(_tokenAddress)
     {
         tokenLimits[_tokenAddress] = _newLimit;
-        emit LogTokenLimitChanged(_newLimit, owner());
+        emit LogTokenLimitChanged(_newLimit, msg.sender);
     }
 
     // // // // // // // //
@@ -88,7 +88,7 @@ contract TokenRegistry is Ownable, ITokenRegistry {
         notZeroAddress(_tokenAddress)
     {
         tokenWrappers[_tokenAddress] = _wrapperAddress;
-        emit LogTokenWrapperChanged(_wrapperAddress, owner());
+        emit LogTokenWrapperChanged(_wrapperAddress, msg.sender);
     }
 
     /**
