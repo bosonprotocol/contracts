@@ -188,12 +188,14 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
     function withdraw(uint256 _tokenIdVoucher)
         external
         override
-   {        bool released = distributeAndWithdraw(_tokenIdVoucher, Entity.ISSUER);
-            released = distributeAndWithdraw(_tokenIdVoucher, Entity.HOLDER) || released;
-            released = distributeAndWithdraw(_tokenIdVoucher, Entity.POOL) || released;
-            require (released, "NOTHING_TO_WITHDRAW");
-
-        }
+        nonReentrant
+        whenNotPaused
+    {
+        bool released = distributeAndWithdraw(_tokenIdVoucher, Entity.ISSUER);
+        released = distributeAndWithdraw(_tokenIdVoucher, Entity.HOLDER) || released;
+        released = distributeAndWithdraw(_tokenIdVoucher, Entity.POOL) || released;
+        require (released, "NOTHING_TO_WITHDRAW");
+    }
 
     /**
      * @notice Trigger withdrawals of what funds are releasable for chosen entity {ISSUER, HOLDER, POOL}
@@ -203,7 +205,9 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
      function withdrawSingle(uint256 _tokenIdVoucher, Entity _to)
         external
         override
-     {
+        nonReentrant
+        whenNotPaused
+    {
         require (distributeAndWithdraw(_tokenIdVoucher, _to),
             "NOTHING_TO_WITHDRAW");
 
@@ -216,8 +220,6 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
      */
     function distributeAndWithdraw(uint256 _tokenIdVoucher, Entity _to)
         internal
-        nonReentrant
-        whenNotPaused
         returns (bool)
     {
         VoucherDetails memory voucherDetails;
