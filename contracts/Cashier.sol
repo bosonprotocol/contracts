@@ -402,10 +402,11 @@ contract Cashier is ICashier, ReentrancyGuard, Ownable, Pausable {
 
         _released = _amount > 0;
 
-        IVoucherKernel(voucherKernel).setDepositsReleased(
-            _voucherDetails.tokenIdVoucher, _to, _amount
-        );
-
+        if (_released) {
+            IVoucherKernel(voucherKernel).setDepositsReleased(
+                _voucherDetails.tokenIdVoucher, _to, _amount
+            );
+        }
     }
 
     /**
