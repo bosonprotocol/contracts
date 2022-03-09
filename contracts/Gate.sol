@@ -108,7 +108,7 @@ contract Gate is IGate, Ownable, Pausable {
      * @return threshold that may be checked when a user commits using a conditional token
      */
     function getConditionalCommitInfo(uint256 _tokenIdSupply) external view returns (uint256, Condition, uint256) {
-        ConditionalCommitInfo memory conditionalCommitInfo = voucherSetToConditionalCommit[_tokenIdSupply];
+        ConditionalCommitInfo storage conditionalCommitInfo = voucherSetToConditionalCommit[_tokenIdSupply];
         return (
             conditionalCommitInfo.conditionalTokenId,
             conditionalCommitInfo.condition,
