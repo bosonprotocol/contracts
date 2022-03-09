@@ -78,8 +78,8 @@ contract Gate is IGate, Ownable, Pausable {
         conditionalTokenContract = _conditionalToken;
         conditionalTokenType = _conditionalTokenType;
 
-        emit LogBosonRouterSet(_bosonRouterAddress, owner());
-        emit LogConditionalContractSet(_conditionalToken, _conditionalTokenType, owner());
+        emit LogBosonRouterSet(_bosonRouterAddress, msg.sender);
+        emit LogConditionalContractSet(_conditionalToken, _conditionalTokenType, msg.sender);
     }
 
     modifier onlyFromRouter() {

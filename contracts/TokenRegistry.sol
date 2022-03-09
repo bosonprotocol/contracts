@@ -25,7 +25,7 @@ contract TokenRegistry is Ownable, ITokenRegistry {
 
     constructor() {
         ethLimit = 1 ether;
-        emit LogETHLimitChanged(ethLimit, owner());
+        emit LogETHLimitChanged(ethLimit, msg.sender);
     }
 
     /**
