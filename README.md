@@ -18,11 +18,15 @@ it, please see the [documentation site](https://docs.bosonprotocol.io/).
 
 - [Local Development](#local-development)
   - [Prerequisites](#prerequisites)
-  - [Build](#build)
-  - [Run](#run)
+  - [Installation](#installation)
+    - [Forking Rinkeby to localnode](#forking-rinkeby-to-localnode)
+    - [Special deployments](#special-deployments)
   - [Test](#test)
+    - [Testing with DAI](#testing-with-dai)
+    - [Unit Tests](#unit-tests)
+    - [Coverage](#coverage)
   - [Code Linting & Formatting](#code-linting--formatting)
-- [Documentation](#documentation)  
+- [Documentation](#documentation)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -102,6 +106,29 @@ npx hardhat deploy --network localhost
 ```
 
 This makes the BOSON test token deployed on Rinkeby (0xEDa08eF1c6ff51Ca7Fd681295797102c1B84606c) and the official DAI token deployed on Rinkeby (0x6A9865aDE2B6207dAAC49f8bCba9705dEB0B0e6D) available to your local hardhat chain.
+
+
+#### Special deployments
+
+Calling `npx hardhat deploy` will deploy the protocol contracts. Beside that we provide addtional utility script for the following deployment cases:
+
+- Deploy all protocol contracts and ERC1155NonTransferable (equivalent to v1.0 deployment script)
+
+  ```
+  npx hardhat deploy-with-erc1155
+  ```
+- Deploy only ERC1155NonTransferable and set the metadata uri defined in `.env` file
+  ```
+  npx hardhat deploy-erc1155-only
+  ```
+- Deploy a set of mock token contracts ERC20, ERC721, ERC1155 and ERC1155NonTransferable which can be used to test conditional commit
+  ```
+  npx hardhat deploy-mocks
+  ```
+- Deploy a Gate contract on a provided network
+  ```
+  npx hardhat deploy-gate
+  ```
 
 ---
 ### Test
