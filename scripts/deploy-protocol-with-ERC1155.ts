@@ -1,3 +1,6 @@
+//AssetRegistry not used in demo-app
+//const AssetRegistry = artifacts.require("AssetRegistry");
+
 import hre from 'hardhat';
 import fs from 'fs';
 import {isValidEnv, addressesDirPath, getAddressesFilePath} from './utils';
@@ -25,6 +28,7 @@ class DeploymentExecutor {
   daiTokenWrapper;
   dai_token;
   dai_token_limit;
+  erc1155NonTransferable;
   complainPeriod;
   cancelFaultPeriod;
   maxTip;
@@ -50,6 +54,7 @@ class DeploymentExecutor {
     this.daiTokenWrapper;
     this.dai_token = process.env.DAI_TOKEN;
     this.dai_token_limit = process.env.DAI_TOKEN_LIMIT;
+    this.erc1155NonTransferable;
 
     this.complainPeriod = process.env.COMPLAIN_PERIOD;
     this.cancelFaultPeriod = process.env.CANCEL_FAULT_PERIOD;
@@ -153,11 +158,25 @@ class DeploymentExecutor {
       'at:',
       event.args._newWrapperAddress
     );
+
+    console.log(
+      '$ ERC1155NonTransferable URI ',
+      'set to :',
+      await this.erc1155NonTransferable.uri(1)
+    );
   }
 
   async deployContracts() {
     const signers = await ethers.getSigners();
+    let [, ccTokenDeployer] = signers;
     const [primaryDeployer] = signers;
+
+    if (
+      process.env.PROTOCOL_DEPLOYER_PRIVATE_KEY ==
+      process.env.CC_TOKEN_DEPLOYER_PRIVATE_KEY
+    ) {
+      ccTokenDeployer = primaryDeployer;
+    }
 
     const contractList = [
       'tokenRegistry',
@@ -169,6 +188,11 @@ class DeploymentExecutor {
       'daiTokenWrapper',
     ];
 
+    const ccContractAddresses = await calculateDeploymentAddresses(
+      ccTokenDeployer.address,
+      ['erc1155NonTransferable']
+    );
+
     const VoucherSets = await ethers.getContractFactory('VoucherSets');
     const Vouchers = await ethers.getContractFactory('Vouchers');
     const VoucherKernel = await ethers.getContractFactory('VoucherKernel');
@@ -176,6 +200,22 @@ class DeploymentExecutor {
     const BosonRouter = await ethers.getContractFactory('BosonRouter');
     const TokenRegistry = await ethers.getContractFactory('TokenRegistry');
     const DAITokenWrapper = await ethers.getContractFactory('DAITokenWrapper');
+    const ERC1155NonTransferable = await ethers.getContractFactory(
+      'ERC1155NonTransferable'
+    );
+
+    //ERC1155NonTransferrable is a Conditional Commit token and should be deployed from a separate address
+    const ERC1155NonTransferableAsOtherSigner =
+      ERC1155NonTransferable.connect(ccTokenDeployer);
+
+    //ERC1155NonTransferrable is a Conditional Commit token and should be deployed from a separate address
+    this.erc1155NonTransferable =
+      await ERC1155NonTransferableAsOtherSigner.deploy(
+        process.env.CONDITIONAL_COMMIT_TOKEN_METADATA_URI,
+        this.txOptions
+      );
+
+    await this.erc1155NonTransferable.deployed();
 
     const contractAddresses = await calculateDeploymentAddresses(
       primaryDeployer.address,
@@ -241,6 +281,15 @@ class DeploymentExecutor {
         );
       }
     }
+
+    if (
+      this.erc1155NonTransferable.address.toLowerCase() !==
+      ccContractAddresses.erc1155NonTransferable.toLowerCase()
+    ) {
+      console.log(
+        `erc1155NonTransferable address mismatch. Expected ${ccContractAddresses.erc1155NonTransferable}, actual ${this.erc1155NonTransferable.address}`
+      );
+    }
   }
 
   async deployMockToken() {
@@ -298,6 +347,12 @@ class DeploymentExecutor {
       this.daiTokenWrapper.deployTransaction.from
     );
 
+    console.log(
+      'ERC1155NonTransferable Contract Address: %s from deployer address %s',
+      this.erc1155NonTransferable.address,
+      this.erc1155NonTransferable.deployTransaction.from
+    );
+
     console.log('DAI Token Address Used: ', this.dai_token);
     console.log('Boson Token Address Used: ', this.boson_token);
   }
@@ -321,6 +376,7 @@ class DeploymentExecutor {
           cashier: this.cashier.address,
           bosonRouter: this.br.address,
           daiTokenWrapper: this.daiTokenWrapper.address,
+          erc1155NonTransferable: this.erc1155NonTransferable.address,
           daiToken: this.dai_token,
           bosonToken: this.boson_token,
         },
