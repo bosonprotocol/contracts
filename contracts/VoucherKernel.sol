@@ -916,6 +916,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
      */
     function setComplainPeriod(uint256 _complainPeriod)
         public
+        override
         onlyOwner
     {
         complainPeriod = _complainPeriod;
@@ -929,6 +930,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
      */
     function setCancelFaultPeriod(uint256 _cancelFaultPeriod)
         public
+        override
         onlyOwner
     {
         cancelFaultPeriod = _cancelFaultPeriod;

@@ -152,6 +152,12 @@ interface IVoucherKernel {
     ) external;
 
     /**
+     * @notice Set the general cancelOrFault period, should be used sparingly as it has significant consequences. Here done simply for demo purposes.
+     * @param _cancelFaultPeriod   the new value for cancelOrFault period (in number of seconds)
+     */
+    function setCancelFaultPeriod(uint256 _cancelFaultPeriod) external;
+
+    /**
      * @notice Set the address of the Boson Router contract
      * @param _bosonRouterAddress   The address of the BR contract
      */
@@ -175,6 +181,12 @@ interface IVoucherKernel {
      */
     function setVoucherSetTokenAddress(address _voucherSetTokenAddress)
         external;
+
+    /**
+     * @notice Set the general complain period, should be used sparingly as it has significant consequences. Here done simply for demo purposes.
+     * @param _complainPeriod   the new value for complain period (in number of seconds)
+     */
+    function setComplainPeriod(uint256 _complainPeriod) external;
 
     /**
      * @notice Get the promise ID at specific index
