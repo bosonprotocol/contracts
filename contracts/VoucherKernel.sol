@@ -24,6 +24,9 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
     using Address for address;
     using SafeMath for uint256;
 
+    //constant for setting complain and cancel periods
+    uint256 internal constant WEEK = 7 * 1 days;
+
     //ERC1155 contract representing voucher sets
     address private voucherSetTokenAddress;
 
@@ -203,13 +206,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         emit LogVoucherSetTokenContractSet(_voucherSetTokenAddress, msg.sender);
         emit LogVoucherTokenContractSet(_voucherTokenAddress, msg.sender);
 
-        uint256 _complainPeriod = 7 * 1 days;
-        uint256 _cancelFaultPeriod = 7 * 1 days;
-        complainPeriod = _complainPeriod;
-        cancelFaultPeriod = _cancelFaultPeriod;
-
-        emit LogComplainPeriodChanged(_complainPeriod, msg.sender);
-        emit LogCancelFaultPeriodChanged(_cancelFaultPeriod, msg.sender);
+        setComplainPeriod(WEEK);
+        setCancelFaultPeriod(WEEK);
     }
 
     /**
@@ -917,7 +915,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
      * @param _complainPeriod   the new value for complain period (in number of seconds)
      */
     function setComplainPeriod(uint256 _complainPeriod)
-        external
+        public
         override
         onlyOwner
     {
@@ -931,7 +929,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
      * @param _cancelFaultPeriod   the new value for cancelOrFault period (in number of seconds)
      */
     function setCancelFaultPeriod(uint256 _cancelFaultPeriod)
-        external
+        public
         override
         onlyOwner
     {
