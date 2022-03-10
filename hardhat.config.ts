@@ -12,7 +12,9 @@ import { HardhatUserConfig } from "hardhat/config";
 
 const { task } = require("hardhat/config");
 const testMnemonic = 'inhale wood champion certain immense wash pepper enact enrich infant purse maid'
-const INFURA_KEY = process.env.INFURA_API_KEY;
+const RINKEBY_URL = process.env.RINKEBY_URL;
+const ROPSTEN_URL = process.env.ROPSTEN_URL;
+const MAINNET_URL = process.env.MAINNET_URL;
 const PROTOCOL_DEPLOYER_PRIVATE_KEY = process.env.PROTOCOL_DEPLOYER_PRIVATE_KEY;
 const CC_TOKEN_DEPLOYER_PRIVATE_KEY = process.env.CC_TOKEN_DEPLOYER_PRIVATE_KEY;
 const CMC_API_KEY = process.env.CMC_API_KEY;
@@ -75,17 +77,17 @@ const config: HardhatUserConfig = {
 			chainId: 1
 		},
 		rinkeby: {
-			url: `https://rinkeby.infura.io/v3/${INFURA_KEY}`,
+			url: RINKEBY_URL,
 			accounts: ACCOUNTS,
 			chainId: 4
 		},
 		ropsten: {
-			url: `https://ropsten.infura.io/v3/${INFURA_KEY}`,
+			url: ROPSTEN_URL,
 			accounts: ACCOUNTS,
 			chainId: 3
 		},
 		mainnet: {
-			url: `https://mainnet.infura.io/v3/${INFURA_KEY}`,
+			url: MAINNET_URL,
 			accounts: ACCOUNTS,
 			initialBaseFeePerGas: 0,
 			chainId: 1
