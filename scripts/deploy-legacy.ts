@@ -1,6 +1,3 @@
-//AssetRegistry not used in demo-app
-//const AssetRegistry = artifacts.require("AssetRegistry");
-
 import hre from 'hardhat';
 import fs from 'fs';
 import {isValidEnv, addressesDirPath, getAddressesFilePath} from './utils';
@@ -363,7 +360,7 @@ class DeploymentExecutor {
     }
 
     fs.writeFileSync(
-      getAddressesFilePath(hre.network.config.chainId, this.env),
+      getAddressesFilePath(hre.network.config.chainId, this.env, 'legacy'),
       JSON.stringify(
         {
           chainId: hre.network.config.chainId,

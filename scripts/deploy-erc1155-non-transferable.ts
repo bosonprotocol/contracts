@@ -1,10 +1,6 @@
-//AssetRegistry not used in demo-app
-//const AssetRegistry = artifacts.require("AssetRegistry");
-
 import hre from 'hardhat';
 import fs from 'fs';
 import {isValidEnv, addressesDirPath, getAddressesFilePath} from './utils';
-import {calculateDeploymentAddresses} from '../testHelpers/contractAddress';
 import packageFile from '../package.json';
 
 const ethers = hre.ethers;
