@@ -735,7 +735,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
 
         vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount = uint248(uint256(vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount).add(_amount));
 
-        if (vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount == getTotalDeposits(_tokenIdVoucher)) {
+        if (vouchersStatus[_tokenIdVoucher].depositReleased.releasedAmount == getTotalDepositsForVoucher(_tokenIdVoucher)) {
             vouchersStatus[_tokenIdVoucher].isDepositsReleased = true;
             emit LogFundsReleased(_tokenIdVoucher, 1); 
         }        
@@ -1033,7 +1033,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
      * @notice Get the sum of buyer and seller deposit for the voucher
      * @param _tokenIdVoucher   ID of the voucher token
      */
-    function getTotalDeposits(uint256 _tokenIdVoucher)
+    function getTotalDepositsForVoucher(uint256 _tokenIdVoucher)
         internal
         view
         returns (
