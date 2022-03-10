@@ -386,7 +386,7 @@ describe('Cashier withdrawals ', () => {
                 eventNames.LOG_FUNDS_RELEASED,
                 (ev) => {
                   assert.isTrue(ev._tokenIdVoucher.eq(voucherID));
-                  assert.equal(ev._type, 0); // 0 == withdraw
+                  assert.equal(ev._type, 0); // 0 == payment
                 }
               );
 
@@ -473,8 +473,7 @@ describe('Cashier withdrawals ', () => {
             eventNames.LOG_FUNDS_RELEASED,
             (ev) => {
               assert.isTrue(ev._tokenIdVoucher.eq(voucherID));
-
-              assert.equal(ev._type, expectedType++); // 0 == withdraw, 1 == deposit
+              assert.equal(ev._type, expectedType++); // 0 == payment, 1 == deposit
             }
           );
         } else {
