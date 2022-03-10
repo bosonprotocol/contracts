@@ -1029,14 +1029,19 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
         );
     }
 
-    function getTotalDeposits(uint256 _tokenIdSupply)
+    /**
+     * @notice Get the sum of buyer and seller deposit for the voucher
+     * @param _tokenIdVoucher   ID of the voucher token
+     */
+    function getTotalDeposits(uint256 _tokenIdVoucher)
         internal
         view
         returns (
             uint256
         )
     {
-        bytes32 promiseKey = ordersPromise[_tokenIdSupply];
+        bytes32 promiseKey = getPromiseIdFromVoucherId(_tokenIdVoucher);
+        
         return promises[promiseKey].depositSe.add(promises[promiseKey].depositBu);
     }
 
