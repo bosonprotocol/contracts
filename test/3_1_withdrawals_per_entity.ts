@@ -399,6 +399,16 @@ describe('Cashier withdrawals ', () => {
                   }
                 );
 
+                eventUtils.assertEventEmitted(
+                  txReceipt,
+                  VoucherKernel_Factory,
+                  eventNames.LOG_FUNDS_RELEASED,
+                  (ev) => {
+                    assert.isTrue(ev._tokenIdVoucher.eq(voucherID));
+                    assert.equal(ev._type, 0); // 0 == withdraw
+                  }
+                );
+
                 if (ethTransfers && paymentWithdrawal) {
                   // only eth transfers emit LOG_WITHDRAWAL. If price was in TKN, paymentWithdrawal == null and no adjustment is needed
                   eventUtils.assertEventEmitted(
@@ -466,13 +476,22 @@ describe('Cashier withdrawals ', () => {
           );
         }
 
+        const recipients = [...depositRecipients, ...paymentRecipients];
+
+        // let lastDepositRecepient = isEntityRecipient(
+        //   [...depositRecipients, ...paymentRecipients],
+        //   Entity[-1]
+        // )
+        let lastDepositRecepient;
+        for (const entity of [...Object.keys(Entity)].reverse()) {
+          if (isEntityRecipient(recipients, entity)) {
+            lastDepositRecepient = entity;
+            break;
+          }
+        }
+
         for (const [entity, entityIndex] of Object.entries(Entity)) {
-          if (
-            isEntityRecipient(
-              [...depositRecipients, ...paymentRecipients],
-              entity
-            )
-          ) {
+          if (isEntityRecipient(recipients, entity)) {
             const withdrawTx = await utils.withdrawSingle(
               voucherID,
               entityIndex,
@@ -496,6 +515,37 @@ describe('Cashier withdrawals ', () => {
                 });
               }
             );
+
+            if (i == 0) {
+              // deposits not released before, event should be emitted here
+              let expectedTypeIndex = 0;
+              const expectedTypes = [];
+              if (isEntityRecipient(paymentRecipients, entity))
+                expectedTypes.push(0);
+              if (entity == lastDepositRecepient) expectedTypes.push(1);
+              if (expectedTypes.length > 0) {
+                eventUtils.assertEventEmitted(
+                  txReceipt,
+                  VoucherKernel_Factory,
+                  eventNames.LOG_FUNDS_RELEASED,
+                  (ev) => {
+                    assert.isTrue(ev._tokenIdVoucher.eq(voucherID));
+
+                    assert.equal(ev._type, expectedTypes[expectedTypeIndex++]); // 0 == withdraw, 1 == deposit
+                  }
+                );
+              }
+            } else if (entity == lastDepositRecepient) {
+              eventUtils.assertEventEmitted(
+                txReceipt,
+                VoucherKernel_Factory,
+                eventNames.LOG_FUNDS_RELEASED,
+                (ev) => {
+                  assert.isTrue(ev._tokenIdVoucher.eq(voucherID));
+                  assert.equal(ev._type, 1); // 1 == deposit
+                }
+              );
+            }
 
             if (
               ethTransfers &&
