@@ -205,11 +205,8 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
 
         uint256 _complainPeriod = 7 * 1 days;
         uint256 _cancelFaultPeriod = 7 * 1 days;
-        complainPeriod = _complainPeriod;
-        cancelFaultPeriod = _cancelFaultPeriod;
-
-        emit LogComplainPeriodChanged(_complainPeriod, msg.sender);
-        emit LogCancelFaultPeriodChanged(_cancelFaultPeriod, msg.sender);
+        setComplainPeriod(_complainPeriod);
+        setCancelFaultPeriod(_cancelFaultPeriod);
     }
 
     /**
@@ -917,8 +914,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
      * @param _complainPeriod   the new value for complain period (in number of seconds)
      */
     function setComplainPeriod(uint256 _complainPeriod)
-        external
-        override
+        public
         onlyOwner
     {
         complainPeriod = _complainPeriod;
@@ -931,8 +927,7 @@ contract VoucherKernel is IVoucherKernel, Ownable, Pausable, ReentrancyGuard {
      * @param _cancelFaultPeriod   the new value for cancelOrFault period (in number of seconds)
      */
     function setCancelFaultPeriod(uint256 _cancelFaultPeriod)
-        external
-        override
+        public
         onlyOwner
     {
         cancelFaultPeriod = _cancelFaultPeriod;
