@@ -478,10 +478,7 @@ describe('Cashier withdrawals ', () => {
 
         const recipients = [...depositRecipients, ...paymentRecipients];
 
-        // let lastDepositRecepient = isEntityRecipient(
-        //   [...depositRecipients, ...paymentRecipients],
-        //   Entity[-1]
-        // )
+        // determine who is the last entity that should receive at leas some part of the deposit
         let lastDepositRecepient;
         for (const entity of [...Object.keys(Entity)].reverse()) {
           if (isEntityRecipient(recipients, entity)) {
