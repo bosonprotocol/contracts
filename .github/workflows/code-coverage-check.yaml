@@ -2,7 +2,7 @@ name: Code Coverage Check
 
 on:
   push:
-    branches: [ gha-zip-and-upload-complete-coverage ]
+    branches: [ main ]
 jobs:
   test:
     runs-on: ubuntu-latest
