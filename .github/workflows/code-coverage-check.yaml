@@ -10,6 +10,9 @@ jobs:
       PROTOCOL_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
       CC_TOKEN_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
       NODE_OPTIONS: --max_old_space_size=4096
+      RINKEBY_URL: https://provider_url/project_key
+      ROPSTEN_URL: https://provider_url/project_key
+      MAINNET_URL: https://provider_url/project_key
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
