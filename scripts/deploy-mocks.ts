@@ -79,7 +79,7 @@ class DeploymentExecutor {
       filePath,
       JSON.stringify(
         {
-          chainId: hre.network.config.chainId,
+          chainId: chainId,
           env: this.env || '',
           erc20: this.erc20,
           erc721: this.erc721,
