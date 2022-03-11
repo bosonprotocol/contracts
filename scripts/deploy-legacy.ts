@@ -354,16 +354,18 @@ class DeploymentExecutor {
     console.log('Boson Token Address Used: ', this.boson_token);
   }
 
-  writeContracts() {
+  async writeContracts() {
     if (!fs.existsSync(addressesDirPath)) {
       fs.mkdirSync(addressesDirPath);
     }
 
+    const chainId = (await hre.ethers.provider.getNetwork()).chainId;
+
     fs.writeFileSync(
-      getAddressesFilePath(hre.network.config.chainId, this.env, 'legacy'),
+      getAddressesFilePath(chainId, this.env, 'legacy'),
       JSON.stringify(
         {
-          chainId: hre.network.config.chainId,
+          chainId: chainId,
           env: this.env || '',
           protocolVersion: packageFile.version,
           tokenRegistry: this.tokenRegistry.address,
