@@ -101,19 +101,41 @@ class DeploymentExecutor {
     );
   }
 
-  writeContracts() {
+  async writeContracts() {
     if (!fs.existsSync(addressesDirPath)) {
       fs.mkdirSync(addressesDirPath);
     }
 
-    fs.writeFileSync(
-      getAddressesFilePath(hre.network.config.chainId, this.env, 'gate'),
-      JSON.stringify(
-        {
-          chainId: hre.network.config.chainId,
+    const chainId = (await hre.ethers.provider.getNetwork()).chainId;
+
+    const gateAddressesFilePath = getAddressesFilePath(
+      chainId,
+      this.env,
+      'gates'
+    );
+
+    const gateAddressesFileContent = fs.existsSync(gateAddressesFilePath)
+      ? JSON.parse(fs.readFileSync(gateAddressesFilePath, 'utf-8'))
+      : {
+          chainId: chainId,
           env: this.env || '',
           protocolVersion: packageFile.version,
-          gate: this.gate.address,
+          gates: [],
+        };
+
+    fs.writeFileSync(
+      gateAddressesFilePath,
+      JSON.stringify(
+        {
+          ...gateAddressesFileContent,
+          gates: [
+            ...gateAddressesFileContent.gates,
+            {
+              token: process.env.CONDITIONAL_TOKEN_ADDRESS,
+              tokenType: process.env.CONDITIONAL_TOKEN_TYPE,
+              gate: this.gate.address,
+            },
+          ],
         },
         null,
         2
@@ -164,6 +186,6 @@ export async function deploy(_env: string): Promise<void> {
 
   await executor.deployContracts();
   executor.logContracts();
-  executor.writeContracts();
+  await executor.writeContracts();
   await executor.setDefaults();
 }

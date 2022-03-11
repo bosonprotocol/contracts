@@ -76,16 +76,18 @@ class DeploymentExecutor {
     );
   }
 
-  writeContracts() {
+  async writeContracts() {
     if (!fs.existsSync(addressesDirPath)) {
       fs.mkdirSync(addressesDirPath);
     }
 
+    const chainId = (await hre.ethers.provider.getNetwork()).chainId;
+
     fs.writeFileSync(
-      getAddressesFilePath(hre.network.config.chainId, this.env, 'erc1155nt'),
+      getAddressesFilePath(chainId, this.env, 'erc1155nt'),
       JSON.stringify(
         {
-          chainId: hre.network.config.chainId,
+          chainId: chainId,
           env: this.env || '',
           protocolVersion: packageFile.version,
           erc1155NonTransferable: this.erc1155NonTransferable.address,
@@ -110,5 +112,5 @@ export async function deploy(_env: string): Promise<void> {
   await executor.deployContracts();
 
   executor.logContracts();
-  executor.writeContracts();
+  await executor.writeContracts();
 }
