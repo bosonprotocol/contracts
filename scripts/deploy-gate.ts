@@ -109,14 +109,34 @@ class DeploymentExecutor {
       fs.mkdirSync(addressesDirPath);
     }
 
-    fs.writeFileSync(
-      getAddressesFilePath(hre.network.config.chainId, this.env, 'gate'),
-      JSON.stringify(
-        {
+    const gateAddressesFilePath = getAddressesFilePath(
+      hre.network.config.chainId,
+      this.env,
+      'gates'
+    );
+
+    const gateAddressesFileContent = fs.existsSync(gateAddressesFilePath)
+      ? JSON.parse(fs.readFileSync(gateAddressesFilePath, 'utf-8'))
+      : {
           chainId: hre.network.config.chainId,
           env: this.env || '',
           protocolVersion: packageFile.version,
-          gate: this.gate.address,
+          gates: [],
+        };
+
+    fs.writeFileSync(
+      gateAddressesFilePath,
+      JSON.stringify(
+        {
+          ...gateAddressesFileContent,
+          gates: [
+            ...gateAddressesFileContent.gates,
+            {
+              token: process.env.CONDITIONAL_TOKEN_ADDRESS,
+              tokenType: process.env.CONDITIONAL_TOKEN_TYPE,
+              gate: this.gate.address,
+            },
+          ],
         },
         null,
         2
