@@ -8,6 +8,9 @@ jobs:
     env:
       PROTOCOL_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
       CC_TOKEN_DEPLOYER_PRIVATE_KEY: 123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234
+      RINKEBY_URL: https://provider_url/project_key
+      ROPSTEN_URL: https://provider_url/project_key
+      MAINNET_URL: https://provider_url/project_key
     steps:
       - uses: actions/checkout@v2
       - name: Set env RELEASE_VERSION
