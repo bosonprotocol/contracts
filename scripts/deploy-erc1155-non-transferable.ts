@@ -33,14 +33,15 @@ class DeploymentExecutor {
 
   async deployContracts() {
     const signers = await ethers.getSigners();
-    let [, ccTokenDeployer] = signers;
-    const [primaryDeployer] = signers;
+    let ccTokenDeployer;
 
     if (
       process.env.PROTOCOL_DEPLOYER_PRIVATE_KEY ==
       process.env.CC_TOKEN_DEPLOYER_PRIVATE_KEY
     ) {
-      ccTokenDeployer = primaryDeployer;
+      [ccTokenDeployer] = signers;
+    } else {
+      [, ccTokenDeployer] = signers;
     }
 
     const ERC1155NonTransferable = await ethers.getContractFactory(
