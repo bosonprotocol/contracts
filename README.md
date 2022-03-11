@@ -110,21 +110,21 @@ This makes the BOSON test token deployed on Rinkeby (0xEDa08eF1c6ff51Ca7Fd681295
 
 #### Special deployments
 
-The following instructions assume you have started a hardhat node (forked or not) using the local node instructions above.  
+The following instructions assume you have started a hardhat node (forked or not) using the local node instructions above. If you want to deploy the contracts to testnets or mainnet just replace `localhost` with the desired network. 
 Calling `npx hardhat deploy` will deploy the protocol contracts. Beside that we provide addtional utility script for the following deployment cases:
 
 - Deploy all protocol contracts and ERC1155NonTransferable (equivalent to v1.0 deployment script)
 
   ```
-  npx hardhat deploy-with-erc1155
+  npx hardhat deploy-with-erc1155 --network localhost
   ```
 - Deploy only ERC1155NonTransferable and set the metadata uri defined in `.env` file
   ```
-  npx hardhat deploy-erc1155-only
+  npx hardhat deploy-erc1155-only --network localhost
   ```
 - Deploy a set of mock token contracts ERC20, ERC721, ERC1155 and ERC1155NonTransferable which can be used to test conditional commit
   ```
-  npx hardhat deploy-mocks
+  npx hardhat deploy-mocks --network localhost
   ```
 - Deploy a Gate contract on a provided network
   - First run the deploy task to deploy the Boson Protocol contracts to your local node, as described above
