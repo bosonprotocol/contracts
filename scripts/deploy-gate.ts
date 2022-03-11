@@ -1,6 +1,3 @@
-//AssetRegistry not used in demo-app
-//const AssetRegistry = artifacts.require("AssetRegistry");
-
 import hre from 'hardhat';
 import fs from 'fs';
 import {isValidEnv, addressesDirPath, getAddressesFilePath} from './utils';
@@ -104,13 +101,15 @@ class DeploymentExecutor {
     );
   }
 
-  writeContracts() {
+  async writeContracts() {
     if (!fs.existsSync(addressesDirPath)) {
       fs.mkdirSync(addressesDirPath);
     }
 
+    const chainId = (await hre.ethers.provider.getNetwork()).chainId;
+
     const gateAddressesFilePath = getAddressesFilePath(
-      hre.network.config.chainId,
+      chainId,
       this.env,
       'gates'
     );
@@ -118,7 +117,7 @@ class DeploymentExecutor {
     const gateAddressesFileContent = fs.existsSync(gateAddressesFilePath)
       ? JSON.parse(fs.readFileSync(gateAddressesFilePath, 'utf-8'))
       : {
-          chainId: hre.network.config.chainId,
+          chainId: chainId,
           env: this.env || '',
           protocolVersion: packageFile.version,
           gates: [],
@@ -187,6 +186,6 @@ export async function deploy(_env: string): Promise<void> {
 
   await executor.deployContracts();
   executor.logContracts();
-  executor.writeContracts();
+  await executor.writeContracts();
   await executor.setDefaults();
 }

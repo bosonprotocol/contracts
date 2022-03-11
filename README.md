@@ -18,11 +18,15 @@ it, please see the [documentation site](https://docs.bosonprotocol.io/).
 
 - [Local Development](#local-development)
   - [Prerequisites](#prerequisites)
-  - [Build](#build)
-  - [Run](#run)
+  - [Installation](#installation)
+    - [Forking Rinkeby to localnode](#forking-rinkeby-to-localnode)
+    - [Special deployments](#special-deployments)
   - [Test](#test)
+    - [Testing with DAI](#testing-with-dai)
+    - [Unit Tests](#unit-tests)
+    - [Coverage](#coverage)
   - [Code Linting & Formatting](#code-linting--formatting)
-- [Documentation](#documentation)  
+- [Documentation](#documentation)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -102,6 +106,41 @@ npx hardhat deploy --network localhost
 ```
 
 This makes the BOSON test token deployed on Rinkeby (0xEDa08eF1c6ff51Ca7Fd681295797102c1B84606c) and the official DAI token deployed on Rinkeby (0x6A9865aDE2B6207dAAC49f8bCba9705dEB0B0e6D) available to your local hardhat chain.
+
+
+#### Special deployments
+
+The following instructions assume you have started a hardhat node (forked or not) using the local node instructions above. If you want to deploy the contracts to testnets or mainnet just replace `localhost` with the desired network. 
+Calling `npx hardhat deploy` will deploy the protocol contracts. Beside that we provide addtional utility script for the following deployment cases:
+
+- Deploy all protocol contracts and ERC1155NonTransferable (equivalent to v1.0 deployment script)
+
+  ```
+  npx hardhat deploy-with-erc1155 --network localhost
+  ```
+- Deploy only ERC1155NonTransferable and set the metadata uri defined in `.env` file
+  ```
+  npx hardhat deploy-erc1155-only --network localhost
+  ```
+- Deploy a set of mock token contracts ERC20, ERC721, ERC1155 and ERC1155NonTransferable which can be used to test conditional commit
+  ```
+  npx hardhat deploy-mocks --network localhost
+  ```
+- Deploy a Gate contract on a provided network
+  - First run the deploy task to deploy the Boson Protocol contracts to your local node, as described above
+  - Then run deploy-mocks, as described above
+  - Provide values for the folowing properties in your .env file
+    ```
+    BOSON_ROUTER_ADDRESS=0000000000000000000000000000000000000000
+    CONDITIONAL_TOKEN_ADDRESS=0000000000000000000000000000000000000000
+    #Must be 0 (FUNGIBLE_TOKEN - ERC20), 1 (NONFUNGIBLE_TOKEN - ERC721), or 2 (MULTI_TOKEN - ERC1155)
+    CONDITIONAL_TOKEN_TYPE=x
+    ```
+    The Boson Router address and conditional token mock addresses can be found in the corresponding file in the addresses directory. For local deployments, the Boson Router address will be written to a file called 1.json (deploy). The mock conditional token addresses can be found in 1-mocks.json
+  - Then run
+    ```
+    npx hardhat deploy-gate --network localhost
+    ```
 
 ---
 ### Test

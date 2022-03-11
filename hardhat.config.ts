@@ -24,10 +24,24 @@ const lazyImport = async (module) => {
 	return await import(module);
 }
 
-task("deploy", "Deploy contracts on a provided network")
+task("deploy", "Deploy protocol contracts on a provided network")
 	.addOptionalParam("env", "(Optional) Provide additional context on which environment the contracts are deployed to: production, staging or testing", "")
 	.setAction( async ({env}) => {
 		const { deploy } = await lazyImport('./scripts/deploy')
+		await deploy(env);
+	})
+
+task("deploy-with-erc1155", "Deploy protocol contracts and a ERC1155NonTransferable contract on a provided network [== v1.0 deployment script]")
+	.addOptionalParam("env", "(Optional) Provide additional context on which environment the contracts are deployed to: production, staging or testing", "")
+	.setAction( async ({env}) => {
+		const { deploy } = await lazyImport('./scripts/deploy-legacy')
+		await deploy(env);
+	})
+
+task("deploy-erc1155-only", "Deploy a ERC1155NonTransferable contract on a provided network")
+	.addOptionalParam("env", "(Optional) Provide additional context on which environment the contracts are deployed to: production, staging or testing", "")
+	.setAction( async ({env}) => {
+		const { deploy } = await lazyImport('./scripts/deploy-erc1155-non-transferable')
 		await deploy(env);
 	})
 
@@ -37,7 +51,6 @@ task("deploy-mocks", "Deploy mock conditional token contracts (ERC20, ERC721, ER
 		const { deploy } = await lazyImport('./scripts/deploy-mocks')
 		await deploy(env);
 	})
-
 
 task("contracts-verify", "Verify already deployed contracts. Bear in mind that at least couple of blocks should be mined before execution!")
 	.addOptionalParam("env", "(Optional) Provide additional context on which environment the contracts are deployed to: production, staging or testing", "")

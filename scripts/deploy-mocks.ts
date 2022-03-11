@@ -66,21 +66,20 @@ class DeploymentExecutor {
     this.erc1155NonTransferable = mockERC1155NonTransferableToken.address;
   }
 
-  writeContracts() {
+  async writeContracts() {
     if (!fs.existsSync(addressesDirPath)) {
       fs.mkdirSync(addressesDirPath);
     }
 
-    const filePath = getAddressesFilePath(
-      hre.network.config.chainId,
-      this.env,
-      'mocks'
-    );
+    const chainId = (await hre.ethers.provider.getNetwork()).chainId;
+
+    const filePath = getAddressesFilePath(chainId, this.env, 'mocks');
+
     fs.writeFileSync(
       filePath,
       JSON.stringify(
         {
-          chainId: hre.network.config.chainId,
+          chainId: chainId,
           env: this.env || '',
           erc20: this.erc20,
           erc721: this.erc721,
@@ -134,6 +133,6 @@ export async function deploy(_env: string): Promise<void> {
   async function deployMocks() {
     const executor = new DeploymentExecutor();
     await executor.deployMockTokens();
-    executor.writeContracts();
+    await executor.writeContracts();
   }
 }
