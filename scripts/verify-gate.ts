@@ -20,10 +20,15 @@ export async function verifyContracts(env: string): Promise<void> {
     throw new Error(`Env: ${env} is not recognized!`);
   }
 
-  const gates: GateTokenPair[]= contracts.gates;
+  const gates: GateTokenPair[] = contracts.gates;
 
   for (const gate of gates) {
-    console.log("Verifying Gate contract %s for conditional token %s of type %s  ", gate.gate, gate.token, gate.tokenType);
+    console.log(
+      'Verifying Gate contract %s for conditional token %s of type %s  ',
+      gate.gate,
+      gate.token,
+      gate.tokenType
+    );
 
     //verify Gate
     try {
