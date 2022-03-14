@@ -30,6 +30,7 @@ class DeploymentExecutor {
   erc1155NonTransferable;
   maxTip;
   txOptions;
+  contractAddresses;
 
   constructor() {
     if (this.constructor == DeploymentExecutor) {
@@ -185,9 +186,11 @@ class DeploymentExecutor {
       contractList
     );
 
+    this.contractAddresses = contractAddresses;
+
     this.tokenRegistry = await TokenRegistry.deploy(this.txOptions);
     await this.tokenRegistry.deployed();
-    verifyDeployedAddress('TokenRegistry');
+    this.verifyDeployedAddress('tokenRegistry');
 
     this.voucherSets = await VoucherSets.deploy(
       process.env.VOUCHERSETS_METADATA_URI,
@@ -196,7 +199,7 @@ class DeploymentExecutor {
       this.txOptions
     );
     await this.voucherSets.deployed();
-    verifyDeployedAddress('VoucherSets');
+    this.verifyDeployedAddress('voucherSets');
 
     this.vouchers = await Vouchers.deploy(
       process.env.VOUCHERS_METADATA_URI,
@@ -207,7 +210,7 @@ class DeploymentExecutor {
       this.txOptions
     );
     await this.vouchers.deployed();
-    verifyDeployedAddress('Vouchers');
+    this.verifyDeployedAddress('vouchers');
 
     this.voucherKernel = await VoucherKernel.deploy(
       contractAddresses.br,
@@ -217,7 +220,7 @@ class DeploymentExecutor {
       this.txOptions
     );
     await this.voucherKernel.deployed();
-    verifyDeployedAddress('VoucherKernel');
+    this.verifyDeployedAddress('voucherKernel');
 
     this.cashier = await Cashier.deploy(
       contractAddresses.br,
@@ -227,7 +230,7 @@ class DeploymentExecutor {
       this.txOptions
     );
     await this.cashier.deployed();
-    verifyDeployedAddress('Cashier');
+    this.verifyDeployedAddress('cashier');
 
     this.br = await BosonRouter.deploy(
       contractAddresses.voucherKernel,
@@ -236,26 +239,27 @@ class DeploymentExecutor {
       this.txOptions
     );
     await this.br.deployed();
-    verifyDeployedAddress('BosonRouter');
+    this.verifyDeployedAddress('br');
 
     this.daiTokenWrapper = await DAITokenWrapper.deploy(
       this.dai_token,
       this.txOptions
     );
     await this.daiTokenWrapper.deployed();
-    verifyDeployedAddress('TokenRegistry');
+    this.verifyDeployedAddress('daiTokenWrapper');
 
-    function verifyDeployedAddress(contractName: string) {
-      // check that expected and actual addresses match
-      if (
-        this[contractName].address.toLowerCase() !==
-        contractAddresses[contractName].toLowerCase()
-      ) {
-        console.log(
-          `${contractName} address mismatch. Expected ${contractAddresses[contractName]}, actual ${this[contractName].address}`
-        );
-        process.exit(1);
-      }
+  }
+
+  verifyDeployedAddress(contractName: string) {
+    // check that expected and actual addresses match
+    if (
+      this[contractName].address.toLowerCase() !==
+      this.contractAddresses[contractName].toLowerCase()
+    ) {
+      console.log(
+        `${contractName} address mismatch. Expected ${this.contractAddresses[contractName]}, actual ${this[contractName].address}`
+      );
+      process.exit(1);
     }
   }
 
