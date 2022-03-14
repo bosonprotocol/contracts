@@ -59,6 +59,13 @@ task("contracts-verify", "Verify already deployed contracts. Bear in mind that a
 		await verifyContracts(env);
 	})
 
+task("contracts-verify-erc1155", "Verify deployed ERC1155NonTransferable. Bear in mind that at least couple of blocks should be mined before execution!")
+	.addOptionalParam("env", "(Optional) Provide additional context on which environment the contracts are deployed to: production, staging or testing", "")
+	.setAction(async ({env}) => {
+		const { verifyContracts } = await lazyImport('./scripts/verify-erc1155-non-transferable')
+		await verifyContracts(env);
+	})
+
 task("deploy-gate", "Deploy and verify the Gate contract on a provided network")
 .addOptionalParam("env", "(Optional) Provide additional context on which environment the contracts are deployed to: production, staging or testing", "")
 .setAction( async ({env}) => {

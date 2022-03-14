@@ -103,16 +103,6 @@ export async function verifyContracts(env: string): Promise<void> {
     logError('BosonRouter', error.message);
   }
 
-  //verify ERC1155NonTransferable
-  try {
-    await hre.run('verify:verify', {
-      address: contracts.erc1155NonTransferable,
-      constructorArguments: [process.env.CONDITIONAL_COMMIT_TOKEN_METADATA_URI],
-    });
-  } catch (error) {
-    logError('ERC1155NonTransferable', error.message);
-  }
-
   //DAITokenWrapper
   try {
     await hre.run('verify:verify', {
