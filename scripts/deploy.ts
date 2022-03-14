@@ -303,7 +303,11 @@ class DeploymentExecutor {
 
     console.log('DAI Token Address Used: ', this.dai_token);
     console.log('Boson Token Address Used: ', this.boson_token);
-    console.log('Erc1155NonTransferable Token Address Used: ', this.erc1155NonTransferable);
+    if (this.erc1155NonTransferable) {
+      console.log('Erc1155NonTransferable Token Address Used: ', this.erc1155NonTransferable)
+    } else {
+      console.warn('Erc1155NonTransferable Token Address not provided!');
+    };
   }
 
   async writeContracts() {
