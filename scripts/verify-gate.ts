@@ -1,11 +1,11 @@
-import {isValidEnv, getAddressesFilePath} from './utils';
+import {isValidEnv, getAddressesFilePath, GateTokenPair} from './utils';
 import fs from 'fs';
 import hre from 'hardhat';
 
 export async function verifyContracts(env: string): Promise<void> {
   const contracts = JSON.parse(
     fs.readFileSync(
-      getAddressesFilePath(hre.network.config.chainId, env, 'gate'),
+      getAddressesFilePath(hre.network.config.chainId, env, 'gates'),
       'utf-8'
     )
   );
@@ -20,18 +20,24 @@ export async function verifyContracts(env: string): Promise<void> {
     throw new Error(`Env: ${env} is not recognized!`);
   }
 
-  //verify Gate
-  try {
-    await hre.run('verify:verify', {
-      address: contracts.gate,
-      constructorArguments: [
-        process.env.BOSON_ROUTER_ADDRESS,
-        process.env.CONDITIONAL_TOKEN_ADDRESS,
-        process.env.CONDITIONAL_TOKEN_TYPE,
-      ],
-    });
-  } catch (error) {
-    logError('Gate', error.message);
+  const gates: GateTokenPair[]= contracts.gates;
+
+  for (const gate of gates) {
+    console.log("Verifying Gate contract %s for conditional token %s of type %s  ", gate.gate, gate.token, gate.tokenType);
+
+    //verify Gate
+    try {
+      await hre.run('verify:verify', {
+        address: gate.gate,
+        constructorArguments: [
+          process.env.BOSON_ROUTER_ADDRESS,
+          gate.token,
+          gate.tokenType,
+        ],
+      });
+    } catch (error) {
+      logError('Gate', error.message);
+    }
   }
 }
 
