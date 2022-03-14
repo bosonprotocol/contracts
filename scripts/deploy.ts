@@ -247,7 +247,6 @@ class DeploymentExecutor {
     );
     await this.daiTokenWrapper.deployed();
     this.verifyDeployedAddress('daiTokenWrapper');
-
   }
 
   verifyDeployedAddress(contractName: string) {
