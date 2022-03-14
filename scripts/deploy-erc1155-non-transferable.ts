@@ -16,8 +16,8 @@ class DeploymentExecutor {
   maxTip;
   txOptions;
 
-  constructor() {
-    this.env;
+  constructor(env: string) {
+    this.env = env;
     this.erc1155NonTransferable;
 
     this.maxTip = ethers.utils.parseUnits(
@@ -107,7 +107,7 @@ export async function deploy(_env: string): Promise<void> {
     throw new Error(`Env: ${env} is not recognized!`);
   }
 
-  const executor = new DeploymentExecutor();
+  const executor = new DeploymentExecutor(env);
 
   await executor.deployContracts();
 

@@ -27,6 +27,7 @@ class DeploymentExecutor {
   dai_token_limit;
   complainPeriod;
   cancelFaultPeriod;
+  erc1155NonTransferable;
   maxTip;
   txOptions;
 
@@ -53,6 +54,8 @@ class DeploymentExecutor {
 
     this.complainPeriod = process.env.COMPLAIN_PERIOD;
     this.cancelFaultPeriod = process.env.CANCEL_FAULT_PERIOD;
+
+    this.erc1155NonTransferable = process.env.ERC1155NONTRANSFERABLE_TOKEN;
 
     this.maxTip = ethers.utils.parseUnits(
       process.env.MAX_TIP ? String(process.env.MAX_TIP) : '1',
@@ -300,6 +303,14 @@ class DeploymentExecutor {
 
     console.log('DAI Token Address Used: ', this.dai_token);
     console.log('Boson Token Address Used: ', this.boson_token);
+    if (this.erc1155NonTransferable) {
+      console.log(
+        'Erc1155NonTransferable Token Address Used: ',
+        this.erc1155NonTransferable
+      );
+    } else {
+      console.warn('Erc1155NonTransferable Token Address not provided!');
+    }
   }
 
   async writeContracts() {
@@ -325,6 +336,7 @@ class DeploymentExecutor {
           daiTokenWrapper: this.daiTokenWrapper.address,
           daiToken: this.dai_token,
           bosonToken: this.boson_token,
+          erc1155NonTransferable: this.erc1155NonTransferable,
         },
         null,
         2
