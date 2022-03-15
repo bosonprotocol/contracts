@@ -30,6 +30,7 @@ class DeploymentExecutor {
   cancelFaultPeriod;
   maxTip;
   txOptions;
+  contractAddresses;
 
   constructor() {
     if (this.constructor == DeploymentExecutor) {
@@ -214,18 +215,38 @@ class DeploymentExecutor {
 
     await this.erc1155NonTransferable.deployed();
 
+    // Verify that expected and actual addresses match. If not there was likely a mismatch of nonces when deployment started.
+    // Although ERC1155NonTransferrable address is not crucial it's better to abort at this point already.
+    if (
+      this.erc1155NonTransferable.address.toLowerCase() !==
+      ccContractAddresses.erc1155NonTransferable.toLowerCase()
+    ) {
+      console.log(
+        `erc1155NonTransferable address mismatch. Expected ${ccContractAddresses.erc1155NonTransferable}, actual ${this.erc1155NonTransferable.address}`
+      );
+      process.exit(1);
+    }
+
     const contractAddresses = await calculateDeploymentAddresses(
       primaryDeployer.address,
       contractList
     );
 
+    this.contractAddresses = contractAddresses;
+
     this.tokenRegistry = await TokenRegistry.deploy(this.txOptions);
+    await this.tokenRegistry.deployed();
+    this.verifyDeployedAddress('tokenRegistry');
+
     this.voucherSets = await VoucherSets.deploy(
       process.env.VOUCHERSETS_METADATA_URI,
       contractAddresses.cashier,
       contractAddresses.voucherKernel,
       this.txOptions
     );
+    await this.voucherSets.deployed();
+    this.verifyDeployedAddress('voucherSets');
+
     this.vouchers = await Vouchers.deploy(
       process.env.VOUCHERS_METADATA_URI,
       'Boson Smart Voucher',
@@ -234,6 +255,9 @@ class DeploymentExecutor {
       contractAddresses.voucherKernel,
       this.txOptions
     );
+    await this.vouchers.deployed();
+    this.verifyDeployedAddress('vouchers');
+
     this.voucherKernel = await VoucherKernel.deploy(
       contractAddresses.br,
       contractAddresses.cashier,
@@ -241,6 +265,9 @@ class DeploymentExecutor {
       contractAddresses.vouchers,
       this.txOptions
     );
+    await this.voucherKernel.deployed();
+    this.verifyDeployedAddress('voucherKernel');
+
     this.cashier = await Cashier.deploy(
       contractAddresses.br,
       contractAddresses.voucherKernel,
@@ -248,44 +275,36 @@ class DeploymentExecutor {
       contractAddresses.vouchers,
       this.txOptions
     );
+    await this.cashier.deployed();
+    this.verifyDeployedAddress('cashier');
+
     this.br = await BosonRouter.deploy(
       contractAddresses.voucherKernel,
       contractAddresses.tokenRegistry,
       contractAddresses.cashier,
       this.txOptions
     );
+    await this.br.deployed();
+    this.verifyDeployedAddress('br');
+
     this.daiTokenWrapper = await DAITokenWrapper.deploy(
       this.dai_token,
       this.txOptions
     );
-
-    await this.tokenRegistry.deployed();
-    await this.voucherSets.deployed();
-    await this.vouchers.deployed();
-    await this.voucherKernel.deployed();
-    await this.cashier.deployed();
-    await this.br.deployed();
     await this.daiTokenWrapper.deployed();
+    this.verifyDeployedAddress('daiTokenWrapper');
+  }
 
+  verifyDeployedAddress(contractName: string) {
     // check that expected and actual addresses match
-    for (const contract of contractList) {
-      if (
-        this[contract].address.toLowerCase() !==
-        contractAddresses[contract].toLowerCase()
-      ) {
-        console.log(
-          `${contract} address mismatch. Expected ${contractAddresses[contract]}, actual ${this[contract].address}`
-        );
-      }
-    }
-
     if (
-      this.erc1155NonTransferable.address.toLowerCase() !==
-      ccContractAddresses.erc1155NonTransferable.toLowerCase()
+      this[contractName].address.toLowerCase() !==
+      this.contractAddresses[contractName].toLowerCase()
     ) {
       console.log(
-        `erc1155NonTransferable address mismatch. Expected ${ccContractAddresses.erc1155NonTransferable}, actual ${this.erc1155NonTransferable.address}`
+        `${contractName} address mismatch. Expected ${this.contractAddresses[contractName]}, actual ${this[contractName].address}`
       );
+      process.exit(1);
     }
   }
 
