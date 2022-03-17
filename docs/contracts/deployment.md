@@ -2,6 +2,21 @@
 
 This page lists the most recent versions of the Boson Protocol contracts on the various networks.
 
+## [v1.1.0](https://github.com/bosonprotocol/contracts/releases/tag/v1.1.0) Contracts are deployed to Ethereum mainnet
+
+| Contract Name | Address |
+| ----------- | ----------- |
+| $BOSON Token Contract Address | [`0xc477d038d5420c6a9e0b031712f61c5120090de9`](https://etherscan.io/address/0xc477d038d5420c6a9e0b031712f61c5120090de9#code) |
+| TokenRegistry | [`0xcaf39b7bcfc3aEd00D62488d3668230B7599CF05`](https://etherscan.io/address/0xcaf39b7bcfc3aEd00D62488d3668230B7599CF05#code) |
+| VoucherSets | [`0xcF6d79E65C49a93a42dd8c474b46998eea4aDEc8`](https://etherscan.io/address/0xcF6d79E65C49a93a42dd8c474b46998eea4aDEc8#code) |
+| Vouchers | [`0xDE41a99562adA9Ee04d9750C99A91C1181EbD875`](https://etherscan.io/address/0xDE41a99562adA9Ee04d9750C99A91C1181EbD875#code) |
+| VoucherKernel | [`0x19c10A47C9356eFD0E4377411Db627636Ee9E3C6`](https://etherscan.io/address/0x19c10A47C9356eFD0E4377411Db627636Ee9E3C6#code) |
+| Cashier | [`0x244154F58e9Bf6C15c3a09846eFB7bEcFe92A880`](https://etherscan.io/address/0x244154F58e9Bf6C15c3a09846eFB7bEcFe92A880#code) |
+| Boson Router | [`0x0A393AEF6dbCd7e7088AcF323f9d28b093B9aB5a`](https://etherscan.io/address/0x0A393AEF6dbCd7e7088AcF323f9d28b093B9aB5a#code) |
+| DaiTokenWrapper | [`0xc762e8f2Ce9831b7278e2939dFFcD9367dE7e6C8`](https://etherscan.io/address/0xc762e8f2Ce9831b7278e2939dFFcD9367dE7e6C8#code) |
+| Gate | [`0xb3f8AeF4D9E54a17514f40a59AdfC35758A7EC8E`](https://etherscan.io/address/0xb3f8AeF4D9E54a17514f40a59AdfC35758A7EC8E#code) |
+| Erc1155NonTransferable (Quest NFTs for Conditional Commit) | [`0xBAd188Ec8B4E168dF2a39C462A7293955EF04bf8`](https://etherscan.io/address/0xBAd188Ec8B4E168dF2a39C462A7293955EF04bf8#code) |
+
 ## [v1.0.0](https://github.com/bosonprotocol/contracts/releases/tag/v1.0.0) Contracts are deployed to Ethereum mainnet
 
 | Contract Name | Address |
