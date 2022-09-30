@@ -1,5 +1,10 @@
 [![banner](docs/assets/banner.png)](https://bosonprotocol.io)
 
+<h1 align="center">!Important!</h1>
+
+
+<p><b><big>Please note that this is first version of Boson Protocol, please find the latest version <a href="https://github.com/bosonprotocol/boson-protocol-contracts">Boson Protocol v2 in its own repo</a>.</big></b></p>
+
 <h1 align="center">Boson Protocol Contracts</h1>
 
 [![Gitter chat](https://badges.gitter.im/bosonprotocol.png)](https://gitter.im/bosonprotocol/community)
