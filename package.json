@@ -106,7 +106,7 @@
         "elliptic": "^6.5.4",
         "eslint": "^7.32.0",
         "eslint-config-prettier": "^7.2.0",
-        "ethereum-waffle": "^3.3.0",
+        "ethereum-waffle": "^4.0.7",
         "ethereumjs-util": "^7.0.7",
         "ethers": "5.4.7",
         "hardhat": "^2.1.2",
