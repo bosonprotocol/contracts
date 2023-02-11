@@ -106,7 +106,7 @@
         "elliptic": "^6.5.4",
         "eslint": "^7.32.0",
         "eslint-config-prettier": "^7.2.0",
-        "ethereum-waffle": "^3.3.0",
+        "ethereum-waffle": "^4.0.9",
         "ethereumjs-util": "^7.0.7",
         "ethers": "5.4.7",
         "hardhat": "^2.1.2",
@@ -119,7 +119,7 @@
         "prettier-plugin-solidity": "^1.0.0-beta.3",
         "prompts": "^2.4.2",
         "solhint": "^3.3.2",
-        "solidity-coverage": "^0.7.12",
+        "solidity-coverage": "^0.8.2",
         "ts-node": "^10.0.0",
         "typechain": "^5.0.0",
         "typescript": "^4.3.2"
